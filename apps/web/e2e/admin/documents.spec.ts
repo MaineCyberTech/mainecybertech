@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("admin documents list", () => {
   test.beforeEach(async ({ page }) => {
@@ -17,10 +17,10 @@ test.describe("admin documents list", () => {
   test("has view mode toggles", async ({ page }) => {
     const listBtn = page.getByRole("button", { name: /list/i });
     const tableBtn = page.getByRole("button", { name: /table/i });
-    if (await listBtn.isVisible()) {
+    if (await visibleWithin(listBtn)) {
       await expect(listBtn).toBeEnabled();
     }
-    if (await tableBtn.isVisible()) {
+    if (await visibleWithin(tableBtn)) {
       await expect(tableBtn).toBeEnabled();
     }
   });
@@ -30,7 +30,7 @@ test.describe("admin document actions", () => {
   test("shows create document form", async ({ page }) => {
     await page.goto("/admin/documents");
     const createBtn = page.getByRole("button", { name: /create|add|new/i });
-    if (await createBtn.isVisible()) {
+    if (await visibleWithin(createBtn)) {
       await createBtn.click();
       await expect(page.getByText(/name|upload/i).first()).toBeVisible();
     }
@@ -41,8 +41,8 @@ test.describe("admin document versions", () => {
   test("document detail page shows version metadata", async ({ page }) => {
     await page.goto("/admin/documents");
     const docLink = page.locator("a[href*='/admin/documents/']").first();
-    if (await docLink.isVisible()) {
-      await docLink.click();
+    if (await visibleWithin(docLink)) {
+      await clickOrGoto(page, docLink);
       await expect(page).toHaveURL(/\/admin\/documents\//);
       await expect(page.getByText(/version|created|updated/i).first()).toBeVisible();
     }

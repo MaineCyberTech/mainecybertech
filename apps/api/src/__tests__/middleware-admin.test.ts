@@ -16,13 +16,30 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";
 
-function mockReq(userId?: string) {
-  return { authUser: userId ? { userId, email: "test@example.com" } : undefined } as unknown as Request;
+function mockReq(
+  userId?: string,
+  opts: { orgId?: string; explicit?: boolean; platformAdmin?: boolean } = {},
+) {
+  const req = {
+    authUser: userId ? { userId, email: "test@example.com" } : undefined,
+  } as unknown as Request;
+  if (opts.orgId !== undefined) {
+    req.orgId = opts.orgId;
+    req.orgScope = {
+      orgId: opts.orgId,
+      explicit: opts.explicit ?? true,
+      platformAdmin: opts.platformAdmin ?? false,
+      impersonation: false,
+    };
+  }
+  return req;
 }
 
 function mockRes() {
@@ -52,7 +69,7 @@ describe("requireAdmin middleware", () => {
   });
 
   it("calls next() for user with admin role", async () => {
-    mockSupabase([{ roles: { id: "role-1", key: "admin" } }]);
+    mockSupabase([{ roles: { id: "00000000-0000-0000-0000-000000000020", key: "admin" } }]);
     const next = jest.fn();
 
     await requireAdmin(mockReq("user-1"), mockRes(), next as NextFunction);
@@ -61,7 +78,7 @@ describe("requireAdmin middleware", () => {
   });
 
   it("calls next() for user with super_admin role", async () => {
-    mockSupabase([{ roles: { id: "role-1", key: "super_admin" } }]);
+    mockSupabase([{ roles: { id: "00000000-0000-0000-0000-000000000020", key: "super_admin" } }]);
     const next = jest.fn();
 
     await requireAdmin(mockReq("user-1"), mockRes(), next as NextFunction);
@@ -87,7 +104,7 @@ describe("requireAdmin middleware", () => {
   });
 
   it("returns 403 when no admin role", async () => {
-    mockSupabase([{ roles: { id: "role-1", key: "client_user" } }]);
+    mockSupabase([{ roles: { id: "00000000-0000-0000-0000-000000000020", key: "client_user" } }]);
     const next = jest.fn();
 
     await requireAdmin(mockReq("user-1"), mockRes(), next as NextFunction);
@@ -102,5 +119,78 @@ describe("requireAdmin middleware", () => {
     await requireAdmin(mockReq("user-1"), mockRes(), next as NextFunction);
 
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 403 }));
+  });
+
+  describe("org-scoped semantics (ADMIN-P1-001 / MT-P1-001)", () => {
+    const ORG_A = "00000000-0000-0000-0000-00000000000a";
+    const ORG_B = "00000000-0000-0000-0000-00000000000b";
+
+    it("regression: an org-A admin cannot act when the request is pinned to org B", async () => {
+      mockSupabase([
+        {
+          organization_id: ORG_A,
+          roles: { id: "role-admin", key: "admin" },
+        },
+      ]);
+      const next = jest.fn();
+
+      await requireAdmin(
+        mockReq("user-1", { orgId: ORG_B, explicit: true }),
+        mockRes(),
+        next as NextFunction,
+      );
+
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 403 }));
+    });
+
+    it("allows an org-A admin on a request pinned to org A", async () => {
+      mockSupabase([
+        {
+          organization_id: ORG_A,
+          roles: { id: "role-admin", key: "admin" },
+        },
+      ]);
+      const next = jest.fn();
+
+      await requireAdmin(
+        mockReq("user-1", { orgId: ORG_A, explicit: true }),
+        mockRes(),
+        next as NextFunction,
+      );
+
+      expect(next).toHaveBeenCalledWith();
+    });
+
+    it("allows a super_admin to act cross-tenant on a pinned org", async () => {
+      mockSupabase([
+        {
+          organization_id: ORG_A,
+          roles: { id: "role-super", key: "super_admin" },
+        },
+      ]);
+      const next = jest.fn();
+
+      await requireAdmin(
+        mockReq("user-1", { orgId: ORG_B, explicit: true }),
+        mockRes(),
+        next as NextFunction,
+      );
+
+      expect(next).toHaveBeenCalledWith();
+    });
+
+    it("does not apply the org pin when no explicit scope was resolved", async () => {
+      mockSupabase([
+        {
+          organization_id: ORG_A,
+          roles: { id: "role-admin", key: "admin" },
+        },
+      ]);
+      const next = jest.fn();
+
+      await requireAdmin(mockReq("user-1"), mockRes(), next as NextFunction);
+
+      expect(next).toHaveBeenCalledWith();
+    });
   });
 });

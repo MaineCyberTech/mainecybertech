@@ -1,6 +1,7 @@
 {
   "name": "@mct/ui",
   "private": true,
+  "license": "ISC",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -9,7 +10,6 @@
     "./styles.css": "./src/styles.css",
     "./hooks/use-theme": "./src/hooks/use-theme.tsx",
     "./providers/ThemeProvider": "./src/providers/ThemeProvider.tsx",
-    "./components/ThemeToggle": "./src/components/ThemeToggle.tsx",
     "./components/Button": "./src/components/Button.tsx",
     "./components/Input": "./src/components/Input.tsx",
     "./components/Badge": "./src/components/Badge.tsx",

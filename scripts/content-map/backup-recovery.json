@@ -1,0 +1,463 @@
+{
+  "backup_readiness_check": {
+    "marketingCopy": "Most small businesses believe their data is backed up - until a computer dies, a ransomware attack hits, or an employee deletes the wrong folder and the 'backup' turns out to be nothing. The Backup Readiness Check determines whether your critical business data is actually backed up and recoverable. We identify what data matters, verify what backup solutions exist (or don't), check whether they're configured and running, and test whether a restore would actually work. You get a clear, honest answer about your backup posture - and what it would take to be protected.",
+    "bestFor": [
+      "Businesses that assume their data is backed up but haven't verified it",
+      "Organizations with no backup solution at all",
+      "Companies whose backups have never been tested",
+      "Businesses preparing for insurance that requires backup evidence"
+    ],
+    "whatIsIncluded": [
+      "Critical data identification and inventory",
+      "Existing backup solution verification",
+      "Backup configuration and status review",
+      "Restore feasibility assessment",
+      "Backup gap identification",
+      "Backup readiness report with recommendations"
+    ],
+    "customerOutcomes": [
+      "An honest answer about whether your data is really backed up",
+      "Critical data identified and its protection status documented",
+      "Backup gaps found before you need the backup",
+      "A clear path to actual data protection"
+    ]
+  },
+  "computer_backup_setup": {
+    "marketingCopy": "A single workstation can hold months of irreplaceable business work - proposals, quotes, customer files, financials - and most businesses have no backup for it beyond 'I think it's in the cloud.' The Computer Backup Setup configures or guides backup for one workstation so its data is protected and recoverable. We identify the important data on the computer, set up automated backup to a reliable destination, configure retention, and verify a restore works. That one computer's data goes from at risk to protected - automatically, without relying on the user to remember anything.",
+    "bestFor": [
+      "Businesses with critical work on individual computers",
+      "Organizations that want workstation data protected automatically",
+      "Companies that have never verified a workstation restore",
+      "Businesses that want data protection for key staff computers"
+    ],
+    "whatIsIncluded": [
+      "Workstation data identification",
+      "Backup solution setup for the computer",
+      "Automated backup configuration",
+      "Retention policy setup",
+      "Restore testing and verification",
+      "Backup setup documentation"
+    ],
+    "customerOutcomes": [
+      "Automated backup protecting that workstation's data",
+      "Verified restore capability instead of assumed protection",
+      "Retention configured so history survives",
+      "A protected computer without relying on user habits"
+    ]
+  },
+  "microsoft_365_backup_setup_backup_recovery": {
+    "marketingCopy": "Microsoft 365 gives you retention and recycling bins - not backup. If an employee permanently deletes mail, ransomware encrypts OneDrive files, or an insider wipes a SharePoint site, Microsoft won't restore it. The Microsoft 365 Backup Setup configures a proper backup solution for Exchange Online, SharePoint, and OneDrive with real point-in-time recovery. We select an appropriate backup platform, automate backup of your mailboxes, sites, and files, set sensible retention, and test a restore so you know it works. Your Microsoft 365 data finally gets the protection you've been assuming it has.",
+    "bestFor": [
+      "Businesses that assume Microsoft 365 protects their data (it doesn't fully)",
+      "Organizations concerned about accidental deletion, ransomware, or insider threats",
+      "Companies that need mail, files, and sites recoverable beyond Microsoft's retention",
+      "Businesses preparing for insurance that requires backup evidence"
+    ],
+    "whatIsIncluded": [
+      "Backup platform evaluation and selection",
+      "Exchange Online mailbox protection",
+      "SharePoint and OneDrive data protection",
+      "Retention and recovery policy setup",
+      "Restore testing to confirm recoverability",
+      "Backup reporting and documentation",
+      "Ransomware and insider-threat recovery options"
+    ],
+    "customerOutcomes": [
+      "Real automated backup of your Microsoft 365 data",
+      "Point-in-time recovery for mail, files, and sites",
+      "Verified restore capability instead of assumed protection",
+      "Backup evidence for insurance and compliance"
+    ]
+  },
+  "nas_backup_setup": {
+    "marketingCopy": "A NAS holds your file server data, shared documents, and often your only copy of important files - and if it's not backed up, a single drive failure or ransomware event can wipe it all. The NAS Backup Setup configures backup for a local NAS or file storage target so its data is protected. We assess what's on the NAS and what matters, set up backup to a reliable destination with proper retention, configure it to run automatically, and verify a restore works. Your file server data gets real backup instead of existing only on the NAS itself.",
+    "bestFor": [
+      "Businesses running a NAS without a backup of it",
+      "Organizations whose shared files exist only on the NAS",
+      "Companies that want file server data backed up automatically",
+      "Businesses preparing for insurance or ransomware protection"
+    ],
+    "whatIsIncluded": [
+      "NAS data and usage assessment",
+      "NAS backup solution setup",
+      "Automated backup configuration",
+      "Retention policy setup",
+      "Restore testing and verification",
+      "NAS backup documentation"
+    ],
+    "customerOutcomes": [
+      "Your NAS data backed up automatically to a safe destination",
+      "Shared files recoverable if the NAS fails or is encrypted",
+      "Retention configured so history survives",
+      "Verified restore capability for your file server data"
+    ]
+  },
+  "cloud_backup_setup": {
+    "marketingCopy": "Cloud backup is the simplest, most reliable protection for most small businesses - but only if it's set up for the right data, with the right retention, and actually working. The Cloud Backup Setup configures cloud backup for your business data and provides basic retention guidance. We identify the data that matters, set up automated cloud backup, configure retention, and verify it runs and restores. Your critical data goes off-site to the cloud automatically - protected against local failures, theft, and ransomware, and recoverable from anywhere.",
+    "bestFor": [
+      "Businesses that want off-site, automatic data protection",
+      "Organizations that need their data recoverable after local failures",
+      "Companies that want cloud backup configured properly",
+      "Businesses preparing for insurance that requires off-site backup"
+    ],
+    "whatIsIncluded": [
+      "Critical data identification",
+      "Cloud backup service setup",
+      "Automated backup configuration",
+      "Retention policy guidance",
+      "Backup verification and restore testing",
+      "Cloud backup documentation"
+    ],
+    "customerOutcomes": [
+      "Automatic off-site cloud backup of your critical data",
+      "Data recoverable after local failure, theft, or ransomware",
+      "Retention configured to protect your history",
+      "Verified, documented cloud backup"
+    ]
+  },
+  "backup_restore_test": {
+    "marketingCopy": "A backup you've never restored isn't a backup - it's a hope. The Backup Restore Test performs a controlled restore from your backup and documents the results, so you know whether your data can actually be recovered when you need it. We select a set of data to restore, perform the restore in a controlled way, verify the recovered data is complete and usable, and document the outcome. If the restore fails, we find out now - not during a real incident. It's the test that turns backup from an assumption into verified protection.",
+    "bestFor": [
+      "Businesses with backups that have never been tested",
+      "Organizations that want proof their restores actually work",
+      "Companies preparing for insurance or compliance that require tested backups",
+      "Businesses that want to find backup problems before an incident"
+    ],
+    "whatIsIncluded": [
+      "Restore scope and data selection",
+      "Controlled restore execution from backup",
+      "Recovered data completeness and usability verification",
+      "Restore failure identification and diagnosis",
+      "Restore test documentation",
+      "Backup improvement recommendations"
+    ],
+    "customerOutcomes": [
+      "Verified proof that your backup can actually be restored",
+      "Backup problems found and fixed before a real incident",
+      "Documented restore testing for insurance and compliance",
+      "Confidence that your data is truly recoverable"
+    ]
+  },
+  "backup_monitoring_plan": {
+    "marketingCopy": "Backups quietly fail all the time - a job stops running, a destination fills up, a credential expires - and most businesses don't find out until they need the data. The Backup Monitoring Plan is a recurring service that keeps your backups verified: automated backup status review, failure alerts, monthly status reports, and restore-test reminders. Each month your backups get checked, failures caught and escalated, and readiness maintained. It's the ongoing oversight that turns backup from a setup-and-hope situation into a monitored, verified, reliable process.",
+    "bestFor": [
+      "Businesses that want backups monitored, not just set up",
+      "Organizations that can't afford to discover backup failure late",
+      "Companies that want monthly backup status visibility",
+      "Businesses that want restore testing kept on schedule"
+    ],
+    "whatIsIncluded": [
+      "Automated backup job monitoring",
+      "Failure alerting and escalation",
+      "Monthly backup status report",
+      "Restore test scheduling and reminders",
+      "Backup configuration review",
+      "Ongoing backup readiness management"
+    ],
+    "customerOutcomes": [
+      "Backups monitored and failures caught early",
+      "Monthly visibility into backup status",
+      "Restore testing kept on schedule",
+      "Verified, reliable backup protection month after month"
+    ]
+  },
+  "disaster_recovery_plan_starter": {
+    "marketingCopy": "When a disaster takes out your systems - ransomware, a fire, a flood, a failed server - the businesses that recover have a plan, and the ones that don't lose weeks of time and revenue. The Disaster Recovery Plan Starter creates a plain-English recovery plan for your systems, data, contacts, and priorities. We identify the critical systems and data that must recover first, document the recovery steps, define the order and timeline for restoration, and record the key contacts. It's a practical recovery plan customized to your business - not a generic binder that sits on a shelf.",
+    "bestFor": [
+      "Businesses with no disaster recovery plan",
+      "Organizations that want a practical recovery plan, not a theoretical one",
+      "Companies that need critical systems and recovery order defined",
+      "Businesses preparing for insurance that requires a recovery plan"
+    ],
+    "whatIsIncluded": [
+      "Critical system and data identification",
+      "Recovery priority and order definition",
+      "Plain-English recovery steps",
+      "Recovery timeline planning",
+      "Key contact documentation",
+      "Disaster recovery plan document"
+    ],
+    "customerOutcomes": [
+      "A practical, customized disaster recovery plan",
+      "Critical systems and recovery order defined",
+      "Clear steps staff can follow during recovery",
+      "Documented recovery readiness for insurance"
+    ]
+  },
+  "backup_starter_bundle": {
+    "marketingCopy": "Most small businesses don't have a backup strategy at all - they have data scattered across computers and cloud apps, and no clear picture of what's protected. The Backup Starter Bundle builds your first real backup capability in one coordinated engagement: critical data discovery, one backup destination, a basic restore test, and instructions. We identify what data matters, set up a backup destination, configure protection, verify a restore works, and hand you simple instructions. It's the starting point every business should have had - a working, tested, documented backup foundation.",
+    "bestFor": [
+      "Businesses with no real backup setup at all",
+      "Organizations that want a coordinated first backup capability",
+      "Companies that want a basic restore test as part of setup",
+      "Businesses that need a documented backup starting point"
+    ],
+    "whatIsIncluded": [
+      "Critical data discovery",
+      "One backup destination setup",
+      "Backup configuration for identified data",
+      "Basic restore test",
+      "Backup instructions for the business",
+      "Backup foundation documentation"
+    ],
+    "customerOutcomes": [
+      "A working backup foundation, tested and documented",
+      "Critical data identified and protected",
+      "A verified restore as part of the setup",
+      "Simple instructions your business can follow"
+    ]
+  },
+  "backup_business_bundle": {
+    "marketingCopy": "Growing businesses need more than a single backup destination - they need multiple devices and cloud accounts protected, monitoring to catch failures, and restore testing on a schedule. The Backup Business Bundle delivers a comprehensive backup solution in one coordinated engagement: multiple devices and cloud accounts backed up, a scheduled monitoring plan, and quarterly restore testing. We configure protection across your environment, establish ongoing monitoring, and verify restores quarterly. Your business gets real, monitored, tested backup protection - not a single setup-and-hope solution.",
+    "bestFor": [
+      "Businesses with data across multiple devices and cloud accounts",
+      "Organizations that want monitoring and restore testing as part of backup",
+      "Companies that want comprehensive, coordinated backup",
+      "Businesses preparing for insurance that requires tested, monitored backup"
+    ],
+    "whatIsIncluded": [
+      "Multiple device and cloud account backup setup",
+      "Scheduled backup monitoring plan",
+      "Quarterly restore testing",
+      "Backup failure alerting",
+      "Retention management",
+      "Comprehensive backup documentation"
+    ],
+    "customerOutcomes": [
+      "Comprehensive backup across your devices and cloud accounts",
+      "Monitored backups with failure alerts",
+      "Quarterly verified restores",
+      "Insurance-ready, documented backup protection"
+    ]
+  },
+  "backup_resilience_bundle": {
+    "marketingCopy": "Real backup resilience means protecting workstations, cloud data, and file servers together - with restore testing and a ransomware recovery checklist. The Backup Resilience Bundle packages comprehensive backup protection into one coordinated engagement: workstations, cloud, NAS or server considerations, restore testing, and a ransomware recovery checklist. We configure backup across your environment, address the file server and cloud gaps, verify restores, and provide a ransomware recovery checklist so you know what to do if the worst happens. It's backup and recovery built for resilience - not just data copied somewhere.",
+    "bestFor": [
+      "Businesses with data spread across workstations, cloud, and servers",
+      "Organizations preparing for ransomware that want recovery capability",
+      "Companies that want restore testing built into their backup",
+      "Businesses that want comprehensive backup and recovery in one engagement"
+    ],
+    "whatIsIncluded": [
+      "Workstation backup configuration",
+      "Cloud account backup configuration",
+      "NAS or server backup consideration",
+      "Restore testing and verification",
+      "Ransomware recovery checklist",
+      "Resilience bundle documentation"
+    ],
+    "customerOutcomes": [
+      "Comprehensive backup across workstations, cloud, and servers",
+      "Verified restore capability",
+      "A ransomware recovery checklist for when it matters",
+      "A documented, resilient backup and recovery posture"
+    ]
+  },
+  "business_continuity_starter_plan": {
+    "marketingCopy": "Business continuity is about keeping your business running when something goes wrong - which requires knowing what's truly critical and what you'd do to stay operational. The Business Continuity Starter Plan identifies your critical systems, recovery targets, and continuity contacts. We work through which systems must stay up, how fast each needs to recover, and who the key contacts are for people, vendors, and recovery. You get a plain-English continuity starting point that turns 'we'd figure it out' into a documented plan for staying in business during disruption.",
+    "bestFor": [
+      "Businesses with no continuity planning",
+      "Organizations that want critical systems and recovery targets defined",
+      "Companies that need continuity contacts documented",
+      "Businesses preparing for insurance or compliance that asks about continuity"
+    ],
+    "whatIsIncluded": [
+      "Critical system identification",
+      "Recovery time target definition",
+      "Recovery point considerations",
+      "Continuity contact documentation",
+      "Plain-English continuity plan",
+      "Continuity improvement recommendations"
+    ],
+    "customerOutcomes": [
+      "A documented plan for staying operational during disruption",
+      "Critical systems and recovery targets clearly defined",
+      "Key continuity contacts captured",
+      "A practical continuity starting point"
+    ]
+  },
+  "emergency_contact_sheet": {
+    "marketingCopy": "During an outage or security incident, the last thing you want is to be hunting for phone numbers - your ISP's support line, your domain registrar, your backup provider, your insurance contact. The Emergency Contact Sheet creates a vendor, account, and contact list for outages, security events, and recovery. We help you compile the contacts that matter, organize them by scenario, and format it so it's usable under pressure. When something goes wrong, you reach for the contact sheet instead of searching your email history.",
+    "bestFor": [
+      "Businesses that don't have critical vendor contacts documented",
+      "Organizations that want a usable contact list for emergencies",
+      "Companies that want contacts organized by incident type",
+      "Businesses preparing for insurance or continuity readiness"
+    ],
+    "whatIsIncluded": [
+      "Critical vendor and provider contact compilation",
+      "Account and support contact identification",
+      "Contact organization by scenario",
+      "Emergency contact sheet creation",
+      "Printable and digital formats",
+      "Contact maintenance guidance"
+    ],
+    "customerOutcomes": [
+      "All critical contacts in one usable document",
+      "Contacts organized by scenario for quick use",
+      "No more hunting for phone numbers during an incident",
+      "A documented emergency contact resource"
+    ]
+  },
+  "outage_response_plan": {
+    "marketingCopy": "When the internet drops, email stops, files are inaccessible, or the website is down, businesses lose money and customers - and without a plan, response is slow and chaotic. The Outage Response Plan creates concrete steps for the outages that hit small businesses hardest: internet, email, file access, and website failures. We document what to check, who to contact, how to communicate internally, and how to decide when to escalate. Your team gets a playbook for each common outage type - so response is fast, ordered, and effective instead of improvised.",
+    "bestFor": [
+      "Businesses that have experienced disruptive outages",
+      "Organizations that want structured outage response",
+      "Companies that need communication plans for outages",
+      "Businesses preparing for continuity readiness"
+    ],
+    "whatIsIncluded": [
+      "Outage scenario documentation (internet, email, files, website)",
+      "Step-by-step response steps for each scenario",
+      "Escalation criteria and contacts",
+      "Internal communication procedures",
+      "Outage documentation templates",
+      "Outage response plan document"
+    ],
+    "customerOutcomes": [
+      "A playbook for responding to common outages",
+      "Fast, ordered response instead of improvisation",
+      "Clear escalation and communication steps",
+      "A documented outage response capability"
+    ]
+  },
+  "power_protection_review": {
+    "marketingCopy": "Power problems - surges, brownouts, and outages - quietly damage business equipment and corrupt data, and most small businesses have no UPS protection on the systems that matter. The Power Protection Review assesses your UPS and surge protection needs for critical equipment. We identify which systems need protected power (servers, network gear, computers, phone systems, cameras), evaluate your current UPS and surge protection, and recommend the right protection levels and sizing. You get a clear picture of your power protection gaps before the next outage or surge takes out equipment.",
+    "bestFor": [
+      "Businesses that have lost equipment or data to power events",
+      "Organizations with critical systems on unprotected power",
+      "Companies that want UPS and surge protection planned properly",
+      "Businesses preparing for continuity or backup readiness"
+    ],
+    "whatIsIncluded": [
+      "Critical equipment power assessment",
+      "UPS and surge protection inventory",
+      "Protection gap identification",
+      "UPS sizing and protection recommendations",
+      "Power protection prioritization",
+      "Power protection review documentation"
+    ],
+    "customerOutcomes": [
+      "A clear picture of which systems need protected power",
+      "UPS and surge protection gaps identified",
+      "Right-sized protection recommendations",
+      "Protected equipment before the next power event"
+    ]
+  },
+  "internet_failover_setup": {
+    "marketingCopy": "When your internet connection fails, your phones, payments, email, and customer access can all stop at once - and without backup connectivity, you're down until the ISP recovers. The Internet Failover Setup configures backup internet or failover where it's available. We assess your options, set up backup connectivity, configure automatic or manual failover, and test that it works. Your business gains the ability to stay online through an ISP outage - with failover that's configured and proven, not just an unused LTE device on a shelf.",
+    "bestFor": [
+      "Businesses that can't afford downtime during internet outages",
+      "Organizations where internet failure stops phones, payments, or operations",
+      "Companies that want tested failover capability",
+      "Businesses preparing for continuity readiness"
+    ],
+    "whatIsIncluded": [
+      "Backup internet option assessment",
+      "Backup connectivity configuration",
+      "Automatic or manual failover setup",
+      "Failover testing and verification",
+      "Failover documentation and instructions",
+      "Continuity improvement guidance"
+    ],
+    "customerOutcomes": [
+      "Backup internet that works when the primary fails",
+      "Tested failover instead of an unconfigured backup",
+      "Staying online through ISP outages",
+      "Documented failover capability"
+    ]
+  },
+  "critical_account_recovery_kit": {
+    "marketingCopy": "If your domain registrar, email admin, website host, or cloud provider account gets locked out or compromised, can you get back in? For most businesses, the answer is a stressful 'I don't know.' The Critical Account Recovery Kit documents recovery methods for your domains, email, cloud, website, and other critical accounts. We work through each critical account, document who controls it, how recovery works, and what the fallback options are, and store the information securely. You get a documented recovery path for every account your business depends on - before you need it.",
+    "bestFor": [
+      "Businesses unsure who controls their critical accounts",
+      "Organizations that want documented recovery methods",
+      "Companies worried about lockout or account compromise",
+      "Business owners preparing for continuity readiness"
+    ],
+    "whatIsIncluded": [
+      "Critical account identification (domain, email, cloud, website, etc.)",
+      "Account ownership and control documentation",
+      "Recovery method documentation for each account",
+      "Secure storage of recovery information",
+      "Fallback and escalation options",
+      "Critical account recovery kit documentation"
+    ],
+    "customerOutcomes": [
+      "A documented recovery path for every critical account",
+      "No more 'who controls the domain?' uncertainty",
+      "Secure, organized recovery information",
+      "Peace of mind that accounts are recoverable"
+    ]
+  },
+  "tabletop_exercise": {
+    "marketingCopy": "The best way to find out if your incident response and continuity plans actually work is to walk through a scenario - before a real one happens. The Tabletop Exercise runs a ransomware, outage, or account compromise scenario with your leadership team in a controlled session. We present a realistic scenario, guide your team through their response decision by decision, and identify where plans, roles, and communications break down. You get a realistic picture of your team's readiness without the real damage - and an action list of what to fix before it's tested for real.",
+    "bestFor": [
+      "Businesses with plans that have never been tested",
+      "Organizations that want to practice incident response safely",
+      "Leadership teams that want to identify gaps in readiness",
+      "Companies preparing for insurance that values tested response"
+    ],
+    "whatIsIncluded": [
+      "Scenario design (ransomware, outage, or compromise)",
+      "Facilitated leadership exercise",
+      "Decision-point walkthrough",
+      "Response and communication gap identification",
+      "Actionable readiness findings",
+      "Tabletop exercise documentation"
+    ],
+    "customerOutcomes": [
+      "A safe, realistic test of your incident response",
+      "Gaps in plans, roles, and communication identified",
+      "Leadership who understand how to respond",
+      "An action list for improving readiness"
+    ]
+  },
+  "continuity_binder": {
+    "marketingCopy": "Every business needs its critical information in one place - contacts, systems, accounts, procedures - accessible when it matters. The Continuity Binder creates a printable and digital runbook for business continuity and recovery. We compile your emergency contacts, critical systems, account recovery paths, response procedures, and key documentation into a single organized binder that exists in both print and digital form. When something goes wrong, you reach for the binder. It's the complete continuity reference most businesses wish they had during their last incident.",
+    "bestFor": [
+      "Businesses with critical information scattered across emails and files",
+      "Organizations that want one complete continuity reference",
+      "Companies that want printable and digital runbook formats",
+      "Businesses preparing for continuity and insurance readiness"
+    ],
+    "whatIsIncluded": [
+      "Emergency contact compilation",
+      "Critical system and account documentation",
+      "Response procedure compilation",
+      "Recovery path documentation",
+      "Printable and digital binder formats",
+      "Continuity binder maintenance guidance"
+    ],
+    "customerOutcomes": [
+      "All critical information in one organized binder",
+      "Printable and digital versions for any situation",
+      "A complete reference for continuity and recovery",
+      "Fast access to what matters during an incident"
+    ]
+  },
+  "small_business_resilience_pack": {
+    "marketingCopy": "Small business resilience is built from a few essentials working together: emergency contacts, backup review, critical accounts, outage response, and failover recommendations. The Small Business Resilience Pack packages these into one coordinated engagement: emergency contact sheet, backup review, critical account list, outage response plan, and failover recommendations. Instead of building each piece separately, you get a coordinated resilience foundation that covers the essentials of staying operational through disruption. It's the resilience pack that turns 'we'd figure it out' into a documented, coordinated capability.",
+    "bestFor": [
+      "Small businesses with no continuity or resilience documentation",
+      "Organizations that want the essentials coordinated in one engagement",
+      "Companies that want contacts, backup, and outage response built together",
+      "Businesses preparing for insurance or continuity readiness"
+    ],
+    "whatIsIncluded": [
+      "Emergency contact sheet creation",
+      "Backup readiness review",
+      "Critical account list documentation",
+      "Outage response plan creation",
+      "Failover recommendations",
+      "Resilience pack documentation"
+    ],
+    "customerOutcomes": [
+      "A coordinated resilience foundation covering the essentials",
+      "Contacts, backup, accounts, and response all documented",
+      "A practical path to staying operational through disruption",
+      "A bundled, coordinated resilience engagement"
+    ]
+  }
+}

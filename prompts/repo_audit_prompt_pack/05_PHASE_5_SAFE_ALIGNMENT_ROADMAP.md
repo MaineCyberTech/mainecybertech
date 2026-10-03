@@ -57,3 +57,11 @@ For each roadmap item include:
 
 Be practical, not theoretical.
 Make this usable as a real engineering plan.
+
+### Self-Review
+
+Before concluding Phase 5, review your output and flag:
+
+- Any roadmap item that depends on unverified assumptions about the reference pattern
+- Any phase with too many items (may indicate insufficient prioritization)
+- Any item where the rollback approach is unclear or unstated

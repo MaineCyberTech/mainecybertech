@@ -1,0 +1,36 @@
+{
+  "version": "2026-07-29.v4-conversion-modules",
+  "module": "cart_quote_builder",
+  "quoteStatuses": ["draft", "submitted", "reviewing", "converted_to_project", "closed"],
+  "lineItemTypes": ["quick_win", "bundle", "monthly_plan", "addon", "custom_scope"],
+  "fields": [
+    "id",
+    "customer",
+    "items",
+    "recommendedBundleIds",
+    "selectedPromoIds",
+    "notes",
+    "status",
+    "createdAt",
+    "updatedAt"
+  ],
+  "publicFlow": [
+    "Customer adds quick wins or services to quote.",
+    "Quote builder recommends a bundle when selected services overlap.",
+    "Customer reviews selected items and safe-intake warning.",
+    "Customer submits consult request.",
+    "Admin reviews quote request and converts later to ticket/project/customer workflow."
+  ],
+  "adminFlow": [
+    "View submitted quote request.",
+    "Review selected products, intake answers, recommendations, and promo eligibility.",
+    "Adjust scope or convert into project/ticket/lead later.",
+    "Record follow-up notes and status changes."
+  ],
+  "guardrails": [
+    "No payment capture required for scoped services unless explicitly implemented safely",
+    "No secret collection",
+    "Consult required for elevated-risk services",
+    "Quote is not a final contract unless human-approved"
+  ]
+}

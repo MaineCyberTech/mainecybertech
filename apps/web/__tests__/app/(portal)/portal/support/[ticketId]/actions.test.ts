@@ -27,9 +27,8 @@ describe("addPortalTicketComment", () => {
   it("adds a comment successfully", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { addPortalTicketComment } = await import(
-      "@/app/(portal)/portal/support/[ticketId]/actions"
-    );
+    const { addPortalTicketComment } =
+      await import("@/app/(portal)/portal/support/[ticketId]/actions");
 
     const formData = new FormData();
     formData.set("ticketId", "ticket-1");
@@ -45,69 +44,65 @@ describe("addPortalTicketComment", () => {
     expect(mockRevalidatePath).toHaveBeenCalledWith("/portal/support/ticket-1");
   });
 
-  it("throws when ticketId is missing", async () => {
+  it("returns error when ticketId is missing", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { addPortalTicketComment } = await import(
-      "@/app/(portal)/portal/support/[ticketId]/actions"
-    );
+    const { addPortalTicketComment } =
+      await import("@/app/(portal)/portal/support/[ticketId]/actions");
 
     const formData = new FormData();
     formData.set("body", "Hello");
 
-    await expect(addPortalTicketComment(formData)).rejects.toThrow(
-      "Ticket ID and comment body are required.",
-    );
+    const result = await addPortalTicketComment(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Ticket ID and comment body");
     expect(mockTicketsAddComment).not.toHaveBeenCalled();
   });
 
-  it("throws when body is missing", async () => {
+  it("returns error when body is missing", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { addPortalTicketComment } = await import(
-      "@/app/(portal)/portal/support/[ticketId]/actions"
-    );
+    const { addPortalTicketComment } =
+      await import("@/app/(portal)/portal/support/[ticketId]/actions");
 
     const formData = new FormData();
     formData.set("ticketId", "ticket-1");
 
-    await expect(addPortalTicketComment(formData)).rejects.toThrow(
-      "Ticket ID and comment body are required.",
-    );
+    const result = await addPortalTicketComment(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Ticket ID and comment body");
     expect(mockTicketsAddComment).not.toHaveBeenCalled();
   });
 
-  it("throws when body is whitespace", async () => {
+  it("returns error when body is whitespace", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { addPortalTicketComment } = await import(
-      "@/app/(portal)/portal/support/[ticketId]/actions"
-    );
+    const { addPortalTicketComment } =
+      await import("@/app/(portal)/portal/support/[ticketId]/actions");
 
     const formData = new FormData();
     formData.set("ticketId", "ticket-1");
     formData.set("body", "   ");
 
-    await expect(addPortalTicketComment(formData)).rejects.toThrow(
-      "Ticket ID and comment body are required.",
-    );
+    const result = await addPortalTicketComment(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Ticket ID and comment body");
     expect(mockTicketsAddComment).not.toHaveBeenCalled();
   });
 
-  it("throws when no approved membership", async () => {
+  it("returns error when no approved membership", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
-    const { addPortalTicketComment } = await import(
-      "@/app/(portal)/portal/support/[ticketId]/actions"
-    );
+    const { addPortalTicketComment } =
+      await import("@/app/(portal)/portal/support/[ticketId]/actions");
 
     const formData = new FormData();
     formData.set("ticketId", "ticket-1");
     formData.set("body", "Hello");
 
-    await expect(addPortalTicketComment(formData)).rejects.toThrow(
-      "No approved organization membership found.",
-    );
+    const result = await addPortalTicketComment(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("No approved organization membership found");
     expect(mockTicketsAddComment).not.toHaveBeenCalled();
   });
 });

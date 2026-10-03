@@ -1,10 +1,4 @@
-import {
-  Registry,
-  Counter,
-  Histogram,
-  Gauge,
-  collectDefaultMetrics,
-} from "prom-client";
+import { Registry, Counter, Histogram, Gauge, collectDefaultMetrics } from "prom-client";
 
 export const register = new Registry();
 
@@ -77,6 +71,18 @@ export const searchQueriesTotal = new Counter({
   registers: [register],
 });
 
+export const activeOrganizations = new Gauge({
+  name: "portal_active_organizations",
+  help: "Current number of active organizations",
+  registers: [register],
+});
+
+export const activeUsers = new Gauge({
+  name: "portal_active_users",
+  help: "Current number of active users",
+  registers: [register],
+});
+
 export const circuitBreakerStatus = new Gauge({
   name: "portal_circuit_breaker_status",
   help: "Circuit breaker status (0=closed, 1=half-open, 2=open)",
@@ -90,19 +96,92 @@ export const idempotencyKeyHits = new Counter({
   registers: [register],
 });
 
-export function recordDbQuery(
-  operation: string,
-  table: string,
-  durationSeconds: number,
-) {
-  dbQueryDuration.observe({ operation, table }, durationSeconds);
+export const notificationDeliveryTotal = new Counter({
+  name: "portal_notification_delivery_total",
+  help: "Total number of notification/in-app/email delivery attempts by channel and outcome",
+  labelNames: ["channel", "status"],
+  registers: [register],
+});
+
+export const notificationSuppressedTotal = new Counter({
+  name: "portal_notification_suppressed_total",
+  help: "Total number of notifications suppressed because the recipient disabled the channel",
+  labelNames: ["channel", "module"],
+  registers: [register],
+});
+
+export const notificationDedupTotal = new Counter({
+  name: "portal_notification_dedup_total",
+  help: "Total number of notifications skipped because the dedup key already existed",
+  labelNames: ["channel"],
+  registers: [register],
+});
+
+/**
+ * Cross-tenant (impersonation) access events (ADMIN-P1-002). Incremented on
+ * every `impersonation_log` write so Prometheus can alert on unexpected
+ * platform-admin reach (see infra/digitalocean/prometheus.rules.yml).
+ */
+export const impersonationEventsTotal = new Counter({
+  name: "portal_impersonation_events_total",
+  help: "Total cross-tenant/platform-admin access events recorded to impersonation_log",
+  labelNames: ["actor_role_key", "source"],
+  registers: [register],
+});
+
+export function recordWebhookDelivery(status: "success" | "failed", event: string) {
+  webhookDeliveriesTotal.inc({ status, event });
 }
 
-export function recordWebhookDelivery(
-  status: "success" | "failed",
-  event: string,
+/**
+ * Tenant-isolation boundary telemetry (IR-P1-006).
+ *
+ * `getScopedClient` silently falls back to the service-role client whenever a
+ * module is not in the RLS allow-list, and `getSupabaseAdmin()` bypasses RLS
+ * entirely. That is the normal state today, which means a tenant-isolation
+ * regression (a query that forgets its organization_id predicate) produces no
+ * signal at all - exactly what the audit flagged: there is no runtime detection
+ * for RLS regressions.
+ *
+ * This counter records every service-role (RLS-bypassing) client selection,
+ * labelled by module and kind, plus whether the request actually resolved an
+ * organization. `org_resolved="false"` on a service-role read of tenant data is
+ * the signal worth alerting on: it means a query ran with no tenant scope at
+ * all. It is deliberately low-cardinality and cheap (a counter increment).
+ */
+export const rlsBypassTotal = new Counter({
+  name: "portal_rls_bypass_total",
+  help: "Service-role (RLS-bypassing) client selections, by module, kind and whether an org was resolved",
+  labelNames: ["module", "kind", "org_resolved"],
+  registers: [register],
+});
+
+export function recordRlsBypass(
+  moduleKey: string,
+  kind: "read" | "write",
+  orgResolved: boolean,
 ) {
-  webhookDeliveriesTotal.inc({ status, event });
+  rlsBypassTotal.inc({
+    module: moduleKey,
+    kind,
+    org_resolved: orgResolved ? "true" : "false",
+  });
+}
+
+/**
+ * Incremented when the RLS-enforcing user client is actually used, so the
+ * rollout of RLS_READS_ENABLED / RLS_WRITES_ENABLED is observable: the ratio of
+ * rls_enforced to rls_bypass shows how much of the surface is protected.
+ */
+export const rlsEnforcedTotal = new Counter({
+  name: "portal_rls_enforced_total",
+  help: "Requests served through the RLS-enforcing user-scoped client",
+  labelNames: ["module", "kind"],
+  registers: [register],
+});
+
+export function recordRlsEnforced(moduleKey: string, kind: "read" | "write") {
+  rlsEnforcedTotal.inc({ module: moduleKey, kind });
 }
 
 export function recordAuthAttempt(result: "success" | "failure") {
@@ -129,14 +208,45 @@ export function recordSearchQuery() {
   searchQueriesTotal.inc();
 }
 
-export function setCircuitBreakerStatus(
-  name: string,
-  status: "closed" | "half-open" | "open",
-) {
+export function setCircuitBreakerStatus(name: string, status: "closed" | "half-open" | "open") {
   const value = status === "closed" ? 0 : status === "half-open" ? 1 : 2;
   circuitBreakerStatus.set({ name }, value);
 }
 
 export function recordIdempotencyKeyHit() {
   idempotencyKeyHits.inc();
+}
+
+/**
+ * Record the outcome of a notification/email delivery attempt.
+ * `status` is `success`, `failed`, or `skipped` (e.g. SMTP not configured).
+ */
+export function recordNotificationDelivery(
+  channel: "in_app" | "email",
+  status: "success" | "failed" | "skipped",
+) {
+  notificationDeliveryTotal.inc({ channel, status });
+}
+
+/** Record that a channel was suppressed by the recipient's preferences. */
+export function recordNotificationSuppressed(channel: "in_app" | "email", module: string) {
+  notificationSuppressedTotal.inc({ channel, module });
+}
+
+/** Record that an insert was skipped because its dedup key already existed. */
+export function recordNotificationDedup(channel: "in_app" | "email") {
+  notificationDedupTotal.inc({ channel });
+}
+
+/** Record a cross-tenant/impersonation access event (ADMIN-P1-002). */
+export function recordImpersonationEvent(actorRoleKey: string, source: string) {
+  impersonationEventsTotal.inc({ actor_role_key: actorRoleKey, source });
+}
+
+export function setActiveOrganizations(count: number) {
+  activeOrganizations.set(count);
+}
+
+export function setActiveUsers(count: number) {
+  activeUsers.set(count);
 }

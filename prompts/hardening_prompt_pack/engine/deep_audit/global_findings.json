@@ -1,0 +1,130 @@
+{
+  "total": 12,
+  "generated_at": "2026-08-06T21:21:31.519069+00:00",
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "tenancy",
+      "file": "apps/api/src/routes/users.ts",
+      "endpoint": "GET /api/v1/users, GET /api/v1/users/:id, PATCH /api/v1/users/:id/role, GET /api/v1/users/:id/permissions",
+      "data_path": "req.params.id \u2192 supabase.from('users').select() \u2192 all user data",
+      "issue": "Users router has no requireOrgAccess \u2014 any authenticated user can access any user's data",
+      "exploit_chain": "Authenticated user from Org A calls GET /api/v1/users/:id with Org B user's UUID \u2192 no org membership check \u2192 returns Org B user's email, role, permissions \u2192 cross-tenant user enumeration",
+      "impact": "Cross-tenant user enumeration and PII exposure",
+      "fix": "Add requireOrgAccess middleware or per-route org membership checks on users router"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "tenancy",
+      "file": "apps/api/src/routes/search.ts",
+      "endpoint": "GET /api/v1/search",
+      "data_path": "search query \u2192 supabase.from('*').select() \u2192 cross-org results",
+      "issue": "Admin search has no org scope \u2014 returns results across all organizations",
+      "exploit_chain": "Admin user with access to Org A calls GET /api/v1/search?q=... \u2192 supabase query returns results from all orgs \u2192 admin sees Org B data they shouldn't",
+      "impact": "Cross-org data exposure via search",
+      "fix": "Add organization_id filter to search queries or requireOrgAccess middleware"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "tenancy",
+      "file": "apps/api/src/routes/profiles.ts",
+      "endpoint": "GET /api/v1/profiles/:id, PATCH /api/v1/profiles/:id",
+      "data_path": "req.params.id \u2192 supabase.from('profiles').select() \u2192 any profile",
+      "issue": "Profiles router has no org check \u2014 any authenticated user can access any profile",
+      "exploit_chain": "User A enumerates profile UUIDs \u2192 GET /api/v1/profiles/:id for User B \u2192 returns full_name, email, phone, avatar_url \u2192 PII harvesting across orgs",
+      "impact": "Cross-tenant PII harvesting (names, emails, phone numbers)",
+      "fix": "Add requireOrgAccess or limit profile reads to user's own org members"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "validation",
+      "file": "apps/api/src/middleware/rate-limit.ts",
+      "endpoint": "POST /api/v1/auth/sign-in",
+      "data_path": "IP \u2192 rateLimitAuth counter \u2192 10 requests/15min per IP",
+      "issue": "Auth rate limit is per-IP only \u2014 attacker can rotate IPs via botnet to brute-force passwords",
+      "exploit_chain": "Attacker controls 1000 IP botnet \u2192 each IP gets 10 attempts per 15min \u2192 10,000 password attempts per 15min \u2192 successful brute-force of weak passwords",
+      "impact": "Password brute-force via IP rotation",
+      "fix": "Add per-email rate limiting (max 5 attempts per email per 15min) in addition to per-IP limit"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "exposure",
+      "file": "apps/api/src/lib/auth.ts",
+      "endpoint": "POST /api/v1/auth/callback (sets mct_session cookie)",
+      "data_path": "Set-Cookie: mct_session=<token>; path=/; ...",
+      "issue": "Session cookie may lack proper SameSite=Strict and Secure flags \u2014 CSRF token not confirmed",
+      "exploit_chain": "Attacker hosts malicious site \u2192 user clicks link while logged into portal \u2192 browser sends mct_session cookie via POST to attacker-controlled endpoint \u2192 session hijack via CSRF if SameSite not set",
+      "impact": "CSRF-based session hijack",
+      "fix": "Explicitly set cookie with httpOnly=true, secure=true, sameSite='strict', path='/'"
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "scenario": "Partial write failure in bulk operations",
+      "file": "admin\\BulkInviteForm.tsx",
+      "issue": "Bulk operation in 2 file(s) uses catch+console.error instead of checking per-item .ok status",
+      "behavior": "User selects 10 documents \u2192 clicks 'Delete' \u2192 7 succeed, 3 fail \u2192 catch block logs error \u2192 UI shows success toast \u2192 user thinks all 10 deleted \u2192 data inconsistency",
+      "impact": "Users unaware of partial failures \u2014 data inconsistency silently introduced",
+      "fix": "Return {ok, error} per item from API and surface partial failures in UI with detailed error list"
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "schema_drift",
+      "file": "supabase/migrations/",
+      "issue": "Tables defined in migrations but never queried in API code: IF, if",
+      "remediation": "Either add API endpoints for these tables or remove them from migrations",
+      "impact": "Dead schema increases migration complexity and storage cost"
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "transactions",
+      "file": "apps/api/src/routes/bulk.ts",
+      "issue": "Bulk invite operations not wrapped in a Supabase RPC transaction \u2014 partial invite failure leaves inconsistent state",
+      "remediation": "Move bulk invite logic into a Supabase RPC function with BEGIN/COMMIT/ROLLBACK",
+      "impact": "If one invite fails mid-batch, earlier invites are already committed \u2014 org membership state is inconsistent"
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "release",
+      "file": ".github/workflows/terraform-do.yml",
+      "issue": "Prod terraform apply gated by prod-approval environment but no required E2E/test workflow_call dependency before apply",
+      "remediation": "Add needs: [validate, e2e] to terraform-apply-prod job",
+      "impact": "Terraform changes can be approved and applied even if tests or E2E tests are failing"
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "pii_storage",
+      "file": "supabase/migrations/",
+      "issue": "PII fields (email, phone, full_name) stored in profiles table without encryption at rest",
+      "remediation": "Enable Transparent Column Encryption (TCE) or Supabase Vault for PII columns",
+      "impact": "Database compromise exposes user names, emails, and phone numbers in plaintext"
+    },
+    {
+      "severity": "P3",
+      "domain": "evolution",
+      "category": "architecture",
+      "file": "apps/web/middleware.ts",
+      "issue": "Domain routing middleware runs on every request \u2014 adds JWT decode overhead even on static assets",
+      "remediation": "Use Next.js matcher config to exclude _next/static, favicon.ico from middleware execution (already done in config)",
+      "impact": "Minimal \u2014 already mitigated by matcher config"
+    },
+    {
+      "severity": "P3",
+      "domain": "evolution",
+      "category": "architecture",
+      "file": "apps/api/src/lib/circuit-breaker.ts",
+      "issue": "Circuit breaker state changes are not exported as Prometheus metrics",
+      "remediation": "Add prom-client Gauge to track circuit breaker state (0=closed, 1=open, 2=half-open)",
+      "impact": "Ops cannot see which external services are being circuit-broken"
+    }
+  ]
+}

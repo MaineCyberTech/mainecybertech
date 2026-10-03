@@ -1,0 +1,61 @@
+{
+  "version": "2026-07-29.v4-conversion-modules",
+  "module": "bundle_savings_calculator",
+  "calculationModes": [
+    {
+      "id": "exact",
+      "label": "Exact savings",
+      "useWhen": "All component products and bundle have exact numeric price values."
+    },
+    {
+      "id": "range",
+      "label": "Range comparison",
+      "useWhen": "Products use low/high price ranges."
+    },
+    {
+      "id": "included_value",
+      "label": "Included value",
+      "useWhen": "Pricing varies by scope; show bundled scope/value instead of exact savings."
+    },
+    {
+      "id": "consult_required",
+      "label": "Consult required",
+      "useWhen": "Price depends on discovery, onsite scope, hardware, or licensing."
+    }
+  ],
+  "fields": [
+    "bundleId",
+    "componentProductIds",
+    "standaloneLow",
+    "standaloneHigh",
+    "bundleLow",
+    "bundleHigh",
+    "mode",
+    "includedValueText",
+    "assumptions",
+    "disclaimer",
+    "lastReviewedBy",
+    "lastReviewedAt"
+  ],
+  "displayRules": {
+    "exact": "Show calculated savings when exact prices are reliable.",
+    "range": "Show range comparison and avoid over-promising.",
+    "included_value": "Show value narrative: included setup, documentation, bundled workflow, fewer handoffs.",
+    "consult_required": "Show consult-required note and included scope rather than savings amount."
+  },
+  "exampleBundleValuePanels": [
+    {
+      "bundleId": "small_business_it_starter_pack",
+      "componentProductIds": [
+        "m365_tenant_health_check",
+        "mfa_setup_session",
+        "backup_readiness_check",
+        "domain_dns_safety_check"
+      ],
+      "mode": "included_value",
+      "includedValueText": "Combines the most common first-step reviews into one practical technology baseline with a single roadmap.",
+      "assumptions": ["Final pricing depends on user count, admin access, and systems included."],
+      "disclaimer": "Displayed value is informational and not a guaranteed discount unless an active promotion applies."
+    }
+  ]
+}

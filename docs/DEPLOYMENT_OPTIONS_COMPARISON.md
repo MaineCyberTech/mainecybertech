@@ -3,20 +3,25 @@
 **Date**: 2024-05-30  
 **Recommendation**: Vercel (Web) + AWS (API/Worker)
 
+> **Historical Document** — This analysis was produced before the migration to DigitalOcean (single droplet, Caddy reverse proxy, GHCR images, hosted Supabase). The current architecture is documented in `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md`. This document is retained for reference only.
+
 ---
 
 ## 📊 Option Comparison
 
 ### Option 1: Vercel Only (NOT RECOMMENDED)
+
 Vercel Edge Functions + Serverless Functions for everything
 
 **Pros**:
+
 - ✅ Simple setup (everything in one place)
 - ✅ Automatic scaling
 - ✅ No DevOps needed
 - ✅ Great for small/medium apps
 
 **Cons**:
+
 - ❌ Expensive at scale ($1000+/month)
 - ❌ Cold starts on background jobs (40s+)
 - ❌ Limited to Node.js functions
@@ -24,20 +29,23 @@ Vercel Edge Functions + Serverless Functions for everything
 - ❌ Limited database connection pooling
 
 **Cost**: $200-1000+/month  
-**Best for**: Simple apps without heavy background jobs  
+**Best for**: Simple apps without heavy background jobs
 
 ---
 
 ### Option 2: AWS Only (COMPLEX)
+
 All services on AWS (ECS, Lambda, RDS)
 
 **Pros**:
+
 - ✅ Maximum flexibility
 - ✅ Cost-effective at scale
 - ✅ Full control
 - ✅ Can run 24/7 workers
 
 **Cons**:
+
 - ❌ Complex setup
 - ❌ More DevOps work
 - ❌ Need to manage infrastructure
@@ -45,15 +53,17 @@ All services on AWS (ECS, Lambda, RDS)
 - ❌ Web deployment not optimized
 
 **Cost**: $100-300/month (but high DevOps overhead)  
-**Best for**: Enterprise with dedicated ops team  
+**Best for**: Enterprise with dedicated ops team
 
 ---
 
 ### Option 3: Vercel + AWS (RECOMMENDED) ⭐
+
 **Vercel** for web (Next.js optimized)  
 **AWS** for API/Worker (cost-effective & flexible)
 
 **Pros**:
+
 - ✅ Best of both worlds
 - ✅ Web deployment optimized for Next.js
 - ✅ API/Worker cost-effective
@@ -62,6 +72,7 @@ All services on AWS (ECS, Lambda, RDS)
 - ✅ Scalable as you grow
 
 **Cons**:
+
 - ⚠️ Multiple platforms (2 dashboards)
 - ⚠️ Moderate DevOps knowledge needed
 - ⚠️ Terraform learning curve
@@ -74,6 +85,7 @@ All services on AWS (ECS, Lambda, RDS)
 ## 🏗️ Architecture Comparison
 
 ### Option 1: Vercel Only
+
 ```
 Client
   ↓
@@ -81,9 +93,11 @@ Vercel (Web + API + Worker)
   ↓
 Supabase (DB)
 ```
+
 - Single provider, but expensive for background jobs
 
 ### Option 2: AWS Only
+
 ```
 Client
   ↓
@@ -95,9 +109,11 @@ Fargate (Worker)
   ↓
 RDS/Supabase (DB)
 ```
+
 - Full control, but complex to manage
 
 ### Option 3: Vercel + AWS (RECOMMENDED)
+
 ```
 Client
   ↓
@@ -109,6 +125,7 @@ ECS (API)  |  Fargate (Worker)
   ↓
 Supabase (DB)
 ```
+
 - Optimized services, manageable complexity
 
 ---
@@ -116,6 +133,7 @@ Supabase (DB)
 ## 💰 Cost Analysis
 
 ### Vercel Only (Monthly)
+
 ```
 Web App:        $20-50    (Pro plan + bandwidth)
 API Functions:  $50-200   (High invocation cost)
@@ -124,9 +142,11 @@ Database:       $25-100   (Supabase usage)
 ────────────────────────
 TOTAL:          $195-850
 ```
+
 **Problem**: Workers are expensive due to cold starts
 
 ### AWS Only (Monthly)
+
 ```
 ECS (API):      $20-30    (Fargate 0.5GB)
 Fargate (Worker): $15-20  (1GB 24/7)
@@ -137,9 +157,11 @@ Database:       $25-100   (Supabase)
 ────────────────────────
 TOTAL:          $67-163   (Infrastructure only)
 ```
+
 **Problem**: Web deployment not optimized for Next.js
 
 ### Vercel + AWS (RECOMMENDED)
+
 ```
 Vercel Web:     $20-50    (Pro plan)
 AWS ECS (API):  $20-30    (Fargate 0.5GB)
@@ -150,26 +172,28 @@ Database:       $25-100   (Supabase)
 ────────────────────────
 TOTAL:          $87-212   ⭐ OPTIMAL
 ```
+
 **Benefit**: Best cost/performance ratio + optimized web
 
 ---
 
 ## 📊 Performance Comparison
 
-| Metric | Vercel Only | AWS Only | Vercel + AWS |
-|--------|-------------|----------|--------------|
-| **Web Load Time** | 100ms ⭐ | 150ms | 100ms ⭐ |
-| **API Response** | 200ms (cold) | 50ms ✓ | 50ms ✓ |
-| **Worker Startup** | 40s (cold) ❌ | <1s ✓ | <1s ✓ |
-| **Auto-scaling** | 5-10s | 30s | Mixed |
-| **24/7 Workers** | No (costly) | Yes ✓ | Yes ✓ |
-| **Complexity** | Easy | Hard | Medium |
+| Metric             | Vercel Only   | AWS Only | Vercel + AWS |
+| ------------------ | ------------- | -------- | ------------ |
+| **Web Load Time**  | 100ms ⭐      | 150ms    | 100ms ⭐     |
+| **API Response**   | 200ms (cold)  | 50ms ✓   | 50ms ✓       |
+| **Worker Startup** | 40s (cold) ❌ | <1s ✓    | <1s ✓        |
+| **Auto-scaling**   | 5-10s         | 30s      | Mixed        |
+| **24/7 Workers**   | No (costly)   | Yes ✓    | Yes ✓        |
+| **Complexity**     | Easy          | Hard     | Medium       |
 
 ---
 
 ## 🎯 Why Vercel + AWS for Your Project?
 
 ### Your Stack Analysis
+
 ```
 ├── Next.js Web (apps/web)        → Vercel ⭐
 ├── Express API (apps/api)        → AWS ECS ⭐
@@ -178,6 +202,7 @@ TOTAL:          $87-212   ⭐ OPTIMAL
 ```
 
 **Key Reasons**:
+
 1. **Web**: Next.js is Vercel's native framework
    - Automatic optimizations
    - Edge middleware support
@@ -201,6 +226,7 @@ TOTAL:          $87-212   ⭐ OPTIMAL
 ## 🔄 Migration Path (If Starting Over)
 
 ### Week 1: Quick Start
+
 ```
 1. Deploy Vercel (30 min)
 2. Setup AWS Account (30 min)
@@ -209,6 +235,7 @@ TOTAL:          $87-212   ⭐ OPTIMAL
 ```
 
 ### Week 2: Production Ready
+
 ```
 1. Setup Terraform (1 hour)
 2. Deploy ECS API (30 min)
@@ -217,6 +244,7 @@ TOTAL:          $87-212   ⭐ OPTIMAL
 ```
 
 ### Week 3: Optimization
+
 ```
 1. Load testing
 2. Performance tuning
@@ -229,17 +257,20 @@ TOTAL:          $87-212   ⭐ OPTIMAL
 ## 🔐 Security by Option
 
 ### Vercel Only
+
 - ✅ Managed SSL
 - ⚠️ Limited network isolation
 - ⚠️ No VPC control
 
 ### AWS Only
+
 - ✅ Full VPC control
 - ✅ Security groups
 - ✅ Private subnets
 - ⚠️ Complex setup
 
 ### Vercel + AWS (RECOMMENDED)
+
 - ✅ Managed SSL (Vercel)
 - ✅ VPC for API/Worker
 - ✅ Private database
@@ -251,6 +282,7 @@ TOTAL:          $87-212   ⭐ OPTIMAL
 ## 📈 Scalability Path
 
 ### Phase 1: MVP (Current Size)
+
 ```
 Traffic: 100-500 req/min
 Cost: $87-212/month
@@ -258,6 +290,7 @@ Setup: Vercel + AWS (recommended)
 ```
 
 ### Phase 2: Growth (1000+ users)
+
 ```
 Traffic: 1000-5000 req/min
 Cost: $150-350/month
@@ -265,6 +298,7 @@ Additions: CDN caching, database optimization
 ```
 
 ### Phase 3: Scale (10000+ users)
+
 ```
 Traffic: 5000+ req/min
 Cost: $500-1000+/month
@@ -278,16 +312,19 @@ Additions: Multi-region, load balancing, caching layers
 ## 🛠️ DevOps Complexity
 
 ### Vercel Only
+
 - **Setup**: 30 minutes
 - **Maintenance**: Minimal (Vercel handles everything)
 - **Learning**: Very easy
 
 ### AWS Only
+
 - **Setup**: 4-8 hours
 - **Maintenance**: Ongoing (infrastructure updates, security patches)
 - **Learning**: Hard (steep learning curve)
 
 ### Vercel + AWS (RECOMMENDED)
+
 - **Setup**: 2-3 hours
 - **Maintenance**: Moderate (Terraform + monitoring)
 - **Learning**: Medium (good investment for long-term)
@@ -321,6 +358,7 @@ Additions: Multi-region, load balancing, caching layers
 ## 🚀 Recommended Path Forward
 
 ### ✅ DO THIS (Vercel + AWS)
+
 1. Deploy to Vercel (30 min)
 2. Setup AWS (30 min)
 3. Configure Terraform (1 hour)
@@ -328,6 +366,7 @@ Additions: Multi-region, load balancing, caching layers
 5. **Total: 3 hours**
 
 ### ❌ DON'T DO THIS
+
 - ❌ "Let me use Vercel for everything" (expensive workers)
 - ❌ "Let me use AWS for everything" (complex web setup)
 - ❌ "Let me use Heroku" (shutting down)
@@ -339,26 +378,28 @@ Additions: Multi-region, load balancing, caching layers
 
 Choose based on your priorities:
 
-| Priority | Best Option |
-|----------|------------|
-| **Simplicity** | Vercel Only |
-| **Cost** | Vercel + AWS |
-| **Flexibility** | AWS Only |
-| **Performance** | Vercel + AWS |
-| **Scalability** | Vercel + AWS |
-| **DevOps Load** | Vercel Only |
-| **NO Cold Starts** | AWS Only or Vercel + AWS |
-| **24/7 Workers** | AWS Only or Vercel + AWS |
-| **Production Ready Now** | Vercel + AWS ⭐ |
+| Priority                 | Best Option              |
+| ------------------------ | ------------------------ |
+| **Simplicity**           | Vercel Only              |
+| **Cost**                 | Vercel + AWS             |
+| **Flexibility**          | AWS Only                 |
+| **Performance**          | Vercel + AWS             |
+| **Scalability**          | Vercel + AWS             |
+| **DevOps Load**          | Vercel Only              |
+| **NO Cold Starts**       | AWS Only or Vercel + AWS |
+| **24/7 Workers**         | AWS Only or Vercel + AWS |
+| **Production Ready Now** | Vercel + AWS ⭐          |
 
 ---
 
 ## ✨ Final Recommendation
 
 ### For Maine CyberTech Portal:
+
 **Use Vercel + AWS**
 
 **Why**:
+
 1. ✅ Web optimized (Next.js → Vercel)
 2. ✅ API cost-effective (Express → AWS ECS)
 3. ✅ Workers viable (Node → AWS Fargate)
@@ -368,6 +409,7 @@ Choose based on your priorities:
 7. ✅ Production-ready in 3 hours
 
 **Timeline**:
+
 - **Day 1**: Deploy to Vercel
 - **Day 1-2**: Setup AWS infrastructure
 - **Day 3**: Deploy API & Worker

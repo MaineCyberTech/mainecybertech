@@ -1,0 +1,29 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "ladders": [
+    {
+      "category": "Cybersecurity",
+      "good": "mfa_setup_session",
+      "better": "m365_secure_bundle",
+      "best": "mct_secure_care"
+    },
+    {
+      "category": "Website & SEO",
+      "good": "website_health_check",
+      "better": "local_business_online_presence_pack",
+      "best": "monthly_website_care_plan"
+    },
+    {
+      "category": "Wi-Fi & Networking",
+      "good": "wifi_coverage_check",
+      "better": "small_office_wifi_bundle",
+      "best": "business_network_foundation"
+    },
+    {
+      "category": "Backup & Recovery",
+      "good": "backup_readiness_check",
+      "better": "backup_business_bundle",
+      "best": "small_business_resilience_pack"
+    }
+  ]
+}

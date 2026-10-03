@@ -50,6 +50,17 @@ otp_expiry = 3600
 enable_signup = false
 enable_confirmations = false
 
+# TOTP MFA. The API exposes /api/v1/auth/mfa/* (enroll/challenge/verify/
+# unenroll) which delegates to GoTrue. For the HOSTED project, enable
+# "Multi-Factor Authentication" under Authentication > Settings in the
+# Supabase dashboard; this block is the local/self-hosted equivalent.
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 [storage]
 enabled = true
 file_size_limit = "25MiB"

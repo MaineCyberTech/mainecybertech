@@ -74,7 +74,19 @@ variable "docker_compose_dir" {
 }
 
 variable "admin_ip_ranges" {
-  description = "IP ranges allowed to SSH into the droplet. In production, restrict to office/VPN IPs."
+  # SSH is fail-closed: this variable has NO default, so every plan/apply must
+  # supply an explicit allowlist. It restricts both the DigitalOcean firewall
+  # (firewall.tf) and the in-droplet UFW rule (cloud-init.yml), since cloud-init
+  # renders per-CIDR `ufw allow from ...` rules from this list.
+  # Do NOT set this to 0.0.0.0/0 + ::/0 in production. Use your office/VPN
+  # CIDRs, e.g. ["203.0.113.0/24", "2001:db8::/32"]. GitHub Actions egress IPs
+  # are dynamic, so CI deploys cannot be pinned; key-only auth (ssh_keys in
+  # droplet.tf, no password auth) is the remaining defense for CI access.
+  description = "IP ranges allowed to SSH into the droplet (office/VPN CIDRs). Required; there is no default so SSH can never be silently opened to the whole internet."
   type        = list(string)
-  default     = ["0.0.0.0/0", "::/0"]
+
+  validation {
+    condition     = length(var.admin_ip_ranges) > 0
+    error_message = "admin_ip_ranges must contain at least one CIDR; SSH cannot be fail-open."
+  }
 }

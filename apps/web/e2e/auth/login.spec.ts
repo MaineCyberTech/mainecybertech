@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("login page", () => {
   test("renders login form", async ({ page }) => {
@@ -9,8 +9,8 @@ test.describe("login page", () => {
   test("redirects to signup page", async ({ page }) => {
     await page.goto("/login");
     const signupLink = page.getByRole("link", { name: /sign up/i });
-    if (await signupLink.isVisible()) {
-      await signupLink.click();
+    if (await visibleWithin(signupLink)) {
+      await clickOrGoto(page, signupLink);
       await expect(page).toHaveURL(/\/signup/);
     }
   });
@@ -25,8 +25,8 @@ test.describe("signup page", () => {
   test("redirects to login page", async ({ page }) => {
     await page.goto("/signup");
     const loginLink = page.getByRole("link", { name: /sign in/i });
-    if (await loginLink.isVisible()) {
-      await loginLink.click();
+    if (await visibleWithin(loginLink)) {
+      await clickOrGoto(page, loginLink);
       await expect(page).toHaveURL(/\/login/);
     }
   });

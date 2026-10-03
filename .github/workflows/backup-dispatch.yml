@@ -1,0 +1,111 @@
+name: Backup Schedule Dispatcher
+
+# Why this workflow exists (audit finding DR-P0-001):
+# GitHub `schedule:` triggers only fire for workflows on the DEFAULT branch.
+# The database backup, restore-test and storage-backup workflows were added on
+# `develop`, so on this repository (default branch `main`) the daily backup,
+# weekly restore test and daily storage mirror never ran. This file must live
+# on `main`; it pokes the real workflows on `develop` via workflow_dispatch,
+# which does not require them to be on the default branch.
+#
+# IMPORTANT: `gh workflow run --ref develop` requires the `workflow` scope on
+# the token. GITHUB_TOKEN cannot dispatch arbitrary workflows, so this job
+# needs a `SCHEDULE_DISPATCH_TOKEN` secret (a PAT or GitHub App token with
+# `actions: write`). If that secret is absent the job fails loudly rather than
+# pretending the backup ran.
+#
+# Alternative (no PAT required): flip the repository's default branch to
+# `develop`. Then delete this dispatcher and the schedule blocks in
+# db-backup.yml / db-restore-test.yml / storage-backup.yml do the work.
+
+on:
+  schedule:
+    - cron: "0 4 * * *"   # daily database backup (matches db-backup.yml)
+    - cron: "0 5 * * *"   # daily storage mirror (matches storage-backup.yml)
+    - cron: "0 6 * * 1"   # weekly restore test (matches db-restore-test.yml)
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Which workflow to dispatch"
+        required: true
+        default: backup
+        type: choice
+        options:
+          - backup
+          - restore-test
+          - storage
+          - both
+          - all
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Choose targets from the schedule
+        id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "targets=${{ inputs.target }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 6 * * 1" ]; then
+            echo "targets=restore-test" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 5 * * *" ]; then
+            echo "targets=storage" >> "$GITHUB_OUTPUT"
+          else
+            echo "targets=backup" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Require a dispatch token
+        env:
+          TOKEN: ${{ secrets.SCHEDULE_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "${TOKEN}" ]; then
+            echo "::error::SCHEDULE_DISPATCH_TOKEN is not set. Backups cannot be dispatched from main. See .github/workflows/backup-dispatch.yml header for options."
+            exit 1
+          fi
+
+      - name: Resolve the dispatch list
+        id: want
+        run: |
+          targets="${{ steps.pick.outputs.targets }}"
+          list=""
+          case "$targets" in
+            backup)       list="db-backup.yml" ;;
+            restore-test) list="db-restore-test.yml" ;;
+            storage)      list="storage-backup.yml" ;;
+            both)         list="db-backup.yml db-restore-test.yml" ;;
+            all)          list="db-backup.yml db-restore-test.yml storage-backup.yml" ;;
+            *) echo "::error::Unknown target '$targets'"; exit 1 ;;
+          esac
+          echo "list=${list}" >> "$GITHUB_OUTPUT"
+          echo "Dispatching: ${list}"
+
+      - name: Dispatch selected workflows
+        env:
+          GH_TOKEN: ${{ secrets.SCHEDULE_DISPATCH_TOKEN }}
+        run: |
+          set -euo pipefail
+          for wf in ${{ steps.want.outputs.list }}; do
+            gh workflow run "${wf}" --repo "${{ github.repository }}" --ref develop
+            echo "Dispatched ${wf} on develop"
+          done
+
+      - name: Warn if the dispatched run does not appear
+        env:
+          GH_TOKEN: ${{ secrets.SCHEDULE_DISPATCH_TOKEN }}
+        run: |
+          # Give Actions a moment, then confirm each run was created. A silent
+          # dispatch failure is exactly the failure mode this workflow fixes.
+          sleep 15
+          set -euo pipefail
+          for wf in ${{ steps.want.outputs.list }}; do
+            count=$(gh run list --repo "${{ github.repository }}" --workflow "${wf}" \
+              --branch develop --limit 3 --json createdAt --jq 'length')
+            if [ "${count}" -eq 0 ]; then
+              echo "::error::No run found for ${wf} after dispatch — the backup may not be running"
+              exit 1
+            fi
+            echo "${wf}: recent runs found (${count})"
+          done

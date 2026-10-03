@@ -1,0 +1,23 @@
+name: A11y breadth (triage)
+
+# Weekly/manual full accessibility scan (68 routes, WCAG 2.2 tags). This is a
+# triage report, not a gate: it is not referenced by any required check, and a
+# red run means the breadth scan found violations to fix or promote into the
+# default 19-page gate. The default E2E gate stays on the small page list.
+# See docs/WEB_UI_CONVENTIONS.md ("Accessibility scanning").
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 5 * * 1"
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  breadth:
+    uses: ./.github/workflows/e2e.yml
+    with:
+      a11y_full: true
+    secrets: inherit

@@ -1,1 +1,18 @@
-{ "p0": 0, "p1": 0, "score": 0 }
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Global Risk Score",
+  "type": "object",
+  "required": ["p0", "p1", "p2", "p3", "score", "total", "blocked", "timestamp"],
+  "properties": {
+    "p0": { "type": "integer" },
+    "p1": { "type": "integer" },
+    "p2": { "type": "integer" },
+    "p3": { "type": "integer" },
+    "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "total": { "type": "integer" },
+    "blocked": { "type": "boolean" },
+    "domain_breakdown": { "type": "object" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "commit": { "type": "string" }
+  }
+}

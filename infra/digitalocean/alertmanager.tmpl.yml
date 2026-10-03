@@ -1,0 +1,147 @@
+# Alertmanager configuration TEMPLATE for the MCT portal stack (IR-P0-003).
+#
+# This file is a ${VAR} template, NOT a loadable Alertmanager config. It is
+# rendered by `envsubst` at container start (see the alertmanager service in
+# docker-compose.yml, which runs:
+#   /bin/sh -c 'envsubst < /etc/alertmanager/alertmanager.tmpl.yml > /etc/alertmanager/alertmanager.yml && exec /bin/alertmanager ...'
+# ). This is required because Alertmanager does NOT understand shell-style
+# `${VAR:-default}` defaults — a literal `${...}` in a `url:` fails config
+# validation with "first path segment in URL cannot contain colon". The
+# compose file therefore supplies defaults for every variable below.
+#
+# This is the DELIVERY half of the alerting path. Prometheus (see prometheus.yml
+# `alerting:`) forwards firing alerts here; Alertmanager fans them out to the
+# receivers below. The Watchdog alert is routed to an EXTERNAL dead-man's-switch
+# / webhook so that a total loss of this droplet (Prometheus, Alertmanager,
+# network egress, disk) is still detected by a system that does not share the box.
+#
+# Secrets NEVER live in this file. Every receiver URL is supplied by the
+# environment when the container starts. Required env var NAMES (values are set
+# in the droplet .env / GitHub env secrets):
+#
+#   ALERTMANAGER_CRITICAL_WEBHOOK_URL
+#     External inbound webhook for critical/real alerts (Slack, Teams, PagerDuty
+#     events, Opsgenie, or a generic webhook relay). Must be reachable from the
+#     droplet. When unset, compose substitutes a no-op loopback URL so the config
+#     still renders and validates.
+#   ALERTMANAGER_WATCHDOG_WEBHOOK_URL
+#     The DEAD-MAN'S SWITCH endpoint — an external ping/heartbeat URL that is NOT
+#     hosted on this droplet (e.g. a healthchecks.io-style ping URL, or an
+#     external uptime service's webhook). This is the receiver the Watchdog alert
+#     is routed to. If it is never pinged for longer than the external service's
+#     grace period, THAT SERVICE pages you — which is exactly what proves the
+#     monitoring path itself is alive.
+#   ALERTMANAGER_DEFAULT_WEBHOOK_URL
+#     Catch-all receiver for everything that is not critical and not the
+#     watchdog (e.g. a low-severity Slack channel). Optional.
+#   ALERTMANAGER_SLACK_API_URL
+#     Optional Slack incoming-webhook URL used by the default/critical receivers.
+#     Leave unset to use the generic webhook receivers only.
+#   ALERTMANAGER_SLACK_CHANNEL
+#     Slack channel name for the above (e.g. "#alerts"). Non-secret.
+#
+# See docs/MONITORING_AND_ALERTING.md §9 for the operating model and the
+# "what happens when the whole stack dies" walkthrough.
+
+global:
+  # Give alerts a little time to resolve before notifying, so a blip does not page.
+  resolve_timeout: 5m
+
+# ---------------------------------------------------------------------------
+# Routing tree
+# ---------------------------------------------------------------------------
+route:
+  # Anything that matches no child route goes to the catch-all receiver.
+  receiver: default
+  # Group by alertname + service so a single incident produces one notification.
+  group_by: ["alertname", "service", "severity"]
+  # Wait before sending the first notification for a new group.
+  group_wait: 30s
+  # Wait before sending a batch of new alerts added to an existing group.
+  group_interval: 5m
+  # Re-notify for an alert that is still firing and has not been updated.
+  repeat_interval: 4h
+
+  routes:
+    # --- Critical path -------------------------------------------------------
+    # Real, user-impacting alerts (service down, 5xx spike, etc.). Delivered to
+    # the external critical webhook / Slack channel.
+    - matchers:
+        - severity = "critical"
+      receiver: critical
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: false
+
+    # --- Dead-man's-switch path (IR-P0-003) ---------------------------------
+    # The Watchdog rule is `expr: vector(1)` — it fires all the time. Prometheus
+    # therefore pushes it to Alertmanager continuously, and Alertmanager pings
+    # the external receiver continuously. A SHORT repeat_interval keeps a steady
+    # heartbeat flowing so the off-box service sees liveness (and notices
+    # silence). This is deliberately independent of every other alert.
+    - matchers:
+        - alertname = "Watchdog"
+      receiver: watchdog
+      # No grouping delay: send the heartbeat immediately.
+      group_wait: 0s
+      group_interval: 1m
+      # Ping the external dead-man's switch every 5 minutes.
+      repeat_interval: 5m
+      continue: false
+
+# ---------------------------------------------------------------------------
+# Receivers
+# ---------------------------------------------------------------------------
+receivers:
+  # Catch-all. Prefer the generic webhook if configured; otherwise Slack.
+  - name: default
+    webhook_configs:
+      - url: "${ALERTMANAGER_DEFAULT_WEBHOOK_URL}"
+        send_resolved: true
+    slack_configs:
+      - api_url: "${ALERTMANAGER_SLACK_API_URL}"
+        channel: "${ALERTMANAGER_SLACK_CHANNEL}"
+        send_resolved: true
+        title: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}{{ .Annotations.summary }}
+          {{ .Annotations.description }}
+          {{ end }}
+
+  # Critical / on-call receiver — the primary external delivery path.
+  - name: critical
+    webhook_configs:
+      - url: "${ALERTMANAGER_CRITICAL_WEBHOOK_URL}"
+        send_resolved: true
+    slack_configs:
+      - api_url: "${ALERTMANAGER_SLACK_API_URL}"
+        channel: "${ALERTMANAGER_SLACK_CHANNEL}"
+        send_resolved: true
+        title: ':rotating_light: [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}{{ .Annotations.summary }}
+          {{ .Annotations.description }}
+          {{ end }}
+
+  # Dead-man's-switch receiver (IR-P0-003). This URL must be an EXTERNAL
+  # heartbeat/ping endpoint, NOT anything on this droplet. Alertmanager pings it
+  # every repeat_interval above. If the ping stops, the external service alerts.
+  - name: watchdog
+    webhook_configs:
+      - url: "${ALERTMANAGER_WATCHDOG_WEBHOOK_URL}"
+        # A watchdog is a liveness signal, never "resolved" in a useful way;
+        # still send resolved so the heartbeat stream is uniform.
+        send_resolved: true
+
+# ---------------------------------------------------------------------------
+# Inhibition — suppress noise, never suppress the watchdog
+# ---------------------------------------------------------------------------
+inhibit_rules:
+  # When something is critical, hide the lower-severity noise for the same
+  # alertname/service pair. Watchdog is severity "none" and has no peers, so it
+  # is never inhibited.
+  - source_matchers:
+      - severity = "critical"
+    target_matchers:
+      - severity = "warning"
+    equal: ["alertname", "service"]

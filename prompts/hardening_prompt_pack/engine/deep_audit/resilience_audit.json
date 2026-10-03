@@ -1,0 +1,17 @@
+{
+  "domain": "resilience",
+  "total": 1,
+  "timestamp": "2026-08-06T21:21:30.804078+00:00",
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "scenario": "Partial write failure in bulk operations",
+      "file": "admin\\BulkInviteForm.tsx",
+      "issue": "Bulk operation in 2 file(s) uses catch+console.error instead of checking per-item .ok status",
+      "behavior": "User selects 10 documents \u2192 clicks 'Delete' \u2192 7 succeed, 3 fail \u2192 catch block logs error \u2192 UI shows success toast \u2192 user thinks all 10 deleted \u2192 data inconsistency",
+      "impact": "Users unaware of partial failures \u2014 data inconsistency silently introduced",
+      "fix": "Return {ok, error} per item from API and surface partial failures in UI with detailed error list"
+    }
+  ]
+}

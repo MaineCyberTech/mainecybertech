@@ -3,50 +3,65 @@ name: Validate
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      # Dependency audit + license policy + Trivy fs — shared with
+      # test.yml's security-scan (PR side).
+      - uses: ./.github/actions/dependency-audit
+
+      - name: Verify required branch-protection checks resolve
+        # Fails when a required status check in .github/branch-protection/*.json
+        # is not a check-run name any workflow actually emits. A mismatch means
+        # the check shows "Expected - Waiting for status to be reported" forever,
+        # so the PR can never satisfy branch protection (CI-P1-002 / BP-P1-001).
+        # Pure static analysis - needs no dependencies.
+        run: node scripts/check-required-checks.mjs
+
   test:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version: [20.x]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # Coverage suite + every schema/docs guard — shared with test.yml's
+      # test job so the two definitions cannot drift apart.
+      - uses: ./.github/actions/unit-tests
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@10 --activate
+  # Secret scanning — same patterns as the pre-commit hook (scripts/scan-secrets.sh).
+  # Runs as part of the deploy gate so a leaked credential cannot ship even if
+  # PR-only checks were bypassed.
+  secrets-scan:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run tests
-        run: pnpm test
+      # Shared with test.yml's secrets-scan job.
+      - uses: ./.github/actions/secret-scan
 
   lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@10 --activate
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup-pnpm
 
       - name: Lint
         run: pnpm lint
@@ -55,20 +70,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@10 --activate
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup-pnpm
 
       - name: TypeCheck
         run: pnpm typecheck
+
+  prompt-provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      # Node only — the provenance scripts are dependency-free.
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          install: "false"
+
+      - name: Verify prompt pack provenance
+        # Supply-chain guard for the 787 files under prompts/ (P2-1) — a change
+        # to any file breaks the tree hashes and fails the deploy gate.
+        run: node scripts/verify-prompts.js verify
+
+      - name: Verify review.md mirror is in sync
+        run: node scripts/sync-review-md.mjs --check

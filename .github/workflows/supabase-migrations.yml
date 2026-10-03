@@ -2,12 +2,27 @@ name: supabase-migrations
 
 on:
   workflow_dispatch:
+    inputs:
+      allow_drift:
+        description: "Set to 1 to bypass the pre-push schema-drift check (after reviewing the diff)"
+        type: choice
+        options: ["0", "1"]
+        default: "0"
   push:
     branches: [develop, main]
     paths:
       - "supabase/**"
       - ".github/workflows/supabase-migrations.yml"
   workflow_call:
+
+permissions:
+  contents: read
+
+# Serialize migration runs per branch: concurrent `supabase db push` against the
+# same hosted project can interleave and corrupt the migrations table.
+concurrency:
+  group: supabase-migrations-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   migrate:
@@ -16,20 +31,29 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
         with:
           node-version: 20
 
       - name: Enable pnpm
         run: |
           corepack enable
-          corepack prepare pnpm@10 --activate
+          # corepack fetches pnpm from the npm registry; retry transient failures.
+          ok=""
+          for attempt in 1 2 3; do
+            if corepack prepare pnpm@10 --activate; then ok=1; break; fi
+            echo "corepack prepare failed (attempt $attempt/3)" >&2
+            sleep 10
+          done
+          test -n "$ok"
 
       - name: Install Supabase CLI
-        run: npm install -g supabase
+        # Pinned to 2.107.0 to match the repo's pnpm-lock.yaml (supabase@2.107.0).
+        # Unpinned installs made migration behavior nondeterministic.
+        run: npm install -g supabase@2.107.0
 
       - name: Link project
         run: supabase link --project-ref ${{ vars.SUPABASE_PROJECT_REF }}
@@ -40,3 +64,42 @@ jobs:
         run: supabase db push --include-all
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Verify no post-push schema drift
+        # Audit IR-P1-002 / DATA-P2-004: the old `|| true` swallowed the
+        # dry-run. The first replacement ran `db diff` BEFORE the push, where
+        # the pending migrations' own DDL (e.g. a drop migration) necessarily
+        # appears as "drift" — a false positive that blocked the first
+        # remediation deploy — while ANSI colouring made the same check
+        # intermittently blind to real drops. Run it AFTER the push, strip
+        # ANSI first, and fail on any remaining DDL: a non-empty diff now
+        # means the remote schema diverges from the migrations just applied.
+        # (workflow_dispatch with allow_drift=1 downgrades to a warning after
+        # review.)
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          ALLOW_MIGRATION_DRIFT: ${{ github.event.inputs.allow_drift || '0' }}
+        run: |
+          set -uo pipefail
+          set +e
+          RAW="$(supabase db diff --linked --schema public 2>&1)"
+          rc=$?
+          set -e
+          # The CLI colours DDL lines, which previously hid them from the grep
+          # below (false negative) — strip ANSI before matching.
+          DIFF="$(printf '%s' "$RAW" | sed 's/\x1b\[[0-9;]*m//g')"
+          printf '%s\n' "$DIFF"
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::supabase db diff failed (exit $rc) — cannot establish the post-push schema state"
+            exit 1
+          fi
+          if printf '%s' "$DIFF" | grep -Eq '^[[:space:]]*(alter|create|drop|comment|grant|revoke)[[:space:]]'; then
+            if [ "${ALLOW_MIGRATION_DRIFT}" = "1" ]; then
+              echo "::warning::Schema drift detected but ALLOW_MIGRATION_DRIFT=1 — continuing"
+            else
+              echo "::error::Post-push schema drift detected. Review the diff above; either commit the missing migration or re-run dispatch with allow_drift=1 after review."
+              exit 1
+            fi
+          else
+            echo "No post-push drift."
+          fi

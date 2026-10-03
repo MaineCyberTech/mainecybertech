@@ -25,15 +25,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center font-orbitron font-bold uppercase tracking-[0.18em] rounded-lg border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+      "inline-flex items-center justify-center font-display font-bold uppercase tracking-[0.18em] rounded-lg border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
     const variantStyles = {
       primary:
         "border-emerald-600 bg-emerald-600 text-[#0A1118] hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.35)] focus:ring-emerald-600",
       secondary:
         "border-emerald-600/40 bg-transparent text-emerald-400 hover:bg-emerald-600/10 hover:shadow-[0_0_15px_rgba(5,150,105,0.2)] focus:ring-emerald-600",
-      danger:
-        "border-red-500 bg-red-500 text-white hover:bg-red-600 focus:ring-red-500",
+      danger: "border-red-500 bg-red-500 text-white hover:bg-red-600 focus:ring-red-500",
       ghost:
         "border-transparent bg-transparent text-slate-300 hover:bg-white/5 hover:text-slate-50 focus:ring-slate-500",
     };
@@ -63,11 +62,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {loading && (
-          <svg
-            className="animate-spin -ml-1 mr-2 h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
+          <svg className="mr-2 -ml-1 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle
               className="opacity-25"
               cx="12"

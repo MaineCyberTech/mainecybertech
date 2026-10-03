@@ -41,6 +41,6 @@ export class ApiKeysApi {
   }
 
   async remove(id: string): Promise<void> {
-    await this.client.delete(`/api/v1/api-keys/${id}`);
+    await this.client.delete(`/api/v1/api-keys/${id}`, undefined, { confirm: true });
   }
 }

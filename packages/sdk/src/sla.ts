@@ -31,13 +31,10 @@ export type SLAMetrics = {
 export class SLApi {
   constructor(private client: ApiClient) {}
 
-  async metrics(params?: {
-    organizationId?: string;
-    days?: number;
-  }): Promise<SLAMetrics> {
-    return this.client.get<SLAMetrics>(
-      "/api/v1/sla/metrics",
-      params as Record<string, string>,
-    );
+  async metrics(params?: { organizationId?: string; days?: number }): Promise<SLAMetrics> {
+    const qp: Record<string, string | number | undefined> = {};
+    if (params?.organizationId) qp.organization_id = params.organizationId;
+    if (params?.days !== undefined) qp.days = params.days;
+    return this.client.get<SLAMetrics>("/api/v1/sla/metrics", qp);
   }
 }

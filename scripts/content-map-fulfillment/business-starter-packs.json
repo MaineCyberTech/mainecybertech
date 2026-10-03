@@ -1,0 +1,2195 @@
+{
+  "small_business_it_starter_pack": {
+    "fulfillmentWorkflow": [
+      "Confirm the starter pack and scope: confirm the Small Business IT Starter Pack and review the M365 or Google review, MFA setup, device health, backup review, domain/DNS check, and roadmap.",
+      "Send the prep checklist: the customer provides the credentials, the system access, the list of users/devices, and any prior documentation.",
+      "Pre-work preparation: review the intake responses and the previous service history, then confirm the access.",
+      "Review the current environment: M365 or Google, device health, backup state, and domain/DNS safety.",
+      "Apply the quick wins: set up MFA and document the recommended roadmap.",
+      "Verify the improvements: confirm the accounts are secured and the roadmap is actionable.",
+      "Deliver the closeout package: the roadmap and getting-started documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Small Business IT Starter Pack scope: M365 or Google review, MFA setup, device health, backup review, domain/DNS check, and roadmap.",
+        "Confirm the customer expectations, the timeline, and any prerequisites.",
+        "Gather baseline: the intake responses and the user/device counts.",
+        "Create the ticket with product id small_business_it_starter_pack and assign an account engineer.",
+        "Check prerequisites: the admin access and the required access provided."
+      ],
+      "delivery": [
+        "Review the email platform: M365 or Google configuration and licensing.",
+        "Assess the device health: endpoints, updates, and condition.",
+        "Review the backup state: coverage and recovery readiness.",
+        "Check the domain/DNS safety: ownership, MX/DNS, and expiration.",
+        "Set up MFA on the critical accounts.",
+        "Prioritize the gaps into a short-term roadmap.",
+        "Give the getting-started guidance.",
+        "Technical verification: confirm the quick wins are applied."
+      ],
+      "documentation": [
+        "Produce the roadmap documentation: findings and priorities.",
+        "Document the MFA coverage applied.",
+        "Record the domain/DNS findings.",
+        "Include the recommended next steps.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: core setup, essential security, backup setup, system documentation, user access, and getting-started guidance.",
+        "Confirm the MFA is set up.",
+        "Confirm the roadmap is prioritized.",
+        "Confirm the getting-started guidance is delivered.",
+        "Flag follow-ups: backup gaps and device refresh."
+      ],
+      "closeout": [
+        "Send the roadmap and getting-started documentation.",
+        "Recommend follow-ups: backup setup and MFA rollout.",
+        "Confirm the customer understands the roadmap.",
+        "Record internal notes: environment findings.",
+        "Offer a follow-up review session."
+      ]
+    }
+  },
+  "new_business_technology_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm the setup and scope: confirm the New Business Technology Setup and review the domain/email setup, accounts, cloud storage, MFA, password guidance, printer basics, and website/domain security.",
+      "Send the prep checklist: the customer provides the business details, the device list, and the access.",
+      "Pre-work preparation: review the intake responses and confirm the access.",
+      "Build the foundation: set up the domain, the email, the accounts, and the cloud storage.",
+      "Apply the security: configure MFA, the passwords, and the website/domain security.",
+      "Verify the setup: confirm the email, the printers, and the security are working.",
+      "Deliver the closeout package: the launch readiness and setup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the New Business Technology Setup scope: domain/email, accounts, cloud storage, MFA, password guidance, printer basics, and website/domain security.",
+        "Confirm the business stage, the users, and the devices.",
+        "Gather baseline: the domain and any existing systems.",
+        "Create the ticket with product id new_business_technology_setup and assign an engineer.",
+        "Check prerequisites: the domain ownership and the access provided."
+      ],
+      "delivery": [
+        "Set up the business email on the domain.",
+        "Create the user accounts and the access.",
+        "Set up the cloud storage and the shared files.",
+        "Configure MFA on the critical accounts.",
+        "Apply the password guidance: a password manager and strong passwords.",
+        "Set up the printer basics and the drivers.",
+        "Review the website/domain security: DNS, SSL, and ownership.",
+        "Technical verification: confirm the email, storage, and security work."
+      ],
+      "documentation": [
+        "Produce the setup documentation: accounts, storage, and security.",
+        "Document the MFA and the access setup.",
+        "Record the domain/DNS settings.",
+        "Include the launch readiness guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: device/network setup, email configuration, security setup, backup configuration, and launch readiness.",
+        "Confirm the email works on the domain.",
+        "Confirm the accounts are secured.",
+        "Confirm the launch readiness is documented.",
+        "Flag follow-ups: backups and ongoing support."
+      ],
+      "closeout": [
+        "Send the launch readiness documentation.",
+        "Recommend follow-ups: backup setup and support plan.",
+        "Confirm the business can operate on the new stack.",
+        "Record internal notes: setup state.",
+        "Offer a support plan."
+      ]
+    }
+  },
+  "business_owner_peace_of_mind_pack": {
+    "fulfillmentWorkflow": [
+      "Confirm the pack and scope: confirm the Business Owner Peace of Mind Pack and review critical account recovery, domain ownership, admin access, backup test planning, the emergency contact sheet, and MFA review.",
+      "Send the prep checklist: the customer provides the critical account list and the access details.",
+      "Pre-work preparation: review the intake and confirm the critical accounts.",
+      "Verify the critical protections: domain ownership, admin access, MFA, and backups.",
+      "Build the recovery kit: recovery paths, the emergency contact sheet, and the backup test plan.",
+      "Verify the protections: confirm the recovery paths work.",
+      "Deliver the closeout package: the peace of mind summary."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Business Owner Peace of Mind Pack scope: critical account recovery, domain ownership, admin access, backup test planning, emergency contact sheet, and MFA review.",
+        "Confirm the critical accounts and the owner concerns.",
+        "Gather baseline: the account list and the access state.",
+        "Create the ticket with product id business_owner_peace_of_mind_pack and assign an engineer.",
+        "Check prerequisites: the owner access and the critical account list."
+      ],
+      "delivery": [
+        "Verify the domain ownership and the admin access.",
+        "Review the MFA on the critical accounts.",
+        "Review the backup coverage for the critical data.",
+        "Set up the recovery paths for the critical accounts.",
+        "Plan the backup test and the restore verification.",
+        "Build the emergency contact sheet.",
+        "Document the owner-focused recommendations.",
+        "Technical verification: confirm the recovery paths work."
+      ],
+      "documentation": [
+        "Produce the peace of mind summary: protections and recovery.",
+        "Document the recovery paths for the critical accounts.",
+        "Record the emergency contact sheet.",
+        "Include the owner-focused recommendations.",
+        "Security rule: recovery secrets stored securely, never in plain docs."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: security assessment, backup verification, quick-fix support, state documentation, and owner recommendations.",
+        "Confirm the critical accounts are recoverable.",
+        "Confirm the MFA is reviewed.",
+        "Confirm the emergency contact sheet is complete.",
+        "Flag follow-ups: backup testing and password rotation."
+      ],
+      "closeout": [
+        "Send the peace of mind summary.",
+        "Recommend follow-ups: run the backup tests and update the contact sheet.",
+        "Confirm the owner knows the recovery paths.",
+        "Record internal notes: protection state.",
+        "Offer a quarterly check-up."
+      ]
+    }
+  },
+  "local_business_online_presence_pack": {
+    "fulfillmentWorkflow": [
+      "Confirm the pack and scope: confirm the Local Business Online Presence Pack and review the Google Business Profile, website health, domain/DNS safety, SEO basics, and the review request process.",
+      "Send the prep checklist: the customer provides the website, the Google account, and the business details.",
+      "Pre-work preparation: review the intake and confirm the access.",
+      "Assess the presence: website health, domain/DNS safety, and Google Business Profile state.",
+      "Apply the basics: set up the profile, the local SEO basics, and the review request process.",
+      "Verify the presence: confirm the profile and the website are healthy.",
+      "Deliver the closeout package: the visibility recommendations."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Local Business Online Presence Pack scope: Google Business Profile, website health, domain/DNS safety, SEO basics, and the review request process.",
+        "Confirm the business details, the website, and the Google access.",
+        "Gather baseline: the current online presence state.",
+        "Create the ticket with product id local_business_online_presence_pack and assign a specialist.",
+        "Check prerequisites: the Google Business Profile access."
+      ],
+      "delivery": [
+        "Assess the website health: uptime, speed, and mobile state.",
+        "Check the domain/DNS safety: ownership, SSL, and expiry.",
+        "Review the Google Business Profile: completeness and accuracy.",
+        "Set up the profile categories, photos, and hours.",
+        "Apply the basic local SEO: listings and consistency.",
+        "Set up the review request process for customers.",
+        "Document the visibility recommendations.",
+        "Technical verification: confirm the profile and website are healthy."
+      ],
+      "documentation": [
+        "Produce the online presence documentation: findings and actions.",
+        "Document the Google Business Profile setup.",
+        "Record the SEO basics applied.",
+        "Include the review request process.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: website setup, Google Business Profile setup, basic local SEO, review strategy, and visibility recommendations.",
+        "Confirm the profile is complete and live.",
+        "Confirm the website is healthy.",
+        "Confirm the review process is ready.",
+        "Flag follow-ups: ongoing SEO and review management."
+      ],
+      "closeout": [
+        "Send the visibility recommendations.",
+        "Recommend follow-ups: ongoing SEO and review management.",
+        "Confirm the profile is live.",
+        "Record internal notes: presence state.",
+        "Offer a monthly website care plan."
+      ]
+    }
+  },
+  "new_client_foundation": {
+    "fulfillmentWorkflow": [
+      "Confirm the foundation and scope: confirm the New Client Foundation and review discovery, asset inventory, admin access review, network scan, M365 review, backup review, security snapshot, and the 30/60/90 roadmap.",
+      "Send the prep checklist: the customer provides the environment access and the documentation.",
+      "Pre-work preparation: review the intake and confirm the access.",
+      "Discover the environment: inventory the assets and scan the network.",
+      "Review the controls: admin access, M365, backups, and the security snapshot.",
+      "Build the roadmap: prioritize into the 30/60/90 plan.",
+      "Deliver the closeout package: the onboarding report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the New Client Foundation scope: discovery, inventory, access review, network scan, M365 review, backup review, security snapshot, and 30/60/90 roadmap.",
+        "Confirm the customer goals and the environment scope.",
+        "Gather baseline: the intake and any prior documentation.",
+        "Create the ticket with product id new_client_foundation and assign an engineer.",
+        "Check prerequisites: the admin access and the network access."
+      ],
+      "delivery": [
+        "Discover the environment: assets, users, and vendors.",
+        "Inventory the hardware, the software, and the licenses.",
+        "Review the admin access and the critical account ownership.",
+        "Scan the network and the endpoints for issues.",
+        "Review the M365 and the email security posture.",
+        "Review the backup coverage and the recovery readiness.",
+        "Build the security snapshot and the 30/60/90 roadmap.",
+        "Technical verification: confirm the inventory is complete."
+      ],
+      "documentation": [
+        "Produce the onboarding report: inventory, findings, and roadmap.",
+        "Document the access review.",
+        "Record the network and the backup findings.",
+        "Include the 30/60/90 priority plan.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: environment assessment, system/asset documentation, access review, priority improvement plan, baseline, and onboarding report.",
+        "Confirm the inventory is complete.",
+        "Confirm the roadmap is prioritized.",
+        "Confirm the baseline is captured.",
+        "Flag follow-ups: the 30/60/90 roadmap execution."
+      ],
+      "closeout": [
+        "Send the onboarding report and the roadmap.",
+        "Recommend follow-ups: execute the 30/60/90 plan.",
+        "Confirm the baseline is understood.",
+        "Record internal notes: environment state.",
+        "Offer a managed services plan."
+      ]
+    }
+  },
+  "new_business_it_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm the setup and scope: confirm the New Business IT Setup for the complete technology foundation for a new company.",
+      "Send the prep checklist: the customer provides the business details and the access.",
+      "Pre-work preparation: review the intake and confirm the access.",
+      "Build the foundation: hardware, internet, email, and accounts.",
+      "Apply the security: security configuration, MFA, and backups.",
+      "Verify the foundation: confirm the email, the internet, and the security work.",
+      "Deliver the closeout package: the startup guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the New Business IT Setup scope: the complete technology foundation for a new company.",
+        "Confirm the business stage, the users, and the devices.",
+        "Gather baseline: the domain and the internet details.",
+        "Create the ticket with product id new_business_it_setup and assign an engineer.",
+        "Check prerequisites: the domain ownership and the access."
+      ],
+      "delivery": [
+        "Set up the hardware: the devices and the peripherals.",
+        "Configure the internet and the network basics.",
+        "Set up the business email and the accounts.",
+        "Apply the security configuration: MFA and endpoint protection.",
+        "Set up the backups for the critical data.",
+        "Configure the shared files and the cloud storage.",
+        "Document the startup guidance.",
+        "Technical verification: confirm the foundation works."
+      ],
+      "documentation": [
+        "Produce the startup documentation: setup and guidance.",
+        "Document the accounts, the storage, and the security.",
+        "Record the network and the backup state.",
+        "Include the startup guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: hardware, internet, email, security, backup, and startup guidance.",
+        "Confirm the email and the network work.",
+        "Confirm the security is applied.",
+        "Confirm the backups are set up.",
+        "Flag follow-ups: ongoing support and growth."
+      ],
+      "closeout": [
+        "Send the startup guidance.",
+        "Recommend follow-ups: support plan and growth planning.",
+        "Confirm the company can operate.",
+        "Record internal notes: setup state.",
+        "Offer a managed IT plan."
+      ]
+    }
+  },
+  "new_employee_setup_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm the setup and scope: confirm the New Employee Setup Bundle and review the device, account, email, app, MFA, and onboarding support.",
+      "Send the prep checklist: the customer provides the employee details, the role, and the device.",
+      "Pre-work preparation: review the intake and confirm the access.",
+      "Set up the device: configuration, the account, the email, and the apps.",
+      "Apply the security: MFA, the access, and the security configuration.",
+      "Verify the setup: confirm the day-one readiness.",
+      "Deliver the closeout package: the onboarding documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the New Employee Setup Bundle scope: device, account, email, app, MFA, and onboarding support.",
+        "Confirm the employee details, the role, and the start date.",
+        "Gather baseline: the device and the needed apps.",
+        "Create the ticket with product id new_employee_setup_bundle and assign a technician.",
+        "Check prerequisites: the device and the admin access."
+      ],
+      "delivery": [
+        "Configure the device: the OS, the updates, and the identity.",
+        "Set up the user account and the access.",
+        "Configure the email and the calendar.",
+        "Install and configure the needed apps.",
+        "Set up MFA and the security configuration.",
+        "Provision the access to the shared resources.",
+        "Verify the day-one readiness.",
+        "Technical verification: confirm the setup works."
+      ],
+      "documentation": [
+        "Produce the onboarding documentation: accounts, apps, and access.",
+        "Document the security configuration.",
+        "Record the device setup state.",
+        "Include the day-one guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: device configuration, core account setup, security configuration, access provisioning, onboarding documentation, and day-one readiness.",
+        "Confirm the device is ready.",
+        "Confirm the email and the apps work.",
+        "Confirm the access is provisioned.",
+        "Flag follow-ups: onboarding completion and training."
+      ],
+      "closeout": [
+        "Send the onboarding documentation.",
+        "Recommend follow-ups: training and access review.",
+        "Confirm the employee is day-one ready.",
+        "Record internal notes: employee setup.",
+        "Offer training support."
+      ]
+    }
+  },
+  "employee_exit_lockdown_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm the exit and scope: confirm the Employee Exit Lockdown Bundle and review the offboarding, account security, access removal, mailbox/data preservation, and closeout summary.",
+      "Send the prep checklist: the customer confirms the exit date and the access list.",
+      "Pre-work preparation: review the employee access and the preservation needs.",
+      "Secure the accounts: disable the access and change the credentials as needed.",
+      "Preserve the data: the mailbox and the data preservation review.",
+      "Verify the lockdown: confirm the access is removed and the data is preserved.",
+      "Deliver the closeout package: the offboarding documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Employee Exit Lockdown Bundle scope: offboarding, account security, access removal, mailbox/data preservation, and closeout summary.",
+        "Confirm the exit date, the accounts, and the data needs.",
+        "Gather baseline: the employee access list.",
+        "Create the ticket with product id employee_exit_lockdown_bundle, mark it time-sensitive, and assign an engineer.",
+        "Check prerequisites: the admin access and the exit confirmation."
+      ],
+      "delivery": [
+        "Disable the user account and the access.",
+        "Remove the app and the shared access.",
+        "Change the credentials where needed.",
+        "Coordinate the device retrieval.",
+        "Preserve the mailbox and the data as agreed.",
+        "Review the exit security: check for the continued access.",
+        "Document the offboarding closeout.",
+        "Technical verification: confirm the access is removed."
+      ],
+      "documentation": [
+        "Produce the offboarding documentation: accounts, access, and preservation.",
+        "Document the access removal and the credential changes.",
+        "Record the data preservation.",
+        "Include the exit security review.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: access/account removal, device retrieval, credential changes, data preservation, exit security review, and offboarding documentation.",
+        "Confirm the access is fully removed.",
+        "Confirm the data is preserved.",
+        "Confirm the exit review is complete.",
+        "Flag follow-ups: final data handoff and cleanup."
+      ],
+      "closeout": [
+        "Send the offboarding documentation.",
+        "Recommend follow-ups: data handoff and cleanup.",
+        "Confirm the exit is secured.",
+        "Record internal notes: exit lockdown.",
+        "Offer a quarterly access review."
+      ]
+    }
+  },
+  "office_move_it_planning": {
+    "fulfillmentWorkflow": [
+      "Confirm the move and scope: confirm the Office Move IT Planning and review the internet, Wi-Fi, phones, cabling, devices, vendor coordination, and migration checklist.",
+      "Send the prep checklist: the customer provides the new site details and the technology list.",
+      "Pre-work preparation: review the current and the target environment.",
+      "Plan the move: the network, the cabling, the phones, and the devices.",
+      "Coordinate the vendors: internet, phones, and cabling providers.",
+      "Verify the plan: the move-day coordination and the post-move verification.",
+      "Deliver the closeout package: the move readiness checklist."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Office Move IT Planning scope: internet, Wi-Fi, phones, cabling, devices, vendor coordination, and migration checklist.",
+        "Confirm the move date, the new site, and the current environment.",
+        "Gather baseline: the current technology and the providers.",
+        "Create the ticket with product id office_move_it_planning and assign an engineer.",
+        "Check prerequisites: the new site details and the move date."
+      ],
+      "delivery": [
+        "Document the current technology: internet, phones, and devices.",
+        "Plan the network layout for the new site.",
+        "Plan the Wi-Fi and the cabling needs.",
+        "Plan the phone system: numbers, handsets, and cutover.",
+        "Coordinate the vendors: internet, phones, and cabling.",
+        "Create the migration checklist and the move-day plan.",
+        "Define the post-move verification.",
+        "Technical verification: confirm the plan is ready for move day."
+      ],
+      "documentation": [
+        "Produce the move readiness documentation: plan and checklist.",
+        "Document the network and the phone plan.",
+        "Record the vendor coordination.",
+        "Include the move-day checklist.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: technology documentation, network/layout planning, vendor coordination, move-day coordination, post-move verification, and readiness checklist.",
+        "Confirm the move plan is complete.",
+        "Confirm the vendors are coordinated.",
+        "Confirm the checklist is ready.",
+        "Flag follow-ups: move-day support and post-move verification."
+      ],
+      "closeout": [
+        "Send the move readiness checklist.",
+        "Recommend follow-ups: move-day support.",
+        "Confirm the move plan is ready.",
+        "Record internal notes: move plan.",
+        "Offer move-day support."
+      ]
+    }
+  },
+  "vendor_transition_package": {
+    "fulfillmentWorkflow": [
+      "Confirm the transition and scope: confirm the Vendor Transition Package for the transition from the old IT provider to Maine Cyber Tech.",
+      "Send the prep checklist: the customer provides the current provider details and the access.",
+      "Pre-work preparation: review the environment and the current documentation.",
+      "Recover the access: recover the credentials and the admin access.",
+      "Migrate the services: the critical services and the documentation.",
+      "Clean the handoff: the access cleanup and the support transition.",
+      "Deliver the closeout package: the post-transition verification."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Vendor Transition Package scope: access recovery, documentation, support transition, and migration.",
+        "Confirm the current provider, the services, and the desired end state.",
+        "Gather baseline: the environment and the critical services.",
+        "Create the ticket with product id vendor_transition_package, mark it sensitive, and assign an engineer.",
+        "Check prerequisites: the access recovery path."
+      ],
+      "delivery": [
+        "Recover the access and the credentials from the old provider.",
+        "Review the environment and the current documentation.",
+        "Document the systems, the vendors, and the devices.",
+        "Coordinate the support transition with the old provider.",
+        "Migrate the critical services to Maine Cyber Tech management.",
+        "Clean the access: remove the stale access and the credentials.",
+        "Verify the post-transition state.",
+        "Technical verification: confirm the handoff is complete."
+      ],
+      "documentation": [
+        "Produce the transition documentation: environment, access, and state.",
+        "Document the services migrated.",
+        "Record the access cleanup.",
+        "Include the post-transition verification.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: access recovery, environment documentation, support transition, critical service migration, clean handoff, and post-transition verification.",
+        "Confirm the access is recovered.",
+        "Confirm the services are migrated.",
+        "Confirm the handoff is clean.",
+        "Flag follow-ups: environment cleanup and roadmap."
+      ],
+      "closeout": [
+        "Send the transition documentation.",
+        "Recommend follow-ups: environment cleanup and roadmap.",
+        "Confirm the transition is complete.",
+        "Record internal notes: transition state.",
+        "Offer a new_client_foundation onboarding."
+      ]
+    }
+  },
+  "it_documentation_rebuild": {
+    "fulfillmentWorkflow": [
+      "Confirm the rebuild and scope: confirm the IT Documentation Rebuild when the network, accounts, vendors, devices, and credentials ownership are unclear.",
+      "Send the prep checklist: the customer provides the access and the known documentation.",
+      "Pre-work preparation: review the intake and prepare the discovery.",
+      "Discover the environment: the network, the accounts, the vendors, and the devices.",
+      "Build the documentation: the network docs, the system docs, and the credential inventory.",
+      "Verify the documentation: confirm the ownership is captured.",
+      "Deliver the closeout package: the documentation handoff."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the IT Documentation Rebuild scope: network, accounts, vendors, devices, and credential ownership.",
+        "Confirm what documentation exists and what is unknown.",
+        "Gather baseline: the access and the environment state.",
+        "Create the ticket with product id it_documentation_rebuild and assign an engineer.",
+        "Check prerequisites: the admin access to the systems."
+      ],
+      "delivery": [
+        "Discover the network: the topology, the gear, and the vendors.",
+        "Inventory the servers, the devices, and the accounts.",
+        "Capture the credential ownership and the access.",
+        "Document the procedures and the known configurations.",
+        "Store the secure credential inventory in the vault.",
+        "Organize the documentation by system and by owner.",
+        "Verify the documentation completeness.",
+        "Technical verification: confirm the ownership is captured."
+      ],
+      "documentation": [
+        "Produce the documentation handoff: network, systems, and procedures.",
+        "Document the credential inventory in the vault.",
+        "Record the device and the service inventory.",
+        "Include the ownership matrix.",
+        "Security rule: credentials stored in the vault, never in plain docs."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: network documentation, server/system documentation, secure credential inventory, procedure documentation, inventory, and handoff.",
+        "Confirm the network and the systems are documented.",
+        "Confirm the credential ownership is captured.",
+        "Confirm the procedures are written.",
+        "Flag follow-ups: documentation maintenance and updates."
+      ],
+      "closeout": [
+        "Send the documentation handoff.",
+        "Recommend follow-ups: keep the docs updated.",
+        "Confirm the customer knows where the docs live.",
+        "Record internal notes: documentation state.",
+        "Offer documentation maintenance."
+      ]
+    }
+  },
+  "asset_inventory_buildout": {
+    "fulfillmentWorkflow": [
+      "Confirm the buildout and scope: confirm the Asset Inventory Buildout for the devices, users, licenses, vendors, network gear, cameras, and systems.",
+      "Send the prep checklist: the customer provides the access and the known asset lists.",
+      "Pre-work preparation: review the intake and prepare the discovery.",
+      "Discover the assets: the hardware, the software, and the network gear.",
+      "Build the register: the ownership, the warranty, and the contract tracking.",
+      "Verify the inventory: confirm the register is complete.",
+      "Deliver the closeout package: the inventory handoff."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Asset Inventory Buildout scope: devices, users, licenses, vendors, network gear, cameras, and systems.",
+        "Confirm the scope of the inventory and the access.",
+        "Gather baseline: the known asset lists.",
+        "Create the ticket with product id asset_inventory_buildout and assign an engineer.",
+        "Check prerequisites: the admin access to the systems."
+      ],
+      "delivery": [
+        "Discover the hardware: the computers, the printers, and the gear.",
+        "Inventory the software and the licenses.",
+        "Map the users and the accounts.",
+        "Record the network gear and the cameras.",
+        "Capture the vendors and the contracts.",
+        "Track the warranty and the ownership.",
+        "Build the asset register with the locations.",
+        "Technical verification: confirm the register is complete."
+      ],
+      "documentation": [
+        "Produce the inventory handoff: the asset register.",
+        "Document the ownership and the locations.",
+        "Record the warranty and the contract tracking.",
+        "Include the license summary.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: hardware, software/license, warranty/contract, asset register, ownership/location, and handoff.",
+        "Confirm the assets are captured.",
+        "Confirm the licenses are inventoried.",
+        "Confirm the ownership is tracked.",
+        "Flag follow-ups: ongoing asset tracking and license management."
+      ],
+      "closeout": [
+        "Send the asset register.",
+        "Recommend follow-ups: asset management and license review.",
+        "Confirm the customer knows the asset state.",
+        "Record internal notes: inventory state.",
+        "Offer asset management."
+      ]
+    }
+  },
+  "it_roadmap_session": {
+    "fulfillmentWorkflow": [
+      "Confirm the session and scope: confirm the IT Roadmap Session for the prioritized technology plan aligned to budget, risk, growth, and operations.",
+      "Send the prep checklist: the customer provides the current state and the goals.",
+      "Pre-work preparation: review the intake and the current environment.",
+      "Review the current state: the technology, the risks, and the budget.",
+      "Build the roadmap: the phased plan and the priorities.",
+      "Discuss the roadmap: the priorities and the budget considerations.",
+      "Deliver the closeout package: the roadmap document."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the IT Roadmap Session scope: current state review, priorities, phased roadmap, and budget.",
+        "Confirm the customer goals and the budget range.",
+        "Gather baseline: the current technology and the risks.",
+        "Create the ticket with product id it_roadmap_session and assign a consultant.",
+        "Check prerequisites: the session details and the access."
+      ],
+      "delivery": [
+        "Review the current technology state.",
+        "Identify the priority gaps: risk, growth, and operations.",
+        "Define the phases: quick wins, near-term, and long-term.",
+        "Align the roadmap to the budget.",
+        "Discuss the roadmap with the customer.",
+        "Prioritize the recommendations by the impact.",
+        "Document the roadmap.",
+        "Technical verification: confirm the roadmap is actionable."
+      ],
+      "documentation": [
+        "Produce the roadmap document: priorities and phases.",
+        "Document the current state findings.",
+        "Record the budget alignment.",
+        "Include the phased plan.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: current state review, priority identification, phased roadmap, budget considerations, expert discussion, and roadmap document.",
+        "Confirm the roadmap is prioritized.",
+        "Confirm the budget alignment.",
+        "Confirm the discussion happened.",
+        "Flag follow-ups: roadmap execution."
+      ],
+      "closeout": [
+        "Send the roadmap document.",
+        "Recommend follow-ups: execute the roadmap.",
+        "Confirm the priorities are understood.",
+        "Record internal notes: roadmap state.",
+        "Offer roadmap execution support."
+      ]
+    }
+  },
+  "quarterly_business_review": {
+    "fulfillmentWorkflow": [
+      "Confirm the review and scope: confirm the Quarterly Business Review and review the issues, risks, budget, roadmap, lifecycle, and upcoming needs.",
+      "Send the prep checklist: the customer provides the current priorities.",
+      "Pre-work preparation: review the quarterly data and the open items.",
+      "Review the period: the issues, the risks, and the health.",
+      "Align the technology: the goals, the roadmap, and the budget.",
+      "Set the priorities: the upcoming needs and the projects.",
+      "Deliver the closeout package: the quarterly summary."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Quarterly Business Review scope: issues, risks, budget, roadmap, lifecycle, and upcoming needs.",
+        "Confirm the customer goals for the quarter.",
+        "Gather baseline: the quarterly data and the open items.",
+        "Create the ticket with product id quarterly_business_review and assign an account engineer.",
+        "Check prerequisites: the review session scheduled."
+      ],
+      "delivery": [
+        "Review the issues and the resolutions from the quarter.",
+        "Review the risks and the mitigations.",
+        "Review the budget and the spend.",
+        "Align the technology to the business goals.",
+        "Review the roadmap and the lifecycle.",
+        "Set the priorities for the next quarter.",
+        "Document the recommendations and the follow-ups.",
+        "Technical verification: confirm the summary is complete."
+      ],
+      "documentation": [
+        "Produce the quarterly summary: issues, risks, and priorities.",
+        "Document the budget and the roadmap status.",
+        "Record the project status.",
+        "Include the follow-ups.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: review sessions, goal alignment, health review, project tracking, recommendations, and quarterly summary.",
+        "Confirm the issues and the risks are reviewed.",
+        "Confirm the priorities are set.",
+        "Confirm the summary is delivered.",
+        "Flag follow-ups: the next quarter priorities."
+      ],
+      "closeout": [
+        "Send the quarterly summary.",
+        "Recommend follow-ups: the next quarter execution.",
+        "Confirm the priorities are understood.",
+        "Record internal notes: quarterly state.",
+        "Offer a recurring quarterly review."
+      ]
+    }
+  },
+  "phone_system_readiness_review": {
+    "fulfillmentWorkflow": [
+      "Confirm the review and scope: confirm the Phone System Readiness Review and review the internet, cabling, handsets, call flow, and phone system needs.",
+      "Send the prep checklist: the customer provides the current phone system details.",
+      "Pre-work preparation: review the intake and the current setup.",
+      "Assess the current system: the internet, the cabling, the handsets, and the call flow.",
+      "Evaluate the readiness: the reliability, the features, and the costs.",
+      "Verify the findings: confirm the recommendation is sound.",
+      "Deliver the closeout package: the readiness report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Phone System Readiness Review scope: internet, cabling, handsets, call flow, and phone system needs.",
+        "Confirm the current system, the users, and the needs.",
+        "Gather baseline: the internet and the phone provider.",
+        "Create the ticket with product id phone_system_readiness_review and assign a specialist.",
+        "Check prerequisites: the current phone system details."
+      ],
+      "delivery": [
+        "Assess the current phone system and the features.",
+        "Review the internet for the voice readiness.",
+        "Review the cabling and the handsets.",
+        "Map the call flow and the needs.",
+        "Evaluate the reliability and the costs.",
+        "Assess the readiness for a modern system.",
+        "Document the recommendations.",
+        "Technical verification: confirm the findings are complete."
+      ],
+      "documentation": [
+        "Produce the readiness report: findings and recommendations.",
+        "Document the current system assessment.",
+        "Record the cost analysis.",
+        "Include the readiness for the modern systems.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: current system assessment, reliability/feature review, cost analysis, readiness, recommendations, and readiness report.",
+        "Confirm the readiness is assessed.",
+        "Confirm the recommendations are clear.",
+        "Confirm the costs are analyzed.",
+        "Flag follow-ups: phone refresh and vendor selection."
+      ],
+      "closeout": [
+        "Send the readiness report.",
+        "Recommend follow-ups: phone refresh and voip_vendor_selection_help.",
+        "Confirm the customer understands the path.",
+        "Record internal notes: readiness state.",
+        "Offer a voip_vendor_selection_help."
+      ]
+    }
+  },
+  "voip_vendor_selection_help": {
+    "fulfillmentWorkflow": [
+      "Confirm the help and scope: confirm the VoIP Vendor Selection Help to compare the phone vendors, requirements, features, numbers, and cutover risks.",
+      "Send the prep checklist: the customer provides the requirements and the needs.",
+      "Pre-work preparation: review the intake and the current phone system.",
+      "Analyze the requirements: the users, the features, and the numbers.",
+      "Compare the vendors: the features, the costs, and the risks.",
+      "Verify the recommendation: confirm the fit.",
+      "Deliver the closeout package: the recommendation report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the VoIP Vendor Selection Help scope: requirements analysis, vendor comparison, features, numbers, and cutover risks.",
+        "Confirm the requirements, the users, and the needs.",
+        "Gather baseline: the current phone system.",
+        "Create the ticket with product id voip_vendor_selection_help and assign a specialist.",
+        "Check prerequisites: the requirements gathered."
+      ],
+      "delivery": [
+        "Analyze the phone requirements: users, features, and numbers.",
+        "Evaluate the current numbers and the porting needs.",
+        "Compare the candidate vendors: features and costs.",
+        "Assess the cutover risks.",
+        "Provide the independent guidance.",
+        "Recommend the best-fit vendor.",
+        "Document the comparison.",
+        "Technical verification: confirm the recommendation is sound."
+      ],
+      "documentation": [
+        "Produce the recommendation report: comparison and selection.",
+        "Document the requirements analysis.",
+        "Record the feature and the cost evaluation.",
+        "Include the cutover risk assessment.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: requirements analysis, vendor comparison, feature/cost evaluation, selection support, independent guidance, and recommendation report.",
+        "Confirm the vendors are compared.",
+        "Confirm the costs are evaluated.",
+        "Confirm the recommendation is clear.",
+        "Flag follow-ups: vendor selection and cutover planning."
+      ],
+      "closeout": [
+        "Send the recommendation report.",
+        "Recommend follow-ups: vendor selection and voip_cutover_support.",
+        "Confirm the customer can decide.",
+        "Record internal notes: vendor analysis.",
+        "Offer voip_cutover_support."
+      ]
+    }
+  },
+  "voip_cutover_support": {
+    "fulfillmentWorkflow": [
+      "Confirm the cutover and scope: confirm the VoIP Cutover Support for the phone migration day planning and support.",
+      "Send the prep checklist: the customer confirms the cutover date and the numbers.",
+      "Pre-work preparation: review the cutover plan and the vendor timing.",
+      "Prepare the cutover: the configuration, the devices, and the training.",
+      "Execute the cutover: the number porting, the testing, and the verification.",
+      "Support the transition: the staff training and the post-cutover support.",
+      "Deliver the closeout package: the cutover documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the VoIP Cutover Support scope: number porting coordination, configuration, device setup, testing, training, and post-cutover support.",
+        "Confirm the cutover date, the numbers, and the vendor.",
+        "Gather baseline: the current system and the porting status.",
+        "Create the ticket with product id voip_cutover_support and assign a specialist.",
+        "Check prerequisites: the cutover date and the vendor coordination."
+      ],
+      "delivery": [
+        "Coordinate the number porting with the carrier.",
+        "Configure the new phone system and the routing.",
+        "Set up the devices and the handsets.",
+        "Test the calls, the voicemail, and the auto attendant.",
+        "Conduct the cutover testing and the verification.",
+        "Train the staff on the new system.",
+        "Provide the post-cutover support.",
+        "Technical verification: confirm the cutover is complete."
+      ],
+      "documentation": [
+        "Produce the cutover documentation: plan, testing, and result.",
+        "Document the configuration and the routing.",
+        "Record the training delivered.",
+        "Include the post-cutover support notes.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: porting coordination, system configuration, device setup, cutover testing, staff training, and post-cutover support.",
+        "Confirm the numbers are ported.",
+        "Confirm the calls work.",
+        "Confirm the staff is trained.",
+        "Flag follow-ups: post-cutover stabilization."
+      ],
+      "closeout": [
+        "Send the cutover documentation.",
+        "Recommend follow-ups: monitor the system post-cutover.",
+        "Confirm the phone system works.",
+        "Record internal notes: cutover state.",
+        "Offer post-cutover support."
+      ]
+    }
+  },
+  "auto_attendant_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm the setup and scope: confirm the Auto Attendant Setup to configure the phone menu, greeting, routing, and mailbox basics.",
+      "Send the prep checklist: the customer provides the menu structure and the hours.",
+      "Pre-work preparation: review the intake and the current phone config.",
+      "Design the attendant: the menu, the routing, and the business hours.",
+      "Configure the attendant: the greeting, the routing, and the voicemail.",
+      "Verify the setup: the test calls and the training.",
+      "Deliver the closeout package: the attendant documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Auto Attendant Setup scope: menu, greeting, routing, business hours, and mailbox basics.",
+        "Confirm the menu structure, the departments, and the hours.",
+        "Gather baseline: the current phone system config.",
+        "Create the ticket with product id auto_attendant_setup and assign a specialist.",
+        "Check prerequisites: the phone system admin access."
+      ],
+      "delivery": [
+        "Design the auto attendant menu and the routing.",
+        "Set the business hours and the holiday rules.",
+        "Configure the menu options and the extensions.",
+        "Record or upload the greetings.",
+        "Configure the voicemail and the mailboxes.",
+        "Set up the call routing and the failover.",
+        "Test the menu and the routing.",
+        "Technical verification: confirm the attendant works."
+      ],
+      "documentation": [
+        "Produce the attendant documentation: menu, routing, and hours.",
+        "Document the voicemail configuration.",
+        "Record the test results.",
+        "Include the admin guide.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: attendant design, menu/routing config, business hours, voicemail, greeting, and testing/training.",
+        "Confirm the menu routes correctly.",
+        "Confirm the hours are set.",
+        "Confirm the voicemail works.",
+        "Flag follow-ups: menu updates and training."
+      ],
+      "closeout": [
+        "Send the attendant documentation.",
+        "Recommend follow-ups: review the menu regularly.",
+        "Confirm the attendant is live.",
+        "Record internal notes: attendant state.",
+        "Offer training support."
+      ]
+    }
+  },
+  "business_voicemail_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm the setup and scope: confirm the Business Voicemail Setup to set up the voicemail greetings, routing, and mailbox workflow.",
+      "Send the prep checklist: the customer provides the mailbox list and the greeting preferences.",
+      "Pre-work preparation: review the intake and the phone system.",
+      "Configure the mailboxes: the greetings, the routing, and the notifications.",
+      "Apply the workflow: the forwarding and the message handling.",
+      "Verify the setup: the test calls and the training.",
+      "Deliver the closeout package: the voicemail documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Business Voicemail Setup scope: greetings, routing, and mailbox workflow.",
+        "Confirm the mailboxes, the owners, and the preferences.",
+        "Gather baseline: the current voicemail state.",
+        "Create the ticket with product id business_voicemail_setup and assign a specialist.",
+        "Check prerequisites: the phone system admin access."
+      ],
+      "delivery": [
+        "Configure the voicemail greetings.",
+        "Set up the mailboxes and the owners.",
+        "Configure the notifications and the forwarding.",
+        "Set the message handling and the retention.",
+        "Document the message workflow.",
+        "Test the voicemail and the delivery.",
+        "Train the users on the voicemail.",
+        "Technical verification: confirm the voicemail works."
+      ],
+      "documentation": [
+        "Produce the voicemail documentation: greetings, routing, and workflow.",
+        "Document the mailbox configuration.",
+        "Record the message handling guidance.",
+        "Include the test results.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: greeting setup, mailbox configuration, notification setup, forwarding, message handling guidance, and testing/training.",
+        "Confirm the greetings play.",
+        "Confirm the notifications route.",
+        "Confirm the workflow is documented.",
+        "Flag follow-ups: greeting updates and training."
+      ],
+      "closeout": [
+        "Send the voicemail documentation.",
+        "Recommend follow-ups: update the greetings periodically.",
+        "Confirm the voicemail is live.",
+        "Record internal notes: voicemail state.",
+        "Offer phone system support."
+      ]
+    }
+  },
+  "phone_number_port_coordination": {
+    "fulfillmentWorkflow": [
+      "Confirm the port and scope: confirm the Phone Number Port Coordination and coordinate the number porting tasks and the customer/vendor readiness.",
+      "Send the prep checklist: the customer provides the numbers and the account details.",
+      "Pre-work preparation: review the porting requirements and the vendor details.",
+      "Coordinate the port: the carrier communication and the timing.",
+      "Manage the readiness: the customer and the vendor readiness.",
+      "Verify the port: the post-port testing and the resolution.",
+      "Deliver the closeout package: the port documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Phone Number Port Coordination scope: porting coordination, carrier communication, timing, and verification.",
+        "Confirm the numbers, the carriers, and the port date.",
+        "Gather baseline: the account details and the LOA status.",
+        "Create the ticket with product id phone_number_port_coordination and assign a specialist.",
+        "Check prerequisites: the carrier account access."
+      ],
+      "delivery": [
+        "Gather the number list and the account details.",
+        "Coordinate the LOA and the carrier requirements.",
+        "Schedule the port timing with the carriers.",
+        "Manage the customer and the vendor readiness.",
+        "Confirm the port date and the windows.",
+        "Resolve the port issues as they arise.",
+        "Verify the numbers after the port.",
+        "Technical verification: confirm the port is complete."
+      ],
+      "documentation": [
+        "Produce the port documentation: numbers, timing, and result.",
+        "Document the carrier coordination.",
+        "Record the post-port testing.",
+        "Include the resolution notes.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: porting coordination, carrier communication, port timing, verification, issue resolution, and post-port testing.",
+        "Confirm the numbers ported.",
+        "Confirm the timing was managed.",
+        "Confirm the post-port testing passed.",
+        "Flag follow-ups: final carrier closeout."
+      ],
+      "closeout": [
+        "Send the port documentation.",
+        "Recommend follow-ups: close the old carrier account.",
+        "Confirm the numbers work.",
+        "Record internal notes: port state.",
+        "Offer phone system support."
+      ]
+    }
+  },
+  "teams_phone_readiness_check": {
+    "fulfillmentWorkflow": [
+      "Confirm the check and scope: confirm the Teams Phone Readiness Check to determine whether Microsoft Teams Phone may fit the organization.",
+      "Send the prep checklist: the customer provides the licensing and the environment details.",
+      "Pre-work preparation: review the intake and the M365 state.",
+      "Assess the readiness: the licensing, the bandwidth, and the devices.",
+      "Evaluate the fit: the configuration review and the requirements.",
+      "Verify the recommendation: the rollout guidance.",
+      "Deliver the closeout package: the readiness recommendations."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Teams Phone Readiness Check scope: licensing, bandwidth, devices, configuration, and rollout guidance.",
+        "Confirm the users, the phones, and the goals.",
+        "Gather baseline: the M365 licensing and the environment.",
+        "Create the ticket with product id teams_phone_readiness_check and assign a specialist.",
+        "Check prerequisites: the M365 admin access."
+      ],
+      "delivery": [
+        "Assess the M365 licensing for Teams Phone.",
+        "Evaluate the bandwidth for the voice traffic.",
+        "Check the device readiness: headsets and desk phones.",
+        "Review the configuration and the prerequisites.",
+        "Assess the number and the carrier needs.",
+        "Provide the readiness recommendations.",
+        "Document the rollout guidance.",
+        "Technical verification: confirm the fit is assessed."
+      ],
+      "documentation": [
+        "Produce the readiness recommendations: licensing, bandwidth, and devices.",
+        "Document the configuration review.",
+        "Record the rollout guidance.",
+        "Include the cost considerations.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: licensing assessment, bandwidth evaluation, device readiness, configuration review, readiness recommendations, and rollout guidance.",
+        "Confirm the licensing is assessed.",
+        "Confirm the bandwidth is evaluated.",
+        "Confirm the rollout path is clear.",
+        "Flag follow-ups: license purchase and rollout planning."
+      ],
+      "closeout": [
+        "Send the readiness recommendations.",
+        "Recommend follow-ups: rollout and voip_vendor_selection_help if needed.",
+        "Confirm the fit decision is clear.",
+        "Record internal notes: readiness state.",
+        "Offer Teams Phone rollout support."
+      ]
+    }
+  },
+  "small_business_phone_refresh": {
+    "fulfillmentWorkflow": [
+      "Confirm the refresh and scope: confirm the Small Business Phone Refresh and review the bill review, call flow design, vendor recommendation, cutover support, and staff quick guide.",
+      "Send the prep checklist: the customer provides the current phone details and the bill.",
+      "Pre-work preparation: review the current system and the bill.",
+      "Assess the current system: the features, the costs, and the needs.",
+      "Design the refresh: the call flow, the vendor, and the system selection.",
+      "Execute the refresh: the setup, the cutover, and the training.",
+      "Deliver the closeout package: the staff quick guide."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Small Business Phone Refresh scope: bill review, call flow design, vendor recommendation, cutover support, and staff quick guide.",
+        "Confirm the current system, the users, and the goals.",
+        "Gather baseline: the phone bill and the needs.",
+        "Create the ticket with product id small_business_phone_refresh and assign a specialist.",
+        "Check prerequisites: the current phone details."
+      ],
+      "delivery": [
+        "Review the phone bill and the costs.",
+        "Assess the current system and the features.",
+        "Design the call flow for the business.",
+        "Recommend the best-fit phone vendor.",
+        "Set up the modern system and the configuration.",
+        "Support the cutover and the number porting.",
+        "Train the staff and provide the quick guide.",
+        "Technical verification: confirm the phones work."
+      ],
+      "documentation": [
+        "Produce the refresh documentation: bill, call flow, and setup.",
+        "Document the vendor recommendation.",
+        "Record the training delivered.",
+        "Include the staff quick guide.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: current system assessment, phone system selection, modern system setup, configuration, training, and post-setup support.",
+        "Confirm the call flow works.",
+        "Confirm the staff is trained.",
+        "Confirm the costs are reviewed.",
+        "Flag follow-ups: post-setup stabilization."
+      ],
+      "closeout": [
+        "Send the staff quick guide.",
+        "Recommend follow-ups: monitor the phone system.",
+        "Confirm the phone system is live.",
+        "Record internal notes: refresh state.",
+        "Offer ongoing phone support."
+      ]
+    }
+  },
+  "church_technology_health_check": {
+    "fulfillmentWorkflow": [
+      "Confirm the check and scope: confirm the Church Technology Health Check and review the Wi-Fi, livestream, email, website, giving platform risk, and volunteer access.",
+      "Send the prep checklist: the church provides the access and the current setup.",
+      "Pre-work preparation: review the intake and the environment.",
+      "Assess the technology: the Wi-Fi, the livestream, the email, and the website.",
+      "Review the risks: the giving platform and the volunteer access.",
+      "Verify the findings: the prioritized recommendations.",
+      "Deliver the closeout package: the health check report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Church Technology Health Check scope: Wi-Fi, livestream, email, website, giving platform, and volunteer access.",
+        "Confirm the church needs and the environment.",
+        "Gather baseline: the current technology state.",
+        "Create the ticket with product id church_technology_health_check and assign an engineer.",
+        "Check prerequisites: the access to the systems."
+      ],
+      "delivery": [
+        "Assess the Wi-Fi and the network health.",
+        "Review the livestream setup and the workflow.",
+        "Review the email and the domain security.",
+        "Check the website and the backups.",
+        "Assess the giving platform risk.",
+        "Review the volunteer access and the accounts.",
+        "Prioritize the recommendations.",
+        "Technical verification: confirm the report is complete."
+      ],
+      "documentation": [
+        "Produce the health check report: findings and priorities.",
+        "Document the network and the livestream state.",
+        "Record the risk assessment.",
+        "Include the prioritized recommendations.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: sound/livestream review, network assessment, security review, prioritized recommendations, and health check report.",
+        "Confirm the Wi-Fi is assessed.",
+        "Confirm the risks are prioritized.",
+        "Confirm the report is delivered.",
+        "Flag follow-ups: the recommended fixes."
+      ],
+      "closeout": [
+        "Send the health check report.",
+        "Recommend follow-ups: address the priority risks.",
+        "Confirm the church knows the state.",
+        "Record internal notes: church technology state.",
+        "Offer a church_it_foundation."
+      ]
+    }
+  },
+  "livestream_setup_support": {
+    "fulfillmentWorkflow": [
+      "Confirm the setup and scope: confirm the Livestream Setup Support for the camera, audio, streaming platform, and workflow setup for churches or events.",
+      "Send the prep checklist: the customer provides the venue details and the equipment.",
+      "Pre-work preparation: review the intake and the equipment list.",
+      "Set up the production: the cameras, the audio, and the encoder.",
+      "Configure the platform: the streaming platform and the workflow.",
+      "Verify the setup: the test stream and the training.",
+      "Deliver the closeout package: the operator guide."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Livestream Setup Support scope: camera, audio, streaming platform, and workflow setup.",
+        "Confirm the venue, the equipment, and the use case.",
+        "Gather baseline: the existing AV equipment.",
+        "Create the ticket with product id livestream_setup_support and assign a specialist.",
+        "Check prerequisites: the equipment and the venue access."
+      ],
+      "delivery": [
+        "Configure the cameras and the framing.",
+        "Set up the audio: the microphones and the levels.",
+        "Configure the encoder and the streaming settings.",
+        "Set up the streaming platform and the destination.",
+        "Test the stream quality and the stability.",
+        "Document the workflow for the operators.",
+        "Train the operators on the run of show.",
+        "Technical verification: confirm the stream works."
+      ],
+      "documentation": [
+        "Produce the operator guide: cameras, audio, and workflow.",
+        "Document the platform configuration.",
+        "Record the test stream results.",
+        "Include the run of show.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: camera config, encoder setup, platform configuration, audio setup, test streaming, and operator training.",
+        "Confirm the stream is stable.",
+        "Confirm the audio is clear.",
+        "Confirm the operators are trained.",
+        "Flag follow-ups: live event rehearsals."
+      ],
+      "closeout": [
+        "Send the operator guide.",
+        "Recommend follow-ups: rehearse before the live event.",
+        "Confirm the livestream is ready.",
+        "Record internal notes: livestream state.",
+        "Offer event-day support."
+      ]
+    }
+  },
+  "guest_wi_fi_for_churches": {
+    "fulfillmentWorkflow": [
+      "Confirm the setup and scope: confirm the Guest Wi-Fi for Churches to separate the public/guest Wi-Fi from the office systems.",
+      "Send the prep checklist: the church provides the network access and the layout.",
+      "Pre-work preparation: review the intake and the current network.",
+      "Design the separation: the guest network and the security.",
+      "Configure the access: the content filtering and the controls.",
+      "Verify the setup: the testing and the documentation.",
+      "Deliver the closeout package: the network documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Guest Wi-Fi for Churches scope: separate the public/guest Wi-Fi from the office systems.",
+        "Confirm the layout, the coverage, and the needs.",
+        "Gather baseline: the current network and the gear.",
+        "Create the ticket with product id guest_wi_fi_for_churches and assign an engineer.",
+        "Check prerequisites: the network admin access."
+      ],
+      "delivery": [
+        "Design the guest network and the VLAN separation.",
+        "Configure the secure separation from the office systems.",
+        "Set up the content filtering for the guests.",
+        "Apply the access controls and the bandwidth limits.",
+        "Set the captive portal and the acceptable use.",
+        "Test the guest and the staff access.",
+        "Document the network configuration.",
+        "Technical verification: confirm the separation works."
+      ],
+      "documentation": [
+        "Produce the network documentation: design and configuration.",
+        "Document the guest access and the filtering.",
+        "Record the testing results.",
+        "Include the admin guide.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: guest network design, secure separation, content filtering, access controls, documentation, and testing.",
+        "Confirm the guests cannot reach the office systems.",
+        "Confirm the filtering works.",
+        "Confirm the staff access is unaffected.",
+        "Flag follow-ups: coverage and monitoring."
+      ],
+      "closeout": [
+        "Send the network documentation.",
+        "Recommend follow-ups: coverage verification and monitoring.",
+        "Confirm the separation is secure.",
+        "Record internal notes: guest Wi-Fi state.",
+        "Offer network monitoring."
+      ]
+    }
+  },
+  "volunteer_account_cleanup": {
+    "fulfillmentWorkflow": [
+      "Confirm the cleanup and scope: confirm the Volunteer Account Cleanup to review and remove the stale access for the former volunteers.",
+      "Send the prep checklist: the church provides the volunteer list and the access.",
+      "Pre-work preparation: review the intake and the accounts.",
+      "Inventory the accounts: the users and the access.",
+      "Clean the access: the stale accounts and the permissions.",
+      "Verify the cleanup: confirm the access is removed.",
+      "Deliver the closeout package: the access documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Volunteer Account Cleanup scope: account inventory, stale account identification, access removal, and permission cleanup.",
+        "Confirm the volunteer list and the current access.",
+        "Gather baseline: the accounts and the systems.",
+        "Create the ticket with product id volunteer_account_cleanup and assign an engineer.",
+        "Check prerequisites: the admin access to the systems."
+      ],
+      "delivery": [
+        "Inventory the volunteer accounts and the access.",
+        "Identify the stale accounts: the former volunteers.",
+        "Confirm the removals with the church leadership.",
+        "Remove the access and the permissions.",
+        "Disable the inactive accounts.",
+        "Document the permissions and the owners.",
+        "Provide the going-forward guidance.",
+        "Technical verification: confirm the access is removed."
+      ],
+      "documentation": [
+        "Produce the access documentation: inventory and removals.",
+        "Document the accounts removed.",
+        "Record the permission cleanup.",
+        "Include the going-forward guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: account inventory, stale account identification, access removal, permission cleanup, access documentation, and going-forward guidance.",
+        "Confirm the stale access is removed.",
+        "Confirm the leadership approved the removals.",
+        "Confirm the guidance is documented.",
+        "Flag follow-ups: periodic access reviews."
+      ],
+      "closeout": [
+        "Send the access documentation.",
+        "Recommend follow-ups: review access quarterly.",
+        "Confirm the cleanup is complete.",
+        "Record internal notes: access cleanup.",
+        "Offer a quarterly access review."
+      ]
+    }
+  },
+  "church_it_foundation": {
+    "fulfillmentWorkflow": [
+      "Confirm the foundation and scope: confirm the Church IT Foundation and review the email/domain, Wi-Fi, website backup, volunteer access, and the security checklist.",
+      "Send the prep checklist: the church provides the access and the environment details.",
+      "Pre-work preparation: review the intake and the current state.",
+      "Review the foundation: the email/domain, the Wi-Fi, and the website backup.",
+      "Apply the security: the volunteer access and the security checklist.",
+      "Verify the foundation: confirm the essentials work.",
+      "Deliver the closeout package: the foundation handoff."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Church IT Foundation scope: email/domain, Wi-Fi, website backup, volunteer access, and the security checklist.",
+        "Confirm the church needs and the environment.",
+        "Gather baseline: the current technology state.",
+        "Create the ticket with product id church_it_foundation and assign an engineer.",
+        "Check prerequisites: the access to the systems."
+      ],
+      "delivery": [
+        "Review the email and the domain security.",
+        "Review the Wi-Fi and the network health.",
+        "Check the website and the backups.",
+        "Review the volunteer access and the accounts.",
+        "Apply the essential security configuration.",
+        "Set up the backup protection.",
+        "Prioritize the budget-conscious recommendations.",
+        "Technical verification: confirm the foundation works."
+      ],
+      "documentation": [
+        "Produce the foundation handoff: state and recommendations.",
+        "Document the email/domain and the Wi-Fi state.",
+        "Record the backup and the security setup.",
+        "Include the budget-conscious recommendations.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: essential technology setup, network security, backup setup, system documentation, budget recommendations, and foundation handoff.",
+        "Confirm the email/domain is secure.",
+        "Confirm the backups are in place.",
+        "Confirm the recommendations are prioritized.",
+        "Flag follow-ups: the recommended fixes."
+      ],
+      "closeout": [
+        "Send the foundation handoff.",
+        "Recommend follow-ups: address the priorities.",
+        "Confirm the church knows the state.",
+        "Record internal notes: foundation state.",
+        "Offer a church_technology_health_check."
+      ]
+    }
+  },
+  "marina_connectivity_pack": {
+    "fulfillmentWorkflow": [
+      "Confirm the pack and scope: confirm the Marina Connectivity Pack and review the internet planning, outdoor Wi-Fi, camera network readiness, guest network, and documentation.",
+      "Send the prep checklist: the marina provides the site layout and the internet details.",
+      "Pre-work preparation: review the intake and the site plan.",
+      "Plan the coverage: the outdoor areas and the access point placement.",
+      "Deploy the connectivity: the outdoor access points and the configuration.",
+      "Verify the coverage: the guest network and the camera readiness.",
+      "Deliver the closeout package: the coverage documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Marina Connectivity Pack scope: internet planning, outdoor Wi-Fi, camera network readiness, guest network, and documentation.",
+        "Confirm the site layout, the areas, and the internet.",
+        "Gather baseline: the current connectivity and the gear.",
+        "Create the ticket with product id marina_connectivity_pack, mark it outdoor-sensitive, and assign a specialist.",
+        "Check prerequisites: the site access and the internet details."
+      ],
+      "delivery": [
+        "Plan the internet capacity for the marina.",
+        "Plan the outdoor Wi-Fi coverage across the areas.",
+        "Select the outdoor-hardened equipment.",
+        "Deploy the access points and the configuration.",
+        "Configure the guest network and the access controls.",
+        "Prepare the camera network readiness.",
+        "Verify the coverage and the performance.",
+        "Technical verification: confirm the coverage is confirmed."
+      ],
+      "documentation": [
+        "Produce the coverage documentation: plan, deployment, and verification.",
+        "Document the equipment and the configuration.",
+        "Record the coverage verification results.",
+        "Include the ongoing management notes.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: coverage planning, AP installation, connectivity configuration, outdoor-hardened equipment, ongoing management, and coverage verification.",
+        "Confirm the coverage is verified.",
+        "Confirm the guest network is isolated.",
+        "Confirm the camera network is ready.",
+        "Flag follow-ups: ongoing management and coverage tweaks."
+      ],
+      "closeout": [
+        "Send the coverage documentation.",
+        "Recommend follow-ups: ongoing management.",
+        "Confirm the connectivity is verified.",
+        "Record internal notes: marina connectivity state.",
+        "Offer ongoing Wi-Fi management."
+      ]
+    }
+  },
+  "outdoor_wi_fi_planning_for_marinas": {
+    "fulfillmentWorkflow": [
+      "Confirm the planning and scope: confirm the Outdoor Wi-Fi Planning for Marinas to create the coverage plan for the docks, yards, boat storage areas, warehouses, and public spaces.",
+      "Send the prep checklist: the marina provides the site layout and the coverage goals.",
+      "Pre-work preparation: review the site plan and the current network.",
+      "Assess the site: the areas, the materials, and the constraints.",
+      "Design the coverage: the access points and the placement.",
+      "Verify the design: the interference and the equipment selection.",
+      "Deliver the closeout package: the design documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Outdoor Wi-Fi Planning for Marinas scope: coverage plan for docks, yards, storage areas, warehouses, and public spaces.",
+        "Confirm the areas, the goals, and the internet.",
+        "Gather baseline: the site layout and the current gear.",
+        "Create the ticket with product id outdoor_wi_fi_planning_for_marinas and assign a specialist.",
+        "Check prerequisites: the site access and the layout."
+      ],
+      "delivery": [
+        "Assess the site areas and the materials.",
+        "Evaluate the coverage goals: docks, yards, and storage.",
+        "Plan the access point placement.",
+        "Design for the outdoor environment: weather and mounting.",
+        "Consider the interference: water, metal, and other gear.",
+        "Recommend the outdoor-hardened equipment.",
+        "Document the coverage design.",
+        "Technical verification: confirm the design is sound."
+      ],
+      "documentation": [
+        "Produce the design documentation: coverage plan and equipment.",
+        "Document the site assessment.",
+        "Record the equipment recommendations.",
+        "Include the interference considerations.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: site assessment, coverage design, equipment recommendations, outdoor planning, interference considerations, and design documentation.",
+        "Confirm the coverage plan covers the areas.",
+        "Confirm the equipment is outdoor-rated.",
+        "Confirm the interference is considered.",
+        "Flag follow-ups: deployment and verification."
+      ],
+      "closeout": [
+        "Send the design documentation.",
+        "Recommend follow-ups: deploy and verify the coverage.",
+        "Confirm the plan is ready.",
+        "Record internal notes: coverage design.",
+        "Offer deployment support."
+      ]
+    }
+  },
+  "security_camera_planning_for_marinas": {
+    "fulfillmentWorkflow": [
+      "Confirm the planning and scope: confirm the Security Camera Planning for Marinas for the camera placement and the network/storage planning in the marina environments.",
+      "Send the prep checklist: the marina provides the site layout and the coverage priorities.",
+      "Pre-work preparation: review the site plan and the priorities.",
+      "Assess the site: the camera areas and the coverage priorities.",
+      "Design the system: the placement, the network, and the storage.",
+      "Verify the design: the marine-environment equipment selection.",
+      "Deliver the closeout package: the planning documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Security Camera Planning for Marinas scope: camera placement and network/storage planning for marina environments.",
+        "Confirm the coverage priorities and the site layout.",
+        "Gather baseline: the current network and the storage.",
+        "Create the ticket with product id security_camera_planning_for_marinas and assign a specialist.",
+        "Check prerequisites: the site access and the layout."
+      ],
+      "delivery": [
+        "Assess the site and the coverage priorities.",
+        "Plan the camera placement for the key areas.",
+        "Design the network for the cameras: cabling and PoE.",
+        "Plan the storage: retention and capacity.",
+        "Select the marine-environment equipment.",
+        "Consider the weather and the mounting constraints.",
+        "Document the system design.",
+        "Technical verification: confirm the design is sound."
+      ],
+      "documentation": [
+        "Produce the planning documentation: placement, network, and storage.",
+        "Document the site assessment.",
+        "Record the equipment selection.",
+        "Include the storage and the retention plan.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: site assessment, camera placement planning, system design, marine-environment equipment, coverage priorities, and planning documentation.",
+        "Confirm the placement covers the priorities.",
+        "Confirm the network/storage is planned.",
+        "Confirm the equipment is marine-rated.",
+        "Flag follow-ups: deployment and installation."
+      ],
+      "closeout": [
+        "Send the planning documentation.",
+        "Recommend follow-ups: deploy the cameras.",
+        "Confirm the plan is ready.",
+        "Record internal notes: camera plan.",
+        "Offer camera installation support."
+      ]
+    }
+  },
+  "gate_and_sign_connectivity_review": {
+    "fulfillmentWorkflow": [
+      "Confirm the review and scope: confirm the Gate and Sign Connectivity Review for the network connectivity options for the gate, sign, or remote outdoor zones.",
+      "Send the prep checklist: the customer provides the site details and the goals.",
+      "Pre-work preparation: review the intake and the site constraints.",
+      "Assess the zone: the connectivity options and the constraints.",
+      "Evaluate the options: the failover, the equipment, and the reliability.",
+      "Verify the recommendation: confirm the fit.",
+      "Deliver the closeout package: the review report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Gate and Sign Connectivity Review scope: connectivity options for the gate, sign, or remote outdoor zones.",
+        "Confirm the zone, the goals, and the constraints.",
+        "Gather baseline: the site and the existing connectivity.",
+        "Create the ticket with product id gate_and_sign_connectivity_review and assign a specialist.",
+        "Check prerequisites: the site details."
+      ],
+      "delivery": [
+        "Assess the connectivity options for the zone.",
+        "Evaluate the wired, the wireless, and the cellular options.",
+        "Review the failover and the redundancy needs.",
+        "Check the equipment readiness.",
+        "Evaluate the reliability in the outdoor environment.",
+        "Recommend the best-fit connectivity.",
+        "Document the review.",
+        "Technical verification: confirm the recommendation is sound."
+      ],
+      "documentation": [
+        "Produce the review report: options and recommendation.",
+        "Document the connectivity assessment.",
+        "Record the failover review.",
+        "Include the equipment recommendations.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: connectivity assessment, failover review, equipment readiness, reliability evaluation, recommendations, and review report.",
+        "Confirm the options are evaluated.",
+        "Confirm the recommendation is clear.",
+        "Confirm the reliability is assessed.",
+        "Flag follow-ups: deployment and failover setup."
+      ],
+      "closeout": [
+        "Send the review report.",
+        "Recommend follow-ups: deploy the connectivity.",
+        "Confirm the customer can decide.",
+        "Record internal notes: connectivity review.",
+        "Offer deployment support."
+      ]
+    }
+  },
+  "seasonal_business_it_readiness": {
+    "fulfillmentWorkflow": [
+      "Confirm the readiness and scope: confirm the Seasonal Business IT Readiness for the pre-season check of the internet, Wi-Fi, cameras, devices, accounts, and backups.",
+      "Send the prep checklist: the business provides the access and the season plan.",
+      "Pre-work preparation: review the intake and the current state.",
+      "Review the systems: the internet, the Wi-Fi, the cameras, and the devices.",
+      "Fix the priorities: the capacity checks and the backup verification.",
+      "Verify the readiness: the contingency planning.",
+      "Deliver the closeout package: the season readiness report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Seasonal Business IT Readiness scope: pre-season check of internet, Wi-Fi, cameras, devices, accounts, and backups.",
+        "Confirm the season plan, the volumes, and the concerns.",
+        "Gather baseline: the current technology state.",
+        "Create the ticket with product id seasonal_business_it_readiness and assign an engineer.",
+        "Check prerequisites: the access to the systems."
+      ],
+      "delivery": [
+        "Review the internet capacity and the redundancy.",
+        "Check the Wi-Fi and the coverage for the season.",
+        "Verify the cameras and the recording.",
+        "Check the devices and the updates.",
+        "Review the accounts and the access.",
+        "Verify the backups and the restore readiness.",
+        "Fix the priority issues before the season.",
+        "Technical verification: confirm the readiness is verified."
+      ],
+      "documentation": [
+        "Produce the season readiness report: findings and fixes.",
+        "Document the capacity and the performance checks.",
+        "Record the backup verification.",
+        "Include the contingency plan.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: pre-season system review, capacity/performance checks, backup verification, contingency planning, priority fixes, and readiness report.",
+        "Confirm the systems are season-ready.",
+        "Confirm the backups restore.",
+        "Confirm the priorities are fixed.",
+        "Flag follow-ups: in-season monitoring."
+      ],
+      "closeout": [
+        "Send the season readiness report.",
+        "Recommend follow-ups: in-season monitoring.",
+        "Confirm the business is ready.",
+        "Record internal notes: season readiness.",
+        "Offer in-season monitoring."
+      ]
+    }
+  },
+  "wellness_office_security_pack": {
+    "fulfillmentWorkflow": [
+      "Confirm the pack and scope: confirm the Wellness Office Security Pack and review the MFA, device encryption, guest Wi-Fi, backup review, and the policy starter kit.",
+      "Send the prep checklist: the office provides the access and the environment details.",
+      "Pre-work preparation: review the intake and the current state.",
+      "Assess the security: the MFA, the device encryption, and the guest Wi-Fi.",
+      "Apply the protections: the security configuration and the backups.",
+      "Verify the protections: confirm the privacy-oriented setup.",
+      "Deliver the closeout package: the policy starter kit."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Wellness Office Security Pack scope: MFA, device encryption, guest Wi-Fi, backup review, and policy starter kit.",
+        "Confirm the office needs and the environment.",
+        "Gather baseline: the current security state.",
+        "Create the ticket with product id wellness_office_security_pack, mark it privacy-sensitive, and assign an engineer.",
+        "Check prerequisites: the admin access to the systems."
+      ],
+      "delivery": [
+        "Set up MFA on the critical accounts.",
+        "Review the device encryption and the endpoint security.",
+        "Configure the secure Wi-Fi and the guest network.",
+        "Review the backups for the client data.",
+        "Apply the privacy-oriented configuration.",
+        "Set up the access controls.",
+        "Provide the policy starter kit.",
+        "Technical verification: confirm the protections are applied."
+      ],
+      "documentation": [
+        "Produce the security documentation: protections and policies.",
+        "Document the MFA and the encryption state.",
+        "Record the Wi-Fi and the backup setup.",
+        "Include the policy starter kit.",
+        "Security rule: client data and credentials never stored in the docs."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: client data protection, secure Wi-Fi, device security, privacy configuration, access controls, and security guidance.",
+        "Confirm the MFA is on the critical accounts.",
+        "Confirm the encryption is reviewed.",
+        "Confirm the policy kit is delivered.",
+        "Flag follow-ups: policy adoption and ongoing reviews."
+      ],
+      "closeout": [
+        "Send the security documentation and the policy kit.",
+        "Recommend follow-ups: adopt the policies and review regularly.",
+        "Confirm the office protections are in place.",
+        "Record internal notes: security state.",
+        "Offer compliance support."
+      ]
+    }
+  },
+  "patient_wi_fi_separation": {
+    "fulfillmentWorkflow": [
+      "Confirm the separation and scope: confirm the Patient Wi-Fi Separation to separate the patient/guest Wi-Fi from the business systems.",
+      "Send the prep checklist: the office provides the network access and the layout.",
+      "Pre-work preparation: review the intake and the current network.",
+      "Design the separation: the guest network and the staff protection.",
+      "Configure the separation: the access controls and the isolation.",
+      "Verify the setup: the testing and the documentation.",
+      "Deliver the closeout package: the network documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Patient Wi-Fi Separation scope: separate the patient/guest Wi-Fi from the business systems.",
+        "Confirm the layout, the coverage, and the needs.",
+        "Gather baseline: the current network and the gear.",
+        "Create the ticket with product id patient_wi_fi_separation and assign an engineer.",
+        "Check prerequisites: the network admin access."
+      ],
+      "delivery": [
+        "Design the patient/guest network and the VLAN separation.",
+        "Protect the staff network and the business systems.",
+        "Apply the access controls and the bandwidth limits.",
+        "Set the captive portal and the acceptable use.",
+        "Isolate the guest traffic from the patient data.",
+        "Test the guest and the staff access.",
+        "Document the network configuration.",
+        "Technical verification: confirm the separation works."
+      ],
+      "documentation": [
+        "Produce the network documentation: design and configuration.",
+        "Document the guest access and the isolation.",
+        "Record the testing results.",
+        "Include the admin guide.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: network design for separation, guest network setup, staff network protection, access controls, documentation, and testing.",
+        "Confirm the guests cannot reach the business systems.",
+        "Confirm the staff access is unaffected.",
+        "Confirm the isolation is tested.",
+        "Flag follow-ups: monitoring and coverage."
+      ],
+      "closeout": [
+        "Send the network documentation.",
+        "Recommend follow-ups: monitor the guest network.",
+        "Confirm the separation is secure.",
+        "Record internal notes: patient Wi-Fi state.",
+        "Offer network monitoring."
+      ]
+    }
+  },
+  "contractor_digital_office": {
+    "fulfillmentWorkflow": [
+      "Confirm the setup and scope: confirm the Contractor Digital Office and review the M365/Google setup, shared files, mobile access, backup, and the security basics for trades.",
+      "Send the prep checklist: the contractor provides the access and the workflow details.",
+      "Pre-work preparation: review the intake and the current state.",
+      "Set up the foundation: the M365/Google, the shared files, and the communication.",
+      "Apply the mobility: the mobile access and the field-friendly setup.",
+      "Verify the setup: the backup and the security basics.",
+      "Deliver the closeout package: the documentation and training."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Contractor Digital Office scope: M365/Google, shared files, mobile access, backup, and security basics.",
+        "Confirm the field workflow, the users, and the needs.",
+        "Gather baseline: the current setup and the devices.",
+        "Create the ticket with product id contractor_digital_office and assign an engineer.",
+        "Check prerequisites: the admin access and the devices."
+      ],
+      "delivery": [
+        "Set up the M365 or Google workspace.",
+        "Create the shared file structure and the permissions.",
+        "Organize the job photos and the folders.",
+        "Configure the mobile devices for the field.",
+        "Set up the communication tools.",
+        "Set up the backup for the job data.",
+        "Apply the security basics: MFA and the lock screen.",
+        "Technical verification: confirm the field access works."
+      ],
+      "documentation": [
+        "Produce the documentation and training: setup and workflow.",
+        "Document the file structure and the access.",
+        "Record the mobile configuration.",
+        "Include the field-friendly guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: cloud file setup, job photo organization, mobile device configuration, communication setup, field-friendly access, and documentation/training.",
+        "Confirm the field access works on mobile.",
+        "Confirm the backups are in place.",
+        "Confirm the training is delivered.",
+        "Flag follow-ups: job photo workflow and backup review."
+      ],
+      "closeout": [
+        "Send the documentation and training.",
+        "Recommend follow-ups: use the job photo workflow.",
+        "Confirm the contractor can operate in the field.",
+        "Record internal notes: contractor setup.",
+        "Offer ongoing support."
+      ]
+    }
+  },
+  "field_laptop_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm the setup and scope: confirm the Field Laptop Setup to set up the mobile-friendly laptop workflow for the field work.",
+      "Send the prep checklist: the customer provides the laptop and the workflow needs.",
+      "Pre-work preparation: review the intake and the current device.",
+      "Set up the device: the hardware, the security, and the connectivity.",
+      "Apply the field readiness: the offline capability and the backup.",
+      "Verify the setup: the field use and the training.",
+      "Deliver the closeout package: the field use documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Field Laptop Setup scope: hardware, security, mobile connectivity, backup, offline capability, and field training.",
+        "Confirm the field workflow, the connectivity, and the needs.",
+        "Gather baseline: the laptop and the current state.",
+        "Create the ticket with product id field_laptop_setup and assign a technician.",
+        "Check prerequisites: the laptop and the access."
+      ],
+      "delivery": [
+        "Set up the hardware: the laptop, the accessories, and the updates.",
+        "Apply the security configuration: the lock, the encryption, and MFA.",
+        "Configure the mobile connectivity: the hotspot and the VPN.",
+        "Set up the backup and the recovery for the field data.",
+        "Enable the offline capability: the files and the apps.",
+        "Configure the field-friendly access.",
+        "Train the user on the field workflow.",
+        "Technical verification: confirm the laptop is field-ready."
+      ],
+      "documentation": [
+        "Produce the field use documentation: setup and guidance.",
+        "Document the security and the connectivity setup.",
+        "Record the backup and the offline configuration.",
+        "Include the field use training notes.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: hardware selection/setup, security configuration, mobile connectivity, backup/recovery, offline capability, and field training.",
+        "Confirm the offline access works.",
+        "Confirm the backup is in place.",
+        "Confirm the user is trained.",
+        "Flag follow-ups: field use follow-up."
+      ],
+      "closeout": [
+        "Send the field use documentation.",
+        "Recommend follow-ups: test the workflow in the field.",
+        "Confirm the laptop is ready.",
+        "Record internal notes: field laptop state.",
+        "Offer field support."
+      ]
+    }
+  },
+  "cloud_file_setup_for_job_photos": {
+    "fulfillmentWorkflow": [
+      "Confirm the setup and scope: confirm the Cloud File Setup for Job Photos to set up the shared folders for the job files, photos, and team access.",
+      "Send the prep checklist: the customer provides the folder structure and the team list.",
+      "Pre-work preparation: review the intake and the current file state.",
+      "Set up the storage: the shared folders and the structure.",
+      "Configure the access: the team permissions and the mobile capture.",
+      "Verify the setup: the backup and the access testing.",
+      "Deliver the closeout package: the training and documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Cloud File Setup for Job Photos scope: shared folders, organization, backup, access, and mobile capture.",
+        "Confirm the folder needs, the team, and the workflow.",
+        "Gather baseline: the current file state.",
+        "Create the ticket with product id cloud_file_setup_for_job_photos and assign a technician.",
+        "Check prerequisites: the cloud admin access."
+      ],
+      "delivery": [
+        "Set up the cloud storage and the shared folders.",
+        "Create the photo organization structure: job, date, and type.",
+        "Configure the team access and the permissions.",
+        "Set up the automatic backup for the photos.",
+        "Configure the mobile capture to the folders.",
+        "Test the access from the devices.",
+        "Train the team on the folder workflow.",
+        "Technical verification: confirm the capture works."
+      ],
+      "documentation": [
+        "Produce the training and documentation: structure and workflow.",
+        "Document the folder organization.",
+        "Record the access and the backup setup.",
+        "Include the mobile capture guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: cloud storage setup, photo organization, automatic backup, access controls, mobile capture setup, and training/documentation.",
+        "Confirm the photos capture to the folders.",
+        "Confirm the backup is automatic.",
+        "Confirm the team access works.",
+        "Flag follow-ups: folder naming and retention."
+      ],
+      "closeout": [
+        "Send the training and documentation.",
+        "Recommend follow-ups: adopt the folder naming.",
+        "Confirm the workflow is live.",
+        "Record internal notes: cloud file setup.",
+        "Offer ongoing support."
+      ]
+    }
+  },
+  "mobile_device_security_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm the setup and scope: confirm the Mobile Device Security Setup and review the MFA, app access, backup, and the basic mobile device safety.",
+      "Send the prep checklist: the customer provides the device list and the policies.",
+      "Pre-work preparation: review the intake and the current devices.",
+      "Apply the device security: the passcode, the encryption, and the lock policy.",
+      "Configure the access: the apps, the controls, and the data separation.",
+      "Verify the setup: the backup and the remote wipe readiness.",
+      "Deliver the closeout package: the security training."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Mobile Device Security Setup scope: passcode/lock policy, encryption, remote wipe, app access, data separation, and training.",
+        "Confirm the devices, the users, and the policies.",
+        "Gather baseline: the current mobile security state.",
+        "Create the ticket with product id mobile_device_security_setup and assign a technician.",
+        "Check prerequisites: the device access and the MDM access."
+      ],
+      "delivery": [
+        "Set the passcode and the lock policy.",
+        "Enable the device encryption.",
+        "Set up the remote wipe capability.",
+        "Configure the app and the access controls.",
+        "Separate the email and the data.",
+        "Set up MFA on the critical apps.",
+        "Configure the backup for the device data.",
+        "Technical verification: confirm the devices are secured."
+      ],
+      "documentation": [
+        "Produce the security documentation: setup and guidance.",
+        "Document the passcode, the encryption, and the wipe setup.",
+        "Record the app access controls.",
+        "Include the security training.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: passcode/lock policy, encryption, remote wipe, app/access controls, email/data separation, and security training.",
+        "Confirm the devices are encrypted.",
+        "Confirm the remote wipe is armed.",
+        "Confirm the training is delivered.",
+        "Flag follow-ups: MDM enrollment and policy review."
+      ],
+      "closeout": [
+        "Send the security documentation.",
+        "Recommend follow-ups: MDM enrollment.",
+        "Confirm the devices are secured.",
+        "Record internal notes: mobile security state.",
+        "Offer MDM setup."
+      ]
+    }
+  },
+  "blueberry_business_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm the starter and scope: confirm the Blueberry Business Starter, the Maine-themed starter package for the new small businesses needing the email, domain, device, and security basics.",
+      "Send the prep checklist: the customer provides the business details and the access.",
+      "Pre-work preparation: review the intake and confirm the access.",
+      "Build the foundation: the email, the domain, the devices, and the communication.",
+      "Apply the security: the security basics and the customer record management.",
+      "Verify the foundation: confirm the season-focused configuration.",
+      "Deliver the closeout package: the getting-started guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Blueberry Business Starter scope: email, domain, device, and security basics for a new small business.",
+        "Confirm the business stage, the users, and the needs.",
+        "Gather baseline: the domain and the current state.",
+        "Create the ticket with product id blueberry_business_starter and assign an engineer.",
+        "Check prerequisites: the domain ownership and the access."
+      ],
+      "delivery": [
+        "Set up the business email on the domain.",
+        "Set up the customer record management.",
+        "Configure the devices and the accounts.",
+        "Set up the communication tools.",
+        "Apply the security basics: MFA and the passwords.",
+        "Configure the season-focused operations.",
+        "Document the getting-started guidance.",
+        "Technical verification: confirm the foundation works."
+      ],
+      "documentation": [
+        "Produce the getting-started documentation: setup and guidance.",
+        "Document the email, the records, and the security.",
+        "Record the season-focused configuration.",
+        "Include the operations guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: online sales setup, customer record management, operations technology, communication setup, season configuration, and getting-started guidance.",
+        "Confirm the email and the devices work.",
+        "Confirm the security basics are applied.",
+        "Confirm the season setup is ready.",
+        "Flag follow-ups: backups and support."
+      ],
+      "closeout": [
+        "Send the getting-started guidance.",
+        "Recommend follow-ups: backup setup and support plan.",
+        "Confirm the business can operate.",
+        "Record internal notes: starter state.",
+        "Offer a support plan."
+      ]
+    }
+  },
+  "pine_tree_protection_pack": {
+    "fulfillmentWorkflow": [
+      "Confirm the pack and scope: confirm the Pine Tree Protection Pack, the Maine-themed security bundle with MFA, password, email, backup, and the critical account review.",
+      "Send the prep checklist: the customer provides the critical accounts and the access.",
+      "Pre-work preparation: review the intake and the current security state.",
+      "Assess the protections: the MFA, the passwords, the email, and the backups.",
+      "Apply the protections: the security configuration and the recovery planning.",
+      "Verify the protections: confirm the field risk mitigation.",
+      "Deliver the closeout package: the security guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Pine Tree Protection Pack scope: MFA, password, email, backup, and the critical account review.",
+        "Confirm the critical accounts and the needs.",
+        "Gather baseline: the current security state.",
+        "Create the ticket with product id pine_tree_protection_pack and assign an engineer.",
+        "Check prerequisites: the admin access to the accounts."
+      ],
+      "delivery": [
+        "Review the critical accounts and the access.",
+        "Set up MFA on the critical accounts.",
+        "Apply the password guidance: the manager and the strength.",
+        "Review the email security and the phishing protections.",
+        "Review the backups and the recovery readiness.",
+        "Set up the data protection and the recovery planning.",
+        "Mitigate the field risks.",
+        "Technical verification: confirm the protections are applied."
+      ],
+      "documentation": [
+        "Produce the security documentation: protections and recovery.",
+        "Document the MFA and the password setup.",
+        "Record the email and the backup state.",
+        "Include the recovery planning.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: device security, backup setup, data protection, field risk mitigation, recovery planning, and security guidance.",
+        "Confirm the critical accounts are secured.",
+        "Confirm the backups are reviewed.",
+        "Confirm the recovery plan is ready.",
+        "Flag follow-ups: backup testing and password rotation."
+      ],
+      "closeout": [
+        "Send the security guidance.",
+        "Recommend follow-ups: test the backups and rotate the passwords.",
+        "Confirm the protections are in place.",
+        "Record internal notes: protection state.",
+        "Offer backup monitoring."
+      ]
+    }
+  },
+  "harbor_wi_fi_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm the bundle and scope: confirm the Harbor Wi-Fi Bundle, the Maine-themed outdoor/business Wi-Fi bundle for the public or mixed-use spaces.",
+      "Send the prep checklist: the customer provides the site layout and the coverage goals.",
+      "Pre-work preparation: review the site plan and the current network.",
+      "Plan the coverage: the waterfront, the docks, and the vessels.",
+      "Deploy the connectivity: the access points and the outdoor configuration.",
+      "Verify the coverage: the coverage verification and the testing.",
+      "Deliver the closeout package: the coverage documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Harbor Wi-Fi Bundle scope: coverage for the waterfront, docks, and vessels in the public or mixed-use spaces.",
+        "Confirm the site layout, the areas, and the goals.",
+        "Gather baseline: the current network and the gear.",
+        "Create the ticket with product id harbor_wi_fi_bundle, mark it outdoor-sensitive, and assign a specialist.",
+        "Check prerequisites: the site access and the layout."
+      ],
+      "delivery": [
+        "Plan the coverage for the waterfront areas.",
+        "Design the dock and the vessel coverage.",
+        "Select the outdoor-hardened equipment.",
+        "Deploy the access points and the configuration.",
+        "Configure the public and the guest access.",
+        "Apply the ongoing management settings.",
+        "Verify the coverage and the performance.",
+        "Technical verification: confirm the coverage is verified."
+      ],
+      "documentation": [
+        "Produce the coverage documentation: plan, deployment, and verification.",
+        "Document the equipment and the configuration.",
+        "Record the coverage verification.",
+        "Include the ongoing management notes.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: coverage planning, AP deployment, outdoor connectivity config, dock/vessel coverage design, ongoing management, and coverage verification.",
+        "Confirm the coverage is verified.",
+        "Confirm the outdoor gear is rated.",
+        "Confirm the guest access is isolated.",
+        "Flag follow-ups: ongoing management and monitoring."
+      ],
+      "closeout": [
+        "Send the coverage documentation.",
+        "Recommend follow-ups: ongoing Wi-Fi management.",
+        "Confirm the coverage is verified.",
+        "Record internal notes: harbor Wi-Fi state.",
+        "Offer ongoing Wi-Fi management."
+      ]
+    }
+  },
+  "anchor_backup_plan": {
+    "fulfillmentWorkflow": [
+      "Confirm the plan and scope: confirm the Anchor Backup Plan, the Maine-themed backup and restore-readiness bundle.",
+      "Send the prep checklist: the customer provides the critical data and the access.",
+      "Pre-work preparation: review the intake and the current backup state.",
+      "Assess the backups: the coverage and the critical data.",
+      "Set up the protection: the backups, the monitoring, and the restore testing.",
+      "Verify the readiness: the restore and the season-focused protection.",
+      "Deliver the closeout package: the backup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Anchor Backup Plan scope: backup setup, restore testing, critical data identification, monitoring, and season protection.",
+        "Confirm the critical data and the restore goals.",
+        "Gather baseline: the current backup state.",
+        "Create the ticket with product id anchor_backup_plan and assign an engineer.",
+        "Check prerequisites: the access to the data."
+      ],
+      "delivery": [
+        "Identify the critical data and the systems.",
+        "Set up the backups for the critical data.",
+        "Configure the backup monitoring.",
+        "Test the restore and the recovery readiness.",
+        "Apply the season-focused protection.",
+        "Document the backup schedule and the retention.",
+        "Verify the restore path.",
+        "Technical verification: confirm the backups restore."
+      ],
+      "documentation": [
+        "Produce the backup documentation: setup, schedule, and testing.",
+        "Document the critical data and the coverage.",
+        "Record the restore test results.",
+        "Include the monitoring and the retention.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: backup setup, restore testing, critical data identification, backup monitoring, season protection, and backup documentation.",
+        "Confirm the backups run.",
+        "Confirm the restore test passed.",
+        "Confirm the monitoring is on.",
+        "Flag follow-ups: recurring restore tests."
+      ],
+      "closeout": [
+        "Send the backup documentation.",
+        "Recommend follow-ups: test the restores quarterly.",
+        "Confirm the backup is verified.",
+        "Record internal notes: backup state.",
+        "Offer backup monitoring."
+      ]
+    }
+  },
+  "north_star_cyber_plan": {
+    "fulfillmentWorkflow": [
+      "Confirm the plan and scope: confirm the North Star Cyber Plan, the Maine-themed recurring strategic cybersecurity roadmap and care plan.",
+      "Send the onboarding prep: the customer confirms the environment, the goals, and the recurring cadence.",
+      "Pre-work preparation: review the environment and the current security state.",
+      "Assess the security: the baseline and the priorities.",
+      "Implement the basics: the security basics and the backups.",
+      "Maintain the plan: the recurring care, the review, and the roadmap updates.",
+      "Deliver the closeout package: the plan documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the North Star Cyber Plan scope: recurring strategic security roadmap and care plan.",
+        "Confirm the environment, the goals, and the cadence.",
+        "Gather baseline: the current security state.",
+        "Create the ticket with product id north_star_cyber_plan, expected deliverables (assessment, implementation, roadmap, care), and assign an account engineer.",
+        "Check prerequisites: the admin access and the environment details."
+      ],
+      "delivery": [
+        "Assess the current security posture.",
+        "Implement the security basics: MFA and the protections.",
+        "Set up the backups and the recovery.",
+        "Build the security roadmap with the priorities.",
+        "Apply the priority recommendations.",
+        "Maintain the recurring care: reviews and the updates.",
+        "Update the roadmap with the progress.",
+        "Technical verification: confirm the plan is tracked."
+      ],
+      "documentation": [
+        "Produce the plan documentation: assessment, roadmap, and care.",
+        "Document the security basics implemented.",
+        "Record the priority recommendations.",
+        "Include the recurring care schedule.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: security assessment, basics implementation, backup setup, security roadmap, priority recommendations, and plan documentation.",
+        "Confirm the roadmap is prioritized.",
+        "Confirm the basics are implemented.",
+        "Confirm the care cadence is set.",
+        "Flag follow-ups: recurring reviews and roadmap execution."
+      ],
+      "closeout": [
+        "Send the plan documentation.",
+        "Recommend follow-ups: the recurring care reviews.",
+        "Confirm the roadmap is understood.",
+        "Record internal notes: security roadmap state.",
+        "Offer the next review."
+      ]
+    }
+  }
+}

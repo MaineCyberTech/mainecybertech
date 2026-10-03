@@ -2,6 +2,14 @@
 
 Thank you for contributing to the Maine CyberTech Portal.
 
+## Community & PR hygiene
+
+- All project spaces follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+- Open PRs with the [pull request template](.github/PULL_REQUEST_TEMPLATE.md).
+- File bugs and feature requests through the
+  [issue templates](.github/ISSUE_TEMPLATE/) so reports arrive with the details
+  maintainers need.
+
 ## Workflow
 
 1. Create a feature branch from your working branch.
@@ -16,18 +24,25 @@ pnpm test
 pnpm build
 ```
 
-5. If your change affects database structure or seed behavior, also validate the Supabase workflow:
+5. If your change affects database structure or seed behavior, also validate the Supabase workflow locally:
 
 ```bash
-supabase db reset
-supabase db push
-supabase db query < supabase/seed.sql
-supabase db query < supabase/verify_seed.sql
+supabase start
+supabase db reset   # applies supabase/migrations/ + the seeds wired in supabase/config.toml
+pnpm --filter=api test
 ```
+
+> `supabase db push` targets the **linked remote** project — do not use it as a local
+> validation step. Migrations are applied to the hosted project by
+> `.github/workflows/supabase-migrations.yml` on push.
+
+6. Releases go through `develop` → `main`; see [docs/RELEASING.md](docs/RELEASING.md)
+   for the quality gates and production promotion process.
 
 ## Pull requests
 
 PRs should include:
+
 - a short summary of what changed
 - why the change was needed
 - any migration / seed implications

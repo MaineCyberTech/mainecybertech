@@ -1,1 +1,0 @@
-Principal security audit prompt.

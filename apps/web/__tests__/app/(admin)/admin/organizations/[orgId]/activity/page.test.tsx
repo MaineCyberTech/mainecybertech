@@ -1,5 +1,11 @@
 import { render, screen } from "@testing-library/react";
 
+jest.mock("next/navigation", () => ({
+  notFound: () => {
+    throw new Error("NEXT_NOT_FOUND");
+  },
+}));
+
 const mockRequireAdminAccess = jest.fn();
 jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
@@ -24,7 +30,17 @@ jest.mock("next/link", () => {
   );
 });
 
-const baseLog = { id: "log1", action: "org.update", entity_type: "organization", entity_id: "o1", actor_user_id: "u1", organization_id: "o1", actor_type: "user", created_at: new Date().toISOString(), metadata: null };
+const baseLog = {
+  id: "log1",
+  action: "org.update",
+  entity_type: "organization",
+  entity_id: "o1",
+  actor_user_id: "u1",
+  organization_id: "o1",
+  actor_type: "user",
+  created_at: new Date().toISOString(),
+  metadata: null,
+};
 
 describe("OrganizationActivityPage", () => {
   beforeEach(() => {
@@ -39,7 +55,9 @@ describe("OrganizationActivityPage", () => {
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/activity/page")).default;
     render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
     expect(screen.getByRole("heading", { name: "Acme Corp Activity" })).toBeInTheDocument();
-    expect(screen.getByText(/Timeline of actions associated with this organization/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Timeline of actions associated with this organization/),
+    ).toBeInTheDocument();
   });
 
   it("renders back link", async () => {
@@ -54,7 +72,9 @@ describe("OrganizationActivityPage", () => {
     render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
     expect(screen.getByText("org.update")).toBeInTheDocument();
     expect(screen.getByText((c) => c.includes("Entity: organization"))).toBeInTheDocument();
-    expect(screen.getByText((c) => c.includes("Actor:") && c.includes("Bob Admin"))).toBeInTheDocument();
+    expect(
+      screen.getByText((c) => c.includes("Actor:") && c.includes("Bob Admin")),
+    ).toBeInTheDocument();
   });
 
   it("renders empty state", async () => {
@@ -64,19 +84,28 @@ describe("OrganizationActivityPage", () => {
     expect(screen.getByText("No activity found for this organization.")).toBeInTheDocument();
   });
 
-  it("uses fallback title when org not found", async () => {
-    mockOrgsGet.mockRejectedValue(new Error("not found"));
+  it("calls notFound when the org is missing", async () => {
+    mockOrgsGet.mockRejectedValue(Object.assign(new Error("not found"), { status: 404 }));
     mockAuditList.mockResolvedValue({ items: [] });
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/activity/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
-    expect(screen.getByText("Organization Activity")).toBeInTheDocument();
+    await expect(Page({ params: Promise.resolve({ orgId: "o1" }) })).rejects.toThrow(
+      "NEXT_NOT_FOUND",
+    );
+  });
+
+  it("rethrows transient org lookup failures", async () => {
+    mockOrgsGet.mockRejectedValue(Object.assign(new Error("DB down"), { status: 500 }));
+    const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/activity/page")).default;
+    await expect(Page({ params: Promise.resolve({ orgId: "o1" }) })).rejects.toThrow("DB down");
   });
 
   it("shows actor email when no full_name", async () => {
     mockProfilesList.mockResolvedValue([{ id: "u1", full_name: null, email: "user@test.com" }]);
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/activity/page")).default;
     render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
-    expect(screen.getByText((c) => c.includes("Actor:") && c.includes("user@test.com"))).toBeInTheDocument();
+    expect(
+      screen.getByText((c) => c.includes("Actor:") && c.includes("user@test.com")),
+    ).toBeInTheDocument();
   });
 
   it("shows actor_type when no profile", async () => {

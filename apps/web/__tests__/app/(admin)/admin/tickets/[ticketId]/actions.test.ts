@@ -30,12 +30,12 @@ const TICKET_ID = "ticket-1";
 const ORG_ID = "org-1";
 
 describe("updateTicketAction", () => {
-  beforeEach(() => { jest.clearAllMocks(); });
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("updates a ticket with all fields", async () => {
-    const { updateTicketAction } = await import(
-      "@/app/(admin)/admin/tickets/[ticketId]/actions"
-    );
+    const { updateTicketAction } = await import("@/app/(admin)/admin/tickets/[ticketId]/actions");
 
     const formData = new FormData();
     formData.set("subject", "Fixed title");
@@ -57,25 +57,25 @@ describe("updateTicketAction", () => {
     expect(mockRevalidatePath).toHaveBeenCalledWith("/admin/tickets");
   });
 
-  it("throws if title is missing", async () => {
-    const { updateTicketAction } = await import(
-      "@/app/(admin)/admin/tickets/[ticketId]/actions"
-    );
+  it("returns error if title is missing", async () => {
+    const { updateTicketAction } = await import("@/app/(admin)/admin/tickets/[ticketId]/actions");
 
     const formData = new FormData();
     formData.set("description", "Desc");
 
-    await expect(updateTicketAction(TICKET_ID, formData)).rejects.toThrow("Title and description");
+    const result = await updateTicketAction(TICKET_ID, formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Title and description");
   });
 });
 
 describe("addCommentAction", () => {
-  beforeEach(() => { jest.clearAllMocks(); });
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("adds an internal comment", async () => {
-    const { addCommentAction } = await import(
-      "@/app/(admin)/admin/tickets/[ticketId]/actions"
-    );
+    const { addCommentAction } = await import("@/app/(admin)/admin/tickets/[ticketId]/actions");
 
     const formData = new FormData();
     formData.set("body", "Internal note");
@@ -91,27 +91,29 @@ describe("addCommentAction", () => {
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/tickets/${TICKET_ID}`);
   });
 
-  it("throws if body is missing", async () => {
-    const { addCommentAction } = await import(
-      "@/app/(admin)/admin/tickets/[ticketId]/actions"
-    );
+  it("returns error if body is missing", async () => {
+    const { addCommentAction } = await import("@/app/(admin)/admin/tickets/[ticketId]/actions");
 
     const formData = new FormData();
-    await expect(addCommentAction(TICKET_ID, ORG_ID, formData)).rejects.toThrow("Comment body is required");
+    const result = await addCommentAction(TICKET_ID, ORG_ID, formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Comment body is required");
   });
 });
 
 describe("deleteTicketAction", () => {
-  beforeEach(() => { jest.clearAllMocks(); });
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-  it("throws if confirmation is not DELETE", async () => {
-    const { deleteTicketAction } = await import(
-      "@/app/(admin)/admin/tickets/[ticketId]/actions"
-    );
+  it("returns error if confirmation is not DELETE", async () => {
+    const { deleteTicketAction } = await import("@/app/(admin)/admin/tickets/[ticketId]/actions");
 
     const formData = new FormData();
     formData.set("confirmation", "wrong");
 
-    await expect(deleteTicketAction(TICKET_ID, formData)).rejects.toThrow("type DELETE");
+    const result = await deleteTicketAction(TICKET_ID, formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("type DELETE");
   });
 });

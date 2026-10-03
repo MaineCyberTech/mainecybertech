@@ -10,10 +10,7 @@ export interface AvatarProps extends ImgHTMLAttributes<HTMLImageElement> {
 }
 
 export const Avatar = forwardRef<HTMLImageElement, AvatarProps>(
-  (
-    { className, fallback, size = "md", shape = "circle", src, alt, ...props },
-    ref,
-  ) => {
+  ({ className, fallback, size = "md", shape = "circle", src, alt, ...props }, ref) => {
     const sizeStyles = {
       sm: "w-8 h-8 text-xs",
       md: "w-10 h-10 text-sm",
@@ -33,7 +30,7 @@ export const Avatar = forwardRef<HTMLImageElement, AvatarProps>(
         <div
           ref={ref}
           className={cn(
-            "inline-flex items-center justify-center font-orbitron font-bold uppercase bg-white/5 border border-white/10",
+            "font-display inline-flex items-center justify-center border border-white/10 bg-white/5 font-bold uppercase",
             sizeStyles[size],
             shapeStyles[shape],
             className,
@@ -50,12 +47,7 @@ export const Avatar = forwardRef<HTMLImageElement, AvatarProps>(
         ref={ref}
         src={src}
         alt={alt}
-        className={cn(
-          "object-cover",
-          sizeStyles[size],
-          shapeStyles[shape],
-          className,
-        )}
+        className={cn("object-cover", sizeStyles[size], shapeStyles[shape], className)}
         onError={() => setImageError(true)}
         {...props}
       />

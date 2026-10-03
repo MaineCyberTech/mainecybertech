@@ -7,7 +7,13 @@ const mockOrgsList = jest.fn();
 const mockRolesList = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
-    organizations: { list: mockOrgsList },
+    organizations: {
+    list: (...args: any[]) =>
+      mockOrgsList(...args).then((data: any) => ({
+        items: Array.isArray(data) ? data : data?.items ?? [],
+        total: Array.isArray(data) ? data.length : data?.total ?? 0,
+      })),
+  },
     roles: { list: mockRolesList },
   }),
 }));
@@ -24,7 +30,7 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -58,19 +64,13 @@ describe("AdminBulkInvitePage", () => {
   it("renders page shell with title and description", async () => {
     const Page = (await import("@/app/(admin)/admin/bulk-invite/page")).default;
     render(await Page());
-    expect(
-      screen.getByRole("heading", { name: "Bulk User Import" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Import multiple users via CSV/),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Bulk User Import" })).toBeInTheDocument();
+    expect(screen.getByText(/Import multiple users via CSV/)).toBeInTheDocument();
   });
 
   it("renders bulk invite form component", async () => {
     mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme Corp" }]);
-    mockRolesList.mockResolvedValue([
-      { id: "r1", name: "Admin", key: "admin" },
-    ]);
+    mockRolesList.mockResolvedValue([{ id: "r1", name: "Admin", key: "admin" }]);
     const Page = (await import("@/app/(admin)/admin/bulk-invite/page")).default;
     render(await Page());
     expect(screen.getByTestId("bulk-invite-form")).toBeInTheDocument();

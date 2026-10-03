@@ -1,6 +1,6 @@
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminDocumentsCenterClient from "@/components/admin/AdminDocumentsCenterClient";
 import { bulkFolderAction, bulkMetadataAction } from "@/app/(admin)/admin/documents/bulk-actions";
@@ -23,7 +23,7 @@ type DocumentRecord = {
   mime_type?: string | null;
   visibility?: string | null;
   current_version?: number | null;
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
   file_name?: string | null;
   file_size?: number | null;
   created_at?: string | null;
@@ -157,15 +157,18 @@ export default async function AdminDocumentsPage() {
       const api = getApiClient();
       const organizationId = String(formData.get("organizationId") ?? "").trim();
       const providedTitle =
-        String(formData.get("title") ?? "").trim() ||
-        String(formData.get("name") ?? "").trim();
+        String(formData.get("title") ?? "").trim() || String(formData.get("name") ?? "").trim();
       const folderPath = trimOrNull(formData.get("category"));
       const requestedVisibility = String(formData.get("visibility") ?? "org").trim() || "org";
       const visibility = ALLOWED_VISIBILITY.includes(requestedVisibility as DocumentVisibility)
         ? requestedVisibility
         : "org";
-      const bucket = String(formData.get("bucket") ?? "documents").trim() || "documents";
-      const suppliedPath = String(formData.get("fileUrl") ?? formData.get("storagePath") ?? "").trim();
+      // Bucket is fixed: the API only accepts the `documents` bucket (FILE-P2-002),
+      // and a UI field that can name another bucket would just be rejected.
+      const bucket = "documents";
+      const suppliedPath = String(
+        formData.get("fileUrl") ?? formData.get("storagePath") ?? "",
+      ).trim();
       const description = trimOrNull(formData.get("description"));
       const file = formData.get("file");
 
@@ -197,6 +200,16 @@ export default async function AdminDocumentsPage() {
 
       if (!suppliedPath) {
         return { ok: false, error: "Provide a storage path or upload a file." };
+      }
+
+      // The API requires `documents` + `orgs/<thisOrgId>/<file>`; check here so
+      // the operator gets a clear message instead of a raw 400. (FILE-P2-002)
+      const expectedPrefix = `orgs/${organizationId}/`;
+      if (!suppliedPath.startsWith(expectedPrefix) || suppliedPath.length <= expectedPrefix.length) {
+        return {
+          ok: false,
+          error: `Storage path must start with ${expectedPrefix} (e.g. ${expectedPrefix}report.pdf).`,
+        };
       }
 
       const doc = await api.documents.create({
@@ -237,8 +250,7 @@ export default async function AdminDocumentsPage() {
     try {
       const documentId = String(formData.get("documentId") ?? "").trim();
       const title =
-        String(formData.get("title") ?? "").trim() ||
-        String(formData.get("name") ?? "").trim();
+        String(formData.get("title") ?? "").trim() || String(formData.get("name") ?? "").trim();
       const description = trimOrNull(formData.get("description"));
       const folderPath = trimOrNull(formData.get("category"));
       const storagePathInput = trimOrNull(formData.get("fileUrl") ?? formData.get("storagePath"));
@@ -249,6 +261,23 @@ export default async function AdminDocumentsPage() {
 
       if (!title) {
         return { ok: false, error: "Document title is required." };
+      }
+
+      // The API rejects a storagePath that does not begin `orgs/<thisDocOrgId>/`
+      // (FILE-P2-002); fetch the record so the message names the document's own
+      // org rather than surfacing a raw 400. Same pattern as replaceFileAction.
+      if (storagePathInput) {
+        const current = (await api.documents.get(documentId)) as unknown as DocumentRecord;
+        const expectedPrefix = `orgs/${current.organization_id}/`;
+        if (
+          !storagePathInput.startsWith(expectedPrefix) ||
+          storagePathInput.length <= expectedPrefix.length
+        ) {
+          return {
+            ok: false,
+            error: `Storage path must start with ${expectedPrefix}.`,
+          };
+        }
       }
 
       const data = await api.documents.update(documentId, {
@@ -316,7 +345,7 @@ export default async function AdminDocumentsPage() {
         return { ok: false, error: "Document ID and replacement file are required." };
       }
 
-      const current = await api.documents.get(documentId) as unknown as DocumentRecord;
+      const current = (await api.documents.get(documentId)) as unknown as DocumentRecord;
       if (!current) {
         return { ok: false, error: "Document record not found." };
       }
@@ -438,11 +467,12 @@ export default async function AdminDocumentsPage() {
     }
   }
 
-  const [organizations, docsResult] = await Promise.all([
-    api.organizations.list(),
+  const [organizationsResult, docsResult] = await Promise.all([
+    api.organizations.list({ limit: 100 }),
     api.documents.list({}),
   ]);
   const rows = docsResult.items ?? [];
+  const organizations = organizationsResult.items ?? [];
 
   const orgMap = new Map<string, string>(
     (organizations as { id: string; name?: string | null }[]).map((org) => [
@@ -457,7 +487,7 @@ export default async function AdminDocumentsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminBreadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Documents" }]} />
+      <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Documents" }]} />
       <AdminSubnav current="documents" />
       <AdminDocumentsCenterClient
         documents={docs}
@@ -475,4 +505,3 @@ export default async function AdminDocumentsPage() {
     </div>
   );
 }
-

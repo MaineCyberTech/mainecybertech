@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 
-export async function uploadPortalDocument(formData: FormData): Promise<{ ok: boolean; error?: string; document?: any }> {
+export async function uploadPortalDocument(formData: FormData): Promise<{ ok: boolean; error?: string; document?: unknown }> {
   const api = getApiClient();
   const membership = await getApprovedMembership();
 
@@ -35,7 +35,7 @@ export async function uploadPortalDocument(formData: FormData): Promise<{ ok: bo
     });
     revalidatePath("/portal/documents");
     return { ok: true, document: doc };
-  } catch (err: any) {
-    return { ok: false, error: err?.message ?? "Upload failed" };
+  } catch (err: unknown) {
+    return { ok: false, error: err instanceof Error ? err.message : "Upload failed" };
   }
 }

@@ -24,32 +24,33 @@ export class RolesApi {
   }
 
   listWithPermissions() {
-    return this.client.get<RoleWithPermissions[]>(
-      "/api/v1/roles/with-permissions",
-    );
+    return this.client.get<RoleWithPermissions[]>("/api/v1/roles/with-permissions");
   }
 
   get(id: string) {
     return this.client.get<Role>(`/api/v1/roles/${id}`);
   }
 
-  getPermissions(roleId: string) {
-    return this.client.get<RolePermissions>(
-      `/api/v1/roles/${roleId}/permissions`,
-    );
+  create(data: { key: string; name: string; description?: string | null }) {
+    return this.client.post<Role>("/api/v1/roles", data);
   }
 
-  updatePermission(
-    roleId: string,
-    permissionId: string,
-    hasPermission: boolean,
-  ) {
-    return this.client.put<{ updated: boolean }>(
-      `/api/v1/roles/${roleId}/permissions`,
-      {
-        permissionId,
-        hasPermission,
-      },
-    );
+  update(id: string, data: { name?: string; description?: string | null }) {
+    return this.client.patch<Role>(`/api/v1/roles/${id}`, data);
+  }
+
+  delete(id: string) {
+    return this.client.delete(`/api/v1/roles/${id}`);
+  }
+
+  getPermissions(roleId: string) {
+    return this.client.get<RolePermissions>(`/api/v1/roles/${roleId}/permissions`);
+  }
+
+  updatePermission(roleId: string, permissionId: string, hasPermission: boolean) {
+    return this.client.put<{ updated: boolean }>(`/api/v1/roles/${roleId}/permissions`, {
+      permissionId,
+      hasPermission,
+    });
   }
 }

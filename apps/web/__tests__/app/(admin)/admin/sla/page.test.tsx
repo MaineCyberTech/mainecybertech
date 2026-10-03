@@ -7,7 +7,13 @@ const mockOrganizationsList = jest.fn();
 const mockSlaMetrics = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
-    organizations: { list: mockOrganizationsList },
+    organizations: {
+    list: (...args: any[]) =>
+      mockOrganizationsList(...args).then((data: any) => ({
+        items: Array.isArray(data) ? data : data?.items ?? [],
+        total: Array.isArray(data) ? data.length : data?.total ?? 0,
+      })),
+  },
     sla: { metrics: mockSlaMetrics },
   }),
 }));
@@ -24,7 +30,7 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };

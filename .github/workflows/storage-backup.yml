@@ -1,0 +1,53 @@
+name: Storage Backup
+
+# Backs up user-uploaded Supabase Storage objects (documents / avatars / logos)
+# to an S3/Spaces destination (audit finding DR-P1-001). Mirrors db-backup.yml:
+# scheduled daily, dispatched manually, Slack on failure.
+#
+# Required secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
+#   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BACKUP_ENCRYPTION_KEY,
+#   SLACK_WEBHOOK_URL.
+# Required variables: S3_BUCKET (bucket NAME; falls back to the
+#   S3_BACKUP_BUCKET secret). Optional: S3_PREFIX, S3_OFFSITE_BUCKET.
+#
+# NOTE: this workflow does not run from `main` unless the file is present there
+# (same default-branch caveat as db-backup.yml — see backup-dispatch.yml).
+
+on:
+  schedule:
+    - cron: "0 5 * * *"   # daily, one hour after the database backup
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  storage-backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Run storage backup script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          # Destination contract mirrors scripts/backup-database.sh (DR-P1-002).
+          S3_BUCKET: ${{ vars.S3_BUCKET || secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
+          S3_PREFIX: ${{ vars.S3_PREFIX || 'storage-backups' }}
+          S3_OFFSITE_BUCKET: ${{ vars.S3_OFFSITE_BUCKET }}
+          S3_OFFSITE_PREFIX: ${{ vars.S3_OFFSITE_PREFIX || 'storage-backups' }}
+          STORAGE_BUCKETS: ${{ vars.STORAGE_BUCKETS || 'documents avatars logos' }}
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+          REQUIRE_BACKUP_ENCRYPTION: "1"
+        run: bash scripts/backup-storage.sh
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          curl -sf -X POST -H "Content-Type: application/json" \
+            -d '{"text":"❌ Supabase Storage backup failed — uploaded files may not be recoverable. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \
+            "${{ secrets.SLACK_WEBHOOK_URL }}" 2>/dev/null || true

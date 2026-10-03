@@ -1,0 +1,42 @@
+﻿{
+  "version": "3.0",
+  "generated_at": "2026-06-30T23:35:00Z",
+  "git_ref": "380538d",
+  "branch": "develop",
+  "readiness_score": 21,
+  "decision": "BLOCKED",
+  "summary": {
+    "total_findings": 13,
+    "P0": 1,
+    "P1": 4,
+    "P2": 3,
+    "P3": 5,
+    "score_breakdown": {
+      "base_score": 100,
+      "P0_penalty": 25,
+      "P1_penalty": 40,
+      "P2_penalty": 9,
+      "P3_penalty": 5,
+      "total_penalty": 79,
+      "formula": "100 - (1*25 + 4*10 + 3*3 + 5*1) = 21"
+    }
+  },
+  "blockers": [
+    "P0: Export endpoints (tickets, projects, audit) broken end-to-end — SDK client.get<Blob>() calls res.json() which crashes on CSV binary response. tickets.exportData(), projects.exportData(), audit.exportData() all non-functional. Patch set PS-001."
+  ],
+  "caveats": [
+    "P1: 5 auth pages (login, signup, forgot-password, password-reset, pending) missing metadata titles — browser tabs show 'Untitled'",
+    "P1: (public) route group missing loading.tsx — no loading state on marketing pages",
+    "P1: listComments() SDK types as PaginatedResult<TicketComment> but API returns TicketComment[] — runtime crash",
+    "P1: notifications table missing org_id index — slow admin queries",
+    "P2: 7 of 12 server actions throw errors instead of returning { ok, error } — inconsistent DX",
+    "P2: 10 dead DB tables with zero API/SDK/frontend usage",
+    "P2: memberships.role_id FK missing CASCADE/SET NULL",
+    "P3: billing_customers and document_shares missing org_id indexes",
+    "P3: All 108 SDK tests in single file",
+    "P3: AWS terraform dormant in repo",
+    "P3: Document upload FormData field names unverified against multer"
+  ],
+  "recommended_remediation": "Execute patch sets in priority order: PS-001 (P0 export chain fix, ~1-4hr) first to unblock, then PS-002 + PS-004 + PS-006 (all XS effort, P1 items), followed by PS-003 (P2 server actions, largest effort ~1-2d). Post-P0 fixes, re-run this release gate for a new score.",
+  "notes": "Prior audit results (AGENTS.md) note 774 tests all green, ESLint 0 errors, TypeScript clean. The 13 findings here are incremental gaps found by the alignment engine, not regressions. The P0 export chain issue is the sole blocking item for production."
+}

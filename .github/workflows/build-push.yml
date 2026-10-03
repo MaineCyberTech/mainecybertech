@@ -2,16 +2,8 @@ name: build-push
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main, develop]
-    paths:
-      - "apps/api/**"
-      - "apps/web/**"
-      - "apps/worker/**"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - ".dockerignore"
-      - ".github/workflows/build-push.yml"
+  # Push triggers removed — deploy-do.yml handles building + deploying on push.
+  # This workflow is kept for manual dispatch and as a reusable build pipeline.
 
 concurrency:
   group: build-push-${{ github.ref }}
@@ -20,111 +12,230 @@ concurrency:
 permissions:
   contents: read
   packages: write
+  id-token: write
+  attestations: write
 
 jobs:
   build-api:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Set env tag
         run: |
-          if [[ "${{ github.ref_name }}" == "main" ]]; then
-            echo "ENV_TAG=prod" >> $GITHUB_ENV
-          else
-            echo "ENV_TAG=dev" >> $GITHUB_ENV
-          fi
           echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
           echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
 
-      - uses: docker/build-push-action@v6
+      - id: build-api
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/api/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ env.REPO_LC }}/mct-api:${{ env.IMAGE_TAG }}
-            ghcr.io/${{ env.REPO_LC }}/mct-api:${{ env.ENV_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Scan mct-api image (CRITICAL/HIGH)
+        # Image-layer scan (CTR-P1-001): the fs scan in test.yml cannot see the
+        # Alpine OS packages or npm-in-image contents of the built artifact.
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ env.REPO_LC }}/mct-api:${{ env.IMAGE_TAG }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+
+      - name: Generate mct-api image SBOM (CycloneDX)
+        # CTR-P1-002: SBOM of the built image (Alpine OS packages +
+        # npm-in-image contents), bound to the pushed digest, not just the tag.
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ env.REPO_LC }}/mct-api@${{ steps.build-api.outputs.digest }}
+          format: cyclonedx
+          output: image-sbom-mct-api.cdx.json
+          scanners: vuln
+
+      - name: Upload mct-api image SBOM
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: image-sbom-mct-api-${{ github.sha }}
+          path: image-sbom-mct-api.cdx.json
+          retention-days: 30
+
+      - name: Attest mct-api provenance (CTR-P1-003)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-name: ghcr.io/${{ env.REPO_LC }}/mct-api
+          subject-digest: ${{ steps.build-api.outputs.digest }}
+          push-to-registry: true
 
   build-worker:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Set env tag
         run: |
-          if [[ "${{ github.ref_name }}" == "main" ]]; then
-            echo "ENV_TAG=prod" >> $GITHUB_ENV
-          else
-            echo "ENV_TAG=dev" >> $GITHUB_ENV
-          fi
           echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
 
-      - uses: docker/build-push-action@v6
+      - id: build-worker
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/worker/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ env.REPO_LC }}/mct-worker:${{ github.sha }}
-            ghcr.io/${{ env.REPO_LC }}/mct-worker:${{ env.ENV_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Scan mct-worker image (CRITICAL/HIGH)
+        # Image-layer scan (CTR-P1-001).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ env.REPO_LC }}/mct-worker:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+
+      - name: Generate mct-worker image SBOM (CycloneDX)
+        # CTR-P1-002: image SBOM bound to the pushed digest (see build-api).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ env.REPO_LC }}/mct-worker@${{ steps.build-worker.outputs.digest }}
+          format: cyclonedx
+          output: image-sbom-mct-worker.cdx.json
+          scanners: vuln
+
+      - name: Upload mct-worker image SBOM
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: image-sbom-mct-worker-${{ github.sha }}
+          path: image-sbom-mct-worker.cdx.json
+          retention-days: 30
+
+      - name: Attest mct-worker provenance (CTR-P1-003)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-name: ghcr.io/${{ env.REPO_LC }}/mct-worker
+          subject-digest: ${{ steps.build-worker.outputs.digest }}
+          push-to-registry: true
 
   build-web:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Set env tag
         run: |
           if [[ "${{ github.ref_name }}" == "main" ]]; then
-            echo "ENV_TAG=prod" >> $GITHUB_ENV
             echo "API_DOMAIN=api.mainecybertech.com" >> $GITHUB_ENV
           else
-            echo "ENV_TAG=dev" >> $GITHUB_ENV
             echo "API_DOMAIN=api.mainecybertech.us" >> $GITHUB_ENV
           fi
           echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
 
-      - uses: docker/build-push-action@v6
+      - id: build-web
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/web/Dockerfile
           push: true
           build-args: |
             NEXT_PUBLIC_API_URL=https://${{ env.API_DOMAIN }}
+            NEXT_PUBLIC_APP_VERSION=${{ github.ref_name }}-${{ github.run_number }}
+            NEXT_PUBLIC_GIT_SHA=${{ github.sha }}
+            NEXT_PUBLIC_BUILD_TIME=${{ github.event.head_commit.timestamp || github.event.pusher.date || '' }}
+            NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED=${{ github.ref_name == 'main' && 'false' || 'true' }}
           tags: |
             ghcr.io/${{ env.REPO_LC }}/mct-web:${{ github.sha }}
-            ghcr.io/${{ env.REPO_LC }}/mct-web:${{ env.ENV_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Scan mct-web image (CRITICAL/HIGH)
+        # Image-layer scan (CTR-P1-001).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ env.REPO_LC }}/mct-web:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+
+      - name: Generate mct-web image SBOM (CycloneDX)
+        # CTR-P1-002: image SBOM bound to the pushed digest (see build-api).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ env.REPO_LC }}/mct-web@${{ steps.build-web.outputs.digest }}
+          format: cyclonedx
+          output: image-sbom-mct-web.cdx.json
+          scanners: vuln
+
+      - name: Upload mct-web image SBOM
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: image-sbom-mct-web-${{ github.sha }}
+          path: image-sbom-mct-web.cdx.json
+          retention-days: 30
+
+      - name: Attest mct-web provenance (CTR-P1-003)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-name: ghcr.io/${{ env.REPO_LC }}/mct-web
+          subject-digest: ${{ steps.build-web.outputs.digest }}
+          push-to-registry: true

@@ -1,9 +1,11 @@
-import pino from "pino";
 import { env } from "../env";
+import { wsTransport } from "../services/supabase";
+import { logger } from "../logger";
 import { sendEmail } from "../email";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TaskHandler, TaskResult } from "../task-registry";
-
-const logger = pino({ level: env.LOG_LEVEL });
+import { insertNotification, resolveChannels } from "../notification-store";
+import { recordNotificationDelivery, recordNotificationSuppressed } from "../metrics";
 
 interface NotificationPayload {
   type?: "task-due" | "membership-approved" | "ticket-responded" | "custom";
@@ -14,19 +16,66 @@ interface NotificationPayload {
   metadata?: Record<string, unknown>;
 }
 
-async function createInAppNotification(supabase: any, userId: string, title: string, body: string, module: string, moduleId?: string, action: string = "updated") {
-  try {
-    await supabase.from("notifications").insert({
-      user_id: userId,
-      title,
-      body,
-      module,
-      module_id: moduleId,
-      action,
-    });
-  } catch (error) {
-    logger.warn({ error: String(error), userId, title }, "Failed to create in-app notification");
-  }
+/** Escape user-controlled content before interpolating it into email HTML. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Preference-gated, deduped in-app insert. Kept as a thin wrapper so existing
+ * call sites keep their shape while routing through the shared enforcement path
+ * (NOTIF-P1-001) and setting a dedup `notification_key` (NOTIF-P1-002).
+ */
+async function createInAppNotification(
+  supabase: SupabaseClient,
+  userId: string,
+  title: string,
+  body: string,
+  module: string,
+  moduleId?: string,
+  action: string = "updated",
+  organizationId?: string | null,
+) {
+  return insertNotification(supabase, {
+    userId,
+    organizationId,
+    title,
+    body,
+    module,
+    moduleId,
+    action,
+  });
+}
+
+/**
+ * True when the same notification was created very recently — guards against
+ * duplicate emails/notifications when a job is retried (BullMQ attempts/SQS
+ * redelivery). The window is short so genuine repeat events still notify.
+ */
+async function recentlyNotified(
+  supabase: SupabaseClient,
+  userId: string,
+  module: string,
+  moduleId: string | null,
+  action: string,
+  windowMinutes = 10,
+): Promise<boolean> {
+  const since = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
+  let query = supabase
+    .from("notifications")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("module", module)
+    .eq("action", action)
+    .gte("created_at", since);
+  query = moduleId ? query.eq("module_id", moduleId) : query.is("module_id", null);
+  const { data } = await query.maybeSingle();
+  return Boolean(data);
 }
 
 export const scheduledNotifications: TaskHandler = async (payload): Promise<TaskResult> => {
@@ -39,51 +88,119 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
     const supabase = createClient(
       env.SUPABASE_URL ?? "",
       env.SUPABASE_SERVICE_ROLE_KEY ?? env.SUPABASE_ANON_KEY ?? "",
+      { realtime: { transport: wsTransport } },
     );
 
     switch (p.type) {
       case "task-due": {
+        const appBaseUrl = env.APP_BASE_URL ?? env.API_BASE_URL ?? "";
+        const dueBefore = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
         const { data: tasks } = await supabase
           .from("project_tasks")
           .select("id, title, due_at, owner_id, project_id, projects(name)")
           .not("due_at", "is", null)
-          .or(`due_at.lte.${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()},due_at.lte.${new Date().toISOString()}`)
+          .lte("due_at", dueBefore)
+          .neq("status", "done")
           .not("owner_id", "is", null)
           .limit(100);
 
         let notified = 0;
         let emailed = 0;
+
+        // Batch the profile + dedupe lookups (previously 2 queries per task).
+        const ownerIds = Array.from(
+          new Set((tasks ?? []).map((t) => t.owner_id).filter((id): id is string => Boolean(id))),
+        );
+        const profileById = new Map<string, { email: string | null; full_name: string | null }>();
+        const alerted = new Set<string>();
+
+        if (ownerIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, email, full_name")
+            .in("id", ownerIds);
+          for (const profile of profiles ?? []) {
+            profileById.set(profile.id as string, {
+              email: (profile.email as string) ?? null,
+              full_name: (profile.full_name as string) ?? null,
+            });
+          }
+
+          const { data: existing } = await supabase
+            .from("notifications")
+            .select("user_id, module_id, action")
+            .eq("module", "projects")
+            .in("user_id", ownerIds)
+            .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+          for (const row of existing ?? []) {
+            alerted.add(`${row.user_id}|${row.module_id}|${row.action}`);
+          }
+        }
+
         for (const task of tasks ?? []) {
           if (!task.owner_id) continue;
 
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("email, full_name")
-            .eq("id", task.owner_id)
-            .single();
-
+          const profile = profileById.get(task.owner_id);
           if (!profile?.email) continue;
 
           const isOverdue = task.due_at && new Date(task.due_at) < new Date();
           const action = isOverdue ? "overdue" : "due_soon";
           const title = isOverdue ? "Task Overdue" : "Task Due Soon";
-          const projName = Array.isArray(task.projects) ? (task.projects as any[])[0]?.name : null;
+          const projName = Array.isArray(task.projects)
+            ? (task.projects as Array<{ name: string }>)[0]?.name
+            : ((task.projects as { name: string } | null)?.name ?? null);
           const body = `"${task.title}"${isOverdue ? " is overdue" : " is due within 24 hours"}${projName ? ` in project ${projName}` : ""}.`;
+          const link = `${appBaseUrl}/portal/projects/${task.project_id}`;
 
-          await createInAppNotification(supabase, task.owner_id, title, body, "tickets", task.id, action);
+          // Dedupe: the scan runs daily and a task can stay overdue for days,
+          // so do not re-notify/re-email the same task within a week.
+          if (alerted.has(`${task.owner_id}|${task.id}|${action}`)) continue;
 
-          const emailSent = await sendEmail({
-            to: profile.email,
-            subject: `[Maine CyberTech] ${title}: ${task.title}`,
-            text: `Hello ${profile.full_name ?? "there"},\n\n${body}\n\nView your tasks: ${env.API_BASE_URL ?? ""}/portal/tickets/${task.id}`,
-            html: `<p>Hello ${profile.full_name ?? "there"},</p><p>${body}</p><p><a href="${env.API_BASE_URL ?? ""}/portal/tickets/${task.id}">View task</a></p>`,
+          // Enforce the recipient's per-module channel preferences. A disabled
+          // in_app channel suppresses the row; a disabled email channel
+          // suppresses the send but not the in-app row (and vice versa).
+          const channels = await resolveChannels(supabase, {
+            userId: task.owner_id,
+            module: "projects",
           });
-          if (emailSent) emailed++;
 
-          notified++;
+          const inApp = await insertNotification(
+            supabase,
+            {
+              userId: task.owner_id,
+              title,
+              body,
+              module: "projects",
+              moduleId: task.id,
+              action,
+            },
+            channels,
+          );
+
+          if (!channels.email) {
+            recordNotificationSuppressed("email", "projects");
+            logger.info(
+              { userId: task.owner_id, module: "projects", action },
+              "Task-due email suppressed by user preference",
+            );
+          } else {
+            const emailSent = await sendEmail({
+              to: profile.email,
+              subject: `[Maine CyberTech] ${title}: ${task.title}`,
+              text: `Hello ${profile.full_name ?? "there"},\n\n${body}\n\nView your project: ${link}`,
+              html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(body)}</p><p><a href="${link}">View project</a></p>`,
+            });
+            recordNotificationDelivery("email", emailSent ? "success" : "failed");
+            if (emailSent) emailed++;
+          }
+
+          if (inApp.inserted) notified++;
         }
 
-        logger.info({ notified, emailed, total: (tasks ?? []).length }, "Task-due notifications processed");
+        logger.info(
+          { notified, emailed, total: (tasks ?? []).length },
+          "Task-due notifications processed",
+        );
         return { ok: true };
       }
 
@@ -98,9 +215,21 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
 
         if (!profile?.email) return { ok: false, error: "User profile not found" };
 
-        await createInAppNotification(supabase, p.targetUserId, "Membership Approved", "Your organization membership has been approved.", "system", undefined, "created");
+        if (await recentlyNotified(supabase, p.targetUserId, "system", null, "created")) {
+          return { ok: true };
+        }
 
-        logger.info({ email: profile.email }, "Membership approved notification sent");
+        await createInAppNotification(
+          supabase,
+          p.targetUserId,
+          "Membership Approved",
+          "Your organization membership has been approved.",
+          "system",
+          undefined,
+          "created",
+        );
+
+        logger.info({ userId: p.targetUserId }, "Membership approved notification sent");
         return { ok: true };
       }
 
@@ -115,16 +244,46 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
 
         if (!profile?.email) return { ok: false, error: "User profile not found" };
 
-        await createInAppNotification(supabase, p.targetUserId, p.title ?? "Ticket Updated", p.body ?? "A ticket has been updated.", "tickets", (p.metadata?.ticketId as string) ?? undefined, "updated");
+        const ticketId = (p.metadata?.ticketId as string) ?? null;
+        if (await recentlyNotified(supabase, p.targetUserId, "tickets", ticketId, "updated")) {
+          return { ok: true };
+        }
 
-        const emailSent = await sendEmail({
-          to: profile.email,
-          subject: `[Maine CyberTech] ${p.title ?? "Ticket Update"}`,
-          text: `Hello ${profile.full_name ?? "there"},\n\n${p.body ?? "A ticket has been updated."}\n\nView: ${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}`,
-          html: `<p>Hello ${profile.full_name ?? "there"},</p><p>${p.body ?? "A ticket has been updated."}</p><p><a href="${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}">View ticket</a></p>`,
+        const channels = await resolveChannels(supabase, {
+          userId: p.targetUserId,
+          module: "tickets",
         });
 
-        logger.info({ email: profile.email, title: p.title, emailSent }, "Ticket responded notification sent");
+        await createInAppNotification(
+          supabase,
+          p.targetUserId,
+          p.title ?? "Ticket Updated",
+          p.body ?? "A ticket has been updated.",
+          "tickets",
+          (p.metadata?.ticketId as string) ?? undefined,
+          "updated",
+        );
+
+        if (!channels.email) {
+          recordNotificationSuppressed("email", "tickets");
+          logger.info(
+            { userId: p.targetUserId, module: "tickets", action: "updated" },
+            "Ticket-responded email suppressed by user preference",
+          );
+        } else {
+          const emailSent = await sendEmail({
+            to: profile.email,
+            subject: `[Maine CyberTech] ${p.title ?? "Ticket Update"}`,
+            text: `Hello ${profile.full_name ?? "there"},\n\n${p.body ?? "A ticket has been updated."}\n\nView: ${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}`,
+            html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(p.body ?? "A ticket has been updated.")}</p><p><a href="${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}">View ticket</a></p>`,
+          });
+          recordNotificationDelivery("email", emailSent ? "success" : "failed");
+        }
+
+        logger.info(
+          { userId: p.targetUserId, title: p.title },
+          "Ticket responded notification sent",
+        );
         return { ok: true };
       }
 
@@ -140,16 +299,42 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
 
         if (!profile?.email) return { ok: false, error: "User profile not found" };
 
-        await createInAppNotification(supabase, p.targetUserId, p.title, p.body ?? "", "system", undefined, "created");
+        if (await recentlyNotified(supabase, p.targetUserId, "system", null, "created")) {
+          return { ok: true };
+        }
 
-        const emailSent = await sendEmail({
-          to: profile.email,
-          subject: `[Maine CyberTech] ${p.title}`,
-          text: `Hello ${profile.full_name ?? "there"},\n\n${p.body ?? ""}`,
-          html: `<p>Hello ${profile.full_name ?? "there"},</p><p>${p.body ?? ""}</p>`,
+        const channels = await resolveChannels(supabase, {
+          userId: p.targetUserId,
+          module: "system",
         });
 
-        logger.info({ email: profile.email, title: p.title, emailSent }, "Custom notification sent");
+        await createInAppNotification(
+          supabase,
+          p.targetUserId,
+          p.title,
+          p.body ?? "",
+          "system",
+          undefined,
+          "created",
+        );
+
+        if (!channels.email) {
+          recordNotificationSuppressed("email", "system");
+          logger.info(
+            { userId: p.targetUserId, module: "system", action: "created" },
+            "Custom notification email suppressed by user preference",
+          );
+        } else {
+          const emailSent = await sendEmail({
+            to: profile.email,
+            subject: `[Maine CyberTech] ${p.title}`,
+            text: `Hello ${profile.full_name ?? "there"},\n\n${p.body ?? ""}`,
+            html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(p.body ?? "")}</p>`,
+          });
+          recordNotificationDelivery("email", emailSent ? "success" : "failed");
+        }
+
+        logger.info({ userId: p.targetUserId, title: p.title }, "Custom notification sent");
         return { ok: true };
       }
 

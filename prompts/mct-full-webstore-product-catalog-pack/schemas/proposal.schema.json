@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "quoteRequestId", "status", "sections"],
+  "properties": {
+    "id": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "quoteRequestId": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "status": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "sections": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "createdAt": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "approvedBy": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    }
+  }
+}

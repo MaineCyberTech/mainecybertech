@@ -1,0 +1,1022 @@
+{
+  "backup_readiness_check": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Backup Readiness Check, review the backup state from intake, and schedule the assessment.",
+      "Send prep instructions: the customer confirms the critical data locations, the backup tools in use, and provides access for the review.",
+      "Pre-work: prepare the readiness checklist and review the intake responses.",
+      "Audit the current backup state: identify what is backed up, how often, where it goes, and retention.",
+      "Assess restore feasibility: check the last successful backup, alerts, and whether restore is actually possible.",
+      "Identify the gaps: document missing data, uncovered devices, and broken configurations.",
+      "Deliver the closeout package: the backup readiness report with recommendations."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Backup Readiness Check scope: assessment and recommendations only, no changes.",
+        "Confirm the critical data locations and the backup tools in use.",
+        "Gather baseline: current backup configuration, last successful backup date, and alerts from the past 90 days.",
+        "Create the ticket with product id backup_readiness_check, expected deliverables (readiness report), and assign a technician.",
+        "Check prerequisites: access to the backup consoles and the customer contact confirmed."
+      ],
+      "delivery": [
+        "Inventory what is backed up: systems, folders, email, cloud data, and devices.",
+        "Review the backup frequency and schedule against the data change rate.",
+        "Verify the backup destination: local, NAS, cloud, or multiple copies.",
+        "Check retention policy: how long backups are kept and whether it fits the needs.",
+        "Review the last successful backup and any failed alerts.",
+        "Assess restore feasibility: confirm backups are actually restorable, not just running.",
+        "Identify gaps: missing critical data, uncovered devices, and stale configurations.",
+        "Technical verification: confirm the findings reflect the live backup environment."
+      ],
+      "documentation": [
+        "Produce the backup readiness report: what is backed up, gaps, and severity.",
+        "Document the restore feasibility findings.",
+        "Record the retention assessment.",
+        "Include prioritized recommendations.",
+        "Security rule: no backup credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: critical data inventory, backup verification, configuration review, restore feasibility, gap identification, and report.",
+        "Confirm every critical data location was assessed.",
+        "Confirm the restore feasibility findings are accurate.",
+        "Confirm the recommendations are prioritized.",
+        "Flag follow-ups: computer_backup_setup, cloud_backup_setup, or backup_starter_bundle to close the gaps."
+      ],
+      "closeout": [
+        "Send the deliverables package: the backup readiness report.",
+        "Recommend next steps: fix the critical gaps with the matching setup service.",
+        "Confirm the customer understands their backup state.",
+        "Record internal notes: backup state and recommendations.",
+        "Offer a quote for the recommended backup setup."
+      ]
+    }
+  },
+  "computer_backup_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Computer Backup Setup, review the workstation from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms the critical folders, the backup destination, and provides the workstation access.",
+      "Pre-work: review the existing backup state and prepare the backup tooling.",
+      "Set up the backup solution: install and configure the backup on the workstation.",
+      "Configure automated backup: schedule the backups and set the retention policy.",
+      "Restore-test the backup: verify the data is actually recoverable.",
+      "Deliver the closeout package: the backup setup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Computer Backup Setup scope: backup configured for one workstation.",
+        "Confirm the critical folders and the preferred backup destination.",
+        "Gather baseline: current backup tool, last backup status, and storage available.",
+        "Create the ticket with product id computer_backup_setup, expected deliverables (working backup, documentation), and assign a technician.",
+        "Check prerequisites: workstation access and the backup destination confirmed."
+      ],
+      "delivery": [
+        "Identify the critical data: documents, desktop, email, and app data.",
+        "Select the backup approach: cloud, NAS, or local target per the situation.",
+        "Install and configure the backup software on the workstation.",
+        "Configure the automated schedule: frequency and timing.",
+        "Set the retention policy: how long backups are kept.",
+        "Run the first backup and confirm success.",
+        "Perform a controlled restore test to confirm recoverability.",
+        "Technical verification: confirm the backup runs and a restore works."
+      ],
+      "documentation": [
+        "Produce the backup setup documentation: what is backed up, schedule, and retention.",
+        "Document the restore test result.",
+        "Record the backup destination details.",
+        "Include the restore instructions.",
+        "Security rule: no backup credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: data identification, backup setup, automated configuration, retention, restore test, and documentation.",
+        "Confirm the backup runs automatically.",
+        "Confirm the restore test succeeded.",
+        "Confirm the retention matches the agreement.",
+        "Flag follow-ups: backup_monitoring_plan for ongoing verification."
+      ],
+      "closeout": [
+        "Send the deliverables package: backup setup documentation.",
+        "Recommend next steps: a backup_monitoring_plan for ongoing readiness.",
+        "Confirm the backup is running and restorable.",
+        "Record internal notes: backup configuration.",
+        "Offer a follow-up check after the first week."
+      ]
+    }
+  },
+  "microsoft_365_backup_setup_backup_recovery": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Microsoft 365 Backup Setup, review the tenant from intake, and schedule the deployment.",
+      "Send prep instructions: the customer confirms the mailboxes, SharePoint/OneDrive data, and the retention needs.",
+      "Pre-work: evaluate the backup platforms and prepare the deployment plan.",
+      "Deploy the backup platform: configure the backup vendor for the Microsoft 365 tenant.",
+      "Protect the data: enable mailbox, SharePoint, and OneDrive protection.",
+      "Set up retention and recovery: configure retention and run a restore test.",
+      "Deliver the closeout package: the Microsoft 365 backup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Microsoft 365 Backup Setup scope: backup/retention strategy for Microsoft 365 data.",
+        "Confirm the mailboxes, SharePoint sites, OneDrive users, and retention needs.",
+        "Gather baseline: current protection, licenses, and the tenant admin access.",
+        "Create the ticket with product id microsoft_365_backup_setup_backup_recovery, expected deliverables (configured backup, restore test, documentation), and assign a technician.",
+        "Check prerequisites: global admin or backup admin access and the platform choice confirmed."
+      ],
+      "delivery": [
+        "Evaluate the backup platforms: fit, cost, and restore capability.",
+        "Select and configure the backup platform for the tenant.",
+        "Enable Exchange Online mailbox protection: all mailboxes in scope.",
+        "Enable SharePoint and OneDrive protection: sites and user data in scope.",
+        "Configure retention and recovery policies per the requirements.",
+        "Run a controlled restore test to confirm recoverability.",
+        "Review ransomware and insider-threat recovery options.",
+        "Technical verification: confirm the backup jobs run and a restore succeeds."
+      ],
+      "documentation": [
+        "Produce the Microsoft 365 backup documentation: platform, protected workloads, and retention.",
+        "Document the restore test result.",
+        "Record the recovery policy settings.",
+        "Include the restore procedure.",
+        "Security rule: no tenant credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: platform evaluation, mailbox protection, SharePoint/OneDrive protection, retention/recovery policy, restore test, reporting, and ransomware recovery options.",
+        "Confirm all in-scope data is protected.",
+        "Confirm the restore test succeeded.",
+        "Confirm retention matches the requirements.",
+        "Flag follow-ups: backup_monitoring_plan for ongoing verification."
+      ],
+      "closeout": [
+        "Send the deliverables package: Microsoft 365 backup documentation.",
+        "Recommend next steps: a backup_monitoring_plan for ongoing readiness.",
+        "Confirm the customer knows how to restore.",
+        "Record internal notes: backup platform and configuration.",
+        "Offer a follow-up after the first week."
+      ]
+    }
+  },
+  "nas_backup_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the NAS Backup Setup, review the NAS from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms the folders to back up and the retention needs.",
+      "Pre-work: review the NAS data and usage and prepare the backup approach.",
+      "Set up the NAS backup: configure the backup solution for the NAS.",
+      "Configure automated backup: schedule the backups and set the retention policy.",
+      "Restore-test the backup: verify the NAS data is recoverable.",
+      "Deliver the closeout package: the NAS backup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the NAS Backup Setup scope: backup configured for a local NAS/file target.",
+        "Confirm the folders in scope and the retention needs.",
+        "Gather baseline: NAS model, capacity used, and existing backup state.",
+        "Create the ticket with product id nas_backup_setup, expected deliverables (working NAS backup, documentation), and assign a technician.",
+        "Check prerequisites: NAS access and the backup destination confirmed."
+      ],
+      "delivery": [
+        "Assess the NAS data and usage: folders, size, and change rate.",
+        "Select the backup approach: cloud replication, second NAS, or external target.",
+        "Configure the backup solution for the NAS data.",
+        "Set the automated schedule: frequency and timing.",
+        "Configure the retention policy.",
+        "Run the first backup and confirm success.",
+        "Perform a controlled restore test to confirm recoverability.",
+        "Technical verification: confirm the backup runs and a restore works."
+      ],
+      "documentation": [
+        "Produce the NAS backup documentation: folders backed up, schedule, and retention.",
+        "Document the restore test result.",
+        "Record the destination and storage details.",
+        "Include the restore instructions.",
+        "Security rule: no NAS credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: data assessment, solution setup, automated configuration, retention, restore test, and documentation.",
+        "Confirm the NAS backup runs automatically.",
+        "Confirm the restore test succeeded.",
+        "Confirm the retention matches the agreement.",
+        "Flag follow-ups: backup_monitoring_plan for ongoing verification."
+      ],
+      "closeout": [
+        "Send the deliverables package: NAS backup documentation.",
+        "Recommend next steps: a backup_monitoring_plan for ongoing readiness.",
+        "Confirm the backup is running and restorable.",
+        "Record internal notes: NAS backup configuration.",
+        "Offer a follow-up check."
+      ]
+    }
+  },
+  "cloud_backup_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Cloud Backup Setup, review the data from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms the critical data locations and the retention needs.",
+      "Pre-work: review the critical data and prepare the cloud backup service.",
+      "Configure the cloud backup service: set up the destination and the backup jobs.",
+      "Configure automated backup: schedule the backups and set the retention policy.",
+      "Verify and restore-test: confirm the backups run and a restore works.",
+      "Deliver the closeout package: the cloud backup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Cloud Backup Setup scope: cloud backup destination with basic retention guidance.",
+        "Confirm the critical data locations and the retention needs.",
+        "Gather baseline: current backup state and the cloud accounts in use.",
+        "Create the ticket with product id cloud_backup_setup, expected deliverables (configured cloud backup, documentation), and assign a technician.",
+        "Check prerequisites: cloud service account access and the data list confirmed."
+      ],
+      "delivery": [
+        "Identify the critical data: what must be protected and where it lives.",
+        "Select the cloud backup service: fit, cost, and restore capability.",
+        "Configure the cloud backup destination and the backup jobs.",
+        "Set the automated schedule: frequency and timing.",
+        "Configure the retention policy with guidance for the data type.",
+        "Run the first backup and confirm success.",
+        "Perform a controlled restore test to confirm recoverability.",
+        "Technical verification: confirm the backup runs and a restore works."
+      ],
+      "documentation": [
+        "Produce the cloud backup documentation: services configured, schedule, and retention.",
+        "Document the restore test result.",
+        "Record the retention guidance.",
+        "Include the restore instructions.",
+        "Security rule: no cloud credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: critical data identification, service setup, automated configuration, retention guidance, verification/restore test, and documentation.",
+        "Confirm the cloud backup runs automatically.",
+        "Confirm the restore test succeeded.",
+        "Confirm the retention guidance fits the data.",
+        "Flag follow-ups: backup_monitoring_plan for ongoing verification."
+      ],
+      "closeout": [
+        "Send the deliverables package: cloud backup documentation.",
+        "Recommend next steps: a backup_monitoring_plan for ongoing readiness.",
+        "Confirm the backup is running and restorable.",
+        "Record internal notes: cloud backup configuration.",
+        "Offer a follow-up check."
+      ]
+    }
+  },
+  "backup_restore_test": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Backup Restore Test, review the backup state from intake, and schedule the test window.",
+      "Send prep instructions: the customer confirms the restore scope and the success criteria.",
+      "Pre-work: define the test scope and prepare the test environment.",
+      "Execute the restore test: perform the controlled restore from backup.",
+      "Verify the restored data: check completeness and usability.",
+      "Diagnose any failures: identify and document restore issues.",
+      "Deliver the closeout package: the restore test documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Backup Restore Test scope: controlled restore test and documentation, elevated risk.",
+        "Confirm the restore scope: files, folders, or systems to test.",
+        "Gather baseline: backup tool, last successful backup, and the test target.",
+        "Create the ticket with product id backup_restore_test, expected deliverables (restore test result, documentation), and assign a technician.",
+        "Check prerequisites: a maintenance window and the success criteria confirmed."
+      ],
+      "delivery": [
+        "Define the test scope: one file restore, one folder restore, and one system restore if applicable.",
+        "Define the success criteria for each test.",
+        "Select the backup point to restore from.",
+        "Execute the controlled restore in the test environment.",
+        "Verify the restored data: completeness, integrity, and usability.",
+        "Diagnose any failures: cause, impact, and corrective action.",
+        "Document the restore timing and results.",
+        "Technical verification: confirm the results reflect the real restore process."
+      ],
+      "documentation": [
+        "Produce the restore test documentation: scope, results, and timing.",
+        "Document any failures and root cause.",
+        "Record the verification of restored data.",
+        "Include the improvement recommendations.",
+        "Security rule: no backup credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: scope/data selection, controlled restore, completeness verification, failure diagnosis, documentation, and recommendations.",
+        "Confirm each planned restore was executed.",
+        "Confirm the restored data was verified.",
+        "Confirm any failures were diagnosed.",
+        "Flag follow-ups: backup improvements, or backup_monitoring_plan for ongoing testing."
+      ],
+      "closeout": [
+        "Send the deliverables package: restore test documentation.",
+        "Recommend next steps: fix any failures and schedule quarterly tests.",
+        "Confirm the customer knows their restore capability.",
+        "Record internal notes: restore results and issues.",
+        "Offer a recurring restore test plan."
+      ]
+    }
+  },
+  "backup_monitoring_plan": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Backup Monitoring Plan, collect the backup access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the backup tools and the monitoring expectations.",
+      "Pre-work: establish the backup baseline and the recurring review checklist.",
+      "Monitor the backup jobs: review job status, alerts, and failures each cycle.",
+      "Review readiness: confirm backups are restorable and retention is met.",
+      "Schedule restore tests: set up the reminders and coordinate the tests.",
+      "Deliver the cycle closeout: the monthly backup status report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Backup Monitoring Plan scope: recurring status review, alerting, and restore-test reminders.",
+        "Collect the backup tool access and the backup inventory.",
+        "Establish the monitoring checklist and the cycle schedule.",
+        "Gather baseline: backup job health, retention state, and known issues.",
+        "Set expectations: what each cycle covers and the escalation path."
+      ],
+      "delivery": [
+        "Review the backup job status: successes, failures, and warnings.",
+        "Investigate and escalate failures: alert the customer per the escalation path.",
+        "Verify retention is being met: retention state and storage health.",
+        "Review the restore-test schedule: confirm tests are due and coordinate them.",
+        "Confirm backup configuration matches the current data landscape.",
+        "Document the monthly backup status report.",
+        "Log all findings and open items.",
+        "Technical verification: confirm the report reflects the live backup state."
+      ],
+      "documentation": [
+        "Produce the monthly backup status report: job status, failures, and retention.",
+        "Track restore-test history and results.",
+        "Record open items and resolutions.",
+        "Maintain the backup configuration documentation.",
+        "Security rule: no backup credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: job monitoring, failure alerting/escalation, monthly report, restore-test scheduling, configuration review, and readiness management.",
+        "Confirm every backup job was reviewed.",
+        "Confirm the report was delivered.",
+        "Confirm the customer was alerted to any failures.",
+        "Flag follow-ups: failing backups to fix, and the next restore test."
+      ],
+      "closeout": [
+        "Send the monthly backup status report.",
+        "Recommend fixes for any failing backups.",
+        "Confirm the backup state with the customer.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monitoring cycle."
+      ]
+    }
+  },
+  "disaster_recovery_plan_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Disaster Recovery Plan Starter, review the systems from intake, and schedule the planning session.",
+      "Send prep instructions: the customer confirms the critical systems, data, and priorities.",
+      "Pre-work: review the systems inventory and prepare the plan template.",
+      "Identify critical systems and data: rank what must be recovered first.",
+      "Define the recovery steps: document plain-English steps per system.",
+      "Set recovery timing and contacts: define timelines and key people.",
+      "Deliver the closeout package: the disaster recovery plan document."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Disaster Recovery Plan Starter scope: plain-English recovery plan, no infrastructure changes.",
+        "Confirm the critical systems, data, and contacts.",
+        "Gather baseline: systems inventory, backup state, and recovery expectations.",
+        "Create the ticket with product id disaster_recovery_plan_starter, expected deliverables (DR plan document), and assign a consultant.",
+        "Check prerequisites: the customer confirms the systems in scope."
+      ],
+      "delivery": [
+        "Inventory the critical systems and data: what the business depends on.",
+        "Define the recovery priorities: what is restored first, second, third.",
+        "Document the recovery steps per system in plain English.",
+        "Define the recovery timeline: expected time to restore each system.",
+        "Document the key contacts: vendors, internal roles, and providers.",
+        "Identify the recovery dependencies: what each restore needs.",
+        "Review the plan against the current backup state.",
+        "Technical verification: confirm the plan is actionable and realistic."
+      ],
+      "documentation": [
+        "Produce the disaster recovery plan: priorities, steps, timelines, and contacts.",
+        "Document the recovery order and dependencies.",
+        "Record the current backup coverage.",
+        "Include the contact list.",
+        "Security rule: no credentials in the plan document."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: system identification, priority definition, recovery steps, timelines, key contacts, and plan document.",
+        "Confirm every critical system is covered.",
+        "Confirm the steps are plain-English and actionable.",
+        "Confirm the recovery timeline is realistic.",
+        "Flag follow-ups: backup fixes, or a full continuity_binder."
+      ],
+      "closeout": [
+        "Send the deliverables package: the disaster recovery plan.",
+        "Recommend next steps: a continuity_binder or restore tests.",
+        "Confirm the customer understands the recovery path.",
+        "Record internal notes: recovery plan and coverage gaps.",
+        "Offer a plan review after changes."
+      ]
+    }
+  },
+  "backup_starter_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Backup Starter Bundle, review the data from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms the critical data and the preferred backup destination.",
+      "Pre-work: discover the critical data and prepare the backup approach.",
+      "Set up the backup destination: configure one backup destination.",
+      "Configure the backups: protect the identified critical data.",
+      "Run a basic restore test: confirm the backups are recoverable.",
+      "Deliver the closeout package: the backup foundation documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Backup Starter Bundle scope: discovery, one destination, backups, basic restore test, and instructions.",
+        "Confirm the critical data locations and the preferred destination.",
+        "Gather baseline: current backup state and storage options.",
+        "Create the ticket with product id backup_starter_bundle, expected deliverables (working backup, instructions, documentation), and assign a technician.",
+        "Check prerequisites: data access and the destination choice confirmed."
+      ],
+      "delivery": [
+        "Discover the critical data: what the business must protect.",
+        "Select one backup destination: cloud, NAS, or local target.",
+        "Set up the backup destination: storage and access.",
+        "Configure the backups for the identified critical data.",
+        "Set the automated schedule and retention.",
+        "Run the first backup and confirm success.",
+        "Perform a basic restore test to confirm recoverability.",
+        "Technical verification: confirm the backup runs and a restore works."
+      ],
+      "documentation": [
+        "Produce the backup foundation documentation: data backed up, destination, schedule, and retention.",
+        "Document the restore test result.",
+        "Record the backup instructions for the business.",
+        "Include the restore procedure.",
+        "Security rule: no backup credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: critical data discovery, destination setup, backup configuration, restore test, instructions, and foundation documentation.",
+        "Confirm the critical data is backed up.",
+        "Confirm the restore test succeeded.",
+        "Confirm the business knows how to restore.",
+        "Flag follow-ups: backup_business_bundle for expansion."
+      ],
+      "closeout": [
+        "Send the deliverables package: backup foundation documentation.",
+        "Recommend next steps: a backup_business_bundle or backup_monitoring_plan.",
+        "Confirm the backup is running and restorable.",
+        "Record internal notes: backup setup.",
+        "Offer a follow-up check."
+      ]
+    }
+  },
+  "backup_business_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Backup Business Bundle, review the devices and cloud accounts from intake, and schedule the project.",
+      "Send prep instructions: the customer confirms the devices, cloud accounts, and retention needs.",
+      "Pre-work: inventory the devices and cloud accounts and prepare the deployment plan.",
+      "Set up the backups: configure backups for the devices and cloud accounts.",
+      "Establish monitoring: configure failure alerting and the monitoring cycle.",
+      "Set up restore testing: schedule quarterly restore tests.",
+      "Deliver the closeout package: the comprehensive backup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Backup Business Bundle scope: multiple devices/cloud accounts, monitoring plan, and quarterly restore tests.",
+        "Confirm the devices, cloud accounts, and retention needs.",
+        "Gather baseline: current backup state across the environment.",
+        "Create the ticket with product id backup_business_bundle, expected deliverables (protected environment, monitoring, documentation), and assign a technician.",
+        "Check prerequisites: access to the devices and cloud accounts confirmed."
+      ],
+      "delivery": [
+        "Inventory the devices and cloud accounts in scope.",
+        "Set up the backups: configure protection for each device and cloud account.",
+        "Configure the automated schedules and retention policies.",
+        "Set up failure alerting: alert the customer on backup failures.",
+        "Establish the monitoring plan: recurring review cycle.",
+        "Set up quarterly restore testing: schedule and prepare the tests.",
+        "Run the first restore test to confirm recoverability.",
+        "Technical verification: confirm all in-scope data is protected and alerting works."
+      ],
+      "documentation": [
+        "Produce the comprehensive backup documentation: protected data, schedules, and retention.",
+        "Document the monitoring plan and alerting.",
+        "Record the quarterly restore test schedule.",
+        "Include the restore procedures.",
+        "Security rule: no backup credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: multi-device/cloud setup, monitoring plan, quarterly restore testing, failure alerting, retention management, and documentation.",
+        "Confirm all devices and cloud accounts are protected.",
+        "Confirm the alerting and monitoring work.",
+        "Confirm the restore test schedule is set.",
+        "Flag follow-ups: backup_resilience_bundle for the full resilience picture."
+      ],
+      "closeout": [
+        "Send the deliverables package: comprehensive backup documentation.",
+        "Recommend next steps: a backup_resilience_bundle or DR planning.",
+        "Confirm the environment is protected.",
+        "Record internal notes: backup coverage.",
+        "Schedule the first quarterly restore test."
+      ]
+    }
+  },
+  "backup_resilience_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Backup Resilience Bundle, review the environment from intake, and schedule the project.",
+      "Send prep instructions: the customer confirms the workstations, cloud accounts, and server/NAS considerations.",
+      "Pre-work: inventory the workstations, cloud accounts, and servers and prepare the plan.",
+      "Configure workstation backups: protect the workstations.",
+      "Configure cloud and server backups: protect the cloud accounts and NAS/server targets.",
+      "Run restore tests and compile the ransomware checklist: verify recoverability and document the recovery path.",
+      "Deliver the closeout package: the resilience bundle documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Backup Resilience Bundle scope: workstations, cloud, NAS/server considerations, restore testing, and ransomware recovery checklist.",
+        "Confirm the workstations, cloud accounts, and server/NAS targets.",
+        "Gather baseline: current backup state and the recovery expectations.",
+        "Create the ticket with product id backup_resilience_bundle, expected deliverables (resilient backup environment, ransomware checklist, documentation), and assign a technician.",
+        "Check prerequisites: access to the workstations and cloud accounts confirmed."
+      ],
+      "delivery": [
+        "Inventory the workstations, cloud accounts, and server/NAS targets.",
+        "Configure the workstation backups: schedule and retention.",
+        "Configure the cloud account backups: protected workloads and retention.",
+        "Assess the NAS/server backup: protect or plan protection for the server targets.",
+        "Run controlled restore tests to confirm recoverability.",
+        "Compile the ransomware recovery checklist: containment, recovery, and communication steps.",
+        "Review the backup strategy for resilience: multiple copies and offline protection.",
+        "Technical verification: confirm the backups are recoverable and the checklist is actionable."
+      ],
+      "documentation": [
+        "Produce the resilience bundle documentation: backup coverage across workstations, cloud, and servers.",
+        "Document the restore test results.",
+        "Record the ransomware recovery checklist.",
+        "Include the recovery procedures.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: workstation backup, cloud backup, NAS/server consideration, restore testing, ransomware checklist, and documentation.",
+        "Confirm all layers are protected.",
+        "Confirm the restore tests succeeded.",
+        "Confirm the ransomware checklist is complete and actionable.",
+        "Flag follow-ups: a backup_monitoring_plan or tabletop_exercise."
+      ],
+      "closeout": [
+        "Send the deliverables package: resilience bundle documentation.",
+        "Recommend next steps: a tabletop_exercise or backup_monitoring_plan.",
+        "Confirm the environment is resilient and recoverable.",
+        "Record internal notes: resilience coverage.",
+        "Offer a review after major changes."
+      ]
+    }
+  },
+  "business_continuity_starter_plan": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Business Continuity Starter Plan, review the business from intake, and schedule the planning session.",
+      "Send prep instructions: the customer confirms the critical systems and the continuity expectations.",
+      "Pre-work: review the systems inventory and prepare the continuity template.",
+      "Identify critical systems: determine what the business needs to keep running.",
+      "Define recovery targets: set the recovery time and point objectives.",
+      "Document continuity contacts: list the key people for continuity.",
+      "Deliver the closeout package: the business continuity plan."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Business Continuity Starter Plan scope: planning and documentation only.",
+        "Confirm the critical systems and the continuity expectations.",
+        "Gather baseline: systems inventory and the business dependencies.",
+        "Create the ticket with product id business_continuity_starter_plan, expected deliverables (continuity plan), and assign a consultant.",
+        "Check prerequisites: the customer confirms the systems in scope."
+      ],
+      "delivery": [
+        "Identify the critical systems: what the business depends on daily.",
+        "Define the recovery time targets: how fast each system must return.",
+        "Define the recovery point considerations: acceptable data loss.",
+        "Document the continuity contacts: decision makers and vendors.",
+        "Write the plain-English continuity plan.",
+        "Identify the continuity gaps: dependencies and single points of failure.",
+        "Review the plan against the current backup state.",
+        "Technical verification: confirm the plan is realistic and actionable."
+      ],
+      "documentation": [
+        "Produce the business continuity plan: critical systems, recovery targets, and contacts.",
+        "Document the recovery point and time objectives.",
+        "Record the continuity gaps and dependencies.",
+        "Include the improvement recommendations.",
+        "Security rule: no credentials in the plan."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: system identification, recovery target definition, recovery point considerations, contact documentation, continuity plan, and recommendations.",
+        "Confirm every critical system is covered.",
+        "Confirm the recovery targets are realistic.",
+        "Confirm the contacts are complete.",
+        "Flag follow-ups: a continuity_binder or disaster recovery plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: the business continuity plan.",
+        "Recommend next steps: a continuity_binder for the full runbook.",
+        "Confirm the customer understands their continuity position.",
+        "Record internal notes: continuity plan and gaps.",
+        "Offer a plan review after changes."
+      ]
+    }
+  },
+  "emergency_contact_sheet": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Emergency Contact Sheet, review the providers from intake, and schedule the build.",
+      "Send prep instructions: the customer confirms the vendors, providers, and account contacts.",
+      "Pre-work: prepare the contact sheet template by scenario.",
+      "Compile the contacts: gather the vendor, provider, and account contacts.",
+      "Organize by scenario: group the contacts by outage, security, and recovery use.",
+      "Produce the formats: create printable and digital versions.",
+      "Deliver the closeout package: the emergency contact sheet."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Emergency Contact Sheet scope: contact compilation and organization, no recovery work.",
+        "Confirm the vendors, providers, and account contacts to include.",
+        "Gather baseline: current provider list and any existing contact documentation.",
+        "Create the ticket with product id emergency_contact_sheet, expected deliverables (contact sheet), and assign a consultant.",
+        "Check prerequisites: the customer provides the provider and account list."
+      ],
+      "delivery": [
+        "Compile the critical vendor and provider contacts: internet, phone, utilities, and IT vendors.",
+        "Identify the account and support contacts: cloud, email, domain, and software.",
+        "Capture the escalation contacts and direct numbers.",
+        "Organize the contacts by scenario: outages, security events, and recovery.",
+        "Note the role and access level for each contact.",
+        "Build the printable and digital formats.",
+        "Add maintenance guidance for keeping the sheet current.",
+        "Technical verification: confirm the contact details are complete and accurate."
+      ],
+      "documentation": [
+        "Produce the emergency contact sheet: contacts organized by scenario.",
+        "Document the printable and digital formats.",
+        "Record the maintenance guidance.",
+        "Note the last verification date.",
+        "Security rule: no credentials in the contact sheet."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: vendor/provider compilation, account contact identification, scenario organization, sheet creation, printable/digital formats, and maintenance guidance.",
+        "Confirm every critical provider is listed.",
+        "Confirm the contacts are organized by scenario.",
+        "Confirm the formats are usable.",
+        "Flag follow-ups: a continuity_binder or outage_response_plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: the emergency contact sheet.",
+        "Recommend next steps: an outage_response_plan or continuity_binder.",
+        "Confirm the sheet is complete and current.",
+        "Record internal notes: contact list.",
+        "Offer a quarterly review of the sheet."
+      ]
+    }
+  },
+  "outage_response_plan": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Outage Response Plan, review the scenarios from intake, and schedule the build.",
+      "Send prep instructions: the customer confirms the outage scenarios to cover.",
+      "Pre-work: prepare the response templates for internet, email, files, and website outages.",
+      "Document the scenarios: define the outage types in scope.",
+      "Write the response steps: step-by-step actions per scenario.",
+      "Set escalation and communication: define escalation criteria and communication procedures.",
+      "Deliver the closeout package: the outage response plan."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Outage Response Plan scope: documentation and templates, no monitoring setup.",
+        "Confirm the outage scenarios to cover: internet, email, files, website.",
+        "Gather baseline: current provider contacts and any existing procedures.",
+        "Create the ticket with product id outage_response_plan, expected deliverables (outage response plan), and assign a consultant.",
+        "Check prerequisites: the customer confirms the scenarios in scope."
+      ],
+      "delivery": [
+        "Document the outage scenarios: internet, email, file access, and website.",
+        "Write the step-by-step response steps for each scenario.",
+        "Define the escalation criteria: when to escalate and to whom.",
+        "Document the internal communication procedures: who informs staff and customers.",
+        "Create the outage documentation templates.",
+        "Include the provider contacts per scenario.",
+        "Review the plan for completeness and actionability.",
+        "Technical verification: confirm the steps are executable by the customer."
+      ],
+      "documentation": [
+        "Produce the outage response plan: scenarios, steps, escalation, and communication.",
+        "Document the templates.",
+        "Record the provider contacts.",
+        "Include the testing instructions for the plan.",
+        "Security rule: no credentials in the plan."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: scenario documentation, response steps, escalation criteria, communication procedures, templates, and plan document.",
+        "Confirm every scenario in scope is covered.",
+        "Confirm the steps are actionable.",
+        "Confirm the escalation path is clear.",
+        "Flag follow-ups: a tabletop_exercise to practice the plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: the outage response plan.",
+        "Recommend next steps: a tabletop_exercise or emergency contact sheet.",
+        "Confirm the customer can execute the plan.",
+        "Record internal notes: outage plan.",
+        "Offer a plan review after provider changes."
+      ]
+    }
+  },
+  "power_protection_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Power Protection Review, review the equipment from intake, and schedule the assessment.",
+      "Send prep instructions: the customer confirms the critical equipment and the power environment.",
+      "Pre-work: prepare the power protection checklist.",
+      "Assess the equipment: inventory the critical equipment and its power needs.",
+      "Review the protection: audit the UPS and surge protection in place.",
+      "Identify the gaps: determine the protection shortfalls and sizing needs.",
+      "Deliver the closeout package: the power protection review report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Power Protection Review scope: assessment and recommendations only.",
+        "Confirm the critical equipment and the power environment.",
+        "Gather baseline: equipment list, existing UPS/surge units, and power history.",
+        "Create the ticket with product id power_protection_review, expected deliverables (review report), and assign a technician.",
+        "Check prerequisites: the equipment list and site access confirmed."
+      ],
+      "delivery": [
+        "Inventory the critical equipment: servers, NAS, network, workstations, and cameras.",
+        "Assess the power needs per device: load and runtime requirements.",
+        "Audit the existing UPS and surge protection: condition, capacity, and age.",
+        "Identify the protection gaps: unprotected equipment and undersized units.",
+        "Recommend UPS sizing: appropriate VA and runtime per critical device.",
+        "Prioritize the power protection improvements by risk.",
+        "Note any battery replacement needs in existing UPS units.",
+        "Technical verification: confirm the assessment reflects the real setup."
+      ],
+      "documentation": [
+        "Produce the power protection review report: equipment, needs, and gaps.",
+        "Document the UPS sizing recommendations.",
+        "Record the prioritization by risk.",
+        "Include the battery and replacement notes.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: equipment assessment, protection inventory, gap identification, UPS sizing recommendations, prioritization, and report.",
+        "Confirm every critical device was assessed.",
+        "Confirm the sizing recommendations are correct.",
+        "Confirm the gaps are prioritized.",
+        "Flag follow-ups: UPS purchase and installation."
+      ],
+      "closeout": [
+        "Send the deliverables package: the power protection review report.",
+        "Recommend next steps: install UPS/surge protection for the critical equipment.",
+        "Confirm the customer knows their power risks.",
+        "Record internal notes: power review findings.",
+        "Offer a quote for the recommended protection."
+      ]
+    }
+  },
+  "internet_failover_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Internet Failover Setup, review the connectivity from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms the backup internet options and the failover expectations.",
+      "Pre-work: assess the backup internet option and prepare the failover configuration.",
+      "Configure the backup connectivity: set up the backup internet connection.",
+      "Set up the failover: configure automatic or manual failover.",
+      "Test the failover: verify the failover works when the primary drops.",
+      "Deliver the closeout package: the failover documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Internet Failover Setup scope: configure backup internet or failover where available, elevated risk.",
+        "Confirm the backup internet options and the failover expectations.",
+        "Gather baseline: primary provider, router model, and backup connectivity available.",
+        "Create the ticket with product id internet_failover_setup, expected deliverables (working failover, documentation), and assign a technician.",
+        "Check prerequisites: the backup connection exists and the maintenance window is confirmed."
+      ],
+      "delivery": [
+        "Assess the backup internet option: availability and suitability (cellular, second line).",
+        "Prepare the failover hardware: router/WAN capability and the backup interface.",
+        "Configure the backup connectivity: connect and authenticate the backup WAN.",
+        "Set up automatic failover where the router supports it.",
+        "Set up manual failover procedures where automatic is not possible.",
+        "Test the failover: drop the primary and confirm the backup takes over.",
+        "Document the failover behavior and failback procedure.",
+        "Technical verification: confirm failover and failback both work."
+      ],
+      "documentation": [
+        "Produce the failover documentation: configuration, trigger conditions, and failback.",
+        "Document the test result.",
+        "Record the backup provider details.",
+        "Include the troubleshooting steps.",
+        "Security rule: no router credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: backup option assessment, connectivity configuration, failover setup, testing/verification, documentation, and continuity guidance.",
+        "Confirm the failover actually works.",
+        "Confirm the failback works.",
+        "Confirm the customer knows how to use it.",
+        "Flag follow-ups: a continuity_binder or outage_response_plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: failover documentation.",
+        "Recommend next steps: test the failover quarterly.",
+        "Confirm the failover is working.",
+        "Record internal notes: failover configuration.",
+        "Offer a follow-up test."
+      ]
+    }
+  },
+  "critical_account_recovery_kit": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Critical Account Recovery Kit, review the accounts from intake, and schedule the build.",
+      "Send prep instructions: the customer confirms the critical accounts: domain, email, cloud, website.",
+      "Pre-work: prepare the account recovery template and the secure storage plan.",
+      "Identify the critical accounts: compile the account list in scope.",
+      "Document the recovery methods: record how to regain control of each account.",
+      "Store securely: put the recovery information into secure storage.",
+      "Deliver the closeout package: the account recovery kit documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Critical Account Recovery Kit scope: documentation of recovery methods, elevated risk.",
+        "Confirm the critical accounts: domain, email, cloud, website, and others.",
+        "Gather baseline: current account ownership and any existing recovery data.",
+        "Create the ticket with product id critical_account_recovery_kit, expected deliverables (recovery kit), and assign a consultant.",
+        "Check prerequisites: the account list and the ownership contacts confirmed."
+      ],
+      "delivery": [
+        "Compile the critical account list: domain, email, cloud, website, and others.",
+        "Document the ownership and control: who owns and administers each account.",
+        "Record the recovery method for each account: recovery email, phone, or admin path.",
+        "Document the fallback and escalation options for each account.",
+        "Store the recovery information securely: encrypted or offline storage.",
+        "Verify the recovery paths where possible.",
+        "Add maintenance guidance for keeping the kit current.",
+        "Technical verification: confirm the recovery methods are documented accurately."
+      ],
+      "documentation": [
+        "Produce the account recovery kit: accounts, ownership, and recovery methods.",
+        "Document the secure storage location.",
+        "Record the fallback and escalation options.",
+        "Include the maintenance guidance.",
+        "Security rule: recovery details are stored securely and never in plain documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: account identification, ownership documentation, recovery method documentation, secure storage, fallback/escalation, and kit documentation.",
+        "Confirm every critical account is covered.",
+        "Confirm the recovery methods are accurate.",
+        "Confirm the storage is secure.",
+        "Flag follow-ups: verifying recovery paths annually, or an emergency contact sheet."
+      ],
+      "closeout": [
+        "Send the deliverables package: the account recovery kit.",
+        "Recommend next steps: verify the recovery paths and review the kit annually.",
+        "Confirm the customer knows how to recover their accounts.",
+        "Record internal notes: account recovery coverage.",
+        "Offer a quarterly review of the kit."
+      ]
+    }
+  },
+  "tabletop_exercise": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Tabletop Exercise, agree the scenario with leadership, and schedule the session.",
+      "Send prep instructions: the customer confirms the participants and the scenario preference.",
+      "Pre-work: design the scenario and prepare the facilitation guide.",
+      "Facilitate the exercise: walk the leadership through the scenario.",
+      "Work the decision points: review the decisions and communications at each step.",
+      "Capture the findings: identify the response and communication gaps.",
+      "Deliver the closeout package: the tabletop exercise report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Tabletop Exercise scope: facilitated walkthrough with leadership, no live systems touched.",
+        "Confirm the participants and the scenario preference: ransomware, outage, or compromise.",
+        "Gather baseline: current response plans and the readiness state.",
+        "Create the ticket with product id tabletop_exercise, expected deliverables (findings report), and assign a consultant.",
+        "Check prerequisites: the participants and the session time confirmed."
+      ],
+      "delivery": [
+        "Design the scenario: ransomware, outage, or account compromise with realistic details.",
+        "Prepare the facilitation guide: decision points and injects.",
+        "Facilitate the leadership exercise: walk through the scenario step by step.",
+        "Work the decision points: who decides, when, and what they do.",
+        "Review the communication paths: internal and external messaging.",
+        "Identify the response and communication gaps.",
+        "Capture the actionable readiness findings.",
+        "Technical verification: confirm the findings reflect the actual readiness."
+      ],
+      "documentation": [
+        "Produce the tabletop exercise report: scenario, decisions, and findings.",
+        "Document the gaps and risks identified.",
+        "Record the actionable recommendations.",
+        "Include the follow-up action items.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: scenario design, facilitated exercise, decision-point walkthrough, gap identification, findings, and report.",
+        "Confirm every decision point was covered.",
+        "Confirm the gaps are documented.",
+        "Confirm the recommendations are actionable.",
+        "Flag follow-ups: closing the gaps and scheduling the next exercise."
+      ],
+      "closeout": [
+        "Send the deliverables package: the tabletop exercise report.",
+        "Recommend next steps: fix the top gaps and run the exercise again.",
+        "Confirm the customer understands their readiness.",
+        "Record internal notes: exercise findings.",
+        "Offer a follow-up exercise in 6 months."
+      ]
+    }
+  },
+  "continuity_binder": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Continuity Binder, review the runbook needs from intake, and schedule the build.",
+      "Send prep instructions: the customer confirms the contacts, systems, and recovery paths to include.",
+      "Pre-work: gather the existing documentation and prepare the binder structure.",
+      "Compile the contacts: consolidate the emergency and vendor contacts.",
+      "Document the systems and recovery: record the critical systems and their recovery paths.",
+      "Assemble the binder: build the printable and digital runbook.",
+      "Deliver the closeout package: the continuity binder."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Continuity Binder scope: printable and digital runbook compilation.",
+        "Confirm the contacts, systems, and recovery paths to include.",
+        "Gather baseline: existing plans, contact sheets, and recovery documentation.",
+        "Create the ticket with product id continuity_binder, expected deliverables (continuity binder), and assign a consultant.",
+        "Check prerequisites: the source documentation and the access confirmed."
+      ],
+      "delivery": [
+        "Compile the emergency contacts: vendors, providers, and key people.",
+        "Document the critical systems and accounts with ownership.",
+        "Compile the response procedures: outage, security, and recovery responses.",
+        "Document the recovery paths: restore steps and dependencies.",
+        "Organize the binder by scenario and system.",
+        "Build the printable and digital formats.",
+        "Add maintenance guidance for keeping the binder current.",
+        "Technical verification: confirm the binder is complete and actionable."
+      ],
+      "documentation": [
+        "Produce the continuity binder: contacts, systems, procedures, and recovery paths.",
+        "Document the printable and digital formats.",
+        "Record the maintenance guidance.",
+        "Include the review schedule.",
+        "Security rule: no credentials in the binder."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: contact compilation, system/account documentation, procedure compilation, recovery path documentation, formats, and maintenance guidance.",
+        "Confirm every critical area is covered.",
+        "Confirm the procedures are actionable.",
+        "Confirm the binder is usable in an emergency.",
+        "Flag follow-ups: quarterly review of the binder."
+      ],
+      "closeout": [
+        "Send the deliverables package: the continuity binder.",
+        "Recommend next steps: review the binder quarterly and after changes.",
+        "Confirm the customer can use the binder in an emergency.",
+        "Record internal notes: binder contents.",
+        "Offer a binder review service."
+      ]
+    }
+  },
+  "small_business_resilience_pack": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Small Business Resilience Pack, review the business from intake, and schedule the project.",
+      "Send prep instructions: the customer confirms the providers, systems, and priorities.",
+      "Pre-work: gather the contact, backup, and account information.",
+      "Build the foundational pieces: create the emergency contact sheet and critical account list.",
+      "Review backup readiness: assess the backup state and identify the gaps.",
+      "Write the outage response: create the outage response plan and failover recommendations.",
+      "Deliver the closeout package: the resilience pack documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Small Business Resilience Pack scope: contact sheet, backup review, account list, outage response, and failover recommendations.",
+        "Confirm the providers, systems, and priorities.",
+        "Gather baseline: contact information, backup state, and account list.",
+        "Create the ticket with product id small_business_resilience_pack, expected deliverables (resilience pack), and assign a consultant.",
+        "Check prerequisites: the business information confirmed."
+      ],
+      "delivery": [
+        "Compile the emergency contact sheet: vendors, providers, and key people.",
+        "Review the backup readiness: what is backed up and the gaps.",
+        "Compile the critical account list: domain, email, cloud, and website.",
+        "Write the outage response plan: internet, email, files, and website scenarios.",
+        "Provide the failover recommendations: backup internet options and priorities.",
+        "Cross-reference the pieces: connect contacts to scenarios and accounts.",
+        "Compile the resilience pack documentation.",
+        "Technical verification: confirm the pack is complete and actionable."
+      ],
+      "documentation": [
+        "Produce the resilience pack: contact sheet, backup review, account list, and outage response.",
+        "Document the failover recommendations.",
+        "Record the backup gaps.",
+        "Include the maintenance guidance.",
+        "Security rule: no credentials in the pack."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: emergency contact sheet, backup review, critical account list, outage response plan, failover recommendations, and pack documentation.",
+        "Confirm every required piece is present.",
+        "Confirm the backup review is accurate.",
+        "Confirm the pack is usable in an emergency.",
+        "Flag follow-ups: closing the backup gaps or a full continuity_binder."
+      ],
+      "closeout": [
+        "Send the deliverables package: the resilience pack.",
+        "Recommend next steps: close the backup gaps and review the pack quarterly.",
+        "Confirm the customer knows their resilience position.",
+        "Record internal notes: resilience pack contents.",
+        "Offer an annual refresh of the pack."
+      ]
+    }
+  }
+}

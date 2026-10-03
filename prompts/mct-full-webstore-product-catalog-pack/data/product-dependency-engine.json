@@ -1,0 +1,31 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "dependencyTypes": ["requires", "recommends", "blocks_until_review", "pairs_well_with"],
+  "examples": [
+    {
+      "product": "unifi_camera_install",
+      "requires": ["camera_network_readiness_check"]
+    },
+    {
+      "product": "backup_restore_test",
+      "recommends": ["backup_readiness_check"]
+    },
+    {
+      "product": "microsoft_365_migration_full",
+      "requires": ["microsoft_365_tenant_health_check"]
+    },
+    {
+      "product": "local_seo_starter",
+      "recommends": ["website_health_check"]
+    },
+    {
+      "product": "firewall_setup",
+      "recommends": ["network_health_check"]
+    }
+  ],
+  "adminBehavior": [
+    "Warn in quote builder",
+    "Show recommended before this service",
+    "Block submission only for hard requirements if configured"
+  ]
+}

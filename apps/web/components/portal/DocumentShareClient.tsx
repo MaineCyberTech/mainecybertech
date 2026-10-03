@@ -1,12 +1,14 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MCTClient } from "@mct/sdk";
 import { Button } from "@mct/ui/components/Button";
 import { Input } from "@mct/ui/components/Input";
 import { Dialog } from "@mct/ui/components/Dialog";
 import { Badge } from "@mct/ui/components/Badge";
 import type { DocumentShare } from "@mct/sdk";
+import { useToast } from "@/components/ui/ToastProvider";
+import { formatDateTime } from "@/lib/format";
 
 interface DocumentShareClientProps {
   documentId: string;
@@ -17,6 +19,7 @@ export default function DocumentShareClient({
   documentId,
   initialShares,
 }: DocumentShareClientProps) {
+  const { pushToast } = useToast();
   const [shares, setShares] = useState<DocumentShare[]>(initialShares);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [revokeDialogOpen, setRevokeDialogOpen] = useState<string | null>(null);
@@ -25,9 +28,15 @@ export default function DocumentShareClient({
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [origin, setOrigin] = useState("");
 
-  const api =
-    typeof window !== "undefined" ? MCTClient.create({ baseUrl: "" }) : null;
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  const api = typeof window !== "undefined" ? MCTClient.create({ baseUrl: "" }) : null;
+
+  const sharePath = (token: string) => `/api/v1/documents/shares/${token}`;
 
   const handleCreateShare = async () => {
     if (!api) return;
@@ -39,9 +48,7 @@ export default function DocumentShareClient({
         setError("Expiration must be at least 1 hour");
         return;
       }
-      const expiresAt = new Date(
-        Date.now() + hours * 60 * 60 * 1000,
-      ).toISOString();
+      const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
       const result = await api.documents.createShare(documentId, {
         expiresAt,
         maxAccess: maxAccess ? parseInt(maxAccess, 10) : undefined,
@@ -50,8 +57,8 @@ export default function DocumentShareClient({
       setDialogOpen(false);
       setExpiresIn("24");
       setMaxAccess("");
-    } catch (e: any) {
-      setError(e?.message || "Failed to create share link");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to create share link");
     } finally {
       setCreating(false);
     }
@@ -63,38 +70,32 @@ export default function DocumentShareClient({
       await api.documents.removeShare(documentId, shareId);
       setShares((prev) => prev.filter((s) => s.id !== shareId));
       setRevokeDialogOpen(null);
-    } catch (e: any) {
-      setError(e?.message || "Failed to revoke share link");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to revoke share link");
     }
   };
 
   const copyToClipboard = async (url: string, id: string) => {
     try {
-      await navigator.clipboard.writeText(url);
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch {
+        const input = document.createElement("input");
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+      }
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2000);
+      pushToast("success", "Share link copied to your clipboard.", "Copied");
     } catch {
-      // Fallback
-      const input = document.createElement("input");
-      input.value = url;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand("copy");
-      document.body.removeChild(input);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
+      pushToast("error", "Clipboard access was blocked by the browser.", "Copy failed");
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const formatDate = (dateStr: string) => formatDateTime(dateStr);
 
   const isExpired = (expiresAt: string) => new Date(expiresAt) < new Date();
 
@@ -102,11 +103,7 @@ export default function DocumentShareClient({
     <section className="cyber-panel">
       <div className="flex items-center justify-between">
         <h2 className="cyber-heading text-lg">Share Links</h2>
-        <Button
-          size="sm"
-          onClick={() => setDialogOpen(true)}
-          disabled={creating}
-        >
+        <Button size="sm" onClick={() => setDialogOpen(true)} disabled={creating}>
           Create Link
         </Button>
       </div>
@@ -120,13 +117,12 @@ export default function DocumentShareClient({
       <div className="mt-6 space-y-3">
         {shares.length === 0 ? (
           <p className="cyber-subtext">
-            No share links created yet. Create a link to share this document
-            with external parties.
+            No share links created yet. Create a link to share this document with external parties.
           </p>
         ) : (
           shares.map((share) => {
             const expired = isExpired(share.expires_at);
-            const shareUrl = `${window.location.origin}/api/v1/documents/shares/${share.token}`;
+            const shareUrl = origin ? `${origin}${sharePath(share.token)}` : sharePath(share.token);
 
             return (
               <div
@@ -167,15 +163,14 @@ export default function DocumentShareClient({
                     )}
                   </div>
                 </div>
-                <div className="flex gap-4 text-xs text-slate-500">
+                <p className="break-all font-mono text-[11px] text-slate-500">{shareUrl}</p>
+                <div className="flex gap-4 text-xs text-slate-400">
                   <span>
                     Access: {share.access_count}
                     {share.max_access ? ` / ${share.max_access}` : ""}
                   </span>
                   <span>Expires: {formatDate(share.expires_at)}</span>
-                  {share.revoked_at && (
-                    <span>Revoked: {formatDate(share.revoked_at)}</span>
-                  )}
+                  {share.revoked_at && <span>Revoked: {formatDate(share.revoked_at)}</span>}
                 </div>
               </div>
             );
@@ -228,10 +223,10 @@ export default function DocumentShareClient({
         size="sm"
       >
         <p className="cyber-subtext">
-          Are you sure you want to revoke this share link? Users with this link
-          will no longer be able to access the document.
+          Are you sure you want to revoke this share link? Users with this link will no longer be
+          able to access the document.
         </p>
-        <div className="flex justify-end gap-2 mt-6">
+        <div className="mt-6 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setRevokeDialogOpen(null)}>
             Cancel
           </Button>

@@ -1,39 +1,187 @@
 import { Router } from "express";
 import multer from "multer";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccessByParam } from "../middleware/org-access";
 import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
-import {
-  requireIfMatch,
-  checkVersionMatch,
-} from "../middleware/optimistic-locking";
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
+import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
+import { resolveAdminTenantScope } from "../lib/admin-scope";
 import {
   createOrganizationSchema,
   updateOrganizationSchema,
   createDomainSchema,
   updateDomainSchema,
+  onboardSchema,
 } from "../validators/organization";
+import { queryInt } from "../lib/query";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+// --- Public-bucket image upload hardening (FILE-P2-002 / FILE-P1-001) --------
+// Logos land in the PUBLIC `logos` bucket and are served inline from a trusted
+// origin. Previously this endpoint performed NO mimetype check and built the
+// storage key from the uploaded filename's extension, so `x.svg` / `x.html` /
+// `x.js` could be persisted and served from our own domain (stored XSS /
+// phishing). The declared mimetype is now allowlisted and the extension that is
+// actually written is DERIVED FROM THE VALIDATED MIMETYPE -- the user-supplied
+// filename (and its extension) is never echoed into the public storage key.
+const IMAGE_MIME_TO_EXTENSION: Record<string, string | undefined> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+export function resolveImageUpload(
+  file: { originalname: string; mimetype: string },
+  label: string,
+): { extension: string; mimetype: string } {
+  const mimetype = (file.mimetype || "").split(";")[0]!.trim().toLowerCase();
+  const extension = IMAGE_MIME_TO_EXTENSION[mimetype];
+  if (!extension) {
+    throw new AppError("VALIDATION", `${label} must be a JPEG, PNG, WebP, or GIF image`, 400);
+  }
+  return { extension, mimetype };
+}
 
 const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
 
+router.post("/onboard", requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = onboardSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
+
+    const { data: org, error: orgError } = await supabase
+      .from("organizations")
+      .insert({
+        name: parsed.name,
+        slug: parsed.slug,
+        primary_domain: parsed.primaryDomain ?? null,
+        support_plan: parsed.supportPlan ?? null,
+      })
+      .select()
+      .single();
+
+    if (orgError) throw new AppError("DB_ERROR", orgError.message, 500);
+
+    const { data: role, error: roleError } = await supabase
+      .from("roles")
+      .select("id")
+      .eq("key", parsed.adminRoleKey)
+      .maybeSingle();
+
+    if (roleError) throw new AppError("DB_ERROR", roleError.message, 500);
+    if (!role) throw new AppError("NOT_FOUND", `Role ${parsed.adminRoleKey} not found`, 404);
+
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("id, email")
+      .eq("email", parsed.adminEmail)
+      .maybeSingle();
+
+    let userId = existingProfile?.id ?? null;
+    let invited = false;
+
+    if (!userId) {
+      const { data: authUser, error: authError } = await supabase.auth.admin.inviteUserByEmail(
+        parsed.adminEmail,
+        { data: { full_name: parsed.adminFullName ?? null } },
+      );
+
+      if (authError || !authUser?.user) {
+        throw new AppError("AUTH_ERROR", authError?.message ?? "Failed to invite admin user", 400);
+      }
+
+      userId = authUser.user.id;
+      invited = true;
+
+      await supabase.from("profiles").upsert(
+        {
+          id: userId,
+          email: parsed.adminEmail,
+          full_name: parsed.adminFullName ?? null,
+        },
+        { onConflict: "id" },
+      );
+    }
+
+    const { data: membership, error: memError } = await supabase
+      .from("memberships")
+      .insert({
+        organization_id: org.id,
+        user_id: userId,
+        role_id: role.id,
+        status: "approved",
+      })
+      .select()
+      .single();
+
+    if (memError) throw new AppError("DB_ERROR", memError.message, 500);
+
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "organization.onboard",
+      entityType: "organization",
+      entityId: org.id,
+      metadata: { name: parsed.name, adminEmail: parsed.adminEmail, invited },
+    });
+
+    invalidateCache(`/api/v1/organizations`);
+    res.status(201).json(
+      success({
+        organization: org,
+        adminUser: { id: userId, email: parsed.adminEmail },
+        membership,
+        invited,
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
-    let query = supabase.from("organizations").select("*");
+    const supabase = getScopedClient(req, "organizations", "read");
+
+    // Cross-tenant reach is decided in exactly ONE place: resolveAdminTenantScope
+    // (lib/admin-scope.ts), which requires BOTH the is_super_admin profile flag
+    // AND a cross-tenant role key in an approved membership.
+    //
+    // This route previously used a DISJUNCTION (`super_admin flag || admin role`),
+    // so a plain single-org `admin` with is_super_admin=false saw every tenant
+    // here while being scoped on audit/dashboard/business-os/store/search — an
+    // internal contradiction, since those routes deliberately treat a plain
+    // tenant `admin` as org-scoped. Use the shared helper so all surfaces agree.
+    //
+    // Resolve the scope BEFORE issuing the organizations query so the tenant
+    // predicate can be applied to it.
+    const tenantScope = await resolveAdminTenantScope(req);
+    const isPlatformAdmin = tenantScope.allTenants;
+
+    let query = supabase.from("organizations").select("*", { count: "exact" });
+
+    if (!isPlatformAdmin) {
+      const orgIds = tenantScope.orgIds;
+
+      if (orgIds.length > 0) {
+        query = query.in("id", orgIds);
+      } else {
+        query = query.eq("id", "00000000-0000-0000-0000-000000000000");
+      }
+    }
 
     const statusFilter = req.query.status as string | undefined;
-    if (statusFilter) query = query.eq("status", statusFilter);
+    if (statusFilter) query = query.eq("status", statusFilter as never);
 
     const idsFilter = req.query.ids as string | undefined;
     if (idsFilter) {
@@ -41,10 +189,29 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
       if (ids.length) query = query.in("id", ids);
     }
 
-    const { data, error } = await query.order("name");
+    const hasPaging = req.query.page !== undefined || req.query.limit !== undefined;
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
+    const offset = (page - 1) * limit;
+
+    if (hasPaging) query = query.range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query.order("name");
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data));
+
+    if (hasPaging) {
+      res.json(
+        success({
+          items: data ?? [],
+          total: count ?? 0,
+          page,
+          limit,
+        }),
+      );
+    } else {
+      res.json(success(data ?? []));
+    }
   } catch (error) {
     next(error);
   }
@@ -52,15 +219,14 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
 
 router.get("/:id", requireOrgAccessByParam, async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "organizations", "read");
     const { data, error } = await supabase
       .from("organizations")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
 
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Organization not found", 404);
+    if (error || !data) throw new AppError("NOT_FOUND", "Organization not found", 404);
     res.json(success(data));
   } catch (error) {
     next(error);
@@ -69,63 +235,54 @@ router.get("/:id", requireOrgAccessByParam, async (req, res, next) => {
 
 router.get("/:id/detail", requireOrgAccessByParam, async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "organizations", "read");
 
     const { data: org, error: orgError } = await supabase
       .from("organizations")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
 
-    if (orgError || !org)
-      throw new AppError("NOT_FOUND", "Organization not found", 404);
+    if (orgError || !org) throw new AppError("NOT_FOUND", "Organization not found", 404);
 
-    const [
-      { data: domains, error: domError },
-      { data: memberships, error: memError },
-    ] = await Promise.all([
-      supabase
-        .from("organization_domains")
-        .select("*")
-        .eq("organization_id", req.params.id),
-      supabase
-        .from("memberships")
-        .select(
-          "id, user_id, role_id, status, is_billing_contact, is_security_contact, created_at",
-        )
-        .eq("organization_id", req.params.id),
-    ]);
+    const [{ data: domains, error: domError }, { data: memberships, error: memError }] =
+      await Promise.all([
+        supabase
+          .from("organization_domains")
+          .select("*")
+          .eq("organization_id", String(req.params.id)),
+        supabase
+          .from("memberships")
+          .select(
+            "id, user_id, role_id, status, is_billing_contact, is_security_contact, created_at",
+          )
+          .eq("organization_id", String(req.params.id)),
+      ]);
 
     if (domError) throw new AppError("DB_ERROR", domError.message, 500);
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);
 
     const memberUserIds = [
-      ...new Set(
-        (memberships ?? []).map((m: { user_id: string }) => m.user_id),
-      ),
+      ...new Set((memberships ?? []).map((m: { user_id: string }) => m.user_id)),
     ];
     const memberRoleIds = [
-      ...new Set(
-        (memberships ?? []).map((m: { role_id: string }) => m.role_id),
-      ),
+      ...new Set((memberships ?? []).map((m) => m.role_id).filter((r): r is string => r !== null)),
     ];
 
-    const [
-      { data: profiles, error: profError },
-      { data: roles, error: rolesError },
-    ] = await Promise.all([
-      memberUserIds.length > 0
-        ? supabase
-            .from("profiles")
-            .select(
-              "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
-            )
-            .in("id", memberUserIds)
-        : { data: [], error: null },
-      memberRoleIds.length > 0
-        ? supabase.from("roles").select("id, key, name").in("id", memberRoleIds)
-        : { data: [], error: null },
-    ]);
+    const [{ data: profiles, error: profError }, { data: roles, error: rolesError }] =
+      await Promise.all([
+        memberUserIds.length > 0
+          ? supabase
+              .from("profiles")
+              .select(
+                "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
+              )
+              .in("id", memberUserIds)
+          : { data: [], error: null },
+        memberRoleIds.length > 0
+          ? supabase.from("roles").select("id, key, name").in("id", memberRoleIds)
+          : { data: [], error: null },
+      ]);
 
     if (profError) throw new AppError("DB_ERROR", profError.message, 500);
     if (rolesError) throw new AppError("DB_ERROR", rolesError.message, 500);
@@ -177,102 +334,104 @@ router.post("/", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requireAdmin, requireIfMatch, async (req, res, next) => {
-  try {
-    const parsed = updateOrganizationSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+router.patch(
+  "/:id",
+  requireOrgAccessByParam,
+  requirePermission("organizations", "manage"),
+  requireIfMatch,
+  async (req, res, next) => {
+    try {
+      const parsed = updateOrganizationSchema.parse(req.body);
+      const supabase = getScopedClient(req, "organizations", "write");
 
-    const { data: current, error: fetchError } = await supabase
-      .from("organizations")
-      .select("version")
-      .eq("id", req.params.id)
-      .single();
+      const { data: current, error: fetchError } = await supabase
+        .from("organizations")
+        .select("version")
+        .eq("id", String(req.params.id))
+        .single();
 
-    if (fetchError || !current) {
-      throw new AppError("NOT_FOUND", "Organization not found", 404);
+      if (fetchError || !current) {
+        throw new AppError("NOT_FOUND", "Organization not found", 404);
+      }
+
+      checkVersionMatch(current.version, req.ifMatchVersion);
+
+      const updateData: Record<string, unknown> = {};
+      if (parsed.name !== undefined) updateData.name = parsed.name;
+      if (parsed.slug !== undefined) updateData.slug = parsed.slug;
+      if (parsed.status !== undefined) updateData.status = parsed.status;
+      if (parsed.primaryDomain !== undefined) updateData.primary_domain = parsed.primaryDomain;
+      if (parsed.supportPlan !== undefined) updateData.support_plan = parsed.supportPlan;
+      if (parsed.logoUrl !== undefined) updateData.logo_url = parsed.logoUrl;
+      if (parsed.brandColor !== undefined) updateData.brand_color = parsed.brandColor;
+      if (parsed.accentColor !== undefined) updateData.accent_color = parsed.accentColor;
+      if (parsed.customDomain !== undefined) updateData.custom_domain = parsed.customDomain;
+
+      updateData.version = current.version + 1;
+
+      const { data, error } = await supabase
+        .from("organizations")
+        .update(updateData as never)
+        .eq("id", String(req.params.id))
+        .eq("version", current.version as number)
+        .select()
+        .single();
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data)
+        throw new AppError("VERSION_CONFLICT", "Organization was modified by another user", 409);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "organization.update",
+        entityType: "organization",
+        entityId: data.id,
+        metadata: parsed,
+      });
+
+      invalidateCache(`/api/v1/organizations`);
+      res.json(success(data));
+    } catch (error) {
+      next(error);
     }
+  },
+);
 
-    checkVersionMatch(current.version, req.ifMatchVersion);
+router.delete(
+  "/:id",
+  requireOrgAccessByParam,
+  requirePermission("organizations", "manage"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "organizations", "write");
+      const { error } = await supabase
+        .from("organizations")
+        .delete()
+        .eq("id", String(req.params.id));
 
-    const updateData: Record<string, unknown> = {};
-    if (parsed.name !== undefined) updateData.name = parsed.name;
-    if (parsed.slug !== undefined) updateData.slug = parsed.slug;
-    if (parsed.status !== undefined) updateData.status = parsed.status;
-    if (parsed.primaryDomain !== undefined)
-      updateData.primary_domain = parsed.primaryDomain;
-    if (parsed.supportPlan !== undefined)
-      updateData.support_plan = parsed.supportPlan;
-    if (parsed.logoUrl !== undefined) updateData.logo_url = parsed.logoUrl;
-    if (parsed.brandColor !== undefined)
-      updateData.brand_color = parsed.brandColor;
-    if (parsed.accentColor !== undefined)
-      updateData.accent_color = parsed.accentColor;
-    if (parsed.customDomain !== undefined)
-      updateData.custom_domain = parsed.customDomain;
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    updateData.version = current.version + 1;
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "organization.delete",
+        entityType: "organization",
+        entityId: String(req.params.id),
+      });
 
-    const { data, error } = await supabase
-      .from("organizations")
-      .update(updateData)
-      .eq("id", req.params.id)
-      .eq("version", current.version)
-      .select()
-      .single();
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data)
-      throw new AppError(
-        "VERSION_CONFLICT",
-        "Organization was modified by another user",
-        409,
-      );
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "organization.update",
-      entityType: "organization",
-      entityId: data.id,
-      metadata: parsed,
-    });
-
-    invalidateCache(`/api/v1/organizations`);
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete("/:id", requireAdmin, async (req, res, next) => {
-  try {
-    const supabase = getSupabaseAdmin();
-    const { error } = await supabase
-      .from("organizations")
-      .delete()
-      .eq("id", req.params.id);
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "organization.delete",
-      entityType: "organization",
-      entityId: String(req.params.id),
-    });
-
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.get("/:id/domains", requireOrgAccessByParam, async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "organizations", "read");
     const { data, error } = await supabase
       .from("organization_domains")
       .select("*")
-      .eq("organization_id", req.params.id);
+      .eq("organization_id", String(req.params.id));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data));
@@ -281,7 +440,12 @@ router.get("/:id/domains", requireOrgAccessByParam, async (req, res, next) => {
   }
 });
 
-router.post("/:id/domains", requireAdmin, async (req, res, next) => {
+// Tenant-scoped domain writes. `requireOrgAccessByParam` pins the request to
+// `:id` (setting req.orgScope/req.orgId) so `requireAdmin`'s org-pinned branch
+// rejects a tenant admin who is not an admin *in that org* (ADMIN-P1-001).
+// Without the param gate orgScope stays unset and requireAdmin falls back to
+// its legacy "admin in any org" path, allowing cross-tenant domain writes.
+router.post("/:id/domains", requireOrgAccessByParam, requireAdmin, async (req, res, next) => {
   try {
     const parsed = createDomainSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -289,7 +453,7 @@ router.post("/:id/domains", requireAdmin, async (req, res, next) => {
     const { data, error } = await supabase
       .from("organization_domains")
       .insert({
-        organization_id: req.params.id,
+        organization_id: String(req.params.id),
         domain: parsed.domain,
         auto_approve: parsed.autoApprove,
       })
@@ -312,7 +476,7 @@ router.post("/:id/domains", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.patch("/:id/domains/:domainId", requireAdmin, async (req, res, next) => {
+router.patch("/:id/domains/:domainId", requireOrgAccessByParam, requireAdmin, async (req, res, next) => {
   try {
     const parsed = updateDomainSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -320,8 +484,8 @@ router.patch("/:id/domains/:domainId", requireAdmin, async (req, res, next) => {
     const { data, error } = await supabase
       .from("organization_domains")
       .update({ auto_approve: parsed.autoApprove })
-      .eq("id", req.params.domainId)
-      .eq("organization_id", req.params.id)
+      .eq("id", String(req.params.domainId))
+      .eq("organization_id", String(req.params.id))
       .select()
       .single();
 
@@ -343,71 +507,67 @@ router.patch("/:id/domains/:domainId", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.delete(
-  "/:id/domains/:domainId",
-  requireAdmin,
-  async (req, res, next) => {
-    try {
-      const supabase = getSupabaseAdmin();
-      const { data: deleted, error } = await supabase
-        .from("organization_domains")
-        .delete()
-        .eq("id", req.params.domainId)
-        .eq("organization_id", req.params.id)
-        .select()
-        .single();
+router.delete("/:id/domains/:domainId", requireOrgAccessByParam, requireAdmin, async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data: deleted, error } = await supabase
+      .from("organization_domains")
+      .delete()
+      .eq("id", String(req.params.domainId))
+      .eq("organization_id", String(req.params.id))
+      .select()
+      .single();
 
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-      await logAuditEvent({
-        organizationId: String(req.params.id),
-        actorUserId: req.authUser!.userId,
-        action: "organization.domain.remove",
-        entityType: "organization_domain",
-        entityId: String(req.params.domainId),
-        metadata: { domain: deleted?.domain ?? null },
-      });
+    await logAuditEvent({
+      organizationId: String(req.params.id),
+      actorUserId: req.authUser!.userId,
+      action: "organization.domain.remove",
+      entityType: "organization_domain",
+      entityId: String(req.params.domainId),
+      metadata: { domain: deleted?.domain ?? null },
+    });
 
-      invalidateCache(`/api/v1/organizations`);
-      res.status(204).send();
-    } catch (error) {
-      next(error);
-    }
-  },
-);
+    invalidateCache(`/api/v1/organizations`);
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.post(
   "/:id/logo",
   requireAuth,
   requireOrgAccessByParam,
+  requirePermission("organizations", "manage"),
   upload.single("logo"),
   async (req, res, next) => {
     try {
       const file = req.file;
       if (!file) throw new AppError("VALIDATION", "Logo file is required", 400);
 
-      const supabase = getSupabaseAdmin();
-      const ext = file.originalname.split(".").pop() ?? "png";
-      const storagePath = `${req.authUser!.userId}/org-${req.params.id}-logo.${ext}`;
+      const supabase = getScopedClient(req, "organizations", "write");
+      // Mimetype + filename extension are allowlisted, and the stored extension
+      // comes from the validated mimetype (never from originalname).
+      const { extension, mimetype } = resolveImageUpload(file, "Logo");
+      const storagePath = `${req.authUser!.userId}/org-${String(req.params.id)}-logo.${extension}`;
 
       const { error: uploadError } = await supabase.storage
         .from("logos")
         .upload(storagePath, file.buffer, {
-          contentType: file.mimetype || undefined,
+          contentType: mimetype,
           upsert: true,
         });
 
-      if (uploadError)
-        throw new AppError("STORAGE_ERROR", uploadError.message, 500);
+      if (uploadError) throw new AppError("STORAGE_ERROR", uploadError.message, 500);
 
-      const { data: publicUrl } = supabase.storage
-        .from("logos")
-        .getPublicUrl(storagePath);
+      const { data: publicUrl } = supabase.storage.from("logos").getPublicUrl(storagePath);
 
       await supabase
         .from("organizations")
         .update({ logo_url: publicUrl.publicUrl })
-        .eq("id", req.params.id);
+        .eq("id", String(req.params.id));
 
       await logAuditEvent({
         actorUserId: req.authUser!.userId,

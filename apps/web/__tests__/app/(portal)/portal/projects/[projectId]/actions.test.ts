@@ -33,9 +33,8 @@ describe("addPortalProjectUpdate", () => {
   it("adds an update successfully", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { addPortalProjectUpdate } = await import(
-      "@/app/(portal)/portal/projects/[projectId]/actions"
-    );
+    const { addPortalProjectUpdate } =
+      await import("@/app/(portal)/portal/projects/[projectId]/actions");
 
     const formData = new FormData();
     formData.set("projectId", "project-1");
@@ -51,53 +50,50 @@ describe("addPortalProjectUpdate", () => {
     expect(mockRevalidatePath).toHaveBeenCalledWith("/portal/projects/project-1");
   });
 
-  it("throws when projectId is missing", async () => {
+  it("returns error when projectId is missing", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { addPortalProjectUpdate } = await import(
-      "@/app/(portal)/portal/projects/[projectId]/actions"
-    );
+    const { addPortalProjectUpdate } =
+      await import("@/app/(portal)/portal/projects/[projectId]/actions");
 
     const formData = new FormData();
     formData.set("body", "Update");
 
-    await expect(addPortalProjectUpdate(formData)).rejects.toThrow(
-      "Project ID and update body are required.",
-    );
+    const result = await addPortalProjectUpdate(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Project ID and update body");
     expect(mockProjectsAddUpdate).not.toHaveBeenCalled();
   });
 
-  it("throws when body is empty", async () => {
+  it("returns error when body is empty", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { addPortalProjectUpdate } = await import(
-      "@/app/(portal)/portal/projects/[projectId]/actions"
-    );
+    const { addPortalProjectUpdate } =
+      await import("@/app/(portal)/portal/projects/[projectId]/actions");
 
     const formData = new FormData();
     formData.set("projectId", "project-1");
     formData.set("body", "");
 
-    await expect(addPortalProjectUpdate(formData)).rejects.toThrow(
-      "Project ID and update body are required.",
-    );
+    const result = await addPortalProjectUpdate(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Project ID and update body");
     expect(mockProjectsAddUpdate).not.toHaveBeenCalled();
   });
 
-  it("throws when no approved membership", async () => {
+  it("returns error when no approved membership", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
-    const { addPortalProjectUpdate } = await import(
-      "@/app/(portal)/portal/projects/[projectId]/actions"
-    );
+    const { addPortalProjectUpdate } =
+      await import("@/app/(portal)/portal/projects/[projectId]/actions");
 
     const formData = new FormData();
     formData.set("projectId", "project-1");
     formData.set("body", "Update");
 
-    await expect(addPortalProjectUpdate(formData)).rejects.toThrow(
-      "No approved organization membership found.",
-    );
+    const result = await addPortalProjectUpdate(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("No approved organization membership found");
     expect(mockProjectsAddUpdate).not.toHaveBeenCalled();
   });
 });
@@ -110,9 +106,8 @@ describe("approvePortalProjectTask", () => {
   it("approves a task successfully", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { approvePortalProjectTask } = await import(
-      "@/app/(portal)/portal/projects/[projectId]/actions"
-    );
+    const { approvePortalProjectTask } =
+      await import("@/app/(portal)/portal/projects/[projectId]/actions");
 
     const formData = new FormData();
     formData.set("taskId", "task-1");
@@ -126,52 +121,49 @@ describe("approvePortalProjectTask", () => {
     expect(mockRevalidatePath).toHaveBeenCalledWith("/portal/projects/project-1");
   });
 
-  it("throws when taskId is missing", async () => {
+  it("returns error when taskId is missing", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { approvePortalProjectTask } = await import(
-      "@/app/(portal)/portal/projects/[projectId]/actions"
-    );
+    const { approvePortalProjectTask } =
+      await import("@/app/(portal)/portal/projects/[projectId]/actions");
 
     const formData = new FormData();
     formData.set("projectId", "project-1");
 
-    await expect(approvePortalProjectTask(formData)).rejects.toThrow(
-      "Project ID and task ID are required.",
-    );
+    const result = await approvePortalProjectTask(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Project ID and task ID");
     expect(mockProjectsApproveTask).not.toHaveBeenCalled();
   });
 
-  it("throws when projectId is missing", async () => {
+  it("returns error when projectId is missing", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { approvePortalProjectTask } = await import(
-      "@/app/(portal)/portal/projects/[projectId]/actions"
-    );
+    const { approvePortalProjectTask } =
+      await import("@/app/(portal)/portal/projects/[projectId]/actions");
 
     const formData = new FormData();
     formData.set("taskId", "task-1");
 
-    await expect(approvePortalProjectTask(formData)).rejects.toThrow(
-      "Project ID and task ID are required.",
-    );
+    const result = await approvePortalProjectTask(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Project ID and task ID");
     expect(mockProjectsApproveTask).not.toHaveBeenCalled();
   });
 
-  it("throws when no approved membership", async () => {
+  it("returns error when no approved membership", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
-    const { approvePortalProjectTask } = await import(
-      "@/app/(portal)/portal/projects/[projectId]/actions"
-    );
+    const { approvePortalProjectTask } =
+      await import("@/app/(portal)/portal/projects/[projectId]/actions");
 
     const formData = new FormData();
     formData.set("taskId", "task-1");
     formData.set("projectId", "project-1");
 
-    await expect(approvePortalProjectTask(formData)).rejects.toThrow(
-      "No approved organization membership found.",
-    );
+    const result = await approvePortalProjectTask(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("No approved organization membership found");
     expect(mockProjectsApproveTask).not.toHaveBeenCalled();
   });
 });
@@ -184,9 +176,8 @@ describe("addPortalTaskComment", () => {
   it("adds a task comment successfully", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { addPortalTaskComment } = await import(
-      "@/app/(portal)/portal/projects/[projectId]/actions"
-    );
+    const { addPortalTaskComment } =
+      await import("@/app/(portal)/portal/projects/[projectId]/actions");
 
     const formData = new FormData();
     formData.set("taskId", "task-1");
@@ -195,79 +186,74 @@ describe("addPortalTaskComment", () => {
 
     await addPortalTaskComment(formData);
 
-    expect(mockProjectsAddPortalTaskComment).toHaveBeenCalledWith(
-      "project-1",
-      "task-1",
-      { organizationId: "org-1", body: "Looks good!" },
-    );
+    expect(mockProjectsAddPortalTaskComment).toHaveBeenCalledWith("project-1", "task-1", {
+      organizationId: "org-1",
+      body: "Looks good!",
+    });
     expect(mockRevalidatePath).toHaveBeenCalledWith("/portal/projects/project-1");
   });
 
-  it("throws when taskId is missing", async () => {
+  it("returns error when taskId is missing", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { addPortalTaskComment } = await import(
-      "@/app/(portal)/portal/projects/[projectId]/actions"
-    );
+    const { addPortalTaskComment } =
+      await import("@/app/(portal)/portal/projects/[projectId]/actions");
 
     const formData = new FormData();
     formData.set("projectId", "project-1");
     formData.set("body", "Nice");
 
-    await expect(addPortalTaskComment(formData)).rejects.toThrow(
-      "Project ID, task ID, and comment body are required.",
-    );
+    const result = await addPortalTaskComment(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Project ID, task ID, and comment body");
     expect(mockProjectsAddPortalTaskComment).not.toHaveBeenCalled();
   });
 
-  it("throws when body is missing", async () => {
+  it("returns error when body is missing", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { addPortalTaskComment } = await import(
-      "@/app/(portal)/portal/projects/[projectId]/actions"
-    );
+    const { addPortalTaskComment } =
+      await import("@/app/(portal)/portal/projects/[projectId]/actions");
 
     const formData = new FormData();
     formData.set("taskId", "task-1");
     formData.set("projectId", "project-1");
 
-    await expect(addPortalTaskComment(formData)).rejects.toThrow(
-      "Project ID, task ID, and comment body are required.",
-    );
+    const result = await addPortalTaskComment(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Project ID, task ID, and comment body");
     expect(mockProjectsAddPortalTaskComment).not.toHaveBeenCalled();
   });
 
-  it("throws when projectId is missing", async () => {
+  it("returns error when projectId is missing", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { addPortalTaskComment } = await import(
-      "@/app/(portal)/portal/projects/[projectId]/actions"
-    );
+    const { addPortalTaskComment } =
+      await import("@/app/(portal)/portal/projects/[projectId]/actions");
 
     const formData = new FormData();
     formData.set("taskId", "task-1");
     formData.set("body", "Comment");
 
-    await expect(addPortalTaskComment(formData)).rejects.toThrow(
-      "Project ID, task ID, and comment body are required.",
-    );
+    const result = await addPortalTaskComment(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Project ID, task ID, and comment body");
   });
 
-  it("throws when no approved membership", async () => {
+  it("returns error when no approved membership", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
-    const { addPortalTaskComment } = await import(
-      "@/app/(portal)/portal/projects/[projectId]/actions"
-    );
+    const { addPortalTaskComment } =
+      await import("@/app/(portal)/portal/projects/[projectId]/actions");
 
     const formData = new FormData();
     formData.set("taskId", "task-1");
     formData.set("projectId", "project-1");
     formData.set("body", "Comment");
 
-    await expect(addPortalTaskComment(formData)).rejects.toThrow(
-      "No approved organization membership found.",
-    );
+    const result = await addPortalTaskComment(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("No approved organization membership found");
     expect(mockProjectsAddPortalTaskComment).not.toHaveBeenCalled();
   });
 });

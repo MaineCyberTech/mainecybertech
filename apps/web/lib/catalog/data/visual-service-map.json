@@ -1,0 +1,85 @@
+{
+  "version": "2026-07-29.v3-visuals",
+  "iconLibraryRecommendation": "lucide-react",
+  "style": "clean modern friendly line icons with subtle gradient cards and optional abstract illustrations",
+  "categoryVisuals": [
+    {
+      "category": "Quick Fixes",
+      "icon": "WandSparkles",
+      "imagePrompt": "friendly modern abstract toolkit, quick fixes, glowing checklist, clean cyber-tech style, no text"
+    },
+    {
+      "category": "Cybersecurity",
+      "icon": "ShieldCheck",
+      "imagePrompt": "modern cyber shield protecting small business devices, calm trustworthy blue teal lighting, no text"
+    },
+    {
+      "category": "Microsoft 365",
+      "icon": "CloudCog",
+      "imagePrompt": "cloud productivity workspace with email calendar files and collaboration, clean SaaS style, no logos, no text"
+    },
+    {
+      "category": "Computer Setup & Support",
+      "icon": "Laptop",
+      "imagePrompt": "new business laptop setup with secure checkmarks and tidy desk, modern friendly, no text"
+    },
+    {
+      "category": "Wi-Fi & Networking",
+      "icon": "Wifi",
+      "imagePrompt": "business network signals across office and outdoor space, modern clean map-like composition, no text"
+    },
+    {
+      "category": "Security Cameras",
+      "icon": "Cctv",
+      "imagePrompt": "clean modern security camera coverage concept for small business property, no text"
+    },
+    {
+      "category": "Backup & Recovery",
+      "icon": "HardDriveDownload",
+      "imagePrompt": "data backup vault with cloud and recovery arrow, trustworthy clean technical illustration, no text"
+    },
+    {
+      "category": "Website & SEO",
+      "icon": "Globe2",
+      "imagePrompt": "modern website growth dashboard with SEO graph and local presence pins, no text"
+    },
+    {
+      "category": "Compliance & Policies",
+      "icon": "ClipboardCheck",
+      "imagePrompt": "policy checklist and compliance shield for small business, calm professional, no text"
+    },
+    {
+      "category": "Monthly IT Plans",
+      "icon": "CalendarCheck",
+      "imagePrompt": "monthly managed IT rhythm with calendar, support headset, and device health, no text"
+    },
+    {
+      "category": "Emergency Support",
+      "icon": "Siren",
+      "imagePrompt": "urgent but calm IT support response dashboard, alert light and recovery path, no text"
+    },
+    {
+      "category": "Business Starter Packs",
+      "icon": "Rocket",
+      "imagePrompt": "small business technology launch kit with cloud, laptop, shield, and growth arrow, no text"
+    }
+  ],
+  "assetRules": [
+    "Icons first for product cards",
+    "Use generated/stock hero art sparingly",
+    "Avoid identifiable people unless model release/provenance is documented",
+    "Keep images compressed, responsive, and lazy-loaded",
+    "Provide alt text for meaningful images and aria-hidden for decorative icons",
+    "Do not use copyrighted vendor logos unless specifically authorized"
+  ],
+  "stockSources": [
+    {
+      "name": "Unsplash",
+      "use": "optional hero/photo backgrounds with provenance notes"
+    },
+    {
+      "name": "Pexels",
+      "use": "optional hero/photo backgrounds with provenance notes"
+    }
+  ]
+}

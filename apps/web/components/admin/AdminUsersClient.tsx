@@ -1,16 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
+import { Membership } from "@mct/sdk";
 
 const PAGE_SIZE = 25;
 
-type Membership = Record<string, any> & {
-  id: string;
-  user_id: string;
-  organization_id: string;
-  role_id: string;
-};
 type Profile = {
   id: string;
   full_name?: string | null;
@@ -27,13 +22,7 @@ type Props = {
   roleMap: Record<string, Role>;
 };
 
-function Chip({
-  children,
-  onRemove,
-}: {
-  children: React.ReactNode;
-  onRemove: () => void;
-}) {
+function Chip({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
       {children}
@@ -48,17 +37,10 @@ function Chip({
   );
 }
 
-export default function AdminUsersClient({
-  memberships,
-  profileMap,
-  orgMap,
-  roleMap,
-}: Props) {
+export default function AdminUsersClient({ memberships, profileMap, orgMap, roleMap }: Props) {
   const [search, setSearch] = useState("");
   const [orgFilter, setOrgFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "active" | "inactive"
-  >("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [page, setPage] = useState(1);
 
   const orgList = useMemo(() => {
@@ -93,9 +75,9 @@ export default function AdminUsersClient({
     }
 
     if (statusFilter === "active") {
-      items = items.filter((m) => m.status === "active");
+      items = items.filter((m) => m.status === "approved");
     } else if (statusFilter === "inactive") {
-      items = items.filter((m) => m.status !== "active");
+      items = items.filter((m) => m.status !== "approved");
     }
 
     return items;
@@ -111,9 +93,7 @@ export default function AdminUsersClient({
       userId,
       memberships: mems,
       profile: profileMap[userId] as Profile | undefined,
-      orgs: mems
-        .map((m) => orgMap[m.organization_id])
-        .filter(Boolean) as Organization[],
+      orgs: mems.map((m) => orgMap[m.organization_id]).filter(Boolean) as Organization[],
       roles: mems.map((m) => roleMap[m.role_id]).filter(Boolean) as Role[],
     }));
   }, [filtered, profileMap, orgMap, roleMap]);
@@ -150,27 +130,25 @@ export default function AdminUsersClient({
       },
     });
 
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearch(e.target.value);
-      setPage(1);
-    },
-    [],
-  );
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(1);
+  }, []);
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative min-w-[200px] flex-1">
           <input
             type="text"
             value={search}
             onChange={handleSearchChange}
             placeholder="Search by name, email, or ID..."
+            aria-label="Search users"
             className="cyber-input w-full pl-9"
           />
           <svg
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -190,6 +168,7 @@ export default function AdminUsersClient({
             setPage(1);
           }}
           className="cyber-input max-w-[200px]"
+          aria-label="Filter by organization"
         >
           <option value="">All orgs</option>
           {orgList.map((org) => (
@@ -201,10 +180,11 @@ export default function AdminUsersClient({
         <select
           value={statusFilter}
           onChange={(e) => {
-            setStatusFilter(e.target.value as any);
+            setStatusFilter(e.target.value as "all" | "active" | "inactive");
             setPage(1);
           }}
           className="cyber-input max-w-[140px]"
+          aria-label="Filter by status"
         >
           <option value="all">All status</option>
           <option value="active">Active</option>
@@ -221,7 +201,7 @@ export default function AdminUsersClient({
           ))}
           <button
             type="button"
-            className="text-xs text-slate-500 hover:text-slate-300 underline"
+            className="text-xs text-slate-400 underline hover:text-slate-300"
             onClick={() => {
               setSearch("");
               setOrgFilter("");
@@ -236,58 +216,52 @@ export default function AdminUsersClient({
 
       <div className="space-y-4">
         {paginated.length > 0 ? (
-          paginated.map(
-            ({ userId, memberships: mems, profile, orgs, roles }) => {
-              const primaryOrg = orgs[0] ?? undefined;
-              const primaryRole = roles[0] ?? undefined;
+          paginated.map(({ userId, memberships: mems, profile, orgs, roles }) => {
+            const primaryOrg = orgs[0] ?? undefined;
+            const primaryRole = roles[0] ?? undefined;
 
-              return (
-                <Link
-                  key={userId}
-                  href={`/admin/users/${userId}`}
-                  className="block glass-card glass-card-hover p-5 sm:p-6"
-                >
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-slate-50">
-                        {profile?.full_name ?? "Unknown User"}
-                      </p>
-                      <p className="mt-1 text-sm text-slate-400">
-                        {profile?.email ?? "No email"}
-                      </p>
-                      <p className="mt-2 text-sm text-slate-400">
-                        Org: {primaryOrg?.name ?? "Unknown"} &middot; Role:{" "}
-                        {primaryRole?.name ?? "Unknown"}
-                        {orgs.length > 1
-                          ? ` &middot; +${orgs.length - 1} more org${orgs.length > 2 ? "s" : ""}`
-                          : ""}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {profile?.is_super_admin ? (
-                        <span className="rounded-full border border-purple-500/20 bg-purple-500/10 px-3 py-1 text-xs font-semibold text-purple-300">
-                          Super Admin
-                        </span>
-                      ) : null}
-
-                      {mems.some((m) => m.is_billing_contact) ? (
-                        <span className="cyber-pill-success">
-                          Billing Contact
-                        </span>
-                      ) : null}
-
-                      {mems.some((m) => m.is_security_contact) ? (
-                        <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-300">
-                          Security Contact
-                        </span>
-                      ) : null}
-                    </div>
+            return (
+              <Link
+                key={userId}
+                href={`/admin/users/${userId}`}
+                className="glass-card glass-card-hover block p-5 sm:p-6"
+              >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-slate-50">
+                      {profile?.full_name ?? "Unknown User"}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-400">{profile?.email ?? "No email"}</p>
+                    <p className="mt-2 text-sm text-slate-400">
+                      Org: {primaryOrg?.name ?? "Unknown"} &middot; Role:{" "}
+                      {primaryRole?.name ?? "Unknown"}
+                      {orgs.length > 1
+                        ? ` &middot; +${orgs.length - 1} more org${orgs.length > 2 ? "s" : ""}`
+                        : ""}
+                    </p>
                   </div>
-                </Link>
-              );
-            },
-          )
+
+                  <div className="flex flex-wrap gap-2">
+                    {profile?.is_super_admin ? (
+                      <span className="rounded-full border border-purple-500/20 bg-purple-500/10 px-3 py-1 text-xs font-semibold text-purple-300">
+                        Super Admin
+                      </span>
+                    ) : null}
+
+                    {mems.some((m) => m.is_billing_contact) ? (
+                      <span className="cyber-pill-success">Billing Contact</span>
+                    ) : null}
+
+                    {mems.some((m) => m.is_security_contact) ? (
+                      <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-300">
+                        Security Contact
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </Link>
+            );
+          })
         ) : (
           <div className="cyber-panel text-slate-400">
             {search || orgFilter || statusFilter !== "all"

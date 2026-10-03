@@ -1,0 +1,23 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "portalSections": [
+    "Requested services",
+    "Quote status",
+    "Proposal status",
+    "Approved services",
+    "Project progress",
+    "Documents",
+    "Tasks/checklists",
+    "Messages",
+    "Recommended next services"
+  ],
+  "statuses": [
+    "requested",
+    "reviewing",
+    "proposal_ready",
+    "approved",
+    "in_progress",
+    "completed",
+    "closed"
+  ]
+}

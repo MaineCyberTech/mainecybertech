@@ -1,0 +1,27 @@
+name: Secret scan (diff)
+description: >
+  Scan the push/PR diff for high-confidence secret patterns. Same patterns as
+  scripts/scan-secrets.sh and the pre-commit hook. Requires a `fetch-depth: 0`
+  checkout (the workflow does that before calling this action).
+
+runs:
+  using: composite
+  steps:
+    - name: Scan diff for secrets
+      shell: bash
+      run: |
+        set -e
+        PATTERNS='AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|gho_[0-9a-zA-Z]{36}|ghu_[0-9a-zA-Z]{36}|github_pat_[0-9a-zA-Z_]{22,}|sk_(live|test)_[0-9a-zA-Z]{16,}|xox[baprs]-[0-9a-zA-Z-]{10,}|-----BEGIN [A-Za-z ]*PRIVATE KEY-----|eyJhbGciOi[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{20,}\.[A-Za-z0-9._-]{20,}'
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          BASE="${{ github.event.pull_request.base.sha }}"
+        else
+          BASE="$(git merge-base HEAD origin/main 2>/dev/null || echo HEAD~1)"
+        fi
+        DIFF=$(git diff -U0 "$BASE" HEAD 2>/dev/null || git diff -U0 HEAD~1 HEAD)
+        MATCHES=$(printf '%s' "$DIFF" | grep -E "^\+" | grep -v 'PATTERNS=' | grep -v 'secrets\.' | grep -vE "^\+\s*#" | grep -cE "$PATTERNS" || true)
+        echo "Secret-pattern matches in diff: $MATCHES"
+        if [ "$MATCHES" -gt 0 ]; then
+          printf '%s' "$DIFF" | grep -nE "^\+.*($PATTERNS)" | grep -v 'PATTERNS=' | grep -v 'secrets\.' || true
+          echo "::error::Secret pattern detected in diff — remove or replace secret values."
+          exit 1
+        fi

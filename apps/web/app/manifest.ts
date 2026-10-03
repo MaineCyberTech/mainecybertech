@@ -1,0 +1,20 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "Maine CyberTech Portal",
+    short_name: "MCT Portal",
+    description: "Managed IT services and cybersecurity platform",
+    start_url: "/",
+    display: "standalone",
+    background_color: "#0A1118",
+    theme_color: "#059669",
+    icons: [
+      {
+        src: "/favicon.svg",
+        sizes: "any",
+        type: "image/svg+xml",
+      },
+    ],
+  };
+}

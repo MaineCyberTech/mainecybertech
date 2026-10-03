@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { getEnv } from "../config/env";
 import { logger } from "./logger";
+import { recordNotificationDelivery } from "./metrics";
 
 type EmailOptions = {
   to: string;
@@ -13,6 +14,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
   const env = getEnv();
   if (!env.SMTP_HOST) {
     logger.warn("SMTP not configured; skipping email");
+    recordNotificationDelivery("email", "skipped");
     return false;
   }
 
@@ -35,11 +37,12 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
       html,
     });
 
-    logger.info({ to, subject }, "Email sent");
+    logger.info({ to: "***", subject }, "Email sent");
     return true;
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    logger.error({ error: msg, to, subject }, "Failed to send email");
+    // Do not log the recipient address (PII).
+    logger.error({ error: msg, to: "***", subject }, "Failed to send email");
     return false;
   }
 }

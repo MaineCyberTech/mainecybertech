@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getApiClient } from "@/lib/api";
+import { isPlatformAdminKey } from "@/lib/roles";
 
 type AdminAccessResult = {
   userId: string;
@@ -12,8 +13,11 @@ export async function requireAdminAccess(): Promise<AdminAccessResult> {
   let user;
   try {
     user = await api.users.me();
-  } catch {
-    redirect("/login");
+  } catch (error) {
+    const err = error as { code?: string; status?: number };
+    if (err?.code === "MFA_REQUIRED") redirect("/portal/profile/security?mfa=required");
+    if (err?.status === 401 || err?.status === 403) redirect("/login");
+    throw error;
   }
 
   if (!user?.userId) {
@@ -23,17 +27,19 @@ export async function requireAdminAccess(): Promise<AdminAccessResult> {
   let memberships;
   try {
     memberships = await api.memberships.list({ userId: user.userId, status: "approved" });
-  } catch {
-    redirect("/portal/dashboard");
+  } catch (error) {
+    const status = (error as { status?: number })?.status;
+    if (status === 401 || status === 403) redirect("/portal/dashboard");
+    throw error;
   }
 
   if (!memberships.length) {
     redirect("/portal/dashboard");
   }
 
-  const adminMembership = (memberships as any[]).find((m) => {
+  const adminMembership = memberships.find((m) => {
     const role = m.roles;
-    return role && ["admin", "super_admin"].includes(role.key);
+    return role && isPlatformAdminKey(role.key);
   });
 
   if (!adminMembership) {
@@ -42,6 +48,6 @@ export async function requireAdminAccess(): Promise<AdminAccessResult> {
 
   return {
     userId: user.userId,
-    roleKey: adminMembership.roles.key
+    roleKey: adminMembership.roles?.key ?? "",
   };
 }

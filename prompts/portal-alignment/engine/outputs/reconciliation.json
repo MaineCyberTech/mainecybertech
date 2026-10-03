@@ -1,0 +1,56 @@
+{
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "cross-domain",
+      "title": "Database tables never queried in API code",
+      "tables": [
+        "IF",
+        "ai_draft_outputs",
+        "ai_policies",
+        "appointments",
+        "break_glass_accounts",
+        "camera_calculations",
+        "chat_messages",
+        "chat_threads",
+        "client_runbooks",
+        "comments",
+        "contract_signers",
+        "contracts",
+        "custom_forms",
+        "device_profiles",
+        "dmarc_assessments",
+        "document_permissions",
+        "if",
+        "incident_responses",
+        "onboarding_clients",
+        "onboarding_submissions",
+        "port_maps",
+        "portal_module_settings",
+        "project_dependencies",
+        "project_members",
+        "project_milestones",
+        "project_phases",
+        "retention_policies",
+        "saas_audits",
+        "store_leads",
+        "store_proposal_drafts",
+        "store_quote_requests",
+        "store_visual_assets",
+        "tabletop_exercises",
+        "training_modules",
+        "vendor_contacts",
+        "webhook_dead_letters",
+        "website_monitors"
+      ],
+      "detail": "37 table(s) defined in migrations but never used in any .from() call"
+    }
+  ],
+  "domain_summary": {
+    "database": 2,
+    "api": 1,
+    "frontend": 2
+  },
+  "tables_unused": 37,
+  "total_findings_before_reconciliation": 5
+}

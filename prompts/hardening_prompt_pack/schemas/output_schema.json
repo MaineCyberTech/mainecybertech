@@ -1,6 +1,33 @@
 {
-  "severity": "P0|P1|P2|P3",
-  "file": "string",
-  "issue": "string",
-  "fix": "string"
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Domain Audit Output",
+  "type": "object",
+  "required": ["domain", "total", "timestamp", "findings"],
+  "properties": {
+    "domain": {
+      "type": "string",
+      "enum": [
+        "security",
+        "data",
+        "resilience",
+        "observability",
+        "supply_chain",
+        "privacy",
+        "ci_cd",
+        "evolution"
+      ]
+    },
+    "total": {
+      "type": "integer",
+      "description": "Number of findings in this domain"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "findings_schema.json" }
+    }
+  }
 }

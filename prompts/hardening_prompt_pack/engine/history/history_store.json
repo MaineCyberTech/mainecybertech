@@ -1,0 +1,11 @@
+{
+  "last_run": "2026-08-06T21:21:19.722604+00:00",
+  "commit": "75d3926 test-data: cover admin workflow-button states (phishing launch + CAB approve/reject)",
+  "risk_score": 50,
+  "p0": 1,
+  "p1": 1,
+  "p2": 2,
+  "p3": 2,
+  "total": 6,
+  "status": "BLOCKED"
+}

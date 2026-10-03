@@ -1,0 +1,278 @@
+{
+  "password_security_checkup": {
+    "marketingCopy": "Weak, reused, or previously leaked passwords are the single most common way small businesses get breached. The Password Security Checkup gives you a practical audit of how your company actually handles credentials today. We review your Microsoft 365 password policies, scan your business email domain against the HaveIBeenPwned breach database to see which accounts have been exposed, document shared logins and generic mailboxes that create accountability gaps, and assess whether a business password manager like Bitwarden, 1Password, or Keeper is the right fit. You receive a plain-English scorecard and a prioritized list of fixes you can act on immediately, plus a 30-minute walkthrough so you fully understand what we found and what to do next.",
+    "bestFor": [
+      "Businesses that reuse the same password across multiple accounts or systems",
+      "Companies where staff share login credentials through spreadsheets or chat",
+      "Organizations that have never reviewed their password policies or breached-account exposure",
+      "Businesses applying for cyber insurance that need evidence of password hygiene"
+    ],
+    "whatIsIncluded": [
+      "Full password policy audit across Microsoft 365 and known cloud platforms",
+      "Domain-wide compromised-credential scan using the HaveIBeenPwned API",
+      "Shared account and generic mailbox inventory with risk assessment",
+      "Password manager readiness evaluation comparing Bitwarden, 1Password, and Keeper",
+      "Plain-English Password Security Scorecard with prioritized recommendations",
+      "30-minute customer walkthrough of findings and next steps"
+    ],
+    "customerOutcomes": [
+      "A clear, documented picture of your password posture across every business system",
+      "Knowledge of exactly which business accounts have been exposed in known breaches",
+      "A prioritized, low-effort plan for eliminating weak, shared, and reused credentials",
+      "Credible password hygiene evidence you can submit with cyber insurance applications"
+    ]
+  },
+  "mfa_setup_session": {
+    "marketingCopy": "Multi-factor authentication stops more than 99% of automated account-takeover attacks, yet most small businesses still rely on a password alone for email, banking, payroll, and cloud apps. The MFA Setup Session audits every critical business account for MFA coverage, then configures it hands-on where you have admin access. We enforce MFA with a Microsoft 365 Conditional Access policy so it applies to every user automatically, enable Google Workspace 2-Step Verification when applicable, and walk you through securing third-party platforms like your domain registrar, payroll provider, and banking portals. Every user gets clear enrollment instructions, we verify sign-in works across phone and desktop apps, and we document recovery codes safely so nobody gets permanently locked out.",
+    "bestFor": [
+      "Businesses that don't have MFA enabled on email, banking, payroll, or cloud accounts",
+      "Organizations whose cyber insurance now requires MFA across all critical accounts",
+      "Companies that need hands-on help enabling MFA without confusing technical documentation",
+      "Businesses that recently suffered an email or account compromise and want it to stop happening"
+    ],
+    "whatIsIncluded": [
+      "Audit of all business-critical accounts to identify MFA gaps",
+      "Microsoft 365 MFA configuration with a Conditional Access policy that applies to every user",
+      "Google Workspace 2-Step Verification setup when applicable",
+      "Guided MFA enablement for third-party platforms (banking, payroll, CRM, domain registrar)",
+      "Authenticator app enrollment and training for all users with recovery code storage",
+      "Post-configuration sign-in testing on every platform we secure"
+    ],
+    "customerOutcomes": [
+      "MFA enforced on email, cloud apps, and every critical third-party account we can reach",
+      "A Conditional Access policy in Microsoft 365 that blocks sign-ins without a second factor",
+      "Staff enrolled and comfortable using an authenticator app with no lockouts or confusion",
+      "Documented MFA status per platform that satisfies insurance and audit requests"
+    ]
+  },
+  "phishing_readiness_mini_audit": {
+    "marketingCopy": "Phishing is the attack path behind most real-world business breaches, and the question every owner asks is: would my staff actually recognize it? The Phishing Readiness Mini Audit gives you a fast, evidence-based answer. We review your SPF, DKIM, and DMARC records so we know whether someone can spoof your domain, audit your Microsoft 365 anti-phishing and anti-spam settings, scan user mailboxes for suspicious forwarding rules that indicate a takeover, and optionally run a safe, controlled phishing simulation to measure real click and report rates. You get a clear scorecard of your email defenses and your team's awareness, with specific fixes ranked by impact.",
+    "bestFor": [
+      "Businesses that receive phishing emails and want to know whether staff would fall for them",
+      "Organizations that have never reviewed their email authentication or anti-phishing settings",
+      "Companies preparing for cyber insurance that asks about phishing awareness testing",
+      "Businesses that experienced a phishing-related compromise or near-miss and want a baseline"
+    ],
+    "whatIsIncluded": [
+      "SPF, DKIM, and DMARC record audit to detect spoofable email domains",
+      "Microsoft 365 anti-phishing policy review including impersonation protection",
+      "Microsoft 365 anti-spam and quarantine settings review",
+      "Mailbox forwarding-rule audit to spot signs of account compromise",
+      "Optional controlled phishing simulation with click, report, and reply metrics",
+      "Phishing Readiness Scorecard with prioritized remediation steps"
+    ],
+    "customerOutcomes": [
+      "A clear picture of whether your email domain can be impersonated and how to stop it",
+      "Measured staff phishing awareness compared against realistic expectations",
+      "Specific Microsoft 365 settings changes that meaningfully reduce phishing risk",
+      "An actionable scorecard you can reuse to track awareness improvements over time"
+    ]
+  },
+  "security_score_snapshot": {
+    "marketingCopy": "Most small businesses have never had a formal security assessment, so they guess where the risk is instead of knowing. The Security Score Snapshot replaces guesswork with a single number you can track. We evaluate five domains that matter most for a small organization - identity, endpoints, email, backup, and admin access - against practical baseline controls, then score you 0 to 100. Each domain gets a red, amber, or green rating with the specific evidence behind it, and we finish with your top five quick-win fixes ranked by risk reduction versus effort. This is a fast, affordable baseline you can rerun quarterly to prove you're improving, and it produces exactly the kind of evidence cyber insurers want to see.",
+    "bestFor": [
+      "Business owners who want an objective, measurable security score rather than gut feeling",
+      "Organizations that have never had any security assessment and need a starting baseline",
+      "Companies applying for cyber insurance that need a gap list and improvement evidence",
+      "Businesses that want to measure security improvement over time with a repeatable score"
+    ],
+    "whatIsIncluded": [
+      "Identity review: MFA coverage, admin accounts, and shared credential risk",
+      "Endpoint review: protection software, patch status, encryption, and local admin rights",
+      "Email review: SPF/DKIM/DMARC, anti-phishing policy, and mailbox-rule risk",
+      "Backup review: configuration, success history, retention, and off-site copy",
+      "Admin access review: privileged accounts, stale accounts, and excessive permissions",
+      "Security Scorecard with an overall 0-100 score and five prioritized quick wins"
+    ],
+    "customerOutcomes": [
+      "A clear 0-100 security score you can benchmark and track over time",
+      "Red, amber, and green ratings across the five domains that drive most small-business risk",
+      "Five prioritized actions ranked by risk reduction versus implementation effort",
+      "Repeatable, insurance-ready evidence of your security posture"
+    ]
+  },
+  "admin_account_cleanup": {
+    "marketingCopy": "Every former employee, past IT provider, and abandoned project usually leaves behind an admin account - and each one is a back door into your business. The Admin Account Cleanup finds and removes them. We audit privileged access across Microsoft 365, on-premises Active Directory when present, and cloud platforms like Google Workspace, Salesforce, and QuickBooks. We identify stale accounts for departed staff, shared admin logins with no individual accountability, and users whose privileges exceed their job. You approve every change before we make it, and you end up with a documented, least-privilege admin structure with clear ownership for every account that remains.",
+    "bestFor": [
+      "Businesses that have gone through employee turnover or IT-provider changes without cleaning up access",
+      "Organizations that still rely on shared admin logins with no way to know who used them",
+      "Companies where nobody is sure who currently has administrative privileges",
+      "Businesses preparing for an audit, compliance review, or cyber insurance application"
+    ],
+    "whatIsIncluded": [
+      "Microsoft 365 admin account audit covering Global, Exchange, SharePoint, and Teams admins",
+      "On-premises Active Directory admin group review when applicable",
+      "Cloud platform admin audit across Google Workspace, Salesforce, QuickBooks, and more",
+      "Stale and shared account identification with risk documentation",
+      "Approved removal or demotion of unnecessary privileges with audit logging",
+      "Final admin inventory documenting ownership, purpose, and review date for every account"
+    ],
+    "customerOutcomes": [
+      "A complete inventory of every administrative account across your business platforms",
+      "Former-employee, shared, and unused admin access removed with documented approval",
+      "A least-privilege admin structure where each account maps to a person and a job",
+      "Dramatically reduced risk of insider misuse and post-termination access"
+    ]
+  },
+  "business_email_safety_check": {
+    "marketingCopy": "Your business email is your digital front door, and if SPF, DKIM, and DMARC aren't configured correctly, anyone can send emails that appear to come from you. The Business Email Safety Check verifies your domain's email authentication, reviews your Microsoft 365 or Google Workspace security settings, audits every mailbox's forwarding rules for unauthorized exfiltration, and confirms MFA is actually enabled on email accounts. It catches the exact failures that lead to business email compromise, spam-flagged domains that hurt deliverability, and silent data leaks through forwarding. You get a straight-to-the-point report with the specific records and settings that need fixing.",
+    "bestFor": [
+      "Businesses worried about scammers impersonating their domain to customers and partners",
+      "Organizations whose legitimate emails are landing in spam due to missing authentication",
+      "Companies that want to verify nobody has set up unauthorized mailbox forwarding",
+      "Businesses preparing for cyber insurance that requires verified email authentication"
+    ],
+    "whatIsIncluded": [
+      "SPF, DKIM, and DMARC record audit with deliverability and spoofing implications",
+      "Microsoft 365 or Google Workspace email security configuration review",
+      "Mailbox forwarding-rule audit across all user mailboxes",
+      "MFA status verification on all email accounts",
+      "Anti-spoofing and anti-impersonation configuration recommendations",
+      "Plain-English email security report with prioritized fixes"
+    ],
+    "customerOutcomes": [
+      "Verified SPF, DKIM, and DMARC configuration that blocks domain spoofing",
+      "Discovery and removal of any unauthorized email forwarding or data-exfiltration rules",
+      "Confirmation that MFA protects every mailbox, closing the most common BEC path",
+      "Improved email deliverability because authentication records are correct"
+    ]
+  },
+  "remote_work_safety_check": {
+    "marketingCopy": "Remote work moves your business network into home offices, coffee shops, and personal devices - and most companies never formally reviewed what that exposed. The Remote Work Safety Check evaluates how your staff actually connect and work remotely. We review your VPN and remote-desktop configuration for unsafe exposure, check whether MFA protects remote access, assess device policies like disk encryption and patching on laptops, and flag risky practices like personal devices handling business data or unsecured home Wi-Fi. You get a practical assessment of your remote-work risk with concrete changes you can make this week.",
+    "bestFor": [
+      "Businesses with employees working from home, in the field, or on the road",
+      "Organizations that allow personal devices or home networks to touch business data",
+      "Companies that use VPN, Remote Desktop, or cloud apps for remote access",
+      "Businesses that scaled up remote work quickly and never audited the security implications"
+    ],
+    "whatIsIncluded": [
+      "Remote access infrastructure review covering VPN, RDP, and management tools",
+      "MFA coverage verification for all remote access paths",
+      "Device posture assessment: encryption, antivirus, patching, and local admin rights",
+      "Guidance on home Wi-Fi security and personal device use for remote staff",
+      "Remote work policy review with practical improvement recommendations",
+      "Remote Work Safety Report with findings and prioritized actions"
+    ],
+    "customerOutcomes": [
+      "A clear picture of every way employees access business systems remotely",
+      "Unsafe remote-access exposures identified and prioritized for immediate fixing",
+      "Concrete guidance staff can follow to secure home networks and personal devices",
+      "A documented remote-work security baseline for insurance or compliance purposes"
+    ]
+  },
+  "basic_incident_readiness_checklist": {
+    "marketingCopy": "When a security incident happens, panic and hesitation cause more damage than the attack itself. The Basic Incident Readiness Checklist gives your team a simple, usable playbook before something goes wrong. We build a step-by-step first-response checklist customized to your business size and systems: who does what, who to call, and how to contain the four most common scenarios - email compromise, ransomware, data breach, and service outage. This isn't a 50-page policy binder; it's a laminated, real-world checklist your staff can actually follow at 3 a.m. during an incident, and it satisfies the incident-response requirements many cyber insurers now demand.",
+    "bestFor": [
+      "Businesses that have no incident response plan and want a practical starting point",
+      "Organizations that need a usable checklist rather than a dense policy document",
+      "Companies whose cyber insurance requires evidence of incident response readiness",
+      "Small teams that want clear roles and phone numbers defined before an emergency"
+    ],
+    "whatIsIncluded": [
+      "Incident classification guide with realistic examples for your business",
+      "Defined roles: incident commander, communications lead, and technical lead",
+      "Emergency contact list template covering insurance, legal, IT, and law enforcement",
+      "Step-by-step containment procedures for email compromise, ransomware, breach, and outage",
+      "Containment checklist covering isolate, preserve, notify, and begin recovery",
+      "Post-incident review template for lessons learned and improvements"
+    ],
+    "customerOutcomes": [
+      "A customized first-response checklist your team can execute under pressure",
+      "Clear roles, ownership, and escalation contacts defined before an incident happens",
+      "Faster containment in the critical first hour when decisions matter most",
+      "Incident-readiness documentation accepted by cyber insurance applications"
+    ]
+  },
+  "website_uptime_monitor_setup": {
+    "marketingCopy": "A down website silently costs you leads, sales, and credibility - and most small businesses only find out when a customer calls. The Website Uptime Monitor Setup puts automated monitoring on your site so you know about problems before your customers do. We configure a professional uptime service that checks your site from multiple global locations every few minutes, alert you by email, SMS, or Slack when it goes down, and tune the alert rules so you aren't woken up by false alarms. We test that alerts actually fire, document the whole setup, and hand you a working early-warning system for your most important sales tool.",
+    "bestFor": [
+      "Businesses whose website drives leads, bookings, sales, or customer inquiries",
+      "Organizations that have discovered downtime from customers instead of from monitoring",
+      "Companies that want automated uptime alerts without managing the tooling themselves",
+      "Businesses that rely on a client portal, quote form, or e-commerce checkout being online"
+    ],
+    "whatIsIncluded": [
+      "Uptime monitoring service selection and configuration (UptimeRobot, BetterStack, or similar)",
+      "Multi-location monitoring for global coverage of your website",
+      "Email, SMS, and Slack or Teams alert routing",
+      "Alert-rule tuning to prevent false positives and alert fatigue",
+      "Monitoring setup documentation with escalation contacts",
+      "Initial monitoring and alert-testing period to confirm everything fires correctly"
+    ],
+    "customerOutcomes": [
+      "Automated downtime detection within minutes, from multiple locations worldwide",
+      "Instant alerts through the channels your team actually watches",
+      "Fewer false alarms because rules are tuned to your site's real behavior",
+      "Peace of mind that website issues are caught before customers complain"
+    ]
+  },
+  "printer_scanner_setup": {
+    "marketingCopy": "A printer that won't print or a scanner that won't scan is one of the most common daily frustrations in a small office - and usually a 20-minute fix hiding behind a confusing driver error. The Printer or Scanner Setup service handles it end to end. We connect the device to your network over wired or wireless, install the correct drivers on every workstation that needs access, configure scan-to-email or scan-to-folder so scanning actually saves time, set sensible defaults like duplex and paper size, and test printing and scanning from every machine so nothing is left half-working. Your team gets a device that just works, plus simple instructions for the tasks they do every day.",
+    "bestFor": [
+      "Offices with a new printer or scanner that needs professional network setup",
+      "Businesses where printing or scanning only works on some computers",
+      "Companies that want scan-to-email or scan-to-folder configured properly",
+      "Teams tired of troubleshooting the same printer error on every workstation"
+    ],
+    "whatIsIncluded": [
+      "Wired or wireless network configuration for the printer or scanner",
+      "Driver installation and configuration on all designated workstations",
+      "Scan-to-email, scan-to-folder, or scan-to-cloud destination setup",
+      "Print queue, default settings, and duplex configuration",
+      "Functionality testing from every workstation including test prints and test scans",
+      "Simple user instructions for common printing and scanning tasks"
+    ],
+    "customerOutcomes": [
+      "Printing and scanning that work reliably from every designated workstation",
+      "Scan-to-email and scan-to-folder saving time instead of creating workarounds",
+      "Correct drivers installed so 'printer not found' errors disappear",
+      "Documented configuration and user guidance your team can reference"
+    ]
+  },
+  "pc_tune_up_cleanup": {
+    "marketingCopy": "Slow computers aren't a hardware problem as often as you'd think - they're usually a build-up of startup programs, junk files, outdated software, and bloatware. The PC Tune-Up and Cleanup service gives a sluggish workstation a measurable performance boost without spending thousands on new hardware. We clear temporary files and old downloads, disable unnecessary startup items that slow boot times, install pending Windows and application updates, remove software nobody uses, and benchmark the machine before and after so you can see the real improvement in boot time, available memory, and disk speed. For a business extending the life of existing computers, this is the cheapest performance upgrade available.",
+    "bestFor": [
+      "Businesses with workstations that have gotten noticeably slower over time",
+      "Organizations that want to extend the life of existing hardware before buying replacements",
+      "Staff members frustrated by long boot times and sluggish everyday performance",
+      "Companies that want measurable before-and-after proof of a performance fix"
+    ],
+    "whatIsIncluded": [
+      "Disk analysis and cleanup of temporary files, old downloads, and recycle bin contents",
+      "Startup program review and optimization for faster boot times",
+      "Installation of pending Windows and application updates",
+      "Identification and removal of unnecessary or bloatware software",
+      "Before-and-after performance benchmarking (boot time, memory, disk speed)",
+      "Maintenance recommendations to keep the machine fast"
+    ],
+    "customerOutcomes": [
+      "Measurably faster boot and everyday performance with benchmark proof",
+      "Recovered disk space from files and applications that were never needed",
+      "A cleaner, more secure system with updates and fewer attack surfaces",
+      "Extended useful life for existing hardware, delaying replacement spending"
+    ]
+  },
+  "computer_replacement_readiness_review": {
+    "marketingCopy": "Replacing business computers without a plan means emergency purchases, inconsistent hardware, and budget surprises. The Computer Replacement Readiness Review turns that scramble into a predictable roadmap. We audit your entire computer fleet - age, specifications, performance, and warranty status - and sort every device into one of three buckets: replace now, extend with an upgrade, or fine for now. You get a prioritized replacement list with specific model recommendations at budget, standard, and performance tiers, a multi-year budget projection, and guidance on data transfer and secure disposal of retired devices. It's hardware lifecycle management for businesses that can't afford to guess.",
+    "bestFor": [
+      "Businesses planning to refresh aging computers and unsure what to replace first",
+      "Organizations that want to budget for hardware over multiple years instead of scrambling",
+      "Companies with a mixed-age fleet that needs standardization",
+      "Businesses that want to stop making reactive, emergency computer purchases"
+    ],
+    "whatIsIncluded": [
+      "Complete fleet audit: age, specifications, performance, and warranty status per device",
+      "Replacement priority ranking with clear reasoning for each computer",
+      "Model recommendations at budget, standard, and performance tiers",
+      "Three-year budget projection for hardware refresh",
+      "Data transfer planning guidance for the replacement process",
+      "Secure disposal recommendations for retired devices"
+    ],
+    "customerOutcomes": [
+      "A prioritized, honest list of which computers must be replaced now versus later",
+      "A multi-year hardware budget you can plan around instead of react to",
+      "Standardized device recommendations that reduce support complexity",
+      "Clear handling of retired devices including secure wipe and recycling options"
+    ]
+  }
+}

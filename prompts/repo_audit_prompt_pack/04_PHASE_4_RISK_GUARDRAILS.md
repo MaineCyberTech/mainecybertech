@@ -29,6 +29,29 @@ For every major potential improvement area, assess:
 - whether deployment behavior could change
 - whether auth, routing, data, or API contracts could be impacted
 
+### Security Posture Comparison
+
+In addition to stability risk, assess the **security posture gap** between the two repos. Compare across:
+
+- **Auth flows** — JWT strategy (local verify vs Supabase getUser), session management, cookie flags (HttpOnly/Secure/SameSite), PKCE exchange
+- **Secrets management** — how API keys, tokens, and secrets are stored, injected, and validated (env schemas, .env.example hygiene, CI secret passing)
+- **HTTP security headers** — CSP, HSTS, X-Frame-Options, X-Content-Type-Options presence and strictness
+- **Input validation** — Zod schema coverage (what % of mutation endpoints are validated), sanitization patterns
+- **Rate limiting** — per-endpoint vs global, auth endpoint throttling, configurable limits
+- **Dependency vulnerabilities** — compare dependency counts, known vulnerable packages, supply chain risk (lockfile, Dependabot/Renovate config)
+- **Database access** — RLS policy coverage, service role key usage patterns, tenant isolation enforcement (requireOrgAccess vs inline checks)
+- **Audit logging** — coverage across mutation endpoints, PII exposure in logs, retention strategy
+- **Error handling** — stack traces in responses, structured vs ad-hoc error formats, sentry/pino integration
+
+For each dimension, classify as:
+
+- current repo is **stronger**
+- reference repo is **stronger**
+- **equivalent**
+- **unknown** (needs deeper inspection)
+
+### Risk Guardrails
+
 Pay special attention to:
 
 - auth flows
@@ -57,3 +80,11 @@ Pay special attention to:
 Be conservative and explicit.
 Do not understate risk.
 If a change sounds nice but is operationally dangerous, say so clearly.
+
+### Self-Review
+
+Before concluding Phase 4, review your output and flag:
+
+- Any risk assessment where you lack evidence to estimate blast radius or migration complexity
+- Any security dimension you didn't assess due to insufficient visibility into the codebase
+- Any "low risk" label that depends on assumptions about test coverage or deployment practices

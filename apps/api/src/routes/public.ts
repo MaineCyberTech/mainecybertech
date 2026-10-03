@@ -6,6 +6,7 @@ import { getEnv } from "../config/env";
 import { logAuditEvent } from "../services/audit";
 import { logger } from "../lib/logger";
 import { httpClients } from "../lib/http-client";
+import { isBotUserAgent, shouldSendVisitorAlert } from "../lib/bot-detection";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -19,7 +20,24 @@ const submitSchema = z.object({
   employees: z.string().min(1).max(50),
   urgency: z.string().min(1).max(50),
   message: z.string().min(1).max(5000),
+  captchaToken: z.string().min(1).max(10000).optional(),
 });
+
+async function verifyCaptcha(token: string): Promise<boolean> {
+  try {
+    const secret = getEnv().TURNSTILE_SECRET_KEY;
+    if (!secret) return true;
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,
+    });
+    const data = (await res.json()) as { success: boolean };
+    return data.success === true;
+  } catch {
+    return false;
+  }
+}
 
 router.get("/init", async (req, res, next) => {
   try {
@@ -30,18 +48,27 @@ router.get("/init", async (req, res, next) => {
     const platform = (req.headers["sec-ch-ua-platform"] as string) || "Unknown";
     const referrer = req.headers["referer"] || "Direct";
 
+    // Crawlers, preview bots, uptime monitors and scanners hit this public
+    // endpoint constantly; do not treat them as human visitors.
+    const isBot = isBotUserAgent(userAgent);
+
     let location = "Unknown";
-    try {
-      const cleanIp = ipAddress.replace("::ffff:", "");
-      const geoRes = await httpClients.geo.get(
-        `http://ip-api.com/json/${cleanIp}`,
-      );
-      const geoData: any = await geoRes.json();
-      if (geoData.status === "success") {
-        location = `${geoData.city}, ${geoData.regionName}, ${geoData.country}`;
+    if (!isBot) {
+      try {
+        const cleanIp = ipAddress.replace("::ffff:", "");
+        const geoRes = await httpClients.geo.get(`http://ip-api.com/json/${cleanIp}`);
+        const geoData: {
+          status: string;
+          city?: string | null;
+          regionName?: string | null;
+          country?: string | null;
+        } = await geoRes.json();
+        if (geoData.status === "success") {
+          location = `${geoData.city}, ${geoData.regionName}, ${geoData.country}`;
+        }
+      } catch {
+        // Geo lookup failure is non-critical
       }
-    } catch {
-      // Geo lookup failure is non-critical
     }
 
     const { error } = await supabase.from("public_interactions").insert({
@@ -51,12 +78,13 @@ router.get("/init", async (req, res, next) => {
       user_agent: userAgent,
       platform,
       referrer,
+      is_bot: isBot,
     });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     const env = getEnv();
-    if (env.PUBLIC_TRAFFIC_WEBHOOK_URL) {
+    if (env.PUBLIC_TRAFFIC_WEBHOOK_URL && !isBot && shouldSendVisitorAlert(ipAddress)) {
       const visitorCard = {
         type: "message",
         attachments: [
@@ -80,13 +108,9 @@ router.get("/init", async (req, res, next) => {
 
       httpClients.teams
         .post(env.PUBLIC_TRAFFIC_WEBHOOK_URL, visitorCard)
-        .catch((err) =>
-          logger.error({ err }, "Failed to send traffic webhook"),
-        );
-    } else {
-      logger.warn(
-        "PUBLIC_TRAFFIC_WEBHOOK_URL not set — skipping visitor webhook",
-      );
+        .catch((err) => logger.error({ err }, "Failed to send traffic webhook"));
+    } else if (!env.PUBLIC_TRAFFIC_WEBHOOK_URL) {
+      logger.warn("PUBLIC_TRAFFIC_WEBHOOK_URL not set — skipping visitor webhook");
     }
 
     res.json(success({ trackingId: interactionId }));
@@ -98,6 +122,21 @@ router.get("/init", async (req, res, next) => {
 router.post("/submit", async (req, res, next) => {
   try {
     const parsed = submitSchema.parse(req.body);
+
+    // When Turnstile is configured, a verified token is required. Previously
+    // the check was skipped whenever the token was absent, so an attacker
+    // could bypass it by simply omitting the field.
+    const captchaSecret = getEnv().TURNSTILE_SECRET_KEY;
+    if (captchaSecret) {
+      if (!parsed.captchaToken) {
+        throw new AppError("CAPTCHA_REQUIRED", "CAPTCHA verification is required.", 400);
+      }
+      const valid = await verifyCaptcha(parsed.captchaToken);
+      if (!valid) {
+        throw new AppError("CAPTCHA_FAILED", "CAPTCHA verification failed. Please try again.", 400);
+      }
+    }
+
     const supabase = getSupabaseAdmin();
 
     const { data: record, error: fetchError } = await supabase
@@ -107,11 +146,7 @@ router.post("/submit", async (req, res, next) => {
       .single();
 
     if (fetchError || !record) {
-      throw new AppError(
-        "NOT_FOUND",
-        "Session expired. Please refresh the page.",
-        404,
-      );
+      throw new AppError("NOT_FOUND", "Session expired. Please refresh the page.", 404);
     }
 
     const { error: updateError } = await supabase
@@ -161,8 +196,7 @@ router.post("/submit", async (req, res, next) => {
 
     if (env.JSM_DOMAIN && env.JSM_API_TOKEN) {
       const authHeader =
-        "Basic " +
-        Buffer.from(`${env.JSM_EMAIL}:${env.JSM_API_TOKEN}`).toString("base64");
+        "Basic " + Buffer.from(`${env.JSM_EMAIL}:${env.JSM_API_TOKEN}`).toString("base64");
 
       const ticketDescription = `*A new client request was submitted via the website.*
 
@@ -219,9 +253,7 @@ h3. Captured Session Metadata
         })
         .catch((err) => logger.error({ err }, "Failed to reach JSM API"));
     } else {
-      logger.warn(
-        "JSM_DOMAIN or JSM_API_TOKEN not set — skipping ticket creation",
-      );
+      logger.warn("JSM_DOMAIN or JSM_API_TOKEN not set — skipping ticket creation");
     }
 
     await logAuditEvent({
@@ -240,6 +272,116 @@ h3. Captured Session Metadata
   } catch (error) {
     next(error);
   }
+});
+
+const MAX_CSP_REPORTS = 10;
+const MAX_CSP_FIELD_LENGTH = 200;
+
+const cspReportSchema = z
+  .object({
+    "document-uri": z.string().optional(),
+    documentURL: z.string().optional(),
+    "violated-directive": z.string().optional(),
+    violatedDirective: z.string().optional(),
+    "effective-directive": z.string().optional(),
+    effectiveDirective: z.string().optional(),
+    "blocked-uri": z.string().optional(),
+    blockedURL: z.string().optional(),
+    "source-file": z.string().optional(),
+    sourceFile: z.string().optional(),
+    "line-number": z.union([z.number(), z.string()]).optional(),
+    lineNumber: z.union([z.number(), z.string()]).optional(),
+    "script-sample": z.string().optional(),
+    sample: z.string().optional(),
+  })
+  .passthrough();
+
+function truncateCspField(value: unknown): string | undefined {
+  if (typeof value !== "string" || value.length === 0) return undefined;
+  return value.length > MAX_CSP_FIELD_LENGTH ? value.slice(0, MAX_CSP_FIELD_LENGTH) : value;
+}
+
+/**
+ * Reduce a browser CSP report to a small allow-list of fields. Everything else
+ * (headers, cookies, arbitrary report extensions) is dropped before logging.
+ */
+function sanitizeCspReport(report: unknown): Record<string, string | number> | null {
+  const parsed = cspReportSchema.safeParse(report);
+  if (!parsed.success) return null;
+  const raw = parsed.data;
+  const sanitized: Record<string, string | number> = {};
+
+  const documentUri = truncateCspField(raw["document-uri"] ?? raw.documentURL);
+  if (documentUri) sanitized["document-uri"] = documentUri;
+
+  const directive = truncateCspField(
+    raw["effective-directive"] ??
+      raw.effectiveDirective ??
+      raw["violated-directive"] ??
+      raw.violatedDirective,
+  );
+  if (directive) sanitized.directive = directive;
+
+  const blockedUri = truncateCspField(raw["blocked-uri"] ?? raw.blockedURL);
+  if (blockedUri) sanitized["blocked-uri"] = blockedUri;
+
+  const sourceFile = truncateCspField(raw["source-file"] ?? raw.sourceFile);
+  if (sourceFile) sanitized["source-file"] = sourceFile;
+
+  const lineNumber = raw["line-number"] ?? raw.lineNumber;
+  if (typeof lineNumber === "number" && Number.isFinite(lineNumber)) {
+    sanitized["line-number"] = lineNumber;
+  } else {
+    const limited = truncateCspField(lineNumber);
+    if (limited) sanitized["line-number"] = limited;
+  }
+
+  const sample = truncateCspField(raw["script-sample"] ?? raw.sample);
+  if (sample) sanitized["script-sample"] = sample;
+
+  return Object.keys(sanitized).length > 0 ? sanitized : null;
+}
+
+/**
+ * Accept both wire formats: a legacy `{ "csp-report": {...} }` envelope or an
+ * array of Reporting API `{ type, body }` entries. Capped so one request can
+ * never flood the logs.
+ */
+function extractCspReports(body: unknown): unknown[] {
+  if (Array.isArray(body)) {
+    const reports: unknown[] = [];
+    for (const entry of body) {
+      if (reports.length >= MAX_CSP_REPORTS) break;
+      if (!entry || typeof entry !== "object") continue;
+      const { type, body: reportBody } = entry as { type?: unknown; body?: unknown };
+      if (typeof type === "string" && type !== "csp-violation") continue;
+      reports.push(reportBody);
+    }
+    return reports;
+  }
+  if (body && typeof body === "object" && "csp-report" in body) {
+    return [(body as { "csp-report"?: unknown })["csp-report"]];
+  }
+  return [];
+}
+
+/**
+ * Browser CSP violation reports. Unauthenticated by design (the global limiter
+ * still applies); reports are logged and never persisted. Responses are always
+ * 204 because browsers ignore anything they cannot read.
+ */
+router.post("/csp-report", (req, res) => {
+  try {
+    for (const report of extractCspReports(req.body)) {
+      const sanitized = sanitizeCspReport(report);
+      if (sanitized) logger.warn({ csp: sanitized }, "csp.violation");
+    }
+  } catch (error) {
+    // Reports are best-effort telemetry; a malformed payload must not fail the
+    // request.
+    logger.debug({ err: error }, "csp.report.parse_failed");
+  }
+  res.status(204).end();
 });
 
 export default router;

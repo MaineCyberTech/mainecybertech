@@ -1,0 +1,85 @@
+﻿import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
+import { notFound } from "next/navigation";
+import { requireAdminAccess } from "@/lib/auth/admin";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import AdminSubnav from "@/components/admin/AdminSubnav";
+import AdminPageShell from "@/components/admin/AdminPageShell";
+import RecordDetail from "@/components/admin/RecordDetail";
+import { updateDomainMonitor, deleteDomainMonitor } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
+
+export const dynamic = "force-dynamic";
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Domain Monitor Detail (${id.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
+
+export default async function DetailPage(props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params;
+  await requireAdminAccess();
+  const api = getApiClient();
+  let record: Record<string, unknown> | null = null;
+  try {
+    record = (await withRetry(() => api.domainMonitors.get(id))) as unknown as Record<
+      string,
+      unknown
+    >;
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
+  }
+
+  return (
+    <AdminPageShell
+      breadcrumbs={
+        <Breadcrumbs
+          items={[
+            { label: "Admin", href: "/admin" },
+            { label: "Domain Monitor", href: "/admin/domain-monitors" },
+            { label: "Detail" },
+          ]}
+        />
+      }
+      subnav={<AdminSubnav current="domain-monitors" />}
+      title={String(record?.domain ?? "Record Detail")}
+    >
+      <RecordDetail
+        id={id}
+        record={record}
+        fields={[
+          { key: "domain", label: "Domain" },
+          { key: "displayName", label: "Display Name" },
+          { key: "dnsProvider", label: "DNS Provider" },
+          { key: "sslValid", label: "SSL Valid", type: "checkbox" },
+          { key: "sslExpires", label: "SSL Expires", type: "date" },
+          { key: "spfStatus", label: "SPF" },
+          { key: "dkimStatus", label: "DKIM" },
+          { key: "dmarcStatus", label: "DMARC" },
+          { key: "nameserverMismatch", label: "NS Mismatch", type: "checkbox" },
+          { key: "cloudflareProxied", label: "Cloudflare Proxied", type: "checkbox" },
+          { key: "checkIntervalHours", label: "Check Interval (hrs)", type: "number" },
+          { key: "alertsEnabled", label: "Alerts", type: "checkbox" },
+          {
+            key: "status",
+            label: "Status",
+            type: "select",
+            options: ["healthy", "warning", "critical", "unknown"],
+          },
+        ]}
+        updateAction={updateDomainMonitor}
+        onUpdate={async () => {
+          "use server";
+          revalidatePath(`/admin/domain-monitors/${id}`);
+        }}
+        deleteAction={deleteDomainMonitor}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/domain-monitors");
+        }}
+        parentHref="/admin/domain-monitors"
+        parentLabel="Domain Monitor"
+      />
+    </AdminPageShell>
+  );
+}

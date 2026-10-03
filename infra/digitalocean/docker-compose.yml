@@ -1,34 +1,92 @@
 name: mct-portal
 
+x-security: &security
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
 x-app-env: &app-env
   NODE_ENV: production
-  SUPABASE_URL: ${SUPABASE_URL}
-  SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-  JWT_SECRET: ${JWT_SECRET}
+  SUPABASE_URL: ${SUPABASE_URL:?SUPABASE_URL must be set}
+  SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?SUPABASE_ANON_KEY must be set}
+  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:?SUPABASE_SERVICE_ROLE_KEY must be set}
+  JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
   CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
   APP_BASE_URL: https://${APP_DOMAIN:-app.mainecybertech.com}
+
+# Bound container logs so the droplet's disk cannot fill up.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
 
 services:
   # ===== Queue =====
   redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
+    logging: *default-logging
+    <<: *security
+    read_only: false
+    # The official redis entrypoint drops privileges to `redis`; ours replaces
+    # it (CTR-P2-003, password off argv), so run as `redis` directly. As root
+    # with `cap_drop: ALL` the container lacks CAP_DAC_OVERRIDE and cannot read
+    # the redis-owned (0600) /data/dump.rdb (deploy 2026-10-03). The SETUID/
+    # SETGID caps the official entrypoint needed are therefore not added.
+    user: redis
+    # REDIS_PASSWORD is REQUIRED (no fallback) — set it in .env or the environment.
+    # The password is written to a 0600 file by the entrypoint and passed via the
+    # ENVIRONMENT only: `--requirepass ${REDIS_PASSWORD}` on the command line (the
+    # previous form) exposed it in argv, readable by any host process via `ps`.
+    entrypoint: ["/bin/sh", "/usr/local/bin/redis-entrypoint.sh"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
     volumes:
       - redis-data:/data
+      - ./redis-entrypoint.sh:/usr/local/bin/redis-entrypoint.sh:ro
+    tmpfs:
+      - /tmp
     restart: unless-stopped
     mem_limit: 48m
+    healthcheck:
+      # Authenticate via REDISCLI_AUTH (env), not `-a <password>` (argv).
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # ===== Our Apps =====
   api:
-    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-api:${IMAGE_TAG:-latest}
+    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-api:${IMAGE_TAG:?IMAGE_TAG must be set}
+    logging: *default-logging
+    <<: *security
     environment:
       <<: *app-env
       API_PORT: 4000
       LOG_LEVEL: info
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       SENTRY_DSN: ${SENTRY_DSN:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      # PII field encryption (AES-256-GCM). Without this the dev `plain:`
+      # fallback is used, so set it in production.
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:-}
+      # Cloudflare Turnstile: when the secret is set, /public/submit requires a
+      # valid captcha token (the site key is inlined into the web build).
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      # Prometheus /metrics bearer gate (unset => token gate disabled).
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      MFA_ENFORCEMENT_ENABLED: ${MFA_ENFORCEMENT_ENABLED:-false}
+      M365_CLIENT_STATE: ${M365_CLIENT_STATE:-}
+      JIRA_WEBHOOK_SECRET: ${JIRA_WEBHOOK_SECRET:-}
+      JSM_WEBHOOK_SECRET: ${JSM_WEBHOOK_SECRET:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@mainecybertech.com}
       PUBLIC_TRAFFIC_WEBHOOK_URL: ${PUBLIC_TRAFFIC_WEBHOOK_URL:-}
       PUBLIC_LEAD_WEBHOOK_URL: ${PUBLIC_LEAD_WEBHOOK_URL:-}
       JSM_DOMAIN: ${JSM_DOMAIN:-}
@@ -36,20 +94,36 @@ services:
       JSM_API_TOKEN: ${JSM_API_TOKEN:-}
       JSM_SERVICEDESK_ID: ${JSM_SERVICEDESK_ID:-}
       JSM_REQUEST_TYPE_ID: ${JSM_REQUEST_TYPE_ID:-}
+      # RLS gating enabler (MT-P0-001). Empty by default => getScopedClient
+      # stays on the service-role client (current behavior). Set via GitHub
+      # secrets RLS_READS_ENABLED / RLS_WRITES_ENABLED to flip per module.
+      RLS_READS_ENABLED: ${RLS_READS_ENABLED:-}
+      RLS_WRITES_ENABLED: ${RLS_WRITES_ENABLED:-}
     depends_on:
       redis:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
-    mem_limit: 128m
+    mem_limit: 256m
+    tmpfs:
+      - /tmp
+    read_only: true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   worker:
-    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:-latest}
+    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:?IMAGE_TAG must be set}
+    logging: *default-logging
+    <<: *security
     environment:
       <<: *app-env
       LOG_LEVEL: info
       HEALTH_PORT: 3001
       QUEUE_BACKEND: bullmq
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       SENTRY_DSN: ${SENTRY_DSN:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       JIRA_BASE_URL: ${JIRA_BASE_URL:-}
@@ -69,23 +143,138 @@ services:
       API_BASE_URL: https://${API_DOMAIN:-api.mainecybertech.com}
     depends_on:
       redis:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
-    mem_limit: 128m
+    mem_limit: 256m
+    tmpfs:
+      - /tmp
+    read_only: true
+    # Liveness probe on the worker's HEALTH_PORT (audit IR-P1-003). Without
+    # this, `docker inspect` reports "missing" and the deploy's container
+    # health gate cannot confirm the worker — enabling it lets a worker that
+    # never becomes healthy fail the gate and trigger the auto-revert.
+    healthcheck:
+      # 127.0.0.1, not `localhost`: the health server binds 0.0.0.0 (IPv4) and
+      # BusyBox wget resolves `localhost` to ::1 first, so the probe failed and
+      # the container was marked unhealthy (deploy 2026-10-03).
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   web:
-    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:-latest}
+    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:?IMAGE_TAG must be set}
+    logging: *default-logging
+    <<: *security
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: http://api:4000
       NEXT_TELEMETRY_DISABLED: 1
       SENTRY_DSN: ${SENTRY_DSN:-}
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+    mem_limit: 512m
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/apps/web/.next/cache
+
+  # ===== Observability (internal only — no published ports) =====
+  prometheus:
+    image: prom/prometheus:v3.5.1@sha256:4b05278adfb2e2781063781edd7ca88cc649ea5270cea1696618886a37eeb298
+    logging: *default-logging
+    <<: *security
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus.rules.yml:/etc/prometheus/rules.yml:ro
+      # Named volume (not tmpfs): TSDB must survive restarts/deploys or the 30d
+      # retention window is lost on every compose down/up. tmpfs also blew the
+      # 256MB mem_limit. Disk is cheap; metrics history is not.
+      - prom-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --web.enable-lifecycle
+    depends_on:
+      alertmanager:
+        condition: service_healthy
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    mem_limit: 256m
+    read_only: true
+
+  # Alertmanager — alert DELIVERY + the dead-man's switch (IR-P0-003).
+  # Prometheus forwards firing alerts here (see prometheus.yml `alerting:`).
+  # The Watchdog rule is routed to an EXTERNAL receiver (a healthchecks.io-style
+  # ping URL / external webhook), so a total loss of this droplet is still
+  # detected off-box. Internal only — no published ports.
+  alertmanager:
+    # TODO(ops): digest is pinned to the v0.28.1 manifest-list digest. If a newer
+    # release is adopted, re-pin (`docker buildx imagetools inspect
+    # prom/alertmanager:vX.Y.Z`) and update the digest here before merge.
+    image: prom/alertmanager:v0.28.1@sha256:27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba
+    logging: *default-logging
+    <<: *security
+    environment:
+      # Substituted into alertmanager.yml by envsubst at container start. Never
+      # commit real values - set these in the droplet .env / GitHub env secrets.
+      # REQUIRED for the dead-man's switch to actually reach off-box:
+      #   ALERTMANAGER_WATCHDOG_WEBHOOK_URL, ALERTMANAGER_CRITICAL_WEBHOOK_URL
+      ALERTMANAGER_WATCHDOG_WEBHOOK_URL: ${ALERTMANAGER_WATCHDOG_WEBHOOK_URL:-http://127.0.0.1:1/noop}
+      ALERTMANAGER_CRITICAL_WEBHOOK_URL: ${ALERTMANAGER_CRITICAL_WEBHOOK_URL:-http://127.0.0.1:1/noop}
+      ALERTMANAGER_DEFAULT_WEBHOOK_URL: ${ALERTMANAGER_DEFAULT_WEBHOOK_URL:-http://127.0.0.1:1/noop}
+      ALERTMANAGER_SLACK_API_URL: ${ALERTMANAGER_SLACK_API_URL:-http://127.0.0.1:1/noop}
+      ALERTMANAGER_SLACK_CHANNEL: ${ALERTMANAGER_SLACK_CHANNEL:-#alerts}
+    volumes:
+      # Mounted READ-ONLY as a template. Alertmanager has no shell-style variable
+      # substitution of its own (a literal ${VAR} in a url: fails validation with
+      # "first path segment in URL cannot contain colon"), and the image has no
+      # envsubst (alpine/busybox). The entrypoint renders the template with sed
+      # into a writable path, fails loudly if any placeholder survives, then
+      # hands off to alertmanager.
+      - ./alertmanager.tmpl.yml:/etc/alertmanager/alertmanager.tmpl.yml:ro
+      # Alertmanager keeps its notification/silence state here; a named volume
+      # survives restarts so a deploy does not re-fire duplicate notifications.
+      - alertmanager-data:/alertmanager
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        awk '{
+          gsub(/\$\{ALERTMANAGER_DEFAULT_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_DEFAULT_WEBHOOK_URL"]);
+          gsub(/\$\{ALERTMANAGER_CRITICAL_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_CRITICAL_WEBHOOK_URL"]);
+          gsub(/\$\{ALERTMANAGER_WATCHDOG_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_WATCHDOG_WEBHOOK_URL"]);
+          gsub(/\$\{ALERTMANAGER_SLACK_API_URL\}/, ENVIRON["ALERTMANAGER_SLACK_API_URL"]);
+          gsub(/\$\{ALERTMANAGER_SLACK_CHANNEL\}/, ENVIRON["ALERTMANAGER_SLACK_CHANNEL"]);
+          print
+        }' /etc/alertmanager/alertmanager.tmpl.yml > /tmp/alertmanager.yml
+        && ! grep -E '\$\{ALERTMANAGER' /tmp/alertmanager.yml | grep -vE '^[[:space:]]*#' | grep -q .
+        && exec /bin/alertmanager --config.file=/tmp/alertmanager.yml
+        --storage.path=/alertmanager --log.level=info
+    expose:
+      - "9093"
+    tmpfs:
+      - /tmp
     restart: unless-stopped
     mem_limit: 128m
+    read_only: true
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # ===== Reverse Proxy =====
   caddy:
-    image: caddy:2-alpine
+    image: caddy:2-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
+    logging: *default-logging
+    <<: *security
+    cap_add:
+      - NET_BIND_SERVICE
     ports:
       - "80:80"
       - "443:443"
@@ -97,6 +286,14 @@ services:
     depends_on:
       - api
       - web
+    healthcheck:
+      # `caddy validate` catches a broken Caddyfile deterministically; probing
+      # HTTP would flap on the 80 -> 443 redirect (self-signed/TLS internal).
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     restart: unless-stopped
     mem_limit: 64m
 
@@ -104,3 +301,5 @@ volumes:
   redis-data:
   caddy-data:
   caddy-config:
+  prom-data:
+  alertmanager-data:

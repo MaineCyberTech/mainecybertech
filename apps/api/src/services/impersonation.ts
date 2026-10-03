@@ -1,0 +1,51 @@
+import { getSupabaseAdmin } from "./supabase";
+import { logger } from "../lib/logger";
+import type { Request } from "express";
+import { toJson } from "../lib/db-types";
+import { recordImpersonationEvent } from "../lib/metrics";
+
+/**
+ * Log cross-tenant access (impersonation).
+ *
+ * Cross-tenant roles (admin/super_admin) can operate across ALL tenants (see
+ * CROSS_TENANT_KEYS in roles.ts). Whenever such a user acts inside an
+ * organization they are NOT a member of, we record it in impersonation_log so
+ * cross-tenant activity is auditable (P0-7).
+ *
+ * Fire-and-forget: a logging failure must never block or fail the request.
+ */
+export async function logImpersonation(input: {
+  actorUserId: string;
+  actorRoleKey: string;
+  organizationId: string | null;
+  source?: string;
+  reason?: string;
+  metadata?: Record<string, unknown>;
+  req?: Pick<Request, "ip" | "get"> | null;
+}): Promise<void> {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase.from("impersonation_log").insert({
+      actor_user_id: input.actorUserId,
+      actor_role_key: input.actorRoleKey,
+      organization_id: input.organizationId,
+      reason: input.reason ?? null,
+      source: input.source ?? "api",
+      metadata: toJson(input.metadata ?? {}),
+      ip_address: input.req?.ip ?? null,
+      user_agent: input.req?.get?.("user-agent") ?? null,
+    });
+
+    if (error) {
+      logger.warn(
+        { err: error, actorUserId: input.actorUserId, orgId: input.organizationId },
+        "impersonation log insert failed (non-blocking)",
+      );
+    } else {
+      // Alertable signal for unexpected platform-admin reach (ADMIN-P1-002).
+      recordImpersonationEvent(input.actorRoleKey, input.source ?? "api");
+    }
+  } catch (err) {
+    logger.warn({ err }, "impersonation log write threw (non-blocking)");
+  }
+}

@@ -1,3 +1,0 @@
-# Alignment Dashboard
-
-Auto generated.

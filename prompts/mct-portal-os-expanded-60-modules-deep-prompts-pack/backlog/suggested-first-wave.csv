@@ -1,0 +1,13 @@
+order,module_id,module,why
+1,20,Internal MSP Business OS Dashboard,"Private operating dashboard for clients, proposals, projects, revenue, renewals, SOP reviews, vendors, tasks, and compliance reminders."
+2,43,Approval Workflow Engine,"Reusable approval system for proposals, change requests, file requests, privileged service desk actions, budget items, procurement, and client sign-offs."
+3,10,MSP Proposal Builder Pricing Engine,"Proposal templates, phases, options, assumptions, pricing scenarios, PDF-ready export, and cover email generation."
+4,1,Multi-Tenant MSP Client Portal,"Foundation portal for tickets, approvals, reports, documents, contacts, assets, roadmaps, service health, and client self-service."
+5,12,Client Project Tracker,"Client-visible project board with phases, milestones, dependencies, files, approvals, status updates, and change requests."
+6,24,Secure File Request Portal,"One-time or scoped file request links for clients to upload bills, floor plans, exports, logs, photos, and evidence securely."
+7,19,Open Findings Audit Remediation Tracker,"P0/P1/P2/P3 finding lifecycle for repo, security, network, SOP, and client assessments."
+8,9,Client Asset Warranty Tracker,"Asset register with warranties, replacement planning, QR labels, maintenance notes, lifecycle scoring, and client visibility."
+9,14,DNS Domain Cloudflare Health Monitor,"Domain, DNS, SSL, SPF, DKIM, DMARC, nameserver, and Cloudflare posture monitoring."
+10,11,QBR Executive Report Generator,"Monthly/quarterly executive reports summarizing tickets, risks, assets, projects, security, backups, and recommendations."
+11,21,AI Ticket Intake Triage Assistant,"Transforms vague client requests into structured tickets with category, priority, missing information, and suggested first response."
+12,41,AI Service Desk Copilot Console,"Operator-facing AI console that summarizes tickets, drafts replies, recommends next troubleshooting questions, and links related KB/runbook content while preserving human approval."

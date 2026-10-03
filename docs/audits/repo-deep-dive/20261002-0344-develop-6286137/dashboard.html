@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Audit Dashboard - 20261002-0344-develop-6286137</title>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2em auto; }
+.score { font-size: 4em; font-weight: bold; text-align: center; }
+.score.high { color: #15803d; } .score.mid { color: #a16207; } .score.low { color: #b91c1c; }
+table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+th, td { border: 1px solid #999; padding: .5em; text-align: left; }
+</style></head>
+<body>
+<h1>Audit Dashboard - 20261002-0344-develop-6286137</h1>
+<div class="score low">0<small>/100</small></div>
+<p style="text-align:center"><strong>Advisory:</strong> NO-GO (gate in RELEASE_GATE.md is authoritative)</p>
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td>P0</td><td>5</td></tr>
+<tr><td>P1</td><td>56</td></tr>
+<tr><td>P2</td><td>132</td></tr>
+<tr><td>P3</td><td>76</td></tr>
+</table>
+<h2>Areas</h2>
+<table><tr><th>Area</th><th>Count</th></tr>
+<tr><td>ACM</td><td>13</td></tr>
+<tr><td>ADMIN</td><td>12</td></tr>
+<tr><td>AI</td><td>8</td></tr>
+<tr><td>API</td><td>8</td></tr>
+<tr><td>BILL</td><td>10</td></tr>
+<tr><td>BP</td><td>9</td></tr>
+<tr><td>CHAIN</td><td>10</td></tr>
+<tr><td>CI</td><td>11</td></tr>
+<tr><td>CTR</td><td>10</td></tr>
+<tr><td>DATA</td><td>11</td></tr>
+<tr><td>DR</td><td>16</td></tr>
+<tr><td>FILE</td><td>12</td></tr>
+<tr><td>INFRA</td><td>12</td></tr>
+<tr><td>IR</td><td>17</td></tr>
+<tr><td>MT</td><td>10</td></tr>
+<tr><td>NOTIF</td><td>12</td></tr>
+<tr><td>REL</td><td>8</td></tr>
+<tr><td>RES</td><td>11</td></tr>
+<tr><td>RLS</td><td>7</td></tr>
+<tr><td>SBOM</td><td>7</td></tr>
+<tr><td>SC</td><td>9</td></tr>
+<tr><td>SEARCH</td><td>11</td></tr>
+<tr><td>SEC</td><td>9</td></tr>
+<tr><td>SECRET</td><td>9</td></tr>
+<tr><td>TEST</td><td>7</td></tr>
+<tr><td>WH</td><td>10</td></tr>
+</table>
+<h2>Top P0/P1</h2>
+<table><tr><th>Sev</th><th>ID</th><th>Title</th></tr>
+<tr><td>P0</td><td>DR-P0-001</td><td>Scheduled backup and restore-test workflows never run because they are absent from the default branch</td></tr>
+<tr><td>P0</td><td>DR-P0-002</td><td>The restore test never asserts integrity and therefore cannot fail on a bad backup</td></tr>
+<tr><td>P0</td><td>IR-P0-001</td><td>No platform-level incident response plan, roles, or postmortem process</td></tr>
+<tr><td>P0</td><td>IR-P0-002</td><td>No data breach response / notification process</td></tr>
+<tr><td>P0</td><td>IR-P0-003</td><td>Total loss of the monitoring/alerting path has no independent dead-man&#x27;s-switch receiver</td></tr>
+<tr><td>P1</td><td>ACM-P1-001</td><td>Client-onboarding mutations run without any `requirePermission` gate</td></tr>
+<tr><td>P1</td><td>ADMIN-P1-001</td><td>Org-agnostic `requireAdmin` lets a tenant admin read other tenants&#x27; admin data</td></tr>
+<tr><td>P1</td><td>ADMIN-P1-002</td><td>Impersonation/cross-tenant access is logged but not reviewable or alerted</td></tr>
+<tr><td>P1</td><td>AI-P1-001</td><td>Vendored audit prompt packs are stale and the run manifest references a prompt the pack does not contain</td></tr>
+<tr><td>P1</td><td>AI-P1-002</td><td>`AGENTS.md` names a stale repository path and three developer docs state a stale accessibility gate size that no guard covers</td></tr>
+<tr><td>P1</td><td>BILL-P1-001</td><td>Module entitlements are derived but not enforced server-side</td></tr>
+<tr><td>P1</td><td>BILL-P1-002</td><td>`payments` table is never populated; payment history is silently empty</td></tr>
+<tr><td>P1</td><td>BILL-P1-003</td><td>Missing Stripe webhook events leave refunds, void, and payment lifecycle unrecorded</td></tr>
+<tr><td>P1</td><td>BP-P1-001</td><td>`main` requires a context (`Dependency Review`) that no job emits</td></tr>
+<tr><td>P1</td><td>BP-P1-002</td><td>`enforce_admins:false` lets administrators bypass all required checks and reviews</td></tr>
+<tr><td>P1</td><td>BP-P1-003</td><td>Production deploy path uses the unguarded `prod` environment, not `prod-approval`</td></tr>
+<tr><td>P1</td><td>CHAIN-P1-001</td><td>Low-trust MSP role key composes into a cross-tenant read pivot</td></tr>
+<tr><td>P1</td><td>CHAIN-P1-002</td><td>Caller-controlled reset redirect composes into an account-takeover assist</td></tr>
+<tr><td>P1</td><td>CHAIN-P1-008</td><td>Branch-protection bypass + missing prod gate compose into unattended production change</td></tr>
+<tr><td>P1</td><td>CI-P1-001</td><td>Production application deploys have no working manual-approval gate</td></tr>
+</table>
+</body></html>

@@ -66,3 +66,11 @@ For every important finding, classify it as:
 Be opinionated, but justify every recommendation.
 No hand-wavy statements.
 No generic advice without exact context.
+
+### Self-Review
+
+Before concluding Phase 3, review your output and flag:
+
+- Any "copy as-is" recommendation where you haven't verified the source pattern actually works in isolation
+- Any recommendation based on assumptions rather than direct code inspection
+- Any assessment where you lack sufficient context to make a confident classification

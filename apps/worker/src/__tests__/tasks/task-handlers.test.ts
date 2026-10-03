@@ -83,9 +83,16 @@ describe("jiraSync", () => {
 });
 
 describe("jsmSync", () => {
-  it("returns error when JSM credentials not configured", async () => {
+  it("requires an organizationId", async () => {
     const { jsmSync } = await import("../../tasks/jsm-sync");
     const result = await jsmSync({});
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("organizationId");
+  });
+
+  it("returns error when JSM credentials not configured", async () => {
+    const { jsmSync } = await import("../../tasks/jsm-sync");
+    const result = await jsmSync({ organizationId: "00000000-0000-0000-0000-000000000001" });
     expect(result.ok).toBe(false);
     expect(result.error).toContain("JSM");
   });
@@ -102,16 +109,14 @@ describe("m365CalendarSync", () => {
 
 describe("scheduledNotifications", () => {
   it("returns error for unknown notification type", async () => {
-    const { scheduledNotifications } =
-      await import("../../tasks/scheduled-notifications");
+    const { scheduledNotifications } = await import("../../tasks/scheduled-notifications");
     const result = await scheduledNotifications({ type: "invalid-type" });
     expect(result.ok).toBe(false);
     expect(result.error).toContain("Unknown notification type");
   });
 
   it("returns error when targetUserId missing for membership notification", async () => {
-    const { scheduledNotifications } =
-      await import("../../tasks/scheduled-notifications");
+    const { scheduledNotifications } = await import("../../tasks/scheduled-notifications");
     const result = await scheduledNotifications({
       type: "membership-approved",
     });
@@ -120,8 +125,7 @@ describe("scheduledNotifications", () => {
   });
 
   it("returns error when targetUserId missing for custom notification", async () => {
-    const { scheduledNotifications } =
-      await import("../../tasks/scheduled-notifications");
+    const { scheduledNotifications } = await import("../../tasks/scheduled-notifications");
     const result = await scheduledNotifications({
       type: "custom",
       title: "Test",
@@ -131,8 +135,7 @@ describe("scheduledNotifications", () => {
   });
 
   it("returns error when title missing for custom notification", async () => {
-    const { scheduledNotifications } =
-      await import("../../tasks/scheduled-notifications");
+    const { scheduledNotifications } = await import("../../tasks/scheduled-notifications");
     const result = await scheduledNotifications({
       type: "custom",
       targetUserId: "u1",

@@ -1,7 +1,7 @@
 # Onboarding Guide — Maine CyberTech Portal
 
 > **Purpose:** Help new developers understand the architecture, development workflow, and key patterns in this monorepo.
-> **Prerequisites:** Node 18+, pnpm 10, Docker, Supabase CLI, VS Code
+> **Prerequisites:** Node 20+, pnpm 10, Docker, Supabase CLI, VS Code
 
 ---
 
@@ -10,13 +10,14 @@
 ```bash
 # Clone and install
 git clone https://github.com/MaineCyberTech/mainecybertech.git
-cd mainecybertech-portal
+cd mainecybertech
 pnpm install
 
 # Start Supabase locally (requires Docker)
 supabase start
 
-# Sync env vars
+# Sync env vars for each app (the root script writes the repo root .env.local;
+# use scripts/start-local-stack.ps1 to write apps/*/.env.local in one step)
 pnpm supabase:env:sync
 
 # Terminals (run each):
@@ -47,12 +48,11 @@ mainecybertech-portal/
 │   └── terraform/
 │       └── digitalocean/  IaC (droplet, firewall, DNS)
 ├── supabase/
-│   ├── migrations/    12 SQL migration files
-│   ├── seeds/         5 seed files
-│   └── policies/      RLS policy snippets
-├── docs/              30+ documentation files
+│   ├── migrations/    127 SQL migration files
+│   └── seeds/         9 seed files
+├── docs/              300+ documentation files
 ├── scripts/           PowerShell + bash utilities
-└── .github/           CI/CD workflows (8 total)
+└── .github/           CI/CD workflows (16 total)
 ```
 
 ### Key Design Principles
@@ -80,9 +80,9 @@ API (Express:4000)
       → inputSanitizer → rateLimiter → rateLimitByUser
       → requestId → requestLogger → [routes]
 
-Worker (BullMQ:3001 health)
-  ├── Task registry: 5 integration tasks + ping
-  └── Backends: BullMQ (default, Redis) / SQS (dormant)
+Worker (`QUEUE_BACKEND`, default `inline`; SQS or BullMQ in prod; health on :3001)
+  ├── Task registry: 28 handlers + built-in ping
+  └── Backends: inline / SQS (`consumer-sqs.ts`) / BullMQ (Redis)
 ```
 
 ### Auth Flow
@@ -150,16 +150,14 @@ export default router;
 ```typescript
 import { MCTClient } from "@mct/sdk";
 
-// Client component (cookie-backed auth)
-const client = MCTClient.create();
-
-// Server component (API token auth)
-const client = MCTClient.create({ apiKey: process.env.API_KEY });
+// `baseUrl` is required; provide a token source for authenticated calls.
+const client = MCTClient.create({
+  baseUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000",
+  getToken: async () => token, // optional; cookie-backed auth is the default in the web app
+});
 
 // Use
-const { data: tickets, error } = await client.tickets.list({
-  organizationId: "...",
-});
+const tickets = await client.tickets.list({ organizationId: "..." });
 ```
 
 ---
@@ -213,8 +211,8 @@ jest.mock("next/navigation", () => ({
 ```bash
 supabase migration new my_change_name
 # Edit the generated SQL file
-supabase db push           # apply to local
-supabase db push --linked  # apply to remote
+supabase db reset          # apply all migrations + seeds to local
+# Hosted application happens in CI (supabase-migrations.yml) — never `db push` locally.
 ```
 
 ### RLS Pattern
@@ -240,17 +238,16 @@ Key helper functions (defined in migration `5302026`):
 ### Production Stack
 
 - **Hosting:** Single DigitalOcean droplet behind Caddy reverse proxy
-- **Containers:** Docker Compose (api, web, worker, redis, caddy)
-- **Registry:** GHCR (ghcr.io/mainecybertech/mct-\*), SHA-tagged images
+- **Containers:** Docker Compose (api, web, worker, redis, caddy, prometheus)
+- **Registry:** GHCR (`ghcr.io/mainecybertech/mainecybertech/mct-{api,web,worker}`), SHA-tagged images
 - **Database:** Hosted Supabase (cloud.supabase.com)
 - **Cache:** In-memory `Map` (single-instance only — see `cache.ts` design note)
 
 ### Deploy Pipeline
 
 1. Push to `develop` → GitHub Actions builds 3 images → pushes to GHCR
-2. SSH into droplet → `docker save | gzip | ssh | gunzip | docker load` (fast image transfer)
-3. `docker compose up -d` with new images
-4. Old images cleaned up post-deploy
+2. SSH into droplet → `docker compose pull` (images come from GHCR) + `docker compose up -d`
+3. New containers start; old images are pruned only after the health gate passes
 
 ### Key Files
 
@@ -298,15 +295,15 @@ Key helper functions (defined in migration `5302026`):
 
 ## 8. Key Documentation
 
-| Document                                       | What it covers                                        |
-| ---------------------------------------------- | ----------------------------------------------------- |
-| `AGENTS.md`                                    | Full architecture, test patterns, critical context    |
-| `docs/API_ENDPOINT_INVENTORY.md`               | All 86 API endpoints with auth/validation/cache/audit |
-| `docs/ENVIRONMENT_VARIABLES.md`                | All env vars across all services                      |
-| `docs/MEGA_AUDIT_2026-06-18.md`                | Comprehensive architecture & security audit           |
-| `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` | Operator manual                                       |
-| `docs/CODE_REVIEW_2026-06-16.md`               | 30 architecture recommendations                       |
-| `README.dev.md`                                | Developer setup guide                                 |
+| Document                                       | What it covers                                                                              |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `AGENTS.md`                                    | Full architecture, test patterns, critical context                                          |
+| `docs/API_ENDPOINT_INVENTORY.md`               | Historical endpoint inventory (see `docs/openapi.yaml` for the authoritative 412-path spec) |
+| `docs/ENVIRONMENT_VARIABLES.md`                | All env vars across all services                                                            |
+| `docs/MEGA_AUDIT_2026-06-18.md`                | Comprehensive architecture & security audit                                                 |
+| `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` | Operator manual                                                                             |
+| `docs/CODE_REVIEW_2026-06-16.md`               | 30 architecture recommendations                                                             |
+| `README.dev.md`                                | Developer setup guide                                                                       |
 
 ---
 

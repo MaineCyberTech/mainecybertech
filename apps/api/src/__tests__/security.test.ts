@@ -62,27 +62,21 @@ describe("inputSanitizer", () => {
 
   it("blocks XSS attempts in body", async () => {
     const app = createTestApp();
-    const res = await request(app)
-      .post("/test")
-      .send({ name: '<script>alert("xss")</script>' });
+    const res = await request(app).post("/test").send({ name: '<script>alert("xss")</script>' });
 
     expect(res.status).toBe(400);
   });
 
   it("blocks SQL injection attempts in body", async () => {
     const app = createTestApp();
-    const res = await request(app)
-      .post("/test")
-      .send({ search: "'; DROP TABLE users; --" });
+    const res = await request(app).post("/test").send({ search: "'; DROP TABLE users; --" });
 
     expect(res.status).toBe(400);
   });
 
   it("sanitizes HTML entities in safe strings", async () => {
     const app = createTestApp();
-    const res = await request(app)
-      .post("/test")
-      .send({ name: "O'Brien" });
+    const res = await request(app).post("/test").send({ name: "O'Brien" });
 
     expect(res.status).toBe(200);
     expect(res.body.body.name).toContain("O");
@@ -90,17 +84,14 @@ describe("inputSanitizer", () => {
 
   it("blocks XSS in query parameters", async () => {
     const app = createTestApp();
-    const res = await request(app)
-      .get("/test?search=<script>alert(1)</script>");
+    const res = await request(app).get("/test?search=<script>alert(1)</script>");
 
     expect(res.status).toBe(400);
   });
 
   it("allows numeric input", async () => {
     const app = createTestApp();
-    const res = await request(app)
-      .post("/test")
-      .send({ count: 42, price: 99.99 });
+    const res = await request(app).post("/test").send({ count: 42, price: 99.99 });
 
     expect(res.status).toBe(200);
     expect(res.body.body.count).toBe(42);
@@ -112,6 +103,20 @@ describe("inputSanitizer", () => {
       .post("/test")
       .send({ user: { name: "Test", bio: "Hello world" } });
 
+    expect(res.status).toBe(200);
+  });
+
+  // Regression: the WAF previously rejected legitimate text that merely
+  // contained these substrings.
+  it.each([
+    ["monitor name", { name: "monitor=prod" }],
+    ["curl command", { note: "curl https://api.example.com" }],
+    ["trailing semicolon", { sql: "SELECT name FROM users;" }],
+    ["hex color", { color: "#0x1f2e3d", hex: "0xdeadbeef" }],
+    ["prose with arrows", { body: "step a --> step b" }],
+  ])("allows benign input: %s", async (_label, body) => {
+    const app = createTestApp();
+    const res = await request(app).post("/test").send(body);
     expect(res.status).toBe(200);
   });
 });

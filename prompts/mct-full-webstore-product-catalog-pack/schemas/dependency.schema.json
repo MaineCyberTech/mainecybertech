@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["product", "dependencyType", "targetProducts"],
+  "properties": {
+    "product": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "dependencyType": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "targetProducts": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "severity": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    }
+  }
+}

@@ -1,8 +1,7 @@
-import pino from "pino";
 import { env } from "../env";
+import { wsTransport } from "../services/supabase";
+import { logger } from "../logger";
 import type { TaskHandler, TaskResult } from "../task-registry";
-
-const logger = pino({ level: env.LOG_LEVEL });
 
 interface ReconcilePayload {
   organizationId?: string;
@@ -36,14 +35,17 @@ async function fetchStripeSubscription(
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(`${stripeUrl}/subscriptions/${subscriptionId}`, { headers });
+      const res = await fetch(`${stripeUrl}/subscriptions/${subscriptionId}`, {
+        headers,
+        signal: AbortSignal.timeout(15_000),
+      });
       if (res.status === 429) {
         const retryAfter = parseInt(res.headers.get("retry-after") ?? "5", 10);
         await new Promise((r) => setTimeout(r, retryAfter * 1000));
         continue;
       }
       if (!res.ok) return null;
-      return await res.json() as StripeSubscription;
+      return (await res.json()) as StripeSubscription;
     } catch {
       if (attempt === retries) return null;
       await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
@@ -67,25 +69,26 @@ export const stripeReconcile: TaskHandler = async (payload): Promise<TaskResult>
     const supabase = createClient(
       env.SUPABASE_URL ?? "",
       env.SUPABASE_SERVICE_ROLE_KEY ?? env.SUPABASE_ANON_KEY ?? "",
+      { realtime: { transport: wsTransport } },
     );
 
     let query = supabase
-      .from("memberships")
-      .select("id, user_id, organization_id, status, stripe_subscription_id, stripe_customer_id")
-      .eq("status", "approved");
+      .from("billing_customers")
+      .select("organization_id, stripe_customer_id")
+      .not("stripe_customer_id", "is", null);
 
     if (organizationId) {
       query = query.eq("organization_id", organizationId);
     }
 
-    const { data: memberships, error: memError } = await query.limit(batchSize);
+    const { data: billingCustomers, error: bcError } = await query.limit(batchSize);
 
-    if (memError) {
-      return { ok: false, error: `Failed to fetch memberships: ${memError.message}` };
+    if (bcError) {
+      return { ok: false, error: `Failed to fetch billing customers: ${bcError.message}` };
     }
 
-    if (!memberships || memberships.length === 0) {
-      logger.info("No approved memberships to reconcile");
+    if (!billingCustomers || billingCustomers.length === 0) {
+      logger.info("No billing customers to reconcile");
       return { ok: true };
     }
 
@@ -93,35 +96,50 @@ export const stripeReconcile: TaskHandler = async (payload): Promise<TaskResult>
     let suspended = 0;
     let errors = 0;
 
-    for (const membership of memberships) {
-      if (!membership.stripe_subscription_id) continue;
+    for (const customer of billingCustomers) {
+      const { data: subscriptions } = await supabase
+        .from("subscriptions")
+        .select("stripe_subscription_id, status, created_at")
+        .eq("organization_id", customer.organization_id)
+        .order("created_at", { ascending: false });
 
-      const sub = await fetchStripeSubscription(stripeKey, membership.stripe_subscription_id);
+      // Prefer the active/trialing subscription. A nondeterministic `limit 1`
+      // could pick an old cancelled row and suspend a paying tenant.
+      const sub =
+        (subscriptions ?? []).find((s) => s.status === "active" || s.status === "trialing") ??
+        subscriptions?.[0];
+      if (!sub?.stripe_subscription_id) continue;
 
-      if (!sub) {
+      const stripeSub = await fetchStripeSubscription(stripeKey, sub.stripe_subscription_id);
+
+      if (!stripeSub) {
         errors++;
         continue;
       }
 
-      const isActive = sub.status === "active" || sub.status === "trialing";
+      // Only suspend on terminal states - `past_due` is still dunning and must
+      // not lock a tenant out.
+      const terminal = ["canceled", "unpaid", "incomplete_expired"].includes(stripeSub.status);
 
-      if (!isActive && !dryRun) {
-        await supabase
+      if (terminal && !dryRun) {
+        const { error: updateError } = await supabase
           .from("memberships")
           .update({ status: "suspended" })
-          .eq("id", membership.id);
+          .eq("organization_id", customer.organization_id)
+          .eq("status", "approved");
+
+        if (updateError) {
+          errors++;
+          continue;
+        }
         suspended++;
-        logger.warn(
-          { membershipId: membership.id, stripeStatus: sub.status, subscriptionId: sub.id },
-          "Suspended membership due to inactive Stripe subscription",
-        );
       }
 
       reconciled++;
     }
 
     logger.info(
-      { reconciled, suspended, errors, total: memberships.length, dryRun },
+      { reconciled, suspended, errors, total: billingCustomers.length, dryRun },
       "Stripe reconciliation complete",
     );
 

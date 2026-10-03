@@ -1,6 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { createClient, type RedisClientType } from "redis";
-import { getEnv } from "../config/env";
+import { getEnv, resolveRedisUrl } from "../config/env";
 
 /**
  * Redis-backed response cache with in-memory fallback.
@@ -16,6 +16,8 @@ interface CacheEntry {
   expires: number;
 }
 
+const MAX_MEMORY_ENTRIES = 5_000;
+
 class CacheBackend {
   private redis: RedisClientType | null = null;
   private memoryCache = new Map<string, { data: unknown; expires: number }>();
@@ -24,17 +26,18 @@ class CacheBackend {
 
   async initialize() {
     const env = getEnv();
-    if (env.REDIS_URL) {
+    if (env.REDIS_URL || env.REDIS_PASSWORD) {
       try {
-        this.redis = createClient({ url: env.REDIS_URL });
+        this.redis = createClient({
+          url: resolveRedisUrl(env.REDIS_URL ?? "redis://redis:6379", env.REDIS_PASSWORD),
+        });
         await this.redis.connect();
         this.useRedis = true;
-        console.log("Redis cache connected");
+        const { logger } = await import("../lib/logger");
+        logger.info("Redis cache connected");
       } catch (err) {
-        console.warn(
-          "Failed to connect to Redis, falling back to in-memory cache:",
-          err,
-        );
+        const { logger } = await import("../lib/logger");
+        logger.warn({ err }, "Failed to connect to Redis, falling back to in-memory cache");
       }
     }
     this.startCleanup();
@@ -47,6 +50,11 @@ class CacheBackend {
         if (entry.expires < now) {
           this.memoryCache.delete(key);
         }
+      }
+      while (this.memoryCache.size > MAX_MEMORY_ENTRIES) {
+        const oldest = this.memoryCache.keys().next();
+        if (oldest.done) break;
+        this.memoryCache.delete(oldest.value);
       }
     }, 60_000).unref();
   }
@@ -79,11 +87,7 @@ class CacheBackend {
 
     if (this.useRedis && this.redis) {
       try {
-        await this.redis.setEx(
-          key,
-          ttlSeconds,
-          JSON.stringify({ data, expires }),
-        );
+        await this.redis.setEx(key, ttlSeconds, JSON.stringify({ data, expires }));
         return;
       } catch {
         // Fall through to memory cache on Redis error
@@ -101,18 +105,32 @@ class CacheBackend {
       return;
     }
 
-    for (const key of this.memoryCache.keys()) {
+    for (const key of [...this.memoryCache.keys()]) {
       if (key.startsWith(pattern)) {
         this.memoryCache.delete(key);
       }
     }
     if (this.useRedis && this.redis) {
-      this.redis
-        .keys(`${pattern}*`)
-        .then((keys: string[]) => {
-          if (keys.length) this.redis!.del(...keys);
-        })
-        .catch(() => {});
+      // SCAN instead of KEYS: KEYS blocks the server for the whole keyspace.
+      const redis = this.redis;
+      void (async () => {
+        try {
+          let batch: string[] = [];
+          for await (const key of redis.scanIterator({
+            MATCH: `${pattern}*`,
+            COUNT: 100,
+          })) {
+            batch.push(String(key));
+            if (batch.length >= 100) {
+              await redis.del(batch);
+              batch = [];
+            }
+          }
+          if (batch.length) await redis.del(batch);
+        } catch {
+          // Best-effort invalidation; TTL will evict eventually.
+        }
+      })();
     }
   }
 
@@ -133,20 +151,19 @@ export function shutdownCache(): void {
   cacheBackend.shutdown();
 }
 
-function ensureCacheReady(): void {
-  // Cache is lazily initialized on first use
-  // but we can ensure it's ready if needed
-}
-
 function buildCacheKey(req: Request): string {
-  const baseKey = `${req.path}:${JSON.stringify(req.query)}`;
-  const authUser = (req as Request & { authUser?: { userId: string; orgId?: string } }).authUser;
-  if (authUser?.orgId) {
-    return `org=${authUser.orgId}:${baseKey}`;
-  }
-  if (authUser?.userId) {
-    return `user=${authUser.userId}:${baseKey}`;
-  }
+  // req.path is router-relative inside mounted routers (e.g. "/" for both
+  // /api/v1/roles and /api/v1/organizations) — baseUrl + path yields the
+  // full mount path so cache keys never collide across routers.
+  const fullPath = `${req.baseUrl ?? ""}${req.path}`;
+  const baseKey = `${fullPath}:${JSON.stringify(req.query)}`;
+  // Scope keys with a SUFFIX so invalidateCache(path) can match by prefix.
+  // (Previously the scope was a prefix, so invalidateCache("/api/v1/x") never
+  // matched an authenticated key and mutations never evicted cached lists.)
+  const orgId = (req as Request & { orgId?: string | null }).orgId;
+  if (orgId) return `${baseKey}:org=${orgId}`;
+  const authUser = (req as Request & { authUser?: { userId: string } }).authUser;
+  if (authUser?.userId) return `${baseKey}:user=${authUser.userId}`;
   return baseKey;
 }
 

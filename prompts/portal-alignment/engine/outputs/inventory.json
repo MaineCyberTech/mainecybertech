@@ -1,0 +1,2567 @@
+{
+  "apps": {
+    "api": {
+      "entry_points": [
+        "src/main.ts"
+      ],
+      "has_routes": true,
+      "routes_dir": "C:\\temp\\mainecybertech-portal\\apps\\api\\src\\routes",
+      "file_count": 6684
+    },
+    "web": {
+      "entry_points": [],
+      "has_routes": false,
+      "routes_dir": null,
+      "file_count": 27284
+    },
+    "worker": {
+      "entry_points": [
+        "src/main.ts"
+      ],
+      "has_routes": false,
+      "routes_dir": null,
+      "file_count": 4986
+    }
+  },
+  "packages": {
+    "config": {
+      "has_package_json": true,
+      "has_tsconfig": true
+    },
+    "sdk": {
+      "has_package_json": true,
+      "has_tsconfig": true
+    },
+    "ui": {
+      "has_package_json": true,
+      "has_tsconfig": true
+    }
+  },
+  "infra": {
+    "infra\\digitalocean\\.env.example": 1527,
+    "infra\\digitalocean\\Caddyfile": 3141,
+    "infra\\digitalocean\\Caddyfile.dev": 1593,
+    "infra\\digitalocean\\Caddyfile.prod": 1687,
+    "infra\\digitalocean\\docker-compose.yml": 5361,
+    "infra\\digitalocean\\prometheus.rules.yml": 1525,
+    "infra\\digitalocean\\prometheus.yml": 701,
+    "infra\\digitalocean\\README.md": 84,
+    "infra\\terraform\\README.md": 232,
+    "infra\\terraform\\.terraform\\modules\\modules.json": 173,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.editorconfig": 589,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.gitignore": 709,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.pre-commit-config.yaml": 1231,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.releaserc.json": 1061,
+    "infra\\terraform\\.terraform\\modules\\vpc\\CHANGELOG.md": 97229,
+    "infra\\terraform\\.terraform\\modules\\vpc\\LICENSE": 10349,
+    "infra\\terraform\\.terraform\\modules\\vpc\\main.tf": 61084,
+    "infra\\terraform\\.terraform\\modules\\vpc\\outputs.tf": 22660,
+    "infra\\terraform\\.terraform\\modules\\vpc\\README.md": 108260,
+    "infra\\terraform\\.terraform\\modules\\vpc\\UPGRADE-3.0.md": 2914,
+    "infra\\terraform\\.terraform\\modules\\vpc\\UPGRADE-4.0.md": 2719,
+    "infra\\terraform\\.terraform\\modules\\vpc\\variables.tf": 55508,
+    "infra\\terraform\\.terraform\\modules\\vpc\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\modules\\vpc\\vpc-flow-logs.tf": 5953,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\config": 321,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\description": 73,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\HEAD": 41,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\index": 9288,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\packed-refs": 18619,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\applypatch-msg.sample": 478,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\commit-msg.sample": 896,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\fsmonitor-watchman.sample": 4726,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\post-update.sample": 189,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\pre-applypatch.sample": 424,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\pre-commit.sample": 1649,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\pre-merge-commit.sample": 416,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\pre-push.sample": 1374,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\pre-rebase.sample": 4898,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\pre-receive.sample": 544,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\prepare-commit-msg.sample": 1492,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\push-to-checkout.sample": 2783,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\sendemail-validate.sample": 2308,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\hooks\\update.sample": 3650,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\info\\exclude": 240,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\logs\\HEAD": 440,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\logs\\refs\\heads\\master": 219,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\logs\\refs\\remotes\\origin\\HEAD": 219,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\objects\\pack\\pack-a1ea77c355d2b291de33f0df677e669b62be3eb4.idx": 93640,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\objects\\pack\\pack-a1ea77c355d2b291de33f0df677e669b62be3eb4.pack": 1295084,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\objects\\pack\\pack-a1ea77c355d2b291de33f0df677e669b62be3eb4.rev": 13276,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\refs\\heads\\master": 41,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.git\\refs\\remotes\\origin\\HEAD": 32,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.github\\contributing.md": 1647,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.github\\workflows\\lock.yml": 1061,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.github\\workflows\\pr-title.yml": 2358,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.github\\workflows\\pre-commit.yml": 3525,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.github\\workflows\\release.yml": 916,
+    "infra\\terraform\\.terraform\\modules\\vpc\\.github\\workflows\\stale-actions.yaml": 1414,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\block-public-access\\main.tf": 1096,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\block-public-access\\outputs.tf": 16544,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\block-public-access\\README.md": 20916,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\block-public-access\\variables.tf": 0,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\block-public-access\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\complete\\main.tf": 6731,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\complete\\outputs.tf": 16888,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\complete\\README.md": 19876,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\complete\\variables.tf": 0,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\complete\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipam\\main.tf": 4357,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipam\\outputs.tf": 18185,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipam\\README.md": 19677,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipam\\variables.tf": 0,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipam\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipv6-dualstack\\main.tf": 1360,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipv6-dualstack\\outputs.tf": 16366,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipv6-dualstack\\README.md": 18377,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipv6-dualstack\\variables.tf": 0,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipv6-dualstack\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipv6-only\\main.tf": 1088,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipv6-only\\outputs.tf": 16366,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipv6-only\\README.md": 18374,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipv6-only\\variables.tf": 0,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\ipv6-only\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\issues\\main.tf": 2593,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\issues\\outputs.tf": 3266,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\issues\\README.md": 4511,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\issues\\variables.tf": 0,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\issues\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\manage-default-vpc\\main.tf": 657,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\manage-default-vpc\\outputs.tf": 16366,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\manage-default-vpc\\README.md": 18304,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\manage-default-vpc\\variables.tf": 0,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\manage-default-vpc\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\network-acls\\main.tf": 5302,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\network-acls\\outputs.tf": 16366,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\network-acls\\README.md": 18669,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\network-acls\\variables.tf": 0,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\network-acls\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\outpost\\main.tf": 4232,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\outpost\\outputs.tf": 16366,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\outpost\\README.md": 18862,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\outpost\\variables.tf": 0,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\outpost\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\secondary-cidr-blocks\\main.tf": 1287,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\secondary-cidr-blocks\\outputs.tf": 16366,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\secondary-cidr-blocks\\README.md": 18530,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\secondary-cidr-blocks\\variables.tf": 0,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\secondary-cidr-blocks\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\separate-route-tables\\main.tf": 1464,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\separate-route-tables\\outputs.tf": 16366,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\separate-route-tables\\README.md": 18702,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\separate-route-tables\\variables.tf": 0,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\separate-route-tables\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\simple\\main.tf": 807,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\simple\\outputs.tf": 16366,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\simple\\README.md": 18878,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\simple\\variables.tf": 0,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\simple\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\vpc-flow-logs\\main.tf": 6763,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\vpc-flow-logs\\outputs.tf": 2677,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\vpc-flow-logs\\README.md": 7144,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\vpc-flow-logs\\variables.tf": 0,
+    "infra\\terraform\\.terraform\\modules\\vpc\\examples\\vpc-flow-logs\\versions.tf": 245,
+    "infra\\terraform\\.terraform\\modules\\vpc\\modules\\vpc-endpoints\\main.tf": 4563,
+    "infra\\terraform\\.terraform\\modules\\vpc\\modules\\vpc-endpoints\\outputs.tf": 650,
+    "infra\\terraform\\.terraform\\modules\\vpc\\modules\\vpc-endpoints\\README.md": 5657,
+    "infra\\terraform\\.terraform\\modules\\vpc\\modules\\vpc-endpoints\\variables.tf": 2282,
+    "infra\\terraform\\.terraform\\modules\\vpc\\modules\\vpc-endpoints\\versions.tf": 158,
+    "infra\\terraform\\.terraform\\providers\\registry.terraform.io\\cloudflare\\cloudflare\\5.19.1\\windows_amd64\\terraform-provider-cloudflare_v5.19.1.exe": 189931520,
+    "infra\\terraform\\.terraform\\providers\\registry.terraform.io\\hashicorp\\archive\\2.8.0\\windows_amd64\\LICENSE.txt": 16757,
+    "infra\\terraform\\.terraform\\providers\\registry.terraform.io\\hashicorp\\archive\\2.8.0\\windows_amd64\\terraform-provider-archive_v2.8.0_x5.exe": 18671240,
+    "infra\\terraform\\.terraform\\providers\\registry.terraform.io\\hashicorp\\aws\\5.100.0\\windows_amd64\\LICENSE.txt": 16761,
+    "infra\\terraform\\.terraform\\providers\\registry.terraform.io\\hashicorp\\aws\\5.100.0\\windows_amd64\\terraform-provider-aws_v5.100.0_x5.exe": 718820352,
+    "infra\\terraform\\.terraform\\providers\\registry.terraform.io\\supabase\\supabase\\1.9.1\\windows_amd64\\CHANGELOG.md": 33,
+    "infra\\terraform\\.terraform\\providers\\registry.terraform.io\\supabase\\supabase\\1.9.1\\windows_amd64\\LICENSE": 16761,
+    "infra\\terraform\\.terraform\\providers\\registry.terraform.io\\supabase\\supabase\\1.9.1\\windows_amd64\\README.md": 1835,
+    "infra\\terraform\\.terraform\\providers\\registry.terraform.io\\supabase\\supabase\\1.9.1\\windows_amd64\\terraform-provider-supabase_v1.9.1.exe": 21522944,
+    "infra\\terraform\\.terraform\\providers\\registry.terraform.io\\vercel\\vercel\\1.14.1\\windows_amd64\\LICENSE": 16725,
+    "infra\\terraform\\.terraform\\providers\\registry.terraform.io\\vercel\\vercel\\1.14.1\\windows_amd64\\README.md": 3237,
+    "infra\\terraform\\.terraform\\providers\\registry.terraform.io\\vercel\\vercel\\1.14.1\\windows_amd64\\terraform-provider-vercel_v1.14.1.exe": 16325120,
+    "infra\\terraform\\digitalocean\\.terraform.lock.hcl": 2393,
+    "infra\\terraform\\digitalocean\\cloud-init.yml": 465,
+    "infra\\terraform\\digitalocean\\dns.tf": 1704,
+    "infra\\terraform\\digitalocean\\droplet.tf": 543,
+    "infra\\terraform\\digitalocean\\firewall.tf": 1288,
+    "infra\\terraform\\digitalocean\\outputs.tf": 352,
+    "infra\\terraform\\digitalocean\\providers.tf": 774,
+    "infra\\terraform\\digitalocean\\terraform.tfstate": 9874,
+    "infra\\terraform\\digitalocean\\terraform.tfstate.backup": 9565,
+    "infra\\terraform\\digitalocean\\variables.tf": 1904,
+    "infra\\terraform\\digitalocean\\.terraform\\providers\\registry.terraform.io\\cloudflare\\cloudflare\\5.20.0\\windows_amd64\\terraform-provider-cloudflare_v5.20.0.exe": 251761152,
+    "infra\\terraform\\digitalocean\\.terraform\\providers\\registry.terraform.io\\digitalocean\\digitalocean\\2.90.0\\windows_amd64\\CHANGELOG.md": 77102,
+    "infra\\terraform\\digitalocean\\.terraform\\providers\\registry.terraform.io\\digitalocean\\digitalocean\\2.90.0\\windows_amd64\\LICENSE": 16725,
+    "infra\\terraform\\digitalocean\\.terraform\\providers\\registry.terraform.io\\digitalocean\\digitalocean\\2.90.0\\windows_amd64\\README.md": 1139,
+    "infra\\terraform\\digitalocean\\.terraform\\providers\\registry.terraform.io\\digitalocean\\digitalocean\\2.90.0\\windows_amd64\\terraform-provider-digitalocean_v2.90.0.exe": 24984064,
+    "infra\\terraform\\digitalocean\\env\\backend.dev.hcl": 462,
+    "infra\\terraform\\digitalocean\\env\\backend.prod.hcl": 468,
+    "infra\\terraform\\digitalocean\\env\\dev.tfvars": 295,
+    "infra\\terraform\\digitalocean\\env\\dev.tfvars.example": 271,
+    "infra\\terraform\\digitalocean\\env\\prod.tfvars": 458,
+    "infra\\terraform\\digitalocean\\env\\prod.tfvars.example": 201
+  },
+  "migrations": [
+    {
+      "file": "5302026_supabase_consolidated_fresh_bootstrap_20260529.corrected.v3.sql",
+      "tables": [
+        "organizations",
+        "organization_domains",
+        "profiles",
+        "roles",
+        "permissions",
+        "role_permissions",
+        "memberships",
+        "user_permission_overrides",
+        "notification_preferences",
+        "onboarding_submissions",
+        "tickets",
+        "ticket_comments",
+        "projects",
+        "project_members",
+        "project_tasks",
+        "comments",
+        "documents",
+        "document_versions",
+        "document_permissions",
+        "contracts",
+        "contract_signers",
+        "appointments",
+        "billing_customers",
+        "subscriptions",
+        "invoices",
+        "payments",
+        "chat_threads",
+        "chat_messages",
+        "audit_logs",
+        "organizations",
+        "organization_domains",
+        "profiles",
+        "roles",
+        "permissions",
+        "role_permissions",
+        "memberships",
+        "user_permission_overrides",
+        "notification_preferences",
+        "onboarding_submissions",
+        "tickets",
+        "ticket_comments",
+        "projects",
+        "project_members",
+        "project_tasks",
+        "comments",
+        "documents",
+        "document_versions",
+        "document_permissions",
+        "contracts",
+        "contract_signers",
+        "appointments",
+        "billing_customers",
+        "subscriptions",
+        "invoices",
+        "payments",
+        "chat_threads",
+        "chat_messages",
+        "audit_logs",
+        "projects",
+        "project_tasks",
+        "if",
+        "if",
+        "if",
+        "project_updates",
+        "project_task_comments",
+        "project_task_comment_reads",
+        "documents",
+        "documents",
+        "documents",
+        "documents",
+        "document_versions",
+        "document_permissions"
+      ]
+    },
+    {
+      "file": "5302028_seed_permissions.sql",
+      "tables": []
+    },
+    {
+      "file": "5302029_create_notifications_table.sql",
+      "tables": [
+        "notifications",
+        "notifications"
+      ]
+    },
+    {
+      "file": "5302030_add_jira_fields.sql",
+      "tables": [
+        "projects",
+        "project_tasks",
+        "tickets"
+      ]
+    },
+    {
+      "file": "5302031_org_branding.sql",
+      "tables": [
+        "organizations"
+      ]
+    },
+    {
+      "file": "5302032_webhook_endpoints.sql",
+      "tables": [
+        "if",
+        "webhook_endpoints",
+        "if",
+        "webhook_deliveries"
+      ]
+    },
+    {
+      "file": "5302033_public_interactions.sql",
+      "tables": [
+        "IF",
+        "public_interactions"
+      ]
+    },
+    {
+      "file": "5302034_ticket_comment_editing.sql",
+      "tables": [
+        "ticket_comments"
+      ]
+    },
+    {
+      "file": "5302035_bootstrap_portal_access.sql",
+      "tables": []
+    },
+    {
+      "file": "5302036_public_interactions_service_role_rls.sql",
+      "tables": []
+    },
+    {
+      "file": "5302037_public_interactions_insert_policies.sql",
+      "tables": []
+    },
+    {
+      "file": "5302038_disable_rls_public_interactions.sql",
+      "tables": [
+        "public_interactions"
+      ]
+    },
+    {
+      "file": "5302041_sla_logs.sql",
+      "tables": [
+        "if",
+        "sla_logs"
+      ]
+    },
+    {
+      "file": "5302042_api_keys.sql",
+      "tables": [
+        "if",
+        "api_keys"
+      ]
+    },
+    {
+      "file": "5302043_document_shares.sql",
+      "tables": [
+        "if",
+        "document_shares"
+      ]
+    },
+    {
+      "file": "5302050_webhook_retry_dlq.sql",
+      "tables": [
+        "if",
+        "if",
+        "webhook_dead_letters"
+      ]
+    },
+    {
+      "file": "5302051_optimistic_locking_version_columns.sql",
+      "tables": [
+        "tickets",
+        "documents",
+        "projects",
+        "organizations",
+        "profiles",
+        "project_tasks",
+        "webhook_endpoints",
+        "notification_preferences",
+        "billing_customers"
+      ]
+    },
+    {
+      "file": "5302052_bulk_update_transaction.sql",
+      "tables": []
+    },
+    {
+      "file": "5302053_webhook_idempotency.sql",
+      "tables": [
+        "if",
+        "webhook_deliveries"
+      ]
+    },
+    {
+      "file": "5302054_bulk_update_with_results.sql",
+      "tables": []
+    },
+    {
+      "file": "5302055_cleanup_dead_tables.sql",
+      "tables": [
+        "memberships"
+      ]
+    },
+    {
+      "file": "5302056_add_missing_indexes.sql",
+      "tables": []
+    },
+    {
+      "file": "5302057_fix_bootstrap_rls_fk_indexes.sql",
+      "tables": [
+        "memberships",
+        "memberships",
+        "memberships"
+      ]
+    },
+    {
+      "file": "5302058_shared_module_tables.sql",
+      "tables": [
+        "if",
+        "portal_module_settings",
+        "if",
+        "approval_requests",
+        "if",
+        "ai_draft_outputs",
+        "if",
+        "module_comments",
+        "if",
+        "module_timeline_events",
+        "if",
+        "scheduled_check_results"
+      ]
+    },
+    {
+      "file": "5302059_proposal_builder.sql",
+      "tables": [
+        "if",
+        "proposals",
+        "if",
+        "proposal_phases",
+        "if",
+        "proposal_line_items"
+      ]
+    },
+    {
+      "file": "5302060_findings_tracker.sql",
+      "tables": [
+        "if",
+        "findings"
+      ]
+    },
+    {
+      "file": "5302061_asset_tracker.sql",
+      "tables": [
+        "if",
+        "assets"
+      ]
+    },
+    {
+      "file": "5302062_domain_monitor.sql",
+      "tables": [
+        "if",
+        "domain_monitors"
+      ]
+    },
+    {
+      "file": "5302063_qbr_reports.sql",
+      "tables": [
+        "if",
+        "qbr_reports"
+      ]
+    },
+    {
+      "file": "5302064_file_requests.sql",
+      "tables": [
+        "if",
+        "file_requests"
+      ]
+    },
+    {
+      "file": "5302065_ticket_triage.sql",
+      "tables": [
+        "if",
+        "ticket_triage_drafts"
+      ]
+    },
+    {
+      "file": "5302066_vendor_contracts_contacts.sql",
+      "tables": [
+        "if",
+        "vendor_contracts",
+        "if",
+        "vendor_contacts"
+      ]
+    },
+    {
+      "file": "5302067_service_catalog.sql",
+      "tables": [
+        "if",
+        "service_catalog"
+      ]
+    },
+    {
+      "file": "5302068_batch_modules.sql",
+      "tables": [
+        "if",
+        "license_tracking",
+        "if",
+        "status_items",
+        "if",
+        "website_monitors",
+        "if",
+        "dmarc_assessments"
+      ]
+    },
+    {
+      "file": "5302069_security_ops.sql",
+      "tables": [
+        "if",
+        "offboarding_checklists",
+        "if",
+        "break_glass_accounts",
+        "if",
+        "onboarding_clients",
+        "if",
+        "patch_compliance"
+      ]
+    },
+    {
+      "file": "5302070_security_suite.sql",
+      "tables": [
+        "if",
+        "m365_hardening",
+        "if",
+        "incident_responses",
+        "if",
+        "identity_verifications",
+        "if",
+        "endpoint_security"
+      ]
+    },
+    {
+      "file": "5302071_governance.sql",
+      "tables": [
+        "if",
+        "change_requests",
+        "if",
+        "risk_register",
+        "if",
+        "retention_policies",
+        "if",
+        "tabletop_exercises"
+      ]
+    },
+    {
+      "file": "5302072_field_services.sql",
+      "tables": [
+        "if",
+        "isp_assessments",
+        "if",
+        "unifi_surveys",
+        "if",
+        "port_maps",
+        "if",
+        "camera_calculations",
+        "if",
+        "hardware_staging",
+        "if",
+        "network_diagrams"
+      ]
+    },
+    {
+      "file": "5302073_edu_automation.sql",
+      "tables": [
+        "if",
+        "sop_library",
+        "if",
+        "compliance_readiness",
+        "if",
+        "insurance_evidence",
+        "if",
+        "ai_policies",
+        "if",
+        "knowledge_articles",
+        "if",
+        "training_modules",
+        "if",
+        "phishing_campaigns",
+        "if",
+        "cyber_scorecards",
+        "if",
+        "automation_workflows",
+        "if",
+        "powershell_scripts",
+        "if",
+        "kb_article_generations"
+      ]
+    },
+    {
+      "file": "5302074_final_batch.sql",
+      "tables": [
+        "if",
+        "sharepoint_plans",
+        "if",
+        "device_profiles",
+        "if",
+        "saas_audits",
+        "if",
+        "procurement_quotes",
+        "if",
+        "dns_change_requests",
+        "if",
+        "satisfaction_pulses",
+        "if",
+        "time_entries",
+        "if",
+        "budget_roadmaps",
+        "if",
+        "client_runbooks",
+        "if",
+        "custom_forms"
+      ]
+    },
+    {
+      "file": "5302075_backup_dr.sql",
+      "tables": [
+        "if",
+        "backup_status"
+      ]
+    },
+    {
+      "file": "5302076_delete_rls_policies.sql",
+      "tables": []
+    },
+    {
+      "file": "5302077_missing_rls_policies.sql",
+      "tables": []
+    },
+    {
+      "file": "5302078_client_onboarding_command_center.sql",
+      "tables": [
+        "if",
+        "client_onboarding_command_center_records",
+        "if",
+        "client_onboarding_checklist_items"
+      ]
+    },
+    {
+      "file": "5302079_satisfaction_pulse_widget.sql",
+      "tables": [
+        "if",
+        "satisfaction_pulses",
+        "satisfaction_pulses",
+        "satisfaction_pulses",
+        "satisfaction_pulses",
+        "satisfaction_pulses",
+        "satisfaction_pulses",
+        "if",
+        "satisfaction_pulse_templates",
+        "if",
+        "satisfaction_pulse_schedules"
+      ]
+    },
+    {
+      "file": "5302080_dynamic_client_forms_builder.sql",
+      "tables": [
+        "if",
+        "dynamic_client_forms",
+        "if",
+        "dynamic_form_submissions"
+      ]
+    },
+    {
+      "file": "5302081_fix_rls_policies.sql",
+      "tables": []
+    },
+    {
+      "file": "5302082_add_performance_indexes.sql",
+      "tables": []
+    },
+    {
+      "file": "5302083_powershell_policy_guard.sql",
+      "tables": [
+        "powershell_scripts",
+        "powershell_scripts",
+        "powershell_scripts"
+      ]
+    },
+    {
+      "file": "5302085_scorecards_gamification.sql",
+      "tables": [
+        "if",
+        "score_history",
+        "if",
+        "badges_earned"
+      ]
+    },
+    {
+      "file": "5302086_sop_library_compliance.sql",
+      "tables": [
+        "if",
+        "sop_library"
+      ]
+    },
+    {
+      "file": "5302087_project_tracker.sql",
+      "tables": [
+        "if",
+        "project_phases",
+        "if",
+        "project_milestones",
+        "if",
+        "project_dependencies"
+      ]
+    },
+    {
+      "file": "5302088_license_optimizer.sql",
+      "tables": [
+        "if",
+        "license_allocations"
+      ]
+    },
+    {
+      "file": "5302089_dmarc_coach.sql",
+      "tables": [
+        "if",
+        "dmarc_analyses"
+      ]
+    },
+    {
+      "file": "5302090_training_hub.sql",
+      "tables": [
+        "if",
+        "training_courses",
+        "if",
+        "training_lessons",
+        "if",
+        "training_enrollments"
+      ]
+    },
+    {
+      "file": "5302091_insurance_binder.sql",
+      "tables": [
+        "if",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence"
+      ]
+    },
+    {
+      "file": "5302092_status_page.sql",
+      "tables": [
+        "if",
+        "status_components",
+        "if",
+        "status_incidents",
+        "if",
+        "maintenance_notices"
+      ]
+    },
+    {
+      "file": "5302093_uptime_monitor.sql",
+      "tables": [
+        "if",
+        "uptime_checks",
+        "if",
+        "uptime_results"
+      ]
+    },
+    {
+      "file": "5302094_camera_calculation_fields.sql",
+      "tables": [
+        "if",
+        "if",
+        "if",
+        "if",
+        "if"
+      ]
+    },
+    {
+      "file": "5302095_offboarding_checklist_fields.sql",
+      "tables": [
+        "if",
+        "if",
+        "if"
+      ]
+    },
+    {
+      "file": "5302096_phishing_campaign_fields.sql",
+      "tables": [
+        "if",
+        "if",
+        "if",
+        "if"
+      ]
+    },
+    {
+      "file": "5302097_isp_unifi_scoring_fields.sql",
+      "tables": [
+        "isp_assessments",
+        "isp_assessments",
+        "isp_assessments",
+        "isp_assessments",
+        "unifi_surveys",
+        "unifi_surveys",
+        "unifi_surveys"
+      ]
+    },
+    {
+      "file": "5302098_article_feedback_fields.sql",
+      "tables": [
+        "knowledge_articles",
+        "knowledge_articles"
+      ]
+    },
+    {
+      "file": "5302099_automation_log_fields.sql",
+      "tables": [
+        "if",
+        "if",
+        "if",
+        "if",
+        "if",
+        "if",
+        "if",
+        "if"
+      ]
+    },
+    {
+      "file": "5302100_fix_rls_membership_status.sql",
+      "tables": []
+    },
+    {
+      "file": "5302101_fix_missing_rls_policies.sql",
+      "tables": []
+    },
+    {
+      "file": "5302102_add_performance_indexes.sql",
+      "tables": []
+    },
+    {
+      "file": "5302103_add_check_constraints.sql",
+      "tables": [
+        "sla_logs",
+        "satisfaction_pulses",
+        "score_history",
+        "patch_compliance",
+        "endpoint_security",
+        "vendor_contracts"
+      ]
+    },
+    {
+      "file": "5302104_store_promotions.sql",
+      "tables": [
+        "store_promotions",
+        "store_promotions"
+      ]
+    },
+    {
+      "file": "5302105_store_quotes.sql",
+      "tables": [
+        "store_quotes",
+        "store_quotes"
+      ]
+    },
+    {
+      "file": "5302106_store_analytics.sql",
+      "tables": [
+        "IF",
+        "store_analytics_events"
+      ]
+    },
+    {
+      "file": "5302107_notification_dedup_and_indexes.sql",
+      "tables": [
+        "notifications"
+      ]
+    },
+    {
+      "file": "5302108_fix_audit_logs_cascade.sql",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "file": "5302109_soft_delete.sql",
+      "tables": [
+        "if",
+        "if",
+        "if"
+      ]
+    },
+    {
+      "file": "5302110_restore_document_permissions.sql",
+      "tables": [
+        "if",
+        "document_permissions"
+      ]
+    },
+    {
+      "file": "5302111_harden_bulk_update_rpc.sql",
+      "tables": []
+    },
+    {
+      "file": "5302112_fix_rls_approved_membership.sql",
+      "tables": []
+    },
+    {
+      "file": "5302113_add_check_constraints.sql",
+      "tables": [
+        "tickets",
+        "documents",
+        "projects",
+        "organizations",
+        "profiles",
+        "project_tasks",
+        "webhook_endpoints",
+        "notification_preferences",
+        "billing_customers"
+      ]
+    },
+    {
+      "file": "5302114_store_conversion_modules.sql",
+      "tables": [
+        "if",
+        "if",
+        "store_quote_requests",
+        "store_visual_assets"
+      ]
+    },
+    {
+      "file": "5302115_store_v5_sales_ops.sql",
+      "tables": [
+        "if",
+        "if",
+        "store_leads",
+        "store_proposal_drafts"
+      ]
+    },
+    {
+      "file": "5302116_grant_table_privileges.sql",
+      "tables": []
+    },
+    {
+      "file": "5302117_public_interactions_retention.sql",
+      "tables": []
+    },
+    {
+      "file": "5302118_permission_matrix_full_catalog.sql",
+      "tables": [
+        "permissions"
+      ]
+    },
+    {
+      "file": "5302119_demo_test_data.sql",
+      "tables": []
+    },
+    {
+      "file": "5302120_demo_module_data.sql",
+      "tables": []
+    },
+    {
+      "file": "5302121_demo_permission_edge_cases.sql",
+      "tables": []
+    },
+    {
+      "file": "5302122_mark_task_read_rpc.sql",
+      "tables": []
+    },
+    {
+      "file": "5302123_demo_expanded_test_data.sql",
+      "tables": []
+    },
+    {
+      "file": "5302124_fix_worker_schema_columns.sql",
+      "tables": [
+        "uptime_checks",
+        "dmarc_analyses"
+      ]
+    },
+    {
+      "file": "5302125_risk_assess_columns.sql",
+      "tables": [
+        "risk_register"
+      ]
+    },
+    {
+      "file": "5302126_demo_worker_admin_coverage.sql",
+      "tables": []
+    },
+    {
+      "file": "5302127_module_state_columns.sql",
+      "tables": [
+        "change_requests",
+        "compliance_readiness",
+        "m365_hardening",
+        "patch_compliance",
+        "endpoint_security",
+        "qbr_reports"
+      ]
+    },
+    {
+      "file": "5302128_role_catalog_expansion.sql",
+      "tables": []
+    }
+  ],
+  "routes": [
+    {
+      "file": "admin.ts",
+      "path": "/organizations"
+    },
+    {
+      "file": "admin.ts",
+      "path": "/test-email"
+    },
+    {
+      "file": "ai.ts",
+      "path": "/triage/analyze"
+    },
+    {
+      "file": "ai.ts",
+      "path": "/triage/convert"
+    },
+    {
+      "file": "ai.ts",
+      "path": "/triage"
+    },
+    {
+      "file": "ai.ts",
+      "path": "/copilot/:ticketId/summarize"
+    },
+    {
+      "file": "ai.ts",
+      "path": "/copilot/:ticketId/reply-draft"
+    },
+    {
+      "file": "analytics.ts",
+      "path": "/track"
+    },
+    {
+      "file": "analytics.ts",
+      "path": "/"
+    },
+    {
+      "file": "analytics.ts",
+      "path": "/summary"
+    },
+    {
+      "file": "api-keys.ts",
+      "path": "/"
+    },
+    {
+      "file": "api-keys.ts",
+      "path": "/"
+    },
+    {
+      "file": "api-keys.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "api-keys.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "approvals.ts",
+      "path": "/export"
+    },
+    {
+      "file": "approvals.ts",
+      "path": "/stats"
+    },
+    {
+      "file": "approvals.ts",
+      "path": "/"
+    },
+    {
+      "file": "approvals.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "approvals.ts",
+      "path": "/"
+    },
+    {
+      "file": "approvals.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "approvals.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "approvals.ts",
+      "path": "/:id/approve"
+    },
+    {
+      "file": "approvals.ts",
+      "path": "/:id/reject"
+    },
+    {
+      "file": "approvals.ts",
+      "path": "/:id/cancel"
+    },
+    {
+      "file": "approvals.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "approvals.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "approvals.ts",
+      "path": "/:id/timeline"
+    },
+    {
+      "file": "assets.ts",
+      "path": "/export"
+    },
+    {
+      "file": "assets.ts",
+      "path": "/"
+    },
+    {
+      "file": "assets.ts",
+      "path": "/stats"
+    },
+    {
+      "file": "assets.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "assets.ts",
+      "path": "/"
+    },
+    {
+      "file": "assets.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "assets.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "assets.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "assets.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "assets.ts",
+      "path": "/:id/timeline"
+    },
+    {
+      "file": "audit.ts",
+      "path": "/"
+    },
+    {
+      "file": "audit.ts",
+      "path": "/export"
+    },
+    {
+      "file": "auth.ts",
+      "path": "/me"
+    },
+    {
+      "file": "auth.ts",
+      "path": "/sign-in"
+    },
+    {
+      "file": "auth.ts",
+      "path": "/sign-up"
+    },
+    {
+      "file": "auth.ts",
+      "path": "/callback"
+    },
+    {
+      "file": "auth.ts",
+      "path": "/sign-out"
+    },
+    {
+      "file": "auth.ts",
+      "path": "/forgot-password"
+    },
+    {
+      "file": "auth.ts",
+      "path": "/reset-password"
+    },
+    {
+      "file": "batch.ts",
+      "path": "/status/public"
+    },
+    {
+      "file": "batch.ts",
+      "path": "/licenses/savings"
+    },
+    {
+      "file": "billing.ts",
+      "path": "/summary"
+    },
+    {
+      "file": "billing.ts",
+      "path": "/invoices"
+    },
+    {
+      "file": "billing.ts",
+      "path": "/invoices/:id"
+    },
+    {
+      "file": "billing.ts",
+      "path": "/subscriptions"
+    },
+    {
+      "file": "billing.ts",
+      "path": "/payments"
+    },
+    {
+      "file": "billing.ts",
+      "path": "/billing-customer"
+    },
+    {
+      "file": "billing.ts",
+      "path": "/sync"
+    },
+    {
+      "file": "billing.ts",
+      "path": "/create-portal-session"
+    },
+    {
+      "file": "bulk.ts",
+      "path": "/invite"
+    },
+    {
+      "file": "business-os.ts",
+      "path": "/summary"
+    },
+    {
+      "file": "business-os.ts",
+      "path": "/approvals-overdue"
+    },
+    {
+      "file": "business-os.ts",
+      "path": "/recent-activity"
+    },
+    {
+      "file": "business-os.ts",
+      "path": "/org-health"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/export.csv"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/:id/complete-phase"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/:id/checklist"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/:id/checklist/:itemId"
+    },
+    {
+      "file": "dashboard.ts",
+      "path": "/summary"
+    },
+    {
+      "file": "dmarc-coach.ts",
+      "path": "/"
+    },
+    {
+      "file": "dmarc-coach.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "dmarc-coach.ts",
+      "path": "/"
+    },
+    {
+      "file": "dmarc-coach.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "dmarc-coach.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "dmarc-coach.ts",
+      "path": "/analyze"
+    },
+    {
+      "file": "docs.ts",
+      "path": "/openapi.json"
+    },
+    {
+      "file": "docs.ts",
+      "path": "/docs"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/shares/:token"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/upload"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/:id/signed-url"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/bulk/folder"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/bulk/metadata"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/:id/versions"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/:id/versions/:versionId"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/:id/shares"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/:id/shares"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/:id/shares/:shareId"
+    },
+    {
+      "file": "documents.ts",
+      "path": "/:id/shares/:shareId"
+    },
+    {
+      "file": "domain-monitors.ts",
+      "path": "/export"
+    },
+    {
+      "file": "domain-monitors.ts",
+      "path": "/"
+    },
+    {
+      "file": "domain-monitors.ts",
+      "path": "/stats"
+    },
+    {
+      "file": "domain-monitors.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "domain-monitors.ts",
+      "path": "/"
+    },
+    {
+      "file": "domain-monitors.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "domain-monitors.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/export.csv"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/:id/publish"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/:id/submit"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/:id/submissions"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/automation/:id/execute"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/automation/:id/complete"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/kb-generator/:id/generate"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/kb/search"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/kb/:id/rate"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/compliance/score"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/phishing/:id/launch"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/phishing/:id/results"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/scorecards/summary"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/scorecards/overview"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/scorecards/leaderboard"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/scorecards/evaluate"
+    },
+    {
+      "file": "field-services.ts",
+      "path": "/isp/:id/score"
+    },
+    {
+      "file": "field-services.ts",
+      "path": "/unifi/:id/plan"
+    },
+    {
+      "file": "field-services.ts",
+      "path": "/camera-calc/calculate"
+    },
+    {
+      "file": "field-services.ts",
+      "path": "/staging/:id/checklist"
+    },
+    {
+      "file": "field-services.ts",
+      "path": "/network-diagrams/:id/export"
+    },
+    {
+      "file": "file-requests.ts",
+      "path": "/public/:token"
+    },
+    {
+      "file": "file-requests.ts",
+      "path": "/public/:token/upload"
+    },
+    {
+      "file": "file-requests.ts",
+      "path": "/"
+    },
+    {
+      "file": "file-requests.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "file-requests.ts",
+      "path": "/"
+    },
+    {
+      "file": "file-requests.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "file-requests.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "final.ts",
+      "path": "/sharepoint/structure-summary"
+    },
+    {
+      "file": "final.ts",
+      "path": "/backups/stats"
+    },
+    {
+      "file": "final.ts",
+      "path": "/backups/risk-analysis"
+    },
+    {
+      "file": "final.ts",
+      "path": "/budgets/analysis"
+    },
+    {
+      "file": "final.ts",
+      "path": "/procurement/compare"
+    },
+    {
+      "file": "final.ts",
+      "path": "/dns-changes/:id/approve"
+    },
+    {
+      "file": "final.ts",
+      "path": "/dns-changes/:id/reject"
+    },
+    {
+      "file": "final.ts",
+      "path": "/dns-changes/:id/implement"
+    },
+    {
+      "file": "final.ts",
+      "path": "/time-entries/summary"
+    },
+    {
+      "file": "findings.ts",
+      "path": "/export"
+    },
+    {
+      "file": "findings.ts",
+      "path": "/"
+    },
+    {
+      "file": "findings.ts",
+      "path": "/stats"
+    },
+    {
+      "file": "findings.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "findings.ts",
+      "path": "/"
+    },
+    {
+      "file": "findings.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "findings.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "findings.ts",
+      "path": "/:id/verify"
+    },
+    {
+      "file": "findings.ts",
+      "path": "/:id/resolve"
+    },
+    {
+      "file": "findings.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "findings.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "findings.ts",
+      "path": "/:id/timeline"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/change-requests/:id/submit"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/change-requests/:id/approve"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/change-requests/:id/reject"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/change-requests/:id/implement"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/change-requests/:id/verify"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/risks/:id/assess"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/sop-library/compliance-map"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/sop-library/framework-gaps"
+    },
+    {
+      "file": "health.ts",
+      "path": "/"
+    },
+    {
+      "file": "insurance-binder.ts",
+      "path": "/coverage-report"
+    },
+    {
+      "file": "insurance-binder.ts",
+      "path": "/"
+    },
+    {
+      "file": "insurance-binder.ts",
+      "path": "/"
+    },
+    {
+      "file": "insurance-binder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "insurance-binder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "insurance-binder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/reclaimable/license-list"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/summary/data"
+    },
+    {
+      "file": "me.ts",
+      "path": "/permissions"
+    },
+    {
+      "file": "memberships.ts",
+      "path": "/"
+    },
+    {
+      "file": "memberships.ts",
+      "path": "/mine"
+    },
+    {
+      "file": "memberships.ts",
+      "path": "/invite"
+    },
+    {
+      "file": "memberships.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "memberships.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "notification-preferences.ts",
+      "path": "/"
+    },
+    {
+      "file": "notification-preferences.ts",
+      "path": "/"
+    },
+    {
+      "file": "notifications.ts",
+      "path": "/stream"
+    },
+    {
+      "file": "notifications.ts",
+      "path": "/"
+    },
+    {
+      "file": "notifications.ts",
+      "path": "/unread-count"
+    },
+    {
+      "file": "notifications.ts",
+      "path": "/:id/read"
+    },
+    {
+      "file": "notifications.ts",
+      "path": "/mark-all-read"
+    },
+    {
+      "file": "notifications.ts",
+      "path": "/"
+    },
+    {
+      "file": "notifications.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "organizations.ts",
+      "path": "/"
+    },
+    {
+      "file": "organizations.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "organizations.ts",
+      "path": "/:id/detail"
+    },
+    {
+      "file": "organizations.ts",
+      "path": "/"
+    },
+    {
+      "file": "organizations.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "organizations.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "organizations.ts",
+      "path": "/:id/domains"
+    },
+    {
+      "file": "organizations.ts",
+      "path": "/:id/domains"
+    },
+    {
+      "file": "organizations.ts",
+      "path": "/:id/domains/:domainId"
+    },
+    {
+      "file": "organizations.ts",
+      "path": "/:id/domains/:domainId"
+    },
+    {
+      "file": "organizations.ts",
+      "path": "/:id/logo"
+    },
+    {
+      "file": "profiles.ts",
+      "path": "/"
+    },
+    {
+      "file": "profiles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "profiles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "profiles.ts",
+      "path": "/:id/avatar"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/export"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/compound"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/detail"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/tasks"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/tasks"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/tasks/:taskId"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/tasks/:taskId"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/tasks/comments"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/tasks/:taskId/comments"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/updates"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/updates"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/updates/:updateId"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/updates/:updateId"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/tasks/:taskId/comments/:commentId"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/tasks/:taskId/comments/:commentId"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/tasks/read-states"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/tasks/reorder"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/tasks/:taskId/read"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/tasks/:taskId/approve"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/:id/tasks/:taskId/portal-comment"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/export"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id/phases"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id/phases/:phaseId"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id/phases/:phaseId"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id/items"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id/items/:itemId"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id/items/:itemId"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id/submit-approval"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id/publish"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "proposals.ts",
+      "path": "/:id/timeline"
+    },
+    {
+      "file": "public.ts",
+      "path": "/init"
+    },
+    {
+      "file": "public.ts",
+      "path": "/submit"
+    },
+    {
+      "file": "qbr.ts",
+      "path": "/"
+    },
+    {
+      "file": "qbr.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "qbr.ts",
+      "path": "/generate"
+    },
+    {
+      "file": "qbr.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "qbr.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "roles.ts",
+      "path": "/"
+    },
+    {
+      "file": "roles.ts",
+      "path": "/with-permissions"
+    },
+    {
+      "file": "roles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "roles.ts",
+      "path": "/"
+    },
+    {
+      "file": "roles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "roles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "roles.ts",
+      "path": "/:id/permissions"
+    },
+    {
+      "file": "roles.ts",
+      "path": "/:id/permissions"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/export"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/:id/respond"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/templates"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/templates/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/templates"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/templates/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/templates/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/schedules"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/schedules"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/schedules/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/schedules/:id"
+    },
+    {
+      "file": "search-portal.ts",
+      "path": "/"
+    },
+    {
+      "file": "search.ts",
+      "path": "/"
+    },
+    {
+      "file": "security-ops.ts",
+      "path": "/offboarding/:id/complete-step"
+    },
+    {
+      "file": "security-ops.ts",
+      "path": "/patch-compliance/stats"
+    },
+    {
+      "file": "security-suite.ts",
+      "path": "/identity-verification/:id/verify"
+    },
+    {
+      "file": "security-suite.ts",
+      "path": "/endpoint-security/coverage"
+    },
+    {
+      "file": "security-suite.ts",
+      "path": "/m365-hardening/:id/scan"
+    },
+    {
+      "file": "service-catalog.ts",
+      "path": "/"
+    },
+    {
+      "file": "service-catalog.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "service-catalog.ts",
+      "path": "/"
+    },
+    {
+      "file": "service-catalog.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "service-catalog.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "sla.ts",
+      "path": "/metrics"
+    },
+    {
+      "file": "status-page.ts",
+      "path": "/public/:orgId"
+    },
+    {
+      "file": "store.ts",
+      "path": "/promotions"
+    },
+    {
+      "file": "store.ts",
+      "path": "/promotions/active"
+    },
+    {
+      "file": "store.ts",
+      "path": "/promotions/admin"
+    },
+    {
+      "file": "store.ts",
+      "path": "/promotions"
+    },
+    {
+      "file": "store.ts",
+      "path": "/promotions/:id"
+    },
+    {
+      "file": "store.ts",
+      "path": "/promotions/:id"
+    },
+    {
+      "file": "store.ts",
+      "path": "/quotes"
+    },
+    {
+      "file": "store.ts",
+      "path": "/quotes"
+    },
+    {
+      "file": "store.ts",
+      "path": "/products"
+    },
+    {
+      "file": "store.ts",
+      "path": "/products/:slug"
+    },
+    {
+      "file": "store.ts",
+      "path": "/categories"
+    },
+    {
+      "file": "store.ts",
+      "path": "/categories/:slug"
+    },
+    {
+      "file": "tickets.ts",
+      "path": "/export"
+    },
+    {
+      "file": "tickets.ts",
+      "path": "/"
+    },
+    {
+      "file": "tickets.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "tickets.ts",
+      "path": "/"
+    },
+    {
+      "file": "tickets.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "tickets.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "tickets.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "tickets.ts",
+      "path": "/:id/comments/:commentId"
+    },
+    {
+      "file": "tickets.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "tickets.ts",
+      "path": "/bulk"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/my-courses"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses/:id"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses/:id"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses/:id"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses/:id/enroll"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses/:id/progress"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/lessons"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/lessons"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/lessons/:id"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/lessons/:id"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/lessons/:id"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/dashboard"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks/:id"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks/:id"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks/:id"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks/:id/results"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks/:id/uptime"
+    },
+    {
+      "file": "users.ts",
+      "path": "/"
+    },
+    {
+      "file": "users.ts",
+      "path": "/compound"
+    },
+    {
+      "file": "users.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "users.ts",
+      "path": "/:id/detail"
+    },
+    {
+      "file": "users.ts",
+      "path": "/:id/role"
+    },
+    {
+      "file": "users.ts",
+      "path": "/:id/permissions"
+    },
+    {
+      "file": "users.ts",
+      "path": "/:id/permissions"
+    },
+    {
+      "file": "vendors.ts",
+      "path": "/vendor-contracts/renewals"
+    },
+    {
+      "file": "webhook-management.ts",
+      "path": "/"
+    },
+    {
+      "file": "webhook-management.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "webhook-management.ts",
+      "path": "/"
+    },
+    {
+      "file": "webhook-management.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "webhook-management.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "webhook-management.ts",
+      "path": "/:id/deliveries"
+    },
+    {
+      "file": "webhook-management.ts",
+      "path": "/:id/test"
+    },
+    {
+      "file": "webhooks.ts",
+      "path": "/stripe"
+    },
+    {
+      "file": "webhooks.ts",
+      "path": "/jira"
+    },
+    {
+      "file": "webhooks.ts",
+      "path": "/jsm"
+    },
+    {
+      "file": "webhooks.ts",
+      "path": "/m365"
+    },
+    {
+      "file": "webhooks.ts",
+      "path": "/m365"
+    }
+  ],
+  "components": [
+    "Breadcrumbs.tsx",
+    "CommentBody.tsx",
+    "DocumentPreview.tsx",
+    "EmptyState.tsx",
+    "HasPermission.tsx",
+    "HealthDashboardClient.tsx",
+    "NotificationBell.tsx",
+    "NotificationsPageClient.tsx",
+    "RouteGuard.tsx",
+    "StatusPill.tsx",
+    "version-badge.tsx",
+    "admin\\AdminApiKeysClient.tsx",
+    "admin\\AdminDocumentsBulkControls.tsx",
+    "admin\\AdminDocumentsCenterClient.tsx",
+    "admin\\AdminDocUpload.tsx",
+    "admin\\AdminGlobalSearch.tsx",
+    "admin\\AdminHeaderActions.tsx",
+    "admin\\AdminOrganizationsClient.tsx",
+    "admin\\AdminPageShell.tsx",
+    "admin\\AdminSidebarContent.tsx",
+    "admin\\AdminSidebarLayout.tsx",
+    "admin\\AdminSLAClient.tsx",
+    "admin\\AdminSubnav.tsx",
+    "admin\\AdminTicketCenterClient.tsx",
+    "admin\\AdminUsersClient.tsx",
+    "admin\\AvatarPill.tsx",
+    "admin\\BulkInviteForm.tsx",
+    "admin\\ConfirmIntentButton.tsx",
+    "admin\\CreateOrganizationForm.tsx",
+    "admin\\CreateRoleForm.tsx",
+    "admin\\CrudForm.tsx",
+    "admin\\InlineStatusDropdown.tsx",
+    "admin\\InviteUserForm.tsx",
+    "admin\\ModuleDetailPage.tsx",
+    "admin\\NewWebhookForm.tsx",
+    "admin\\OrgBrandingForm.tsx",
+    "admin\\PermissionMatrixClient.tsx",
+    "admin\\ProjectTaskListV5.tsx",
+    "admin\\RecordDetail.tsx",
+    "admin\\RoleEditForm.tsx",
+    "admin\\RolePermissionsEditor.tsx",
+    "admin\\SeverityPill.tsx",
+    "admin\\StatusPill.tsx",
+    "admin\\SuperAdminOrgSwitcher.tsx",
+    "admin\\TriageAnalyzeClient.tsx",
+    "admin\\UserPermissionOverridesClient.tsx",
+    "admin\\WorkflowActionButtons.tsx",
+    "layout\\SidebarShell.tsx",
+    "marketing\\ContactForm.tsx",
+    "marketing\\MarketingHeader.tsx",
+    "marketing\\ParticleBackground.tsx",
+    "marketing\\ServiceCard.tsx",
+    "portal\\DocumentShareClient.tsx",
+    "portal\\DocumentVersionsClient.tsx",
+    "portal\\OrgSwitcher.tsx",
+    "portal\\PortalAdminQuickSwitch.tsx",
+    "portal\\PortalDocumentsCenterClient.tsx",
+    "portal\\PortalGlobalSearch.tsx",
+    "portal\\PortalHeaderActions.tsx",
+    "portal\\PortalSidebarContent.tsx",
+    "portal\\PortalSidebarLayout.tsx",
+    "portal\\PortalSubnav.tsx",
+    "portal\\ProjectCalendarView.tsx",
+    "portal\\ProjectTasksWithViews.tsx",
+    "portal\\ProjectTimelineView.tsx",
+    "portal\\SupportCenterClient.tsx",
+    "seo\\BreadcrumbJsonLd.tsx",
+    "seo\\JsonLd.tsx",
+    "seo\\LocalBusinessJsonLd.tsx",
+    "store\\BundleValuePanel.tsx",
+    "store\\CampaignBanner.tsx",
+    "store\\CampaignsManagerClient.tsx",
+    "store\\CategoryVisualHeader.tsx",
+    "store\\FAQSection.tsx",
+    "store\\IncludedItemsList.tsx",
+    "store\\IntakeFormRenderer.tsx",
+    "store\\PackageLadder.tsx",
+    "store\\PackageLadderGrid.tsx",
+    "store\\PromoBadge.tsx",
+    "store\\QuoteBuilderClient.tsx",
+    "store\\ServiceFinderQuiz.tsx",
+    "store\\StoreCategoryCard.tsx",
+    "store\\StoreIconTile.tsx",
+    "store\\StoreProductCard.tsx",
+    "store\\StoreSidebar.tsx",
+    "store\\TrustBadgeList.tsx"
+  ],
+  "tests": {
+    "api": 234,
+    "web": 3,
+    "sdk": 0,
+    "worker": 12,
+    "e2e": 2
+  },
+  "total_files": 4373,
+  "total_lines": 602319,
+  "git": {
+    "commit": "75d3926 test-data: cover admin workflow-button states (phishing launch + CAB approve/reject)",
+    "branch": "develop"
+  },
+  "summary": {
+    "apps": [
+      "api",
+      "web",
+      "worker"
+    ],
+    "migrations": 93,
+    "api_routes": 358,
+    "components": 86,
+    "total_files": 4373,
+    "total_lines": 602319
+  }
+}

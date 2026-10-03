@@ -1,0 +1,143 @@
+# Basic alerting rules for the MCT portal stack.
+# NOTE: These rules are evaluated by Prometheus; for delivery (email/Slack/etc.)
+# an Alertmanager deployment is required. The Watchdog rule below is a common
+# liveness signal that fires once per day and is used to validate the alert path.
+groups:
+  - name: mct-service-availability
+    rules:
+      - alert: MCTServiceDown
+        expr: up{job=~"mct-api|mct-worker"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "MCT service {{ $labels.job }} is down"
+          description: "Prometheus cannot scrape {{ $labels.job }} (target {{ $labels.instance }}) for more than 2 minutes."
+
+      - alert: MCTHighRequestErrorRate
+        expr: |
+          sum by (job) (
+            rate(portal_http_requests_total{status_code=~"5.."}[5m])
+            /
+            clamp_min(rate(portal_http_requests_total[5m]), 0.0001)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "MCT 5xx error rate above 5% ({{ $labels.job }})"
+          description: "The 5xx error rate for {{ $labels.job }} has been above 5% for 5 minutes."
+
+      - alert: Watchdog
+        expr: vector(1)
+        labels:
+          severity: none
+          team: platform
+        annotations:
+          summary: "Prometheus Watchdog"
+          description: "This alert is a liveness signal — firing at least once a day means the alerting pipeline is healthy."
+
+  - name: mct-admin-abuse
+    rules:
+      # ADMIN-P1-002: platform-admin cross-tenant access is recorded to
+      # impersonation_log and surfaced as portal_impersonation_events_total.
+      # A sustained burst of cross-tenant entries warrants review. Delivery
+      # requires Alertmanager (see the file header).
+      - alert: MCTImpersonationBurst
+        expr: sum(rate(portal_impersonation_events_total[10m])) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Elevated cross-tenant (impersonation) access volume"
+          description: "More than 0.5 cross-tenant access events/second over 10 minutes. Review GET /api/v1/audit/impersonation."
+
+      # IR-P1-006: runtime signal for tenant-isolation regressions.
+      #
+      # getScopedClient falls back to the RLS-bypassing service-role client for
+      # any module not in the RLS allow-list - that is the normal state today,
+      # so the bypass itself is not alertable. What IS alertable is a service-role
+      # call that resolved NO organization: it means a query touched tenant data
+      # with no tenant scope at all, which is the shape of a cross-tenant leak.
+      #
+      # IMPORTANT - why this is NOT keyed on org_resolved="false": cross-tenant
+      # platform-admin requests (impersonation, the org switcher) legitimately
+      # resolve no org, so a rule on that label fires continuously in normal
+      # operation and becomes noise that hides a real regression.
+      #
+      # Different alert entirely: it must not depend on a self-referential
+      # baseline (a sustained spike raises its own baseline and silences the
+      # rule). Two independent conditions, both required:
+      #
+      #   (a) ABSOLUTE: the module is serving a high share of org-less
+      #       service-role traffic right now (>= 50%). A module that is always
+      #       org-less (a genuine platform-level read) is excluded by (b).
+      # Design, corrected a second time. The first draft used clamp_min as if it
+      # were a cap, pushing the threshold above 1.0 (dead rule). The second used
+      # a self-referential 24h baseline, which INCLUDES the ongoing spike, so a
+      # sustained regression raised its own baseline and silenced the rule
+      # (reproduced with `promtool test rules`). Excluding "just the spike" from
+      # a window is not expressible while the spike is ongoing.
+      #
+      # So this rule makes an ABSOLUTE assertion and does not try to learn a
+      # baseline: a module serving >=50% of its RLS-bypassing traffic with NO
+      # organization is the regression signature. That is deliberately biased
+      # toward firing; the annotation tells the responder to distinguish a
+      # genuine platform-level read path before acting, and MCTRlsEnforcedShare
+      # Collapsed plus the org_resolved breakdown are the corroborating signals.
+      #
+      # Reachable by construction: the threshold is on the same 0..1 scale as the
+      # measured ratio, so no arithmetic can push it out of range.
+      - alert: MCTTenantScopeRegression
+        expr: |
+          (
+            sum by (module) (rate(portal_rls_bypass_total{org_resolved="false"}[15m]))
+            /
+            clamp_min(sum by (module) (rate(portal_rls_bypass_total[15m])), 0.0001)
+            >= 0.5
+          )
+          and on (module)
+          (
+            sum by (module) (rate(portal_rls_bypass_total[15m])) > 0.01
+          )
+        for: 15m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Module {{ $labels.module }} started serving tenant data with no organization scope"
+          description: "At least half of the RLS-bypassing client selections for module {{ $labels.module }} resolve no organization. That is the signature of a tenant-isolation regression - a query that dropped its organization_id predicate. Confirm whether this module has a genuine platform-level read path before treating it as benign; check its queries for a missing organization_id filter."
+
+      # IR-P1-006: RLS rollout visibility. Reports the enforced share as an
+      # information-level signal ONLY when the RLS allow-lists are actually in
+      # use somewhere. It is deliberately not an alert: with the allow-lists empty
+      # by default the enforced share is legitimately ~0, and an alert on that
+      # would fire permanently and mask real problems. Use the metric to watch
+      # the rollout instead (Grafana / ad-hoc query).
+      - alert: MCTRlsEnforcedShareCollapsed
+        # Only meaningful once RLS is in use: fires when a module that HAS been
+        # serving through the RLS client drops to zero enforced selections while
+        # still serving traffic - i.e. it fell out of the allow-list.
+        expr: |
+          (
+            sum by (module) (rate(portal_rls_enforced_total[30m])) == 0
+          )
+          and
+          (
+            sum by (module) (rate(portal_rls_bypass_total{module=~".+"}[30m])) > 0.05
+          )
+          and on (module)
+          (
+            max_over_time(sum by (module) (rate(portal_rls_enforced_total[5m]))[6h:5m]) > 0.01
+          )
+        for: 30m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Module {{ $labels.module }} stopped serving through the RLS-enforcing client"
+          description: "Module {{ $labels.module }} previously served tenant queries through the RLS-enforcing client but has produced none for 30 minutes while still handling traffic. It likely dropped out of RLS_READS_ENABLED / RLS_WRITES_ENABLED. Check the allow-lists in the droplet .env."
+

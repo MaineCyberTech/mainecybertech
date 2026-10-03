@@ -1,13 +1,56 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
 import { AppError, success } from "../types";
 import { getEnv } from "../config/env";
 import { httpClients } from "../lib/http-client";
+import { logger } from "../lib/logger";
+import { queryInt } from "../lib/query";
+import { resolveAdminTenantScope } from "../lib/admin-scope";
+
+type StripePrice = {
+  nickname?: string | null;
+  product?: string | null;
+  unit_amount?: number | null;
+  currency?: string | null;
+};
+
+type StripeInvoice = {
+  id: string;
+  number: string | null;
+  status: string;
+  subtotal: number;
+  tax: number | null;
+  total: number;
+  currency: string;
+  hosted_invoice_url: string | null;
+  invoice_pdf: string | null;
+  due_date: number | null;
+  status_transitions?: { paid_at?: number | null } | null;
+};
+
+type StripeSubscription = {
+  id: string;
+  status: string;
+  current_period_start: number | null;
+  current_period_end: number | null;
+  items: { data: Array<{ price: StripePrice }> };
+};
+
+type StripePaymentIntent = {
+  id: string;
+  status: string;
+  amount: number;
+  amount_received?: number | null;
+  currency: string;
+  created: number | null;
+  invoice?: string | null;
+  customer?: string | null;
+};
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -15,12 +58,10 @@ router.use(requireOrgAccess);
 
 router.get("/summary", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "billing", "read");
     const orgId = req.query.organization_id as string | undefined;
 
-    const baseQuery = orgId
-      ? (qb: any) => qb.eq("organization_id", orgId)
-      : (qb: any) => qb;
+    const baseQuery = orgId ? (qb: any) => qb.eq("organization_id", orgId) : (qb: any) => qb;
 
     const [
       { count: activeSubs },
@@ -71,19 +112,16 @@ router.get("/summary", async (req, res, next) => {
 
 router.get("/invoices", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      50,
-      Math.max(1, parseInt(req.query.limit as string) || 20),
-    );
+    const supabase = getScopedClient(req, "billing", "read");
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 20)));
     const offset = (page - 1) * limit;
     const orgId = req.query.organization_id as string | undefined;
     const statusFilter = req.query.status as string | undefined;
 
     let query = supabase.from("invoices").select("*", { count: "exact" });
     if (orgId) query = query.eq("organization_id", orgId);
-    if (statusFilter) query = query.eq("status", statusFilter);
+    if (statusFilter) query = query.eq("status", statusFilter as never);
 
     const { data, error, count } = await query
       .order("created_at", { ascending: false })
@@ -98,14 +136,12 @@ router.get("/invoices", async (req, res, next) => {
 
 router.get("/invoices/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("invoices")
-      .select("*")
-      .eq("id", req.params.id)
-      .single();
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Invoice not found", 404);
+    const supabase = getScopedClient(req, "billing", "read");
+    const orgId = req.query.organization_id as string | undefined;
+    let query = supabase.from("invoices").select("*").eq("id", String(req.params.id));
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.single();
+    if (error || !data) throw new AppError("NOT_FOUND", "Invoice not found", 404);
     res.json(success(data));
   } catch (error) {
     next(error);
@@ -114,7 +150,7 @@ router.get("/invoices/:id", async (req, res, next) => {
 
 router.get("/subscriptions", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "billing", "read");
     const orgId = req.query.organization_id as string | undefined;
 
     let query = supabase.from("subscriptions").select("*");
@@ -132,12 +168,9 @@ router.get("/subscriptions", async (req, res, next) => {
 
 router.get("/payments", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      50,
-      Math.max(1, parseInt(req.query.limit as string) || 20),
-    );
+    const supabase = getScopedClient(req, "billing", "read");
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 20)));
     const offset = (page - 1) * limit;
     const orgId = req.query.organization_id as string | undefined;
 
@@ -158,47 +191,59 @@ router.get("/payments", async (req, res, next) => {
 
 router.get("/billing-customer", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "billing", "read");
     const orgId = req.query.organization_id as string | undefined;
-    if (!orgId)
-      throw new AppError("VALIDATION", "organization_id is required", 400);
 
-    const { data, error } = await supabase
-      .from("billing_customers")
-      .select("*")
-      .eq("organization_id", orgId)
-      .single();
-    if (error && error.code !== "PGRST116")
-      throw new AppError("DB_ERROR", error.message, 500);
+    let query = supabase.from("billing_customers").select("*");
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.single();
+    if (error && error.code !== "PGRST116") throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data ?? null));
   } catch (error) {
     next(error);
   }
 });
 
-router.post("/sync", requireAdmin, async (req, res, next) => {
+router.post("/sync", requirePermission("billing", "manage"), async (req, res, next) => {
   try {
     const { organizationId } = z
       .object({ organizationId: z.string().uuid().optional() })
       .parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "billing", "write");
+
+    // Scope the sync to a single organization. `req.orgId` (resolved by
+    // requireOrgAccess) is the authority; a body/query org may only narrow,
+    // never widen, the caller's scope. Previously an omitted org left the
+    // query with no predicate at all, so the handler synced EVERY tenant's
+    // billing customers, invoices, subscriptions and payments.
+    const scope = await resolveAdminTenantScope(req);
+    const requestedOrg =
+      organizationId ??
+      (typeof req.query.organization_id === "string" ? req.query.organization_id : undefined);
+    const targetOrg = requestedOrg ?? req.orgId ?? undefined;
+
+    if (!targetOrg) {
+      // Never silently fall back to "all tenants".
+      throw new AppError("VALIDATION", "organizationId is required", 400);
+    }
+    if (!scope.allTenants && !scope.orgIds.includes(targetOrg)) {
+      throw new AppError("FORBIDDEN", "You do not have access to this organization", 403);
+    }
 
     const env = getEnv();
     const stripeKey = env.STRIPE_SECRET_KEY;
-    if (!stripeKey)
-      throw new AppError("CONFIG", "STRIPE_SECRET_KEY not configured", 500);
+    if (!stripeKey) throw new AppError("CONFIG", "STRIPE_SECRET_KEY not configured", 500);
 
     const stripeHeaders = {
       Authorization: `Bearer ${stripeKey}`,
       "Content-Type": "application/x-www-form-urlencoded",
     };
 
-    let query = supabase
+    const { data: customers } = await supabase
       .from("billing_customers")
-      .select("stripe_customer_id, organization_id");
-    if (organizationId) query = query.eq("organization_id", organizationId);
+      .select("stripe_customer_id, organization_id")
+      .eq("organization_id", targetOrg);
 
-    const { data: customers } = await query;
     if (!customers?.length) {
       res.json(success({ synced: 0, message: "No billing customers found" }));
       return;
@@ -208,7 +253,7 @@ router.post("/sync", requireAdmin, async (req, res, next) => {
     for (const customer of customers) {
       if (!customer.stripe_customer_id) continue;
 
-      const [invoicesRes, subsRes] = await Promise.all([
+      const [invoicesRes, subsRes, paymentsRes] = await Promise.all([
         httpClients.stripe.get(
           `https://api.stripe.com/v1/invoices?customer=${customer.stripe_customer_id}&limit=20`,
           { headers: stripeHeaders },
@@ -217,13 +262,17 @@ router.post("/sync", requireAdmin, async (req, res, next) => {
           `https://api.stripe.com/v1/subscriptions?customer=${customer.stripe_customer_id}&limit=10`,
           { headers: stripeHeaders },
         ),
+        httpClients.stripe.get(
+          `https://api.stripe.com/v1/payment_intents?customer=${customer.stripe_customer_id}&limit=20`,
+          { headers: stripeHeaders },
+        ),
       ]);
 
       if (invoicesRes.ok) {
-        const invoicesData = (await invoicesRes.json()) as { data: any[] };
+        const invoicesData = (await invoicesRes.json()) as { data: StripeInvoice[] };
         for (const inv of invoicesData.data ?? []) {
           const status =
-            inv.status === "open" && new Date(inv.due_date * 1000) < new Date()
+            inv.status === "open" && new Date((inv.due_date ?? 0) * 1000) < new Date()
               ? "overdue"
               : inv.status;
           await supabase.from("invoices").upsert(
@@ -231,23 +280,18 @@ router.post("/sync", requireAdmin, async (req, res, next) => {
               organization_id: customer.organization_id,
               stripe_invoice_id: inv.id,
               invoice_number: inv.number,
-              status,
-              subtotal_cents: Math.round(
-                inv.subtotal * (inv.currency === "usd" ? 100 : 100),
-              ),
-              tax_cents: Math.round((inv.tax ?? 0) * 100),
-              total_cents: Math.round(inv.total * 100),
+              status: status as never,
+              // Stripe already returns amounts in the smallest currency unit (cents)
+              subtotal_cents: Math.round(inv.subtotal),
+              tax_cents: Math.round(inv.tax ?? 0),
+              total_cents: Math.round(inv.total),
               currency: inv.currency,
               hosted_invoice_url: inv.hosted_invoice_url,
               invoice_pdf_url: inv.invoice_pdf,
-              due_at: inv.due_date
-                ? new Date(inv.due_date * 1000).toISOString()
-                : null,
+              due_at: inv.due_date ? new Date((inv.due_date ?? 0) * 1000).toISOString() : null,
               paid_at:
                 inv.status === "paid"
-                  ? new Date(
-                      inv.status_transitions?.paid_at * 1000,
-                    ).toISOString()
+                  ? new Date((inv.status_transitions?.paid_at ?? 0) * 1000).toISOString()
                   : null,
             },
             { onConflict: "stripe_invoice_id" },
@@ -256,7 +300,7 @@ router.post("/sync", requireAdmin, async (req, res, next) => {
       }
 
       if (subsRes.ok) {
-        const subsData = (await subsRes.json()) as { data: any[] };
+        const subsData = (await subsRes.json()) as { data: StripeSubscription[] };
         for (const sub of subsData.data ?? []) {
           const price = sub.items?.data?.[0]?.price;
           await supabase.from("subscriptions").upsert(
@@ -279,6 +323,41 @@ router.post("/sync", requireAdmin, async (req, res, next) => {
         }
       }
 
+      // Populate payment history (BILL-P1-002). PaymentIntents are Stripe's
+      // canonical payment object; link to the local invoice when one exists.
+      if (paymentsRes.ok) {
+        const paymentsData = (await paymentsRes.json()) as { data: StripePaymentIntent[] };
+        const { data: orgInvoices } = await supabase
+          .from("invoices")
+          .select("id, stripe_invoice_id")
+          .eq("organization_id", customer.organization_id);
+        const invoiceIdByStripeId = new Map(
+          (orgInvoices ?? []).map((inv) => [inv.stripe_invoice_id, inv.id]),
+        );
+
+        for (const pi of paymentsData.data ?? []) {
+          const succeeded = pi.status === "succeeded";
+          await supabase.from("payments").upsert(
+            {
+              organization_id: customer.organization_id,
+              invoice_id: pi.invoice ? (invoiceIdByStripeId.get(pi.invoice) ?? null) : null,
+              stripe_payment_intent_id: pi.id,
+              amount_cents: Math.round(
+                succeeded ? (pi.amount_received ?? pi.amount) : pi.amount,
+              ),
+              currency: pi.currency,
+              status: succeeded
+                ? "succeeded"
+                : pi.status === "canceled" || pi.status === "requires_payment_method"
+                  ? "failed"
+                  : "pending",
+              paid_at: succeeded ? new Date((pi.created ?? 0) * 1000).toISOString() : null,
+            },
+            { onConflict: "stripe_payment_intent_id" },
+          );
+        }
+      }
+
       synced++;
     }
 
@@ -286,10 +365,82 @@ router.post("/sync", requireAdmin, async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "billing.sync",
       entityType: "billing_customer",
-      metadata: { organizationId, synced },
+      organizationId: targetOrg,
+      metadata: { organizationId: targetOrg, synced },
     });
 
     res.json(success({ synced }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// NOTE: intentionally available to any member of the resolved org (customer
+// self-service billing portal). `billing:manage` is not required because the
+// catalog does not grant it to client roles, and the portal is the customer's
+// only way to update payment methods / cancel. Tighten here if billing
+// contacts become a distinct permission.
+router.post("/create-portal-session", async (req, res, next) => {
+  try {
+    const env = getEnv();
+    const stripeKey = env.STRIPE_SECRET_KEY;
+    if (!stripeKey) throw new AppError("CONFIG", "STRIPE_SECRET_KEY not configured", 500);
+
+    const supabase = getScopedClient(req, "billing", "write");
+    const activeOrgHeader =
+      typeof req.headers?.["x-active-org"] === "string"
+        ? (req.headers["x-active-org"] as string)
+        : undefined;
+    const orgId =
+      (req.body?.organizationId as string | undefined) ??
+      (req.query.organization_id as string | undefined) ??
+      (activeOrgHeader?.length ? activeOrgHeader : undefined) ??
+      (req.cookies?.["mct_active_org"] as string | undefined);
+    if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
+
+    const { data: customer, error } = await supabase
+      .from("billing_customers")
+      .select("stripe_customer_id")
+      .eq("organization_id", orgId)
+      .single();
+
+    if (error || !customer?.stripe_customer_id) {
+      throw new AppError("NOT_FOUND", "No Stripe customer found for this organization", 404);
+    }
+
+    const body = new URLSearchParams({
+      customer: customer.stripe_customer_id,
+      return_url: `${env.APP_BASE_URL}/portal/billing`,
+    });
+
+    const portalRes = await httpClients.stripe.fetch(
+      "https://api.stripe.com/v1/billing_portal/sessions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${stripeKey}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: body.toString(),
+      },
+    );
+
+    if (!portalRes.ok) {
+      const errorText = await portalRes.text().catch(() => "Unknown error");
+      logger.error({ status: portalRes.status, error: errorText }, "Stripe portal session failed");
+      throw new AppError("STRIPE_ERROR", "Failed to create billing portal session", 500);
+    }
+
+    const session = (await portalRes.json()) as { url: string };
+
+    await logAuditEvent({
+      organizationId: orgId,
+      actorUserId: req.authUser!.userId,
+      action: "billing.portal_session",
+      entityType: "billing_customer",
+    });
+
+    res.json(success({ url: session.url }));
   } catch (error) {
     next(error);
   }

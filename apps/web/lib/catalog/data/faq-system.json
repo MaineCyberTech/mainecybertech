@@ -1,0 +1,30 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "faqFields": [
+    "id",
+    "question",
+    "answer",
+    "categoryIds",
+    "productIds",
+    "public",
+    "schemaEligible",
+    "lastReviewedAt"
+  ],
+  "starterFaqs": [
+    {
+      "id": "admin_access_needed",
+      "question": "What if I do not know my admin login?",
+      "answer": "Maine Cyber Tech can help identify the right account owner and coordinate safe access separately. Do not submit passwords through public forms."
+    },
+    {
+      "id": "hardware_included",
+      "question": "Does this include hardware?",
+      "answer": "Hardware, licenses, subscriptions, and third-party fees are not included unless explicitly stated."
+    },
+    {
+      "id": "remote_or_onsite",
+      "question": "Is this remote or onsite?",
+      "answer": "Many services can start remotely. Onsite work depends on the service scope and location."
+    }
+  ]
+}

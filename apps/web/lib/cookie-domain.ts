@@ -13,12 +13,12 @@ export function getCookieDomain(host: string): string | undefined {
 
 export function getCookieOptions(host: string) {
   const domain = getCookieDomain(host);
-  const isProduction = process.env.NODE_ENV === "production";
+  const isSecure = !host.includes("localhost") && !host.includes("127.0.0.1");
 
   return {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? ("none" as const) : ("lax" as const),
+    secure: isSecure,
+    sameSite: "lax" as const,
     domain,
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
@@ -27,14 +27,12 @@ export function getCookieOptions(host: string) {
 
 export function getDeleteCookieOptions(host: string) {
   const domain = getCookieDomain(host);
+  const isSecure = !host.includes("localhost") && !host.includes("127.0.0.1");
 
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite:
-      process.env.NODE_ENV === "production"
-        ? ("none" as const)
-        : ("lax" as const),
+    secure: isSecure,
+    sameSite: "lax" as const,
     domain,
     path: "/",
   };

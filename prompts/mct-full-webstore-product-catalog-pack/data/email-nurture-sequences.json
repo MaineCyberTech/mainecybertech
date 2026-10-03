@@ -1,0 +1,37 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "sequences": [
+    {
+      "id": "cybersecurity_interest",
+      "trigger": "Viewed or quoted cybersecurity products",
+      "emails": [
+        "5 quick ways to reduce account takeover risk",
+        "Why MFA and backups matter for cyber insurance",
+        "Start with a small cyber risk snapshot"
+      ]
+    },
+    {
+      "id": "website_seo_interest",
+      "trigger": "Viewed or quoted website/SEO products",
+      "emails": [
+        "Is your website helping or hurting local leads?",
+        "Domain and DNS issues that can break email",
+        "Local SEO starter checklist"
+      ]
+    },
+    {
+      "id": "quiz_no_quote",
+      "trigger": "Completed service finder but did not submit quote",
+      "emails": [
+        "Here are the services that matched your answers",
+        "How to start small with a quick win",
+        "When to upgrade to a bundle or monthly care"
+      ]
+    }
+  ],
+  "guardrails": [
+    "User consent/opt-in should be respected",
+    "Do not send until email system and permissions are intentionally wired",
+    "No sensitive intake data in email body"
+  ]
+}

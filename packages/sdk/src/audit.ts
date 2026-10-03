@@ -37,6 +37,6 @@ export class AuditApi {
     if (params?.organizationId) qp.organization_id = params.organizationId;
     if (params?.action) qp.action = params.action;
     if (params?.entityType) qp.entity_type = params.entityType;
-    return this.client.get<string>("/api/v1/audit/export", qp);
+    return this.client.getBlob("/api/v1/audit/export", qp);
   }
 }

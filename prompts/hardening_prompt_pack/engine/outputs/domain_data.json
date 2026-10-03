@@ -1,0 +1,23 @@
+{
+  "domain": "data",
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "data",
+      "file": "apps/api/src/routes/*.ts",
+      "issue": "No Supabase RPC transactions used for multi-step operations",
+      "impact": "Partial writes possible on failure",
+      "fix": "Wrap multi-step mutations in Supabase RPC transactions"
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "file": "supabase/migrations/*.sql",
+      "issue": "Tables defined in migrations but never queried in API code: IF, ai_draft_outputs, appointments, chat_messages, chat_threads, comments, contract_signers, contracts, document_permissions, if, onboarding_submissions, portal_module_settings, project_members, store_leads, store_proposal_drafts, store_quote_requests, store_visual_assets, webhook_dead_letters",
+      "impact": "Dead schema or incomplete feature implementation",
+      "fix": "Remove unused tables or add API queries"
+    }
+  ],
+  "count": 2,
+  "tables_found": 132
+}

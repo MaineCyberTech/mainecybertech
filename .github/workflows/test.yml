@@ -1,14 +1,31 @@
 name: Test
 
+# PR-only by design: on pushes to develop/main the same suites run once through
+# `deploy-do` → `validate.yml`. Keeping a push trigger here ran the full test
+# job, audit and secret scan a second time on every push. Dependency-only
+# pushes are still covered because deploy-do triggers on
+# pnpm-lock.yaml/package.json.
 on:
   workflow_dispatch:
-  push:
-    branches: [main, develop]
+  # Deliberately no `paths:` on pull_request (BP-P2-004): `test (20.x)` is a
+  # required check, and a path-filtered workflow never reports on docs-only
+  # PRs — leaving them blocked or unguarded.
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  # Cancel superseded runs on the same ref (rapid pushes to a PR). A manual
+  # dispatch runs in its own ref group, so it is never cancelled by a PR.
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -16,20 +33,33 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # Shared with validate.yml so the two definitions cannot drift apart.
+      - uses: ./.github/actions/unit-tests
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@10 --activate
+  # Dependency audit — hard gate, no continue-on-error
+  security-scan:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      # Shared with validate.yml's audit job.
+      - uses: ./.github/actions/dependency-audit
 
-      - name: Run tests
-        run: pnpm test
+  # Secret scanning — same patterns as the pre-commit hook (scripts/scan-secrets.sh)
+  secrets-scan:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      # Shared with validate.yml's secrets-scan job.
+      - uses: ./.github/actions/secret-scan

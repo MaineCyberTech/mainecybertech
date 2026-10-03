@@ -15,6 +15,12 @@
   S3 bucket name for backup storage. Default: mainecybertech-backups
 .PARAMETER S3Prefix
   S3 key prefix. Default: database-backups
+.NOTES
+  NOT CANONICAL — CI and the encrypted/offsite path use scripts/backup-database.sh
+  (audit DR-P3-001). This Windows helper does NOT encrypt the dump and does NOT
+  support the offsite copy, so a backup it produces is weaker than a CI backup.
+  Prefer the bash script (e.g. via WSL/Git Bash) for production backups; use
+  this only for local/dev convenience. See docs/ROLLBACK_PROCEDURES.md §3a.
 #>
 
 param(

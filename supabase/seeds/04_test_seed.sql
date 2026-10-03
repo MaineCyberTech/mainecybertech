@@ -95,12 +95,8 @@ values (
   jsonb_build_object('seeded', true)
 ) on conflict (id) do nothing;
 
-insert into public.project_members (project_id, user_id, role)
-values
-  ('53000000-0000-0000-0000-000000000002'::uuid, 'ebc615c1-6c95-46a6-9bf1-68a4af87b1d8'::uuid, 'stakeholder'),
-  ('53000000-0000-0000-0000-000000000002'::uuid, '817016dc-cc3b-49d1-8ee6-637f880fa0a4'::uuid, 'msp_admin'),
-  ('53000000-0000-0000-0000-000000000002'::uuid, '6adfefa6-27c2-480e-9881-6514f4e9b708'::uuid, 'viewer')
-on conflict (project_id, user_id) do update set role = excluded.role;
+-- project_members table removed in migration 5302055
+-- insert into public.project_members (project_id, user_id, role) values (...);
 
 -- =========================================================
 -- TASKS — Add Jira fields to existing tasks

@@ -1,11 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import express from "express";
-import {
-  responseCache,
-  responseCacheNoRenew,
-  invalidateCache,
-} from "../middleware/cache";
+import { responseCache, responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 
 function createTestApp() {
   const app = express();
@@ -106,5 +102,35 @@ describe("responseCache", () => {
 
     await request(app).get("/test");
     expect(getCallCount()).toBe(2);
+  });
+
+  it("does not collide cache keys across mounted routers with the same relative path", async () => {
+    invalidateCache();
+    const app = express();
+    const rolesRouter = express.Router();
+    const orgsRouter = express.Router();
+
+    rolesRouter.get("/", responseCacheNoRenew(60), (_req, res) => {
+      res.json({ entity: "roles" });
+    });
+    orgsRouter.get("/", responseCacheNoRenew(60), (_req, res) => {
+      res.json({ entity: "organizations" });
+    });
+
+    app.use("/api/v1/roles", rolesRouter);
+    app.use("/api/v1/organizations", orgsRouter);
+
+    const roles1 = await request(app).get("/api/v1/roles");
+    const orgs1 = await request(app).get("/api/v1/organizations");
+    // Second round must hit each router's own cache entry — not the other's.
+    const roles2 = await request(app).get("/api/v1/roles");
+    const orgs2 = await request(app).get("/api/v1/organizations");
+
+    expect(roles1.body.entity).toBe("roles");
+    expect(orgs1.body.entity).toBe("organizations");
+    expect(roles2.body.entity).toBe("roles");
+    expect(orgs2.body.entity).toBe("organizations");
+    expect(roles2.headers["x-cache"]).toBe("HIT");
+    expect(orgs2.headers["x-cache"]).toBe("HIT");
   });
 });

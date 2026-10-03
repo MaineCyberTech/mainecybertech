@@ -1,0 +1,1583 @@
+{
+  "website_health_check": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Website Health Check, review the site from intake, and schedule the check.",
+      "Send prep instructions: the customer confirms the website URL, the admin access, and any known issues.",
+      "Pre-work: prepare the health checklist: uptime, SSL, backups, admin access, forms, and risks.",
+      "Run the checks: verify uptime, SSL, backups, and the admin access state.",
+      "Test the forms: confirm contact form delivery works.",
+      "Identify the risks: document the obvious website risks and prioritize the fixes.",
+      "Deliver the closeout package: the website health report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Website Health Check scope: review and report only, no changes.",
+        "Confirm the website URL, the admin access, and any known issues.",
+        "Gather baseline: hosting details, CMS, and any prior issues.",
+        "Create the ticket with product id website_health_check, expected deliverables (health report), and assign a specialist.",
+        "Check prerequisites: the customer confirms admin access and the site is live."
+      ],
+      "delivery": [
+        "Check uptime and availability: is the site reachable and responding.",
+        "Verify the SSL certificate: validity, coverage, and expiry.",
+        "Review the backup state: backups exist, configured, and current.",
+        "Review the admin accounts and access: account count, roles, and stale access.",
+        "Test the contact form delivery: submit a test and confirm receipt.",
+        "Scan for obvious risks: outdated software, exposed files, and warnings.",
+        "Prioritize the findings by risk and impact.",
+        "Technical verification: confirm the report reflects the live site."
+      ],
+      "documentation": [
+        "Produce the website health report: findings, severity, and fixes.",
+        "Document the uptime and SSL status.",
+        "Record the backup and access findings.",
+        "Include the prioritized fix list.",
+        "Security rule: no admin credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: uptime check, SSL verification, backup review, admin access review, form testing, risk identification, and report.",
+        "Confirm all checks were run.",
+        "Confirm the findings are accurate.",
+        "Confirm the fixes are prioritized.",
+        "Flag follow-ups: website_security_review or website_speed_snapshot."
+      ],
+      "closeout": [
+        "Send the deliverables package: the website health report.",
+        "Recommend next steps: fix the critical findings.",
+        "Confirm the customer understands their website state.",
+        "Record internal notes: website health findings.",
+        "Offer a quote for the recommended fixes."
+      ]
+    }
+  },
+  "website_speed_snapshot": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Website Speed Snapshot, review the site from intake, and schedule the check.",
+      "Send prep instructions: the customer confirms the key pages to test.",
+      "Pre-work: prepare the performance checklist and the test tools.",
+      "Run the performance tests: test the key pages on mobile and desktop.",
+      "Identify the bottlenecks: find the image, asset, hosting, and plugin issues.",
+      "Rank the improvements: order the speed fixes by impact.",
+      "Deliver the closeout package: the performance snapshot report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Website Speed Snapshot scope: performance review and recommendations only.",
+        "Confirm the key pages to test.",
+        "Gather baseline: current load times and any known slowness.",
+        "Create the ticket with product id website_speed_snapshot, expected deliverables (performance report), and assign a specialist.",
+        "Check prerequisites: the site is live and the pages confirmed."
+      ],
+      "delivery": [
+        "Run page performance tests on the key pages: mobile and desktop.",
+        "Capture the Core Web Vitals: LCP, INP, and CLS.",
+        "Analyze the images and assets: sizes, formats, and compression.",
+        "Review the hosting and caching: response times and cache settings.",
+        "Check the plugins and scripts: heavy or blocking resources.",
+        "Calculate the load time per important page.",
+        "Rank the speed improvements by impact.",
+        "Technical verification: confirm the report reflects the live site."
+      ],
+      "documentation": [
+        "Produce the performance snapshot report: test results and bottlenecks.",
+        "Document the load times per page.",
+        "Record the ranked recommendations.",
+        "Include the baseline for future comparison.",
+        "Security rule: no admin credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: key page testing, bottleneck identification, load time analysis, ranked recommendations, baseline documentation, and next steps.",
+        "Confirm every key page was tested.",
+        "Confirm the bottleneck analysis is accurate.",
+        "Confirm the recommendations are ranked by impact.",
+        "Flag follow-ups: implementing the top speed fixes."
+      ],
+      "closeout": [
+        "Send the deliverables package: the performance snapshot report.",
+        "Recommend next steps: implement the high-impact speed fixes.",
+        "Confirm the customer understands the main speed issues.",
+        "Record internal notes: performance findings.",
+        "Offer a re-test after fixes."
+      ]
+    }
+  },
+  "website_security_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Website Security Review, review the site from intake, and schedule the review.",
+      "Send prep instructions: the customer confirms the website URL, the admin access, and the plugins/dependencies in use.",
+      "Pre-work: prepare the security checklist: SSL, access, plugins, backups, and vulnerabilities.",
+      "Run the review: assess SSL, admin access, and plugins/dependencies.",
+      "Check the backups and vulnerabilities: verify backups and scan for common issues.",
+      "Compile the report: document the findings and prioritized fixes.",
+      "Deliver the closeout package: the website security report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Website Security Review scope: assessment and report, elevated risk.",
+        "Confirm the website URL, the admin access, and the platform.",
+        "Gather baseline: current security state and any prior incidents.",
+        "Create the ticket with product id website_security_review, expected deliverables (security report), and assign a security specialist.",
+        "Check prerequisites: admin access confirmed and the site is live."
+      ],
+      "delivery": [
+        "Review the SSL configuration: validity, enforcement, and coverage.",
+        "Review the admin accounts and access: count, roles, MFA, and stale access.",
+        "Assess the plugins and dependencies: versions and known vulnerabilities.",
+        "Verify the backups: exist, configured, and restorable.",
+        "Check the common website vulnerabilities: headers, exposures, and misconfigurations.",
+        "Scan for signs of compromise where visible.",
+        "Prioritize the findings by severity.",
+        "Technical verification: confirm the report reflects the live site."
+      ],
+      "documentation": [
+        "Produce the website security report: findings, severity, and fixes.",
+        "Document the SSL and access findings.",
+        "Record the plugin and dependency issues.",
+        "Include the prioritized remediation plan.",
+        "Security rule: no credentials or secrets in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: SSL review, admin access review, plugin/dependency assessment, backup verification, vulnerability check, and report.",
+        "Confirm all security checks were run.",
+        "Confirm the findings are accurate.",
+        "Confirm the fixes are prioritized.",
+        "Flag follow-ups: fixing the critical findings or a cloudflare_security_tune_up."
+      ],
+      "closeout": [
+        "Send the deliverables package: the website security report.",
+        "Recommend next steps: remediate the critical findings.",
+        "Confirm the customer understands their security posture.",
+        "Record internal notes: security findings.",
+        "Offer a re-review after remediation."
+      ]
+    }
+  },
+  "website_backup_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Website Backup Setup, review the site from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms the website access and the retention needs.",
+      "Pre-work: review the current backup state and prepare the backup solution.",
+      "Set up the backup solution: configure backups for the files and database.",
+      "Configure the automation: schedule the backups and set the retention policy.",
+      "Restore-test the backup: verify the website is recoverable.",
+      "Deliver the closeout package: the website backup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Website Backup Setup scope: backup configured for the website.",
+        "Confirm the website access and the retention needs.",
+        "Gather baseline: current backup state and the hosting details.",
+        "Create the ticket with product id website_backup_setup, expected deliverables (working backup, documentation), and assign a specialist.",
+        "Check prerequisites: hosting/admin access confirmed."
+      ],
+      "delivery": [
+        "Review the website structure: files and database components.",
+        "Select the backup approach: hosting backup, plugin, or external service.",
+        "Configure the backup solution for the files and database.",
+        "Set the automated schedule: frequency and timing.",
+        "Configure the retention policy.",
+        "Run the first backup and confirm success.",
+        "Perform a controlled restore test to confirm recoverability.",
+        "Technical verification: confirm the backup runs and a restore works."
+      ],
+      "documentation": [
+        "Produce the website backup documentation: what is backed up, schedule, and retention.",
+        "Document the restore test result.",
+        "Record the backup location details.",
+        "Include the recovery instructions.",
+        "Security rule: no hosting credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: backup solution setup, automated configuration, retention policy, restore testing, documentation, and recovery instructions.",
+        "Confirm the website backup runs automatically.",
+        "Confirm the restore test succeeded.",
+        "Confirm the retention matches the agreement.",
+        "Flag follow-ups: a monthly_website_care_plan for ongoing verification."
+      ],
+      "closeout": [
+        "Send the deliverables package: website backup documentation.",
+        "Recommend next steps: a monthly_website_care_plan for ongoing backups.",
+        "Confirm the backup is running and restorable.",
+        "Record internal notes: backup configuration.",
+        "Offer a follow-up check."
+      ]
+    }
+  },
+  "monthly_website_care_plan": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Monthly Website Care Plan, collect the site access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the website access, the update policy, and the minor-edit scope.",
+      "Pre-work: establish the site baseline and the recurring care checklist.",
+      "Run the care cycle: apply CMS, plugin, and theme updates.",
+      "Verify the site health: check uptime, backups, and contact forms.",
+      "Handle minor edits: apply approved minor edits within scope.",
+      "Deliver the cycle closeout: the monthly website health report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Monthly Website Care Plan scope: updates, uptime, backups, form checks, and minor edits.",
+        "Collect the site access and the update policy.",
+        "Establish the care checklist and the cycle schedule.",
+        "Gather baseline: site health, versions, and backup state.",
+        "Set expectations: what each cycle covers and the minor-edit scope."
+      ],
+      "delivery": [
+        "Apply CMS, plugin, and theme updates in a maintenance window.",
+        "Verify the site after updates: no breakage and pages load.",
+        "Check uptime and availability: the site is reachable.",
+        "Verify the backups: recent and successful.",
+        "Test the contact forms: delivery confirmed.",
+        "Apply approved minor edits within scope.",
+        "Document the changes and flag issues.",
+        "Technical verification: confirm the site is healthy at the end of each cycle."
+      ],
+      "documentation": [
+        "Produce the monthly website health report: work performed and findings.",
+        "Track the versions and update history.",
+        "Record the backup and form check results.",
+        "Maintain the site documentation.",
+        "Security rule: no admin credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: CMS/plugin/theme updates, uptime monitoring, backup verification, form checks, minor edits, and monthly report.",
+        "Confirm all updates were applied safely.",
+        "Confirm the site is healthy.",
+        "Confirm the report was delivered.",
+        "Flag follow-ups: website_security_review or speed fixes."
+      ],
+      "closeout": [
+        "Send the monthly website health report.",
+        "Recommend upgrades when patterns show need.",
+        "Confirm the site is healthy.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next care cycle."
+      ]
+    }
+  },
+  "landing_page_build": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and kickoff: confirm the Landing Page Build, review the campaign goal from intake, and kick off the project.",
+      "Send prep instructions: the customer confirms the target service, the audience, and the call to action.",
+      "Strategy and messaging: define the page strategy and the core message.",
+      "Build the page: create the conversion-focused page structure with a clear call to action.",
+      "Optimize and integrate: add basic SEO structure and form/contact integration.",
+      "Test and refine: verify the page works and converts cleanly.",
+      "Launch and handover: publish the page and deliver the documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Landing Page Build scope: a focused landing page for a service, campaign, or market.",
+        "Confirm the target service, the audience, and the call to action.",
+        "Gather baseline: existing site, brand assets, and the campaign goal.",
+        "Create the ticket with product id landing_page_build, expected deliverables (published landing page, documentation), and assign a web specialist.",
+        "Check prerequisites: the content and the assets provided."
+      ],
+      "delivery": [
+        "Define the landing page strategy: goal, audience, and message.",
+        "Develop the conversion-focused structure: headline, value, proof, and call to action.",
+        "Write the page content: clear, concise, and action-oriented.",
+        "Build the page: structure, styling, and responsive layout.",
+        "Add basic SEO structure: title, meta description, and headings.",
+        "Integrate the form or contact: capture the leads correctly.",
+        "Test the page: load, layout, form, and conversion path.",
+        "Technical verification: confirm the page is live and working."
+      ],
+      "documentation": [
+        "Produce the landing page documentation: structure, content, and settings.",
+        "Document the SEO structure applied.",
+        "Record the form/contact integration.",
+        "Include the handover and edit instructions.",
+        "Security rule: no admin credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: strategy/messaging, conversion structure, page build, basic SEO, form integration, and launch/handover.",
+        "Confirm the page is live and working.",
+        "Confirm the form delivers leads.",
+        "Confirm the SEO structure is in place.",
+        "Flag follow-ups: analytics_setup for conversion tracking."
+      ],
+      "closeout": [
+        "Send the deliverables package: landing page documentation and handover.",
+        "Recommend next steps: analytics_setup and ad/email traffic.",
+        "Confirm the page is live and converting.",
+        "Record internal notes: landing page build.",
+        "Offer ongoing optimization."
+      ]
+    }
+  },
+  "local_seo_page_build": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and kickoff: confirm the Local SEO Page Build, review the service and location from intake, and kick off the project.",
+      "Send prep instructions: the customer confirms the target service and the town/city target.",
+      "Research the keywords: identify the local service keywords.",
+      "Structure the page: build the service-and-location page with local SEO structure.",
+      "Optimize the page: integrate the local keywords and local business signals.",
+      "Test and refine: verify the page structure and local relevance.",
+      "Deliver the closeout package: the local SEO page documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Local SEO Page Build scope: a service-and-town page with local SEO structure.",
+        "Confirm the target service and the town/city target.",
+        "Gather baseline: existing pages, rankings, and local competition.",
+        "Create the ticket with product id local_seo_page_build, expected deliverables (optimized local page, documentation), and assign an SEO specialist.",
+        "Check prerequisites: the content and the location details provided."
+      ],
+      "delivery": [
+        "Research the local keywords: service + location search terms.",
+        "Structure the page: service focus with local context.",
+        "Integrate the local keywords naturally: headings, copy, and metadata.",
+        "Add local business signals: name, address, phone, and service area.",
+        "Build the page content: helpful, specific, and conversion-focused.",
+        "Add internal links: connect to the relevant site pages.",
+        "Optimize the metadata: title and description for the local query.",
+        "Technical verification: confirm the page structure is search-friendly."
+      ],
+      "documentation": [
+        "Produce the local SEO page documentation: keyword targets, structure, and optimization.",
+        "Document the local signals applied.",
+        "Record the metadata and internal links.",
+        "Include the content rationale.",
+        "Security rule: no admin credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: service/location targeting, local SEO structure, keyword integration, local business signals, page build/optimization, and documentation.",
+        "Confirm the page targets the right service and location.",
+        "Confirm the keywords are integrated naturally.",
+        "Confirm the local signals are in place.",
+        "Flag follow-ups: submission to Search Console and internal linking."
+      ],
+      "closeout": [
+        "Send the deliverables package: local SEO page documentation.",
+        "Recommend next steps: submit to Search Console and build more local pages.",
+        "Confirm the page is live and optimized.",
+        "Record internal notes: local page build.",
+        "Offer the local_service_page_pack for more locations."
+      ]
+    }
+  },
+  "contact_form_fix": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Contact Form Fix, review the form from intake, and schedule the fix.",
+      "Send prep instructions: the customer confirms the form page, the delivery address, and the symptoms.",
+      "Pre-work: prepare the form diagnosis checklist.",
+      "Diagnose the failure: test the form delivery and find the failure point.",
+      "Fix the issues: correct delivery, spam filtering, validation, and routing.",
+      "Verify the fix: retest the form end to end.",
+      "Deliver the closeout package: the form fix documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Contact Form Fix scope: form delivery, spam, validation, and routing.",
+        "Confirm the form page, the delivery address, and the symptoms.",
+        "Gather baseline: form type, mail setup, and when it last worked.",
+        "Create the ticket with product id contact_form_fix, expected deliverables (working form, documentation), and assign a specialist.",
+        "Check prerequisites: the form admin access and a test submission path."
+      ],
+      "delivery": [
+        "Test the form delivery: submit a test and trace the result.",
+        "Diagnose the failure: server, plugin, spam filter, or routing issue.",
+        "Check the mail configuration: SMTP, headers, and delivery.",
+        "Fix the delivery issues: correct the mail path and settings.",
+        "Adjust the spam filtering: reduce false positives and spam.",
+        "Correct the validation and routing: field rules and destinations.",
+        "Retest the form end to end: submit and confirm receipt.",
+        "Technical verification: confirm delivery works consistently."
+      ],
+      "documentation": [
+        "Produce the form fix documentation: diagnosis, fixes, and configuration.",
+        "Document the mail setup.",
+        "Record the spam filter settings.",
+        "Include the troubleshooting notes.",
+        "Security rule: no mail credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: delivery testing, failure diagnosis, delivery/spam fixes, validation/routing correction, testing/verification, and documentation.",
+        "Confirm the form delivers reliably.",
+        "Confirm the spam handling is balanced.",
+        "Confirm the routing is correct.",
+        "Flag follow-ups: cloudflare_turnstile_setup for bot protection."
+      ],
+      "closeout": [
+        "Send the deliverables package: form fix documentation.",
+        "Recommend next steps: cloudflare_turnstile_setup to block spam bots.",
+        "Confirm the form is working.",
+        "Record internal notes: form diagnosis and fixes.",
+        "Offer a follow-up after a week."
+      ]
+    }
+  },
+  "analytics_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Analytics Setup, review the tracking needs from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms the site access and the tracking goals.",
+      "Pre-work: prepare the analytics account and the tracking plan.",
+      "Install the analytics: set up the tracking code on the site.",
+      "Configure the tracking: set up search visibility, goals, and conversions.",
+      "Set up reporting: configure the reports and dashboards.",
+      "Deliver the closeout package: the analytics setup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Analytics Setup scope: analytics and search visibility tracking.",
+        "Confirm the site access and the tracking goals.",
+        "Gather baseline: current analytics state and the site structure.",
+        "Create the ticket with product id analytics_setup, expected deliverables (working analytics, documentation), and assign a specialist.",
+        "Check prerequisites: the analytics account access and the site access confirmed."
+      ],
+      "delivery": [
+        "Set up or access the analytics account: GA4 and Search Console.",
+        "Install the analytics tracking code across the site.",
+        "Verify the data collection: real-time hits confirm tracking.",
+        "Set up search visibility tracking: Search Console verification and sitemap.",
+        "Configure the goals and conversions: key actions as conversions.",
+        "Enable traffic source visibility: campaigns and channels.",
+        "Configure the reports: dashboard and key metrics.",
+        "Technical verification: confirm the data flows into the reports."
+      ],
+      "documentation": [
+        "Produce the analytics setup documentation: accounts, tracking, and goals.",
+        "Document the conversion configuration.",
+        "Record the report setup.",
+        "Include the troubleshooting notes.",
+        "Security rule: no analytics credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: analytics installation, search visibility tracking, goal/conversion tracking, traffic source visibility, reporting configuration, and documentation.",
+        "Confirm the tracking collects data.",
+        "Confirm the goals and conversions are set.",
+        "Confirm the reports are useful.",
+        "Flag follow-ups: a monthly_website_care_plan or monthly_local_seo_plan to act on the data."
+      ],
+      "closeout": [
+        "Send the deliverables package: analytics setup documentation.",
+        "Recommend next steps: review the reports monthly.",
+        "Confirm the data is flowing.",
+        "Record internal notes: analytics setup.",
+        "Offer a reporting review after a month."
+      ]
+    }
+  },
+  "cookie_privacy_basics_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Cookie/Privacy Basics Review, review the site from intake, and schedule the review.",
+      "Send prep instructions: the customer confirms the site practices and the data collected.",
+      "Pre-work: prepare the privacy review checklist.",
+      "Review the practices: assess the current cookie and data practices.",
+      "Identify the gaps: compare the notices to the basic privacy expectations.",
+      "Make recommendations: document the practical fixes and consent considerations.",
+      "Deliver the closeout package: the privacy review documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Cookie/Privacy Basics Review scope: review and recommendations only, not legal advice.",
+        "Confirm the site practices and the data collected.",
+        "Gather baseline: current notices, cookies, and integrations.",
+        "Create the ticket with product id cookie_privacy_basics_review, expected deliverables (privacy review), and assign a specialist.",
+        "Check prerequisites: the site access and the practice details confirmed."
+      ],
+      "delivery": [
+        "Review the current cookie and data practices: scripts, trackers, and storage.",
+        "Assess the cookie and privacy notices: presence, accuracy, and coverage.",
+        "Compare the practices to the basic privacy expectations.",
+        "Identify the gaps: missing notices, unclear data use, and consent needs.",
+        "Document the practical recommendations for the business.",
+        "Review the cookie consent considerations: consent tooling needs.",
+        "Prioritize the recommendations by risk.",
+        "Technical verification: confirm the review reflects the live site."
+      ],
+      "documentation": [
+        "Produce the privacy review documentation: findings, gaps, and recommendations.",
+        "Document the consent considerations.",
+        "Record the prioritized fixes.",
+        "Include the caveat that this is not legal advice.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: practice review, notice gap assessment, privacy expectations comparison, practical recommendations, consent considerations, and documentation.",
+        "Confirm the site practices were reviewed.",
+        "Confirm the gaps are documented.",
+        "Confirm the recommendations are practical.",
+        "Flag follow-ups: implementing a consent banner or updating the notices."
+      ],
+      "closeout": [
+        "Send the deliverables package: the privacy review documentation.",
+        "Recommend next steps: update the notices and add a consent banner if needed.",
+        "Confirm the customer understands the recommendations.",
+        "Record internal notes: privacy findings.",
+        "Offer a re-review after changes."
+      ]
+    }
+  },
+  "local_seo_snapshot": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Local SEO Snapshot, review the business from intake, and schedule the review.",
+      "Send prep instructions: the customer confirms the business details and the target locations.",
+      "Pre-work: prepare the local visibility checklist.",
+      "Review the local visibility: assess the business profile, titles, and pages.",
+      "Check the citations: review the directory and citation consistency.",
+      "Identify the gaps: document the local visibility shortfalls.",
+      "Deliver the closeout package: the local SEO snapshot report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Local SEO Snapshot scope: local visibility review and report.",
+        "Confirm the business details and the target locations.",
+        "Gather baseline: Google Business Profile state and current rankings.",
+        "Create the ticket with product id local_seo_snapshot, expected deliverables (snapshot report), and assign an SEO specialist.",
+        "Check prerequisites: the business details confirmed."
+      ],
+      "delivery": [
+        "Review the local search visibility: where the business appears locally.",
+        "Assess the Google Business Profile: completeness, accuracy, and categories.",
+        "Review the page titles and local optimization: metadata and local signals.",
+        "Check the citations and directories: name, address, phone consistency.",
+        "Review the local content: pages targeting local services.",
+        "Identify the local visibility gaps.",
+        "Prioritize the improvements.",
+        "Technical verification: confirm the findings reflect the live listings."
+      ],
+      "documentation": [
+        "Produce the local SEO snapshot report: findings, gaps, and improvements.",
+        "Document the Google Business Profile state.",
+        "Record the citation consistency findings.",
+        "Include the prioritized local improvements.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: local visibility review, Google Business Profile assessment, title/local optimization review, citation check, gap identification, and report.",
+        "Confirm the local listings were reviewed.",
+        "Confirm the gaps are documented.",
+        "Confirm the improvements are prioritized.",
+        "Flag follow-ups: google_business_profile_optimization or local_seo_starter."
+      ],
+      "closeout": [
+        "Send the deliverables package: the local SEO snapshot report.",
+        "Recommend next steps: optimize the Google Business Profile.",
+        "Confirm the customer understands their local visibility.",
+        "Record internal notes: local visibility findings.",
+        "Offer a quote for the recommended local work."
+      ]
+    }
+  },
+  "google_business_profile_optimization": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Google Business Profile Optimization, review the profile from intake, and schedule the work.",
+      "Send prep instructions: the customer confirms the profile access and the business details.",
+      "Pre-work: audit the current profile completeness.",
+      "Optimize the basics: fix the categories, services, and description.",
+      "Improve the media and content: organize the photos and develop the FAQs.",
+      "Verify the optimization: confirm the profile is complete and consistent.",
+      "Deliver the closeout package: the profile optimization documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Google Business Profile Optimization scope: profile improvements, not verification issues.",
+        "Confirm the profile access and the business details.",
+        "Gather baseline: profile completeness and current content.",
+        "Create the ticket with product id google_business_profile_optimization, expected deliverables (optimized profile, documentation), and assign an SEO specialist.",
+        "Check prerequisites: profile ownership/access confirmed."
+      ],
+      "delivery": [
+        "Audit the profile: completeness, accuracy, and category fit.",
+        "Optimize the categories: primary and secondary fit.",
+        "Improve the services: descriptions and booking details.",
+        "Rewrite the business description: clear, keyword-relevant, and compliant.",
+        "Review the photos: recommend, organize, and caption.",
+        "Develop the FAQs: common questions with answers.",
+        "Confirm the hours, address, and phone accuracy.",
+        "Technical verification: confirm the profile is complete and consistent."
+      ],
+      "documentation": [
+        "Produce the profile optimization documentation: changes and rationale.",
+        "Document the categories, services, and description.",
+        "Record the photo and FAQ work.",
+        "Include the maintenance guidance.",
+        "Security rule: no profile credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: profile audit, category optimization, description improvement, photo recommendations, FAQ development, and completeness optimization.",
+        "Confirm the profile is complete.",
+        "Confirm the categories and services are optimized.",
+        "Confirm the content is accurate.",
+        "Flag follow-ups: local_seo_snapshot or a monthly_local_seo_plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: profile optimization documentation.",
+        "Recommend next steps: a monthly_local_seo_plan for ongoing management.",
+        "Confirm the profile is optimized.",
+        "Record internal notes: profile changes.",
+        "Offer a review in a few weeks."
+      ]
+    }
+  },
+  "local_service_page_pack": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and kickoff: confirm the Local Service Page Pack, review the services and towns from intake, and kick off the project.",
+      "Send prep instructions: the customer confirms the priority services and towns.",
+      "Plan the targeting: build the service-and-location targeting plan.",
+      "Build the pages: create the local service pages with local SEO structure.",
+      "Optimize the content: integrate local keywords and content.",
+      "Link and connect: set up internal linking between the local pages.",
+      "Deliver the closeout package: the local page pack documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Local Service Page Pack scope: multiple local service pages.",
+        "Confirm the priority services and towns.",
+        "Gather baseline: existing pages, rankings, and local competition.",
+        "Create the ticket with product id local_service_page_pack, expected deliverables (page pack, documentation), and assign an SEO specialist.",
+        "Check prerequisites: the service and location list confirmed."
+      ],
+      "delivery": [
+        "Build the service-and-location targeting plan: which pages to create.",
+        "Research the local keywords per service and town.",
+        "Structure the pages: service focus with local context.",
+        "Build the pages: content, local signals, and metadata.",
+        "Optimize the content: natural local keyword integration.",
+        "Set up internal linking between the local pages and the site.",
+        "Add local business signals per page.",
+        "Technical verification: confirm the pages are live and search-friendly."
+      ],
+      "documentation": [
+        "Produce the local page pack documentation: page list, keywords, and structure.",
+        "Document the internal linking plan.",
+        "Record the metadata per page.",
+        "Include the maintenance guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: targeting plan, page strategy, page builds, keyword/content optimization, internal linking, and documentation.",
+        "Confirm every planned page was built.",
+        "Confirm the local SEO structure is consistent.",
+        "Confirm the internal linking is in place.",
+        "Flag follow-ups: submission to Search Console and a monthly_local_seo_plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: local page pack documentation.",
+        "Recommend next steps: submit the pages and track in Search Console.",
+        "Confirm the pages are live.",
+        "Record internal notes: local page pack.",
+        "Offer a monthly_local_seo_plan for ongoing growth."
+      ]
+    }
+  },
+  "blog_starter_pack": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and kickoff: confirm the Blog Starter Pack, review the services from intake, and kick off the project.",
+      "Send prep instructions: the customer confirms the content goals and the audience.",
+      "Develop the content strategy: define the topics aligned to the services.",
+      "Build the topic plan: create the blog topic plan.",
+      "Identify the priority articles: rank the articles by value.",
+      "Draft the starters: produce the article briefs or starter posts.",
+      "Deliver the closeout package: the blog starter documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Blog Starter Pack scope: topic plan and starter briefs or posts.",
+        "Confirm the content goals and the audience.",
+        "Gather baseline: existing content and the service list.",
+        "Create the ticket with product id blog_starter_pack, expected deliverables (topic plan, starter content, documentation), and assign a content specialist.",
+        "Check prerequisites: the services and the content goals confirmed."
+      ],
+      "delivery": [
+        "Develop the content strategy: goals, audience, and topics.",
+        "Build the blog topic plan aligned to the services.",
+        "Rank the priority articles by search value and business value.",
+        "Write the starter article briefs: angle, keywords, and structure.",
+        "Produce the starter posts for the highest-priority topics.",
+        "Add content optimization guidance: titles, headings, and calls to action.",
+        "Plan the publishing order.",
+        "Technical verification: confirm the briefs are actionable."
+      ],
+      "documentation": [
+        "Produce the blog starter documentation: strategy, topic plan, and briefs.",
+        "Document the content optimization guidance.",
+        "Record the publishing plan.",
+        "Include the starter posts.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: content strategy, topic plan, priority article identification, starter briefs/posts, optimization guidance, and documentation.",
+        "Confirm the topics align to the services.",
+        "Confirm the briefs are actionable.",
+        "Confirm the priority ranking is sound.",
+        "Flag follow-ups: publishing the starters and a monthly_local_seo_plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: blog starter documentation.",
+        "Recommend next steps: publish the starters and plan the next batch.",
+        "Confirm the customer has a content path.",
+        "Record internal notes: content plan.",
+        "Offer ongoing content development."
+      ]
+    }
+  },
+  "technical_seo_fix_pack": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Technical SEO Fix Pack, review the site from intake, and schedule the fixes.",
+      "Send prep instructions: the customer confirms the site access and the known SEO issues.",
+      "Pre-work: run the technical SEO audit.",
+      "Fix the metadata: correct the titles and descriptions.",
+      "Fix the structure: correct the heading structure, sitemap, and indexing basics.",
+      "Resolve the issues: fix the common technical SEO problems.",
+      "Deliver the closeout package: the technical SEO fix documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Technical SEO Fix Pack scope: metadata, headings, sitemap, indexing, and common issues.",
+        "Confirm the site access and the known issues.",
+        "Gather baseline: current metadata, sitemap, and indexing state.",
+        "Create the ticket with product id technical_seo_fix_pack, expected deliverables (fixed site, documentation), and assign an SEO specialist.",
+        "Check prerequisites: the site access confirmed."
+      ],
+      "delivery": [
+        "Audit the metadata: titles and descriptions across the key pages.",
+        "Fix the metadata: correct, unique, and keyword-relevant.",
+        "Correct the heading structure: hierarchy and relevance.",
+        "Verify the sitemap: present, valid, and submitted.",
+        "Fix the indexing basics: robots rules, canonical tags, and visibility.",
+        "Resolve the common technical SEO issues: redirects, duplicates, and speed blockers.",
+        "Verify the fixes: recheck the affected pages.",
+        "Technical verification: confirm the fixes are live and valid."
+      ],
+      "documentation": [
+        "Produce the technical SEO fix documentation: issues found and fixes applied.",
+        "Document the metadata changes.",
+        "Record the sitemap and indexing state.",
+        "Include the before/after verification.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: metadata fixes, heading correction, sitemap verification/submission, indexing fixes, common issue fixes, and documentation.",
+        "Confirm the metadata is fixed.",
+        "Confirm the sitemap is valid and submitted.",
+        "Confirm the indexing basics are correct.",
+        "Flag follow-ups: schema_markup_setup or a monthly_local_seo_plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: technical SEO fix documentation.",
+        "Recommend next steps: schema markup and ongoing SEO.",
+        "Confirm the fixes are live.",
+        "Record internal notes: SEO fixes applied.",
+        "Offer a re-audit after changes."
+      ]
+    }
+  },
+  "monthly_local_seo_plan": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Monthly Local SEO Plan, collect the business access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the target services, locations, and review process.",
+      "Pre-work: establish the local SEO baseline and the recurring checklist.",
+      "Create the content: develop the monthly content and local page optimization.",
+      "Manage the profile and reviews: update the Google Business Profile and handle reviews.",
+      "Report and follow up: compile the monthly local SEO report.",
+      "Deliver the cycle closeout: the monthly report, open items, and next steps."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Monthly Local SEO Plan scope: recurring content, local optimization, reviews, and reporting.",
+        "Collect the business access: profile, analytics, and search console.",
+        "Establish the checklist and the cycle schedule.",
+        "Gather baseline: rankings, profile state, and review volume.",
+        "Set expectations: what each cycle covers and the reporting cadence."
+      ],
+      "delivery": [
+        "Develop the monthly content: blog or local page updates.",
+        "Optimize the local pages: keyword and content refresh.",
+        "Manage the Google Business Profile: posts, updates, and accuracy.",
+        "Monitor the reviews: respond and support review requests.",
+        "Track the rankings and search visibility.",
+        "Identify the local opportunities and gaps.",
+        "Document the monthly local SEO report.",
+        "Technical verification: confirm the report reflects the real data."
+      ],
+      "documentation": [
+        "Produce the monthly local SEO report: work performed, rankings, and reviews.",
+        "Track the content published.",
+        "Record the profile and review activity.",
+        "Maintain the optimization documentation.",
+        "Security rule: no business account credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: content development, local optimization, profile management, review monitoring/requests, monthly reporting, and ongoing optimization.",
+        "Confirm the monthly work was completed.",
+        "Confirm the report was delivered.",
+        "Confirm the profile and reviews are handled.",
+        "Flag follow-ups: content expansion and new local pages."
+      ],
+      "closeout": [
+        "Send the monthly local SEO report.",
+        "Recommend the next content and optimization priorities.",
+        "Confirm the local visibility trend.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monthly cycle."
+      ]
+    }
+  },
+  "review_request_system_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Review Request System Setup, review the review process from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms the review platforms and the request timing.",
+      "Pre-work: prepare the review request templates.",
+      "Design the process: define the review request flow.",
+      "Create the templates: build the review request messages.",
+      "Set up the routing: configure the platform routing and best practices.",
+      "Deliver the closeout package: the review system documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Review Request System Setup scope: process and templates for requesting reviews.",
+        "Confirm the review platforms and the request timing.",
+        "Gather baseline: current review volume and request methods.",
+        "Create the ticket with product id review_request_system_setup, expected deliverables (review system, documentation), and assign a specialist.",
+        "Check prerequisites: the platforms and the customer flow confirmed."
+      ],
+      "delivery": [
+        "Design the review request process: when and how to ask.",
+        "Create the request templates: email, SMS, or link variants.",
+        "Define the platform routing: which customers go to which platform.",
+        "Apply the solicitation best practices: timing, sincerity, and ease.",
+        "Set up the implementation: link generation and trigger points.",
+        "Document the process for the customer's team.",
+        "Review the compliance considerations: platform policies.",
+        "Technical verification: confirm the templates and links work."
+      ],
+      "documentation": [
+        "Produce the review system documentation: process, templates, and routing.",
+        "Document the best practices applied.",
+        "Record the platform details.",
+        "Include the staff instructions.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: process design, template creation, platform routing, best practices, implementation, and documentation.",
+        "Confirm the templates are ready to use.",
+        "Confirm the routing is configured.",
+        "Confirm the process is documented.",
+        "Flag follow-ups: a monthly_local_seo_plan to manage reviews ongoing."
+      ],
+      "closeout": [
+        "Send the deliverables package: review system documentation.",
+        "Recommend next steps: launch the process and monitor the reviews.",
+        "Confirm the customer can run the process.",
+        "Record internal notes: review system setup.",
+        "Offer a review of results after a month."
+      ]
+    }
+  },
+  "schema_markup_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Schema Markup Setup, review the site from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms the pages and the structured data types needed.",
+      "Pre-work: assess the schema needs for the business.",
+      "Build the markup: create the LocalBusiness, service, or FAQ markup.",
+      "Implement the markup: add the structured data to the site.",
+      "Validate and test: verify the markup and check the rich result eligibility.",
+      "Deliver the closeout package: the schema markup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Schema Markup Setup scope: structured data for the business.",
+        "Confirm the pages and the data types needed.",
+        "Gather baseline: existing markup and the page list.",
+        "Create the ticket with product id schema_markup_setup, expected deliverables (working markup, documentation), and assign an SEO specialist.",
+        "Check prerequisites: the site access and the pages confirmed."
+      ],
+      "delivery": [
+        "Assess the schema needs: LocalBusiness, service, FAQ, and more.",
+        "Build the markup: valid JSON-LD for the selected types.",
+        "Match the markup to the real site data: name, address, phone, and services.",
+        "Implement the markup on the pages.",
+        "Validate the markup: use the rich results test and validator.",
+        "Review the rich result eligibility per type.",
+        "Fix any validation errors.",
+        "Technical verification: confirm the markup validates and is live."
+      ],
+      "documentation": [
+        "Produce the schema markup documentation: types, pages, and implementation.",
+        "Document the validation results.",
+        "Record the rich result eligibility.",
+        "Include the maintenance notes for content changes.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: schema assessment, markup implementation, structured data configuration, validation/testing, rich result review, and documentation.",
+        "Confirm the markup validates.",
+        "Confirm the data matches the live site.",
+        "Confirm the rich result eligibility is documented.",
+        "Flag follow-ups: technical_seo_fix_pack or a monthly_local_seo_plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: schema markup documentation.",
+        "Recommend next steps: monitor rich results in Search Console.",
+        "Confirm the markup is live and valid.",
+        "Record internal notes: markup implementation.",
+        "Offer a review after content changes."
+      ]
+    }
+  },
+  "website_safety_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Website Safety Bundle, review the site from intake, and schedule the work.",
+      "Send prep instructions: the customer confirms the site access and any known issues.",
+      "Pre-work: prepare the safety checklist: uptime, backups, SSL, and access.",
+      "Set up the monitoring: configure uptime monitoring.",
+      "Verify the foundations: check backups, SSL, and admin access.",
+      "Compile the report: document the health findings.",
+      "Deliver the closeout package: the website safety report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Website Safety Bundle scope: monitoring, backups, SSL, access, and report.",
+        "Confirm the site access and the monitoring expectations.",
+        "Gather baseline: current uptime, backup, SSL, and access state.",
+        "Create the ticket with product id website_safety_bundle, expected deliverables (monitoring, safety report, documentation), and assign a specialist.",
+        "Check prerequisites: the site access and the monitoring account confirmed."
+      ],
+      "delivery": [
+        "Set up uptime monitoring: alerts on site outages.",
+        "Verify the backups: exist, configured, and restorable.",
+        "Review the SSL: validity, enforcement, and coverage.",
+        "Review the admin access: accounts, roles, and stale access.",
+        "Check the common safety issues: exposures and warnings.",
+        "Compile the website health report with findings.",
+        "Prioritize the fixes by risk.",
+        "Technical verification: confirm the monitoring and checks reflect the live site."
+      ],
+      "documentation": [
+        "Produce the website safety report: findings, severity, and fixes.",
+        "Document the monitoring setup.",
+        "Record the backup, SSL, and access findings.",
+        "Include the prioritized fixes.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: uptime monitoring, backup check, SSL review, admin access review, health report, and coordinated assessment.",
+        "Confirm the monitoring is active.",
+        "Confirm the foundations were verified.",
+        "Confirm the report is complete.",
+        "Flag follow-ups: website_security_review for a deeper review."
+      ],
+      "closeout": [
+        "Send the deliverables package: website safety report.",
+        "Recommend next steps: fix the prioritized findings.",
+        "Confirm the customer knows their website safety state.",
+        "Record internal notes: safety findings.",
+        "Offer a monthly_website_care_plan for ongoing protection."
+      ]
+    }
+  },
+  "local_seo_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and kickoff: confirm the Local SEO Starter, review the business from intake, and kick off the project.",
+      "Send prep instructions: the customer confirms the business details and the target locations.",
+      "Review the Google Business Profile: audit and optimize the profile.",
+      "Build the local pages: create the local page foundations.",
+      "Clean up the metadata: fix the titles and descriptions.",
+      "Set up the reviews: implement the review request process.",
+      "Deliver the closeout package: the local SEO starter documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Local SEO Starter scope: profile review, local pages, metadata cleanup, and review process.",
+        "Confirm the business details and the target locations.",
+        "Gather baseline: profile state, pages, metadata, and reviews.",
+        "Create the ticket with product id local_seo_starter, expected deliverables (local SEO foundation, documentation), and assign an SEO specialist.",
+        "Check prerequisites: the profile and site access confirmed."
+      ],
+      "delivery": [
+        "Audit and optimize the Google Business Profile: completeness and categories.",
+        "Build the local page foundations: service/location targeting.",
+        "Clean up the metadata: titles and descriptions.",
+        "Implement the review request process: templates and routing.",
+        "Apply the local SEO fundamentals: signals and consistency.",
+        "Set up the basics: Search Console and sitemap.",
+        "Document the foundation and next steps.",
+        "Technical verification: confirm the foundations are live."
+      ],
+      "documentation": [
+        "Produce the local SEO starter documentation: profile work, pages, metadata, and review process.",
+        "Document the local signals applied.",
+        "Record the review system.",
+        "Include the next-step roadmap.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: profile review/optimization, local page development, metadata cleanup, review process setup, fundamentals implementation, and documentation.",
+        "Confirm the profile is optimized.",
+        "Confirm the local pages are built.",
+        "Confirm the metadata is clean.",
+        "Flag follow-ups: a monthly_local_seo_plan for ongoing growth."
+      ],
+      "closeout": [
+        "Send the deliverables package: local SEO starter documentation.",
+        "Recommend next steps: a monthly_local_seo_plan to continue.",
+        "Confirm the local SEO foundation is in place.",
+        "Record internal notes: local SEO foundation.",
+        "Offer a results review after a few weeks."
+      ]
+    }
+  },
+  "website_growth_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Website Growth Bundle, collect the site access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the growth goals and the content priorities.",
+      "Pre-work: establish the site baseline and the growth checklist.",
+      "Maintain and optimize: run the website care, content, and SEO work.",
+      "Improve conversions: apply the conversion improvements.",
+      "Review strategy: review the performance and adjust the strategy.",
+      "Deliver the cycle closeout: the growth report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Website Growth Bundle scope: care, content, SEO, conversion, and strategy review.",
+        "Collect the site access and the growth goals.",
+        "Establish the growth checklist and the cycle schedule.",
+        "Gather baseline: traffic, rankings, and conversions.",
+        "Set expectations: what each cycle covers and the reporting cadence."
+      ],
+      "delivery": [
+        "Run the monthly website care: updates, uptime, backups, and forms.",
+        "Develop the content: blog posts or page updates.",
+        "Apply the SEO optimization: metadata, structure, and local signals.",
+        "Improve the conversions: calls to action, paths, and page improvements.",
+        "Review the strategy and performance: traffic, rankings, and goals.",
+        "Adjust the priorities based on the data.",
+        "Document the growth report.",
+        "Technical verification: confirm the report reflects the real data."
+      ],
+      "documentation": [
+        "Produce the growth report: work performed, metrics, and next steps.",
+        "Track the content and SEO changes.",
+        "Record the conversion improvements.",
+        "Maintain the strategy documentation.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: website care, content development, SEO optimization, conversion improvements, strategy review, and growth reporting.",
+        "Confirm the monthly work was completed.",
+        "Confirm the metrics improved or are tracked.",
+        "Confirm the report was delivered.",
+        "Flag follow-ups: bigger content pushes or paid traffic."
+      ],
+      "closeout": [
+        "Send the growth report.",
+        "Recommend the next growth priorities.",
+        "Confirm the customer sees the progress.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next growth cycle."
+      ]
+    }
+  },
+  "cloudflare_basic_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Cloudflare Basic Setup, review the domain from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms the DNS records and the domain access.",
+      "Pre-work: review the DNS zone and prepare the Cloudflare configuration.",
+      "Import the DNS: bring the DNS records into Cloudflare.",
+      "Configure the SSL and proxy: set up SSL and enable proxy for the site.",
+      "Verify the setup: confirm the site resolves and loads through Cloudflare.",
+      "Deliver the closeout package: the Cloudflare configuration documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Cloudflare Basic Setup scope: DNS import, SSL review, proxy basics, and baseline configuration.",
+        "Confirm the DNS records and the domain access.",
+        "Gather baseline: current DNS provider and the zone records.",
+        "Create the ticket with product id cloudflare_basic_setup, expected deliverables (working Cloudflare setup, documentation), and assign a specialist.",
+        "Check prerequisites: the domain is delegated/available and the records list confirmed."
+      ],
+      "delivery": [
+        "Review the DNS zone: current records and any risky entries.",
+        "Import the DNS records into Cloudflare.",
+        "Configure the SSL: mode, certificate, and enforcement.",
+        "Enable proxy for the website: orange-cloud the web records.",
+        "Configure the baseline settings: caching and standard protection.",
+        "Verify the DNS resolution: records resolve correctly.",
+        "Verify the site loads through Cloudflare.",
+        "Technical verification: confirm the site is served correctly."
+      ],
+      "documentation": [
+        "Produce the Cloudflare configuration documentation: records, SSL, and proxy state.",
+        "Document the baseline settings.",
+        "Record the verification results.",
+        "Include the troubleshooting notes.",
+        "Security rule: no Cloudflare credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: DNS import, SSL configuration, proxy enablement, baseline configuration, setup verification, and documentation.",
+        "Confirm the DNS records are correct.",
+        "Confirm the SSL is working.",
+        "Confirm the site loads through Cloudflare.",
+        "Flag follow-ups: cloudflare_security_tune_up for protections."
+      ],
+      "closeout": [
+        "Send the deliverables package: Cloudflare configuration documentation.",
+        "Recommend next steps: a cloudflare_security_tune_up.",
+        "Confirm the site is working through Cloudflare.",
+        "Record internal notes: Cloudflare setup.",
+        "Offer a follow-up after propagation."
+      ]
+    }
+  },
+  "cloudflare_security_tune_up": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Cloudflare Security Tune-Up, review the zone from intake, and schedule the work.",
+      "Send prep instructions: the customer confirms the site access and the security concerns.",
+      "Pre-work: review the current Cloudflare security settings.",
+      "Review the WAF and settings: assess the firewall and protection config.",
+      "Apply the protections: configure the practical protections and bot management.",
+      "Set up rate limiting: add rate limits where appropriate.",
+      "Deliver the closeout package: the security tune-up documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Cloudflare Security Tune-Up scope: WAF and security settings review and configuration.",
+        "Confirm the site access and the security concerns.",
+        "Gather baseline: current WAF, rules, and protection state.",
+        "Create the ticket with product id cloudflare_security_tune_up, expected deliverables (hardened zone, documentation), and assign a specialist.",
+        "Check prerequisites: the Cloudflare and site access confirmed."
+      ],
+      "delivery": [
+        "Review the WAF configuration: rules, sensitivity, and coverage.",
+        "Assess the security settings: bot, challenge, and protection modes.",
+        "Configure the practical protections: managed rules and custom rules.",
+        "Manage bot and malicious traffic: bot fight mode or challenges.",
+        "Add rate limiting where appropriate: protect the login and forms.",
+        "Check the SSL and security headers posture.",
+        "Test the protections: confirm legitimate traffic still works.",
+        "Technical verification: confirm the protections are live and not over-blocking."
+      ],
+      "documentation": [
+        "Produce the security tune-up documentation: WAF state, rules, and settings.",
+        "Document the bot and rate limit configuration.",
+        "Record the test results.",
+        "Include the monitoring guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: WAF review, security assessment, practical protections, bot management, rate limiting, and documentation.",
+        "Confirm the WAF is configured.",
+        "Confirm the protections do not over-block.",
+        "Confirm the rate limits are in place.",
+        "Flag follow-ups: cloudflare_turnstile_setup for forms."
+      ],
+      "closeout": [
+        "Send the deliverables package: security tune-up documentation.",
+        "Recommend next steps: cloudflare_turnstile_setup for form bots.",
+        "Confirm the protections are active.",
+        "Record internal notes: security settings.",
+        "Offer a monitoring review."
+      ]
+    }
+  },
+  "dns_cleanup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the DNS Cleanup, review the zone from intake, and schedule the work.",
+      "Send prep instructions: the customer confirms the DNS access and the records to review.",
+      "Pre-work: review the DNS zone and identify the stale records.",
+      "Identify the issues: find the stale and risky records.",
+      "Remove the records: delete the approved stale records.",
+      "Verify the DNS: confirm the important records still work.",
+      "Deliver the closeout package: the DNS documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the DNS Cleanup scope: remove stale records and document the important ones.",
+        "Confirm the DNS access and the records to review.",
+        "Gather baseline: full DNS zone and record usage.",
+        "Create the ticket with product id dns_cleanup, expected deliverables (cleaned zone, documentation), and assign a specialist.",
+        "Check prerequisites: DNS access confirmed and the record usage understood."
+      ],
+      "delivery": [
+        "Review the DNS zone: all records and their purpose.",
+        "Identify the stale and risky records: unused hosts and insecure entries.",
+        "Confirm the removals with the customer before deleting.",
+        "Remove the approved stale records.",
+        "Document the important records and their purpose.",
+        "Verify the DNS after cleanup: critical records resolve.",
+        "Check the mail and website records specifically.",
+        "Technical verification: confirm the zone is clean and working."
+      ],
+      "documentation": [
+        "Produce the DNS documentation: record inventory, purpose, and owner.",
+        "Document the removals made.",
+        "Record the verification results.",
+        "Include the maintenance guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: zone review, stale/risky identification, approved removal, important record documentation, verification, and documentation.",
+        "Confirm only approved records were removed.",
+        "Confirm the important records still work.",
+        "Confirm the documentation is complete.",
+        "Flag follow-ups: email_dns_authentication_fix or domain protection."
+      ],
+      "closeout": [
+        "Send the deliverables package: DNS documentation.",
+        "Recommend next steps: email authentication checks and domain protection.",
+        "Confirm the DNS is clean and working.",
+        "Record internal notes: DNS cleanup.",
+        "Offer a periodic DNS review."
+      ]
+    }
+  },
+  "email_dns_authentication_fix": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Email DNS Authentication Fix, review the domain from intake, and schedule the work.",
+      "Send prep instructions: the customer confirms the email sending services and the DNS access.",
+      "Pre-work: assess the SPF, DKIM, and DMARC state.",
+      "Fix the records: configure or correct SPF, DKIM, and DMARC.",
+      "Handle the limits: manage the SPF limits and includes.",
+      "Verify and test: test deliverability and spoofing protection.",
+      "Deliver the closeout package: the email authentication documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Email DNS Authentication Fix scope: SPF, DKIM, and DMARC configuration.",
+        "Confirm the email sending services and the DNS access.",
+        "Gather baseline: current SPF, DKIM, and DMARC records.",
+        "Create the ticket with product id email_dns_authentication_fix, expected deliverables (configured email auth, documentation), and assign a specialist.",
+        "Check prerequisites: DNS access confirmed and the sending services listed."
+      ],
+      "delivery": [
+        "Assess the SPF, DKIM, and DMARC records: presence and validity.",
+        "Correct the SPF record: include the sending services and manage limits.",
+        "Configure DKIM: align with the sending service and publish the selector.",
+        "Configure DMARC: policy, alignment, and reporting.",
+        "Handle the SPF limits: consolidate includes where needed.",
+        "Test the deliverability: send test messages and check the results.",
+        "Verify the spoofing protection: confirm the mail is authenticated.",
+        "Technical verification: confirm the records propagate and validate."
+      ],
+      "documentation": [
+        "Produce the email authentication documentation: SPF, DKIM, and DMARC state.",
+        "Document the record changes.",
+        "Record the deliverability test results.",
+        "Include the monitoring guidance.",
+        "Security rule: no mail credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: SPF/DKIM/DMARC assessment, record configuration, SPF limit handling, deliverability testing, spoofing verification, and documentation.",
+        "Confirm all three records are configured.",
+        "Confirm the mail validates.",
+        "Confirm deliverability is tested.",
+        "Flag follow-ups: DMARC policy enforcement after monitoring."
+      ],
+      "closeout": [
+        "Send the deliverables package: email authentication documentation.",
+        "Recommend next steps: enforce DMARC after a monitoring period.",
+        "Confirm the mail is authenticated.",
+        "Record internal notes: email auth changes.",
+        "Offer a re-check after propagation."
+      ]
+    }
+  },
+  "domain_registrar_security_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Domain Registrar Security Setup, review the registrar from intake, and schedule the work.",
+      "Send prep instructions: the customer confirms the registrar access and the domain list.",
+      "Pre-work: review the registrar account security state.",
+      "Secure the account: enable MFA and review the account security.",
+      "Protect the domain: verify the domain lock and transfer protection.",
+      "Document recovery and renewal: record recovery methods and renewal practices.",
+      "Deliver the closeout package: the domain security documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Domain Registrar Security Setup scope: registrar security, lock, recovery, and renewal.",
+        "Confirm the registrar access and the domain list.",
+        "Gather baseline: MFA state, lock status, and renewal settings.",
+        "Create the ticket with product id domain_registrar_security_setup, expected deliverables (secured registrar account, documentation), and assign a specialist.",
+        "Check prerequisites: registrar access confirmed."
+      ],
+      "delivery": [
+        "Review the registrar account security: access, contacts, and MFA.",
+        "Enable MFA on the registrar account: strong authentication.",
+        "Verify the domain lock: registrar lock and transfer protection.",
+        "Document the account recovery methods: recovery email and backup codes.",
+        "Review the renewal and expiration practices: auto-renewal and alerts.",
+        "Check the domain contact details: owner and admin contacts.",
+        "Note any high-risk settings.",
+        "Technical verification: confirm the protections are active."
+      ],
+      "documentation": [
+        "Produce the domain security documentation: MFA, lock, recovery, and renewal.",
+        "Document the recovery methods securely.",
+        "Record the renewal settings.",
+        "Include the monitoring guidance.",
+        "Security rule: recovery codes are stored securely, never in plain docs."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: account security review, MFA enablement, domain lock verification, recovery documentation, renewal review, and documentation.",
+        "Confirm MFA is enabled.",
+        "Confirm the domain lock is on.",
+        "Confirm the recovery methods are documented.",
+        "Flag follow-ups: domain_expiration_protection for monitoring."
+      ],
+      "closeout": [
+        "Send the deliverables package: domain security documentation.",
+        "Recommend next steps: domain_expiration_protection monitoring.",
+        "Confirm the domain is secured.",
+        "Record internal notes: registrar security.",
+        "Offer a periodic review."
+      ]
+    }
+  },
+  "cloudflare_turnstile_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Cloudflare Turnstile Setup, review the forms from intake, and schedule the work.",
+      "Send prep instructions: the customer confirms the forms to protect and the site access.",
+      "Pre-work: review the form setup and prepare the Turnstile configuration.",
+      "Configure Turnstile: set up the widget and keys.",
+      "Integrate the forms: add Turnstile to the supported forms.",
+      "Verify the experience: test the visitor experience and bot blocking.",
+      "Deliver the closeout package: the Turnstile setup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Cloudflare Turnstile Setup scope: bot/spam protection on supported forms.",
+        "Confirm the forms to protect and the site access.",
+        "Gather baseline: current spam volume and form setup.",
+        "Create the ticket with product id cloudflare_turnstile_setup, expected deliverables (protected forms, documentation), and assign a specialist.",
+        "Check prerequisites: the site access and the form list confirmed."
+      ],
+      "delivery": [
+        "Assess the form configuration: which forms and how they submit.",
+        "Set up the Turnstile widget: site key and secret key.",
+        "Configure the widget mode: managed, invisible, or non-interactive.",
+        "Integrate Turnstile into the forms.",
+        "Configure the bot and spam blocking behavior.",
+        "Verify the visitor experience: legitimate users pass smoothly.",
+        "Test the forms end to end: submissions still deliver.",
+        "Technical verification: confirm the protection is live and non-blocking."
+      ],
+      "documentation": [
+        "Produce the Turnstile setup documentation: widget config and integrated forms.",
+        "Document the mode and behavior.",
+        "Record the test results.",
+        "Include the troubleshooting notes.",
+        "Security rule: secret keys never go in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: configuration assessment, form integration, bot/spam blocking, visitor experience verification, form testing, and documentation.",
+        "Confirm the protected forms work.",
+        "Confirm legitimate visitors pass.",
+        "Confirm spam is blocked.",
+        "Flag follow-ups: cloudflare_security_tune_up for broader protection."
+      ],
+      "closeout": [
+        "Send the deliverables package: Turnstile setup documentation.",
+        "Recommend next steps: cloudflare_security_tune_up.",
+        "Confirm the forms are protected.",
+        "Record internal notes: Turnstile setup.",
+        "Offer a spam volume review after a few weeks."
+      ]
+    }
+  },
+  "cloudflare_redirect_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Cloudflare Redirect Setup, review the redirect needs from intake, and schedule the work.",
+      "Send prep instructions: the customer confirms the redirects needed and the site access.",
+      "Pre-work: assess the redirect needs.",
+      "Configure the redirects: set up the redirect rules in Cloudflare.",
+      "Set up the page rules: add page rules where appropriate and enforce HTTPS.",
+      "Test the redirects: verify the redirects work correctly.",
+      "Deliver the closeout package: the redirect documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Cloudflare Redirect Setup scope: redirects and page rules.",
+        "Confirm the redirects needed and the site access.",
+        "Gather baseline: current redirects and the change history.",
+        "Create the ticket with product id cloudflare_redirect_setup, expected deliverables (working redirects, documentation), and assign a specialist.",
+        "Check prerequisites: the site access and the redirect list confirmed."
+      ],
+      "delivery": [
+        "Assess the redirect needs: old URLs, HTTPS, and canonical targets.",
+        "Configure the redirect rules: source, destination, and status.",
+        "Set up the page rules where appropriate.",
+        "Enforce HTTPS: redirect HTTP to HTTPS.",
+        "Handle the edge cases: www/non-www and trailing slashes.",
+        "Test the redirects: each rule fires correctly.",
+        "Verify the canonical behavior: no redirect chains.",
+        "Technical verification: confirm the redirects work end to end."
+      ],
+      "documentation": [
+        "Produce the redirect documentation: rules, sources, and destinations.",
+        "Document the HTTPS enforcement.",
+        "Record the test results.",
+        "Include the maintenance notes.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: needs assessment, redirect configuration, page rule setup, HTTPS enforcement, testing/verification, and documentation.",
+        "Confirm every redirect works.",
+        "Confirm HTTPS is enforced.",
+        "Confirm there are no broken chains.",
+        "Flag follow-ups: domain protection or a cloudflare_security_tune_up."
+      ],
+      "closeout": [
+        "Send the deliverables package: redirect documentation.",
+        "Recommend next steps: review the analytics for redirect-driven traffic.",
+        "Confirm the redirects are working.",
+        "Record internal notes: redirect rules.",
+        "Offer a follow-up if redirects are needed later."
+      ]
+    }
+  },
+  "domain_expiration_protection": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Domain Expiration Protection, review the domains from intake, and schedule the work.",
+      "Send prep instructions: the customer confirms the domain list and the renewal ownership.",
+      "Pre-work: inventory the domains and review the renewal settings.",
+      "Document the domains: record the domain inventory and ownership.",
+      "Secure the renewals: verify auto-renewal and renewal settings.",
+      "Set up monitoring: configure the expiration monitoring and assess the risk.",
+      "Deliver the closeout package: the domain protection documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Domain Expiration Protection scope: renewal ownership documentation and expiration monitoring.",
+        "Confirm the domain list and the renewal ownership.",
+        "Gather baseline: expiration dates and current renewal settings.",
+        "Create the ticket with product id domain_expiration_protection, expected deliverables (protected renewals, documentation), and assign a specialist.",
+        "Check prerequisites: the domain list and the registrar access confirmed."
+      ],
+      "delivery": [
+        "Inventory the domains: names, registrars, and expiration dates.",
+        "Document the ownership: who controls and renews each domain.",
+        "Review the renewal settings: auto-renewal on or off.",
+        "Verify auto-renewal: payment methods and confirmations.",
+        "Assess the expiration risk: near-term expirations and gaps.",
+        "Set up expiration monitoring: alerts before expiration.",
+        "Document the renewal calendar.",
+        "Technical verification: confirm the risk is minimized."
+      ],
+      "documentation": [
+        "Produce the domain protection documentation: inventory, ownership, and renewals.",
+        "Document the monitoring setup.",
+        "Record the risk assessment.",
+        "Include the renewal calendar.",
+        "Security rule: no registrar credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: domain inventory, renewal review, auto-renewal verification, risk assessment, monitoring setup, and documentation.",
+        "Confirm every domain is documented.",
+        "Confirm auto-renewal is secured.",
+        "Confirm the monitoring is active.",
+        "Flag follow-ups: domain_registrar_security_setup for account security."
+      ],
+      "closeout": [
+        "Send the deliverables package: domain protection documentation.",
+        "Recommend next steps: domain_registrar_security_setup.",
+        "Confirm the domains are protected from expiration.",
+        "Record internal notes: domain inventory.",
+        "Offer a periodic renewal review."
+      ]
+    }
+  },
+  "cloudflare_monthly_management": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Cloudflare Monthly Management, collect the zone access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the DNS changes policy and the expectations.",
+      "Pre-work: establish the zone baseline and the recurring checklist.",
+      "Manage the DNS: apply the monthly DNS changes.",
+      "Review the configuration: review the Cloudflare settings and protections.",
+      "Update the documentation: record the changes and findings.",
+      "Deliver the cycle closeout: the monthly management summary."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Cloudflare Monthly Management scope: recurring DNS changes, review, and documentation.",
+        "Collect the zone access and the change policy.",
+        "Establish the checklist and the cycle schedule.",
+        "Gather baseline: zone config, DNS state, and known issues.",
+        "Set expectations: what each cycle covers and the escalation path."
+      ],
+      "delivery": [
+        "Apply the approved monthly DNS changes.",
+        "Review the Cloudflare configuration: settings and rules.",
+        "Maintain the security and proxy settings: keep protections current.",
+        "Check the site behavior: caching and loading through Cloudflare.",
+        "Update the DNS and configuration documentation.",
+        "Identify issues: misconfigurations and risks.",
+        "Document the monthly management summary.",
+        "Technical verification: confirm the zone is healthy and changes applied."
+      ],
+      "documentation": [
+        "Produce the monthly management summary: changes, findings, and state.",
+        "Update the DNS inventory.",
+        "Record the configuration changes.",
+        "Track the open items.",
+        "Security rule: no credentials in the summary."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: DNS changes, configuration review, security/proxy maintenance, documentation updates, issue identification, and monthly summary.",
+        "Confirm all approved changes were applied.",
+        "Confirm the zone is healthy.",
+        "Confirm the summary was delivered.",
+        "Flag follow-ups: security tune-ups and site changes."
+      ],
+      "closeout": [
+        "Send the monthly management summary.",
+        "Recommend fixes for any findings.",
+        "Confirm the zone is healthy.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monthly cycle."
+      ]
+    }
+  },
+  "domain_protection_pack": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and kickoff: confirm the Domain Protection Pack, review the domains from intake, and kick off the project.",
+      "Send prep instructions: the customer confirms the registrar access and the DNS access.",
+      "Secure the registrar: enable MFA and verify the domain lock.",
+      "Document the DNS: inventory and document the DNS records.",
+      "Fix the email auth: configure SPF, DKIM, and DMARC.",
+      "Review Cloudflare and renewals: review the Cloudflare zone and set up renewal tracking.",
+      "Deliver the closeout package: the domain protection documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Domain Protection Pack scope: registrar security, lock, DNS docs, email auth, Cloudflare review, and renewals.",
+        "Confirm the registrar, DNS, and Cloudflare access.",
+        "Gather baseline: security state, DNS, email auth, and renewals.",
+        "Create the ticket with product id domain_protection_pack, expected deliverables (protected domain, documentation), and assign a specialist.",
+        "Check prerequisites: all the required access confirmed."
+      ],
+      "delivery": [
+        "Enable MFA on the registrar account and review the security.",
+        "Verify the domain lock and transfer protection.",
+        "Inventory and document the DNS records.",
+        "Configure SPF, DKIM, and DMARC for email authentication.",
+        "Review the Cloudflare zone: proxy, SSL, and protections.",
+        "Set up renewal tracking: auto-renewal and alerts.",
+        "Document the recovery methods securely.",
+        "Technical verification: confirm all the protections are active."
+      ],
+      "documentation": [
+        "Produce the domain protection documentation: security, DNS, email auth, Cloudflare, and renewals.",
+        "Document the recovery methods securely.",
+        "Record the email authentication state.",
+        "Include the monitoring and maintenance guidance.",
+        "Security rule: no credentials or recovery secrets in plain docs."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: registrar security, domain lock, DNS documentation, email authentication, Cloudflare review, and renewal tracking.",
+        "Confirm MFA and the lock are active.",
+        "Confirm the DNS and email auth are documented.",
+        "Confirm the renewals are tracked.",
+        "Flag follow-ups: periodic reviews and cloudflare_security_tune_up."
+      ],
+      "closeout": [
+        "Send the deliverables package: domain protection documentation.",
+        "Recommend next steps: a cloudflare_monthly_management or periodic review.",
+        "Confirm the domain is protected.",
+        "Record internal notes: domain protection state.",
+        "Offer a periodic re-check."
+      ]
+    }
+  }
+}

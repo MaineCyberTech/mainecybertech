@@ -1,11 +1,22 @@
 name: TypeCheck
 
+# PR-only by design: on pushes to develop/main typecheck runs once through
+# `deploy-do` → `validate.yml`. The push trigger here duplicated it.
 on:
   workflow_dispatch:
-  push:
-    branches: [main, develop]
+  # Deliberately no `paths:` on pull_request (BP-P2-004): `typecheck` is a
+  # required check, and a path-filtered workflow never reports on docs-only
+  # PRs — leaving them blocked or unguarded.
   pull_request:
     branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  # Cancel superseded runs on the same ref (rapid pushes to a PR).
+  group: typecheck-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   typecheck:
@@ -13,20 +24,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@10 --activate
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup-pnpm
 
       - name: TypeCheck workspace
         run: pnpm typecheck

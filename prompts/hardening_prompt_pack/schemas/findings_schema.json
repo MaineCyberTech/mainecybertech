@@ -1,7 +1,59 @@
 {
-  "severity": "P0|P1|P2|P3",
-  "file": "string",
-  "issue": "string",
-  "impact": "string",
-  "fix": "string"
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hardening Audit Finding",
+  "type": "object",
+  "required": ["severity", "domain", "category", "file", "issue", "impact", "fix"],
+  "properties": {
+    "severity": {
+      "type": "string",
+      "enum": ["P0", "P1", "P2", "P3"],
+      "description": "P0=Direct breach/cross-tenant/RCE, P1=Missing control/partial exposure, P2=Defense-in-depth/hardening, P3=Cosmetic/tech-debt"
+    },
+    "domain": {
+      "type": "string",
+      "enum": [
+        "security",
+        "data",
+        "resilience",
+        "observability",
+        "supply_chain",
+        "privacy",
+        "ci_cd",
+        "evolution"
+      ],
+      "description": "Must match the domain directory name for merger clustering"
+    },
+    "category": {
+      "type": "string",
+      "description": "Domain-specific subcategory (e.g. auth, tenancy, validation, exposure, infra for security)"
+    },
+    "file": {
+      "type": "string",
+      "description": "Relative path from repo root"
+    },
+    "issue": {
+      "type": "string",
+      "description": "One-line summary of the finding"
+    },
+    "impact": {
+      "type": "string",
+      "description": "Business + technical impact if unaddressed"
+    },
+    "fix": {
+      "type": "string",
+      "description": "Actionable remediation steps"
+    },
+    "exploit_chain": {
+      "type": "string",
+      "description": "Step-by-step attack narrative (security domain only)"
+    },
+    "endpoint": {
+      "type": "string",
+      "description": "HTTP method + path, e.g. GET /api/v1/users/:id"
+    },
+    "data_path": {
+      "type": "string",
+      "description": "Data flow from request through services to storage"
+    }
+  }
 }

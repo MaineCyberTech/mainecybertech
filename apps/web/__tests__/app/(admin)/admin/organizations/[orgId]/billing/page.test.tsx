@@ -27,6 +27,12 @@ jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mocks.requireAdminAccess(...args),
 }));
 
+jest.mock("next/navigation", () => ({
+  notFound: () => {
+    throw new Error("NEXT_NOT_FOUND");
+  },
+}));
+
 jest.mock("next/link", () => {
   return ({ children, href, ...rest }: any) => (
     <a href={href} {...rest}>
@@ -35,14 +41,11 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock(
-  "@/app/(admin)/admin/organizations/[orgId]/billing/AdminBillingClient",
-  () => {
-    return function MockBillingClient(props: any) {
-      return <div data-testid="billing-client">{props.organizationId}</div>;
-    };
-  },
-);
+jest.mock("@/app/(admin)/admin/organizations/[orgId]/billing/AdminBillingClient", () => {
+  return function MockBillingClient(props: any) {
+    return <div data-testid="billing-client">{props.organizationId}</div>;
+  };
+});
 
 describe("AdminOrgBillingPage", () => {
   beforeEach(() => {
@@ -57,33 +60,32 @@ describe("AdminOrgBillingPage", () => {
   });
 
   it("renders org name and billing header", async () => {
-    const Page = (
-      await import("@/app/(admin)/admin/organizations/[orgId]/billing/page")
-    ).default;
+    const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/billing/page")).default;
     render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
     expect(screen.getByText("Acme Corp Billing")).toBeInTheDocument();
     expect(screen.getByTestId("billing-client")).toHaveTextContent("o1");
   });
 
   it("renders back link to organization", async () => {
-    const Page = (
-      await import("@/app/(admin)/admin/organizations/[orgId]/billing/page")
-    ).default;
+    const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/billing/page")).default;
     render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
     const backLink = screen.getByText("Back to Organization");
-    expect(backLink.closest("a")).toHaveAttribute(
-      "href",
-      "/admin/organizations/o1",
-    );
+    expect(backLink.closest("a")).toHaveAttribute("href", "/admin/organizations/o1");
   });
 
   it("handles null org gracefully", async () => {
     mockOrgGet.mockRejectedValue(new Error("not found"));
-    const Page = (
-      await import("@/app/(admin)/admin/organizations/[orgId]/billing/page")
-    ).default;
+    const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/billing/page")).default;
     render(await Page({ params: Promise.resolve({ orgId: "bad" }) }));
     expect(screen.getByText("Organization Billing")).toBeInTheDocument();
+  });
+
+  it("calls notFound when the org is missing", async () => {
+    mockOrgGet.mockRejectedValue(Object.assign(new Error("not found"), { status: 404 }));
+    const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/billing/page")).default;
+    await expect(Page({ params: Promise.resolve({ orgId: "bad" }) })).rejects.toThrow(
+      "NEXT_NOT_FOUND",
+    );
   });
 
   it("passes billing data to client component", async () => {
@@ -98,9 +100,7 @@ describe("AdminOrgBillingPage", () => {
       id: "c1",
       email: "billing@test.com",
     });
-    const Page = (
-      await import("@/app/(admin)/admin/organizations/[orgId]/billing/page")
-    ).default;
+    const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/billing/page")).default;
     render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
     expect(screen.getByTestId("billing-client")).toBeInTheDocument();
   });

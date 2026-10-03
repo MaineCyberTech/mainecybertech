@@ -26,6 +26,18 @@ export interface WebhookDelivery {
   created_at: string;
 }
 
+export interface WebhookDeadLetter {
+  id: string;
+  webhook_id: string;
+  event: string;
+  request_body?: unknown;
+  attempt_count: number;
+  last_attempt_at: string;
+  last_error?: string | null;
+  created_at: string;
+  endpoint?: { id: string; name: string; url: string } | null;
+}
+
 export class WebhooksApi {
   constructor(private client: ApiClient) {}
 
@@ -49,18 +61,23 @@ export class WebhooksApi {
     return this.client.post<WebhookEndpoint>("/api/v1/webhook-endpoints", data);
   }
 
-  update(id: string, data: {
-    name?: string;
-    url?: string;
-    secret?: string | null;
-    events?: string[];
-    isActive?: boolean;
-  }) {
+  update(
+    id: string,
+    data: {
+      name?: string;
+      url?: string;
+      secret?: string | null;
+      events?: string[];
+      isActive?: boolean;
+    },
+  ) {
     return this.client.patch<WebhookEndpoint>(`/api/v1/webhook-endpoints/${id}`, data);
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/webhook-endpoints/${id}`);
+    return this.client.delete<void>(`/api/v1/webhook-endpoints/${id}`, undefined, {
+      confirm: true,
+    });
   }
 
   listDeliveries(webhookId: string, params?: { page?: number; limit?: number }) {
@@ -68,7 +85,8 @@ export class WebhooksApi {
     if (params?.page !== undefined) qp.page = params.page;
     if (params?.limit !== undefined) qp.limit = params.limit;
     return this.client.get<PaginatedResult<WebhookDelivery>>(
-      `/api/v1/webhook-endpoints/${webhookId}/deliveries`, qp,
+      `/api/v1/webhook-endpoints/${webhookId}/deliveries`,
+      qp,
     );
   }
 
@@ -76,5 +94,25 @@ export class WebhooksApi {
     return this.client.post<{ ok: boolean; status?: number; error?: string; duration_ms?: number }>(
       `/api/v1/webhook-endpoints/${webhookId}/test`,
     );
+  }
+
+  listDeadLetters(params?: { event?: string; webhookId?: string; page?: number; limit?: number }) {
+    const qp: Record<string, string | number | undefined> = {};
+    if (params?.event) qp.event = params.event;
+    if (params?.webhookId) qp.webhook_id = params.webhookId;
+    if (params?.page !== undefined) qp.page = params.page;
+    if (params?.limit !== undefined) qp.limit = params.limit;
+    return this.client.get<PaginatedResult<WebhookDeadLetter>>(
+      "/api/v1/webhook-endpoints/dead-letters",
+      qp,
+    );
+  }
+
+  retryDeadLetter(id: string) {
+    return this.client.post<{ ok: boolean }>(`/api/v1/webhook-endpoints/dead-letters/${id}/retry`);
+  }
+
+  deleteDeadLetter(id: string) {
+    return this.client.delete<{ ok: boolean }>(`/api/v1/webhook-endpoints/dead-letters/${id}`);
   }
 }

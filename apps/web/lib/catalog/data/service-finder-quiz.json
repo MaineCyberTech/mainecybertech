@@ -1,0 +1,221 @@
+{
+  "version": "2026-07-29.v4-conversion-modules",
+  "module": "service_finder_quiz",
+  "goal": "Recommend one quick win, one bundle, and one monthly plan from 4-6 customer-friendly questions.",
+  "questions": [
+    {
+      "id": "primary_concern",
+      "label": "What are you trying to improve first?",
+      "type": "single_select",
+      "required": true,
+      "options": [
+        {
+          "value": "security",
+          "label": "Security and account protection"
+        },
+        {
+          "value": "m365",
+          "label": "Microsoft 365, email, or users"
+        },
+        {
+          "value": "wifi_network",
+          "label": "Wi-Fi, networking, or internet reliability"
+        },
+        {
+          "value": "website_seo",
+          "label": "Website, local SEO, or online presence"
+        },
+        {
+          "value": "backup_resilience",
+          "label": "Backup, recovery, or business continuity"
+        },
+        {
+          "value": "new_business",
+          "label": "Starting or organizing a business technology foundation"
+        }
+      ]
+    },
+    {
+      "id": "urgency_level",
+      "label": "How urgent is this?",
+      "type": "single_select",
+      "required": true,
+      "options": [
+        {
+          "value": "planning",
+          "label": "Planning ahead"
+        },
+        {
+          "value": "soon",
+          "label": "I want to handle it soon"
+        },
+        {
+          "value": "asap",
+          "label": "ASAP"
+        },
+        {
+          "value": "emergency",
+          "label": "Something is down or compromised"
+        }
+      ]
+    },
+    {
+      "id": "business_stage",
+      "label": "Which best describes your business?",
+      "type": "single_select",
+      "required": true,
+      "options": [
+        {
+          "value": "solo_micro",
+          "label": "Solo or very small team"
+        },
+        {
+          "value": "small_team",
+          "label": "Small team"
+        },
+        {
+          "value": "growing",
+          "label": "Growing business"
+        },
+        {
+          "value": "seasonal",
+          "label": "Seasonal or location-based business"
+        },
+        {
+          "value": "nonprofit_church",
+          "label": "Church or nonprofit"
+        },
+        {
+          "value": "professional_office",
+          "label": "Professional or wellness office"
+        }
+      ]
+    },
+    {
+      "id": "support_preference",
+      "label": "What kind of help do you prefer?",
+      "type": "single_select",
+      "required": true,
+      "options": [
+        {
+          "value": "quick_fix",
+          "label": "A focused quick win"
+        },
+        {
+          "value": "bundle",
+          "label": "A guided package"
+        },
+        {
+          "value": "monthly",
+          "label": "Ongoing monthly support"
+        },
+        {
+          "value": "not_sure",
+          "label": "Not sure, recommend a path"
+        }
+      ]
+    },
+    {
+      "id": "admin_access",
+      "label": "Do you have admin access to the systems involved?",
+      "type": "single_select",
+      "required": false,
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        },
+        {
+          "value": "not_sure",
+          "label": "Not sure"
+        }
+      ]
+    },
+    {
+      "id": "budget_comfort",
+      "label": "What buying style feels best right now?",
+      "type": "single_select",
+      "required": false,
+      "options": [
+        {
+          "value": "entry",
+          "label": "Start with a low-cost first step"
+        },
+        {
+          "value": "standard",
+          "label": "Solve the main problem properly"
+        },
+        {
+          "value": "complete",
+          "label": "I want a complete care path"
+        },
+        {
+          "value": "consult",
+          "label": "I want a recommendation before buying"
+        }
+      ]
+    }
+  ],
+  "recommendationMap": [
+    {
+      "when": {
+        "primary_concern": "security"
+      },
+      "quickWin": "mfa_setup_session",
+      "bundle": "pine_tree_protection_pack",
+      "monthlyPlan": "mct_secure_care"
+    },
+    {
+      "when": {
+        "primary_concern": "m365"
+      },
+      "quickWin": "microsoft_365_tenant_setup",
+      "bundle": "m365_secure_bundle",
+      "monthlyPlan": "m365_managed_bundle"
+    },
+    {
+      "when": {
+        "primary_concern": "wifi_network"
+      },
+      "quickWin": "wi_fi_coverage_check",
+      "bundle": "business_network_foundation",
+      "monthlyPlan": "mct_complete_care"
+    },
+    {
+      "when": {
+        "primary_concern": "website_seo"
+      },
+      "quickWin": "website_health_check",
+      "bundle": "local_business_online_presence_pack",
+      "monthlyPlan": "monthly_website_care_plan"
+    },
+    {
+      "when": {
+        "primary_concern": "backup_resilience"
+      },
+      "quickWin": "backup_readiness_check",
+      "bundle": "small_business_resilience_pack",
+      "monthlyPlan": "backup_monitoring_plan"
+    },
+    {
+      "when": {
+        "primary_concern": "new_business"
+      },
+      "quickWin": "domain_registrar_security_setup",
+      "bundle": "small_business_it_starter_pack",
+      "monthlyPlan": "mct_essential_care"
+    }
+  ],
+  "emergencyOverride": {
+    "when": {
+      "urgency_level": "emergency"
+    },
+    "quickWin": "emergency_remote_support",
+    "bundle": "business_owner_peace_of_mind_pack",
+    "monthlyPlan": "mct_secure_care"
+  }
+}

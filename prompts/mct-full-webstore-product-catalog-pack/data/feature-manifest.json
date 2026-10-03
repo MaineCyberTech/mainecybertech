@@ -1,0 +1,100 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "features": [
+    {
+      "id": "store_analytics",
+      "name": "Store Analytics + Conversion Tracking",
+      "description": "Track views, CTA clicks, quiz events, quote events, promo interactions, and conversion paths."
+    },
+    {
+      "id": "lead_scoring",
+      "name": "Lead Scoring",
+      "description": "Score quote requests and service finder results based on urgency, selected products, business size, and buying intent."
+    },
+    {
+      "id": "recommendation_engine_v2",
+      "name": "Recommendation Engine V2",
+      "description": "Advanced recommendation groups such as frequently paired, next step, upgrade path, monthly match, dependency, and seasonal match."
+    },
+    {
+      "id": "comparison_pages",
+      "name": "Product Comparison Pages",
+      "description": "Generate structured comparison pages for common product and package decisions."
+    },
+    {
+      "id": "package_ladders",
+      "name": "Good Better Best Package Ladders",
+      "description": "Show guided three-step choices per category."
+    },
+    {
+      "id": "proposal_generator",
+      "name": "Quote-to-Proposal Generator",
+      "description": "Generate internal quote review, client-facing proposal draft, scope, assumptions, exclusions, add-ons, and follow-up email."
+    },
+    {
+      "id": "intake_to_project",
+      "name": "Intake-to-Project Conversion",
+      "description": "Convert quote/intake submissions into organization/contact/project/ticket/task scaffolds later."
+    },
+    {
+      "id": "product_lifecycle",
+      "name": "Admin Product Lifecycle Workflow",
+      "description": "Draft, review, published, seasonal, paused, archived, needs update, and compliance review lifecycle."
+    },
+    {
+      "id": "content_quality_auditor",
+      "name": "Store Content Quality Auditor",
+      "description": "Audit product copy for clarity, completeness, risk, unsupported claims, and SEO quality."
+    },
+    {
+      "id": "seo_landing_pages",
+      "name": "SEO Landing Page Generator",
+      "description": "Generate local and vertical service landing page scaffolds from catalog data."
+    },
+    {
+      "id": "faq_objection_system",
+      "name": "FAQ and Objection Handling System",
+      "description": "Reusable product/category FAQs with FAQ schema readiness."
+    },
+    {
+      "id": "testimonial_system",
+      "name": "Review/Testimonial Placement System",
+      "description": "Admin-approved testimonials with permission and provenance tracking."
+    },
+    {
+      "id": "case_study_generator",
+      "name": "Case Study Generator",
+      "description": "Turn completed work into publishable case study drafts with approval controls."
+    },
+    {
+      "id": "email_nurture",
+      "name": "Email Nurture Sequences",
+      "description": "Follow-up content for leads by interest area and funnel stage."
+    },
+    {
+      "id": "portal_service_hub",
+      "name": "Customer Portal Service Hub",
+      "description": "Expose requested services, quote status, proposals, projects, docs, tasks, and recommended next services in portal."
+    },
+    {
+      "id": "fulfillment_checklists",
+      "name": "Internal Fulfillment Checklist Generator",
+      "description": "Generate task checklists from product/service definitions."
+    },
+    {
+      "id": "profitability_scoring",
+      "name": "Product Profitability + Effort Scoring",
+      "description": "Score products by effort, complexity, margin, lead value, onsite needs, admin access, risk, seasonality."
+    },
+    {
+      "id": "dependency_engine",
+      "name": "Product Dependency Engine",
+      "description": "Define required/recommended prerequisites and quote/admin warnings."
+    },
+    {
+      "id": "lead_magnets",
+      "name": "Public Service Readiness Checklist Downloads",
+      "description": "Lead magnet checklists for cyber insurance, starter IT, website, onboarding/offboarding, marinas, churches, backups."
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "downloads": [
+    {
+      "id": "cyber_insurance_readiness_checklist",
+      "title": "Cyber Insurance Readiness Checklist"
+    },
+    {
+      "id": "small_business_it_starter_checklist",
+      "title": "Small Business IT Starter Checklist"
+    },
+    {
+      "id": "website_health_checklist",
+      "title": "Website Health Checklist"
+    },
+    {
+      "id": "new_employee_it_setup_checklist",
+      "title": "New Employee IT Setup Checklist"
+    },
+    {
+      "id": "employee_offboarding_checklist",
+      "title": "Employee Offboarding Checklist"
+    },
+    {
+      "id": "marina_preseason_technology_checklist",
+      "title": "Marina Pre-Season Technology Checklist"
+    },
+    {
+      "id": "church_cybersecurity_checklist",
+      "title": "Church Cybersecurity Checklist"
+    },
+    {
+      "id": "backup_restore_test_checklist",
+      "title": "Backup Restore Test Checklist"
+    }
+  ],
+  "fields": [
+    "id",
+    "title",
+    "description",
+    "publicSlug",
+    "relatedProducts",
+    "leadCaptureRequired",
+    "filePath",
+    "lastReviewedAt"
+  ]
+}

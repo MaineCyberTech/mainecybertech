@@ -1,0 +1,21 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "checklistTemplate": [
+    "Review intake",
+    "Confirm scope",
+    "Confirm safe access method",
+    "Perform service-specific work",
+    "Document findings/changes",
+    "QA review",
+    "Send customer summary",
+    "Recommend next service",
+    "Close temporary access if applicable"
+  ],
+  "fields": [
+    "productId",
+    "checklistItems",
+    "requiredEvidence",
+    "requiredApprovals",
+    "closeoutDeliverables"
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "version": "2026-07-29.v4-conversion-modules",
+  "module": "promotion_admin_center",
+  "statuses": ["draft", "active", "paused", "expired", "archived"],
+  "promotionTypes": [
+    {
+      "id": "percentage_discount",
+      "label": "Percentage Discount",
+      "description": "Percentage off eligible product or bundle. Use only when a real discount exists."
+    },
+    {
+      "id": "fixed_credit",
+      "label": "Fixed Credit",
+      "description": "Dollar credit toward a bundle, monthly plan, or larger project."
+    },
+    {
+      "id": "bundle_savings",
+      "label": "Bundle Savings",
+      "description": "Value messaging for bundles that include multiple products."
+    },
+    {
+      "id": "included_addon",
+      "label": "Included Add-on",
+      "description": "A clearly scoped add-on included with purchase."
+    },
+    {
+      "id": "seasonal_campaign",
+      "label": "Seasonal Campaign",
+      "description": "Campaign tied to a real seasonal planning window."
+    },
+    {
+      "id": "new_client_intro",
+      "label": "New Client Intro Offer",
+      "description": "Introductory offer for first-time clients."
+    },
+    {
+      "id": "capacity_notice",
+      "label": "Capacity Notice",
+      "description": "Truthful scheduling capacity message; not a fake scarcity claim."
+    }
+  ],
+  "requiredFields": ["id", "name", "status", "type", "badgeText", "terms", "eligibility"],
+  "adminFields": [
+    "id",
+    "name",
+    "description",
+    "type",
+    "status",
+    "badgeText",
+    "detailText",
+    "terms",
+    "startsAt",
+    "endsAt",
+    "eligibleProductIds",
+    "eligibleCategoryIds",
+    "eligibleBundleIds",
+    "excludedProductIds",
+    "requiresConsult",
+    "stackable",
+    "priority",
+    "createdBy",
+    "updatedBy",
+    "createdAt",
+    "updatedAt",
+    "auditLog"
+  ],
+  "guardrails": {
+    "disallowed": [
+      "fake countdown timers",
+      "fake low-stock service inventory",
+      "misleading strikethrough prices",
+      "hidden terms",
+      "fear-heavy cyber copy",
+      "guaranteed security/compliance claims",
+      "discounts that are not honored at checkout/quote review"
+    ],
+    "requiredPublicDisclosure": [
+      "badge text",
+      "short terms",
+      "eligibility",
+      "expiration if real",
+      "consult required if scoped service",
+      "included add-on scope if applicable"
+    ]
+  },
+  "examplePromotions": [
+    {
+      "id": "quick_win_to_secure_bundle_credit",
+      "name": "Quick-Win Starter Credit",
+      "type": "fixed_credit",
+      "status": "draft",
+      "badgeText": "Starter credit eligible",
+      "detailText": "Apply part of this quick-win toward an eligible security bundle or monthly care plan.",
+      "terms": "Credit must be approved by Maine Cyber Tech and applied to eligible follow-up work. Do not show a dollar amount unless configured by admin.",
+      "eligibleCategoryIds": ["quick-fixes", "cybersecurity"],
+      "eligibleProductIds": [],
+      "eligibleBundleIds": [
+        "m365_secure_bundle",
+        "cyber_insurance_readiness_bundle",
+        "small_business_resilience_pack"
+      ],
+      "requiresConsult": true,
+      "stackable": false,
+      "priority": 20
+    },
+    {
+      "id": "website_care_included_uptime",
+      "name": "Website Care Uptime Monitor Bonus",
+      "type": "included_addon",
+      "status": "draft",
+      "badgeText": "Includes uptime monitor setup",
+      "detailText": "Eligible website care purchases can include basic uptime monitor setup.",
+      "terms": "Applies only when selected by admin. Does not include emergency response unless separately purchased.",
+      "eligibleCategoryIds": ["website-seo"],
+      "eligibleProductIds": ["monthly_website_care_plan", "website_safety_bundle"],
+      "eligibleBundleIds": [],
+      "requiresConsult": false,
+      "stackable": true,
+      "priority": 15
+    }
+  ]
+}

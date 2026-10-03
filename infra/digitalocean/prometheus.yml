@@ -1,0 +1,37 @@
+# Prometheus configuration for the MCT portal stack.
+# Runs inside the docker compose network — NO public exposure (no published ports).
+# Scrapes the API and Worker /metrics endpoints.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/rules.yml
+
+# Forward firing alerts to Alertmanager (IR-P0-003). Internal-only, on the
+# compose network — no published ports. Alertmanager then routes the `Watchdog`
+# alert to an external dead-man's-switch receiver (see alertmanager.yml).
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  - job_name: mct-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["api:4000"]
+        labels:
+          service: api
+
+  - job_name: mct-worker
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["worker:3001"]
+        labels:
+          service: worker
+
+  - job_name: prometheus
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["localhost:9090"]

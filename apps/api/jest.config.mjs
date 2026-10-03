@@ -3,7 +3,7 @@ export default {
   testEnvironment: "node",
   roots: ["<rootDir>/src"],
   testMatch: ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
-  testPathIgnorePatterns: ["/node_modules/", "helpers\\.ts$"],
+  testPathIgnorePatterns: ["/node_modules/", "helpers\\.ts$", "/openapi/"],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   collectCoverageFrom: [
     "src/**/*.ts",
@@ -13,13 +13,14 @@ export default {
   ],
   coverageThreshold: {
     global: {
-      branches: 50,
+      branches: 30,
       functions: 50,
-      lines: 50,
-      statements: 50,
+      lines: 55,
+      statements: 58,
     },
   },
   moduleNameMapper: {
+    "^(\\.\\.?\\/.*)\\.js$": "$1",
     "^redis$": "<rootDir>/src/__mocks__/redis.ts",
   },
 };

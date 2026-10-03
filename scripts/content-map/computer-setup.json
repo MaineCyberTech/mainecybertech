@@ -1,0 +1,394 @@
+{
+  "new_computer_setup": {
+    "marketingCopy": "A brand-new business computer is only as good as its setup - and out-of-the-box defaults mean the wrong settings, missing updates, unconfigured security, and hours of setup time. The New Computer Setup prepares a new Windows or Mac business computer for productive use: operating system updates, user accounts, software installation, network and printer configuration, email and Microsoft 365 setup, and security basics like encryption and protection. We configure it properly, test it, and hand it over ready for work. Your team gets a computer that's productive on day one instead of spending their first hours configuring it.",
+    "bestFor": [
+      "Businesses buying new computers who want them work-ready",
+      "Organizations that want security configured before the computer reaches staff",
+      "Companies that want setup handled by professionals instead of trial-and-error",
+      "New employees who need a working computer on their first day"
+    ],
+    "whatIsIncluded": [
+      "Operating system setup and update installation",
+      "User account and profile configuration",
+      "Software installation for the user's role",
+      "Email and Microsoft 365 configuration",
+      "Network, printer, and peripheral connectivity",
+      "Security configuration including encryption and protection",
+      "Functionality testing and handover"
+    ],
+    "customerOutcomes": [
+      "A work-ready computer from day one",
+      "Security configured before the device reaches the user",
+      "Email, software, and peripherals all working",
+      "A documented setup instead of an afternoon of configuration"
+    ]
+  },
+  "business_laptop_security_setup": {
+    "marketingCopy": "Laptops travel - to home offices, client sites, and coffee shops - which makes them the most likely device to be lost, stolen, or compromised. The Business Laptop Security Setup hardens a laptop before it starts traveling: updates installed, disk encryption enabled, account hygiene cleaned up, screen lock configured, protection software verified, and practical settings applied that reduce risk without frustrating the user. We focus on the security controls that matter most for a portable device carrying business data. Your laptops become secure by default rather than relying on luck.",
+    "bestFor": [
+      "Businesses issuing laptops to remote, field, or traveling staff",
+      "Organizations concerned about lost or stolen devices",
+      "Companies that want laptop security configured before the device goes into the field",
+      "Businesses meeting insurance requirements for device encryption"
+    ],
+    "whatIsIncluded": [
+      "Operating system and application updates",
+      "Disk encryption enablement (BitLocker or FileVault)",
+      "Account and login hygiene",
+      "Screen lock and security policy configuration",
+      "Endpoint protection verification",
+      "Practical security settings that reduce risk without hurting productivity"
+    ],
+    "customerOutcomes": [
+      "A hardened laptop secure for travel and remote work",
+      "Encryption enabled so a lost laptop doesn't mean a data breach",
+      "Security settings configured to reduce risk",
+      "Insurance-ready laptop security evidence"
+    ]
+  },
+  "patch_status_snapshot": {
+    "marketingCopy": "Unpatched software is one of the most exploited vulnerabilities in small business - and most owners have no idea whether their computers are current. The Patch Status Snapshot provides a quick assessment of patch and update status across a small set of devices: which are current, which are behind, and which have critical gaps. We check operating system and key application updates, identify the devices most at risk, and give you a prioritized list of updates to apply. It's a fast, affordable way to close one of the biggest exploit paths before it's used against you.",
+    "bestFor": [
+      "Businesses that have never checked patch status across their devices",
+      "Organizations concerned about unpatched software vulnerabilities",
+      "Companies that want a quick, affordable security assessment",
+      "Businesses preparing for insurance that asks about patch management"
+    ],
+    "whatIsIncluded": [
+      "Patch status review across a small set of devices",
+      "Operating system update assessment",
+      "Key application update assessment",
+      "Critical gap identification",
+      "Prioritized update recommendations",
+      "Patch status report"
+    ],
+    "customerOutcomes": [
+      "A clear picture of which devices are patched and which aren't",
+      "Critical update gaps identified before they're exploited",
+      "A prioritized list of updates to apply",
+      "Patch posture evidence for insurance and compliance"
+    ]
+  },
+  "managed_workstation_essentials": {
+    "marketingCopy": "Workstations need ongoing care to stay reliable and secure - but most small businesses only think about them when something breaks. Managed Workstation Essentials is an entry-level recurring workstation care plan: device inventory, basic health review, update verification, and a maintenance cadence that keeps your computers running. It's the foundation level of proactive workstation management - designed for businesses that want a manageable baseline of care without a full managed IT commitment. Your computers get checked, tracked, and maintained on a schedule instead of running until they fail.",
+    "bestFor": [
+      "Small businesses that want basic proactive workstation care",
+      "Organizations with a modest number of computers to maintain",
+      "Companies that want devices tracked and health-checked regularly",
+      "Businesses starting their journey toward managed IT"
+    ],
+    "whatIsIncluded": [
+      "Device inventory management",
+      "Basic health review of workstations",
+      "Update and patch status verification",
+      "Scheduled maintenance cadence",
+      "Issue identification and prioritization",
+      "Monthly care summary"
+    ],
+    "customerOutcomes": [
+      "Workstations tracked and maintained on a schedule",
+      "Basic health issues caught before they become outages",
+      "Update and patch status verified regularly",
+      "A manageable baseline of proactive care"
+    ]
+  },
+  "managed_workstation_protect": {
+    "marketingCopy": "Between unpatched machines, unchecked endpoint protection, and health issues nobody notices, unmanaged workstations are a compounding risk. Managed Workstation Protect is the next tier of recurring workstation care: managed patching, endpoint protection status verification, and a monthly health summary - so your computers are actively protected rather than just tracked. We ensure updates are applied, confirm protection software is active, review device health, and report monthly. It's proactive workstation security and maintenance for businesses that want their machines actually protected, not just inventoried.",
+    "bestFor": [
+      "Businesses that want workstations actively patched and protected",
+      "Organizations that want endpoint protection status verified regularly",
+      "Companies that want monthly visibility into workstation health",
+      "Businesses preparing for insurance that requires patch and protection management"
+    ],
+    "whatIsIncluded": [
+      "Managed patching of workstations",
+      "Endpoint protection status verification",
+      "Device health monitoring",
+      "Update and protection remediation",
+      "Monthly health summary",
+      "Issue prioritization and guidance"
+    ],
+    "customerOutcomes": [
+      "Workstations patched and protected on an ongoing basis",
+      "Endpoint protection verified as active, not assumed",
+      "Monthly visibility into fleet health",
+      "Insurance-ready evidence of patch and protection management"
+    ]
+  },
+  "managed_workstation_complete": {
+    "marketingCopy": "For businesses that rely heavily on their computers, reactive support isn't enough - they need priority care, lifecycle management, and standardized devices. Managed Workstation Complete is the top tier of recurring workstation service: priority support, lifecycle tracking, device standards, and a quarterly review of every machine. We maintain your fleet proactively, handle issues with priority, track warranty and replacement timing, enforce consistent device standards, and review fleet health quarterly. It's full-lifecycle workstation management that keeps your computers reliable, current, and replaceable on a schedule.",
+    "bestFor": [
+      "Businesses that depend heavily on their computers every day",
+      "Organizations that want priority support and lifecycle management",
+      "Companies that want consistent, standardized devices",
+      "Businesses that want quarterly fleet reviews"
+    ],
+    "whatIsIncluded": [
+      "Priority workstation support",
+      "Lifecycle and warranty tracking",
+      "Device standards and standardization",
+      "Proactive maintenance and health management",
+      "Quarterly fleet review",
+      "Replacement planning and guidance"
+    ],
+    "customerOutcomes": [
+      "Priority support for business-critical workstations",
+      "Fleet reliability and consistency",
+      "Lifecycle and replacement tracked proactively",
+      "Quarterly visibility into fleet health and direction"
+    ]
+  },
+  "laptop_procurement": {
+    "marketingCopy": "Buying business laptops is full of pitfalls - the wrong specs, consumer models in a business environment, overpriced hardware, and inconsistency between users. The Laptop Procurement service recommends and coordinates the purchase of a business laptop that actually fits your needs and budget. We assess what the user and role require, recommend specific models at the right tier, compare pricing, and coordinate the purchase with the right configuration. You get a laptop that's right for the job, purchased efficiently, and consistent with the rest of your fleet - without spending hours researching specs yourself.",
+    "bestFor": [
+      "Businesses buying laptops without an internal IT expert",
+      "Organizations that want the right specs without overpaying",
+      "Companies that want fleet consistency in their devices",
+      "Businesses that want procurement handled professionally"
+    ],
+    "whatIsIncluded": [
+      "Role and usage needs assessment",
+      "Specific model recommendations at the right tier",
+      "Specification and pricing comparison",
+      "Purchase coordination with the right configuration",
+      "Fleet consistency guidance",
+      "Procurement documentation"
+    ],
+    "customerOutcomes": [
+      "A laptop that fits the job and budget",
+      "Professional procurement without hours of research",
+      "Fleet-consistent device choices",
+      "Clear documentation of what was bought and why"
+    ]
+  },
+  "desktop_procurement": {
+    "marketingCopy": "Desktop computers power offices, reception desks, workstations, and server rooms - and choosing the wrong one means performance problems or wasted spend. The Desktop Procurement service recommends and coordinates the purchase of business desktops matched to their actual role. We assess what the desktop needs to run, recommend specific models at the right tier, compare pricing, and coordinate purchasing with the right configuration - including considerations like SSD, memory, and ports for your peripherals. You get a desktop that handles the job, purchased efficiently, and consistent with your environment.",
+    "bestFor": [
+      "Businesses purchasing desktops for staff or specialized roles",
+      "Organizations that want specs matched to the actual workload",
+      "Companies that want fleet-consistent desktop purchases",
+      "Businesses that want professional procurement guidance"
+    ],
+    "whatIsIncluded": [
+      "Role and workload assessment",
+      "Specific desktop model recommendations",
+      "Specification and pricing comparison",
+      "Purchase coordination with the right configuration",
+      "Peripheral compatibility considerations",
+      "Procurement documentation"
+    ],
+    "customerOutcomes": [
+      "Desktops matched to their actual workload",
+      "Professional procurement without research overload",
+      "Fleet-consistent choices",
+      "Clear purchase documentation"
+    ]
+  },
+  "printer_procurement_help": {
+    "marketingCopy": "Choosing an office printer or scanner involves a maze of specifications - print volumes, toner costs, features, and compatibility - and buying the wrong one means either endless consumable costs or a machine that doesn't fit your workflow. The Printer Procurement Help service recommends printer and scanner options based on your actual office needs. We assess your printing volume, document types, color needs, and desired features, then recommend specific models with a focus on total cost of ownership - not just the sticker price. You get a printer that fits your workflow and budget, with the true ongoing costs understood.",
+    "bestFor": [
+      "Businesses buying a printer or scanner and unsure what to choose",
+      "Organizations that want to understand true ongoing toner and supply costs",
+      "Companies that want a device matched to their print volume and workflow",
+      "Businesses tired of overpaying for consumables"
+    ],
+    "whatIsIncluded": [
+      "Office printing and scanning needs assessment",
+      "Print volume and workflow analysis",
+      "Specific model recommendations",
+      "Total cost of ownership comparison including supplies",
+      "Feature and compatibility guidance",
+      "Purchase recommendations documentation"
+    ],
+    "customerOutcomes": [
+      "A printer or scanner that fits your workflow and volume",
+      "Understanding of true supply costs before purchase",
+      "A device recommendation matched to your needs",
+      "Avoidance of overpaying for the wrong machine"
+    ]
+  },
+  "warranty_tracking": {
+    "marketingCopy": "Business computers and devices have warranties that expire - and most businesses discover theirs expired only when a device breaks and the repair is no longer covered. The Warranty Tracking service documents your hardware warranties and replacement dates in one place: what's covered, for how long, and when it expires. We inventory your devices, look up warranty status where possible, and create a tracking document with expiration dates and reminders. Warranty coverage is money already spent - and tracking it ensures you use it before it lapses.",
+    "bestFor": [
+      "Businesses that don't know which devices are under warranty",
+      "Organizations that have paid for repairs that were actually covered",
+      "Companies that want warranty expirations tracked before they lapse",
+      "Businesses planning hardware replacement based on warranty timing"
+    ],
+    "whatIsIncluded": [
+      "Device inventory with warranty identification",
+      "Warranty status lookup where available",
+      "Warranty expiration date tracking",
+      "Replacement date planning guidance",
+      "Warranty tracking documentation",
+      "Expiration reminders"
+    ],
+    "customerOutcomes": [
+      "A single view of every device's warranty status",
+      "Warranty coverage used before it lapses",
+      "No more surprise repair bills for covered devices",
+      "Replacement planning informed by warranty timing"
+    ]
+  },
+  "lifecycle_replacement_plan": {
+    "marketingCopy": "Hardware fails on its own schedule - and without a replacement plan, businesses make emergency purchases, scramble for budget, and run a mix of aging, unreliable devices. The Lifecycle Replacement Plan creates a staged replacement roadmap for your computers and devices. We inventory the fleet, assess age and condition, and build a phased replacement schedule spread over multiple years so purchases are planned and budgeted rather than panicked. You get a practical plan that turns hardware replacement from a crisis into a scheduled, budgeted process.",
+    "bestFor": [
+      "Businesses running a mix of aging and new devices",
+      "Organizations that want planned, budgeted hardware replacement",
+      "Companies tired of emergency computer purchases",
+      "Businesses that want a multi-year hardware roadmap"
+    ],
+    "whatIsIncluded": [
+      "Fleet inventory and condition assessment",
+      "Replacement priority analysis",
+      "Staged multi-year replacement schedule",
+      "Budget projections for hardware",
+      "Standardization guidance",
+      "Replacement plan documentation"
+    ],
+    "customerOutcomes": [
+      "A staged plan for replacing aging hardware",
+      "Budgeted, predictable hardware spending",
+      "No more emergency replacement crises",
+      "A documented roadmap aligned to your business needs"
+    ]
+  },
+  "workstation_refresh_pack": {
+    "marketingCopy": "Refreshing a computer involves more than buying a new one - procurement, setup, data transfer, security baseline, and old device handling all need to happen without disrupting work. The Workstation Refresh Pack packages the entire refresh process into one coordinated service: procurement guidance, professional setup, data transfer from the old machine, security baseline configuration, and secure wipe or coordination of the old device. Instead of coordinating multiple pieces, you get one engagement that handles the full lifecycle. Old computer out, new computer in, data intact, security configured, and nothing lost.",
+    "bestFor": [
+      "Businesses replacing workstations who want the process handled",
+      "Organizations that want data transferred safely to new devices",
+      "Companies that want security configured on new hardware",
+      "Businesses that want old devices handled securely"
+    ],
+    "whatIsIncluded": [
+      "Procurement guidance for the new workstation",
+      "New computer professional setup",
+      "User data transfer from old to new",
+      "Security baseline configuration",
+      "Old device secure wipe and coordination",
+      "Refresh coordination and documentation"
+    ],
+    "customerOutcomes": [
+      "A complete workstation refresh handled as one coordinated project",
+      "Data transferred intact to the new machine",
+      "Security configured on all new hardware",
+      "Old devices securely handled with nothing lost"
+    ]
+  },
+  "data_transfer_service": {
+    "marketingCopy": "Moving to a new computer usually means losing something - an overlooked folder, a browser bookmark, a configuration, or a document that lived only in one place. The Data Transfer Service moves your selected user data from an old computer to a new one completely and safely. We identify what matters - documents, emails, browser data, and application settings - and migrate it to the new machine with verification that everything arrived. You get your new computer with your data intact and nothing left behind on the old one. It's the part of computer replacement that's usually done wrong, done right.",
+    "bestFor": [
+      "Businesses upgrading staff to new computers",
+      "Organizations that want data moved completely, not partially",
+      "Companies concerned about losing files in a migration",
+      "Users who have data scattered across folders, browsers, and apps"
+    ],
+    "whatIsIncluded": [
+      "Data identification across documents, email, browser, and applications",
+      "User data migration to the new computer",
+      "Application setting transfer where applicable",
+      "Post-transfer verification of data completeness",
+      "Source data handling guidance",
+      "Data transfer documentation"
+    ],
+    "customerOutcomes": [
+      "All important data moved to the new computer",
+      "Nothing left behind on the old machine",
+      "Verified data completeness instead of assumed",
+      "A smooth, complete transition to new hardware"
+    ]
+  },
+  "old_device_wipe_coordination": {
+    "marketingCopy": "Old computers hold business data even after they're 'deleted' - files, cached credentials, and recoverable documents survive a simple format. The Old Device Wipe Coordination ensures retired devices are securely wiped, reused, or recycled the right way. We coordinate secure data erasure using standards-compliant methods, verify the wipe, and guide the device's path to reuse, donation, or recycling. It's the security step most businesses skip when retiring hardware - and the one that prevents a used laptop from leaking business data to whoever buys it next.",
+    "bestFor": [
+      "Businesses retiring or reselling old computers",
+      "Organizations donating or recycling devices with data on them",
+      "Companies that want proof that old device data was destroyed",
+      "Businesses preparing for insurance or compliance data-handling reviews"
+    ],
+    "whatIsIncluded": [
+      "Secure data erasure coordination using standards-compliant methods",
+      "Wipe verification and proof",
+      "Device reuse, donation, or recycling guidance",
+      "Data-bearing device risk assessment",
+      "Old device handling documentation",
+      "Secure disposal certification where applicable"
+    ],
+    "customerOutcomes": [
+      "Retired devices securely wiped with verified data destruction",
+      "No business data left behind on reused or recycled hardware",
+      "Clear, documented handling of every retired device",
+      "Compliance-ready evidence of secure disposal"
+    ]
+  },
+  "conference_room_audio_setup": {
+    "marketingCopy": "A conference room with bad audio turns every meeting into a struggle - people who can't be heard, echoes, feedback, and remote participants who miss half the conversation. The Conference Room Audio Setup configures a meeting room's speaker, microphone, and camera so meetings actually work. We set up the audio and video hardware, connect it to your meeting platform, optimize placement and settings for the room's acoustics, and test a full meeting workflow. Your conference room becomes a place where everyone - in the room and remote - can hear and be heard.",
+    "bestFor": [
+      "Businesses with conference rooms where meetings don't work well",
+      "Organizations that struggle with audio quality and feedback",
+      "Companies with remote participants who can't hear meetings",
+      "Businesses that want meeting rooms that just work"
+    ],
+    "whatIsIncluded": [
+      "Conference room hardware setup (speaker, microphone, camera)",
+      "Meeting platform integration",
+      "Audio optimization for room acoustics",
+      "Camera framing and configuration",
+      "Full meeting workflow testing",
+      "User guidance for running meetings"
+    ],
+    "customerOutcomes": [
+      "Conference room meetings with clear audio and video",
+      "Remote participants who can hear and be heard",
+      "Meeting hardware that works reliably",
+      "A room set up for productive meetings"
+    ]
+  },
+  "microsoft_365_basics_training": {
+    "marketingCopy": "Most Microsoft 365 users use only a fraction of what the platform offers - and the features they skip are often the ones that save the most time. The Microsoft 365 Basics Training teaches your staff the fundamentals of Outlook, Teams, OneDrive, and SharePoint in a practical, hands-on way. We customize the training to your workflows, use real examples from your business, and cover the daily tasks that matter: email management, meetings and chat, file storage and sharing, and collaboration basics. Your team leaves able to use Microsoft 365 more effectively - with fewer questions, fewer workarounds, and better collaboration.",
+    "bestFor": [
+      "Businesses whose staff barely use Microsoft 365 features",
+      "Organizations that want staff trained on real workflows, not theory",
+      "Companies that want to reduce 'how do I do this' questions",
+      "Teams that would collaborate better with proper training"
+    ],
+    "whatIsIncluded": [
+      "Customized Microsoft 365 basics training",
+      "Outlook email management and calendar training",
+      "Teams chat, meetings, and collaboration training",
+      "OneDrive and SharePoint file basics",
+      "Real-world examples from your business",
+      "Reference materials for everyday use"
+    ],
+    "customerOutcomes": [
+      "Staff who use Microsoft 365 more effectively",
+      "Fewer basic questions and workarounds",
+      "Better file sharing and collaboration",
+      "A more productive return on your Microsoft 365 investment"
+    ]
+  },
+  "teams_and_sharepoint_training": {
+    "marketingCopy": "Teams and SharePoint are powerful collaboration tools - but without proper training, they become chaos: files in the wrong places, confusing channel structures, and sharing that nobody controls. The Teams and SharePoint Training focuses specifically on files, channels, sharing, and permissions so your team collaborates the right way. We train your staff on organizing channels and teams, storing and finding files, controlling sharing and permissions, and collaborating on documents. Your team learns to use the tools the way they're designed to be used - reducing clutter, confusion, and accidental over-sharing.",
+    "bestFor": [
+      "Businesses whose Teams and SharePoint usage is disorganized",
+      "Organizations that want staff trained on proper file and channel structure",
+      "Companies concerned about uncontrolled file sharing",
+      "Teams that struggle to find files or collaborate effectively"
+    ],
+    "whatIsIncluded": [
+      "Teams and SharePoint collaboration training",
+      "Channel and team organization best practices",
+      "File storage and finding training",
+      "Sharing and permission management training",
+      "Document collaboration techniques",
+      "Reference materials and best-practice guides"
+    ],
+    "customerOutcomes": [
+      "A more organized, usable Teams and SharePoint environment",
+      "Files stored and found in the right places",
+      "Controlled sharing instead of accidental over-sharing",
+      "A team that collaborates effectively"
+    ]
+  }
+}
