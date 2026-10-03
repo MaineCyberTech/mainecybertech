@@ -84,9 +84,10 @@ dialog and re-submits the form with the button as submitter on confirm.
 
 ## Accessibility scanning
 
-- **Default gate:** `apps/web/e2e/a11y.spec.ts` scans 19 core routes and fails
-  on `critical`/`serious` axe violations (WCAG 2.0/2.1 A+AA tags).
+- **Default gate:** `apps/web/e2e/a11y.spec.ts` scans 25 core routes and fails
+  on `critical`/`serious` axe violations (WCAG 2.0/2.1/2.2 A+AA tags,
+  `wcag22aa` included).
 - **Breadth triage:** run with `A11Y_FULL=1` (or the weekly/manual, non-blocking
-  `a11y-breadth.yml`) to scan 68 routes with `wcag22aa` tags added. Fix findings
-  there, then promote the route into `BASE_PAGES` once clean — do not widen the
-  prod gate with known failures.
+  `a11y-breadth.yml`) to scan the remaining 43 routes (68 total) with the same
+  tag set. Fix findings there, then promote the route into `BASE_PAGES` once
+  clean — do not widen the prod gate with known failures.

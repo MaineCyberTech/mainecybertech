@@ -63,10 +63,10 @@ data-dependent gates — a slow render skips a branch instead of failing) and
 15s, navigations 30s; failures upload `.playwright-report/` and
 `.playwright-results/`.
 
-Accessibility: `apps/web/e2e/a11y.spec.ts` scans 19 core routes against
-`critical`/`serious` axe rules (WCAG 2.0/2.1 A+AA). `A11Y_FULL=1` expands to
-68 routes plus `wcag22aa` — the weekly, non-blocking `a11y-breadth.yml`
-triage run.
+Accessibility: `apps/web/e2e/a11y.spec.ts` scans 25 core routes against
+`critical`/`serious` axe rules (WCAG 2.0/2.1/2.2 A+AA, `wcag22aa` included).
+`A11Y_FULL=1` expands to 68 routes — the weekly, non-blocking
+`a11y-breadth.yml` triage run.
 
 ## Test patterns
 
