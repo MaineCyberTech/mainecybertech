@@ -126,6 +126,8 @@ re-deploys the previously running tag before exiting non-zero.
 
 ## Before promoting to prod
 
+The consolidated release-readiness gate (exit criteria, fail-closed decisions
+and the go-live operator checklist) is [`RELEASE_GATE.md`](RELEASE_GATE.md).
 Known environment caveats (from `AGENTS.md` Known Debt) that must be resolved
 first:
 
