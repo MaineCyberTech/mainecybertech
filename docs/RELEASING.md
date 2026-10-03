@@ -67,6 +67,11 @@ pass before the deploy step:
   a release section, insert a dated `## YYYY-MM-DD` heading below
   `[Unreleased]`, move the shipped entries under it, and leave an empty
   `[Unreleased]` at the top.
+- Cut release notes from
+  [`templates/RELEASE_NOTES_TEMPLATE.md`](../templates/RELEASE_NOTES_TEMPLATE.md)
+  — fill every section, including Breaking Changes, Migrations (with the
+  release's migration filenames) and Operator Actions, and use the result as
+  the GitHub Release body.
 
 ## Production deploy
 
