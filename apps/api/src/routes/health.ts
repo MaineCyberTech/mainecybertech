@@ -1,4 +1,5 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
+import crypto from "crypto";
 import { success } from "../types";
 import { getSupabaseAdminNoBreaker } from "../services/supabase";
 import { getEnv, type Env } from "../config/env";
@@ -7,6 +8,22 @@ import { checkRedisHealth } from "../lib/health";
 const router: ReturnType<typeof Router> = Router();
 
 type Check = { status: string; latencyMs?: number; error?: string };
+
+// Shared gate for internal-only endpoints (`/metrics`, `/health/detail`).
+// Fail closed: when no token is configured the endpoint is treated as
+// unavailable, so an unconfigured deployment never exposes internals.
+// Comparison is constant-time to avoid leaking the token via timing.
+export function authorizeInternalRequest(req: Request, token: string | undefined): boolean {
+  if (!token) return false;
+  const header = req.headers.authorization;
+  const provided =
+    (header?.startsWith("Bearer ") ? header.slice(7) : undefined) ??
+    (typeof req.query.token === "string" ? req.query.token : undefined);
+  if (!provided) return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(token);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
 
 // /health is unauthenticated and, when configured, calls Stripe and JSM on
 // every hit — an amplification/DoS vector and a config-disclosure oracle.
@@ -71,7 +88,10 @@ async function getExternalChecks(
   return { stripe, jsm, healthy };
 }
 
-router.get("/", async (_req, res) => {
+async function runHealthChecks(): Promise<{
+  status: "healthy" | "degraded";
+  checks: Record<string, Check>;
+}> {
   const checks: Record<string, Check> = {};
   let healthy = true;
 
@@ -102,11 +122,38 @@ router.get("/", async (_req, res) => {
   const redis = await checkRedisHealth(env);
   checks.redis = { status: redis.status, latencyMs: redis.latencyMs, error: redis.error };
 
-  const status = healthy ? 200 : 503;
-  res.status(status).json(
+  return { status: healthy ? "healthy" : "degraded", checks };
+}
+
+// Public liveness/readiness probe: only the overall status is exposed. Provider
+// names, configuration presence (`not_configured`) and raw dependency error
+// strings are NOT disclosed to unauthenticated callers (SEC-P2-003).
+router.get("/", async (_req, res) => {
+  const { status } = await runHealthChecks();
+  const code = status === "healthy" ? 200 : 503;
+  res.status(code).json(
     success({
       service: "api",
-      status: healthy ? "healthy" : "degraded",
+      status,
+      uptime: process.uptime(),
+    }),
+  );
+});
+
+// Detailed dependency checks for internal monitoring. Gated by METRICS_TOKEN:
+// without a configured/presented token the route 404s so it is not advertised
+// or usable (SEC-P2-003).
+router.get("/detail", async (req, res) => {
+  if (!authorizeInternalRequest(req, getEnv().METRICS_TOKEN)) {
+    res.status(404).end();
+    return;
+  }
+  const { status, checks } = await runHealthChecks();
+  const code = status === "healthy" ? 200 : 503;
+  res.status(code).json(
+    success({
+      service: "api",
+      status,
       checks,
       uptime: process.uptime(),
     }),
