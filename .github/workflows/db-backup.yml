@@ -9,6 +9,9 @@ permissions:
 
 jobs:
   backup:
+    # Backups target the dev database/buckets; the dev environment holds
+    # the SUPABASE_*/Spaces secrets these jobs resolve.
+    environment: dev
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -16,9 +19,14 @@ jobs:
         id: backup
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          # Prefer dedicated AWS_* secrets; fall back to the Spaces keys the
+          # dev environment already carries (Spaces is S3-compatible).
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
+          # Spaces endpoint by default; override with the S3_ENDPOINT variable
+          # for real AWS S3 or another Spaces region.
+          AWS_ENDPOINT_URL: ${{ vars.S3_ENDPOINT || 'https://nyc3.digitaloceanspaces.com' }}
           # Destination contract (audit DR-P1-002 / IR-P1-005): S3_BUCKET is a
           # bucket NAME (no s3:// scheme) and S3_PREFIX is a key prefix. The
           # restore test reads the SAME two values. Fall back to the legacy

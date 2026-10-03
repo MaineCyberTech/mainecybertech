@@ -164,6 +164,16 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   pre-push check it flagged the pending migrations' own DDL (e.g. a drop
   migration) as drift, and its colour-sensitive grep intermittently missed real
   drops. Post-push a non-empty diff now means genuine divergence.
+- Backups can resolve their configuration now: `db-backup`,
+  `db-restore-test` and `storage-backup` attach the `dev` environment (which
+  holds `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`), their `AWS_*` credentials
+  fall back to its `DO_SPACES_*` keys, and the scripts receive the Spaces
+  endpoint via `AWS_ENDPOINT_URL` (default
+  `https://nyc3.digitaloceanspaces.com`, override with the `S3_ENDPOINT`
+  variable) — previously they targeted real AWS S3 with credentials that were
+  never in scope. Still required from the operator: `SUPABASE_DB_URL`,
+  `BACKUP_ENCRYPTION_KEY`, the `mainecybertech-backups` bucket (or an
+  `S3_BUCKET` variable), and optionally `SLACK_WEBHOOK_URL`.
 - Container limits + infra drift: every compose service now sets `pids_limit`
   (CTR-P2-005) so one container cannot exhaust the host PID table and take down
   the single-droplet stack; the dev droplet size is consistently

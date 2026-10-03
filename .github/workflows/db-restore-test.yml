@@ -9,6 +9,9 @@ permissions:
 
 jobs:
   restore-test:
+    # Backups target the dev database/buckets; the dev environment holds
+    # the SUPABASE_*/Spaces secrets these jobs resolve.
+    environment: dev
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -34,9 +37,14 @@ jobs:
           # S3_BACKUP_BUCKET is accepted and normalised below.
           S3_BUCKET: ${{ vars.S3_BUCKET || secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
           S3_PREFIX: ${{ vars.S3_PREFIX || 'database-backups' }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          # Prefer dedicated AWS_* secrets; fall back to the Spaces keys the
+          # dev environment already carries (Spaces is S3-compatible).
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
+          # Spaces endpoint by default; override with the S3_ENDPOINT variable
+          # for real AWS S3 or another Spaces region.
+          AWS_ENDPOINT_URL: ${{ vars.S3_ENDPOINT || 'https://nyc3.digitaloceanspaces.com' }}
         run: |
           set -euo pipefail
           # Accept both "bucket" and "s3://bucket[/prefix]" shapes, then always
@@ -61,9 +69,14 @@ jobs:
 
       - name: Download backup
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          # Prefer dedicated AWS_* secrets; fall back to the Spaces keys the
+          # dev environment already carries (Spaces is S3-compatible).
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
+          # Spaces endpoint by default; override with the S3_ENDPOINT variable
+          # for real AWS S3 or another Spaces region.
+          AWS_ENDPOINT_URL: ${{ vars.S3_ENDPOINT || 'https://nyc3.digitaloceanspaces.com' }}
         run: |
           set -euo pipefail
           aws s3 cp "${{ steps.find-backup.outputs.backup_uri }}" /tmp/restore.download

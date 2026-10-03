@@ -4,11 +4,13 @@ name: Storage Backup
 # to an S3/Spaces destination (audit finding DR-P1-001). Mirrors db-backup.yml:
 # scheduled daily, dispatched manually, Slack on failure.
 #
-# Required secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-#   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BACKUP_ENCRYPTION_KEY,
-#   SLACK_WEBHOOK_URL.
+# Runs against the `dev` environment (which carries SUPABASE_URL /
+#   SUPABASE_SERVICE_ROLE_KEY). Required secrets: BACKUP_ENCRYPTION_KEY,
+#   SLACK_WEBHOOK_URL (optional); AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY fall
+#   back to the environment's DO_SPACES_ACCESS_KEY_ID/DO_SPACES_SECRET_ACCESS_KEY.
 # Required variables: S3_BUCKET (bucket NAME; falls back to the
-#   S3_BACKUP_BUCKET secret). Optional: S3_PREFIX, S3_OFFSITE_BUCKET.
+#   S3_BACKUP_BUCKET secret). Optional: S3_PREFIX, S3_OFFSITE_BUCKET,
+#   S3_ENDPOINT (default https://nyc3.digitaloceanspaces.com).
 #
 # NOTE: this workflow does not run from `main` unless the file is present there
 # (same default-branch caveat as db-backup.yml — see backup-dispatch.yml).
@@ -23,6 +25,9 @@ permissions:
 
 jobs:
   storage-backup:
+    # Backups target the dev database/buckets; the dev environment holds
+    # the SUPABASE_*/Spaces secrets these jobs resolve.
+    environment: dev
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -32,9 +37,14 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          # Prefer dedicated AWS_* secrets; fall back to the Spaces keys the
+          # dev environment already carries (Spaces is S3-compatible).
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
+          # Spaces endpoint by default; override with the S3_ENDPOINT variable
+          # for real AWS S3 or another Spaces region.
+          AWS_ENDPOINT_URL: ${{ vars.S3_ENDPOINT || 'https://nyc3.digitaloceanspaces.com' }}
           # Destination contract mirrors scripts/backup-database.sh (DR-P1-002).
           S3_BUCKET: ${{ vars.S3_BUCKET || secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
           S3_PREFIX: ${{ vars.S3_PREFIX || 'storage-backups' }}
