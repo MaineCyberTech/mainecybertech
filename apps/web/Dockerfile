@@ -45,6 +45,17 @@ ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Runtime hardening (CTR-P1-001): drop npm/corepack — the server runs `node`
+# directly. npm's bundled tree (tar 6.2.1 CRITICAL, minimatch, brace-expansion,
+# pacote, sigstore) was the entire node-package source of the image-scan
+# findings; libcrypto3/libssl3 carry an Alpine fix.
+RUN apk upgrade --no-cache libcrypto3 libssl3 \
+ && rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+           /usr/local/bin/pnpm /usr/local/bin/yarn /usr/local/bin/yarnpkg \
+           /root/.cache/node/corepack
+
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public

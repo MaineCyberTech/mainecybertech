@@ -127,6 +127,12 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   wider policy.
 - The Next.js RCE advisory and the Storybook-chain advisories were cleared
   (`dd4cb2ec`, `0931853a`); `pnpm audit --prod` remains a hard deploy gate.
+- Runtime images no longer ship npm/corepack — their bundled dependency tree
+  (`tar` 6.x CRITICAL, minimatch, brace-expansion, pacote, sigstore) was the
+  entire node-package source of the image-scan findings — and apply the Alpine
+  `libcrypto3`/`libssl3` security update (CTR-P1-001). `validate.yml`'s license
+  gate now uses `collect-licenses.mjs` like `test.yml`; the `pnpm licenses list`
+  form it still used fails on pnpm 10.34.x and blocked every deploy.
 
 ### Fixed
 
@@ -154,6 +160,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - Infra: prod env vars are forwarded to the API container, the Prometheus
   alert expression is corrected, and Docker builds retry corepack
   (`38660802`).
+- The migration drift check runs **after** `db push` and strips ANSI: as a
+  pre-push check it flagged the pending migrations' own DDL (e.g. a drop
+  migration) as drift, and its colour-sensitive grep intermittently missed real
+  drops. Post-push a non-empty diff now means genuine divergence.
 
 ### Changed
 
