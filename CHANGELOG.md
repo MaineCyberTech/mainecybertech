@@ -9,6 +9,21 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- **RLS:** `client_portal_entitlements` writes are now limited to platform
+  admins — migration `5302420` gated them to org admins and `5302428` dropped
+  `client_admin` and added a `with check` so a row cannot move across
+  organizations. Direct PostgREST writes as `client_admin` now fail; the API
+  path (service role, `requireAdmin`) is unchanged.
+- **RLS:** migration `5302420` also restores the approved-membership predicate
+  for portal entitlements — pending/suspended members lose access until
+  approved.
+- **Upgrade:** apply migrations `5302420`–`5302428` in order. There are no
+  down-migrations; rollback is restore-from-backup
+  (`docs/ROLLBACK_PROCEDURES.md`). List the release's migration filenames in the
+  release notes using [`templates/RELEASE_NOTES_TEMPLATE.md`](./templates/RELEASE_NOTES_TEMPLATE.md).
+
 ### Added
 
 - First-class MFA login second factor: `POST /auth/sign-in` reports
@@ -82,6 +97,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   (migration `5302421`), so store quotes enter the approvals/publish workflow.
   The convert step carries `proposalId` onto the project metadata, and
   `/admin/store/quote-requests` links through to `/admin/proposals/[id]`.
+- Accessibility: the default axe gate now scans **25 routes** (up from 19) and
+  gates `wcag22aa` (`target-size`, `select-name`) in addition to
+  `critical`/`serious`; the seven pages fixed on 2026-10-02 were promoted from
+  the breadth triage set (`43573d12`, `62861370`).
 
 ### Security
 
@@ -106,6 +125,8 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   `with check` so a row cannot be moved across organizations (migration
   `5302428`). The API writes with the service role, so nothing depended on the
   wider policy.
+- The Next.js RCE advisory and the Storybook-chain advisories were cleared
+  (`dd4cb2ec`, `0931853a`); `pnpm audit --prod` remains a hard deploy gate.
 
 ### Fixed
 
@@ -119,6 +140,20 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - Committed branch-protection configuration
   (`.github/branch-protection/*.json`).
 - Explicit `permissions:` blocks on every GitHub Actions workflow.
+- Web hardening from the 2026-10-02 a11y/UI pass: portal detail pages show an
+  access-restricted state instead of a failure, document modals close on
+  Escape, confirm-dialog bodies are labelled, uploads surface a busy state,
+  promotions surface load failures, `/portal/feedback` is permission-gated,
+  ticket deletion has a pending state, and the version badge is hidden on
+  mobile (`bf6805ab`, `73d8aea4`, `5264a09d`, `7f7f8ade`).
+- WCAG 2.2 contrast, target-size and select-name violations fixed across
+  admin/portal pages (`f0d79194`, `28b05215`).
+- API/worker: offboarding writes are scoped to the caller's org, AI triage is
+  permission-guarded, and notification emails escape user content and stop
+  logging PII (`c9f855af`).
+- Infra: prod env vars are forwarded to the API container, the Prometheus
+  alert expression is corrected, and Docker builds retry corepack
+  (`38660802`).
 
 ### Changed
 
@@ -167,6 +202,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - Sentry tracing/release are tunable via `SENTRY_TRACES_SAMPLE_RATE` and
   `SENTRY_RELEASE` (web client: `NEXT_PUBLIC_SENTRY_*`), defaulting to the
   previous 0.2 production / 0 development behaviour.
+- Docs: test counts refreshed (3,490 tests / 397 suites), ONBOARDING /
+  MONITORING and the operator map corrected, and the endpoint inventory marked
+  historical (`cb46876b`, `13e95482`).
 
 ## 2026-09-21
 

@@ -14,5 +14,7 @@
 - [ ] Prompt provenance unaffected (`node scripts/verify-prompts.js verify`)
 - [ ] `review.md` mirror stays in sync (`node scripts/sync-review-md.mjs --check`)
 - [ ] Supabase migrations are idempotent and follow the naming guide (if any)
+- [ ] `CHANGELOG.md` `[Unreleased]` updated (or N/A for docs-only)
 - [ ] No secrets, credentials, or real environment values committed
 - [ ] Docs/`AGENTS.md` updated if counts, workflows, or architecture changed
+- [ ] Required checks green (see `branch-protection/README.md`)
