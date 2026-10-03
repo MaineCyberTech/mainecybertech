@@ -65,6 +65,13 @@ Use environment-scoped values wherever possible.
 | `JSM_API_TOKEN`              | —   | yes  | JSM API token                                        |
 | `JSM_SERVICEDESK_ID`         | —   | yes  | JSM service desk ID                                  |
 | `JSM_REQUEST_TYPE_ID`        | —   | yes  | JSM request type ID                                  |
+| `JIRA_WEBHOOK_SECRET`        | —   | yes  | Inbound Jira webhook signature verification (API)    |
+| `JSM_WEBHOOK_SECRET`         | —   | yes  | Inbound JSM webhook signature verification (API)     |
+| `M365_CLIENT_STATE`          | —   | yes  | Inbound M365 webhook validation state (API)          |
+| `METRICS_TOKEN`              | —   | yes  | Optional bearer gate for `GET /metrics`              |
+
+`M365_WEBHOOK_SECRET` is retired — inbound M365 webhooks validate with
+`M365_CLIENT_STATE` (the single authoritative M365 secret).
 
 ## Secrets required by the database backup / restore workflows
 
