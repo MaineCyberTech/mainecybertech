@@ -164,6 +164,13 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   pre-push check it flagged the pending migrations' own DDL (e.g. a drop
   migration) as drift, and its colour-sensitive grep intermittently missed real
   drops. Post-push a non-empty diff now means genuine divergence.
+- Deploy resilience (from the first post-merge deploy on 2026-10-03): the redis
+  container now runs as `user: redis` — the custom entrypoint (password off
+  argv) replaced the official privilege-dropping one, and as root with
+  `cap_drop: ALL` it could not read the redis-owned 0600 `dump.rdb`; the worker
+  healthcheck probes `127.0.0.1` (the health server binds IPv4, `localhost`
+  resolved to `::1`); and a failed `docker compose up` now restores the
+  previous stack before exiting instead of leaving the site down.
 
 ### Changed
 

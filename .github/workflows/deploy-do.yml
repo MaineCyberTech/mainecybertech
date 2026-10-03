@@ -703,7 +703,20 @@ jobs:
             PREV_TAG=$(docker inspect --format '{{.Config.Image}}' mct-portal-api-1 2>/dev/null | sed 's/.*://')
             docker compose -p mct-portal down --remove-orphans || true
             docker rm -f mct-portal-caddy-1 2>/dev/null || true
-            IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans
+            # A failed `compose up` must not leave the site down: the previous
+            # stack was already stopped by the `down` above. Restore it before
+            # exiting (the health-gate rollback below only covers the case
+            # where `up` succeeded but containers never became healthy).
+            if ! IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans; then
+              echo "ERROR: docker compose up failed; restoring the previous stack" >&2
+              docker compose -p mct-portal logs --tail=40 redis 2>/dev/null || true
+              if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "${{ env.IMAGE_TAG }}" ]; then
+                echo "Rolling back to previously running tag $PREV_TAG" >&2
+                docker compose -p mct-portal down --remove-orphans || true
+                IMAGE_TAG="$PREV_TAG" GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans || true
+              fi
+              exit 1
+            fi
             sleep 15
             echo "=== Docker compose ps ==="
             docker compose -p mct-portal ps --format 'table {{.Name}}\t{{.Status}}\t{{.Ports}}'
@@ -779,7 +792,7 @@ jobs:
           worker_ok=""
           for i in $(seq 1 12); do
             wcode=$($SSH \
-              "docker exec mct-portal-worker-1 wget -qO- http://localhost:3001/health >/dev/null 2>&1 && echo 200 || echo 000" 2>/dev/null | tr -d '\r\n' || echo "000")
+              "docker exec mct-portal-worker-1 wget -qO- http://127.0.0.1:3001/health >/dev/null 2>&1 && echo 200 || echo 000" 2>/dev/null | tr -d '\r\n' || echo "000")
             if [ "$wcode" = "200" ]; then
               echo "Worker healthy after $((i*5))s (HTTP 200)"; worker_ok=1; break
             fi

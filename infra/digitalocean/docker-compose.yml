@@ -28,10 +28,13 @@ services:
     image: redis:7-alpine@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
     logging: *default-logging
     <<: *security
-    cap_add:
-      - SETUID
-      - SETGID
     read_only: false
+    # The official redis entrypoint drops privileges to `redis`; ours replaces
+    # it (CTR-P2-003, password off argv), so run as `redis` directly. As root
+    # with `cap_drop: ALL` the container lacks CAP_DAC_OVERRIDE and cannot read
+    # the redis-owned (0600) /data/dump.rdb (deploy 2026-10-03). The SETUID/
+    # SETGID caps the official entrypoint needed are therefore not added.
+    user: redis
     # REDIS_PASSWORD is REQUIRED (no fallback) — set it in .env or the environment.
     # The password is written to a 0600 file by the entrypoint and passed via the
     # ENVIRONMENT only: `--requirepass ${REDIS_PASSWORD}` on the command line (the
@@ -151,7 +154,10 @@ services:
     # health gate cannot confirm the worker — enabling it lets a worker that
     # never becomes healthy fail the gate and trigger the auto-revert.
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      # 127.0.0.1, not `localhost`: the health server binds 0.0.0.0 (IPv4) and
+      # BusyBox wget resolves `localhost` to ::1 first, so the probe failed and
+      # the container was marked unhealthy (deploy 2026-10-03).
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
