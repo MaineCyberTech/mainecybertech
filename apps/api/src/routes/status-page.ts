@@ -23,13 +23,14 @@ const router: ReturnType<typeof Router> = Router();
 //
 // Enumeration: a caller who knows/guesses an organization UUID can read that
 // org's published status. The UUIDs are opaque (not sequential) and the exposed
-// fields are non-sensitive operational status, so this matches the documented
-// feature. There is currently NO explicit `enabled`/`is_public` flag on
-// `organizations` or on the status_* tables; the public view is always on for
-// every org. Gating it on an opt-in flag would require a schema migration (sql
-// under supabase/ is owned elsewhere) and a product decision, so it is reported
-// as an open follow-up rather than changed here. This route is therefore left
-// public; only the field surface is tightened.
+// fields are non-sensitive operational status, but the page was always on for
+// every org, which made every tenant anonymously enumerable.
+//
+// It is now OPT-IN: gate on `organizations.settings.status_page_enabled`. The
+// `settings` jsonb column already exists on `organizations` (bootstrap migration
+// 5302026), so no schema change is required. An org without the flag is
+// indistinguishable from an unknown org (both 404), so the endpoint cannot be
+// used to confirm which orgs exist.
 const PUBLIC_COMPONENT_COLUMNS =
   "id, name, description, component_type, status, display_order, created_at, updated_at";
 const PUBLIC_INCIDENT_COLUMNS =
@@ -37,25 +38,55 @@ const PUBLIC_INCIDENT_COLUMNS =
 const PUBLIC_MAINTENANCE_COLUMNS =
   "id, title, description, scheduled_start, scheduled_end, status, affected_component_ids, created_at, updated_at";
 
+/**
+ * True when the org has explicitly published its status page.
+ *
+ * Fails CLOSED: a missing row, missing `settings`, a non-boolean value, or a DB
+ * error all mean "not published". Silence is the safe default here - the cost of
+ * a wrongly-private status page is a support ticket; the cost of a wrongly-
+ * public one is anonymous tenant enumeration.
+ */
+async function isStatusPageEnabled(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  orgId: string,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("organizations")
+    .select("settings")
+    .eq("id", orgId)
+    .maybeSingle();
+  if (error || !data) return false;
+  const settings = (data as { settings?: Record<string, unknown> | null }).settings;
+  return settings?.status_page_enabled === true;
+}
+
 router.get("/public/:orgId", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const orgId = String(req.params.orgId);
+
+    if (!(await isStatusPageEnabled(supabase, orgId))) {
+      // Same response for "not published" and "no such org" - do not let this
+      // endpoint confirm whether an organization exists.
+      throw new AppError("NOT_FOUND", "Status page not found", 404);
+    }
+
     const [compRes, incRes, maintRes] = await Promise.all([
       supabase
         .from("status_components")
         .select(PUBLIC_COMPONENT_COLUMNS)
-        .eq("organization_id", String(req.params.orgId))
+        .eq("organization_id", orgId)
         .order("display_order"),
       supabase
         .from("status_incidents")
         .select(PUBLIC_INCIDENT_COLUMNS)
-        .eq("organization_id", String(req.params.orgId))
+        .eq("organization_id", orgId)
         .neq("status", "resolved")
         .order("started_at", { ascending: false }),
       supabase
         .from("maintenance_notices")
         .select(PUBLIC_MAINTENANCE_COLUMNS)
-        .eq("organization_id", String(req.params.orgId))
+        .eq("organization_id", orgId)
         .gte("scheduled_start", new Date().toISOString())
         .order("scheduled_start"),
     ]);

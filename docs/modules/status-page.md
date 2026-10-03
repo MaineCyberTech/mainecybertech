@@ -19,7 +19,7 @@ Public and private service status page system for MSP clients. Organizations man
 - Root cause analysis and post-mortem notes on incident resolution
 - Scheduled maintenance notices with start/end times and affected components
 - Automatic status rollback when maintenance window ends
-- Public endpoint (`GET /public/:orgId`) — no authentication required
+- Public endpoint (`GET /public/:orgId`) — no authentication required, and only served for orgs that have opted in via `organizations.settings.status_page_enabled = true` (otherwise 404, indistinguishable from an unknown org)
 - Admin CRUD endpoints behind authentication and org access controls
 - Audit logging on all admin mutation endpoints
 - RLS enforcement on components, incidents, and maintenance notices
@@ -40,7 +40,7 @@ Public and private service status page system for MSP clients. Organizations man
 | POST   | /api/v1/status-page/maintenance     | Schedule maintenance with affected component IDs                                          |
 | PATCH  | /api/v1/status-page/maintenance/:id | Update maintenance details, time window, or status                                        |
 | DELETE | /api/v1/status-page/maintenance/:id | Cancel scheduled maintenance                                                              |
-| GET    | /api/v1/status-page/public/:orgId   | Public status page (no auth) — returns components, active incidents, upcoming maintenance |
+| GET    | /api/v1/status-page/public/:orgId   | Public status page (no auth, opt-in orgs only) — returns components, active incidents, upcoming maintenance |
 
 ## Data Model
 
@@ -48,6 +48,6 @@ Tables: `status_components` (organization_id, name, description, status, group_n
 
 ## Access Control
 
-- Public endpoint: no auth on `GET /public/:orgId`
+- Public endpoint: no auth on `GET /public/:orgId`, but the org must have `status_page_enabled: true` in its settings; disabled, unknown, or errored orgs all 404 (fails closed)
 - Admin: full CRUD on components, incidents, maintenance (requireAuth + requireOrgAccess)
 - Client: view status page via public endpoint; no portal write access

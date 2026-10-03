@@ -19,7 +19,7 @@ Category: operations
 | Delete components        | admin, super_admin            |
 | Manage incidents         | All authenticated org members |
 | Manage maintenance       | All authenticated org members |
-| View public status       | Anyone (unauth, by org id)    |
+| View public status       | Anyone (unauth, by org id, only if the org has opted in) |
 
 ## Routes
 
@@ -40,7 +40,7 @@ Category: operations
 
 | Method | Endpoint                              | Description                                                        |
 | ------ | ------------------------------------- | ------------------------------------------------------------------ |
-| GET    | `/api/v1/status-page/public/:orgId`   | Public status (components, active incidents, upcoming maintenance) |
+| GET    | `/api/v1/status-page/public/:orgId`   | Public status (components, active incidents, upcoming maintenance); requires the org to have opted in, otherwise 404 |
 | GET    | `/api/v1/status-page/components`      | List components (paginated)                                        |
 | GET    | `/api/v1/status-page/components/:id`  | Get a component                                                    |
 | POST   | `/api/v1/status-page/components`      | Create component                                                   |
@@ -108,6 +108,22 @@ Category: operations
 
 ## Workflows
 
+### Publishing the Status Page
+
+The public endpoint is **opt-in per organization**. It is only served when
+
+```json
+{ "status_page_enabled": true }
+```
+
+is present in `organizations.settings` (a jsonb column that already exists on the
+`organizations` table — no separate migration or flag column is required). Any
+other value, a missing flag, or a database error fails **closed** (404).
+
+`GET /admin/status-pages` (or the API) is where an operator flips the flag for
+their own org; until they do, the public page returns 404 and the org is not
+anonymously discoverable.
+
 ### Component Management
 
 1. Define components (services, APIs, websites) with status and display order
@@ -128,7 +144,7 @@ Category: operations
 
 | Issue                           | Resolution                                                 |
 | ------------------------------- | ---------------------------------------------------------- |
-| Public endpoint returns empty   | Verify org id; check no active incidents/maintenance exist |
+| Public endpoint returns empty   | Verify the org has `status_page_enabled: true` in its settings; then check no active incidents/maintenance exist |
 | Component status not updating   | Use PATCH with `status` and correct `organization_id`      |
 | Resolved incident still visible | Public feed filters out `resolved` incidents               |
 | Delete denied (403)             | Membership role must be `admin` or `super_admin`           |

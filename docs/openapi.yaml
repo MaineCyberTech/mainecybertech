@@ -14139,6 +14139,13 @@ paths:
       tags:
         - "StatusPage"
       summary: "Get public status page"
+      description: >
+        Public, unauthenticated status page for the organization. Only served
+        when the organization has opted in with
+        `organizations.settings.status_page_enabled = true`; otherwise the
+        response is 404 (indistinguishable from an unknown org, so the endpoint
+        cannot be used to enumerate tenants). Fails closed on a settings read
+        error or a missing/non-boolean flag.
       responses:
         200:
           description: "Success"
@@ -14148,6 +14155,8 @@ paths:
           description: "Unauthorized"
         403:
           description: "Forbidden"
+        404:
+          description: "Status page not published for this org, or no such org"
         500:
           description: "Internal server error"
       security: []
