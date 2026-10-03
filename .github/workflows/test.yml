@@ -10,14 +10,12 @@ on:
       - "pnpm-lock.yaml"
       - "package.json"
       - ".github/workflows/test.yml"
+  # Deliberately no `paths:` on pull_request (BP-P2-004): `test (20.x)` is a
+  # required check, and a path-filtered workflow never reports on docs-only
+  # PRs — leaving them blocked or unguarded. Push runs stay filtered to save
+  # CI minutes.
   pull_request:
     branches: [main, develop]
-    paths:
-      - "apps/**"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - "package.json"
-      - ".github/workflows/test.yml"
 
 permissions:
   contents: read
