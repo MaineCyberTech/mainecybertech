@@ -263,13 +263,21 @@ export default async function AdminDocumentsPage() {
         return { ok: false, error: "Document title is required." };
       }
 
-      // The API rejects a storagePath that does not begin `orgs/<thisOrgId>/`
-      // (FILE-P2-002); surface that here rather than as a raw 400.
-      if (storagePathInput && !storagePathInput.startsWith(`orgs/${organizationId}/`)) {
-        return {
-          ok: false,
-          error: `Storage path must start with orgs/${organizationId}/.`,
-        };
+      // The API rejects a storagePath that does not begin `orgs/<thisDocOrgId>/`
+      // (FILE-P2-002); fetch the record so the message names the document's own
+      // org rather than surfacing a raw 400. Same pattern as replaceFileAction.
+      if (storagePathInput) {
+        const current = (await api.documents.get(documentId)) as unknown as DocumentRecord;
+        const expectedPrefix = `orgs/${current.organization_id}/`;
+        if (
+          !storagePathInput.startsWith(expectedPrefix) ||
+          storagePathInput.length <= expectedPrefix.length
+        ) {
+          return {
+            ok: false,
+            error: `Storage path must start with ${expectedPrefix}.`,
+          };
+        }
       }
 
       const data = await api.documents.update(documentId, {
