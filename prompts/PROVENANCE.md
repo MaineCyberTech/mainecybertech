@@ -49,14 +49,20 @@ node scripts/verify-prompts.js tree       # print per-pack SHA-256 tree hashes
 
 ## Pack inventory
 
-| Pack | Files | Tree hash (generated) | Purpose |
-| ---- | ----- | --------------------- | ------- |
-| `hardening_prompt_pack` | 70 | 5e7fe33c… | Security/hardening audit + remediation prompts |
-| `mct-full-webstore-product-catalog-pack` | 193 | 6bbf6d77… | Webstore product catalog prompts |
-| `mct-portal-os-expanded-60-modules-deep-prompts-pack` | 222 | 0c90b9a5… | 60-module portal OS deep prompts |
-| `portal-alignment` | 63 | 33d35be0… | Portal alignment prompts |
-| `repo-deep-dive` | 210 | 2bcf19a1… | Repo deep-dive prompts |
-| `repo_audit_prompt_pack` | 28 | 6a7c5d47… | Repo audit prompts |
+Packs are **vendored snapshots**, not live sources: they are pinned as-is and
+are not re-synced when the upstream prompt sets move on. The `Status` column
+records that explicitly (AI-P1-001) so nobody treats a stale pack as the
+current specification.
+
+| Pack | Files | Tree hash (generated) | Status | Purpose / drift notes |
+| ---- | ----- | --------------------- | ------ | --------------------- |
+| `hardening_prompt_pack` | 70 | 5e7fe33c… | Retired upstream (vendored) | Security/hardening audit + remediation prompts; README references runner paths that are absent, and embedded generated outputs are historical |
+| `mct-full-webstore-product-catalog-pack` | 193 | 6bbf6d77… | Frozen (implemented) | Webstore product catalog prompts; findings implemented 2026-09-21 |
+| `mct-portal-os-expanded-60-modules-deep-prompts-pack` | 222 | 0c90b9a5… | Frozen (partially aspirational) | 60-module portal OS deep prompts; the implementation matrix points at 1-file-per-module paths that were never created — the real mapping is `docs/module-matrix-mapping.md` |
+| `portal-alignment` | 63 | 33d35be0… | Retired upstream (vendored) | Portal alignment prompts; dashboard/trend engines partly stale and embedded outputs hardcode an old repo path |
+| `repo-deep-dive` | 210 | 2bcf19a1… | **Stale vs its runs** | Repo deep-dive prompts: this snapshot ends at prompt `40_release_notes_changelog_generator.md`; later runs used prompts `41`–`45` that are not vendored here. Current outputs live in `docs/audits/repo-deep-dive/`, not in the pack |
+| `repo_audit_prompt_pack` | 28 | 6a7c5d47… | Frozen (historical) | Repo audit prompts incl. two embedded runs |
 
 > Tree hashes above are the values as of the last `generate`. The authoritative
-> values live in `prompts/manifest.json` and are verified by CI.
+> values live in `prompts/manifest.json` and are verified by CI. To change a
+> pack intentionally, edit it, then `node scripts/verify-prompts.js generate`.
