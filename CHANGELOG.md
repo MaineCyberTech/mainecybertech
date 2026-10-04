@@ -171,6 +171,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - `FIELD_ENCRYPTION_KEY` is required in production: the API refuses to boot
   without a valid 32-byte key instead of silently writing reversible `plain:`
   PII, and `encryptField` throws rather than degrade at runtime (SEC-P1-001).
+- E2E now provisions a throwaway `FIELD_ENCRYPTION_KEY` for the local API: the
+  SEC-P1-001 production boot guard otherwise refused to start the API in the
+  workflow's `NODE_ENV=production` step.
 - Deploy resilience (from the first post-merge deploy on 2026-10-03): the redis
   container now runs as `user: redis` — the custom entrypoint (password off
   argv) replaced the official privilege-dropping one, and as root with
