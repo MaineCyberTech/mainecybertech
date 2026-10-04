@@ -1,0 +1,31 @@
+{
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "generated": "2026-10-03T05:21:32.025019+00:00",
+  "formula": "max(0, 100 - (P0*40 + P1*10 + P2*3)); P3 unpenalized",
+  "counts": {
+    "total": 44,
+    "bySeverity": {
+      "P0": 1,
+      "P1": 3,
+      "P2": 26,
+      "P3": 14
+    },
+    "byArea": {
+      "API": 3,
+      "ARCH": 4,
+      "CI": 4,
+      "DATA": 3,
+      "FEAT": 3,
+      "FINAL": 3,
+      "HYG": 4,
+      "INV": 4,
+      "OBS": 4,
+      "SEC": 5,
+      "SUPPLY": 4,
+      "TEST": 3
+    }
+  },
+  "score": 0,
+  "advisoryDecision": "NO-GO",
+  "note": "Advisory only. The audit gate in RELEASE_GATE.md is authoritative."
+}
