@@ -148,7 +148,7 @@ pnpm e2e                     # Playwright E2E
 | Web components            | 102   | `apps/web/components/`                                                                                                                                                 |
 | SQL migrations            | 134   | `supabase/migrations/` (latest: 5302436 restore_platform_admin_rls_gates)                                                                                              |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                 |
-| GitHub Actions workflows  | 19    | `.github/workflows/`                                                                                                                                                   |
+| GitHub Actions workflows  | 20    | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                           |
 | Build/dev/utility scripts | 79    | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
 
@@ -276,7 +276,7 @@ SENTRY_DSN=
 
 ## CI/CD
 
-**19 GitHub Actions workflows** in `.github/workflows/`:
+**20 GitHub Actions workflows** in `.github/workflows/`:
 
 | Workflow                | Trigger            | Purpose                                                                                     |
 | ----------------------- | ------------------ | ------------------------------------------------------------------------------------------- |
@@ -297,6 +297,7 @@ SENTRY_DSN=
 | storage-backup.yml      | schedule/manual    | Mirror Supabase Storage buckets to Spaces                                                   |
 | backup-dispatch.yml     | schedule/manual    | Runs on `main` to dispatch the develop backup/restore workflows                             |
 | secret-rotation-reminder.yml | schedule/manual | Quarterly secret-rotation issue (deduplicated, `secret-rotation` label)                     |
+| wireguard-endpoint.yml  | dispatch           | DO cloud-firewall management for the lab WireGuard endpoint (list / allow UDP)              |
 | dependency-review.yml   | pull_request       | Block PRs introducing vulnerable dependencies                                               |
 | sbom.yml                | push/PR/weekly     | CycloneDX SBOM artifact (`scripts/generate-sbom.mjs`)                                       |
 
