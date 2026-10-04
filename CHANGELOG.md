@@ -164,6 +164,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   pre-push check it flagged the pending migrations' own DDL (e.g. a drop
   migration) as drift, and its colour-sensitive grep intermittently missed real
   drops. Post-push a non-empty diff now means genuine divergence.
+- CI workflows now request least-privilege `GITHUB_TOKEN` scopes: the unused
+  `actions: write` grant was dropped from `terraform-do`, `e2e`, `a11y-breadth`
+  and `deploy-do` (artifact upload/download uses the runner's runtime token, not
+  `GITHUB_TOKEN`) (CI-P3-002).
 - Worker webhook delivery and retry now use the `pinnedFetch` helper (resolves
   and validates DNS once, then pins the connection to that IP) instead of a
   guard-then-`fetch`, closing the DNS-rebinding TOCTOU in the worker

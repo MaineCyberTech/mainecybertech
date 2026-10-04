@@ -29,7 +29,6 @@ on:
 
 permissions:
   contents: read
-  actions: write
 
 concurrency:
   # Cancel superseded PR runs; never cancel the prod deploy-gate call from
