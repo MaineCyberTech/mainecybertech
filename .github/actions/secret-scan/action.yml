@@ -15,7 +15,15 @@ runs:
         if [ "${{ github.event_name }}" = "pull_request" ]; then
           BASE="${{ github.event.pull_request.base.sha }}"
         else
-          BASE="$(git merge-base HEAD origin/main 2>/dev/null || echo HEAD~1)"
+          # CI-003: on a push, diff the pushed commit against the event's
+          # before-SHA. Using `git merge-base HEAD origin/main` was a no-op on
+          # pushes to main (origin/main == HEAD => empty diff), so the deploy
+          # gate scanned nothing on the exact commit that ships to production.
+          BASE="${{ github.event.before }}"
+          # First push to a branch (or non-push event): before is all-zeros.
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE="HEAD~1"
+          fi
         fi
         DIFF=$(git diff -U0 "$BASE" HEAD 2>/dev/null || git diff -U0 HEAD~1 HEAD)
         MATCHES=$(printf '%s' "$DIFF" | grep -E "^\+" | grep -v 'PATTERNS=' | grep -v 'secrets\.' | grep -vE "^\+\s*#" | grep -cE "$PATTERNS" || true)
