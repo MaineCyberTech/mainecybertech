@@ -55,20 +55,22 @@ jobs:
           RESP=$(curl -sS -H "Authorization: Bearer $DO_API_TOKEN" \
             "https://api.digitalocean.com/v2/droplets?page=1&per_page=200")
           ID=$(printf '%s' "$RESP" | jq -r --arg n "$DROPLET" \
-            '[.droplets[]|select(.name==$n or (.name|startswith($n+"-")))]|sort_by(.created_at)|last|.id')
+            '[.droplets[]?|select(.name==$n or (.name|startswith($n+"-")))]|sort_by(.created_at)|last|.id|tostring')
           [ -n "$ID" ] && [ "$ID" != "null" ] || { echo "::error::droplet $DROPLET not found"; exit 1; }
-          FID=$(curl -sS -H "Authorization: Bearer $DO_API_TOKEN" \
-            "https://api.digitalocean.com/v2/firewalls?page=1&per_page=200" \
-            | jq -r --argjson id "$ID" '.firewalls[]|select(.droplet_ids|index($id))|.id' | head -n1)
+          echo "droplet id=$ID"
+          FWRESP=$(curl -sS -H "Authorization: Bearer $DO_API_TOKEN" \
+            "https://api.digitalocean.com/v2/firewalls?page=1&per_page=200")
+          echo "firewalls response (head): $(printf '%s' "$FWRESP" | head -c 400)"
+          FID=$(printf '%s' "$FWRESP" | jq -r --argjson id "$ID" '(.firewalls // [])[]|select((.droplet_ids // [])|index($id))|.id' | head -n1)
           if [ -z "$FID" ] || [ "$FID" = "null" ]; then
             echo "No DigitalOcean cloud firewall attached to droplet $DROPLET (id $ID)."
             exit 0
           fi
-          echo "droplet id=$ID  firewall id=$FID  allowing udp/$UDP_PORT"
+          echo "firewall id=$FID  allowing udp/$UDP_PORT"
           curl -sS -X POST -H "Authorization: Bearer $DO_API_TOKEN" -H "Content-Type: application/json" \
             "https://api.digitalocean.com/v2/firewalls/$FID/rules" \
             -d "{\"inbound_rules\":[{\"protocol\":\"udp\",\"ports\":\"$UDP_PORT\",\"sources\":{\"addresses\":[\"0.0.0.0/0\",\"::/0\"]}}]}" \
             -w '\nHTTP %{http_code}\n'
           echo "--- inbound rules now ---"
           curl -sS -H "Authorization: Bearer $DO_API_TOKEN" "https://api.digitalocean.com/v2/firewalls/$FID" \
-            | jq -r '.firewall.inbound_rules[] | "\(.protocol) \(.ports) \(.sources.addresses|join(","))"'
+            | jq -r '(.firewall.inbound_rules // [])[] | "\(.protocol) \(.ports) \(.sources.addresses|join(","))"'
