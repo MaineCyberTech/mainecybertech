@@ -18,6 +18,30 @@ Production stack for the Maine CyberTech Portal on a single DigitalOcean droplet
 `GHCR_IMAGE_PREFIX` overrides the image prefix (default
 `ghcr.io/mainecybertech/mainecybertech`).
 
+### Container image pinning
+
+Every third-party image is pinned by digest (`image@sha256:...`) so a mutable
+upstream tag cannot change what runs in production. The three app images built
+by this repository are the exception: they are referenced by the immutable
+`git`-SHA tag set by `deploy-do.yml`
+(`${GHCR_IMAGE_PREFIX}/mct-api:${IMAGE_TAG}`, etc.). The deploy workflow
+resolves each tag to its manifest digest and verifies the GitHub
+build-provenance attestation for that digest before `docker compose up`, so the
+running artifact is bound to the reviewed commit.
+
+Refresh a third-party pin when intentionally bumping the dependency:
+
+```sh
+# print the multi-arch manifest digest for the tag you want
+docker buildx imagetools inspect <registry>/<image>:<tag> \
+  --format '{{.Manifest.Digest}}'
+# then change the image: line to <registry>/<image>:<tag>@sha256:<digest>
+```
+
+Refresh an app image by reviewing and merging to `main`: CI rebuilds and
+re-tags with the new commit SHA. A rollback reuses the same tag-to-digest +
+attestation verification for the older SHA.
+
 Supporting files:
 
 - `Caddyfile` — default prod-equivalent config (TLS + security headers).
