@@ -4,6 +4,7 @@ import { enqueueTask } from "./task-producer";
 import { logger } from "./logger";
 import { claimIdempotencyKey, deleteIdempotencyKey } from "./idempotency";
 import { assertSafeWebhookUrl } from "./ssrf-guard";
+import { pinnedFetch } from "./pinned-fetch";
 
 const MAX_ATTEMPTS = 3;
 const RETRY_BASE_MS = 200;
@@ -43,19 +44,19 @@ async function deliverWithRetry(
   let lastError: string | null = null;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    let res: Response | null = null;
+    let res: { status: number; text: () => Promise<string> } | null = null;
     try {
       await assertSafeWebhookUrl(url);
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
-      res = await fetch(url, {
+      // SEC-003: pinnedFetch validates DNS and pins the connection to the
+      // validated IP (closing the rebinding TOCTOU). Redirects are not
+      // followed, matching the previous `redirect: "manual"`.
+      res = await pinnedFetch(url, {
         method: "POST",
         headers,
         body,
         signal: controller.signal,
-        // The SSRF guard validated the initial URL only; do not follow a
-        // redirect to an internal address.
-        redirect: "manual",
       });
       clearTimeout(timeout);
 
