@@ -274,4 +274,20 @@ describe("orphanCleanup task", () => {
     expect(result).toEqual({ ok: true });
     expect(active.removeCalls.documents).toEqual([[orphan]]);
   });
+
+  it("refuses to remove a folder-like path (DATA-P0-001 guard)", async () => {
+    // Simulate list-semantics drift: a folder entry that does NOT carry a null
+    // id, so it looks like an object key at the bucket root. Supabase treats a
+    // folder name as a recursive delete, so it must never reach storage.remove.
+    active = mockClient({
+      filesByBucket: { documents: [{ name: "orgs", id: "1" }] },
+      queryByTable: { documents: { data: [], error: null } },
+    });
+
+    const result = await orphanCleanup({});
+
+    expect(active.removeCalls.documents ?? []).toEqual([]);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("folder-like");
+  });
 });
