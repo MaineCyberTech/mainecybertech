@@ -26,7 +26,10 @@ const submitSchema = z.object({
 async function verifyCaptcha(token: string): Promise<boolean> {
   try {
     const secret = getEnv().TURNSTILE_SECRET_KEY;
-    if (!secret) return true;
+    // SEC-P2-002: fail closed. Production refuses to boot without a secret
+    // (see assertProductionTurnstile), but guard direct/legacy callers rather
+    // than treating an unconfigured secret as a verified token.
+    if (!secret) return false;
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -122,12 +125,13 @@ router.get("/init", async (req, res, next) => {
 router.post("/submit", async (req, res, next) => {
   try {
     const parsed = submitSchema.parse(req.body);
+    const env = getEnv();
 
-    // When Turnstile is configured, a verified token is required. Previously
-    // the check was skipped whenever the token was absent, so an attacker
-    // could bypass it by simply omitting the field.
-    const captchaSecret = getEnv().TURNSTILE_SECRET_KEY;
-    if (captchaSecret) {
+    // SEC-P2-002: Turnstile is mandatory in production (env validation refuses
+    // to boot without TURNSTILE_SECRET_KEY). When configured anywhere, a
+    // verified token is required. Previously the check was skipped whenever the
+    // token was absent, so an attacker could bypass it by omitting the field.
+    if (env.TURNSTILE_SECRET_KEY || env.NODE_ENV === "production") {
       if (!parsed.captchaToken) {
         throw new AppError("CAPTCHA_REQUIRED", "CAPTCHA verification is required.", 400);
       }
@@ -166,8 +170,6 @@ router.post("/submit", async (req, res, next) => {
       .eq("id", parsed.trackingId);
 
     if (updateError) throw new AppError("DB_ERROR", updateError.message, 500);
-
-    const env = getEnv();
 
     if (env.PUBLIC_LEAD_WEBHOOK_URL) {
       const teamsMessage = `🚨 **NEW MSP LEAD: ${parsed.company}** 🚨\n\n**Service Interest:** ${parsed.services}\n**Urgency:** ${parsed.urgency}\n\n**Client Information**\n* **Contact:** ${parsed.name}\n* **Email:** ${parsed.email}\n* **Phone:** ${parsed.phone}\n* **Company:** ${parsed.company}\n* **Size:** ${parsed.employees} employees\n\n**Message:**\n${parsed.message}\n\n**Session Metadata**\n* **Location:** ${record.location}\n* **Platform:** ${record.platform ? record.platform.replace(/"/g, "") : "Unknown"}\n* **IP Address:** ${record.ip_address}\n* **Referrer:** ${record.referrer}\n* **Tracking ID:** ${record.id}`;

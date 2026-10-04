@@ -60,6 +60,23 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 /**
+ * SEC-P2-002: fail closed at boot in production when Turnstile is not
+ * configured. The public lead endpoints (`GET /api/v1/public/init`,
+ * `POST /api/v1/public/submit`) write rows and fan out to external
+ * webhooks/tickets, so an unset `TURNSTILE_SECRET_KEY` must refuse startup
+ * rather than silently disable the anti-bot control.
+ */
+export function assertProductionTurnstile(
+  env: Pick<Env, "NODE_ENV" | "TURNSTILE_SECRET_KEY">,
+): void {
+  if (env.NODE_ENV === "production" && !env.TURNSTILE_SECRET_KEY) {
+    throw new Error(
+      "TURNSTILE_SECRET_KEY is required in production; refusing to run public lead endpoints with CAPTCHA disabled",
+    );
+  }
+}
+
+/**
  * Builds a Redis connection URL, injecting REDIS_PASSWORD when the URL
  * does not already carry credentials. Used by ioredis / node-redis clients.
  */
@@ -87,6 +104,7 @@ export function getEnv(): Env {
         `Invalid environment variables: ${JSON.stringify(result.error.flatten().fieldErrors)}`,
       );
     }
+    assertProductionTurnstile(result.data);
     _env = result.data;
   }
   return _env;
