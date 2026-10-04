@@ -1,0 +1,76 @@
+name: WireGuard lab endpoint
+
+# Manage the DigitalOcean cloud firewall for the lab audit WireGuard endpoint, using the
+# repo's DO_API_TOKEN (value never printed). Read-only listing + add an inbound UDP rule.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'list | firewall-list | firewall-allow'
+        type: choice
+        options: [list, firewall-list, firewall-allow]
+        required: true
+        default: list
+      droplet:
+        description: 'Droplet name (e.g. mct-portal-dev)'
+        required: true
+        default: mct-portal-dev
+      udp_port:
+        description: 'UDP port to allow inbound (audit overlay)'
+        required: false
+        default: '51900'
+
+permissions:
+  contents: read
+
+jobs:
+  do:
+    runs-on: ubuntu-latest
+    env:
+      DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
+      DROPLET: ${{ inputs.droplet }}
+      UDP_PORT: ${{ inputs.udp_port }}
+    steps:
+      - name: List droplets
+        if: inputs.action == 'list'
+        run: |
+          set -e
+          curl -sS -H "Authorization: Bearer $DO_API_TOKEN" \
+            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
+            | jq -r '.droplets[] | "\(.name)\t\(.networks.v4[]?|select(.type=="public")|.ip_address)\t\(.status)"' | sort
+
+      - name: List firewalls
+        if: inputs.action == 'firewall-list'
+        run: |
+          set -e
+          curl -sS -H "Authorization: Bearer $DO_API_TOKEN" \
+            "https://api.digitalocean.com/v2/firewalls?page=1&per_page=200" \
+            | jq -r '.firewalls[] | "\(.id)\t\(.name)\tdroplets=[\(.droplet_ids|join(","))]\n  inbound: \([.inbound_rules[]?|"\(.protocol)/\(.ports)"]|join(", "))"'
+
+      - name: Allow inbound UDP
+        if: inputs.action == 'firewall-allow'
+        run: |
+          set -e
+          RESP=$(curl -sS -H "Authorization: Bearer $DO_API_TOKEN" \
+            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200")
+          ID=$(printf '%s' "$RESP" | jq -r --arg n "$DROPLET" \
+            '[.droplets[]?|select(.name==$n or (.name|startswith($n+"-")))]|sort_by(.created_at)|last|.id|tostring')
+          [ -n "$ID" ] && [ "$ID" != "null" ] || { echo "::error::droplet $DROPLET not found"; exit 1; }
+          echo "droplet id=$ID"
+          FWRESP=$(curl -sS -H "Authorization: Bearer $DO_API_TOKEN" \
+            "https://api.digitalocean.com/v2/firewalls?page=1&per_page=200")
+          echo "firewalls response (head): $(printf '%s' "$FWRESP" | head -c 400)"
+          FID=$(printf '%s' "$FWRESP" | jq -r --argjson id "$ID" '(.firewalls // [])[]|select((.droplet_ids // [])|index($id))|.id' | head -n1)
+          if [ -z "$FID" ] || [ "$FID" = "null" ]; then
+            echo "No DigitalOcean cloud firewall attached to droplet $DROPLET (id $ID)."
+            exit 0
+          fi
+          echo "firewall id=$FID  allowing udp/$UDP_PORT"
+          curl -sS -X POST -H "Authorization: Bearer $DO_API_TOKEN" -H "Content-Type: application/json" \
+            "https://api.digitalocean.com/v2/firewalls/$FID/rules" \
+            -d "{\"inbound_rules\":[{\"protocol\":\"udp\",\"ports\":\"$UDP_PORT\",\"sources\":{\"addresses\":[\"0.0.0.0/0\",\"::/0\"]}}]}" \
+            -w '\nHTTP %{http_code}\n'
+          echo "--- inbound rules now ---"
+          curl -sS -H "Authorization: Bearer $DO_API_TOKEN" "https://api.digitalocean.com/v2/firewalls/$FID" \
+            | jq -r '(.firewall.inbound_rules // [])[] | "\(.protocol) \(.ports) \(.sources.addresses|join(","))"'
