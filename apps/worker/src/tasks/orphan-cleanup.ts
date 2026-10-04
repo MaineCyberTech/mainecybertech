@@ -21,15 +21,17 @@ type StorageEntry = { name: string; id?: string | null };
 
 /**
  * DATA-P0-001 guard: Supabase Storage treats a folder/prefix name as a
- * recursive delete, so a folder must never reach `remove`. Real object keys
- * always contain at least one path separator with a non-empty final segment
- * (documents: `orgs/<orgId>/<file>`; avatars: `<userId>/<file>`). Listing
- * recurses into `id === null` folders and never collects them, but this is
- * defence in depth against list-semantics drift or a misbehaving API.
+ * recursive delete, so a folder must never reach `remove`. A path is
+ * folder-like when it ends in `/` or when any other listed object lives under
+ * it (`<path>/…`) — shape-agnostic, so it also covers legacy `orgs/<uuid>/…`
+ * keys alongside the canonical `<orgId>/…` and `<orgId>/requests/…` forms.
+ * Listing already recurses into `id === null` folders and never collects them;
+ * this is defence in depth against list-semantics drift.
  */
-function isObjectKey(path: string): boolean {
-  const parts = path.split("/");
-  return parts.length >= 2 && parts[parts.length - 1].length > 0;
+function isFolderLike(path: string, allPaths: string[]): boolean {
+  if (path.endsWith("/") || path.split("/").pop() === "") return true;
+  const prefix = `${path}/`;
+  return allPaths.some((other) => other !== path && other.startsWith(prefix));
 }
 
 /**
@@ -178,14 +180,14 @@ export async function orphanCleanup(_payload: Record<string, unknown>): Promise<
       // report instead of risking a recursive delete.
       const safeOrphaned: string[] = [];
       for (const path of orphaned) {
-        if (isObjectKey(path)) {
-          safeOrphaned.push(path);
-        } else {
+        if (isFolderLike(path, paths)) {
           logger.error(
             { bucket, path },
             "Refusing to remove a folder-like path (DATA-P0-001)",
           );
           failures.push(`${bucket}: refused to remove folder-like path ${path}`);
+        } else {
+          safeOrphaned.push(path);
         }
       }
 
