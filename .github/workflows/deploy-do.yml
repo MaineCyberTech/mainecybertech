@@ -217,6 +217,30 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           format: table
+      - name: Generate mct-api image SBOM (CycloneDX)
+        # SUPPLY-P3-001: emit a digest-bound SBOM on the deploy path so a shipped
+        # image can always be tied to its bill of materials (the 30-day workflow
+        # artifact alone expires, and build-push.yml is not on the deploy path).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api@${{ steps.build-api.outputs.digest }}
+          format: cyclonedx
+          output: image-sbom-mct-api.cdx.json
+          scanners: vuln
+      - name: Attest mct-api SBOM (SUPPLY-P3-001)
+        # Cryptographically binds the SBOM to the deployed image digest and pushes
+        # it to the registry as an OCI referrer, so it is durable and not subject
+        # to the 30-day artifact retention window.
+        uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
+        with:
+          subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api
+          subject-digest: ${{ steps.build-api.outputs.digest }}
+          sbom-path: image-sbom-mct-api.cdx.json
+          push-to-registry: true
       - name: Attest mct-api provenance (CTR-P1-003)
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
         with:
@@ -259,6 +283,26 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           format: table
+      - name: Generate mct-worker image SBOM (CycloneDX)
+        # SUPPLY-P3-001: digest-bound SBOM on the deploy path (see build-api).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker@${{ steps.build-worker.outputs.digest }}
+          format: cyclonedx
+          output: image-sbom-mct-worker.cdx.json
+          scanners: vuln
+      - name: Attest mct-worker SBOM (SUPPLY-P3-001)
+        # Durable, digest-bound SBOM attestation (see build-api).
+        uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
+        with:
+          subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker
+          subject-digest: ${{ steps.build-worker.outputs.digest }}
+          sbom-path: image-sbom-mct-worker.cdx.json
+          push-to-registry: true
       - name: Attest mct-worker provenance (CTR-P1-003)
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
         with:
@@ -308,6 +352,26 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           format: table
+      - name: Generate mct-web image SBOM (CycloneDX)
+        # SUPPLY-P3-001: digest-bound SBOM on the deploy path (see build-api).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web@${{ steps.build-web.outputs.digest }}
+          format: cyclonedx
+          output: image-sbom-mct-web.cdx.json
+          scanners: vuln
+      - name: Attest mct-web SBOM (SUPPLY-P3-001)
+        # Durable, digest-bound SBOM attestation (see build-api).
+        uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
+        with:
+          subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web
+          subject-digest: ${{ steps.build-web.outputs.digest }}
+          sbom-path: image-sbom-mct-web.cdx.json
+          push-to-registry: true
       - name: Attest mct-web provenance (CTR-P1-003)
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
         with:
@@ -456,7 +520,8 @@ jobs:
     uses: ./.github/workflows/validate.yml
 
   # e2e + migrations: required for prod (main) deploys only; skipped on dev to keep deploys fast.
-  # Skipped jobs do NOT block deploy -- deploy uses always() && !failure() && !cancelled().
+  # A skipped job is only tolerated because its own `if` deliberately excludes dev;
+  # the deploy gate below still requires every job that ran to have succeeded.
   e2e-gate:
     needs: [setup]
     if: ${{ needs.setup.outputs.name == 'prod' && (github.event_name == 'push' || github.event.inputs.rollback_sha == '') }}
@@ -471,9 +536,30 @@ jobs:
 
   deploy:
     needs: [setup, resolve-ip, validate, e2e-gate, migrate-gate, build-api, build-worker, build-web, verify-attestations]
-    # always(): run even when gates are skipped (dev); !failure() && !cancelled(): never run after a failure.
-    # A failed verify-attestations is a failure(), so the deploy is blocked.
-    if: ${{ always() && !failure() && !cancelled() }}
+    # Fail closed. Do NOT use `always() && !failure()` here: `failure()` is false
+    # when a needed job was merely *skipped*, so that pattern can let a deploy run
+    # when a gate did not actually pass. Require every job that ran to have
+    # succeeded explicitly:
+    #   - validate (test + lint + typecheck + audit + secrets) and every build
+    #     must be green;
+    #   - e2e-gate / migrate-gate may be `skipped` only on dev, where their own
+    #     `if` excludes them;
+    #   - build-api/worker/web may be `skipped` only for a rollback dispatch
+    #     (existing images are re-deployed);
+    #   - verify-attestations must always succeed.
+    if: >-
+      ${{
+        !cancelled() &&
+        needs.setup.result == 'success' &&
+        needs['resolve-ip'].result == 'success' &&
+        needs.validate.result == 'success' &&
+        needs['verify-attestations'].result == 'success' &&
+        (needs['e2e-gate'].result == 'success' || needs['e2e-gate'].result == 'skipped') &&
+        (needs['migrate-gate'].result == 'success' || needs['migrate-gate'].result == 'skipped') &&
+        (needs['build-api'].result == 'success' || needs['build-api'].result == 'skipped') &&
+        (needs['build-worker'].result == 'success' || needs['build-worker'].result == 'skipped') &&
+        (needs['build-web'].result == 'success' || needs['build-web'].result == 'skipped')
+      }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     # Prod deploys use the same protected environment as the Terraform prod

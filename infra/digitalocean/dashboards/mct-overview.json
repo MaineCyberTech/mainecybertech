@@ -1,0 +1,108 @@
+{
+  "title": "MCT Platform Overview",
+  "uid": "mct-overview",
+  "tags": ["mct", "slo"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": { "from": "now-30d", "to": "now" },
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "title": "API availability (30d, target 99.9%)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(portal_http_requests_total{status_code!~\"5..\"}[30d])) / clamp_min(sum(rate(portal_http_requests_total[30d])), 0.0001)",
+          "legendFormat": "availability"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0.99, "max": 1 }, "overrides": [] }
+    },
+    {
+      "id": 2,
+      "title": "API p95 latency (5m)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 9, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(portal_http_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "id": 3,
+      "title": "5xx error rate (5m)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 9, "x": 15, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(portal_http_requests_total{status_code=~\"5..\"}[5m])) / clamp_min(sum(rate(portal_http_requests_total[5m])), 0.0001)",
+          "legendFormat": "5xx rate"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] }
+    },
+    {
+      "id": 4,
+      "title": "Webhook delivery success (30d)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(portal_webhook_deliveries_total{status=\"success\"}[30d])) / clamp_min(sum(rate(portal_webhook_deliveries_total[30d])), 0.0001)",
+          "legendFormat": "success"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] }
+    },
+    {
+      "id": 5,
+      "title": "Notification delivery success (30d)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 6 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(portal_notification_delivery_total{status=\"success\"}[30d])) / clamp_min(sum(rate(portal_notification_delivery_total[30d])), 0.0001)",
+          "legendFormat": "success"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] }
+    },
+    {
+      "id": 6,
+      "title": "RLS-enforced share (rollout signal)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 9, "x": 12, "y": 6 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(portal_rls_enforced_total[30d])) / clamp_min(sum(rate(portal_rls_enforced_total[30d])) + sum(rate(portal_rls_bypass_total[30d])), 0.0001)",
+          "legendFormat": "enforced share"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] }
+    },
+    {
+      "id": 7,
+      "title": "Active organizations / users",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 9, "x": 15, "y": 6 },
+      "targets": [
+        { "refId": "A", "expr": "portal_active_organizations", "legendFormat": "organizations" },
+        { "refId": "B", "expr": "portal_active_users", "legendFormat": "users" }
+      ],
+      "fieldConfig": { "defaults": {}, "overrides": [] }
+    }
+  ]
+}

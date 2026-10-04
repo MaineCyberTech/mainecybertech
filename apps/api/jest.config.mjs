@@ -12,11 +12,14 @@ export default {
     "!src/**/__tests__/**",
   ],
   coverageThreshold: {
+    // TEST-P3-001: ratcheted from 30/50/55/58 to just below the measured
+    // coverage (2026-10-03: branches 49.7, functions 75.3, lines 78.7,
+    // statements 72.9) so erosion fails CI instead of accumulating silently.
     global: {
-      branches: 30,
-      functions: 50,
-      lines: 55,
-      statements: 58,
+      branches: 45,
+      functions: 70,
+      lines: 74,
+      statements: 70,
     },
   },
   moduleNameMapper: {

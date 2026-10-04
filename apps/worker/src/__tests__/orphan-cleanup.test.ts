@@ -67,17 +67,41 @@ function mockClient(opts: {
   listErrorByBucket?: Record<string, { message: string }>;
 }) {
   const removeCalls: Record<string, string[][]> = {};
+  const inCalls: Record<string, string[][]> = {};
   const from = jest.fn((table: string) => {
-    return createThenableChain(opts.queryByTable?.[table] ?? { data: [], error: null });
+    const chain = createThenableChain(opts.queryByTable?.[table] ?? { data: [], error: null });
+    // Record the key chunks passed to `.in()` so tests can prove the reference
+    // lookup is chunked (DATA-P2-002) rather than sent as one huge request.
+    chain.in = jest.fn((_column: string, values: string[]) => {
+      inCalls[table] = inCalls[table] ?? [];
+      inCalls[table].push(values);
+      return chain;
+    });
+    return chain;
   });
 
   const storageFrom = jest.fn((bucket: string) => ({
     list: jest.fn().mockImplementation((path: string, o: { limit: number; offset: number }) => {
       const err = opts.listErrorByBucket?.[bucket];
       if (err) return Promise.resolve({ data: null, error: err });
-      const all =
-        opts.prefixEntries?.[bucket]?.[path] ??
-        (path === "" ? (opts.filesByBucket?.[bucket] ?? []) : []);
+
+      let all: Entry[];
+      if (opts.prefixEntries?.[bucket]?.[path] !== undefined) {
+        // Pass nested listings through verbatim: folders must carry `id: null`
+        // (or omit `id`) and files must carry a real `id`, exactly as the real
+        // Storage API returns them. Tests that omit `id` on a file are now
+        // caught instead of being silently treated as objects.
+        all = opts.prefixEntries[bucket][path];
+      } else if (path === "") {
+        // Root flat listings are files; give them an id unless a test opts out.
+        all = (opts.filesByBucket?.[bucket] ?? []).map((e) => ({
+          ...e,
+          id: e.id === undefined ? `file:${e.name}` : e.id,
+        }));
+      } else {
+        all = [];
+      }
+
       const page = all.slice(o.offset, o.offset + o.limit);
       return Promise.resolve({ data: page, error: null });
     }),
@@ -91,7 +115,7 @@ function mockClient(opts: {
   }));
 
   const client = { from, storage: { from: storageFrom } };
-  return { client, removeCalls, storageFrom };
+  return { client, removeCalls, storageFrom, inCalls, from };
 }
 
 let active: ReturnType<typeof mockClient>;
@@ -117,7 +141,10 @@ describe("orphanCleanup task", () => {
     active = mockClient({
       filesByBucket: { documents: [{ name: "doc-1.pdf" }, { name: "doc-2.pdf" }] },
       queryByTable: {
-        documents: { data: [{ storage_path: "doc-1.pdf" }, { storage_path: "doc-2.pdf" }], error: null },
+        documents: {
+          data: [{ storage_path: "doc-1.pdf" }, { storage_path: "doc-2.pdf" }],
+          error: null,
+        },
       },
     });
     const result = await orphanCleanup({});
@@ -126,13 +153,25 @@ describe("orphanCleanup task", () => {
   });
 
   it("removes only the genuinely orphaned files", async () => {
+    const org = "00000000-0000-0000-0000-00000000000a";
+    const keep = `orgs/${org}/doc-1.pdf`;
+    const orphan = `orgs/${org}/orphan-1.pdf`;
     active = mockClient({
-      filesByBucket: { documents: [{ name: "doc-1.pdf" }, { name: "orphan-1.pdf" }] },
-      queryByTable: { documents: { data: [{ storage_path: "doc-1.pdf" }], error: null } },
+      prefixEntries: {
+        documents: {
+          "": [{ name: "orgs", id: null }],
+          orgs: [{ name: org, id: null }],
+          [`orgs/${org}`]: [
+            { name: "doc-1.pdf", id: "f-keep" },
+            { name: "orphan-1.pdf", id: "f-orphan" },
+          ],
+        },
+      },
+      queryByTable: { documents: { data: [{ storage_path: keep }], error: null } },
     });
     const result = await orphanCleanup({});
     expect(result).toEqual({ ok: true });
-    expect(active.removeCalls.documents).toEqual([["orphan-1.pdf"]]);
+    expect(active.removeCalls.documents).toEqual([[orphan]]);
   });
 
   // --- the data-loss regression this suite exists to prevent ----------------
@@ -175,7 +214,9 @@ describe("orphanCleanup task", () => {
     const many = Array.from({ length: 250 }, (_, i) => ({ name: `f-${i}.pdf` }));
     active = mockClient({
       filesByBucket: { documents: many },
-      queryByTable: { documents: { data: many.map((m) => ({ storage_path: m.name })), error: null } },
+      queryByTable: {
+        documents: { data: many.map((m) => ({ storage_path: m.name })), error: null },
+      },
     });
 
     const result = await orphanCleanup({});
@@ -183,12 +224,52 @@ describe("orphanCleanup task", () => {
     expect(active.removeCalls.documents ?? []).toEqual([]);
   });
 
-  it("handles an avatar orphan safely (keyed by basename)", async () => {
+  it("chunks the reference lookup for large buckets (DATA-P2-002)", async () => {
+    // 450 objects => 3 postgrest `.in()` chunks per table at the 200-key bound,
+    // instead of one request with 450 keys.
+    const many = Array.from({ length: 450 }, (_, i) => ({ name: `f-${i}.pdf` }));
     active = mockClient({
-      filesByBucket: { documents: [], avatars: [{ name: "user-1.png" }, { name: "stale.png" }] },
+      filesByBucket: { documents: many },
+      queryByTable: {
+        documents: { data: many.map((m) => ({ storage_path: m.name })), error: null },
+      },
+    });
+
+    const result = await orphanCleanup({});
+    expect(result).toEqual({ ok: true });
+
+    const chunks = active.inCalls.documents ?? [];
+    expect(chunks.length).toBe(3);
+    for (const chunk of chunks) {
+      expect(chunk.length).toBeLessThanOrEqual(200);
+    }
+    const totalKeys = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    expect(totalKeys).toBe(450);
+    // The other reference tables are chunked the same way.
+    expect((active.inCalls.document_versions ?? []).length).toBe(3);
+    expect((active.inCalls.file_request_uploads ?? []).length).toBe(3);
+  });
+
+  it("handles an avatar orphan safely (nested, keyed by basename)", async () => {
+    active = mockClient({
+      prefixEntries: {
+        avatars: {
+          "": [
+            { name: "user-1", id: null },
+            { name: "user-2", id: null },
+          ],
+          "user-1": [{ name: "avatar.png", id: "a-keep" }],
+          "user-2": [{ name: "old-avatar.png", id: "a-orphan" }],
+        },
+      },
       queryByTable: {
         profiles: {
-          data: [{ avatar_url: "https://x.supabase.co/storage/v1/object/public/avatars/user-1.png" }],
+          data: [
+            {
+              avatar_url:
+                "https://x.supabase.co/storage/v1/object/public/avatars/user-1/avatar.png",
+            },
+          ],
           error: null,
         },
       },
@@ -196,14 +277,19 @@ describe("orphanCleanup task", () => {
 
     const result = await orphanCleanup({});
     expect(result).toEqual({ ok: true });
-    expect(active.removeCalls.avatars).toEqual([["stale.png"]]);
+    expect(active.removeCalls.avatars).toEqual([["user-2/old-avatar.png"]]);
   });
 
   it("reports failure but still cleans the other bucket when one bucket fails", async () => {
     active = mockClient({
+      prefixEntries: {
+        avatars: {
+          "": [{ name: "user-1", id: null }],
+          "user-1": [{ name: "avatar.png", id: "a-orphan" }],
+        },
+      },
       filesByBucket: {
         documents: [{ name: "doc.pdf" }],
-        avatars: [{ name: "stale.png" }],
       },
       queryByTable: {
         documents: { data: null, error: { message: "db down" } },
@@ -213,7 +299,7 @@ describe("orphanCleanup task", () => {
 
     const result = await orphanCleanup({});
     expect(active.removeCalls.documents ?? []).toEqual([]);
-    expect(active.removeCalls.avatars).toEqual([["stale.png"]]);
+    expect(active.removeCalls.avatars).toEqual([["user-1/avatar.png"]]);
     expect(result.ok).toBe(false);
   });
 
@@ -260,7 +346,10 @@ describe("orphanCleanup task", () => {
         documents: {
           "": [{ name: "orgs", id: null }],
           orgs: [{ name: org, id: null }],
-          [`orgs/${org}`]: [{ name: "keep.pdf" }, { name: "orphan.pdf" }],
+          [`orgs/${org}`]: [
+            { name: "keep.pdf", id: "f-keep" },
+            { name: "orphan.pdf", id: "f-orphan" },
+          ],
         },
       },
       queryByTable: {
@@ -273,5 +362,95 @@ describe("orphanCleanup task", () => {
     const result = await orphanCleanup({});
     expect(result).toEqual({ ok: true });
     expect(active.removeCalls.documents).toEqual([[orphan]]);
+  });
+
+  // --- DATA-P0-001 hardening: folders are never deletable ------------------
+
+  it("treats a folder entry with an absent `id` as a folder, never an object [DATA-P0-001]", async () => {
+    const org = "00000000-0000-0000-0000-00000000000b";
+    const keep = `orgs/${org}/keep.pdf`;
+    const orphan = `orgs/${org}/orphan.pdf`;
+    active = mockClient({
+      prefixEntries: {
+        documents: {
+          // No `id` at all: an older/proxied Storage response shape. This must
+          // still be walked as a folder, never handed to remove().
+          "": [{ name: "orgs" }],
+          orgs: [{ name: org }],
+          [`orgs/${org}`]: [
+            { name: "keep.pdf", id: "f-keep" },
+            { name: "orphan.pdf", id: "f-orphan" },
+          ],
+        },
+      },
+      queryByTable: {
+        documents: { data: [{ storage_path: keep }], error: null },
+      },
+    });
+
+    const result = await orphanCleanup({});
+    expect(result).toEqual({ ok: true });
+    expect(active.removeCalls.documents).toEqual([[orphan]]);
+    // The folder names themselves must never appear in a remove() call.
+    expect((active.removeCalls.documents ?? []).flat()).not.toContain("orgs");
+    expect((active.removeCalls.documents ?? []).flat()).not.toContain(org);
+  });
+
+  it("never removes the .emptyFolderPlaceholder marker [DATA-P0-001]", async () => {
+    const org = "00000000-0000-0000-0000-00000000000c";
+    const orphan = `orgs/${org}/orphan.pdf`;
+    active = mockClient({
+      prefixEntries: {
+        documents: {
+          "": [{ name: "orgs", id: null }],
+          orgs: [{ name: org, id: null }],
+          [`orgs/${org}`]: [
+            { name: ".emptyFolderPlaceholder", id: "placeholder" },
+            { name: "orphan.pdf", id: "f-orphan" },
+          ],
+        },
+      },
+      queryByTable: { documents: { data: [], error: null } },
+    });
+
+    const result = await orphanCleanup({});
+    expect(result).toEqual({ ok: true });
+    expect(active.removeCalls.documents).toEqual([[orphan]]);
+  });
+
+  it("aborts the bucket rather than removing a non-object (root) path [DATA-P0-001]", async () => {
+    active = mockClient({
+      // A bare root-level name has no "/" and cannot be proven to be an object
+      // key; passing it to remove() is exactly the recursive-prefix hazard.
+      filesByBucket: { documents: [{ name: "legacy-root.pdf" }] },
+      queryByTable: { documents: { data: [], error: null } },
+    });
+
+    const result = await orphanCleanup({});
+    expect(active.removeCalls.documents ?? []).toEqual([]);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("documents");
+  });
+
+  it("aborts when a folder is surfaced with a non-null id above its children [DATA-P0-001]", async () => {
+    const org = "00000000-0000-0000-0000-00000000000d";
+    active = mockClient({
+      // A flat/odd listing that returns BOTH the folder path (with a bogus
+      // non-null id, so it looks like an object) and an object under it: the
+      // prefix guard must classify the folder path as folder-like and abort
+      // instead of recursively deleting everything beneath it.
+      filesByBucket: {
+        documents: [
+          { name: `orgs/${org}`, id: "bogus-folder-id" },
+          { name: `orgs/${org}/orphan.pdf`, id: "f-orphan" },
+        ],
+      },
+      queryByTable: { documents: { data: [], error: null } },
+    });
+
+    const result = await orphanCleanup({});
+    expect(active.removeCalls.documents ?? []).toEqual([]);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("documents");
   });
 });

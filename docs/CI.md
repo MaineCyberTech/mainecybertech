@@ -25,6 +25,7 @@ branch.
 | Storage Backup        | `storage-backup.yml`      | daily 05:00 UTC; dispatch                                          | —                                                                                                                                                                        | `scripts/backup-storage.sh` mirrors the `documents`/`avatars`/`logos` buckets to Spaces; Slack alert on failure                                                    | Scheduled           |
 | Backup Dispatcher     | `backup-dispatch.yml`     | daily 04:00 + weekly Mon 06:00; dispatch                           | —                                                                                                                                                                        | Runs **on `main`** to `workflow_dispatch` the develop backup/restore workflows (schedules only fire from the default branch — audit DR-P0-001); fails loudly without `SCHEDULE_DISPATCH_TOKEN` | Scheduled           |
 | Secret Rotation Reminder | `secret-rotation-reminder.yml` | quarterly (1 Jan/Apr/Jul/Oct, 09:00 UTC); dispatch | —                                                                                                                                                                        | Creates a deduplicated `secret-rotation` issue linking the rotation policy and checklist (SECRET-P2-002)                                                          | Scheduled           |
+| WireGuard lab endpoint | `wireguard-endpoint.yml`  | dispatch (`action`, `droplet`, `udp_port`)                         | —                                                                                                                                                                        | Lists droplets/firewalls or adds an inbound UDP rule for the lab WireGuard endpoint via the DO API (`DO_API_TOKEN`)                                               | Manual              |
 | SBOM                  | `sbom.yml`                | push + PR `main`, `develop`; weekly (Mon 05:00); dispatch          | —                                                                                                                                                                        | CycloneDX **lockfile** SBOM (licenses + dependency graph + commit binding) via `scripts/generate-sbom.mjs`, validated before upload; 30-day artifact (container **image** SBOMs are emitted by `build-push.yml`)                          | Artifact-only (not a gate) |
 
 ## Deploy pipeline
@@ -36,7 +37,8 @@ setup → resolve-ip
       → build-api ∥ build-worker ∥ build-web ∥ validate
       → e2e-gate + migrate-gate        (prod only; skipped on dev)
       → verify-attestations
-      → deploy (always() && !failure() && !cancelled())
+      → deploy (fail-closed: validate + builds + verify-attestations success;
+                 e2e-gate/migrate-gate may be skipped on dev only)
 ```
 
 `deploy` writes the droplet `.env` via `printf` (secrets never interpolate into
@@ -100,6 +102,12 @@ setting the `apply` input additionally enables the apply job (`main` → prod
 environment + E2E/migration gates; `develop` → dev). Re-enable push/PR triggers
 once the token is rotated and `prod-approval` has required reviewers configured
 in GitHub.
+
+A weekly **plan-only drift check** (`schedule`, Mondays 07:00 UTC) is wired in
+but stays dormant (`terraform-plan` is skipped) until the operator sets the
+repository variable `TF_DRIFT_PLAN_ENABLED=true` — do this after rotating
+`DO_API_TOKEN`. When enabled, the run fails if the plan is non-empty so drift is
+visible; it never applies (`CI-P2-002`).
 
 ## Best-effort and triage-only jobs
 

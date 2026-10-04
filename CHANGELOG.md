@@ -164,6 +164,22 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   pre-push check it flagged the pending migrations' own DDL (e.g. a drop
   migration) as drift, and its colour-sensitive grep intermittently missed real
   drops. Post-push a non-empty diff now means genuine divergence.
+- Reconciled the document storage-path contract after the #30/#32 merge: the
+  metadata validator and admin-documents UI now expect `<orgId>/<file>` (first
+  segment = org UUID, as `storage_path_org_id` and the storage RLS policies
+  require) instead of the reverted `orgs/<orgId>/<file>` form, and the
+  orphan-cleanup remove guard is shape-agnostic — it refuses any path that
+  other listed objects live under.
+- Orphan cleanup refuses to hand a folder-like path to `storage.remove`
+  (Supabase treats a folder name as a recursive delete) and reports it instead
+  of risking the bucket contents, on top of the folder-aware recursive listing
+  (DATA-P0-001 from the 2026-10-03 audit of the pre-rebase branch).
+- `FIELD_ENCRYPTION_KEY` is required in production: the API refuses to boot
+  without a valid 32-byte key instead of silently writing reversible `plain:`
+  PII, and `encryptField` throws rather than degrade at runtime (SEC-P1-001).
+- E2E now provisions a throwaway `FIELD_ENCRYPTION_KEY` for the local API: the
+  SEC-P1-001 production boot guard otherwise refused to start the API in the
+  workflow's `NODE_ENV=production` step.
 - CI workflows now request least-privilege `GITHUB_TOKEN` scopes: the unused
   `actions: write` grant was dropped from `terraform-do`, `e2e`, `a11y-breadth`
   and `deploy-do` (artifact upload/download uses the runner's runtime token, not
@@ -172,12 +188,23 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   and validates DNS once, then pins the connection to that IP) instead of a
   guard-then-`fetch`, closing the DNS-rebinding TOCTOU in the worker
   (SEC-P2-002).
-- `FIELD_ENCRYPTION_KEY` is required in production: the API refuses to boot
-  without a valid 32-byte key instead of silently writing reversible `plain:`
-  PII, and `encryptField` throws rather than degrade at runtime (SEC-P1-001).
-- E2E now provisions a throwaway `FIELD_ENCRYPTION_KEY` for the local API: the
-  SEC-P1-001 production boot guard otherwise refused to start the API in the
-  workflow's `NODE_ENV=production` step.
+- Backups can resolve their configuration now: `db-backup`,
+  `db-restore-test` and `storage-backup` attach the `dev` environment (which
+  holds `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`), their `AWS_*` credentials
+  fall back to its `DO_SPACES_*` keys, and the scripts receive the Spaces
+  endpoint via `AWS_ENDPOINT_URL` (default
+  `https://nyc3.digitaloceanspaces.com`, override with the `S3_ENDPOINT`
+  variable) — previously they targeted real AWS S3 with credentials that were
+  never in scope. Still required from the operator: `SUPABASE_DB_URL`,
+  `BACKUP_ENCRYPTION_KEY`, the `mainecybertech-backups` bucket (or an
+  `S3_BUCKET` variable), and optionally `SLACK_WEBHOOK_URL`.
+- Container limits + infra drift: every compose service now sets `pids_limit`
+  (CTR-P2-005) so one container cannot exhaust the host PID table and take down
+  the single-droplet stack; the dev droplet size is consistently
+  `s-1vcpu-2gb` in CI and `dev.tfvars.example` (was `s-1vcpu-512mb-10gb` in CI
+  vs `s-1vcpu-1gb` in the example while the stack reserves ~1.4 GB —
+  INFRA-P2-004); `infra/terraform/README.md` no longer references a removed
+  `aws/` root.
 - Deploy resilience (from the first post-merge deploy on 2026-10-03): the redis
   container now runs as `user: redis` — the custom entrypoint (password off
   argv) replaced the official privilege-dropping one, and as root with

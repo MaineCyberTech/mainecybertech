@@ -39,11 +39,14 @@ export default {
     "!**/*.stories.{ts,tsx}",
   ],
   coverageThreshold: {
+    // TEST-P3-001: ratcheted from 38/38/45/46 to just below the measured
+    // coverage (2026-10-03: branches 41.3, functions 40.4, lines 49.7,
+    // statements 48.9) so erosion fails CI instead of accumulating silently.
     global: {
-      branches: 38,
-      functions: 38,
-      lines: 45,
-      statements: 46,
+      branches: 39,
+      functions: 39,
+      lines: 47,
+      statements: 47,
     },
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],

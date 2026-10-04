@@ -65,23 +65,32 @@ router.get("/", async (req, res, next) => {
       : callerProfile?.is_super_admin === true;
     const canSeeAllTenants = callerIsSuperAdmin && holdsCrossTenantRole;
 
+    // `requireOrgAccess` has already resolved the request's authoritative tenant
+    // scope. Honor it rather than re-deriving: an explicitly requested
+    // organization narrows the search (even for a cross-tenant super admin),
+    // and the absence of a resolved org must never widen it (API-P2-001). The
+    // all-tenants path is audited below.
+    const requestedOrgId = req.orgScope?.explicit ? (req.orgScope.orgId ?? null) : null;
+    const allTenants = canSeeAllTenants && requestedOrgId === null;
+    const scopedOrgIds = requestedOrgId ? [requestedOrgId] : adminOrgIds;
+
     // Super admins get the PII columns; everyone else gets a reduced
     // projection (no email/phone) consistent with staff-PII endpoints.
     // Tenant admins can still identify staff by name/title.
-    const userProjection = canSeeAllTenants
+    const userProjection = allTenants
       ? "id, full_name, email, phone, title"
       : "id, full_name, title";
 
-    // Platforms admins see users across all orgs; everyone else is limited to
+    // Platform admins see users across all orgs; everyone else is limited to
     // approved members of their own orgs, and never falls back to "all" when
     // their org list is empty.
-    const scopedUserIds = canSeeAllTenants
+    const scopedUserIds = allTenants
       ? null
       : (
           await supabase
             .from("memberships")
             .select("user_id")
-            .in("organization_id", adminOrgIds.length > 0 ? adminOrgIds : ["__none__"])
+            .in("organization_id", scopedOrgIds.length > 0 ? scopedOrgIds : ["__none__"])
             .eq("status", "approved")
         ).data?.map((m) => m.user_id as string) ?? [];
 
@@ -102,10 +111,10 @@ router.get("/", async (req, res, next) => {
       .select("id, title, status, priority, organization_id")
       .or(`title.ilike.${wildcardTerm},description.ilike.${wildcardTerm}`)
       .limit(5);
-    if (!canSeeAllTenants) {
+    if (!allTenants) {
       ticketQuery = ticketQuery.in(
         "organization_id",
-        adminOrgIds.length > 0 ? adminOrgIds : ["__no_match__"],
+        scopedOrgIds.length > 0 ? scopedOrgIds : ["__no_match__"],
       );
     }
 
@@ -114,10 +123,10 @@ router.get("/", async (req, res, next) => {
       .select("id, name, status, priority, organization_id")
       .or(`name.ilike.${wildcardTerm},description.ilike.${wildcardTerm}`)
       .limit(5);
-    if (!canSeeAllTenants) {
+    if (!allTenants) {
       projectQuery = projectQuery.in(
         "organization_id",
-        adminOrgIds.length > 0 ? adminOrgIds : ["__no_match__"],
+        scopedOrgIds.length > 0 ? scopedOrgIds : ["__no_match__"],
       );
     }
 
@@ -126,10 +135,10 @@ router.get("/", async (req, res, next) => {
       .select("id, name, mime_type, visibility, organization_id")
       .or(`name.ilike.${wildcardTerm},mime_type.ilike.${wildcardTerm}`)
       .limit(5);
-    if (!canSeeAllTenants) {
+    if (!allTenants) {
       documentQuery = documentQuery.in(
         "organization_id",
-        adminOrgIds.length > 0 ? adminOrgIds : ["__no_match__"],
+        scopedOrgIds.length > 0 ? scopedOrgIds : ["__no_match__"],
       );
     }
 
@@ -142,10 +151,10 @@ router.get("/", async (req, res, next) => {
       .select("id, name, slug, status")
       .or(`name.ilike.${searchTerm},slug.ilike.${searchTerm}`)
       .limit(5);
-    if (!canSeeAllTenants) {
+    if (!allTenants) {
       organizationQuery = organizationQuery.in(
         "id",
-        adminOrgIds.length > 0 ? adminOrgIds : ["__no_match__"],
+        scopedOrgIds.length > 0 ? scopedOrgIds : ["__no_match__"],
       );
     }
 
@@ -184,6 +193,9 @@ router.get("/", async (req, res, next) => {
       metadata: {
         queryHash,
         queryLength: q.length,
+        // Audited flag: a cross-tenant super admin searched without an explicit
+        // organization (the only path allowed to span every tenant).
+        allTenants,
         resultCounts: {
           users: users?.length ?? 0,
           organizations: organizations?.length ?? 0,

@@ -39,3 +39,24 @@ runs:
           echo "::error::Secret pattern detected in diff (values redacted). Files: ${FILES:-unknown}"
           exit 1
         fi
+
+    - name: Reject tracked local secret files
+      # SUPPLY-P3-002: local Supabase runtime secrets
+      # (supabase/.temp/**/env/*.env) and non-example .env files must never be
+      # committed. `.gitignore` covers them; this guard fails the build if one
+      # is force-added or the ignore rule regresses. `.github/restore-test-
+      # baseline.env` is a non-secret floor file and is explicitly allowed.
+      shell: bash
+      run: |
+        set -euo pipefail
+        BAD="$(git ls-files \
+          | grep -E '(^|/)\.env($|\.)|(^|/)supabase/\.temp/' \
+          | grep -vE '\.env\.example$' \
+          | grep -vx '.github/restore-test-baseline.env' \
+          || true)"
+        if [ -n "$BAD" ]; then
+          echo "::error::Tracked local secret files must be removed from git:"
+          printf '%s\n' "$BAD"
+          exit 1
+        fi
+        echo "No tracked local secret files"

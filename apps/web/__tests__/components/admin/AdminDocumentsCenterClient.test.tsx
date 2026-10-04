@@ -36,7 +36,7 @@ const baseDoc = {
   folder_path: "Finance",
   visibility: "org",
   storage_bucket: "documents",
-  storage_path: "orgs/o1/report.pdf",
+  storage_path: "o1/report.pdf",
   file_name: "report.pdf",
   file_size: 102400,
   description: "Quarterly financial report",

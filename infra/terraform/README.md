@@ -2,8 +2,8 @@
 
 This directory contains Terraform configurations for the MCT portal infrastructure.
 
-- `aws/` - AWS infrastructure (dormant, migrated to DO)
-- `digitalocean/` - DigitalOcean infrastructure (active)
+- `digitalocean/` - DigitalOcean infrastructure (active; the AWS root this
+  directory once described was removed after the migration to DigitalOcean)
 
 ## Required variables
 

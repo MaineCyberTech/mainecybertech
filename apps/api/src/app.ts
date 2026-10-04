@@ -14,7 +14,7 @@ import { securityHeaders } from "./middleware/security-headers";
 import { csrfProtection } from "./middleware/csrf";
 import { idempotencyMiddleware } from "./middleware/idempotency";
 import { requestTimeout } from "./middleware/request-timeout";
-import healthRouter from "./routes/health";
+import healthRouter, { authorizeInternalRequest } from "./routes/health";
 import authRouter from "./routes/auth";
 import organizationsRouter from "./routes/organizations";
 import membershipsRouter from "./routes/memberships";
@@ -153,19 +153,14 @@ export function createApp(): Express {
   app.use("/health", healthRouter);
   app.use("/metrics", rateLimitMetrics, async (req, res) => {
     try {
-      // Optional shared-token gate: 404 (not 401) so the endpoint is not
-      // advertised. Enabled by setting METRICS_TOKEN; internal scrapers send
-      // it as a bearer token.
-      const metricsToken = getEnv().METRICS_TOKEN;
-      if (metricsToken) {
-        const header = req.headers.authorization;
-        const provided =
-          (header?.startsWith("Bearer ") ? header.slice(7) : undefined) ??
-          (typeof req.query.token === "string" ? req.query.token : undefined);
-        if (provided !== metricsToken) {
-          res.status(404).end();
-          return;
-        }
+      // Fail-closed shared-token gate: 404 (not 401) so the endpoint is not
+      // advertised. Metrics are only served when METRICS_TOKEN is configured
+      // and the caller presents it as a bearer token; without a configured
+      // token the endpoint 404s rather than exposing metric labels publicly
+      // (API-P3-001).
+      if (!authorizeInternalRequest(req, getEnv().METRICS_TOKEN)) {
+        res.status(404).end();
+        return;
       }
       res.set("Content-Type", register.contentType);
       res.end(await register.metrics());

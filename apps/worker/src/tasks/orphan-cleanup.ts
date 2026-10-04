@@ -16,17 +16,64 @@ const LIST_PAGE_SIZE = 100;
  */
 const MAX_LISTED = 10_000;
 
-/** Storage entry shape returned by `list()`. Folders have a null `id`. */
+/**
+ * Maximum number of keys per PostgREST `.in()` request. A single `IN (...)`
+ * with thousands of values can exceed request-size limits or time out, which
+ * would fail the reference read and (correctly) skip the bucket, so the task
+ * would never clean anything. Chunking keeps the reference lookup bounded
+ * while preserving the fail-closed behaviour (DATA-P2-002).
+ */
+const IN_CHUNK_SIZE = 200;
+
+/** Split an array into fixed-size chunks. */
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    out.push(items.slice(i, i + size));
+  }
+  return out;
+}
+
+/** Storage entry shape returned by `list()`. Folders have a null/absent `id`. */
 type StorageEntry = { name: string; id?: string | null };
+
+/** Supabase's own marker object used to materialise an otherwise empty folder. */
+const EMPTY_FOLDER_PLACEHOLDER = ".emptyFolderPlaceholder";
+
+/** Hard ceiling on folder recursion, so a malformed/looping listing cannot run away. */
+const MAX_DEPTH = 8;
+
+/**
+ * A folder entry has no object `id` (Supabase returns `null`; an older or
+ * proxied response may omit the field entirely). Treating `undefined` as a file
+ * is the DATA-P0-001 bug: a bare folder name handed to `remove()` is a
+ * recursive prefix delete.
+ */
+function isFolderEntry(entry: StorageEntry): boolean {
+  return entry.id === null || entry.id === undefined;
+}
+
+/**
+ * A path is folder-like when it ends in `/` or when any other listed object
+ * lives under it (`<path>/…`). The listing recurses into folder entries and
+ * never collects them, but this catches a folder surfaced with a non-null `id`
+ * (or a flat listing that returns a folder and its children): handing such a
+ * path to `remove()` would recursively delete everything under it.
+ */
+function isFolderLike(path: string, allPaths: string[]): boolean {
+  if (path.endsWith("/") || path.split("/").pop() === "") return true;
+  const prefix = `${path}/`;
+  return allPaths.some((other) => other !== path && other.startsWith(prefix));
+}
 
 /**
  * Recursively list every object path in a bucket, following pagination.
  *
  * `list(prefix)` returns a mix of files and folder entries (folders have a
- * null `id`) and only shows nested objects when the folder prefix is listed, so
- * a single flat call both truncates and hides nested objects. Any read error
- * aborts the whole listing: an unreadable listing must never degrade into
- * "these files are orphans".
+ * null/absent `id`) and only shows nested objects when the folder prefix is
+ * listed, so a single flat call both truncates and hides nested objects. Any
+ * read error aborts the whole listing: an unreadable listing must never degrade
+ * into "these files are orphans".
  */
 async function listAllFiles(
   storageBucket: {
@@ -38,7 +85,12 @@ async function listAllFiles(
   bucket: string,
   prefix = "",
   seen = { count: 0 },
+  depth = 0,
 ): Promise<string[]> {
+  if (depth > MAX_DEPTH) {
+    throw new Error(`list ${bucket} exceeded max folder depth ${MAX_DEPTH}`);
+  }
+
   const paths: string[] = [];
   let offset = 0;
 
@@ -53,9 +105,11 @@ async function listAllFiles(
     const page = data ?? [];
 
     for (const entry of page) {
+      // Never surface a folder's internal placeholder as a real object.
+      if (!entry.name || entry.name === EMPTY_FOLDER_PLACEHOLDER) continue;
       const fullPath = prefix ? `${prefix}/${entry.name}` : entry.name;
-      if (entry.id === null) {
-        paths.push(...(await listAllFiles(storageBucket, bucket, fullPath, seen)));
+      if (isFolderEntry(entry)) {
+        paths.push(...(await listAllFiles(storageBucket, bucket, fullPath, seen, depth + 1)));
       } else {
         paths.push(fullPath);
       }
@@ -109,29 +163,30 @@ export async function orphanCleanup(_payload: Record<string, unknown>): Promise<
           // A path is referenced if it appears in ANY of: the live document
           // row, any version row (FILE-P1-003), or a file-request upload row
           // (FILE-P1-002). Objects under a folder are listed recursively, so
-          // the reconciliation set must cover the same full paths.
-          const { data: docs, error: docsError } = await supabase
-            .from("documents")
-            .select("storage_path")
-            .in("storage_path", paths);
-          if (docsError) throw new Error(docsError.message);
-
-          const { data: versions, error: versionsError } = await supabase
-            .from("document_versions")
-            .select("storage_path")
-            .in("storage_path", paths);
-          if (versionsError) throw new Error(versionsError.message);
-
-          const { data: requestUploads, error: uploadsError } = await supabase
-            .from("file_request_uploads")
-            .select("storage_path")
-            .in("storage_path", paths);
-          if (uploadsError) throw new Error(uploadsError.message);
+          // the reconciliation set must cover the same full paths. The lookup
+          // is chunked because `paths` can hold thousands of keys
+          // (DATA-P2-002).
+          const fetchReferencedPaths = async (
+            table: "documents" | "document_versions" | "file_request_uploads",
+          ): Promise<string[]> => {
+            const found: string[] = [];
+            for (const chunk of chunkArray(paths, IN_CHUNK_SIZE)) {
+              const { data, error } = await supabase
+                .from(table)
+                .select("storage_path")
+                .in("storage_path", chunk);
+              if (error) throw new Error(error.message);
+              for (const row of data ?? []) {
+                if (row.storage_path) found.push(row.storage_path);
+              }
+            }
+            return found;
+          };
 
           referenced = new Set<string>([
-            ...(docs ?? []).map((d) => d.storage_path),
-            ...(versions ?? []).map((v) => v.storage_path),
-            ...(requestUploads ?? []).map((u) => u.storage_path),
+            ...(await fetchReferencedPaths("documents")),
+            ...(await fetchReferencedPaths("document_versions")),
+            ...(await fetchReferencedPaths("file_request_uploads")),
           ]);
         } else {
           const { data: profiles, error: profilesError } = await supabase
@@ -162,6 +217,22 @@ export async function orphanCleanup(_payload: Record<string, unknown>): Promise<
       });
 
       if (orphaned.length === 0) continue;
+
+      // Defence in depth (DATA-P0-001): `remove()` treats a bare folder name
+      // or trailing-slash prefix as a RECURSIVE delete, so only concrete,
+      // nested object keys may ever be handed to it. Reject empty/root-level
+      // paths and anything folder-like (trailing slash, or a prefix other
+      // listed objects live under). If anything else slips through, abort the
+      // bucket instead of destroying unrelated objects.
+      const unsafe = orphaned.filter(
+        (p) => p.length === 0 || !p.includes("/") || isFolderLike(p, paths),
+      );
+      if (unsafe.length > 0) {
+        const message = `refusing to remove non-object path(s): ${unsafe.join(", ")}`;
+        logger.error({ bucket, unsafe }, "Aborted orphan removal for unsafe paths");
+        failures.push(`${bucket}: ${message}`);
+        continue;
+      }
 
       const { error: removeError } = await supabase.storage.from(bucket).remove(orphaned);
       if (removeError) {

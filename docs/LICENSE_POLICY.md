@@ -1,7 +1,7 @@
 # License Policy
 
 Policy owner: Platform Engineering. Legal review: Founder. Last updated
-2026-10-02.
+2026-10-03.
 
 This document is the human-readable companion to
 [`security/license-policy.json`](../security/license-policy.json), which is the
@@ -69,3 +69,30 @@ The monorepo itself is `ISC` (see [`LICENSE`](../LICENSE) and every
 `package.json`). ISC is permissive and MIT-equivalent; it is intentional for
 this private, non-published monorepo. (Finding SBOM-P3-001 is a documentation
 gap, not a license change request.)
+
+## Generated artifacts (tracking policy)
+
+Generated supply-chain/legal aggregates are **ignored and regenerated**, never
+committed. This is a single policy for every such artifact so a stale committed
+copy cannot drift from the lockfile:
+
+| Artifact | Producer | Consumer | Tracking |
+| --- | --- | --- | --- |
+| `licenses.json` | `node scripts/collect-licenses.mjs --out licenses.json` | `scripts/license-gate.mjs`, `scripts/generate-sbom.mjs` | `.gitignore`d; regenerated in CI |
+| `sbom.cdx.json`, `sbom.spdx.json` | `node scripts/generate-sbom.mjs` (`.github/workflows/sbom.yml`) | uploaded as an artifact, bound to the commit SHA | `.gitignore`d; regenerated in CI |
+
+CI enforces the policy from both directions:
+
+- `test.yml` → **License policy gate** fails on a denied/unknown license over the
+  freshly regenerated inventory.
+- `test.yml` → **Ensure generated license/SBOM artifacts stay untracked** fails
+  if any of the files above is committed again.
+
+To inspect the current inventory locally, regenerate it (do not commit it):
+
+```bash
+node scripts/collect-licenses.mjs --out licenses.json
+```
+
+The SBOM is generated on demand by `sbom.yml` and, where a release needs it,
+attached to that release; see `docs/SBOM_PROCESS.md`.

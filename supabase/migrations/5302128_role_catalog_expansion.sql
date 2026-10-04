@@ -21,7 +21,7 @@
 --
 -- The roles + permission assignments are REAL configuration (unguarded,
 -- needed in every environment). The demo user accounts at the bottom are
--- dev-only and guarded by the production-domain check like 5302119.
+-- dev-only and opt-in, guarded by the same app.seed_demo flag as 5302119.
 -- =========================================================
 
 -- ---------------------------------------------------------
@@ -289,13 +289,13 @@ on conflict (role_id, permission_id) do nothing;
 -- ---------------------------------------------------------
 do $$
 begin
-  if exists (
-    select 1 from public.organizations
-    where primary_domain is not null
-      and primary_domain not like '%.example'
-      and primary_domain not like '%.local'
-  ) then
-    raise notice '5302128: production-like organization domains detected - skipping demo users';
+  -- Demo users are opt-in only and MUST NOT load by default (e.g. on a fresh
+  -- production database). Enable explicitly on a disposable dev database:
+  --   alter database postgres set app.seed_demo = 'true';
+  -- Local `supabase db reset` populates demo users from supabase/seeds/ after
+  -- migrations, so no flag is needed for local/E2E.
+  if coalesce(current_setting('app.seed_demo', true), '') <> 'true' then
+    raise notice '5302128: app.seed_demo is not ''true'' - skipping demo users';
     return;
   end if;
 

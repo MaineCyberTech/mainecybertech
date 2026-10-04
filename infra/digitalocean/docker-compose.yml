@@ -49,6 +49,10 @@ services:
       - /tmp
     restart: unless-stopped
     mem_limit: 48m
+    # Fork-bomb blast radius (CTR-P2-005): without a PID cap one container can
+    # exhaust the host PID table and take down every service on this
+    # single-droplet topology.
+    pids_limit: 128
     healthcheck:
       # Authenticate via REDISCLI_AUTH (env), not `-a <password>` (argv).
       test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping"]
@@ -108,6 +112,10 @@ services:
         condition: service_healthy
     restart: unless-stopped
     mem_limit: 256m
+    # Fork-bomb blast radius (CTR-P2-005). CPU limits are deliberately not set:
+    # the dev droplet is 1 vCPU, so per-service `cpus` caps would throttle the
+    # shared box rather than isolate it.
+    pids_limit: 256
     tmpfs:
       - /tmp
     read_only: true
@@ -150,6 +158,10 @@ services:
         condition: service_healthy
     restart: unless-stopped
     mem_limit: 256m
+    # Fork-bomb blast radius (CTR-P2-005). CPU limits are deliberately not set:
+    # the dev droplet is 1 vCPU, so per-service `cpus` caps would throttle the
+    # shared box rather than isolate it.
+    pids_limit: 256
     tmpfs:
       - /tmp
     read_only: true
@@ -180,6 +192,7 @@ services:
         condition: service_started
     restart: unless-stopped
     mem_limit: 512m
+    pids_limit: 256
     read_only: true
     tmpfs:
       - /tmp
@@ -209,6 +222,10 @@ services:
       - /tmp
     restart: unless-stopped
     mem_limit: 256m
+    # Fork-bomb blast radius (CTR-P2-005). CPU limits are deliberately not set:
+    # the dev droplet is 1 vCPU, so per-service `cpus` caps would throttle the
+    # shared box rather than isolate it.
+    pids_limit: 256
     read_only: true
 
   # Alertmanager — alert DELIVERY + the dead-man's switch (IR-P0-003).
@@ -264,6 +281,7 @@ services:
       - /tmp
     restart: unless-stopped
     mem_limit: 128m
+    pids_limit: 128
     read_only: true
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093/-/healthy"]
@@ -300,6 +318,7 @@ services:
       start_period: 20s
     restart: unless-stopped
     mem_limit: 64m
+    pids_limit: 128
 
 volumes:
   redis-data:

@@ -35,7 +35,8 @@ describe("securityHeaders", () => {
 
     expect(res.headers["x-content-type-options"]).toBe("nosniff");
     expect(res.headers["x-frame-options"]).toBe("DENY");
-    expect(res.headers["x-xss-protection"]).toBe("1; mode=block");
+    // SEC-P3-001: the deprecated X-XSS-Protection header is intentionally not set.
+    expect(res.headers["x-xss-protection"]).toBeUndefined();
     expect(res.headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
     expect(res.headers["strict-transport-security"]).toContain("max-age=63072000");
   });
@@ -46,6 +47,8 @@ describe("securityHeaders", () => {
 
     expect(res.headers["content-security-policy"]).toContain("default-src 'self'");
     expect(res.headers["content-security-policy"]).toContain("script-src 'self'");
+    // SEC-P3-001: the JSON API does not need inline styles.
+    expect(res.headers["content-security-policy"]).not.toContain("'unsafe-inline'");
   });
 });
 
