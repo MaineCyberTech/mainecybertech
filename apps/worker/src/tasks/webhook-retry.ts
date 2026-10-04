@@ -1,6 +1,7 @@
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
 import { assertSafeUrl } from "../lib/ssrf-guard";
+import { pinnedFetch } from "../lib/pinned-fetch";
 import type { TaskResult } from "../task-registry";
 
 const MAX_RETRIES = 5;
@@ -13,7 +14,9 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
 
     const { data: deliveries, error: fetchError } = await supabase
       .from("webhook_deliveries")
-      .select("id, webhook_id, event, request_body, error, retry_count, next_retry_at, dead_letter, idempotency_key")
+      .select(
+        "id, webhook_id, event, request_body, error, retry_count, next_retry_at, dead_letter, idempotency_key",
+      )
       .eq("status", "failed")
       .eq("dead_letter", false)
       // Generic inbound-webhook logs have no endpoint to retry against.
@@ -112,20 +115,20 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
 
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
-        const res = await fetch(endpoint.url, {
+        // SEC-P2-002: pinnedFetch validates DNS and pins the connection to the
+        // validated IP (closing the guard-then-fetch rebinding TOCTOU).
+        // Redirects are not followed, matching `redirect: "manual"`.
+        const res = await pinnedFetch(endpoint.url, {
           method: "POST",
           headers,
           body,
           signal: controller.signal,
-          // The SSRF guard validated the initial URL only; do not follow a
-          // redirect to an internal address.
-          redirect: "manual",
         });
         clearTimeout(timeout);
 
         const newRetryCount = (delivery.retry_count ?? 0) + 1;
 
-        if (res.ok) {
+        if (res.status >= 200 && res.status < 300) {
           await supabase
             .from("webhook_deliveries")
             .update({
