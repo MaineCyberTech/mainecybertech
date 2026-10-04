@@ -16,6 +16,9 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
 
   const nonce = randomUUID();
   res.setHeader("X-Content-Security-Policy-Nonce", nonce);
+  // Expose the nonce to route handlers (e.g. the docs inline bootstrap script)
+  // so they can tag inline <script> blocks the CSP will allow.
+  res.locals.cspNonce = nonce;
 
   const isSwaggerUI = req.path.startsWith("/api/v1/docs");
 
