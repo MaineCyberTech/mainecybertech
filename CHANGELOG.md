@@ -164,6 +164,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   pre-push check it flagged the pending migrations' own DDL (e.g. a drop
   migration) as drift, and its colour-sensitive grep intermittently missed real
   drops. Post-push a non-empty diff now means genuine divergence.
+- `FIELD_ENCRYPTION_KEY` is required in production: the API refuses to boot
+  without a valid 32-byte key instead of silently writing reversible `plain:`
+  PII, and `encryptField` throws rather than degrade at runtime (SEC-P1-001).
 - Deploy resilience (from the first post-merge deploy on 2026-10-03): the redis
   container now runs as `user: redis` — the custom entrypoint (password off
   argv) replaced the official privilege-dropping one, and as root with
