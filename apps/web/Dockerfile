@@ -56,6 +56,11 @@ RUN apk upgrade --no-cache libcrypto3 libssl3 \
            /usr/local/bin/pnpm /usr/local/bin/yarn /usr/local/bin/yarnpkg \
            /root/.cache/node/corepack
 
+# DL3045: set an explicit WORKDIR for the runner stage. The standalone bundle
+# keeps its monorepo layout, so `node apps/web/server.js` resolves identically
+# from /app as it did from the previous implicit `/`.
+WORKDIR /app
+
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
@@ -66,6 +71,6 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000 || exit 1
+  CMD ["wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000"]
 
 CMD ["node", "apps/web/server.js"]
