@@ -29,7 +29,13 @@ runs:
         MATCHES=$(printf '%s' "$DIFF" | grep -E "^\+" | grep -v 'PATTERNS=' | grep -v 'secrets\.' | grep -vE "^\+\s*#" | grep -cE "$PATTERNS" || true)
         echo "Secret-pattern matches in diff: $MATCHES"
         if [ "$MATCHES" -gt 0 ]; then
-          printf '%s' "$DIFF" | grep -nE "^\+.*($PATTERNS)" | grep -v 'PATTERNS=' | grep -v 'secrets\.' || true
-          echo "::error::Secret pattern detected in diff — remove or replace secret values."
+          # SEC-001: never echo the matched line — it contains the secret and
+          # GitHub retains workflow logs. Report only the affected files (from
+          # the diff's `+++ b/<path>` headers); values stay masked.
+          FILES=$(printf '%s' "$DIFF" | awk -v pat="$PATTERNS" '
+            /^\+\+\+ b\// { f=substr($0,7) }
+            /^\+/ && !/PATTERNS=/ && !/secrets\./ && !/^\+[[:space:]]*#/ && $0 ~ pat { print f }
+          ' | sort -u | tr '\n' ' ')
+          echo "::error::Secret pattern detected in diff (values redacted). Files: ${FILES:-unknown}"
           exit 1
         fi
