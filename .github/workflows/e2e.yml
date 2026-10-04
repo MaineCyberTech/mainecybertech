@@ -108,6 +108,10 @@ jobs:
           # The API boots with NODE_ENV=production in E2E, and production
           # refuses to start without a valid PII key (SEC-P1-001). Test-only key.
           echo "FIELD_ENCRYPTION_KEY=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" >> $API_ENV
+          # Production also refuses to start without Turnstile (SEC-P2-002).
+          # Cloudflare's documented always-pass test secret; the widget is not
+          # exercised by E2E, this only satisfies the fail-closed boot gate.
+          echo "TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA" >> $API_ENV
           # Also write root .env.local for dotenv.config({ path: ".env.local" }) in main.ts
           cp $API_ENV .env.local
 

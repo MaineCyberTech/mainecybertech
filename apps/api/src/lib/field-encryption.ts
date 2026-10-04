@@ -4,9 +4,8 @@
  * Provides AES-256-GCM encryption/decryption for sensitive profile fields
  * (full_name, email, phone, etc.) so they are not stored in plaintext in the
  * database. The key is derived from FIELD_ENCRYPTION_KEY (32-byte hex or
- * base64). In production the key is required: env validation and the module
- * boot guard below refuse to start without it, and encryptField throws rather
- * than fall back (SEC-P1-001). In development/test only, a missing key falls
+ * base64). In production the key is required: env validation refuses to boot
+ * without it and encryptField throws rather than fall back (SEC-P1-001). In development/test only, a missing key falls
  * back to a clearly-marked reversible `plain:` transform so local work still
  * runs; reading a legacy `plain:` value logs a counter but is never silently
  * rewritten.
@@ -37,27 +36,12 @@ function isProduction(): boolean {
   return (getEnv() as Record<string, unknown>).NODE_ENV === "production";
 }
 
-/**
- * SEC-P1-001: fail fast at boot in production. Without this the API starts and
- * `encryptField` silently degrades to the reversible `plain:` form, so PII is
- * stored in a recoverable encoding while the schema implies encryption.
- */
-if (isProduction()) {
-  const key = getKey();
-  if (!key || key.length !== 32) {
-    throw new Error(
-      "FIELD_ENCRYPTION_KEY must be a 32-byte hex or base64 key in production; refusing to start with reversible plaintext PII (SEC-P1-001)",
-    );
-  }
-}
-
 export function encryptField(plaintext: string): string {
   const key = getKey();
   if (!key || key.length !== 32) {
     // SEC-P1-001: never fall back to reversible plaintext in production.
-    // getEnv() already refuses to boot prod without a key and the module-level
-    // boot guard above fails fast at import; this guards direct callers and
-    // any future path that bypasses env validation.
+    // getEnv() already refuses to boot prod without a key; this guards direct
+    // callers and any future path that bypasses env validation.
     if (isProduction()) {
       throw new Error(
         "FIELD_ENCRYPTION_KEY is required to encrypt PII in production; refusing to store plaintext",
