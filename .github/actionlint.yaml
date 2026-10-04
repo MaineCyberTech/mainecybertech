@@ -1,0 +1,17 @@
+# actionlint configuration.
+#
+# actionlint only knows GitHub-hosted runner labels out of the box. These are
+# the custom labels used by the organisation's self-hosted runners; without
+# this list `runs-on: [self-hosted, linux, x64, <label>]` is reported as an
+# unknown label.
+self-hosted-runner:
+  labels:
+    - lab
+    - lab-ubuntu
+    - lab-python
+    - lab-sudo
+    - lab-docker
+    - lab-debian
+    - ci-runner
+    - edge-builder
+    - lab-runner-2
