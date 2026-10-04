@@ -1,0 +1,42 @@
+# Secret-scan configuration for mainecybertech (gitleaks >= 8.25).
+#
+# The built-in ruleset stays enabled. Every allowlist below is scoped to a
+# single rule (`generic-api-key`) and matches a reviewed, known-safe value or
+# file; no directory is exempt wholesale. `scripts/ci/verify-gitleaks-config.sh`
+# pins this down with a negative fixture that must still be detected.
+
+[extend]
+useDefault = true
+
+# `generic-api-key` is the broad high-entropy heuristic rule. The repo's
+# tracked hits are all reviewed false positives (see DET-P2-002); the
+# allowlists below are value/line scoped to each reviewed class.
+[[rules]]
+id = "generic-api-key"
+
+    # "m365-hardening" is a product module identifier, not a credential. It
+    # appears in the portal/admin nav config, a permission migration, a feature
+    # doc, and the audit artifacts that quote them.
+    [[rules.allowlists]]
+    description = "m365-hardening is a module identifier, not a secret"
+    regexTarget = "line"
+    regexes = ['''m365-hardening''']
+
+    # prompts/manifest.json is a checksum manifest: each value is the SHA-256 of
+    # a prompt file. The entropy heuristic sees the 64-hex digest as a key.
+    # Scoped to this file AND to a quoted 64-hex JSON value.
+    [[rules.allowlists]]
+    description = "prompt manifest SHA-256 checksums"
+    condition = "AND"
+    paths = ['''prompts/manifest\.json$''']
+    regexTarget = "line"
+    regexes = ['''"[0-9a-f]{64}"''']
+
+    # Throwaway default JWT for the local Supabase e2e stack. CI overrides it
+    # with `secrets.E2E_JWT_SECRET`; it is never production key material.
+    # Match the literal value, not a path, so the audit docs that quote the
+    # workflow line are covered too.
+    [[rules.allowlists]]
+    description = "e2e throwaway JWT default"
+    regexTarget = "line"
+    regexes = ['''e2e-test-secret-32-characters-long''']
