@@ -104,6 +104,12 @@ jobs:
           echo "CORS_ORIGIN=http://localhost:3000" >> $API_ENV
           echo "LOG_LEVEL=silent" >> $API_ENV
           echo "JWT_SECRET=e2e-test-secret-32-characters-long" >> $API_ENV
+          # SEC-P1-001: the API refuses to boot under NODE_ENV=production
+          # (set in the "Start API server" step) without a valid 32-byte
+          # FIELD_ENCRYPTION_KEY. E2E runs against a throwaway local Supabase,
+          # so a fresh random test key per run is fine and is never real PII key
+          # material.
+          echo "FIELD_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> $API_ENV
           # Also write root .env.local for dotenv.config({ path: ".env.local" }) in main.ts
           cp $API_ENV .env.local
 
