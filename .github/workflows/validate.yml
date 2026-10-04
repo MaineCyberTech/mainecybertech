@@ -16,6 +16,20 @@ jobs:
       # test.yml's security-scan (PR side).
       - uses: ./.github/actions/dependency-audit
 
+      - name: Verify tracked shell scripts are executable
+        # PORT-001: docs instruct operators to run `./scripts/...`; a missing
+        # exec bit only fails on Linux/macOS, at the worst possible moment
+        # (incident/rollback). Fail the deploy gate if any tracked *.sh is 100644.
+        run: |
+          set -e
+          bad=$(git ls-files -s | awk '$1 == "100644" && $4 ~ /\.sh$/ { print $4 }')
+          if [ -n "$bad" ]; then
+            echo "::error::Tracked .sh files are missing the executable bit:"
+            printf '%s\n' "$bad"
+            echo "Fix: git update-index --chmod=+x <file>"
+            exit 1
+          fi
+
       - name: Verify required branch-protection checks resolve
         # Fails when a required status check in .github/branch-protection/*.json
         # is not a check-run name any workflow actually emits. A mismatch means

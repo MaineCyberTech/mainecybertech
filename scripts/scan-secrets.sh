@@ -24,9 +24,12 @@ if [ "$MATCHES" -gt 0 ]; then
   echo ""
   echo "  HIGH-ENTROPY / SECRET PATTERN DETECTED IN STAGED FILES"
   echo ""
-  echo "$STAGED" | xargs git diff --cached -U0 -- 2>/dev/null | grep -nE "^\+.*($PATTERNS)" | grep -v "PATTERNS=" | grep -v 'secrets\.' | while IFS= read -r line; do
-    echo "    $line"
-  done
+  # SEC-001: report only the affected files, never the matched line — the
+  # line contains the secret and would end up in the terminal / CI logs.
+  echo "$STAGED" | xargs git diff --cached -U0 -- 2>/dev/null | awk -v pat="$PATTERNS" '
+    /^\+\+\+ b\// { f=substr($0,7) }
+    /^\+/ && !/PATTERNS=/ && !/secrets\./ && !/^\+[[:space:]]*#/ && $0 ~ pat { print "    " f }
+  ' | sort -u
   echo ""
   echo "  Commit blocked. Remove or replace secret values before committing."
   exit 1

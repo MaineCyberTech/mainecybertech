@@ -54,7 +54,10 @@ services:
       retries: 3
 
   e2e:
-    image: mcr.microsoft.com/playwright:v1.61.0
+    # Digest-pinned to the multi-arch manifest for v1.61.0 so a re-tagged
+    # upstream image cannot silently change the e2e toolchain.
+    # Refresh: docker buildx imagetools inspect mcr.microsoft.com/playwright:<tag>
+    image: mcr.microsoft.com/playwright:v1.61.0@sha256:57b65fdc9ceabe0ef613124c7bbe2babcf9362c4d85e382fe3b03604e84b428a
     working_dir: /app
     volumes:
       - .:/app

@@ -1,0 +1,302 @@
+{
+  "run": "20261004-0700-main-178b91c",
+  "generated": "2026-10-04T07:45:32Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 14,
+    "bySeverity": {
+      "P2": 7,
+      "P3": 7
+    },
+    "byArea": {
+      "CI": 6,
+      "PORT": 1,
+      "SEC": 3,
+      "CONF": 2,
+      "SUPPLY": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "World-open DigitalOcean firewall mutation with no approval and unvalidated udp_port",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 24,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/wireguard-endpoint.yml:24 permissions: (job has no environment:)",
+        ".github/workflows/wireguard-endpoint.yml:32 DROPLET: ${{ inputs.droplet }}",
+        ".github/workflows/wireguard-endpoint.yml:33 UDP_PORT: ${{ inputs.udp_port }}",
+        ".github/workflows/wireguard-endpoint.yml:70 curl -sS -X POST ... /v2/firewalls/$FID/rules",
+        ".github/workflows/wireguard-endpoint.yml:72 -d \"{\\\"inbound_rules\\\":[{\\\"protocol\\\":\\\"udp\\\",\\\"ports\\\":\\\"$UDP_PORT\\\",\\\"sources\\\":{\\\"addresses\\\":[\\\"0.0.0.0/0\\\",\\\"::/0\\\"]}}]}\"",
+        ".github/workflows/wireguard-endpoint.yml:31 DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}"
+      ],
+      "impact": "Anyone with repository write access can trigger this workflow_dispatch to add a world-open (0.0.0.0/0, ::/0) inbound UDP rule to any droplet in the DigitalOcean account, including production, using the broad DO_API_TOKEN. udp_port is embedded raw in the JSON body so a crafted value can inject additional rules. No environment approval gate exists for the mutation.",
+      "recommendation": "Add an environment approval (prod-approval or a dedicated firewall-approval), restrict droplet to an explicit choice allow-list, validate udp_port (^[0-9]{1,5}$, documented allow-list), build the JSON with jq -n --argjson instead of interpolation, narrow sources to known lab/VPN CIDRs, and add an expiry/removal + audit step. Consider a separate least-privilege token/workflow for firewall changes.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CI-P2-002",
+      "severity": "P2",
+      "title": "Deploy-gate secret scan is a no-op on pushes to main",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 43,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/validate.yml:43 # Runs as part of the deploy gate so a leaked credential cannot ship even if PR-only checks were bypassed.",
+        ".github/actions/secret-scan/action.yml:15 if [ \"${{ github.event_name }}\" = \"pull_request\" ]; then",
+        ".github/actions/secret-scan/action.yml:18 BASE=\"$(git merge-base HEAD origin/main 2>/dev/null || echo HEAD~1)\"",
+        ".github/actions/secret-scan/action.yml:20 DIFF=$(git diff -U0 \"$BASE\" HEAD 2>/dev/null || git diff -U0 HEAD~1 HEAD)"
+      ],
+      "impact": "On a push to main (the prod deploy path), origin/main equals HEAD, so git diff is empty and the scanner reports zero matches. The defense-in-depth claim in validate.yml is unsupported for the exact commit that ships to production; a direct/admin push can bypass the PR-side scan.",
+      "recommendation": "For push events, diff against github.event.before (fall back to HEAD~1 when it is all-zeros), not git merge-base with origin/main. Add a regression test that a synthetic secret on the push path fails the scan.",
+      "deterministic_ref": null,
+      "confidence": "Medium",
+      "status": "verified-fixed",
+      "note": "merged mainecybertech#75 @ 9cc582f"
+    },
+    {
+      "id": "CI-P2-003",
+      "severity": "P2",
+      "title": "Production approval environment documented as having no required reviewers",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 11,
+      "area": "CI",
+      "evidence": [
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:11 **Required reviewers (1+) must be configured in GitHub**",
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:12 ..prod-approval..; none are configured yet, so the approval",
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:13 gate is not yet in force.",
+        ".github/workflows/deploy-do.yml:486 environment: ${{ needs.setup.outputs.name == 'prod' && 'prod-approval' || 'dev' }}",
+        ".github/workflows/supabase-migrations.yml:30 environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}"
+      ],
+      "impact": "The intended second human gate for production deploy and Terraform apply is not configured, and prod DB migrations run under the unprotected prod environment. Production changes rely solely on branch protection; a compromised merge-capable account can reach production without an approval prompt.",
+      "recommendation": "Configure prod-approval with 1+ required reviewers in GitHub Settings -> Environments, move prod migrations under prod-approval, and update the matrix/runbooks. Add a runbook verification step and, if possible, a check that the environment has protection rules.",
+      "deterministic_ref": null,
+      "confidence": "Medium",
+      "status": "verified-fixed",
+      "note": "merged mainecybertech#80 @ cd13108"
+    },
+    {
+      "id": "PORT-P2-001",
+      "severity": "P2",
+      "title": "17 tracked shell scripts lack the exec bit; documented ./scripts/... commands fail",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 95,
+      "area": "PORT",
+      "evidence": [
+        "README.md:95 ./scripts/start-local-stack.sh         # Linux/macOS",
+        "docs/ROLLBACK_PROCEDURES.md:141 SUPABASE_DB_URL=postgresql://... ./scripts/restore-database.sh --dry-run",
+        "docs/ROLLBACK_PROCEDURES.md:175 ./scripts/restore-storage.sh --dry-run",
+        "git ls-files -s: scripts/restore-database.sh, scripts/restore-storage.sh, scripts/start-local-stack.sh ... mode 100644",
+        "repository has 17 tracked *.sh at mode 100644; only scripts/scan-secrets.sh is 100755"
+      ],
+      "impact": "Operators following the incident/rollback docs get 'Permission denied' on Linux/macOS because the scripts are not executable. CI is unaffected (it calls bash scripts/...), so the failure surfaces only under human, often urgent, use.",
+      "recommendation": "git update-index --chmod=+x the 17 scripts and commit; add a CI check that no tracked *.sh is mode 100644.",
+      "deterministic_ref": "DET-P2-002",
+      "confidence": "High",
+      "status": "verified-fixed",
+      "note": "merged mainecybertech#74 @ 54c76a3"
+    },
+    {
+      "id": "SEC-P2-001",
+      "severity": "P2",
+      "title": "Secret scanner echoes the matched secret value into CI logs",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 21,
+      "area": "SEC",
+      "evidence": [
+        ".github/actions/secret-scan/action.yml:21 MATCHES=$(printf '%s' \"$DIFF\" | grep -E \"^\\+\" | ... | grep -cE \"$PATTERNS\" ...)",
+        ".github/actions/secret-scan/action.yml:24 printf '%s' \"$DIFF\" | grep -nE \"^\\+.*($PATTERNS)\" | ... || true",
+        "scripts/scan-secrets.sh:27 grep -nE \"^\\+.*($PATTERNS)\" ... while IFS= read -r line; do echo \"    $line\""
+      ],
+      "impact": "On detection the scanner prints the offending added line verbatim, including the secret, into GitHub Actions logs (retained/exportable) and pre-commit output, turning a blocked commit into a logged exposure.",
+      "recommendation": "Print only file, line number and rule name; never echo the diff or matched value; call ::add-mask:: before any echo. Apply the same change to scripts/scan-secrets.sh. Add a test asserting no matched value appears in output.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "verified-fixed",
+      "note": "merged mainecybertech#76 @ d0dec1e"
+    },
+    {
+      "id": "SEC-P2-002",
+      "severity": "P2",
+      "title": "Webhook SSRF guard has a DNS-rebinding TOCTOU window",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 81,
+      "area": "SEC",
+      "evidence": [
+        "apps/api/src/lib/ssrf-guard.ts:81 export async function assertSafeWebhookUrl(url: string): Promise<void>",
+        "apps/api/src/lib/ssrf-guard.ts:94 addresses = await dns.promises.lookup(hostname, { all: true });",
+        "apps/api/src/lib/webhook-dispatcher.ts:48 await assertSafeWebhookUrl(url);",
+        "apps/api/src/lib/webhook-dispatcher.ts:51 res = await fetch(url, {",
+        "apps/api/src/routes/webhook-management.ts:461 await assertSafeWebhookUrl(webhook.url); (then :466 fetch(webhook.url))"
+      ],
+      "impact": "The guard validates the resolved address but fetch() resolves the hostname a second time. An attacker-controlled hostname can return a public IP to the guard and a private/loopback/metadata IP to the fetch (DNS rebinding), reaching internal services from the API/worker network despite the documented anti-rebinding control.",
+      "recommendation": "Resolve once and connect to the validated IP while preserving the Host header (custom undici lookup / ssrf-req-filter), or re-validate the connected peer IP and abort on change; explicitly block link-local/metadata ranges. Apply the same pattern in webhook-management.ts.",
+      "deterministic_ref": null,
+      "confidence": "Medium",
+      "status": "verified-fixed",
+      "note": "merged mainecybertech#81 @ dc4ecb1"
+    },
+    {
+      "id": "CONF-P2-001",
+      "severity": "P2",
+      "title": "Workflow-scope PAT SCHEDULE_DISPATCH_TOKEN omitted from secret inventory and rotation policy",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 13,
+      "area": "CONF",
+      "evidence": [
+        ".github/workflows/backup-dispatch.yml:13 needs a `SCHEDULE_DISPATCH_TOKEN` secret (a PAT or GitHub App token with",
+        ".github/workflows/backup-dispatch.yml:14 `actions: write`).",
+        ".github/workflows/backup-dispatch.yml:62 TOKEN: ${{ secrets.SCHEDULE_DISPATCH_TOKEN }}",
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md has no SCHEDULE_DISPATCH_TOKEN row",
+        "docs/SECRETS_ROTATION.md:9-57 inventory has no SCHEDULE_DISPATCH_TOKEN entry"
+      ],
+      "impact": "A long-lived credential capable of dispatching privileged workflows is neither inventoried nor scheduled for rotation/revocation, so it can be forgotten during normal rotation and incident response.",
+      "recommendation": "Add SCHEDULE_DISPATCH_TOKEN to the secrets matrix and SECRETS_ROTATION.md with an owner and 90-day rotation; prefer a repository-scoped GitHub App installation token with short expiry over a classic PAT.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "verified-fixed",
+      "note": "merged mainecybertech#77 @ f313947"
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "actionlint/shellcheck workflow lint issues (SC2086/SC2129/SC2002/SC2015)",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 26,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/build-push.yml:26 run: | (SC2086 x2 at :27-:28); :99 (SC2086); :169 (SC2086 x3)",
+        ".github/workflows/deploy-do.yml:72 run: | (9x SC2086 + SC2129); :130 (SC2086)",
+        ".github/workflows/terraform-do.yml:47 (SC2086 x2); :209 (SC2086); :249 (SC2086)",
+        ".github/workflows/wireguard-endpoint.yml:53 (SC2015)",
+        ".github/workflows/e2e.yml:98 (SC2129); :117 (SC2002)"
+      ],
+      "impact": "Reproduced with actionlint 1.7.12 + shellcheck 0.9.0 on main: 20x SC2086 (info), 2x SC2129 (style), 1x SC2002 (style), 1x SC2015 (info). No functional/security impact (unquoted values cannot contain whitespace), but the repo has no actionlint job, so future real workflow errors go undetected.",
+      "recommendation": "Quote GITHUB_ENV/GITHUB_OUTPUT/GITHUB_STEP_SUMMARY and expression-derived variables; add an actionlint CI job (and optionally zizmor for security-specific checks).",
+      "deterministic_ref": "DET-P2-001",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CI-P3-002",
+      "severity": "P3",
+      "title": "Over-broad workflow token permissions (unused write scopes)",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 19,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/terraform-do.yml:19 pull-requests: write",
+        ".github/workflows/terraform-do.yml:20 actions: write (workflow trigger is workflow_dispatch only at :9; PR-comment step :126-:140 is unreachable)",
+        ".github/workflows/e2e.yml:32 actions: write",
+        ".github/workflows/a11y-breadth.yml:16 actions: write",
+        ".github/workflows/deploy-do.yml:36 actions: write"
+      ],
+      "impact": "Write scopes no step consumes are granted to every job, increasing the blast radius if a step or action is compromised. Least privilege is a CI-hardening baseline.",
+      "recommendation": "Remove unused actions: write / pull-requests: write; scope any genuinely needed write permission to the specific job (deploy-do.yml already job-scopes verify-attestations). Re-run actionlint/zizmor to confirm.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CI-P3-003",
+      "severity": "P3",
+      "title": "StrictHostKeyChecking=no in the deploy health check",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 777,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:777 SSH=\"ssh -i $KEY_FILE -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@$DROPLET_IP\""
+      ],
+      "impact": "The post-deploy worker health check disables SSH host-key verification, so a poisoned/spoofed droplet IP could receive the root CI_SSH_PRIVATE_KEY and/or return false health results.",
+      "recommendation": "Pin the droplet host key via a secret and use StrictHostKeyChecking=yes with a known_hosts file (or the host-key configuration used by the appleboy/ssh-action steps).",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P3-001",
+      "severity": "P3",
+      "title": "gitleaks generic-api-key/jwt hits are false positives (no tracked secret)",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 182,
+      "area": "SEC",
+      "evidence": [
+        "prompts/manifest.json:182 SHA-256 content hash entry",
+        "apps/web/lib/navigation/portal-nav.ts:178 key: \"m365-hardening\",",
+        "docs/features/m365-hardening.md:15 Permission module key: `m365-hardening`",
+        "supabase/migrations/5302128_role_catalog_expansion.sql:101 or (p.module_key = 'm365-hardening' ...)",
+        ".github/workflows/e2e.yml:107 echo \"JWT_SECRET=e2e-test-secret-32-characters-long\" >> $API_ENV",
+        ".gitignore:37 supabase/.temp/"
+      ],
+      "impact": "gitleaks (reproduced in WSL) reports 33 hits (31 generic-api-key, 2 jwt). All tracked hits are SHA-256 hashes in prompts/manifest.json, the m365-hardening module key, or a deliberate e2e test JWT. The 2 jwt and 2 generic-api-key hits under supabase/.temp/start-secrets/.../docker.env are gitignored local artifacts, not repository content. No real secret is present.",
+      "recommendation": "Commit a .gitleaks.toml allowlisting prompts/manifest.json (hashes), the m365-hardening key and test fixtures; optionally run gitleaks in CI with high-confidence rules only. Do not allowlist broad path globs that could hide real secrets.",
+      "deterministic_ref": "DET-P2-003",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P3-001",
+      "severity": "P3",
+      "title": "Unpinned container images (test/local only); production app images tag-based by design",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 57,
+      "area": "SUPPLY",
+      "evidence": [
+        "docker-compose.yml:57 image: mcr.microsoft.com/playwright:v1.61.0",
+        ".github/workflows/db-restore-test.yml:103 postgres:16-alpine",
+        "infra/digitalocean/docker-compose.yml:61 ${GHCR_IMAGE_PREFIX:-...}/mct-api:${IMAGE_TAG:?IMAGE_TAG must be set}",
+        "infra/digitalocean/docker-compose.yml:28 image: redis:7-alpine@sha256:... (pinned)",
+        ".github/workflows/e2e.yml:74 npm install -g supabase@2.107.0 (supabase start pulls floating Docker Hub images)"
+      ],
+      "impact": "Production infra services are digest-pinned and the app images are resolved to a digest and attestation-verified before deploy, so the deterministic '4 unpinned images' is only partially applicable. The genuinely unpinned playwright and postgres images run in CI/dev and could execute a tampered tag on the runner.",
+      "recommendation": "Pin the playwright and postgres test images by digest and consider pinning the Supabase local image set; document that app images are intentionally tag-addressed and attestation-verified.",
+      "deterministic_ref": "DET-P3-004",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P3-002",
+      "severity": "P3",
+      "title": "Dockerfile lint: missing WORKDIR in web runner stage and shell-form HEALTHCHECK",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 37,
+      "area": "SUPPLY",
+      "evidence": [
+        "apps/web/Dockerfile:37 FROM node:20-alpine@sha256:... AS runner",
+        "apps/web/Dockerfile:59 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./",
+        "apps/web/Dockerfile:60 COPY ... .next/static ./apps/web/.next/static",
+        "apps/web/Dockerfile:61 COPY ... public ./apps/web/public",
+        "apps/web/Dockerfile:68 CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000 || exit 1",
+        "apps/api/Dockerfile:58 HEALTHCHECK ... CMD wget ...",
+        "apps/worker/Dockerfile:57 HEALTHCHECK ... CMD wget ..."
+      ],
+      "impact": "hadolint DL3045 (COPY to relative destination without WORKDIR) applies to the web runner stage, which is a fresh FROM and does not inherit base's WORKDIR /app. DL3025 flags shell-form CMD inside HEALTHCHECK. All cosmetic/reliability; builds currently work.",
+      "recommendation": "Add WORKDIR /app to the web runner stage before the COPYs; optionally use exec-form HEALTHCHECK arrays. Add hadolint to CI with documented ignores if needed.",
+      "deterministic_ref": "DET-P3-005",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CONF-P3-001",
+      "severity": "P3",
+      "title": "Secret rotation policy has no evidence any secret was ever rotated",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 221,
+      "area": "CONF",
+      "evidence": [
+        "docs/SECRETS_ROTATION.md:221 ## Rotation Log",
+        "docs/SECRETS_ROTATION.md:225 | (Initial deployment) | All | - | No | dev, prod |",
+        "docs/SECRETS_ROTATION.md:227 Update this table after each rotation event."
+      ],
+      "impact": "The policy is thorough ('configured'), but the log contains only the initial-deployment row, so 90-day secrets (JWT, Stripe, Jira/JSM tokens, Supabase access token, CI SSH key, METRICS_TOKEN) have no verifiable rotation artifact. 'Configured' is not 'exercised'.",
+      "recommendation": "Populate the Rotation Log on the next cycle with date, operator, environment and the gh secret set / deploy run URL; have the secret-rotation-reminder issue require a reviewer to confirm the log entry.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    }
+  ]
+}

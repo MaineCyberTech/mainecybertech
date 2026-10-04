@@ -5,7 +5,14 @@
 - `dev` — Dev deploys, Terraform dev apply, dev migrations (no protection rules)
 - `prod` — Prod Supabase migrations (`supabase-migrations.yml`); used by
   `deploy-do`'s read-only `resolve-ip` job and `terraform-do`'s
-  `terraform-plan` job (no protection rules)
+  `terraform-plan` job. **Required reviewers (1+) must also be configured
+  here** (CI-004): `supabase-migrations.yml` runs `supabase db push` against
+  production on push to `main`, which is a production mutation — branch
+  protection alone is not a second human gate. Once reviewers are set, the
+  `prod` environment prompts before prod migrations run. Alternatively,
+  migrate the migration job to `prod-approval` after confirming its
+  environment-scoped `SUPABASE_ACCESS_TOKEN` / `SUPABASE_PROJECT_REF` are
+  available there.
 - `prod-approval` — Attached by the production-mutating jobs: the `deploy-do`
   `deploy` job (prod) and the `terraform-do` `terraform-apply-prod` job.
   **Required reviewers (1+) must be configured in GitHub** (Settings →
@@ -113,6 +120,7 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 | `SUPABASE_ACCESS_TOKEN`   | yes | yes  | Supabase CLI auth for `supabase link` / `db push` (`supabase-migrations.yml`) |
 | `CHROMATIC_PROJECT_TOKEN` | yes | yes  | Chromatic visual-regression upload (`chromatic.yml`, best-effort job)         |
 | `E2E_JWT_SECRET`          | opt | opt  | Optional E2E JWT secret; `e2e.yml` falls back to a built-in test value        |
+| `SCHEDULE_DISPATCH_TOKEN` | —   | yes  | Repo-scoped PAT / GitHub App token with `actions: write` for `backup-dispatch.yml` workflow dispatch (CONF-001; see `docs/SECRETS_ROTATION.md`) |
 
 ## Repository or environment variables required by workflows
 
@@ -131,7 +139,10 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 
 1. **Create environments** in GitHub Settings → Environments:
    - `dev` — no protection rules
-   - `prod` — no protection rules (prod migrations; read-only plan/resolve jobs)
+   - `prod` — **add Required reviewers (1+)** because `supabase-migrations.yml`
+     runs production DB migrations under this environment on push to `main`
+     (CI-004); read-only plan/resolve jobs share it. This **must be configured
+     in GitHub and cannot be set from the repo**.
    - `prod-approval` — **add Required reviewers (1+)** to actually gate prod
      deploys and prod Terraform apply. This is the single gate for both app and
      infra production changes; it **must be configured in GitHub and cannot be
@@ -154,6 +165,10 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
    - `REDIS_PASSWORD`, `FIELD_ENCRYPTION_KEY`, `TURNSTILE_SECRET_KEY`, `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` — deployment/runtime config forwarded by `deploy-do.yml`
    - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — from Stripe dashboard
    - `CHROMATIC_PROJECT_TOKEN` — from the Chromatic project (visual regression)
+   - `SCHEDULE_DISPATCH_TOKEN` — repo-scoped token with `actions: write` used by
+     `backup-dispatch.yml` to dispatch the develop backup/restore workflows.
+     Prefer a repository-scoped GitHub App installation token (short expiry)
+     over a classic PAT; rotate every 90 days (see `docs/SECRETS_ROTATION.md`)
    - Integration secrets as needed (Jira, JSM, M365, SMTP, Sentry, Teams webhooks)
 
 3. **Add variables** to the appropriate environment scopes (or repo-wide):

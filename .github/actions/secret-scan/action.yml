@@ -15,14 +15,28 @@ runs:
         if [ "${{ github.event_name }}" = "pull_request" ]; then
           BASE="${{ github.event.pull_request.base.sha }}"
         else
-          BASE="$(git merge-base HEAD origin/main 2>/dev/null || echo HEAD~1)"
+          # CI-003: on a push, diff the pushed commit against the event's
+          # before-SHA. Using `git merge-base HEAD origin/main` was a no-op on
+          # pushes to main (origin/main == HEAD => empty diff), so the deploy
+          # gate scanned nothing on the exact commit that ships to production.
+          BASE="${{ github.event.before }}"
+          # First push to a branch (or non-push event): before is all-zeros.
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE="HEAD~1"
+          fi
         fi
         DIFF=$(git diff -U0 "$BASE" HEAD 2>/dev/null || git diff -U0 HEAD~1 HEAD)
         MATCHES=$(printf '%s' "$DIFF" | grep -E "^\+" | grep -v 'PATTERNS=' | grep -v 'secrets\.' | grep -vE "^\+\s*#" | grep -cE "$PATTERNS" || true)
         echo "Secret-pattern matches in diff: $MATCHES"
         if [ "$MATCHES" -gt 0 ]; then
-          printf '%s' "$DIFF" | grep -nE "^\+.*($PATTERNS)" | grep -v 'PATTERNS=' | grep -v 'secrets\.' || true
-          echo "::error::Secret pattern detected in diff — remove or replace secret values."
+          # SEC-001: never echo the matched line — it contains the secret and
+          # GitHub retains workflow logs. Report only the affected files (from
+          # the diff's `+++ b/<path>` headers); values stay masked.
+          FILES=$(printf '%s' "$DIFF" | awk -v pat="$PATTERNS" '
+            /^\+\+\+ b\// { f=substr($0,7) }
+            /^\+/ && !/PATTERNS=/ && !/secrets\./ && !/^\+[[:space:]]*#/ && $0 ~ pat { print f }
+          ' | sort -u | tr '\n' ' ')
+          echo "::error::Secret pattern detected in diff (values redacted). Files: ${FILES:-unknown}"
           exit 1
         fi
 

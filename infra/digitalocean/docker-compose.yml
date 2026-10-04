@@ -61,6 +61,10 @@ services:
       retries: 3
 
   # ===== Our Apps =====
+  # App images are built+tagged by CI with the immutable commit SHA. The deploy
+  # workflow resolves each tag to its manifest digest and verifies the build
+  # attestation before `up` (see README.md > Container image pinning); they are
+  # not statically digest-pinned because the SHA tag changes per release.
   api:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-api:${IMAGE_TAG:?IMAGE_TAG must be set}
     logging: *default-logging

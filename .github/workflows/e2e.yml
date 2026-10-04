@@ -29,7 +29,6 @@ on:
 
 permissions:
   contents: read
-  actions: write
 
 concurrency:
   # Cancel superseded PR runs; never cancel the prod deploy-gate call from
@@ -105,9 +104,12 @@ jobs:
           echo "CORS_ORIGIN=http://localhost:3000" >> $API_ENV
           echo "LOG_LEVEL=silent" >> $API_ENV
           echo "JWT_SECRET=e2e-test-secret-32-characters-long" >> $API_ENV
-          # The API boots with NODE_ENV=production in E2E, and production
-          # refuses to start without a valid PII key (SEC-P1-001). Test-only key.
-          echo "FIELD_ENCRYPTION_KEY=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" >> $API_ENV
+          # SEC-P1-001: the API refuses to boot under NODE_ENV=production
+          # (set in the "Start API server" step) without a valid 32-byte
+          # FIELD_ENCRYPTION_KEY. E2E runs against a throwaway local Supabase,
+          # so a fresh random test key per run is fine and is never real PII key
+          # material.
+          echo "FIELD_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> $API_ENV
           # Production also refuses to start without Turnstile (SEC-P2-002).
           # Cloudflare's documented always-pass test secret; the widget is not
           # exercised by E2E, this only satisfies the fail-closed boot gate.

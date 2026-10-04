@@ -177,6 +177,17 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - `FIELD_ENCRYPTION_KEY` is required in production: the API refuses to boot
   without a valid 32-byte key instead of silently writing reversible `plain:`
   PII, and `encryptField` throws rather than degrade at runtime (SEC-P1-001).
+- E2E now provisions a throwaway `FIELD_ENCRYPTION_KEY` for the local API: the
+  SEC-P1-001 production boot guard otherwise refused to start the API in the
+  workflow's `NODE_ENV=production` step.
+- CI workflows now request least-privilege `GITHUB_TOKEN` scopes: the unused
+  `actions: write` grant was dropped from `terraform-do`, `e2e`, `a11y-breadth`
+  and `deploy-do` (artifact upload/download uses the runner's runtime token, not
+  `GITHUB_TOKEN`) (CI-P3-002).
+- Worker webhook delivery and retry now use the `pinnedFetch` helper (resolves
+  and validates DNS once, then pins the connection to that IP) instead of a
+  guard-then-`fetch`, closing the DNS-rebinding TOCTOU in the worker
+  (SEC-P2-002).
 - Backups can resolve their configuration now: `db-backup`,
   `db-restore-test` and `storage-backup` attach the `dev` environment (which
   holds `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`), their `AWS_*` credentials
