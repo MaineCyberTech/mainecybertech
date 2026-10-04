@@ -6,7 +6,8 @@
  * database. The key is derived from MCT_FIELD_ENCRYPTION_KEY (32-byte hex or
  * base64). When the key is absent (e.g. local dev without the secret), the
  * functions fall back to a clearly-marked reversible transform so the app
- * still runs, but callers should treat unencrypted storage as non-production.
+ * still runs — but in **production a missing or invalid key is a boot error**
+ * (SEC-P1-001): the API must never come up writing reversible `plain:` PII.
  *
  * NOTE: This utility is the building block. Applying it to the `profiles`
  * table requires a migration adding an `encrypted_pii jsonb` column plus a
@@ -29,9 +30,33 @@ function getKey(): Buffer | null {
   }
 }
 
+function isProduction(): boolean {
+  return (getEnv() as Record<string, unknown>).NODE_ENV === "production";
+}
+
+/**
+ * SEC-P1-001: fail fast at boot in production. Without this the API starts and
+ * `encryptField` silently degrades to the reversible `plain:` form, so PII is
+ * stored in a recoverable encoding while the schema implies encryption.
+ */
+if (isProduction()) {
+  const key = getKey();
+  if (!key || key.length !== 32) {
+    throw new Error(
+      "FIELD_ENCRYPTION_KEY must be a 32-byte hex or base64 key in production; refusing to start with reversible plaintext PII (SEC-P1-001)",
+    );
+  }
+}
+
 export function encryptField(plaintext: string): string {
   const key = getKey();
   if (!key || key.length !== 32) {
+    if (isProduction()) {
+      // Defence in depth behind the boot guard: never write reversible PII.
+      throw new Error(
+        "FIELD_ENCRYPTION_KEY is not configured; refusing to write reversible plaintext PII (SEC-P1-001)",
+      );
+    }
     // Dev fallback: not real encryption. Callers must not rely on this in prod.
     return `plain:${plaintext}`;
   }
