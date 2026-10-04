@@ -3,10 +3,16 @@ dotenv.config({ path: ".env.local" });
 import { createApp } from "./app";
 import { getEnv } from "./config/env";
 import { logger } from "./lib/logger";
+import { assertRlsStartupConfig } from "./lib/rls-startup-check";
 import { checkRedisHealth } from "./lib/health";
 import { initializeCache, shutdownCache } from "./middleware/cache";
 
 const env = getEnv();
+
+// ARCH-P2-002: refuse to start in production with an empty RLS read allow-list,
+// which would silently route every read through the service-role client.
+assertRlsStartupConfig(env);
+
 const app = createApp();
 
 if (env.NODE_ENV === "production") {
