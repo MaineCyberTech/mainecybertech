@@ -92,6 +92,7 @@
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md)                                                       | Common issues and fixes by service (new)                        |
 | [ROLLBACK_PROCEDURES.md](ROLLBACK_PROCEDURES.md)                                               | Docker, Supabase, Terraform rollback                            |
 | [RELEASING.md](RELEASING.md)                                                                   | Branch model, quality gates, production promotion, rollback     |
+| [RELEASE_GATE.md](RELEASE_GATE.md)                                                             | Release-readiness gate: exit criteria, fail-closed decisions, go-live checklist |
 | [CI.md](CI.md)                                                                                 | GitHub Actions workflows: triggers, filters, gates, triage-only |
 | [PERFORMANCE.md](PERFORMANCE.md)                                                               | Response caching, rate limits, DB indexes, web performance      |
 | [MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md)                                       | Monitoring strategy, alerting setup, dashboards                 |
