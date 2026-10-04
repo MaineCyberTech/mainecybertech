@@ -5,7 +5,14 @@
 - `dev` — Dev deploys, Terraform dev apply, dev migrations (no protection rules)
 - `prod` — Prod Supabase migrations (`supabase-migrations.yml`); used by
   `deploy-do`'s read-only `resolve-ip` job and `terraform-do`'s
-  `terraform-plan` job (no protection rules)
+  `terraform-plan` job. **Required reviewers (1+) must also be configured
+  here** (CI-004): `supabase-migrations.yml` runs `supabase db push` against
+  production on push to `main`, which is a production mutation — branch
+  protection alone is not a second human gate. Once reviewers are set, the
+  `prod` environment prompts before prod migrations run. Alternatively,
+  migrate the migration job to `prod-approval` after confirming its
+  environment-scoped `SUPABASE_ACCESS_TOKEN` / `SUPABASE_PROJECT_REF` are
+  available there.
 - `prod-approval` — Attached by the production-mutating jobs: the `deploy-do`
   `deploy` job (prod) and the `terraform-do` `terraform-apply-prod` job.
   **Required reviewers (1+) must be configured in GitHub** (Settings →
@@ -125,7 +132,10 @@ Variables). Optional offsite copy: `S3_OFFSITE_BUCKET` /
 
 1. **Create environments** in GitHub Settings → Environments:
    - `dev` — no protection rules
-   - `prod` — no protection rules (prod migrations; read-only plan/resolve jobs)
+   - `prod` — **add Required reviewers (1+)** because `supabase-migrations.yml`
+     runs production DB migrations under this environment on push to `main`
+     (CI-004); read-only plan/resolve jobs share it. This **must be configured
+     in GitHub and cannot be set from the repo**.
    - `prod-approval` — **add Required reviewers (1+)** to actually gate prod
      deploys and prod Terraform apply. This is the single gate for both app and
      infra production changes; it **must be configured in GitHub and cannot be
