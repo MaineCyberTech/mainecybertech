@@ -3,11 +3,13 @@
  *
  * Provides AES-256-GCM encryption/decryption for sensitive profile fields
  * (full_name, email, phone, etc.) so they are not stored in plaintext in the
- * database. The key is derived from MCT_FIELD_ENCRYPTION_KEY (32-byte hex or
- * base64). When the key is absent (e.g. local dev without the secret), the
- * functions fall back to a clearly-marked reversible transform so the app
- * still runs — but in **production a missing or invalid key is a boot error**
- * (SEC-P1-001): the API must never come up writing reversible `plain:` PII.
+ * database. The key is derived from FIELD_ENCRYPTION_KEY (32-byte hex or
+ * base64). In production the key is required: env validation and the module
+ * boot guard below refuse to start without it, and encryptField throws rather
+ * than fall back (SEC-P1-001). In development/test only, a missing key falls
+ * back to a clearly-marked reversible `plain:` transform so local work still
+ * runs; reading a legacy `plain:` value logs a counter but is never silently
+ * rewritten.
  *
  * NOTE: This utility is the building block. Applying it to the `profiles`
  * table requires a migration adding an `encrypted_pii jsonb` column plus a
@@ -16,6 +18,7 @@
  */
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import { getEnv } from "../config/env";
+import { logger } from "./logger";
 
 const ALGO = "aes-256-gcm";
 
@@ -51,13 +54,16 @@ if (isProduction()) {
 export function encryptField(plaintext: string): string {
   const key = getKey();
   if (!key || key.length !== 32) {
+    // SEC-P1-001: never fall back to reversible plaintext in production.
+    // getEnv() already refuses to boot prod without a key and the module-level
+    // boot guard above fails fast at import; this guards direct callers and
+    // any future path that bypasses env validation.
     if (isProduction()) {
-      // Defence in depth behind the boot guard: never write reversible PII.
       throw new Error(
-        "FIELD_ENCRYPTION_KEY is not configured; refusing to write reversible plaintext PII (SEC-P1-001)",
+        "FIELD_ENCRYPTION_KEY is required to encrypt PII in production; refusing to store plaintext",
       );
     }
-    // Dev fallback: not real encryption. Callers must not rely on this in prod.
+    // Dev/test fallback: not real encryption. Callers must not rely on this in prod.
     return `plain:${plaintext}`;
   }
   const iv = randomBytes(12);
@@ -68,7 +74,16 @@ export function encryptField(plaintext: string): string {
 }
 
 export function decryptField(payload: string): string {
-  if (payload.startsWith("plain:")) return payload.slice("plain:".length);
+  if (payload.startsWith("plain:")) {
+    // Legacy row written by the old dev fallback. Keep reading it (do not
+    // rewrite silently) but emit a counter so operators can find and
+    // re-encrypt these rows. SEC-P1-001.
+    logger.warn(
+      { event: "pii_legacy_plaintext" },
+      "reading legacy plaintext PII value; re-encryption required",
+    );
+    return payload.slice("plain:".length);
+  }
   if (!payload.startsWith("v1:")) return payload;
   const key = getKey();
   if (!key || key.length !== 32) return payload;

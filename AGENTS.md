@@ -149,7 +149,7 @@ pnpm e2e                     # Playwright E2E
 | SQL migrations            | 134   | `supabase/migrations/` (latest: 5302436 restore_platform_admin_rls_gates)                                                                                              |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 20    | `.github/workflows/`                                                                                                                                                   |
-| AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                           |
+| AI prompt files           | 632   | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
 | Build/dev/utility scripts | 79    | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
 
 ## Database Types (2026-09-21)

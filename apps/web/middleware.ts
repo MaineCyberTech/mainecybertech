@@ -2,6 +2,18 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const SESSION_COOKIE = "mct_session";
 
+/**
+ * ARCH-P3-001 — this is a best-effort, non-authoritative UX gate.
+ *
+ * `isTokenExpired` base64-decodes the JWT payload and reads `exp` without
+ * verifying the signature. The `mct_session` value is client-presented, so a
+ * forged-but-unexpired cookie reaches only the page shell — it is never
+ * treated as authorization. Every server component/server action re-checks the
+ * session by calling the API with the token (`apps/web/lib/api.ts` →
+ * `api.users.me()` / memberships in `lib/auth/membership.ts`), and the API
+ * verifies the JWT signature (`apps/api/src/middleware/auth.ts`). Do not add
+ * data access that relies on `isAuthenticated` here.
+ */
 function isTokenExpired(token: string): boolean {
   try {
     const parts = token.split(".");

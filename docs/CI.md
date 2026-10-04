@@ -37,7 +37,8 @@ setup → resolve-ip
       → build-api ∥ build-worker ∥ build-web ∥ validate
       → e2e-gate + migrate-gate        (prod only; skipped on dev)
       → verify-attestations
-      → deploy (always() && !failure() && !cancelled())
+      → deploy (fail-closed: validate + builds + verify-attestations success;
+                 e2e-gate/migrate-gate may be skipped on dev only)
 ```
 
 `deploy` writes the droplet `.env` via `printf` (secrets never interpolate into
@@ -101,6 +102,12 @@ setting the `apply` input additionally enables the apply job (`main` → prod
 environment + E2E/migration gates; `develop` → dev). Re-enable push/PR triggers
 once the token is rotated and `prod-approval` has required reviewers configured
 in GitHub.
+
+A weekly **plan-only drift check** (`schedule`, Mondays 07:00 UTC) is wired in
+but stays dormant (`terraform-plan` is skipped) until the operator sets the
+repository variable `TF_DRIFT_PLAN_ENABLED=true` — do this after rotating
+`DO_API_TOKEN`. When enabled, the run fails if the plan is non-empty so drift is
+visible; it never applies (`CI-P2-002`).
 
 ## Best-effort and triage-only jobs
 

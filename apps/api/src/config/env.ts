@@ -1,5 +1,21 @@
 import { z } from "zod";
 
+/**
+ * True when `raw` is a 64-char hex or base64 value that decodes to exactly 32
+ * bytes (an AES-256 key). Kept in sync with lib/field-encryption.getKey().
+ */
+function isValidFieldEncryptionKey(raw?: string): boolean {
+  if (!raw) return false;
+  try {
+    const key = /^[0-9a-fA-F]{64}$/.test(raw)
+      ? Buffer.from(raw, "hex")
+      : Buffer.from(raw, "base64");
+    return key.length === 32;
+  } catch {
+    return false;
+  }
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   API_PORT: z.coerce.number().default(4000),
@@ -60,6 +76,38 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 /**
+ * SEC-P2-002: fail closed at boot in production when Turnstile is not
+ * configured. The public lead endpoints (`GET /api/v1/public/init`,
+ * `POST /api/v1/public/submit`) write rows and fan out to external
+ * webhooks/tickets, so an unset `TURNSTILE_SECRET_KEY` must refuse startup
+ * rather than silently disable the anti-bot control.
+ */
+export function assertProductionTurnstile(
+  env: Pick<Env, "NODE_ENV" | "TURNSTILE_SECRET_KEY">,
+): void {
+  if (env.NODE_ENV === "production" && !env.TURNSTILE_SECRET_KEY) {
+    throw new Error(
+      "TURNSTILE_SECRET_KEY is required in production; refusing to run public lead endpoints with CAPTCHA disabled",
+    );
+  }
+}
+
+/**
+ * SEC-P1-001: fail closed at boot in production. A missing or malformed
+ * FIELD_ENCRYPTION_KEY must refuse startup rather than let
+ * lib/field-encryption silently store PII as reversible `plain:` values.
+ */
+export function assertProductionSecrets(
+  env: Pick<Env, "NODE_ENV" | "FIELD_ENCRYPTION_KEY">,
+): void {
+  if (env.NODE_ENV === "production" && !isValidFieldEncryptionKey(env.FIELD_ENCRYPTION_KEY)) {
+    throw new Error(
+      "FIELD_ENCRYPTION_KEY is required in production and must decode to exactly 32 bytes (64-char hex or base64)",
+    );
+  }
+}
+
+/**
  * Builds a Redis connection URL, injecting REDIS_PASSWORD when the URL
  * does not already carry credentials. Used by ioredis / node-redis clients.
  */
@@ -87,6 +135,8 @@ export function getEnv(): Env {
         `Invalid environment variables: ${JSON.stringify(result.error.flatten().fieldErrors)}`,
       );
     }
+    assertProductionTurnstile(result.data);
+    assertProductionSecrets(result.data);
     _env = result.data;
   }
   return _env;

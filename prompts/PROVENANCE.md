@@ -7,7 +7,7 @@
 > Embedded outputs (findings, reports, engine JSON/py artifacts) are historical
 > snapshots, not current repo state. (AI-P2-002)
 
-The `prompts/` directory contains 787 files across 6 packs — prompt templates
+The `prompts/` directory contains 630 pinned files across 6 packs — prompt templates
 for AI-assisted development AND generated audit outputs (JSON/CSV/py artifacts)
 produced by running those audits. Because these files are not executable in the
 application runtime, but ARE committed to the repo and could be tampered with,
@@ -56,13 +56,20 @@ current specification.
 
 | Pack | Files | Tree hash (generated) | Status | Purpose / drift notes |
 | ---- | ----- | --------------------- | ------ | --------------------- |
-| `hardening_prompt_pack` | 70 | 5e7fe33c… | Retired upstream (vendored) | Security/hardening audit + remediation prompts; README references runner paths that are absent, and embedded generated outputs are historical |
-| `mct-full-webstore-product-catalog-pack` | 193 | 6bbf6d77… | Frozen (implemented) | Webstore product catalog prompts; findings implemented 2026-09-21 |
-| `mct-portal-os-expanded-60-modules-deep-prompts-pack` | 222 | 0c90b9a5… | Frozen (partially aspirational) | 60-module portal OS deep prompts; the implementation matrix points at 1-file-per-module paths that were never created — the real mapping is `docs/module-matrix-mapping.md` |
-| `portal-alignment` | 63 | 33d35be0… | Retired upstream (vendored) | Portal alignment prompts; dashboard/trend engines partly stale and embedded outputs hardcode an old repo path |
-| `repo-deep-dive` | 210 | 2bcf19a1… | **Stale vs its runs** | Repo deep-dive prompts: this snapshot ends at prompt `40_release_notes_changelog_generator.md`; later runs used prompts `41`–`45` that are not vendored here. Current outputs live in `docs/audits/repo-deep-dive/`, not in the pack |
+| `hardening_prompt_pack` | 70 | de3bc6ae… | Retired upstream (vendored) | Security/hardening audit + remediation prompts; README references runner paths that are absent, and embedded generated outputs are historical |
+| `mct-full-webstore-product-catalog-pack` | 193 | 0acb00fd… | Frozen (implemented) | Webstore product catalog prompts; findings implemented 2026-09-21 |
+| `mct-portal-os-expanded-60-modules-deep-prompts-pack` | 222 | f04b6ee8… | Frozen (partially aspirational) | 60-module portal OS deep prompts; the implementation matrix points at 1-file-per-module paths that were never created — the real mapping is `docs/module-matrix-mapping.md` |
+| `portal-alignment` | 63 | 4c0d108f… | Retired upstream (vendored) | Portal alignment prompts; dashboard/trend engines partly stale and embedded outputs hardcode an old repo path |
+| `repo-deep-dive` | 53 | 57ffbb85… | **Stale vs its runs** | Repo deep-dive prompts: this snapshot ends at prompt `40_release_notes_changelog_generator.md`; later runs used prompts `41`–`45` that are not vendored here. Current outputs live in `docs/audits/repo-deep-dive/`, not in the pack |
 | `repo_audit_prompt_pack` | 28 | 6a7c5d47… | Frozen (historical) | Repo audit prompts incl. two embedded runs |
 
 > Tree hashes above are the values as of the last `generate`. The authoritative
 > values live in `prompts/manifest.json` and are verified by CI. To change a
 > pack intentionally, edit it, then `node scripts/verify-prompts.js generate`.
+>
+> **2026-10-03 (INV-P3-001):** the five dated prior-run output snapshots that had
+> been committed under `prompts/repo-deep-dive/` (157 report files across
+> `20260728…`–`20260806…`) were removed. Audit *outputs* belong under
+> `docs/audits/{name}/{run}/`, not inside the prompt pack; the pack retains only
+> the canonical templates and prompts. `prompts/manifest.json` is regenerated
+> accordingly (630 pinned files, down from 787).
