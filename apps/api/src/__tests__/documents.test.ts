@@ -81,7 +81,7 @@ const DOCUMENT = {
   visibility: "org",
   folder_path: null,
   storage_bucket: "documents",
-  storage_path: "orgs/org-1/file.pdf",
+  storage_path: "org-1/file.pdf",
   mime_type: "application/pdf",
   file_name: "file.pdf",
   file_size: 1024,
@@ -196,13 +196,13 @@ describe("documents routes", () => {
           organizationId: "00000000-0000-0000-0000-000000000001",
           name: "Sneaky",
           storageBucket: "avatars",
-          storagePath: "orgs/00000000-0000-0000-0000-000000000001/x.png",
+          storagePath: "00000000-0000-0000-0000-000000000001/x.png",
         });
 
       expect(res.status).toBe(400);
     });
 
-    it("rejects a storagePath that does not look like orgs/<orgId>/<file>", async () => {
+    it("rejects a storagePath that does not look like <orgId>/<file>", async () => {
       mockFrom({ data: null, error: null });
 
       const res = await request(app)
@@ -228,7 +228,7 @@ describe("documents routes", () => {
           organizationId: "00000000-0000-0000-0000-000000000001",
           name: "Cross-tenant",
           storageBucket: "documents",
-          storagePath: "orgs/00000000-0000-0000-0000-000000000099/secret.pdf",
+          storagePath: "00000000-0000-0000-0000-000000000099/secret.pdf",
         });
 
       expect(res.status).toBe(400);
@@ -244,7 +244,7 @@ describe("documents routes", () => {
           organizationId: "00000000-0000-0000-0000-000000000001",
           name: "Legit",
           storageBucket: "documents",
-          storagePath: "orgs/00000000-0000-0000-0000-000000000001/report.pdf",
+          storagePath: "00000000-0000-0000-0000-000000000001/report.pdf",
         });
 
       expect(res.status).toBe(201);
@@ -286,7 +286,7 @@ describe("documents routes", () => {
       const res = await request(app)
         .patch(`/api/v1/documents/${DOCUMENT.id}`)
         .set("Authorization", "Bearer token-123")
-        .send({ storagePath: "orgs/00000000-0000-0000-0000-000000000099/secret.pdf" });
+        .send({ storagePath: "00000000-0000-0000-0000-000000000099/secret.pdf" });
 
       expect(res.status).toBe(400);
     });
@@ -317,7 +317,7 @@ describe("documents routes", () => {
           createMockBuilder({
             data: {
               storage_bucket: "documents",
-              storage_path: "orgs/org-1/file.pdf",
+              storage_path: "org-1/file.pdf",
             },
             error: null,
           } as MockResult),
@@ -332,7 +332,7 @@ describe("documents routes", () => {
       expect(res.status).toBe(204);
       expect(supabase.storage.from).toHaveBeenCalledWith("documents");
       expect(supabase.storage.from("documents").remove).toHaveBeenCalledWith([
-        "orgs/org-1/file.pdf",
+        "org-1/file.pdf",
       ]);
     });
 
@@ -383,7 +383,7 @@ describe("documents routes", () => {
         createMockBuilder({
           data: {
             storage_bucket: "documents",
-            storage_path: "orgs/org-1/file.pdf",
+            storage_path: "org-1/file.pdf",
           },
           error: null,
         } as MockResult),

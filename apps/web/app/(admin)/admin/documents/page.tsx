@@ -202,9 +202,10 @@ export default async function AdminDocumentsPage() {
         return { ok: false, error: "Provide a storage path or upload a file." };
       }
 
-      // The API requires `documents` + `orgs/<thisOrgId>/<file>`; check here so
-      // the operator gets a clear message instead of a raw 400. (FILE-P2-002)
-      const expectedPrefix = `orgs/${organizationId}/`;
+      // The API requires `documents` + `<thisOrgId>/<file>` (the first segment
+      // is the org UUID — storage RLS derives the tenant from it, MT-P2-003);
+      // check here so the operator gets a clear message instead of a raw 400.
+      const expectedPrefix = `${organizationId}/`;
       if (!suppliedPath.startsWith(expectedPrefix) || suppliedPath.length <= expectedPrefix.length) {
         return {
           ok: false,
@@ -263,12 +264,13 @@ export default async function AdminDocumentsPage() {
         return { ok: false, error: "Document title is required." };
       }
 
-      // The API rejects a storagePath that does not begin `orgs/<thisDocOrgId>/`
-      // (FILE-P2-002); fetch the record so the message names the document's own
-      // org rather than surfacing a raw 400. Same pattern as replaceFileAction.
+      // The API rejects a storagePath that does not begin `<thisDocOrgId>/`
+      // (first segment = org UUID, MT-P2-003); fetch the record so the message
+      // names the document's own org rather than surfacing a raw 400. Same
+      // pattern as replaceFileAction.
       if (storagePathInput) {
         const current = (await api.documents.get(documentId)) as unknown as DocumentRecord;
-        const expectedPrefix = `orgs/${current.organization_id}/`;
+        const expectedPrefix = `${current.organization_id}/`;
         if (
           !storagePathInput.startsWith(expectedPrefix) ||
           storagePathInput.length <= expectedPrefix.length
