@@ -27,6 +27,20 @@ runs:
         node scripts/collect-licenses.mjs --out licenses.json
         node scripts/license-gate.mjs licenses.json
 
+    - name: Ensure generated license/SBOM artifacts stay untracked
+      # HYG-P3-002 / INV-P2-001: `licenses.json` and `sbom.cdx.json` are
+      # generated aggregates, listed in .gitignore and regenerated in CI (this
+      # job and sbom.yml), never committed. Fail if one is committed again so a
+      # stale copy cannot drift from the lockfile.
+      shell: bash
+      run: |
+        tracked="$(git ls-files -- licenses.json sbom.cdx.json sbom.spdx.json)"
+        if [ -n "$tracked" ]; then
+          echo "::error::Generated artifacts must not be tracked: $tracked"
+          exit 1
+        fi
+        echo "Generated artifacts are untracked (ok)"
+
     - name: Run Trivy filesystem vulnerability scanner
       # Dependency vulnerabilities are gated by audit-gate.mjs above; Trivy
       # focuses on source/config findings and Go/Rust binaries.

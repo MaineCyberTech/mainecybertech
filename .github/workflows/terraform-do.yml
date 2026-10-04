@@ -6,6 +6,13 @@ on:
   # review. Re-enable push/PR triggers once the token is rotated and the
   # environments have protection rules. A manual run plans by default; apply
   # only happens when the `apply` input is set.
+  #
+  # CI-P2-002: a weekly plan-only drift check runs from the default branch. It
+  # stays dormant (job skipped) until DO_API_TOKEN is rotated AND the repository
+  # variable `TF_DRIFT_PLAN_ENABLED` is set to `true`, so an invalid token cannot
+  # fail a scheduled run. When enabled, a non-empty plan fails the run (alert).
+  schedule:
+    - cron: "0 7 * * 1"
   workflow_dispatch:
     inputs:
       apply:
@@ -27,6 +34,9 @@ concurrency:
 
 jobs:
   terraform-plan:
+    # CI-P2-002: scheduled drift plans only run once the operator enables the
+    # repository variable (after token rotation). Manual/push runs are unaffected.
+    if: ${{ github.event_name != 'schedule' || vars.TF_DRIFT_PLAN_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -148,6 +158,19 @@ jobs:
           name: tfplan-${{ steps.env.outputs.name }}
           path: infra/terraform/digitalocean/tfplan
           retention-days: 1
+
+      - name: Fail scheduled run on infrastructure drift
+        # CI-P2-002: the weekly plan-only run must alert (fail) when the
+        # committed Terraform no longer matches the deployed droplet, instead of
+        # silently recording a non-empty plan.
+        if: github.event_name == 'schedule'
+        run: |
+          if grep -q "No changes." "${{ runner.temp }}/tfplan.txt"; then
+            echo "No infrastructure drift detected"
+          else
+            echo "::error::Terraform plan is non-empty — infrastructure drift detected (see the tfplan artifact)."
+            exit 1
+          fi
 
   # ===== Deployment gates =====
   # validate always runs for every terraform run (test + lint + typecheck).

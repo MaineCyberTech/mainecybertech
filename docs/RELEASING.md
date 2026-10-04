@@ -121,16 +121,20 @@ re-deploys the previously running tag before exiting non-zero.
 
 - SBOM: `sbom.yml` generates a CycloneDX **lockfile** artifact
   (`sbom-cyclonedx`, 30-day retention) with licenses, a dependency graph, and
-  `<VERSION>+<commit SHA>` binding, and `build-push.yml` generates a CycloneDX
-  **image** SBOM per image (`image-sbom-mct-<image>-<commit>`) bound to the
-  pushed image digest — see [docs/SBOM_PROCESS.md](SBOM_PROCESS.md) for
-  retrieval and verification.
+  `<VERSION>+<commit SHA>` binding. The deploy path (`deploy-do.yml`) generates
+  a CycloneDX **image** SBOM per image bound to the pushed image digest and
+  **attests** it (`actions/attest-sbom`, pushed to the registry), so a shipped
+  image stays tied to its SBOM after the artifact expires (SUPPLY-P3-001);
+  `build-push.yml` emits the same image SBOM as an artifact. See
+  [docs/SBOM_PROCESS.md](SBOM_PROCESS.md) for retrieval and verification.
 - Backups: `db-backup.yml` runs daily at 04:00 UTC to Spaces and notifies Slack
   on failure.
 - Monitoring: [docs/MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md).
 
 ## Before promoting to prod
 
+The consolidated release-readiness gate (exit criteria, fail-closed decisions
+and the go-live operator checklist) is [`RELEASE_GATE.md`](RELEASE_GATE.md).
 Known environment caveats (from `AGENTS.md` Known Debt) that must be resolved
 first:
 

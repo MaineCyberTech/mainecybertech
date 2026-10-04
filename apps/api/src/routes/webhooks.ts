@@ -10,6 +10,7 @@ import { verifyWebhookSignature, validateWebhookTimestamp } from "../lib/webhook
 import { claimIdempotencyKey, storeIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
 import { recordWebhookDelivery } from "../lib/metrics";
 import { type Row } from "../lib/db-types";
+import { timingSafeCompare } from "../lib/timing-safe";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -563,8 +564,9 @@ router.post("/m365", async (req, res, next) => {
       // clientState is the only authentication for M365 change notifications
       // (Graph does not sign webhook payloads). Missing or mismatched
       // clientState must be rejected — previously an omitted clientState
-      // passed the check, making the endpoint unauthenticated.
-      if (!notification.clientState || notification.clientState !== clientState) {
+      // passed the check, making the endpoint unauthenticated. SEC-P3-002:
+      // compare in constant time so the secret is not timing-observable.
+      if (!notification.clientState || !timingSafeCompare(notification.clientState, clientState)) {
         logger.warn(
           { resource: notification.resource, hasClientState: Boolean(notification.clientState) },
           "M365 webhook clientState missing or mismatch",

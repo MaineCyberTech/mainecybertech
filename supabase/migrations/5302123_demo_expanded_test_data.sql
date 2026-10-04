@@ -13,20 +13,23 @@
 -- Acme (11111111) and Northwind (22222222) - the two thinnest
 -- tenants - and extras for Harborview/Brightline/Summit.
 --
--- SAFETY GUARD: the whole block is skipped when the database
--- already contains production-like tenants (any organization
--- with a real domain, i.e. not *.example / *.local).
+-- SAFETY GUARD: the whole block is opt-in and skipped unless the
+-- database explicitly enables it with
+--   alter database postgres set app.seed_demo = 'true';
+-- It therefore never runs on a fresh (or existing) production
+-- database. Local/E2E use supabase/seeds/ instead.
 -- =========================================================
 
 do $$
 begin
-  if exists (
-    select 1 from public.organizations
-    where primary_domain is not null
-      and primary_domain not like '%.example'
-      and primary_domain not like '%.local'
-  ) then
-    raise notice '5302123: production-like organization domains detected - skipping expanded demo data';
+  -- Demo/test data is opt-in only and MUST NOT load by default (e.g. on a fresh
+  -- production database where no real tenant exists yet). Enable it explicitly
+  -- on a disposable dev database:
+  --   alter database postgres set app.seed_demo = 'true';
+  -- Local `supabase db reset` populates demo data from supabase/seeds/ after
+  -- migrations, so no flag is needed for local/E2E.
+  if coalesce(current_setting('app.seed_demo', true), '') <> 'true' then
+    raise notice '5302123: app.seed_demo is not ''true'' - skipping expanded demo data';
     return;
   end if;
 

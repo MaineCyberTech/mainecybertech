@@ -2505,6 +2505,13 @@ const extendedRoutes: RouteDef[] = [
 
   // health - generated from apps/api/src/routes/health.ts
   { method: "get", path: "/health", summary: "Health check", tag: "Health", auth: false },
+  {
+    method: "get",
+    path: "/health/detail",
+    summary: "Detailed health check (internal; requires METRICS_TOKEN)",
+    tag: "Health",
+    auth: false,
+  },
 
   // insurance-binder - generated from apps/api/src/routes/insurance-binder.ts
   {

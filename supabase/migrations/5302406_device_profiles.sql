@@ -51,11 +51,19 @@ create policy "device_profiles_delete" on public.device_profiles
     )
   );
 
--- Demo data for the Device Profile Library.
-insert into public.device_profiles (id, organization_id, name, type, manufacturer, model, specs) values
+-- Demo data for the Device Profile Library (opt-in only; see 5302119).
+do $$
+begin
+  if coalesce(current_setting('app.seed_demo', true), '') <> 'true' then
+    raise notice '5302406: app.seed_demo is not ''true'' - skipping demo device profiles';
+    return;
+  end if;
+
+  insert into public.device_profiles (id, organization_id, name, type, manufacturer, model, specs) values
   ('82010000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Clinical Workstation Standard', 'workstation', 'Dell', 'OptiPlex 7020', jsonb_build_object('bitlocker', true, 'edr', true, 'local_admin', false)),
   ('82010000-0000-0000-0000-000000000002'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'POS Terminal Standard', 'pos_terminal', 'NCR', 'POS-X', jsonb_build_object('pos_lockdown', true, 'edr', true)),
   ('82010000-0000-0000-0000-000000000003'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'Advisor Laptop Standard', 'laptop', 'Lenovo', 'ThinkPad X1', jsonb_build_object('bitlocker', true, 'edr', true, 'mdm', true)),
   ('82010000-0000-0000-0000-000000000004'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'Warehouse Standard', 'workstation', 'HP', 'EliteDesk 800', jsonb_build_object('screen_lock_minutes', 5)),
   ('82010000-0000-0000-0000-000000000005'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Archive Standard', 'workstation', 'Dell', 'OptiPlex 5000', jsonb_build_object('usb_write_blocked', true))
-on conflict (id) do nothing;
+  on conflict (id) do nothing;
+end $$;

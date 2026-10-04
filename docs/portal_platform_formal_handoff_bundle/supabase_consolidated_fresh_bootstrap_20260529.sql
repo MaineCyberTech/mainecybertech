@@ -12,6 +12,14 @@
 --   The document_visibility enum is created as:
 --     private, org, internal, public
 -- =========================================================
+--
+-- HISTORICAL / GENERATED COPY - DO NOT EDIT (INV-P2-002).
+--   This file is a hand-off snapshot kept for reference only. The LIVE
+--   source of truth is the migration chain under `supabase/migrations/`
+--   (see `5302026_supabase_consolidated_fresh_bootstrap_20260529.corrected.v3.sql`).
+--   Any schema change must be made there; edits here will not be applied and
+--   will silently diverge from the deployed schema.
+-- =========================================================
 
 -- =========================================================
 -- INIT: extensions + enums

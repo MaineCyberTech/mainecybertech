@@ -39,7 +39,7 @@ mainecybertech-portal/
 │   │   │   └── not-found.tsx
 │   │   ├── components/                         # 43 files across admin/, portal/, marketing/
 │   │   ├── lib/                                # api.ts, client-api.ts, auth/, cn.ts, org-actions.ts
-│   │   ├── middleware.ts                       # Edge JWT exp check + route guard
+│   │   ├── middleware.ts                       # Edge JWT exp UX gate (non-authoritative) + route guard
 │   │   ├── next.config.mjs                     # standalone, rewrites, bundle-analyzer
 │   │   ├── vercel.json                         # pnpm install --frozen-lockfile
 │   │   ├── Dockerfile
@@ -108,12 +108,18 @@ dotenv/config → getEnv() (Zod validate, exit on fail) → createApp() → app.
 
 **Web (Next.js App Router):**
 ```
-Middleware (edge) → JWT exp check → guard redirects
+Middleware (edge) → JWT exp UX gate (non-authoritative) → guard redirects
   → Root layout (fonts, theme, accent gradient)
     → Route group layout (portal: 2-phase auth+membership; admin: auth only)
       → Page (server component or client component)
         → Server action or client SDK call → Next.js rewrite (/api/v1/*) → Express API
 ```
+
+> **ARCH-P3-001:** `apps/web/middleware.ts` base64-decodes the `mct_session`
+> payload and checks `exp` without verifying the JWT signature. It is a UX
+> gate only. Authorization is enforced by the API on every server-side call
+> (the token is forwarded via `apps/web/lib/api.ts`), so a forged-but-unexpired
+> cookie reaches only the page shell.
 
 **Worker (`apps/worker/src/main.ts`):**
 ```
