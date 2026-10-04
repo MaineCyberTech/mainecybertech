@@ -213,6 +213,30 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           format: table
+      - name: Generate mct-api image SBOM (CycloneDX)
+        # SUPPLY-P3-001: emit a digest-bound SBOM on the deploy path so a shipped
+        # image can always be tied to its bill of materials (the 30-day workflow
+        # artifact alone expires, and build-push.yml is not on the deploy path).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api@${{ steps.build-api.outputs.digest }}
+          format: cyclonedx
+          output: image-sbom-mct-api.cdx.json
+          scanners: vuln
+      - name: Attest mct-api SBOM (SUPPLY-P3-001)
+        # Cryptographically binds the SBOM to the deployed image digest and pushes
+        # it to the registry as an OCI referrer, so it is durable and not subject
+        # to the 30-day artifact retention window.
+        uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
+        with:
+          subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api
+          subject-digest: ${{ steps.build-api.outputs.digest }}
+          sbom-path: image-sbom-mct-api.cdx.json
+          push-to-registry: true
       - name: Attest mct-api provenance (CTR-P1-003)
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
         with:
@@ -255,6 +279,26 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           format: table
+      - name: Generate mct-worker image SBOM (CycloneDX)
+        # SUPPLY-P3-001: digest-bound SBOM on the deploy path (see build-api).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker@${{ steps.build-worker.outputs.digest }}
+          format: cyclonedx
+          output: image-sbom-mct-worker.cdx.json
+          scanners: vuln
+      - name: Attest mct-worker SBOM (SUPPLY-P3-001)
+        # Durable, digest-bound SBOM attestation (see build-api).
+        uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
+        with:
+          subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker
+          subject-digest: ${{ steps.build-worker.outputs.digest }}
+          sbom-path: image-sbom-mct-worker.cdx.json
+          push-to-registry: true
       - name: Attest mct-worker provenance (CTR-P1-003)
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
         with:
@@ -304,6 +348,26 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           format: table
+      - name: Generate mct-web image SBOM (CycloneDX)
+        # SUPPLY-P3-001: digest-bound SBOM on the deploy path (see build-api).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web@${{ steps.build-web.outputs.digest }}
+          format: cyclonedx
+          output: image-sbom-mct-web.cdx.json
+          scanners: vuln
+      - name: Attest mct-web SBOM (SUPPLY-P3-001)
+        # Durable, digest-bound SBOM attestation (see build-api).
+        uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
+        with:
+          subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web
+          subject-digest: ${{ steps.build-web.outputs.digest }}
+          sbom-path: image-sbom-mct-web.cdx.json
+          push-to-registry: true
       - name: Attest mct-web provenance (CTR-P1-003)
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
         with:
