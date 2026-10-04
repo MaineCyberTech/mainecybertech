@@ -26,7 +26,8 @@ const METHODS = ["get", "post", "put", "patch", "delete"];
 // --- app.ts mounts: import xRouter from "./routes/x" + app.use("/prefix", xRouter)
 const appSrc = fs.readFileSync(APP_TS, "utf8");
 const varToBase = {};
-const importRe = /import\s+(\w+Router)\s+from\s+["']\.\/routes\/([\w-]+)["']/g;
+const importRe =
+  /import\s+(\w+Router)(?:\s*,\s*\{[^}]*\})?\s+from\s+["']\.\/routes\/([\w-]+)["']/g;
 let m;
 while ((m = importRe.exec(appSrc))) varToBase[m[1]] = m[2];
 
