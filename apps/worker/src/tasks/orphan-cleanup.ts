@@ -16,17 +16,33 @@ const LIST_PAGE_SIZE = 100;
  */
 const MAX_LISTED = 10_000;
 
-/** Storage entry shape returned by `list()`. Folders have a null `id`. */
+/** Storage entry shape returned by `list()`. Folders have a null/absent `id`. */
 type StorageEntry = { name: string; id?: string | null };
+
+/** Supabase's own marker object used to materialise an otherwise empty folder. */
+const EMPTY_FOLDER_PLACEHOLDER = ".emptyFolderPlaceholder";
+
+/** Hard ceiling on folder recursion, so a malformed/looping listing cannot run away. */
+const MAX_DEPTH = 8;
+
+/**
+ * A folder entry has no object `id` (Supabase returns `null`; an older or
+ * proxied response may omit the field entirely). Treating `undefined` as a file
+ * is the DATA-P0-001 bug: a bare folder name handed to `remove()` is a
+ * recursive prefix delete.
+ */
+function isFolderEntry(entry: StorageEntry): boolean {
+  return entry.id === null || entry.id === undefined;
+}
 
 /**
  * Recursively list every object path in a bucket, following pagination.
  *
  * `list(prefix)` returns a mix of files and folder entries (folders have a
- * null `id`) and only shows nested objects when the folder prefix is listed, so
- * a single flat call both truncates and hides nested objects. Any read error
- * aborts the whole listing: an unreadable listing must never degrade into
- * "these files are orphans".
+ * null/absent `id`) and only shows nested objects when the folder prefix is
+ * listed, so a single flat call both truncates and hides nested objects. Any
+ * read error aborts the whole listing: an unreadable listing must never degrade
+ * into "these files are orphans".
  */
 async function listAllFiles(
   storageBucket: {
@@ -38,7 +54,12 @@ async function listAllFiles(
   bucket: string,
   prefix = "",
   seen = { count: 0 },
+  depth = 0,
 ): Promise<string[]> {
+  if (depth > MAX_DEPTH) {
+    throw new Error(`list ${bucket} exceeded max folder depth ${MAX_DEPTH}`);
+  }
+
   const paths: string[] = [];
   let offset = 0;
 
@@ -53,9 +74,11 @@ async function listAllFiles(
     const page = data ?? [];
 
     for (const entry of page) {
+      // Never surface a folder's internal placeholder as a real object.
+      if (!entry.name || entry.name === EMPTY_FOLDER_PLACEHOLDER) continue;
       const fullPath = prefix ? `${prefix}/${entry.name}` : entry.name;
-      if (entry.id === null) {
-        paths.push(...(await listAllFiles(storageBucket, bucket, fullPath, seen)));
+      if (isFolderEntry(entry)) {
+        paths.push(...(await listAllFiles(storageBucket, bucket, fullPath, seen, depth + 1)));
       } else {
         paths.push(fullPath);
       }
@@ -162,6 +185,18 @@ export async function orphanCleanup(_payload: Record<string, unknown>): Promise<
       });
 
       if (orphaned.length === 0) continue;
+
+      // Defence in depth (DATA-P0-001): `remove()` treats a bare folder name
+      // or trailing-slash prefix as a RECURSIVE delete, so only concrete,
+      // nested object keys may ever be handed to it. If anything else slips
+      // through, abort the bucket instead of destroying unrelated objects.
+      const unsafe = orphaned.filter((p) => p.length === 0 || p.endsWith("/") || !p.includes("/"));
+      if (unsafe.length > 0) {
+        const message = `refusing to remove non-object path(s): ${unsafe.join(", ")}`;
+        logger.error({ bucket, unsafe }, "Aborted orphan removal for unsafe paths");
+        failures.push(`${bucket}: ${message}`);
+        continue;
+      }
 
       const { error: removeError } = await supabase.storage.from(bucket).remove(orphaned);
       if (removeError) {
