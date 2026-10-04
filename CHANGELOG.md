@@ -164,6 +164,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   pre-push check it flagged the pending migrations' own DDL (e.g. a drop
   migration) as drift, and its colour-sensitive grep intermittently missed real
   drops. Post-push a non-empty diff now means genuine divergence.
+- CI workflows now request least-privilege `GITHUB_TOKEN` scopes: the unused
+  `actions: write` grant was dropped from `terraform-do`, `e2e`, `a11y-breadth`
+  and `deploy-do` (artifact upload/download uses the runner's runtime token, not
+  `GITHUB_TOKEN`) (CI-P3-002).
 - Deploy resilience (from the first post-merge deploy on 2026-10-03): the redis
   container now runs as `user: redis` — the custom entrypoint (password off
   argv) replaced the official privilege-dropping one, and as root with
