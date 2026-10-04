@@ -20,6 +20,21 @@ const MAX_LISTED = 10_000;
 type StorageEntry = { name: string; id?: string | null };
 
 /**
+ * DATA-P0-001 guard: Supabase Storage treats a folder/prefix name as a
+ * recursive delete, so a folder must never reach `remove`. A path is
+ * folder-like when it ends in `/` or when any other listed object lives under
+ * it (`<path>/…`) — shape-agnostic, so it also covers legacy `orgs/<uuid>/…`
+ * keys alongside the canonical `<orgId>/…` and `<orgId>/requests/…` forms.
+ * Listing already recurses into `id === null` folders and never collects them;
+ * this is defence in depth against list-semantics drift.
+ */
+function isFolderLike(path: string, allPaths: string[]): boolean {
+  if (path.endsWith("/") || path.split("/").pop() === "") return true;
+  const prefix = `${path}/`;
+  return allPaths.some((other) => other !== path && other.startsWith(prefix));
+}
+
+/**
  * Recursively list every object path in a bucket, following pagination.
  *
  * `list(prefix)` returns a mix of files and folder entries (folders have a
@@ -161,18 +176,33 @@ export async function orphanCleanup(_payload: Record<string, unknown>): Promise<
         return !referenced.has(key);
       });
 
-      if (orphaned.length === 0) continue;
+      // DATA-P0-001: never hand a folder/prefix to `remove` — refuse it and
+      // report instead of risking a recursive delete.
+      const safeOrphaned: string[] = [];
+      for (const path of orphaned) {
+        if (isFolderLike(path, paths)) {
+          logger.error(
+            { bucket, path },
+            "Refusing to remove a folder-like path (DATA-P0-001)",
+          );
+          failures.push(`${bucket}: refused to remove folder-like path ${path}`);
+        } else {
+          safeOrphaned.push(path);
+        }
+      }
 
-      const { error: removeError } = await supabase.storage.from(bucket).remove(orphaned);
+      if (safeOrphaned.length === 0) continue;
+
+      const { error: removeError } = await supabase.storage.from(bucket).remove(safeOrphaned);
       if (removeError) {
         logger.error(
-          { bucket, count: orphaned.length, error: removeError.message },
+          { bucket, count: safeOrphaned.length, error: removeError.message },
           "Failed to remove orphaned files",
         );
         failures.push(`${bucket}: ${removeError.message}`);
       } else {
-        logger.info({ bucket, count: orphaned.length }, "Removed orphaned storage files");
-        totalRemoved += orphaned.length;
+        logger.info({ bucket, count: safeOrphaned.length }, "Removed orphaned storage files");
+        totalRemoved += safeOrphaned.length;
       }
     }
 

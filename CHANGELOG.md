@@ -164,6 +164,19 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   pre-push check it flagged the pending migrations' own DDL (e.g. a drop
   migration) as drift, and its colour-sensitive grep intermittently missed real
   drops. Post-push a non-empty diff now means genuine divergence.
+- Reconciled the document storage-path contract after the #30/#32 merge: the
+  metadata validator and admin-documents UI now expect `<orgId>/<file>` (first
+  segment = org UUID, as `storage_path_org_id` and the storage RLS policies
+  require) instead of the reverted `orgs/<orgId>/<file>` form, and the
+  orphan-cleanup remove guard is shape-agnostic — it refuses any path that
+  other listed objects live under.
+- Orphan cleanup refuses to hand a folder-like path to `storage.remove`
+  (Supabase treats a folder name as a recursive delete) and reports it instead
+  of risking the bucket contents, on top of the folder-aware recursive listing
+  (DATA-P0-001 from the 2026-10-03 audit of the pre-rebase branch).
+- `FIELD_ENCRYPTION_KEY` is required in production: the API refuses to boot
+  without a valid 32-byte key instead of silently writing reversible `plain:`
+  PII, and `encryptField` throws rather than degrade at runtime (SEC-P1-001).
 - Backups can resolve their configuration now: `db-backup`,
   `db-restore-test` and `storage-backup` attach the `dev` environment (which
   holds `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`), their `AWS_*` credentials

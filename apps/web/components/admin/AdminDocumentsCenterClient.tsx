@@ -1884,7 +1884,7 @@ export default function AdminDocumentsCenterClient({
                     id="doc-existing-storage-path-optional"
                     name="fileUrl"
                     className="cyber-input"
-                    placeholder="orgs/.../file.ext"
+                    placeholder="<org-id>/file.ext"
                   />
                 </div>
               </div>

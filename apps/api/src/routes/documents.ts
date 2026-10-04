@@ -261,10 +261,10 @@ router.post("/", requirePermission("documents", "create"), async (req, res, next
     const parsed = createDocumentSchema.parse(req.body);
     const supabase = getScopedClient(req, "documents", "write");
 
-    // The schema guarantees `orgs/<uuid>/...`, but not that the uuid is THIS
-    // org's. Reject a path pointing at another tenant's prefix. (FILE-P2-002)
+    // The schema guarantees `<uuid>/...`, but not that the uuid is THIS org's.
+    // Reject a path pointing at another tenant's prefix. (FILE-P2-002)
     if (parsed.storagePath) {
-      const pathOrg = parsed.storagePath.split("/")[1];
+      const pathOrg = parsed.storagePath.split("/")[0];
       if (pathOrg.toLowerCase() !== parsed.organizationId.toLowerCase()) {
         throw new AppError("VALIDATION", "storagePath does not belong to this organization", 400);
       }
@@ -511,7 +511,7 @@ router.patch(
       // A rewritten storagePath must point at THIS document's org, not merely
       // at some org. (FILE-P2-002)
       if (parsed.storagePath) {
-        const pathOrg = parsed.storagePath.split("/")[1];
+        const pathOrg = parsed.storagePath.split("/")[0];
         if (pathOrg.toLowerCase() !== String(current.organization_id).toLowerCase()) {
           throw new AppError("VALIDATION", "storagePath does not belong to this organization", 400);
         }

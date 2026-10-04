@@ -13,18 +13,22 @@ import { z } from "zod";
  * - bucket: an allowlist of exactly one. Other buckets (avatars, logos) are
  *   public and must never be addressable through the documents API.
  * - path: must match the canonical server-generated shape
- *   `orgs/<org-uuid>/<filename>` (see the upload route). This prevents pointing
- *   at `../`-style keys or another org's prefix. The org segment is checked
+ *   `<org-uuid>/<filename>` (see the upload route). This prevents pointing at
+ *   `../`-style keys or another org's prefix. The org segment is checked
  *   against `organizationId` at the route level where both are known.
+ *
+ * The FIRST segment must be the org UUID — `storage_path_org_id()` (5302026)
+ * and the storage RLS policies derive the tenant from it (MT-P2-003), so the
+ * earlier `orgs/<uuid>/...` form was reverted.
  */
 export const DOCUMENTS_BUCKET_ONLY = "documents";
-const STORAGE_PATH_RE = /^orgs\/[0-9a-fA-F-]{36}\/[^/]+$/;
+const STORAGE_PATH_RE = /^[0-9a-fA-F-]{36}\/[^/]+$/;
 
 const storageBucketSchema = z.literal("documents");
 const storagePathSchema = z
   .string()
   .max(1024)
-  .regex(STORAGE_PATH_RE, "storagePath must look like orgs/<orgId>/<fileName>");
+  .regex(STORAGE_PATH_RE, "storagePath must look like <orgId>/<fileName>");
 
 export const createDocumentSchema = z.object({
   organizationId: z.string().uuid(),
