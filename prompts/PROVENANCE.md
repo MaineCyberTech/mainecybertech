@@ -1,6 +1,6 @@
 # Prompt Pack Provenance (P2-1)
 
-The `prompts/` directory contains 787 files across 6 packs — prompt templates
+The `prompts/` directory contains 630 files across 6 packs — prompt templates
 for AI-assisted development AND generated audit outputs (JSON/CSV/py artifacts)
 produced by running those audits. Because these files are not executable in the
 application runtime, but ARE committed to the repo and could be tampered with,
@@ -48,8 +48,15 @@ node scripts/verify-prompts.js tree       # print per-pack SHA-256 tree hashes
 | `mct-full-webstore-product-catalog-pack` | 193 | 6bbf6d77… | Webstore product catalog prompts |
 | `mct-portal-os-expanded-60-modules-deep-prompts-pack` | 222 | 0c90b9a5… | 60-module portal OS deep prompts |
 | `portal-alignment` | 63 | 33d35be0… | Portal alignment prompts |
-| `repo-deep-dive` | 210 | 2bcf19a1… | Repo deep-dive prompts |
+| `repo-deep-dive` | 53 | 57ffbb85… | Repo deep-dive prompt pack (templates + prompts) |
 | `repo_audit_prompt_pack` | 28 | 6a7c5d47… | Repo audit prompts |
 
 > Tree hashes above are the values as of the last `generate`. The authoritative
 > values live in `prompts/manifest.json` and are verified by CI.
+>
+> **2026-10-03 (INV-P3-001):** the five dated prior-run output snapshots that had
+> been committed under `prompts/repo-deep-dive/` (157 report files across
+> `20260728…`–`20260806…`) were removed. Audit *outputs* belong under
+> `docs/audits/{name}/{run}/`, not inside the prompt pack; the pack retains only
+> the canonical templates and prompts. `prompts/` is now 630 files (down from
+> 787), and `prompts/manifest.json` is regenerated accordingly.
