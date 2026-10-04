@@ -35,7 +35,8 @@ setup → resolve-ip
       → build-api ∥ build-worker ∥ build-web ∥ validate
       → e2e-gate + migrate-gate        (prod only; skipped on dev)
       → verify-attestations
-      → deploy (always() && !failure() && !cancelled())
+      → deploy (fail-closed: validate + builds + verify-attestations success;
+                 e2e-gate/migrate-gate may be skipped on dev only)
 ```
 
 `deploy` writes the droplet `.env` via `printf` (secrets never interpolate into
