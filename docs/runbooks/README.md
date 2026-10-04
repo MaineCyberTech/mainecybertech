@@ -6,6 +6,10 @@ covers operating the module day to day — triggers, inputs, outputs, failure
 handling and escalation. The canonical example is
 [client-onboarding-command-center.md](client-onboarding-command-center.md).
 
+Platform incident/recovery runbooks live in
+[../PLATFORM_FAILURE_RUNBOOKS.md](../PLATFORM_FAILURE_RUNBOOKS.md) and
+[../INCIDENT_RESPONSE.md](../INCIDENT_RESPONSE.md).
+
 | Runbook                                                                            | Module                                 |
 | ---------------------------------------------------------------------------------- | -------------------------------------- |
 | [ai-kb-article-generator.md](ai-kb-article-generator.md)                           | AI KB Article Generator                |

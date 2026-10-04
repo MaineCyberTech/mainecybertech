@@ -67,8 +67,17 @@ function mockClient(opts: {
   listErrorByBucket?: Record<string, { message: string }>;
 }) {
   const removeCalls: Record<string, string[][]> = {};
+  const inCalls: Record<string, string[][]> = {};
   const from = jest.fn((table: string) => {
-    return createThenableChain(opts.queryByTable?.[table] ?? { data: [], error: null });
+    const chain = createThenableChain(opts.queryByTable?.[table] ?? { data: [], error: null });
+    // Record the key chunks passed to `.in()` so tests can prove the reference
+    // lookup is chunked (DATA-P2-002) rather than sent as one huge request.
+    chain.in = jest.fn((_column: string, values: string[]) => {
+      inCalls[table] = inCalls[table] ?? [];
+      inCalls[table].push(values);
+      return chain;
+    });
+    return chain;
   });
 
   const storageFrom = jest.fn((bucket: string) => ({
@@ -106,7 +115,7 @@ function mockClient(opts: {
   }));
 
   const client = { from, storage: { from: storageFrom } };
-  return { client, removeCalls, storageFrom };
+  return { client, removeCalls, storageFrom, inCalls, from };
 }
 
 let active: ReturnType<typeof mockClient>;
@@ -213,6 +222,32 @@ describe("orphanCleanup task", () => {
     const result = await orphanCleanup({});
     expect(result).toEqual({ ok: true });
     expect(active.removeCalls.documents ?? []).toEqual([]);
+  });
+
+  it("chunks the reference lookup for large buckets (DATA-P2-002)", async () => {
+    // 450 objects => 3 postgrest `.in()` chunks per table at the 200-key bound,
+    // instead of one request with 450 keys.
+    const many = Array.from({ length: 450 }, (_, i) => ({ name: `f-${i}.pdf` }));
+    active = mockClient({
+      filesByBucket: { documents: many },
+      queryByTable: {
+        documents: { data: many.map((m) => ({ storage_path: m.name })), error: null },
+      },
+    });
+
+    const result = await orphanCleanup({});
+    expect(result).toEqual({ ok: true });
+
+    const chunks = active.inCalls.documents ?? [];
+    expect(chunks.length).toBe(3);
+    for (const chunk of chunks) {
+      expect(chunk.length).toBeLessThanOrEqual(200);
+    }
+    const totalKeys = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    expect(totalKeys).toBe(450);
+    // The other reference tables are chunked the same way.
+    expect((active.inCalls.document_versions ?? []).length).toBe(3);
+    expect((active.inCalls.file_request_uploads ?? []).length).toBe(3);
   });
 
   it("handles an avatar orphan safely (nested, keyed by basename)", async () => {

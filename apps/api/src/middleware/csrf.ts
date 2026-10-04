@@ -1,6 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
-import { randomBytes, timingSafeEqual } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { getEnv } from "../config/env";
+import { timingSafeCompare } from "../lib/timing-safe";
 
 const CSRF_TOKEN_LENGTH = 32;
 const CSRF_HEADER = "x-csrf-token";
@@ -9,14 +10,6 @@ const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
 
 function generateToken(): string {
   return randomBytes(CSRF_TOKEN_LENGTH).toString("hex");
-}
-
-function timingSafeCompare(a: string, b: string): boolean {
-  try {
-    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
-  } catch {
-    return false;
-  }
 }
 
 /**
