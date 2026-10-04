@@ -55,7 +55,8 @@
       "recommendation": "For push events, diff against github.event.before (fall back to HEAD~1 when it is all-zeros), not git merge-base with origin/main. Add a regression test that a synthetic secret on the push path fails the scan.",
       "deterministic_ref": null,
       "confidence": "Medium",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged mainecybertech#75 @ 9cc582f"
     },
     {
       "id": "CI-P2-003",
@@ -75,7 +76,8 @@
       "recommendation": "Configure prod-approval with 1+ required reviewers in GitHub Settings -> Environments, move prod migrations under prod-approval, and update the matrix/runbooks. Add a runbook verification step and, if possible, a check that the environment has protection rules.",
       "deterministic_ref": null,
       "confidence": "Medium",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged mainecybertech#80 @ cd13108"
     },
     {
       "id": "PORT-P2-001",
@@ -95,7 +97,8 @@
       "recommendation": "git update-index --chmod=+x the 17 scripts and commit; add a CI check that no tracked *.sh is mode 100644.",
       "deterministic_ref": "DET-P2-002",
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged mainecybertech#74 @ 54c76a3"
     },
     {
       "id": "SEC-P2-001",
@@ -113,7 +116,8 @@
       "recommendation": "Print only file, line number and rule name; never echo the diff or matched value; call ::add-mask:: before any echo. Apply the same change to scripts/scan-secrets.sh. Add a test asserting no matched value appears in output.",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged mainecybertech#76 @ d0dec1e"
     },
     {
       "id": "SEC-P2-002",
@@ -133,7 +137,8 @@
       "recommendation": "Resolve once and connect to the validated IP while preserving the Host header (custom undici lookup / ssrf-req-filter), or re-validate the connected peer IP and abort on change; explicitly block link-local/metadata ranges. Apply the same pattern in webhook-management.ts.",
       "deterministic_ref": null,
       "confidence": "Medium",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged mainecybertech#81 @ dc4ecb1"
     },
     {
       "id": "CONF-P2-001",
@@ -153,7 +158,8 @@
       "recommendation": "Add SCHEDULE_DISPATCH_TOKEN to the secrets matrix and SECRETS_ROTATION.md with an owner and 90-day rotation; prefer a repository-scoped GitHub App installation token with short expiry over a classic PAT.",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged mainecybertech#77 @ f313947"
     },
     {
       "id": "CI-P3-001",
