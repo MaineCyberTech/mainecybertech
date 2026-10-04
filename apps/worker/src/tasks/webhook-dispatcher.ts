@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
 import { assertSafeUrl } from "../lib/ssrf-guard";
+import { pinnedFetch } from "../lib/pinned-fetch";
 import { claimIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
 import type { TaskHandler, TaskResult } from "../task-registry";
 import type { Json } from "@mct/sdk/database.types";
@@ -139,14 +140,14 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
-        const res = await fetch(endpoint.url, {
+        // SEC-P2-002: pinnedFetch validates DNS and pins the connection to the
+        // validated IP (closing the rebinding TOCTOU the guard-then-fetch left
+        // open). Redirects are not followed, matching `redirect: "manual"`.
+        const res = await pinnedFetch(endpoint.url, {
           method: "POST",
           headers,
           body,
           signal: controller.signal,
-          // Do not follow redirects: the SSRF guard validated the initial URL
-          // only, and a public host could 302 to an internal address.
-          redirect: "manual",
         });
         clearTimeout(timeout);
         responseStatus = res.status;

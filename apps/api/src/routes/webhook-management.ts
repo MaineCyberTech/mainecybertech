@@ -9,6 +9,7 @@ import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { AppError, success } from "../types";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
+import { pinnedFetch } from "../lib/pinned-fetch";
 import { assertResourceOrg, loadOwned } from "../lib/tenant";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { queryInt, queryString } from "../lib/query";
@@ -463,13 +464,13 @@ router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, re
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
-      const res = await fetch(webhook.url, {
+      // SEC-003: pinnedFetch validates DNS and pins the connection to the
+      // validated IP; redirects are not followed.
+      const res = await pinnedFetch(webhook.url, {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
         signal: controller.signal,
-        // Do not follow redirects: the SSRF guard validated the initial URL.
-        redirect: "manual",
       });
       clearTimeout(timeout);
       responseStatus = res.status;

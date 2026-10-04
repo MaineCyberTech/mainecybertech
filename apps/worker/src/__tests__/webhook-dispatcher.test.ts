@@ -21,6 +21,12 @@ jest.mock("../lib/ssrf-guard", () => ({
   assertSafeUrl: jest.fn().mockResolvedValue(null),
 }));
 
+// SEC-P2-002: delivery now goes through pinnedFetch (pins the validated DNS
+// answer) instead of global fetch.
+jest.mock("../lib/pinned-fetch", () => ({
+  pinnedFetch: jest.fn(),
+}));
+
 const endpoint = {
   id: "22222222-2222-2222-2222-222222222222",
   name: "Worker endpoint",
@@ -33,7 +39,18 @@ const deliveryInserts: Array<Record<string, unknown>> = [];
 
 function makeChain(terminal: "endpoints" | "other") {
   const chain: Record<string, unknown> = {};
-  const passthrough = ["select", "eq", "contains", "update", "insert", "not", "lt", "or", "order", "limit"];
+  const passthrough = [
+    "select",
+    "eq",
+    "contains",
+    "update",
+    "insert",
+    "not",
+    "lt",
+    "or",
+    "order",
+    "limit",
+  ];
   for (const m of passthrough) {
     chain[m] = jest.fn().mockReturnThis();
   }
@@ -58,20 +75,23 @@ jest.mock("../services/supabase", () => ({
 }));
 
 import { webhookDispatcher } from "../tasks/webhook-dispatcher";
+import { pinnedFetch } from "../lib/pinned-fetch";
+
+const fetchMock = pinnedFetch as unknown as jest.Mock;
 
 describe("worker webhookDispatcher idempotency", () => {
   const data = { ticketId: "t-1" };
 
   beforeEach(() => {
     deliveryInserts.length = 0;
+    fetchMock.mockReset();
   });
 
   it("sends an Idempotency-Key header and persists it on the delivery row", async () => {
-    const fetchMock = jest.fn().mockResolvedValue({
+    fetchMock.mockResolvedValue({
       status: 200,
       text: jest.fn().mockResolvedValue("ok"),
     });
-    (global as unknown as { fetch: unknown }).fetch = fetchMock;
 
     // Key passed explicitly by the producer.
     const baseKey = "wh-out-explicit-key";
@@ -92,14 +112,18 @@ describe("worker webhookDispatcher idempotency", () => {
   });
 
   it("collapses a duplicate job for the same event to a single delivery", async () => {
-    const fetchMock = jest.fn().mockResolvedValue({
+    fetchMock.mockResolvedValue({
       status: 200,
       text: jest.fn().mockResolvedValue("ok"),
     });
-    (global as unknown as { fetch: unknown }).fetch = fetchMock;
 
     const baseKey = "wh-out-shared-key";
-    const payload = { event: "ticket.created", organizationId: "org-1", data, idempotencyKey: baseKey };
+    const payload = {
+      event: "ticket.created",
+      organizationId: "org-1",
+      data,
+      idempotencyKey: baseKey,
+    };
     await Promise.all([webhookDispatcher(payload), webhookDispatcher(payload)]);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);

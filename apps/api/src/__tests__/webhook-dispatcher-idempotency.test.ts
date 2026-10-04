@@ -25,6 +25,12 @@ jest.mock("../lib/ssrf-guard", () => ({
   assertSafeWebhookUrl: jest.fn().mockResolvedValue(undefined),
 }));
 
+// SEC-003: outbound delivery now goes through pinnedFetch (pins the validated
+// DNS answer) instead of global fetch.
+jest.mock("../lib/pinned-fetch", () => ({
+  pinnedFetch: jest.fn(),
+}));
+
 const endpoint = {
   id: "11111111-1111-1111-1111-111111111111",
   name: "Test endpoint",
@@ -69,13 +75,15 @@ jest.mock("../services/supabase", () => ({
 
 import { dispatchWebhook, buildOutboundIdempotencyKey } from "../lib/webhook-dispatcher";
 import { deleteIdempotencyKey } from "../lib/idempotency";
+import { pinnedFetch } from "../lib/pinned-fetch";
+
+const fetchMock = pinnedFetch as unknown as jest.Mock;
 
 function okFetch() {
-  const fetchMock = jest.fn().mockResolvedValue({
+  fetchMock.mockResolvedValue({
     status: 200,
     text: jest.fn().mockResolvedValue("ok"),
   });
-  (global as unknown as { fetch: unknown }).fetch = fetchMock;
   return fetchMock;
 }
 
@@ -83,6 +91,7 @@ describe("dispatchWebhook outbound idempotency", () => {
   const data = { ticketId: "t-1", title: "Hello" };
 
   beforeEach(async () => {
+    fetchMock.mockReset();
     deliveryInserts.length = 0;
     endpointUpdates.length = 0;
     await deleteIdempotencyKey(
@@ -120,16 +129,16 @@ describe("dispatchWebhook outbound idempotency", () => {
   });
 
   it("releases the claim on failure so a later retry can proceed", async () => {
-    const fail = jest.fn().mockResolvedValue({
+    fetchMock.mockResolvedValue({
       status: 500,
       text: jest.fn().mockResolvedValue("boom"),
     });
-    (global as unknown as { fetch: unknown }).fetch = fail;
 
     await dispatchWebhook("ticket.created", "org-1", data);
 
-    const ok = okFetch();
+    fetchMock.mockClear();
+    okFetch();
     await dispatchWebhook("ticket.created", "org-1", data);
-    expect(ok).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

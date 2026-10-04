@@ -33,7 +33,6 @@ permissions:
   packages: write
   id-token: write
   attestations: write
-  actions: write
 
 env:
   IMAGE_TAG: ${{ github.event.inputs.rollback_sha || github.sha }}
