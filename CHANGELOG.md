@@ -164,6 +164,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   pre-push check it flagged the pending migrations' own DDL (e.g. a drop
   migration) as drift, and its colour-sensitive grep intermittently missed real
   drops. Post-push a non-empty diff now means genuine divergence.
+- Worker webhook delivery and retry now use the `pinnedFetch` helper (resolves
+  and validates DNS once, then pins the connection to that IP) instead of a
+  guard-then-`fetch`, closing the DNS-rebinding TOCTOU in the worker
+  (SEC-P2-002).
 - Deploy resilience (from the first post-merge deploy on 2026-10-03): the redis
   container now runs as `user: redis` — the custom entrypoint (password off
   argv) replaced the official privilege-dropping one, and as root with
