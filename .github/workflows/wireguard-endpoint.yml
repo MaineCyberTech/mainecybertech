@@ -2,6 +2,12 @@ name: WireGuard lab endpoint
 
 # Manage the DigitalOcean cloud firewall for the lab audit WireGuard endpoint, using the
 # repo's DO_API_TOKEN (value never printed). Read-only listing + add an inbound UDP rule.
+#
+# CI-002 hardening: the mutation path now (a) pauses on the `prod-approval`
+# environment, (b) validates udp_port as an integer 1-65535, (c) requires an
+# explicit, validated source CIDR and refuses a world-open source
+# (0.0.0.0/0 / ::/0) unless confirm_world_open=yes is chosen, and (d) builds
+# the request body with jq so a crafted port/CIDR cannot inject extra rules.
 
 on:
   workflow_dispatch:
@@ -17,9 +23,18 @@ on:
         required: true
         default: mct-portal-dev
       udp_port:
-        description: 'UDP port to allow inbound (audit overlay)'
+        description: 'UDP port to allow inbound (integer 1-65535)'
         required: false
         default: '51900'
+      source:
+        description: 'Source CIDR(s), comma-separated (e.g. 203.0.113.0/24). Required for firewall-allow.'
+        required: false
+      confirm_world_open:
+        description: 'Allow a world-open source (0.0.0.0/0 or ::/0)? Only with explicit yes.'
+        type: choice
+        options: ['no', 'yes']
+        required: true
+        default: 'no'
 
 permissions:
   contents: read
@@ -27,10 +42,16 @@ permissions:
 jobs:
   do:
     runs-on: ubuntu-latest
+    # CI-002: the firewall-allow action mutates a cloud firewall with the
+    # account-wide DO_API_TOKEN; require the protected environment (configure
+    # 1+ required reviewers in GitHub Settings -> Environments).
+    environment: prod-approval
     env:
       DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
       DROPLET: ${{ inputs.droplet }}
       UDP_PORT: ${{ inputs.udp_port }}
+      SOURCE: ${{ inputs.source }}
+      CONFIRM_WORLD_OPEN: ${{ inputs.confirm_world_open }}
     steps:
       - name: List droplets
         if: inputs.action == 'list'
@@ -52,6 +73,38 @@ jobs:
         if: inputs.action == 'firewall-allow'
         run: |
           set -e
+
+          # --- Validate udp_port (integer 1-65535) ---
+          if ! printf '%s' "$UDP_PORT" | grep -Eq '^[0-9]{1,5}$'; then
+            echo "::error::udp_port must be an integer between 1 and 65535 (got a non-numeric value)"
+            exit 1
+          fi
+          PORT_NUM=$((10#$UDP_PORT))
+          if [ "$PORT_NUM" -lt 1 ] || [ "$PORT_NUM" -gt 65535 ]; then
+            echo "::error::udp_port must be between 1 and 65535"
+            exit 1
+          fi
+
+          # --- Validate source CIDRs; refuse world-open unless explicitly confirmed ---
+          if [ -z "${SOURCE//[[:space:]]/}" ]; then
+            echo "::error::input 'source' is required for firewall-allow (comma-separated CIDR(s))"
+            exit 1
+          fi
+          CONFIRM="${CONFIRM_WORLD_OPEN:-no}"
+          for cidr in $(printf '%s' "$SOURCE" | tr ',' ' '); do
+            if ! printf '%s' "$cidr" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}(/[0-9]{1,2})?$|^[0-9A-Fa-f:]+(/[0-9]{1,3})?$'; then
+              echo "::error::invalid source address/CIDR: '$cidr'"
+              exit 1
+            fi
+            if [ "$cidr" = "0.0.0.0/0" ] || [ "$cidr" = "::/0" ]; then
+              if [ "$CONFIRM" != "yes" ]; then
+                echo "::error::world-open source '$cidr' requires confirm_world_open=yes"
+                exit 1
+              fi
+            fi
+          done
+          SOURCES_JSON=$(printf '%s' "$SOURCE" | tr ',' '\n' | sed 's/[[:space:]]//g' | sed '/^$/d' | jq -R . | jq -cs .)
+
           RESP=$(curl -sS -H "Authorization: Bearer $DO_API_TOKEN" \
             "https://api.digitalocean.com/v2/droplets?page=1&per_page=200")
           ID=$(printf '%s' "$RESP" | jq -r --arg n "$DROPLET" \
@@ -66,10 +119,12 @@ jobs:
             echo "No DigitalOcean cloud firewall attached to droplet $DROPLET (id $ID)."
             exit 0
           fi
-          echo "firewall id=$FID  allowing udp/$UDP_PORT"
+          echo "firewall id=$FID  allowing udp/$UDP_PORT from $SOURCE"
+          BODY=$(jq -n --arg port "$UDP_PORT" --argjson addrs "$SOURCES_JSON" \
+            '{inbound_rules:[{protocol:"udp",ports:$port,sources:{addresses:$addrs}}]}')
           curl -sS -X POST -H "Authorization: Bearer $DO_API_TOKEN" -H "Content-Type: application/json" \
             "https://api.digitalocean.com/v2/firewalls/$FID/rules" \
-            -d "{\"inbound_rules\":[{\"protocol\":\"udp\",\"ports\":\"$UDP_PORT\",\"sources\":{\"addresses\":[\"0.0.0.0/0\",\"::/0\"]}}]}" \
+            -d "$BODY" \
             -w '\nHTTP %{http_code}\n'
           echo "--- inbound rules now ---"
           curl -sS -H "Authorization: Bearer $DO_API_TOKEN" "https://api.digitalocean.com/v2/firewalls/$FID" \
