@@ -107,6 +107,7 @@ Variables). Optional offsite copy: `S3_OFFSITE_BUCKET` /
 | `SUPABASE_ACCESS_TOKEN`   | yes | yes  | Supabase CLI auth for `supabase link` / `db push` (`supabase-migrations.yml`) |
 | `CHROMATIC_PROJECT_TOKEN` | yes | yes  | Chromatic visual-regression upload (`chromatic.yml`, best-effort job)         |
 | `E2E_JWT_SECRET`          | opt | opt  | Optional E2E JWT secret; `e2e.yml` falls back to a built-in test value        |
+| `SCHEDULE_DISPATCH_TOKEN` | —   | yes  | Repo-scoped PAT / GitHub App token with `actions: write` for `backup-dispatch.yml` workflow dispatch (CONF-001; see `docs/SECRETS_ROTATION.md`) |
 
 ## Repository or environment variables required by workflows
 
@@ -148,6 +149,10 @@ Variables). Optional offsite copy: `S3_OFFSITE_BUCKET` /
    - `REDIS_PASSWORD`, `FIELD_ENCRYPTION_KEY`, `TURNSTILE_SECRET_KEY`, `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` — deployment/runtime config forwarded by `deploy-do.yml`
    - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — from Stripe dashboard
    - `CHROMATIC_PROJECT_TOKEN` — from the Chromatic project (visual regression)
+   - `SCHEDULE_DISPATCH_TOKEN` — repo-scoped token with `actions: write` used by
+     `backup-dispatch.yml` to dispatch the develop backup/restore workflows.
+     Prefer a repository-scoped GitHub App installation token (short expiry)
+     over a classic PAT; rotate every 90 days (see `docs/SECRETS_ROTATION.md`)
    - Integration secrets as needed (Jira, JSM, M365, SMTP, Sentry, Teams webhooks)
 
 3. **Add variables** to the appropriate environment scopes (or repo-wide):
