@@ -168,6 +168,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   and validates DNS once, then pins the connection to that IP) instead of a
   guard-then-`fetch`, closing the DNS-rebinding TOCTOU in the worker
   (SEC-P2-002).
+- `FIELD_ENCRYPTION_KEY` is required in production: the API refuses to boot
+  without a valid 32-byte key instead of silently writing reversible `plain:`
+  PII, and `encryptField` throws rather than degrade at runtime (SEC-P1-001).
 - Deploy resilience (from the first post-merge deploy on 2026-10-03): the redis
   container now runs as `user: redis` — the custom entrypoint (password off
   argv) replaced the official privilege-dropping one, and as root with
