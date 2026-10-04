@@ -27,6 +27,10 @@ concurrency:
 jobs:
   migrate:
     runs-on: ubuntu-latest
+    # CI-004: prod runs `supabase db push` (a production mutation). The `prod`
+    # environment MUST have 1+ required reviewers configured server-side; this
+    # file cannot enforce that. See docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md
+    # (Settings -> Environments -> prod).
     environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
 
     steps:
