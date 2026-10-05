@@ -867,9 +867,9 @@ jobs:
           # comes from the DO_SSH_HOST_KEY secret; refresh it if the droplet is
           # rebuilt (the fingerprints are on the droplet's /etc/ssh).
           KNOWN_HOSTS="$(mktemp)"
-          printf '%s\n' "$DO_SSH_HOST_KEY" | while IFS= read -r hk; do
-            [ -n "$hk" ] && printf '%s %s\n' "$DROPLET_IP" "$hk"
-          done > "$KNOWN_HOSTS"
+          # `awk` skips blank lines and always exits 0, so the step cannot trip
+          # `set -e` on a trailing newline in the secret.
+          printf '%s\n' "$DO_SSH_HOST_KEY" | awk -v ip="$DROPLET_IP" 'NF { print ip, $0 }' > "$KNOWN_HOSTS"
           SSH="ssh -i $KEY_FILE -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$KNOWN_HOSTS -o ConnectTimeout=10 root@$DROPLET_IP"
           api_ok=""
           for i in $(seq 1 30); do
