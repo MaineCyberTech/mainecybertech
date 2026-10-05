@@ -635,6 +635,7 @@ jobs:
           host: ${{ needs.resolve-ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          fingerprint: ${{ secrets.DO_SSH_HOST_FINGERPRINT }}
           command_timeout: 45m
           # Secrets are forwarded as environment variables rather than being
           # interpolated into the remote script, so a value containing $,
@@ -739,6 +740,7 @@ jobs:
           host: ${{ needs.resolve-ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          fingerprint: ${{ secrets.DO_SSH_HOST_FINGERPRINT }}
           command_timeout: 45m
           envs: CF_ORIGIN_CERT,CF_ORIGIN_KEY,GHCR_TOKEN,GHCR_ACTOR
           script: |
@@ -852,6 +854,7 @@ jobs:
           APP_DOMAIN: ${{ needs.setup.outputs.app_domain }}
           DROPLET_IP: ${{ needs.resolve-ip.outputs.droplet_ip }}
           CI_SSH_PRIVATE_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          DO_SSH_HOST_KEY: ${{ secrets.DO_SSH_HOST_KEY }}
         run: |
           # The worker port is not published, so it must be checked over SSH.
           # Write the key so ssh can actually authenticate (without -i the
@@ -859,7 +862,15 @@ jobs:
           KEY_FILE="$(mktemp)"
           printf '%s\n' "$CI_SSH_PRIVATE_KEY" > "$KEY_FILE"
           chmod 600 "$KEY_FILE"
-          SSH="ssh -i $KEY_FILE -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@$DROPLET_IP"
+          # CI-P3-003: verify the droplet host key instead of trusting any key
+          # (the old StrictHostKeyChecking=no accepted a MITM). The pinned key
+          # comes from the DO_SSH_HOST_KEY secret; refresh it if the droplet is
+          # rebuilt (the fingerprints are on the droplet's /etc/ssh).
+          KNOWN_HOSTS="$(mktemp)"
+          printf '%s\n' "$DO_SSH_HOST_KEY" | while IFS= read -r hk; do
+            [ -n "$hk" ] && printf '%s %s\n' "$DROPLET_IP" "$hk"
+          done > "$KNOWN_HOSTS"
+          SSH="ssh -i $KEY_FILE -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$KNOWN_HOSTS -o ConnectTimeout=10 root@$DROPLET_IP"
           api_ok=""
           for i in $(seq 1 30); do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$API_DOMAIN/health" 2>/dev/null | tr -d '\r\n' || echo "000")
@@ -870,7 +881,7 @@ jobs:
             echo "===== API CONTAINER LOGS START ====="
             $SSH "docker ps -a --format '{{.Names}} {{.Status}}'; echo '---'; docker compose -p mct-portal logs --tail=50 api 2>/dev/null || docker logs mct-portal-api-1 --tail 50 2>/dev/null || echo 'no api container found'" || echo "SSH to droplet failed"
             echo "===== API CONTAINER LOGS END ====="
-            rm -f "$KEY_FILE"
+            rm -f "$KEY_FILE" "$KNOWN_HOSTS"
             exit 1
           fi
           echo "Worker health check via SSH..."
@@ -887,11 +898,11 @@ jobs:
             echo "===== WORKER CONTAINER LOGS START ====="
             $SSH "docker compose -p mct-portal logs --tail=50 worker 2>/dev/null || docker logs mct-portal-worker-1 --tail 50 2>/dev/null || echo 'no worker container found'" || echo "SSH to droplet failed"
             echo "===== WORKER CONTAINER LOGS END ====="
-            rm -f "$KEY_FILE"
+            rm -f "$KEY_FILE" "$KNOWN_HOSTS"
             echo "Worker health check failed" >&2
             exit 1
           fi
-          rm -f "$KEY_FILE"
+          rm -f "$KEY_FILE" "$KNOWN_HOSTS"
           web_ok=""
           for i in $(seq 1 15); do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$APP_DOMAIN/login" 2>/dev/null | tr -d '\r\n' || echo "000")
