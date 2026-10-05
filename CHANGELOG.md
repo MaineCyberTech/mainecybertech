@@ -212,6 +212,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   healthcheck probes `127.0.0.1` (the health server binds IPv4, `localhost`
   resolved to `::1`); and a failed `docker compose up` now restores the
   previous stack before exiting instead of leaving the site down.
+- Deploy SSH now verifies the droplet host key: both `appleboy/ssh-action`
+  steps pin a fingerprint and the health-check `ssh` builds a known_hosts file
+  from `DO_SSH_HOST_KEY` instead of `StrictHostKeyChecking=no` (CI-P3-003).
 
 ### Changed
 
