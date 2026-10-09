@@ -124,6 +124,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      # CTR-P3-001: don't count boot-time failures against the retries budget.
+      start_period: 30s
 
   worker:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:?IMAGE_TAG must be set}
@@ -177,6 +179,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      # CTR-P3-001: allow the consumer/health server to boot before counting
+      # failures against the retries budget.
+      start_period: 30s
 
   web:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:?IMAGE_TAG must be set}
