@@ -339,8 +339,8 @@ importers:
   apps/worker:
     dependencies:
       '@aws-sdk/client-sqs':
-        specifier: ^3.1057.0
-        version: 3.1145.0
+        specifier: ^3.1146.0
+        version: 3.1146.0
       '@mct/config':
         specifier: workspace:^
         version: link:../../packages/config
@@ -474,8 +474,8 @@ packages:
     resolution: {integrity: sha512-U4+70Pc5ZS9osnCBCE5Jha/ciHM+Yp+CNMNC/7HvYbNRk1Ldd+f7qO65W5qfhu/TCv+/ozljlXXe9Nj8419DMA==}
     engines: {node: '>=10'}
 
-  '@aws-sdk/client-sqs@3.1145.0':
-    resolution: {integrity: sha512-TZVXL++ssfxDfy+Wu84JgbmwW6EeYGvImdxRLthYtS5KNnhLlNbzB3eJwO2STcwk3a7ctRwwOX50U2PFO+2bFw==}
+  '@aws-sdk/client-sqs@3.1146.0':
+    resolution: {integrity: sha512-JQT0qy87HLkrCJNYaBkzpQuopVFpvafwyrHTRaL55gXCrYRh8y3oJ080squ4X6gmyD2wO7uw4E65ps13KuisJw==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/core@3.978.1':
@@ -7047,7 +7047,7 @@ snapshots:
 
   '@alloc/quick-lru@5.3.0': {}
 
-  '@aws-sdk/client-sqs@3.1145.0':
+  '@aws-sdk/client-sqs@3.1146.0':
     dependencies:
       '@aws-sdk/core': 3.978.1
       '@aws-sdk/credential-provider-node': 3.972.84
