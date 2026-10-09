@@ -2,6 +2,7 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -30,6 +31,7 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -38,6 +40,7 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -47,6 +50,7 @@ updates:
 
   - package-ecosystem: "terraform"
     directory: "/infra/terraform/digitalocean"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
