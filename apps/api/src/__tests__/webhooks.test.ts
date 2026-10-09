@@ -70,6 +70,11 @@ jest.mock("../lib/idempotency", () => ({
 jest.mock("../lib/webhook-signature", () => ({
   verifyWebhookSignature: jest.fn().mockReturnValue(true),
   validateWebhookTimestamp: jest.fn().mockReturnValue(true),
+  rawBodyBuffer: jest.fn((value: unknown) => {
+    if (Buffer.isBuffer(value)) return value;
+    if (typeof value === "string") return Buffer.from(value);
+    return null;
+  }),
 }));
 
 jest.mock("../lib/logger", () => ({
@@ -412,6 +417,29 @@ describe("webhooks routes", () => {
 
       expect(res.status).toBe(401);
     });
+
+    it("fails closed when the raw body is unavailable [WH-P2-004]", async () => {
+      const { rawBodyBuffer, verifyWebhookSignature } = await import(
+        "../lib/webhook-signature"
+      );
+      (rawBodyBuffer as jest.Mock).mockReturnValueOnce(null);
+      (verifyWebhookSignature as jest.Mock).mockClear();
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/jira")
+        .set("x-hub-signature", "sig_123")
+        .send({
+          webhookEvent: "issue_updated",
+          issue: {
+            key: "PROJ-456",
+            fields: { status: { name: "Done" }, summary: "Closed issue" },
+          },
+        });
+
+      expect(res.status).toBe(401);
+      // Never verify a re-serialized body — fail before the HMAC comparison.
+      expect(verifyWebhookSignature).not.toHaveBeenCalled();
+    });
   });
 
   describe("POST /jsm", () => {
@@ -430,6 +458,29 @@ describe("webhooks routes", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
+    });
+
+    it("fails closed when the raw body is unavailable [WH-P2-004]", async () => {
+      const { rawBodyBuffer, verifyWebhookSignature } = await import(
+        "../lib/webhook-signature"
+      );
+      (rawBodyBuffer as jest.Mock).mockReturnValueOnce(null);
+      (verifyWebhookSignature as jest.Mock).mockClear();
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/jsm")
+        .set("x-hub-signature", "sig_123")
+        .send({
+          webhookEvent: "customer_added",
+          issue: {
+            key: "HELP-1",
+            fields: { status: { name: "Open" }, summary: "Test JSM issue" },
+          },
+          organizationId: "00000000-0000-0000-0000-000000000001",
+        });
+
+      expect(res.status).toBe(401);
+      expect(verifyWebhookSignature).not.toHaveBeenCalled();
     });
   });
 
@@ -536,6 +587,30 @@ describe("webhooks routes", () => {
       expect(firstKey).toMatch(/^m365-/);
       expect(secondKey).toMatch(/^m365-/);
       expect(firstKey).not.toBe(secondKey);
+    });
+
+    it("bounds replay with the 7-day idempotency window [WH-P2-001]", async () => {
+      const { claimIdempotencyKey } = await import("../lib/idempotency");
+      (claimIdempotencyKey as jest.Mock).mockClear();
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [
+            {
+              resource: "users/ttl",
+              changeType: "updated",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+              resourceData: { id: "ttl" },
+            },
+          ],
+        });
+
+      expect(res.status).toBe(200);
+      expect(claimIdempotencyKey).toHaveBeenCalled();
+      // Third argument is the TTL in seconds: the enforced replay window.
+      expect((claimIdempotencyKey as jest.Mock).mock.calls[0][2]).toBe(7 * 24 * 60 * 60);
     });
   });
 

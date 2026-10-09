@@ -225,6 +225,13 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   `routes/auth.ts` (GoTrue token exchange, `bootstrap_portal_access` RPC) are
   bounded with `AbortSignal.timeout` so a hung provider cannot hold a request
   open indefinitely (RES-P2-004).
+- Inbound webhook signatures fail closed: Jira/JSM verification now requires
+  the captured raw body (`rawBodyBuffer`) instead of falling back to
+  re-serialized `req.body`, which is not signature-stable (WH-P2-004).
+- M365 change notifications enforce a replay window: the atomic idempotency
+  claim on the full-notification digest is held for 7 days (Graph sends no
+  event timestamp and does not sign payloads), so a captured retransmission
+  cannot be reprocessed (WH-P2-001).
 
 ### Changed
 
