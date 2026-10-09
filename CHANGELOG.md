@@ -232,6 +232,13 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   claim on the full-notification digest is held for 7 days (Graph sends no
   event timestamp and does not sign payloads), so a captured retransmission
   cannot be reprocessed (WH-P2-001).
+- CSV exports neutralize spreadsheet formula injection and never default to
+  all tenants: `escapeCsvValue` prefixes formula-leading values (`= + - @`,
+  tab, CR) with a text marker while leaving plain numbers untouched, and the
+  approvals/assets/tickets/projects/proposals/findings/domain-monitors export
+  routes apply the mandatory `resolveAdminTenantScope` predicate — an
+  explicit `?organization_id` may only narrow, and an empty scope fails
+  closed (FILE-P2-006).
 
 ### Changed
 

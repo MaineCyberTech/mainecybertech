@@ -8,6 +8,7 @@ import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { loadOwned } from "../lib/tenant";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
+import { applyOrgScope, applyRequestedOrg, resolveAdminTenantScope } from "../lib/admin-scope";
 import {
   createDomainMonitorSchema,
   updateDomainMonitorSchema,
@@ -37,8 +38,17 @@ router.get("/export", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "domain-monitors", "read");
     let q = supabase.from("domain_monitors").select("*");
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) q = q.eq("organization_id", orgId);
+    // FILE-P2-006: exports must never default to all tenants. A genuine
+    // cross-tenant admin sees every org; everyone else is limited to their
+    // approved orgs, and an explicit ?organization_id may only narrow.
+    const scope = await resolveAdminTenantScope(req);
+    q = applyRequestedOrg(
+      q,
+      "organization_id",
+      req.query.organization_id as string | undefined,
+      scope,
+    );
+    q = applyOrgScope(q, "organization_id", scope);
     const { data, error } = await q.order("domain", { ascending: true }).limit(10000);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({

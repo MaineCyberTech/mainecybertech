@@ -33,6 +33,7 @@ import {
   deleteSchedule,
 } from "../services/satisfaction-pulse-widget";
 import { logAuditEvent } from "../services/audit";
+import { escapeCsvValue } from "../lib/csv";
 
 const router: Router = Router();
 
@@ -93,11 +94,9 @@ router.get("/export", async (req: Request, res: Response, next: NextFunction) =>
         );
       }
       const headers = Object.keys(items[0]).join(",");
+      // FILE-P2-006: escapeCsvValue applies the formula-injection guard too.
       const rows = items.map((item: Record<string, unknown>) =>
-        Object.values(item)
-          .map((v) => (v === null || v === undefined ? "" : String(v).replace(/"/g, '""')))
-          .map((v) => (v.includes(",") || v.includes("\n") ? `"${v}"` : v))
-          .join(","),
+        Object.values(item).map(escapeCsvValue).join(","),
       );
       res.setHeader("Content-Type", "text/csv");
       res.setHeader("Content-Disposition", 'attachment; filename="satisfaction-pulses-export.csv"');
