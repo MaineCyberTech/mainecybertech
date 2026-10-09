@@ -2,7 +2,7 @@ import { Worker as BullWorker, type Job } from "bullmq";
 import { env, resolveRedisUrl } from "./env";
 import { executeTask } from "./task-registry";
 import { logger } from "./logger";
-import { isShuttingDown, drainInFlight } from "./shutdown";
+import { isShuttingDown, drainInFlight, markShuttingDown } from "./shutdown";
 
 let bullWorker: BullWorker | null = null;
 
@@ -56,6 +56,7 @@ export async function runBullMQWorker(): Promise<void> {
   await new Promise<void>((resolve) => {
     const shutdown = async () => {
       if (isShuttingDown()) return;
+      markShuttingDown();
       logger.info("Shutdown signal received — closing BullMQ worker...");
       await bullWorker?.close();
       await drainInFlight();
