@@ -239,6 +239,15 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   routes apply the mandatory `resolveAdminTenantScope` predicate — an
   explicit `?organization_id` may only narrow, and an empty scope fails
   closed (FILE-P2-006).
+- `apps/worker/.env.example` documents `APP_BASE_URL` (notification email
+  links; falls back to `API_BASE_URL`) — it was in the schema but missing from
+  the template (SECRET-P3-001).
+- The web client env fails fast in production when `NEXT_PUBLIC_API_URL` is
+  missing instead of silently falling back to `http://localhost:4000`
+  (SECRET-P3-002).
+- The API and worker compose healthchecks set `start_period: 30s` so
+  boot-time failures no longer consume the retries budget before the services
+  are up (CTR-P3-001).
 
 ### Changed
 
