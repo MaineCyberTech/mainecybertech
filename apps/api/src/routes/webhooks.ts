@@ -6,13 +6,25 @@ import { logger } from "../lib/logger";
 import { failure, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { getEnv } from "../config/env";
-import { verifyWebhookSignature, validateWebhookTimestamp } from "../lib/webhook-signature";
+import {
+  verifyWebhookSignature,
+  validateWebhookTimestamp,
+  rawBodyBuffer,
+} from "../lib/webhook-signature";
 import { claimIdempotencyKey, storeIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
 import { recordWebhookDelivery } from "../lib/metrics";
 import { type Row } from "../lib/db-types";
 import { timingSafeCompare } from "../lib/timing-safe";
 
 const router: ReturnType<typeof Router> = Router();
+
+/**
+ * Replay window for M365 change notifications (WH-P2-001). Graph sends no
+ * per-event timestamp and does not sign payloads, so the atomic idempotency
+ * claim on the notification digest is the enforced replay guard. Keep it well
+ * beyond Graph's own retry schedule (retries stop after ~4 hours).
+ */
+const M365_REPLAY_WINDOW_SECONDS = 7 * 24 * 60 * 60;
 
 async function logWebhookDelivery(
   event: string,
@@ -38,10 +50,11 @@ async function logWebhookDelivery(
   }
 }
 
-async function dedupWebhook(key: string): Promise<boolean> {
+async function dedupWebhook(key: string, ttlSeconds?: number): Promise<boolean> {
   // Atomic claim (Redis SET NX EX or in-memory mutex fallback) — prevents
-  // concurrent check-then-store races from double-processing an event.
-  const claimed = await claimIdempotencyKey(key, "processing");
+  // concurrent check-then-store races from double-processing an event. The TTL
+  // is the replay window: an identical retransmission within it is rejected.
+  const claimed = await claimIdempotencyKey(key, "processing", ttlSeconds);
   if (!claimed) {
     logger.info({ key }, "Duplicate webhook, skipping");
     return true;
@@ -359,7 +372,14 @@ router.post("/jira", async (req, res, next) => {
       res.status(401).json(failure("UNAUTHORIZED", "Missing webhook signature", 401));
       return;
     }
-    const rawBody = Buffer.from((req as { rawBody?: Buffer }).rawBody || JSON.stringify(req.body));
+    // WH-P2-004: verify over the exact received bytes; fail closed when the raw
+    // body was not captured (re-serialized JSON is not signature-stable).
+    const rawBody = rawBodyBuffer((req as { rawBody?: unknown }).rawBody);
+    if (!rawBody) {
+      logger.warn("Jira webhook raw body unavailable — rejecting");
+      res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
+      return;
+    }
     if (!verifyWebhookSignature(rawBody, sig, jiraSecret)) {
       logger.warn("Jira webhook signature verification failed");
       res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
@@ -454,7 +474,14 @@ router.post("/jsm", async (req, res, next) => {
       res.status(401).json(failure("UNAUTHORIZED", "Missing webhook signature", 401));
       return;
     }
-    const rawBody = Buffer.from((req as { rawBody?: Buffer }).rawBody || JSON.stringify(req.body));
+    // WH-P2-004: verify over the exact received bytes; fail closed when the raw
+    // body was not captured (re-serialized JSON is not signature-stable).
+    const rawBody = rawBodyBuffer((req as { rawBody?: unknown }).rawBody);
+    if (!rawBody) {
+      logger.warn("JSM webhook raw body unavailable — rejecting");
+      res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
+      return;
+    }
     if (!verifyWebhookSignature(rawBody, sig, jsmSecret)) {
       logger.warn("JSM webhook signature verification failed");
       res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
@@ -585,10 +612,13 @@ router.post("/m365", async (req, res, next) => {
     const notification = value[0];
     const resource = notification?.resource;
     const changeType = notification?.changeType;
-    // Deterministic but event-unique dedup key: Graph sends no per-event id or
-    // timestamp, so include the subscription expiry + a digest of the full
-    // notification JSON. Identical retransmissions dedupe; distinct legitimate
-    // events (same resource + changeType) are NOT suppressed.
+    // WH-P2-001: Graph change notifications carry no event timestamp and are
+    // not signed — clientState is the authentication, so a timestamp window
+    // cannot be enforced on the payload. Replay is instead bounded by an
+    // atomic idempotency claim on a deterministic digest of the full
+    // notification, held for M365_REPLAY_WINDOW_SECONDS: an identical
+    // retransmission (Graph retry or a captured replay) is rejected, while
+    // distinct legitimate events are not suppressed.
     const eventDigest = crypto
       .createHash("sha256")
       .update(JSON.stringify(notification ?? {}))
@@ -596,7 +626,7 @@ router.post("/m365", async (req, res, next) => {
       .slice(0, 16);
     const m365Key = `m365-${resource ?? "unknown"}-${changeType ?? "unknown"}-${notification?.subscriptionExpirationDateTime ?? "no-expiry"}-${eventDigest}`;
     claimedKey = m365Key;
-    if (await dedupWebhook(m365Key)) {
+    if (await dedupWebhook(m365Key, M365_REPLAY_WINDOW_SECONDS)) {
       res.json(success({ received: true }));
       return;
     }
