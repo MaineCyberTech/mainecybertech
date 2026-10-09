@@ -22,7 +22,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.453.0",
     "react": "^19.0.0",
-    "tailwind-merge": "^2.5.5"
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
