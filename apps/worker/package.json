@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-sqs": "^3.1057.0",
+    "@aws-sdk/client-sqs": "^3.1146.0",
     "@mct/config": "workspace:^",
     "@mct/sdk": "workspace:^",
     "@sentry/node": "^10.56.0",
