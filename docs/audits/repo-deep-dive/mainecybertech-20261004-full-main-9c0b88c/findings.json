@@ -1,6 +1,6 @@
 {
   "run": "mainecybertech-20261004-full-main-9c0b88c",
-  "generated": "2026-10-09T21:20:28Z",
+  "generated": "2026-10-09T23:34:46Z",
   "sourceReports": 43,
   "counts": {
     "bySeverity": {
@@ -1616,7 +1616,7 @@
       "line": 23,
       "owner": "API/backend + storage",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1902,7 +1902,7 @@
       "line": 20,
       "owner": "notifications/backend",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2045,7 +2045,7 @@
       "line": 15,
       "owner": "platform/backend",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2078,7 +2078,7 @@
       "line": 18,
       "owner": "platform/backend",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2540,7 +2540,7 @@
       "line": 17,
       "owner": "integrations/backend",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2573,7 +2573,7 @@
       "line": 20,
       "owner": "integrations/backend",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3354,7 +3354,7 @@
       "line": 21,
       "owner": "platform/backend",
       "target": "this quarter",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
