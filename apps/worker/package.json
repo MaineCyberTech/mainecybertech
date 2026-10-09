@@ -20,7 +20,7 @@
     "@sentry/node": "^10.56.0",
     "@supabase/realtime-js": "2.106.2",
     "@supabase/supabase-js": "^2.49.1",
-    "bullmq": "^5.78.1",
+    "bullmq": "^6.3.11",
     "dotenv": "^16.4.7",
     "ioredis": "^5.6.0",
     "nodemailer": "^10.0.6",
