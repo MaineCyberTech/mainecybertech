@@ -1,0 +1,36 @@
+{
+  "pack": "repo-deep-dive-full-hardening-audit-pack",
+  "version": "1.5.0",
+  "profile": "focused-security-supply-chain-ci",
+  "outputRoot": "docs/audits/{name}/{run}/",
+  "run": "mainecybertech-20261004-full-main-9c0b88c",
+  "scaffolded_at": "2026-10-05T03:57:07Z",
+  "scaffolded_by": "tools/publish_audit.py",
+  "promptCount": 4,
+  "prompts": [
+    "06_security_authz_tenancy_audit.md",
+    "10_github_actions_cicd_governance.md",
+    "11_supply_chain_dependency_secrets.md",
+    "36_container_runtime_security.md"
+  ],
+  "scope": {
+    "repo": "mainecybertech",
+    "repoName": "mainecybertech",
+    "branch": "main",
+    "commit": "9c0b88cbdbb1c598afa3239012ab0539bd3611cd",
+    "shortCommit": "9c0b88c",
+    "generatedAt": "2026-10-05T03:57:07Z",
+    "reports": [
+      "lens_focused_security_supply_chain_ci.md"
+    ]
+  },
+  "findings": {
+    "total": 336
+  },
+  "secretScan": {
+    "tool": "tools/publish_audit.py scan_secrets",
+    "result": "pass",
+    "rules": 7,
+    "scannedAt": "2026-10-05T03:57:07Z"
+  }
+}
