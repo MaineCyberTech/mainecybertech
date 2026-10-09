@@ -17,7 +17,7 @@
   "dependencies": {
     "@mct/config": "workspace:^",
     "@mct/sdk": "workspace:^",
-    "@sentry/node": "^10.56.0",
+    "@sentry/node": "^11.4.0",
     "@supabase/supabase-js": "^2.49.1",
     "@types/zxcvbn": "^4.4.5",
     "bullmq": "^5.78.1",
