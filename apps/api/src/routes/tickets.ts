@@ -14,6 +14,8 @@ import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { isPlatformAdminKey, PLATFORM_ADMIN_KEYS, roleKeyOf } from "../lib/roles";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import {
+  applyOrgScope,
+  applyRequestedOrg,
   NO_ORG_MATCH,
   resolveAdminTenantScope,
   type AdminTenantScope,
@@ -55,8 +57,17 @@ router.get("/export", async (req, res, next) => {
 
     let query = supabase.from("tickets").select("*");
 
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    // FILE-P2-006: exports must never default to all tenants. A genuine
+    // cross-tenant admin sees every org; everyone else is limited to their
+    // approved orgs, and an explicit ?organization_id may only narrow.
+    const scope = await resolveAdminTenantScope(req);
+    query = applyRequestedOrg(
+      query,
+      "organization_id",
+      req.query.organization_id as string | undefined,
+      scope,
+    );
+    query = applyOrgScope(query, "organization_id", scope);
 
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter as never);
