@@ -215,6 +215,16 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - Deploy SSH now verifies the droplet host key: both `appleboy/ssh-action`
   steps pin a fingerprint and the health-check `ssh` builds a known_hosts file
   from `DO_SSH_HOST_KEY` instead of `StrictHostKeyChecking=no` (CI-P3-003).
+- Worker resilience: an `unhandledRejection` handler now logs-and-continues
+  (matching the API) instead of falling through to the fatal path, and graceful
+  shutdown arms a force-exit watchdog (`WORKER_SHUTDOWN_TIMEOUT_MS`, default
+  30s) so a task that never settles cannot hang the drain until SIGKILL
+  (NOTIF-P2-003 / RES-P2-001 / RES-P3-001). The BullMQ path also marks the
+  process as draining, so `/health` reports `draining`/503 during shutdown.
+- Outbound calls in `routes/public.ts` (Turnstile siteverify) and
+  `routes/auth.ts` (GoTrue token exchange, `bootstrap_portal_access` RPC) are
+  bounded with `AbortSignal.timeout` so a hung provider cannot hold a request
+  open indefinitely (RES-P2-004).
 
 ### Changed
 
