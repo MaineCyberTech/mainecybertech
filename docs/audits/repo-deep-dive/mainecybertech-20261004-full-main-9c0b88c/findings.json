@@ -1,6 +1,6 @@
 {
   "run": "mainecybertech-20261004-full-main-9c0b88c",
-  "generated": "2026-10-10T05:11:17Z",
+  "generated": "2026-10-10T05:26:20Z",
   "sourceReports": 43,
   "counts": {
     "bySeverity": {
@@ -967,7 +967,7 @@
       "line": 16,
       "owner": "API principal engineer",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -978,7 +978,7 @@
       "line": 17,
       "owner": "API principal engineer",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
