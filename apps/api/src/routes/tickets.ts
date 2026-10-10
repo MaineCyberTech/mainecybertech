@@ -76,6 +76,15 @@ router.get("/export", async (req, res, next) => {
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
+    // ADMIN-P2-001: every sensitive export is audit-logged (row count only,
+    // never the exported content).
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "ticket.export",
+      entityType: "ticket",
+      metadata: { rowCount: data?.length ?? 0 },
+    });
+
     sendExportResponse(res, data ?? [], ticketExportColumns, "tickets");
   } catch (error) {
     next(error);
