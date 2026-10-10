@@ -2,9 +2,14 @@ import { jest } from "@jest/globals";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   buildNotificationKey,
+  claimNotificationEmail,
   insertNotification,
   resolveChannels,
 } from "../notification-store";
+
+jest.mock("../lib/idempotency", () => ({
+  claimIdempotencyKey: jest.fn().mockResolvedValue(true),
+}));
 
 type Result = { data: unknown; error: unknown };
 
@@ -144,5 +149,38 @@ describe("worker insertNotification (NOTIF-P1-001/002)", () => {
     const a = buildNotificationKey({ ...input });
     const b = buildNotificationKey({ ...input, body: "a different task body" });
     expect(a).not.toBe(b);
+  });
+});
+
+describe("claimNotificationEmail (NOTIF-P2-004)", () => {
+  it("returns true when this run inserted the notification", async () => {
+    const { claimIdempotencyKey } = await import("../lib/idempotency");
+    (claimIdempotencyKey as jest.Mock).mockClear();
+
+    await expect(
+      claimNotificationEmail({ inserted: true, deduped: false, suppressed: false }, "k1"),
+    ).resolves.toBe(true);
+    expect(claimIdempotencyKey).not.toHaveBeenCalled();
+  });
+
+  it("returns false when the notification was deduped — another run owns the send", async () => {
+    await expect(
+      claimNotificationEmail({ inserted: false, deduped: true, suppressed: false }, "k2"),
+    ).resolves.toBe(false);
+  });
+
+  it("falls back to the idempotency store when in-app is suppressed", async () => {
+    const { claimIdempotencyKey } = await import("../lib/idempotency");
+
+    (claimIdempotencyKey as jest.Mock).mockResolvedValueOnce(true);
+    await expect(
+      claimNotificationEmail({ inserted: false, deduped: false, suppressed: true }, "k3"),
+    ).resolves.toBe(true);
+    expect(claimIdempotencyKey).toHaveBeenCalledWith("notif-email-k3", "sent");
+
+    (claimIdempotencyKey as jest.Mock).mockResolvedValueOnce(false);
+    await expect(
+      claimNotificationEmail({ inserted: false, deduped: false, suppressed: true }, "k3"),
+    ).resolves.toBe(false);
   });
 });
