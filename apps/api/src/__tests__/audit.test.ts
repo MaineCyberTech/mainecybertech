@@ -203,6 +203,12 @@ describe("audit routes", () => {
 
       expect(res.status).toBe(200);
       expect(builders.audit_logs.in).toHaveBeenCalledWith("organization_id", [ORG_A]);
+
+      // ADMIN-P2-001: the export itself is audited.
+      const { logAuditEvent } = await import("../services/audit");
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ action: "audit.export", entityType: "audit_log" }),
+      );
     });
 
     it("rejects an org-A admin exporting org B's audit rows", async () => {

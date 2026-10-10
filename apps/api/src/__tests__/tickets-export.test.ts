@@ -158,4 +158,19 @@ describe("Ticket export endpoint", () => {
     const res = await request(app).get("/api/v1/tickets/export");
     expect(res.status).toBe(401);
   });
+
+  it("audit-logs the export (row count only) [ADMIN-P2-001]", async () => {
+    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null } as MockResult));
+    const { logAuditEvent } = await import("../services/audit");
+    (logAuditEvent as jest.Mock).mockClear();
+
+    const res = await request(app)
+      .get("/api/v1/tickets/export")
+      .set("Authorization", "Bearer token");
+
+    expect(res.status).toBe(200);
+    expect(logAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "ticket.export", entityType: "ticket" }),
+    );
+  });
 });

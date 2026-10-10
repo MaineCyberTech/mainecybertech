@@ -248,6 +248,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - The API and worker compose healthchecks set `start_period: 30s` so
   boot-time failures no longer consume the retries budget before the services
   are up (CTR-P3-001).
+- Every sensitive export is audit-logged: the tickets, projects and audit
+  exports now write an `*.export` audit event with the row count (never the
+  exported content), matching approvals/assets/proposals/findings/
+  domain-monitors (ADMIN-P2-001).
 
 ### Changed
 
