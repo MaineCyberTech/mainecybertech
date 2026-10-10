@@ -1,6 +1,6 @@
 {
   "run": "mainecybertech-20261004-full-main-9c0b88c",
-  "generated": "2026-10-10T03:56:24Z",
+  "generated": "2026-10-10T04:22:58Z",
   "sourceReports": 43,
   "counts": {
     "bySeverity": {
@@ -1803,7 +1803,7 @@
       "line": 29,
       "owner": "platform lead / security reviewer",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1935,7 +1935,7 @@
       "line": 23,
       "owner": "notifications/backend",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
