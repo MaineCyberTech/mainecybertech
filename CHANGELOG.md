@@ -291,6 +291,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - The worker refuses to start in production with `QUEUE_BACKEND=inline`, which
   would idle forever and stall queued work while health stayed green
   (RES-P2-003).
+- The SSE notification stream now asserts the caller's resolved organization on
+  both the initial unread query and every realtime insert/update, so rows from
+  another org are dropped instead of streamed (MT-P2-004).
 
 ### Changed
 

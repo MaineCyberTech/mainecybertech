@@ -27,6 +27,22 @@ function sanitizeNotification(n: Record<string, unknown>): Record<string, unknow
   };
 }
 
+/**
+ * MT-P2-004: the SSE channel is scoped to the caller's resolved organization.
+ * Supabase realtime `filter` supports a single column, so the user_id filter is
+ * applied server-side and the org assertion is enforced here (and on the
+ * initial query). Rows without a matching org are dropped, not streamed.
+ */
+export function notificationInScope(
+  row: Record<string, unknown>,
+  userId: string,
+  scopedOrgId: string | undefined,
+): boolean {
+  if (row.user_id !== userId) return false;
+  if (scopedOrgId && row.organization_id !== scopedOrgId) return false;
+  return true;
+}
+
 // SSE stream for real-time notifications using Supabase realtime
 router.get("/stream", async (req, res, next) => {
   try {
@@ -39,6 +55,8 @@ router.get("/stream", async (req, res, next) => {
 
     const supabase = getScopedClient(req, "notifications", "read");
     const userId = req.authUser!.userId;
+    // Resolved by requireOrgAccess; undefined only for un-pinned platform admins.
+    const scopedOrgId = req.orgId ?? undefined;
 
     // Send initial heartbeat
     res.write(`data: ${JSON.stringify({ type: "connected", userId })}\n\n`);
@@ -98,7 +116,9 @@ router.get("/stream", async (req, res, next) => {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          const safe = sanitizeNotification(payload.new as Record<string, unknown>);
+          const row = payload.new as Record<string, unknown>;
+          if (!notificationInScope(row, userId, scopedOrgId)) return;
+          const safe = sanitizeNotification(row);
           res.write(`event: notification\ndata: ${JSON.stringify(safe)}\n\n`);
         },
       )
@@ -111,7 +131,9 @@ router.get("/stream", async (req, res, next) => {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          const safe = sanitizeNotification(payload.new as Record<string, unknown>);
+          const row = payload.new as Record<string, unknown>;
+          if (!notificationInScope(row, userId, scopedOrgId)) return;
+          const safe = sanitizeNotification(row);
           res.write(`event: notification_update\ndata: ${JSON.stringify(safe)}\n\n`);
         },
       )
@@ -122,13 +144,17 @@ router.get("/stream", async (req, res, next) => {
       });
 
     // Send initial unread notifications on connect
-    supabase
+    let initialQuery = supabase
       .from("notifications")
       .select("*")
       .eq("user_id", userId)
       .eq("read", false)
       .order("created_at", { ascending: false })
-      .limit(5)
+      .limit(5);
+    if (scopedOrgId) {
+      initialQuery = initialQuery.eq("organization_id", scopedOrgId);
+    }
+    initialQuery
       .then(({ data, error }) => {
         if (!error && data && data.length > 0) {
           const safe = data.map((n: Record<string, unknown>) => sanitizeNotification(n));
