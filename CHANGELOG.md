@@ -282,6 +282,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - The API's inline email fallback now retries transient SMTP failures (up to
   three attempts with backoff) before reporting failure; the send result was
   already surfaced through logs and delivery metrics (NOTIF-P2-006).
+- `supabase-migrations` now runs a pre-push `db push --dry-run` and publishes
+  the planned migration set as an artifact (uploaded before the real push, so
+  it survives a failed apply) — the plan is no longer discarded (IR-P2-006).
 
 ### Changed
 
