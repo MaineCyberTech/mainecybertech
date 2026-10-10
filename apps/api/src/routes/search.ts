@@ -7,6 +7,7 @@ import { requireAdmin } from "../middleware/admin";
 import { requireOrgAccess } from "../middleware/org-access";
 import { logAuditEvent } from "../services/audit";
 import { sanitizeSearchTerm } from "../lib/search";
+import { queryInt } from "../lib/query";
 import { isCrossTenantKey, roleKeyOf } from "../lib/roles";
 
 const router: ReturnType<typeof Router> = Router();
@@ -22,6 +23,8 @@ router.get("/", async (req, res, next) => {
     }
 
     const supabase = getSupabaseAdmin();
+    // SEARCH-P2-004: page size is caller-tunable (default 5, hard cap 25).
+    const limit = Math.min(25, Math.max(1, queryInt(req.query.limit, 5)));
     const searchTerm = `${q}%`;
     const wildcardTerm = `%${q}%`;
 
@@ -96,9 +99,9 @@ router.get("/", async (req, res, next) => {
 
     let userQuery = supabase
       .from("profiles")
-      .select(userProjection)
+      .select(userProjection, { count: "exact" })
       .or(`full_name.ilike.${searchTerm},email.ilike.${wildcardTerm}`)
-      .limit(5);
+      .limit(limit);
     if (scopedUserIds) {
       userQuery = userQuery.in(
         "id",
@@ -108,9 +111,9 @@ router.get("/", async (req, res, next) => {
 
     let ticketQuery = supabase
       .from("tickets")
-      .select("id, title, status, priority, organization_id")
+      .select("id, title, status, priority, organization_id", { count: "exact" })
       .or(`title.ilike.${wildcardTerm},description.ilike.${wildcardTerm}`)
-      .limit(5);
+      .limit(limit);
     if (!allTenants) {
       ticketQuery = ticketQuery.in(
         "organization_id",
@@ -120,9 +123,9 @@ router.get("/", async (req, res, next) => {
 
     let projectQuery = supabase
       .from("projects")
-      .select("id, name, status, priority, organization_id")
+      .select("id, name, status, priority, organization_id", { count: "exact" })
       .or(`name.ilike.${wildcardTerm},description.ilike.${wildcardTerm}`)
-      .limit(5);
+      .limit(limit);
     if (!allTenants) {
       projectQuery = projectQuery.in(
         "organization_id",
@@ -132,9 +135,9 @@ router.get("/", async (req, res, next) => {
 
     let documentQuery = supabase
       .from("documents")
-      .select("id, name, mime_type, visibility, organization_id")
+      .select("id, name, mime_type, visibility, organization_id", { count: "exact" })
       .or(`name.ilike.${wildcardTerm},mime_type.ilike.${wildcardTerm}`)
-      .limit(5);
+      .limit(limit);
     if (!allTenants) {
       documentQuery = documentQuery.in(
         "organization_id",
@@ -148,9 +151,9 @@ router.get("/", async (req, res, next) => {
     // are a true platform admin.
     let organizationQuery = supabase
       .from("organizations")
-      .select("id, name, slug, status")
+      .select("id, name, slug, status", { count: "exact" })
       .or(`name.ilike.${searchTerm},slug.ilike.${searchTerm}`)
-      .limit(5);
+      .limit(limit);
     if (!allTenants) {
       organizationQuery = organizationQuery.in(
         "id",
@@ -159,11 +162,11 @@ router.get("/", async (req, res, next) => {
     }
 
     const [
-      { data: users, error: uErr },
-      { data: organizations, error: oErr },
-      { data: tickets, error: tErr },
-      { data: projects, error: pErr },
-      { data: documents, error: dErr },
+      { data: users, error: uErr, count: uCount },
+      { data: organizations, error: oErr, count: oCount },
+      { data: tickets, error: tErr, count: tCount },
+      { data: projects, error: pErr, count: pCount },
+      { data: documents, error: dErr, count: dCount },
     ] = await Promise.all([
       userQuery,
       organizationQuery,
@@ -213,6 +216,15 @@ router.get("/", async (req, res, next) => {
         tickets: tickets ?? [],
         projects: projects ?? [],
         documents: documents ?? [],
+        // SEARCH-P2-004: per-entity totals + the applied page size (additive).
+        counts: {
+          users: uCount ?? 0,
+          organizations: oCount ?? 0,
+          tickets: tCount ?? 0,
+          projects: pCount ?? 0,
+          documents: dCount ?? 0,
+        },
+        limit,
       }),
     );
   } catch (error) {

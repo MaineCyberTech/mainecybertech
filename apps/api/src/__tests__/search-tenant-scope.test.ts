@@ -148,6 +148,9 @@ describe("Search tenant scope (API-P2-001)", () => {
       tickets: [],
       projects: [],
       documents: [],
+      // SEARCH-P2-004: additive totals + page size.
+      counts: { users: 0, organizations: 0, tickets: 0, projects: 0, documents: 0 },
+      limit: 5,
     });
 
     // Every tenant-owned query must be an explicit no-match predicate, never
