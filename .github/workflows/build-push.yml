@@ -27,7 +27,7 @@ jobs:
           echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
           echo "IMAGE_TAG=${{ github.sha }}" >> "$GITHUB_ENV"
 
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -99,7 +99,7 @@ jobs:
         run: |
           echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -174,7 +174,7 @@ jobs:
           fi
           echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
