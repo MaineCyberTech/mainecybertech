@@ -276,6 +276,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   scans the full git history weekly (and on demand), verifies the reviewed
   allowlist still catches a synthetic key, and uploads the JSON report as a
   durable artifact (SECRET-P2-003). The tree scan stays diff-scoped on PRs.
+- Notification email links percent-encode the module id and HTML-escape the
+  final href, closing the CodeQL `js/xss` flow from a ticket id into the email
+  body (code scanning alert #6).
 
 ### Changed
 
