@@ -64,6 +64,24 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
+      - name: Dry-run pending migrations (plan artifact)
+        # IR-P2-006: capture the plan instead of discarding it. The dry-run
+        # lists exactly which migrations would apply and fails before any
+        # mutation if the pending set cannot be resolved.
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -o pipefail
+          supabase db push --include-all --dry-run 2>&1 | tee migration-dry-run.txt
+
+      - name: Upload migration dry-run plan
+        # Uploaded before the real push so the plan survives a failed apply.
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: migration-dry-run
+          path: migration-dry-run.txt
+          retention-days: 30
+
       - name: Run migrations
         run: supabase db push --include-all
         env:
