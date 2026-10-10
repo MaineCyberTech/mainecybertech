@@ -33,6 +33,7 @@ jest.mock("../config/env", () => ({
 jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
     getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
+jest.mock("../lib/metrics", () => ({ recordSearchQuery: jest.fn() }));
 jest.mock("../middleware/admin", () => ({
   requireAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
@@ -95,6 +96,11 @@ describe("Search API", () => {
     expect(res.body.data).toHaveProperty("tickets");
     expect(res.body.data).toHaveProperty("projects");
     expect(res.body.data).toHaveProperty("documents");
+    // IR-P2-001: the search counter is wired.
+    const { recordSearchQuery } = jest.requireMock("../lib/metrics") as {
+      recordSearchQuery: jest.Mock;
+    };
+    expect(recordSearchQuery).toHaveBeenCalled();
   });
 
   it("honors ?limit and returns per-entity counts [SEARCH-P2-004]", async () => {

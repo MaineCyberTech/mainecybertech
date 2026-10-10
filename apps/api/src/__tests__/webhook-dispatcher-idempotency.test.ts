@@ -35,6 +35,7 @@ jest.mock("../lib/pinned-fetch", () => ({
 jest.mock("../lib/metrics", () => ({
   recordWebhookDelivery: jest.fn(),
   recordWebhookDeadLetter: jest.fn(),
+  recordIdempotencyKeyHit: jest.fn(),
 }));
 
 const endpoint = {

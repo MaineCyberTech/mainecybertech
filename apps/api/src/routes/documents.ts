@@ -22,6 +22,7 @@ import { z } from "zod";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
+import { recordDocumentCreated } from "../lib/metrics";
 
 const createShareSchema = z.object({
   expiresAt: z
@@ -300,6 +301,8 @@ router.post("/", requirePermission("documents", "create"), async (req, res, next
       entityId: data.id,
       metadata: { name: parsed.name },
     });
+
+    recordDocumentCreated();
 
     res.status(201).json(success(data));
   } catch (error) {

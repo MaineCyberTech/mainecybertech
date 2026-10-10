@@ -18,6 +18,7 @@ import {
   onboardSchema,
 } from "../validators/organization";
 import { queryInt } from "../lib/query";
+import { recordOrganizationCreated } from "../lib/metrics";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -326,6 +327,8 @@ router.post("/", requireAdmin, async (req, res, next) => {
       entityId: data.id,
       metadata: { name: parsed.name },
     });
+
+    recordOrganizationCreated();
 
     invalidateCache(`/api/v1/organizations`);
     res.status(201).json(success(data));
