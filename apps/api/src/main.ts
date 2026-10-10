@@ -22,7 +22,13 @@ if (env.NODE_ENV === "production") {
   if (!env.SMTP_USER) missing.push("SMTP_USER");
   if (!env.SMTP_PASS) missing.push("SMTP_PASS");
   if (missing.length > 0) {
-    logger.warn({ missing }, "SMTP not fully configured — email notifications will fail silently");
+    // NOTIF-P2-002: surface the degradation loudly (non-fatal — a deployment
+    // without SMTP must still serve the app). Emails are skipped and metered
+    // via recordNotificationDelivery("email", "skipped").
+    logger.error(
+      { missing },
+      "SMTP not configured in production — notification email will be skipped",
+    );
   }
 }
 
