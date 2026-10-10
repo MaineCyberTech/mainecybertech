@@ -108,6 +108,20 @@ export function assertProductionSecrets(
 }
 
 /**
+ * NOTIF-P2-002: fail closed at boot in production when SMTP is not
+ * configured. Notification email would otherwise degrade to a silent no-op
+ * (sendEmail logs a warning and returns false), invisible to users and
+ * operators alike.
+ */
+export function assertProductionSmtp(env: Pick<Env, "NODE_ENV" | "SMTP_HOST">): void {
+  if (env.NODE_ENV === "production" && !env.SMTP_HOST) {
+    throw new Error(
+      "SMTP_HOST is required in production; refusing to run with notification email silently disabled",
+    );
+  }
+}
+
+/**
  * Builds a Redis connection URL, injecting REDIS_PASSWORD when the URL
  * does not already carry credentials. Used by ioredis / node-redis clients.
  */
@@ -137,6 +151,7 @@ export function getEnv(): Env {
     }
     assertProductionTurnstile(result.data);
     assertProductionSecrets(result.data);
+    assertProductionSmtp(result.data);
     _env = result.data;
   }
   return _env;
