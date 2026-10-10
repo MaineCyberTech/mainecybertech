@@ -26,6 +26,55 @@ const PRIORITY_MAP: Record<string, string> = {
   Lowest: "low",
 };
 
+// API-P2-002: paginate the JSM search (previously a single maxResults=100 page
+// silently dropped every later issue) and retry transient HTTP failures.
+const PAGE_SIZE = 100;
+const MAX_PAGES = 20; // 2000 issues per run; truncation is reported, not silent
+const FETCH_ATTEMPTS = 3;
+const RETRY_BASE_MS = 500;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Fetch with bounded retry for transient failures (network errors, 429, 5xx).
+ * The final response is returned as-is so the caller keeps its error handling.
+ */
+async function jsmFetch(url: string, headers: Record<string, string>): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(15_000) });
+      if ((res.status === 429 || res.status >= 500) && attempt < FETCH_ATTEMPTS) {
+        lastError = new Error(`JSM API error ${res.status}`);
+        await sleep(RETRY_BASE_MS * attempt);
+        continue;
+      }
+      return res;
+    } catch (error) {
+      lastError = error;
+      if (attempt < FETCH_ATTEMPTS) {
+        await sleep(RETRY_BASE_MS * attempt);
+        continue;
+      }
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
+}
+
+type JsmIssue = {
+  key: string;
+  fields: {
+    summary: string;
+    status: { name: string };
+    issuetype: { name: string };
+    priority?: { name: string };
+    labels?: string[];
+    resolution?: { name: string };
+    assignee?: { emailAddress?: string; displayName?: string };
+    updated: string;
+  };
+};
+
 export const jsmSync: TaskHandler = async (payload): Promise<TaskResult> => {
   const { organizationId, projectKey, fullSync } = payload as JsmSyncPayload;
   if (!organizationId) {
@@ -58,38 +107,38 @@ export const jsmSync: TaskHandler = async (payload): Promise<TaskResult> => {
 
     const daysBack = fullSync ? 30 : 7;
     const jql = `project = ${projectKey ?? "MCT"} AND created >= -${daysBack}d ORDER BY created DESC`;
-    const res = await fetch(
-      `${baseUrl}/rest/api/3/search?jql=${encodeURIComponent(jql)}&maxResults=100&fields=summary,status,issuetype,priority,labels,resolution,assignee,updated`,
-      { headers, signal: AbortSignal.timeout(15_000) },
-    );
 
-    if (!res.ok) {
-      const text = await res.text();
-      return { ok: false, error: `JSM API error ${res.status}: ${text}` };
+    const issues: JsmIssue[] = [];
+    let startAt = 0;
+    let truncated = false;
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const res = await jsmFetch(
+        `${baseUrl}/rest/api/3/search?jql=${encodeURIComponent(jql)}&startAt=${startAt}&maxResults=${PAGE_SIZE}&fields=summary,status,issuetype,priority,labels,resolution,assignee,updated`,
+        headers,
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        return { ok: false, error: `JSM API error ${res.status}: ${text}` };
+      }
+
+      const data = (await res.json()) as { issues?: JsmIssue[]; total?: number };
+      const pageIssues = data.issues ?? [];
+      issues.push(...pageIssues);
+      startAt += pageIssues.length;
+
+      if (pageIssues.length === 0) break;
+      if (typeof data.total === "number" && startAt >= data.total) break;
+      if (pageIssues.length < PAGE_SIZE) break;
+      if (page === MAX_PAGES - 1) truncated = true;
     }
-
-    const data = (await res.json()) as {
-      issues: Array<{
-        key: string;
-        fields: {
-          summary: string;
-          status: { name: string };
-          issuetype: { name: string };
-          priority?: { name: string };
-          labels?: string[];
-          resolution?: { name: string };
-          assignee?: { emailAddress?: string; displayName?: string };
-          updated: string;
-        };
-      }>;
-    };
 
     let created = 0;
     let updated = 0;
     let skipped = 0;
     let errors = 0;
 
-    for (const issue of data.issues) {
+    for (const issue of issues) {
       const { data: existing } = await supabase
         .from("tickets")
         .select("id, status, priority, title")
@@ -131,7 +180,9 @@ export const jsmSync: TaskHandler = async (payload): Promise<TaskResult> => {
             .eq("id", existing.id);
 
           if (updateError) {
-            logger.warn(
+            // API-P2-002: a dropped update must fail the run, not just log.
+            errors++;
+            logger.error(
               { ticketId: existing.id, issueKey: issue.key, error: updateError.message },
               "Failed to update ticket from JSM",
             );
@@ -170,9 +221,16 @@ export const jsmSync: TaskHandler = async (payload): Promise<TaskResult> => {
     }
 
     logger.info(
-      { created, updated, skipped, errors, total: data.issues.length },
+      { created, updated, skipped, errors, total: issues.length },
       "JSM sync complete",
     );
+    if (truncated) {
+      // Do not report success for a sync that stopped at the page cap.
+      return {
+        ok: false,
+        error: `JSM sync truncated after ${issues.length} issues (page cap ${MAX_PAGES}); rerun with a narrower window`,
+      };
+    }
     return errors > 0 ? { ok: false, error: `${errors} ticket(s) failed to import` } : { ok: true };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
