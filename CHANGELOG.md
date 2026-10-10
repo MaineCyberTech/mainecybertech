@@ -279,6 +279,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - Notification email links percent-encode the module id and HTML-escape the
   final href, closing the CodeQL `js/xss` flow from a ticket id into the email
   body (code scanning alert #6).
+- The API's inline email fallback now retries transient SMTP failures (up to
+  three attempts with backoff) before reporting failure; the send result was
+  already surfaced through logs and delivery metrics (NOTIF-P2-006).
 
 ### Changed
 
