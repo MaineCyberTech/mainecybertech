@@ -272,6 +272,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   plain `docker compose up` no longer starts the repo-wide-mounted test
   container, and `E2E_ADMIN_PASSWORD` must be supplied explicitly instead of
   shipping a weak default (CTR-P2-002).
+- New scheduled **Secret history scan** workflow: a checksum-pinned gitleaks
+  scans the full git history weekly (and on demand), verifies the reviewed
+  allowlist still catches a synthetic key, and uploads the JSON report as a
+  durable artifact (SECRET-P2-003). The tree scan stays diff-scoped on PRs.
 
 ### Changed
 
