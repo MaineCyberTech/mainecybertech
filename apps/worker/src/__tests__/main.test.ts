@@ -70,6 +70,8 @@ describe("env schema", () => {
       ...REQUIRED,
       NODE_ENV: "production",
       SMTP_HOST: "smtp.test.local",
+      QUEUE_BACKEND: "bullmq",
+      REDIS_URL: "redis://localhost:6379",
     });
     expect(env.SMTP_HOST).toBe("smtp.test.local");
   });
