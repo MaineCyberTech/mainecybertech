@@ -294,6 +294,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - The SSE notification stream now asserts the caller's resolved organization on
   both the initial unread query and every realtime insert/update, so rows from
   another org are dropped instead of streamed (MT-P2-004).
+- Dependabot now watches the digest-pinned base images in `apps/api`,
+  `apps/web`, `apps/worker`, and `infra/digitalocean` (weekly Docker PRs), not
+  just the root compose (CTR-P2-001).
 
 ### Changed
 
