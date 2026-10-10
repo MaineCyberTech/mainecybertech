@@ -1,6 +1,6 @@
 {
   "run": "mainecybertech-20261004-full-main-9c0b88c",
-  "generated": "2026-10-10T04:46:04Z",
+  "generated": "2026-10-10T05:11:17Z",
   "sourceReports": 43,
   "counts": {
     "bySeverity": {
@@ -1341,7 +1341,7 @@
       "line": 18,
       "owner": "platform/infrastructure",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1748,7 +1748,7 @@
       "line": 24,
       "owner": "platform lead / security reviewer",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1847,7 +1847,7 @@
       "line": 21,
       "owner": "API platform / security",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
