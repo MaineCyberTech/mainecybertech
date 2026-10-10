@@ -301,6 +301,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   creation counters, search queries, idempotency-key hits, active
   organization/user gauges, and the database query duration histogram on
   Supabase REST calls (IR-P2-001).
+- `docs/API_ERROR_HANDLING.md` now documents the implemented error contract —
+  the `{code, message, status, details?}` envelope, 400 (not 422) validation
+  responses with code `VALIDATION`, the actual code vocabulary, and
+  `X-Request-ID` as the traceability header (API-P2-003).
 
 ### Changed
 
