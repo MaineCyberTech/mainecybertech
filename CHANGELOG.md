@@ -259,6 +259,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - Webhook outcomes are metered on both sides: outbound success/failure
   counters in the API and worker, plus a dead-letter counter incremented when
   a delivery is moved to the DLQ (WH-P2-003).
+- Scheduled notification emails are now atomic: the `notification_key` upsert
+  is the claim that decides which run owns the email send, and when the
+  in-app channel is disabled by preference the idempotency store provides the
+  claim — a retried job or concurrent replica can no longer double-send
+  (NOTIF-P2-004).
 
 ### Changed
 

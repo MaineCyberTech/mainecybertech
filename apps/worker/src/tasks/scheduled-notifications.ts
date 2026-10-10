@@ -4,7 +4,12 @@ import { logger } from "../logger";
 import { sendEmail } from "../email";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TaskHandler, TaskResult } from "../task-registry";
-import { insertNotification, resolveChannels } from "../notification-store";
+import {
+  insertNotification,
+  resolveChannels,
+  buildNotificationKey,
+  claimNotificationEmail,
+} from "../notification-store";
 import { recordNotificationDelivery, recordNotificationSuppressed } from "../metrics";
 
 interface NotificationPayload {
@@ -164,6 +169,18 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
             module: "projects",
           });
 
+          // NOTIF-P2-004: the notification_key upsert is the atomic claim that
+          // decides which run owns the email send (retries/concurrent replicas
+          // must not double-send).
+          const notificationKey = buildNotificationKey({
+            userId: task.owner_id,
+            module: "projects",
+            moduleId: task.id,
+            action,
+            title,
+            body,
+          });
+
           const inApp = await insertNotification(
             supabase,
             {
@@ -173,6 +190,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
               module: "projects",
               moduleId: task.id,
               action,
+              notificationKey,
             },
             channels,
           );
@@ -182,6 +200,11 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
             logger.info(
               { userId: task.owner_id, module: "projects", action },
               "Task-due email suppressed by user preference",
+            );
+          } else if (!(await claimNotificationEmail(inApp, notificationKey))) {
+            logger.info(
+              { userId: task.owner_id, module: "projects", action },
+              "Task-due email already claimed by another run — skipping",
             );
           } else {
             const emailSent = await sendEmail({
@@ -254,14 +277,29 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           module: "tickets",
         });
 
-        await createInAppNotification(
+        const ticketTitle = p.title ?? "Ticket Updated";
+        const ticketBody = p.body ?? "A ticket has been updated.";
+        // NOTIF-P2-004: one atomic claim per notification owns the email send.
+        const notificationKey = buildNotificationKey({
+          userId: p.targetUserId,
+          module: "tickets",
+          moduleId: ticketId,
+          action: "updated",
+          title: ticketTitle,
+          body: ticketBody,
+        });
+        const inApp = await insertNotification(
           supabase,
-          p.targetUserId,
-          p.title ?? "Ticket Updated",
-          p.body ?? "A ticket has been updated.",
-          "tickets",
-          (p.metadata?.ticketId as string) ?? undefined,
-          "updated",
+          {
+            userId: p.targetUserId,
+            title: ticketTitle,
+            body: ticketBody,
+            module: "tickets",
+            moduleId: ticketId,
+            action: "updated",
+            notificationKey,
+          },
+          channels,
         );
 
         if (!channels.email) {
@@ -270,12 +308,17 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
             { userId: p.targetUserId, module: "tickets", action: "updated" },
             "Ticket-responded email suppressed by user preference",
           );
+        } else if (!(await claimNotificationEmail(inApp, notificationKey))) {
+          logger.info(
+            { userId: p.targetUserId, module: "tickets", action: "updated" },
+            "Ticket-responded email already claimed by another run — skipping",
+          );
         } else {
           const emailSent = await sendEmail({
             to: profile.email,
-            subject: `[Maine CyberTech] ${p.title ?? "Ticket Update"}`,
-            text: `Hello ${profile.full_name ?? "there"},\n\n${p.body ?? "A ticket has been updated."}\n\nView: ${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}`,
-            html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(p.body ?? "A ticket has been updated.")}</p><p><a href="${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}">View ticket</a></p>`,
+            subject: `[Maine CyberTech] ${ticketTitle}`,
+            text: `Hello ${profile.full_name ?? "there"},\n\n${ticketBody}\n\nView: ${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}`,
+            html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(ticketBody)}</p><p><a href="${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}">View ticket</a></p>`,
           });
           recordNotificationDelivery("email", emailSent ? "success" : "failed");
         }
@@ -308,14 +351,28 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           module: "system",
         });
 
-        await createInAppNotification(
+        const customBody = p.body ?? "";
+        // NOTIF-P2-004: one atomic claim per notification owns the email send.
+        const notificationKey = buildNotificationKey({
+          userId: p.targetUserId,
+          module: "system",
+          moduleId: null,
+          action: "created",
+          title: p.title,
+          body: customBody,
+        });
+        const inApp = await insertNotification(
           supabase,
-          p.targetUserId,
-          p.title,
-          p.body ?? "",
-          "system",
-          undefined,
-          "created",
+          {
+            userId: p.targetUserId,
+            title: p.title,
+            body: customBody,
+            module: "system",
+            moduleId: null,
+            action: "created",
+            notificationKey,
+          },
+          channels,
         );
 
         if (!channels.email) {
@@ -324,12 +381,17 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
             { userId: p.targetUserId, module: "system", action: "created" },
             "Custom notification email suppressed by user preference",
           );
+        } else if (!(await claimNotificationEmail(inApp, notificationKey))) {
+          logger.info(
+            { userId: p.targetUserId, module: "system", action: "created" },
+            "Custom notification email already claimed by another run — skipping",
+          );
         } else {
           const emailSent = await sendEmail({
             to: profile.email,
             subject: `[Maine CyberTech] ${p.title}`,
-            text: `Hello ${profile.full_name ?? "there"},\n\n${p.body ?? ""}`,
-            html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(p.body ?? "")}</p>`,
+            text: `Hello ${profile.full_name ?? "there"},\n\n${customBody}`,
+            html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(customBody)}</p>`,
           });
           recordNotificationDelivery("email", emailSent ? "success" : "failed");
         }
