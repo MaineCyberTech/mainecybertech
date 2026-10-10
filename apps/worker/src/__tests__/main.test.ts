@@ -49,6 +49,8 @@ describe("env schema", () => {
       SUPABASE_URL: "https://test.supabase.co",
       SUPABASE_ANON_KEY: "test-key",
       SMTP_HOST: "smtp.test.local",
+      QUEUE_BACKEND: "bullmq",
+      REDIS_URL: "redis://localhost:6379",
     });
 
     expect(env.NODE_ENV).toBe("production");
@@ -68,8 +70,31 @@ describe("env schema", () => {
       ...REQUIRED,
       NODE_ENV: "production",
       SMTP_HOST: "smtp.test.local",
+      QUEUE_BACKEND: "bullmq",
+      REDIS_URL: "redis://localhost:6379",
     });
     expect(env.SMTP_HOST).toBe("smtp.test.local");
+  });
+
+  it("rejects QUEUE_BACKEND=inline in production [RES-P2-003]", () => {
+    expect(() =>
+      parseEnv({
+        ...REQUIRED,
+        NODE_ENV: "production",
+        SMTP_HOST: "smtp.test.local",
+      }),
+    ).toThrow(/QUEUE_BACKEND/);
+  });
+
+  it("accepts QUEUE_BACKEND=bullmq in production [RES-P2-003]", () => {
+    const env = parseEnv({
+      ...REQUIRED,
+      NODE_ENV: "production",
+      SMTP_HOST: "smtp.test.local",
+      QUEUE_BACKEND: "bullmq",
+      REDIS_URL: "redis://localhost:6379",
+    });
+    expect(env.QUEUE_BACKEND).toBe("bullmq");
   });
 
   it("rejects invalid NODE_ENV", () => {
