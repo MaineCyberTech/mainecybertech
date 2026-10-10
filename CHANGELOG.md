@@ -268,6 +268,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   per-entity `counts` alongside the result arrays, replacing the silent
   5-result ceiling with caller-controlled paging and totals
   (SEARCH-P2-004).
+- The local compose `e2e` service is profile-gated (`--profile e2e`), so a
+  plain `docker compose up` no longer starts the repo-wide-mounted test
+  container, and `E2E_ADMIN_PASSWORD` must be supplied explicitly instead of
+  shipping a weak default (CTR-P2-002).
 
 ### Changed
 
