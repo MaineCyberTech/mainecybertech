@@ -159,11 +159,15 @@ describe("dispatchWebhook outbound idempotency", () => {
 
     await dispatchWebhook("ticket.created", "org-1", data);
 
-    expect(deliveryInserts).toHaveLength(1);
+    // The supabase mock funnels both deliveries and dead letters into the same
+    // array; find each row by shape.
+    const deliveryRow = deliveryInserts.find((r) => "status" in r);
+    const dlqRow = deliveryInserts.find((r) => "attempt_count" in r);
     // A terminal 4xx stops after the first attempt — the persisted row must
     // say 1, not the fixed MAX_ATTEMPTS it used to record.
-    expect(deliveryInserts[0].retry_count).toBe(1);
-    expect(deliveryInserts[0].dead_letter).toBe(true);
+    expect(deliveryRow?.retry_count).toBe(1);
+    expect(deliveryRow?.dead_letter).toBe(true);
+    expect(dlqRow?.attempt_count).toBe(1);
     // WH-P2-003: the outbound failure and its dead-letter outcome are metered.
     expect(recordWebhookDelivery).toHaveBeenCalledWith("failed", "ticket.created");
     expect(recordWebhookDeadLetter).toHaveBeenCalledWith("ticket.created");
