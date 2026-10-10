@@ -32,6 +32,7 @@ jest.mock("@supabase/supabase-js", () => {
       range: jest.fn().mockReturnThis(),
       limit: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: null, error: null }),
+      maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
     })),
     storage: {
       from: jest.fn(() => ({

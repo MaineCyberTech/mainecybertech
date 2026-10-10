@@ -305,6 +305,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   the `{code, message, status, details?}` envelope, 400 (not 422) validation
   responses with code `VALIDATION`, the actual code vocabulary, and
   `X-Request-ID` as the traceability header (API-P2-003).
+- The JSM ticket sync now paginates the search (100/page, capped at 20 pages
+  with truncation reported as a failure instead of silent success), retries
+  transient HTTP failures, and counts failed ticket updates as errors
+  (API-P2-002).
 
 ### Changed
 

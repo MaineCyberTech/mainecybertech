@@ -83,6 +83,75 @@ describe("jiraSync", () => {
 });
 
 describe("jsmSync", () => {
+  const realFetch = globalThis.fetch;
+
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+    jest.useRealTimers();
+  });
+
+  const issue = (key: string) => ({
+    key,
+    fields: {
+      summary: `Issue ${key}`,
+      status: { name: "Open" },
+      issuetype: { name: "Task" },
+      priority: { name: "Medium" },
+      labels: [],
+      resolution: null,
+      updated: "2026-10-10T00:00:00.000Z",
+    },
+  });
+
+  it("paginates the JSM search and syncs every page [API-P2-002]", async () => {
+    envMock.JSM_BASE_URL = "https://jsm.test";
+    envMock.JSM_EMAIL = "bot@test.local";
+    envMock.JSM_API_TOKEN = "token";
+
+    const page1 = {
+      issues: Array.from({ length: 100 }, (_, i) => issue(`MCT-${i + 1}`)),
+      total: 101,
+    };
+    const page2 = { issues: [issue("MCT-101")], total: 101 };
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => page1 })
+      .mockResolvedValueOnce({ ok: true, json: async () => page2 });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const { jsmSync } = await import("../../tasks/jsm-sync");
+    const result = await jsmSync({ organizationId: "00000000-0000-0000-0000-000000000001" });
+
+    expect(result.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][0] as string).toContain("startAt=0");
+    expect(fetchMock.mock.calls[1][0] as string).toContain("startAt=100");
+  });
+
+  it("retries a transient JSM failure before giving up [API-P2-002]", async () => {
+    jest.useFakeTimers();
+    envMock.JSM_BASE_URL = "https://jsm.test";
+    envMock.JSM_EMAIL = "bot@test.local";
+    envMock.JSM_API_TOKEN = "token";
+
+    const fetchMock = jest
+      .fn()
+      .mockRejectedValueOnce(new Error("ECONNRESET"))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ issues: [issue("MCT-1")], total: 1 }),
+      });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const { jsmSync } = await import("../../tasks/jsm-sync");
+    const promise = jsmSync({ organizationId: "00000000-0000-0000-0000-000000000001" });
+    await jest.runAllTimersAsync();
+    const result = await promise;
+
+    expect(result.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("requires an organizationId", async () => {
     const { jsmSync } = await import("../../tasks/jsm-sync");
     const result = await jsmSync({});
