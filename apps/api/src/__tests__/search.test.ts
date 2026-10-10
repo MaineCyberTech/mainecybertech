@@ -97,6 +97,27 @@ describe("Search API", () => {
     expect(res.body.data).toHaveProperty("documents");
   });
 
+  it("honors ?limit and returns per-entity counts [SEARCH-P2-004]", async () => {
+    const supabase = mockAuth();
+    const builder = createMockBuilder({ data: [], error: null, count: 7 });
+    supabase.from.mockImplementation(tableAwareFrom(builder));
+
+    const res = await request(app)
+      .get("/api/v1/search?q=test&limit=10")
+      .set("Authorization", authToken);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.limit).toBe(10);
+    expect(res.body.data.counts).toEqual({
+      users: 7,
+      organizations: 7,
+      tickets: 7,
+      projects: 7,
+      documents: 7,
+    });
+    expect(builder.limit).toHaveBeenCalledWith(10);
+  });
+
   it("returns 401 without auth token", async () => {
     const res = await request(app).get("/api/v1/search?q=test");
     expect(res.status).toBe(401);

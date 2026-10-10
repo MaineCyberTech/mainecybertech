@@ -264,6 +264,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   in-app channel is disabled by preference the idempotency store provides the
   claim — a retried job or concurrent replica can no longer double-send
   (NOTIF-P2-004).
+- Admin search accepts `?limit` (default 5, hard cap 25) and returns
+  per-entity `counts` alongside the result arrays, replacing the silent
+  5-result ceiling with caller-controlled paging and totals
+  (SEARCH-P2-004).
 
 ### Changed
 
