@@ -100,7 +100,9 @@ describe("Search API", () => {
   it("honors ?limit and returns per-entity counts [SEARCH-P2-004]", async () => {
     const supabase = mockAuth();
     const builder = createMockBuilder({ data: [], error: null, count: 7 });
-    supabase.from.mockImplementation(tableAwareFrom(builder));
+    // Every table resolves through the same builder so the five entity queries
+    // (and the membership/profile lookups they depend on) see the count.
+    supabase.from.mockReturnValue(builder);
 
     const res = await request(app)
       .get("/api/v1/search?q=test&limit=10")
