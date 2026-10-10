@@ -29,6 +29,7 @@ import {
   createDependencySchema,
 } from "../validators/project";
 import { queryInt } from "../lib/query";
+import { recordProjectCreated } from "../lib/metrics";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -282,6 +283,10 @@ function projectSubRoute(
         entityType: resource,
         entityId: (data as { id: string } | null)?.id,
       });
+
+      if (resource === "projects") {
+        recordProjectCreated();
+      }
 
       res.status(201).json(success(data));
     } catch (err) {

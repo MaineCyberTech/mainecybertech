@@ -9,6 +9,7 @@ import { logAuditEvent } from "../services/audit";
 import { sanitizeSearchTerm } from "../lib/search";
 import { queryInt } from "../lib/query";
 import { isCrossTenantKey, roleKeyOf } from "../lib/roles";
+import { recordSearchQuery } from "../lib/metrics";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -208,6 +209,8 @@ router.get("/", async (req, res, next) => {
         },
       },
     });
+
+    recordSearchQuery();
 
     res.json(
       success({

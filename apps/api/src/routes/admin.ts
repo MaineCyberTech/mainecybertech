@@ -8,6 +8,7 @@ import { sendEmail } from "../lib/email";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { queryInt } from "../lib/query";
+import { setActiveOrganizations } from "../lib/metrics";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -42,6 +43,7 @@ router.get("/organizations", async (req, res, next) => {
     const { data, error, count } = await query;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    setActiveOrganizations(count ?? 0);
     res.json(success({ items: data ?? [], total: count ?? 0, page, limit }));
   } catch (error) {
     next(error);

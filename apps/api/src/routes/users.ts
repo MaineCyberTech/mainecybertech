@@ -13,6 +13,7 @@ import {
 } from "../middleware/org-access";
 import { queryInt } from "../lib/query";
 import { roleKeyOf } from "../lib/roles";
+import { setActiveUsers } from "../lib/metrics";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -94,6 +95,7 @@ router.get("/", requireAdmin, async (req, res, next) => {
 
     const { data, error, count } = await finalQuery;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    setActiveUsers(count ?? 0);
     res.json(success({ items: data ?? [], total: count ?? 0, page, limit }));
   } catch (error) {
     next(error);

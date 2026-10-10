@@ -28,6 +28,7 @@ import {
   bulkTicketUpdateSchema,
 } from "../validators/ticket";
 import { queryInt } from "../lib/query";
+import { recordTicketCreated } from "../lib/metrics";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -216,6 +217,8 @@ router.post("/", requirePermission("tickets", "create"), async (req, res, next) 
         }
       }
     }
+
+    recordTicketCreated();
 
     res.status(201).json(success(data));
   } catch (error) {

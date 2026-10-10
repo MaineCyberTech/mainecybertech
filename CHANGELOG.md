@@ -297,6 +297,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - Dependabot now watches the digest-pinned base images in `apps/api`,
   `apps/web`, `apps/worker`, and `infra/digitalocean` (weekly Docker PRs), not
   just the root compose (CTR-P2-001).
+- Wired the declared-but-unused metrics: organization/project/ticket/document
+  creation counters, search queries, idempotency-key hits, active
+  organization/user gauges, and the database query duration histogram on
+  Supabase REST calls (IR-P2-001).
 
 ### Changed
 
