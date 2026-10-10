@@ -55,6 +55,28 @@ export const notificationSuppressedTotal = new promClient.Counter({
   registers: [register],
 });
 
+export const webhookDeliveriesTotal = new promClient.Counter({
+  name: "worker_webhook_deliveries_total",
+  help: "Total outbound webhook delivery attempts by outcome",
+  labelNames: ["status", "event"] as const,
+  registers: [register],
+});
+
+export const webhookDeadLettersTotal = new promClient.Counter({
+  name: "worker_webhook_dead_letters_total",
+  help: "Total outbound webhook deliveries moved to the dead-letter set",
+  labelNames: ["event"] as const,
+  registers: [register],
+});
+
+export function recordWebhookDelivery(status: "success" | "failed", event: string): void {
+  webhookDeliveriesTotal.inc({ status, event });
+}
+
+export function recordWebhookDeadLetter(event: string): void {
+  webhookDeadLettersTotal.inc({ event });
+}
+
 export function recordNotificationDelivery(
   channel: "in_app" | "email",
   status: "success" | "failed" | "skipped",

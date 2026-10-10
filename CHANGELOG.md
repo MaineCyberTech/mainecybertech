@@ -252,6 +252,13 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   exports now write an `*.export` audit event with the row count (never the
   exported content), matching approvals/assets/proposals/findings/
   domain-monitors (ADMIN-P2-001).
+- Outbound webhook deliveries record the **actual** attempt count instead of
+  the fixed maximum, and failed inline deliveries are persisted as
+  dead-lettered so the worker retry task no longer re-retries them — one
+  retry owner per delivery (WH-P2-002).
+- Webhook outcomes are metered on both sides: outbound success/failure
+  counters in the API and worker, plus a dead-letter counter incremented when
+  a delivery is moved to the DLQ (WH-P2-003).
 
 ### Changed
 

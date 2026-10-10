@@ -27,6 +27,12 @@ jest.mock("../lib/pinned-fetch", () => ({
   pinnedFetch: jest.fn(),
 }));
 
+// WH-P2-003: metering is asserted, not incremented for real.
+jest.mock("../metrics", () => ({
+  recordWebhookDelivery: jest.fn(),
+  recordWebhookDeadLetter: jest.fn(),
+}));
+
 const endpoint = {
   id: "22222222-2222-2222-2222-222222222222",
   name: "Worker endpoint",
@@ -128,5 +134,35 @@ describe("worker webhookDispatcher idempotency", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(deliveryInserts).toHaveLength(1);
+  });
+
+  it("meters outbound success and failure outcomes [WH-P2-003]", async () => {
+    const { recordWebhookDelivery } = await import("../metrics");
+    (recordWebhookDelivery as jest.Mock).mockClear();
+
+    fetchMock.mockResolvedValue({
+      status: 200,
+      text: jest.fn().mockResolvedValue("ok"),
+    });
+    await webhookDispatcher({
+      event: "ticket.created",
+      organizationId: "org-1",
+      data: { ticketId: "meter-ok" },
+      idempotencyKey: "wh-out-meter-ok",
+    });
+    expect(recordWebhookDelivery).toHaveBeenCalledWith("success", "ticket.created");
+
+    (recordWebhookDelivery as jest.Mock).mockClear();
+    fetchMock.mockResolvedValue({
+      status: 400,
+      text: jest.fn().mockResolvedValue("bad"),
+    });
+    await webhookDispatcher({
+      event: "ticket.created",
+      organizationId: "org-1",
+      data: { ticketId: "meter-fail" },
+      idempotencyKey: "wh-out-meter-fail",
+    });
+    expect(recordWebhookDelivery).toHaveBeenCalledWith("failed", "ticket.created");
   });
 });
