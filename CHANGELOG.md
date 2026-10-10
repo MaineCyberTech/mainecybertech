@@ -288,6 +288,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - The API and worker now fail closed at boot in production when `SMTP_HOST` is
   unset, so notification email can no longer silently degrade to a no-op
   (NOTIF-P2-002).
+- The worker refuses to start in production with `QUEUE_BACKEND=inline`, which
+  would idle forever and stall queued work while health stayed green
+  (RES-P2-003).
 
 ### Changed
 

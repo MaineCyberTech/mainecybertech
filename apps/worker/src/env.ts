@@ -60,6 +60,18 @@ export const envSchema = z
         message: "SMTP_HOST is required when NODE_ENV=production",
       });
     }
+    // RES-P2-003: the `inline` backend makes the worker idle forever (tasks
+    // are only executed by callers falling back in-process), so production
+    // must never start with it — queued work would stall silently while
+    // health stays green.
+    if (val.NODE_ENV === "production" && val.QUEUE_BACKEND === "inline") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["QUEUE_BACKEND"],
+        message:
+          "QUEUE_BACKEND=inline is not allowed when NODE_ENV=production (the worker would idle and stall queued work)",
+      });
+    }
   });
 
 export type Env = z.infer<typeof envSchema>;
