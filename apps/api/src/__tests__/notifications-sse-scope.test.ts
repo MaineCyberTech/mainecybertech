@@ -1,3 +1,17 @@
+import { jest } from "@jest/globals";
+
+jest.mock("../config/env", () => ({
+  getEnv: jest.fn().mockReturnValue({
+    NODE_ENV: "test",
+    LOG_LEVEL: "silent",
+    JWT_SECRET: "test-jwt-secret",
+    SUPABASE_URL: "https://test.supabase.co",
+    SUPABASE_ANON_KEY: "test-anon-key",
+    SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
+    APP_BASE_URL: "http://localhost:3000",
+  }),
+}));
+
 import { notificationInScope } from "../routes/notifications";
 
 describe("SSE notification org assertion [MT-P2-004]", () => {
