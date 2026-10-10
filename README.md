@@ -279,8 +279,8 @@ docker compose build worker
 # Start all services
 docker compose up
 
-# Run E2E tests in container
-docker compose run e2e
+# Run E2E tests in container (local-only profile; password has no default)
+E2E_ADMIN_PASSWORD=1 docker compose run e2e
 ```
 
 | Service | Image (GHCR)                                       | Build              | Exposed Port  |

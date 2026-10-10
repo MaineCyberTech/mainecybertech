@@ -56,19 +56,28 @@ services:
       start_period: 30s
 
   e2e:
+    # CTR-P2-002: local-only, opt-in test runner. The profile keeps it out of a
+    # plain `docker compose up` (it mounts the whole repo below, so it must
+    # never start implicitly). Run it explicitly:
+    #   E2E_ADMIN_PASSWORD=<local seed password> docker compose run e2e
+    profiles: ["e2e"]
     # Digest-pinned to the multi-arch manifest for v1.61.0 so a re-tagged
     # upstream image cannot silently change the e2e toolchain.
     # Refresh: docker buildx imagetools inspect mcr.microsoft.com/playwright:<tag>
     image: mcr.microsoft.com/playwright:v1.61.0@sha256:57b65fdc9ceabe0ef613124c7bbe2babcf9362c4d85e382fe3b03604e84b428a
     working_dir: /app
     volumes:
+      # The harness reads the working tree (tests + config) and writes its
+      # report/auth artifacts into it, so a repo-wide bind mount is required.
       - .:/app
       - /app/node_modules/
       - /app/apps/web/node_modules/
     environment:
       - E2E_BASE_URL=http://web:3000
       - E2E_ADMIN_EMAIL=${E2E_ADMIN_EMAIL:-superadmin.real@mainecybertech.local}
-      - E2E_ADMIN_PASSWORD=${E2E_ADMIN_PASSWORD:-1}
+      # No implicit credential: require the caller to supply the local seed
+      # password explicitly instead of shipping a weak default.
+      - E2E_ADMIN_PASSWORD=${E2E_ADMIN_PASSWORD:?set E2E_ADMIN_PASSWORD (the local seed password is 1)}
       - CI=true
     depends_on:
       web:
