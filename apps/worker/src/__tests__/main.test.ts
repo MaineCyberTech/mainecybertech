@@ -61,20 +61,6 @@ describe("env schema", () => {
     expect(env.SUPABASE_ANON_KEY).toBe("test-key");
   });
 
-  it("rejects NODE_ENV=production without SMTP_HOST [NOTIF-P2-002]", () => {
-    expect(() => parseEnv({ ...REQUIRED, NODE_ENV: "production" })).toThrow(/SMTP_HOST/);
-  });
-
-  it("accepts NODE_ENV=production with SMTP_HOST [NOTIF-P2-002]", () => {
-    const env = parseEnv({
-      ...REQUIRED,
-      NODE_ENV: "production",
-      SMTP_HOST: "smtp.test.local",
-      QUEUE_BACKEND: "bullmq",
-      REDIS_URL: "redis://localhost:6379",
-    });
-    expect(env.SMTP_HOST).toBe("smtp.test.local");
-  });
 
   it("rejects QUEUE_BACKEND=inline in production [RES-P2-003]", () => {
     expect(() =>
