@@ -48,6 +48,7 @@ describe("env schema", () => {
       WORKER_TIMEOUT: "60000",
       SUPABASE_URL: "https://test.supabase.co",
       SUPABASE_ANON_KEY: "test-key",
+      SMTP_HOST: "smtp.test.local",
     });
 
     expect(env.NODE_ENV).toBe("production");
@@ -56,6 +57,19 @@ describe("env schema", () => {
     expect(env.WORKER_TIMEOUT).toBe(60000);
     expect(env.SUPABASE_URL).toBe("https://test.supabase.co");
     expect(env.SUPABASE_ANON_KEY).toBe("test-key");
+  });
+
+  it("rejects NODE_ENV=production without SMTP_HOST [NOTIF-P2-002]", () => {
+    expect(() => parseEnv({ ...REQUIRED, NODE_ENV: "production" })).toThrow(/SMTP_HOST/);
+  });
+
+  it("accepts NODE_ENV=production with SMTP_HOST [NOTIF-P2-002]", () => {
+    const env = parseEnv({
+      ...REQUIRED,
+      NODE_ENV: "production",
+      SMTP_HOST: "smtp.test.local",
+    });
+    expect(env.SMTP_HOST).toBe("smtp.test.local");
   });
 
   it("rejects invalid NODE_ENV", () => {

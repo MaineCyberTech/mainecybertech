@@ -51,6 +51,15 @@ export const envSchema = z
         message: "REDIS_URL is required when QUEUE_BACKEND=bullmq",
       });
     }
+    // NOTIF-P2-002: production must not run with notification email silently
+    // disabled — every queued email would be skipped with only a warning.
+    if (val.NODE_ENV === "production" && !val.SMTP_HOST) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["SMTP_HOST"],
+        message: "SMTP_HOST is required when NODE_ENV=production",
+      });
+    }
   });
 
 export type Env = z.infer<typeof envSchema>;

@@ -285,6 +285,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - `supabase-migrations` now runs a pre-push `db push --dry-run` and publishes
   the planned migration set as an artifact (uploaded before the real push, so
   it survives a failed apply) — the plan is no longer discarded (IR-P2-006).
+- The API and worker now fail closed at boot in production when `SMTP_HOST` is
+  unset, so notification email can no longer silently degrade to a no-op
+  (NOTIF-P2-002).
 
 ### Changed
 
