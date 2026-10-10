@@ -31,6 +31,12 @@ jest.mock("../lib/pinned-fetch", () => ({
   pinnedFetch: jest.fn(),
 }));
 
+// WH-P2-003: metering is asserted, not incremented for real.
+jest.mock("../lib/metrics", () => ({
+  recordWebhookDelivery: jest.fn(),
+  recordWebhookDeadLetter: jest.fn(),
+}));
+
 const endpoint = {
   id: "11111111-1111-1111-1111-111111111111",
   name: "Test endpoint",
@@ -140,5 +146,38 @@ describe("dispatchWebhook outbound idempotency", () => {
     okFetch();
     await dispatchWebhook("ticket.created", "org-1", data);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("records the actual attempt count and dead-letters failed deliveries [WH-P2-002]", async () => {
+    fetchMock.mockResolvedValue({
+      status: 400,
+      text: jest.fn().mockResolvedValue("bad request"),
+    });
+    const { recordWebhookDelivery, recordWebhookDeadLetter } = await import("../lib/metrics");
+    (recordWebhookDelivery as jest.Mock).mockClear();
+    (recordWebhookDeadLetter as jest.Mock).mockClear();
+
+    await dispatchWebhook("ticket.created", "org-1", data);
+
+    expect(deliveryInserts).toHaveLength(1);
+    // A terminal 4xx stops after the first attempt — the persisted row must
+    // say 1, not the fixed MAX_ATTEMPTS it used to record.
+    expect(deliveryInserts[0].retry_count).toBe(1);
+    expect(deliveryInserts[0].dead_letter).toBe(true);
+    // WH-P2-003: the outbound failure and its dead-letter outcome are metered.
+    expect(recordWebhookDelivery).toHaveBeenCalledWith("failed", "ticket.created");
+    expect(recordWebhookDeadLetter).toHaveBeenCalledWith("ticket.created");
+  });
+
+  it("meters successful outbound deliveries [WH-P2-003]", async () => {
+    okFetch();
+    const { recordWebhookDelivery } = await import("../lib/metrics");
+    (recordWebhookDelivery as jest.Mock).mockClear();
+
+    await dispatchWebhook("ticket.created", "org-1", data);
+
+    expect(deliveryInserts[0].retry_count).toBe(1);
+    expect(deliveryInserts[0].dead_letter).toBe(false);
+    expect(recordWebhookDelivery).toHaveBeenCalledWith("success", "ticket.created");
   });
 });

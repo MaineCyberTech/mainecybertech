@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { assertSafeUrl } from "../lib/ssrf-guard";
 import { pinnedFetch } from "../lib/pinned-fetch";
 import { claimIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
+import { recordWebhookDelivery, recordWebhookDeadLetter } from "../metrics";
 import type { TaskHandler, TaskResult } from "../task-registry";
 import type { Json } from "@mct/sdk/database.types";
 
@@ -122,6 +123,9 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
           // re-processed if the same job is delivered twice.
           ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
         });
+        // WH-P2-003: meter the permanent failure and its dead-letter outcome.
+        recordWebhookDelivery("failed", event);
+        recordWebhookDeadLetter(event);
         await supabase
           .from("webhook_endpoints")
           .update({
@@ -174,6 +178,9 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
         next_retry_at: failed ? new Date(Date.now() + 5 * 60 * 1000).toISOString() : null,
         ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
       });
+
+      // WH-P2-003: outbound outcomes are metered (success and failure).
+      recordWebhookDelivery(failed ? "failed" : "success", event);
 
       if (error || responseStatus >= 400) {
         failCount++;

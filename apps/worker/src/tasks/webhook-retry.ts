@@ -2,6 +2,7 @@ import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
 import { assertSafeUrl } from "../lib/ssrf-guard";
 import { pinnedFetch } from "../lib/pinned-fetch";
+import { recordWebhookDelivery, recordWebhookDeadLetter } from "../metrics";
 import type { TaskResult } from "../task-registry";
 
 const MAX_RETRIES = 5;
@@ -144,6 +145,8 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
             .update({ last_success_at: new Date().toISOString(), last_error: null })
             .eq("id", delivery.webhook_id);
 
+          // WH-P2-003: a retry that succeeds is an outbound success.
+          recordWebhookDelivery("success", delivery.event);
           retried++;
         } else {
           const nextRetry = new Date(
@@ -169,6 +172,7 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
               last_attempt_at: new Date().toISOString(),
             });
 
+            recordWebhookDeadLetter(delivery.event);
             deadLettered++;
           } else {
             await supabase
@@ -201,6 +205,7 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
             last_attempt_at: new Date().toISOString(),
           });
 
+          recordWebhookDeadLetter(delivery.event);
           deadLettered++;
         } else {
           const nextRetry = new Date(
