@@ -28,14 +28,19 @@ jest.mock("../services/audit", () => ({
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";
+import { logAuditEvent } from "../services/audit";
 
 function mockAuth() {
-  const supabase = { from: jest.fn(), auth: { getUser: jest.fn() } };
+  const supabase = {
+    from: jest.fn(),
+    auth: { getUser: jest.fn(), admin: { deleteUser: jest.fn() } },
+  };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
   supabase.auth.getUser.mockResolvedValue({
     data: { user: { id: "user-1", email: "admin@example.com" } },
     error: null,
   });
+  supabase.auth.admin.deleteUser.mockResolvedValue({ data: { user: null }, error: null });
   return supabase;
 }
 
@@ -267,6 +272,160 @@ describe("users routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe("GET /:id/export (DSAR access)", () => {
+    it("exports the subject's identity bundle and audits the export", async () => {
+      const supabase = mockAuth();
+      const profile = { id: "user-1", full_name: "Test User", email: "test@example.com" };
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "profiles") return createMockBuilder({ data: profile, error: null });
+        return createMockBuilder({ data: [], error: null });
+      });
+
+      const res = await request(app)
+        .get("/api/v1/users/user-1/export")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.subject).toBe("user-1");
+      expect(res.body.data.profile.id).toBe("user-1");
+      expect(res.body.data.memberships).toEqual([]);
+      expect(res.body.data.permissionOverrides).toEqual([]);
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ action: "user.data.export", entityId: "user-1" }),
+      );
+    });
+
+    it("allows an admin to export another user in their org", async () => {
+      const supabase = mockAuth();
+      let membershipCalls = 0;
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "memberships") {
+          membershipCalls++;
+          return membershipCalls === 1
+            ? createMockBuilder({ data: { roles: { id: "r1", key: "admin" } }, error: null })
+            : createMockBuilder({ data: [], error: null });
+        }
+        if (table === "profiles") return createMockBuilder({ data: { id: "user-2" }, error: null });
+        return createMockBuilder({ data: [], error: null });
+      });
+
+      const res = await request(app)
+        .get("/api/v1/users/user-2/export")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.subject).toBe("user-2");
+    });
+
+    it("returns 403 when a non-admin exports another user", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: { roles: { id: "r1", key: "client_user" } }, error: null }),
+      );
+
+      const res = await request(app)
+        .get("/api/v1/users/user-2/export")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
+    });
+
+    it("returns 404 when the subject does not exist", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: { message: "Not found", code: "PGRST116" } }),
+      );
+
+      const res = await request(app)
+        .get("/api/v1/users/missing/export")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("DELETE /:id (DSAR erasure)", () => {
+    it("scrubs the profile and deletes the auth user (super admin only)", async () => {
+      const supabase = mockAuth();
+      const scrubBuilder = createMockBuilder({ data: null, error: null });
+      let profileCalls = 0;
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "profiles") {
+          profileCalls++;
+          if (profileCalls === 1) {
+            return createMockBuilder({ data: { is_super_admin: true }, error: null });
+          }
+          if (profileCalls === 2) return createMockBuilder({ data: { id: "user-2" }, error: null });
+          return scrubBuilder;
+        }
+        return createMockBuilder({ data: null, error: null });
+      });
+
+      const res = await request(app)
+        .delete("/api/v1/users/user-2")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(204);
+      expect(scrubBuilder.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          full_name: null,
+          email: null,
+          phone: null,
+          title: null,
+          encrypted_pii: null,
+        }),
+      );
+      expect(supabase.auth.admin.deleteUser).toHaveBeenCalledWith("user-2");
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ action: "user.account.erased", entityId: "user-2" }),
+      );
+    });
+
+    it("rejects a caller who is not a super admin", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: { is_super_admin: false }, error: null }),
+      );
+
+      const res = await request(app)
+        .delete("/api/v1/users/user-2")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
+      expect(supabase.auth.admin.deleteUser).not.toHaveBeenCalled();
+    });
+
+    it("refuses self-erasure", async () => {
+      const supabase = mockAuth();
+
+      const res = await request(app)
+        .delete("/api/v1/users/user-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(400);
+      expect(supabase.auth.admin.deleteUser).not.toHaveBeenCalled();
+    });
+
+    it("returns 404 when the target does not exist", async () => {
+      const supabase = mockAuth();
+      let profileCalls = 0;
+      supabase.from.mockImplementation(() => {
+        profileCalls++;
+        return createMockBuilder({
+          data: profileCalls === 1 ? { is_super_admin: true } : null,
+          error: null,
+        });
+      });
+
+      const res = await request(app)
+        .delete("/api/v1/users/missing")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+      expect(supabase.auth.admin.deleteUser).not.toHaveBeenCalled();
     });
   });
 });

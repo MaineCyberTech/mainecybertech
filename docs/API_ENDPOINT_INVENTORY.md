@@ -55,6 +55,8 @@
 | ------- | ------------------ | ---------------------------------- | ----------------------------- | -------------------------- | ----------------------------------------------------------- |
 | `GET`   | `/`                | `requireAuth` + `requireOrgAccess` | —                             | —                          | Paginated, includes membership grouping for multi-org users |
 | `GET`   | `/:id`             | `requireAuth` + `requireOrgAccess` | —                             | —                          | Single user with profile + memberships                      |
+| `GET`   | `/:id/export`      | `requireAuth` + `requireOrgAccess` | —                             | `user.data.export`         | DSAR export: profile + memberships + permission overrides   |
+| `DELETE` | `/:id`             | `requireAuth` + `requireOrgAccess` | —                             | `user.account.erased`      | DSAR erasure (super admin): scrub profile, delete auth user |
 | `PATCH` | `/:id/role`        | `requireAuth` + `requireOrgAccess` | `updateUserRoleSchema`        | `user.role.update`         | Optional `organizationId` for multi-org scoping             |
 | `GET`   | `/:id/permissions` | `requireAuth` + `requireOrgAccess` | —                             | —                          | Returns `UserPermissionsResponse` (role + overrides)        |
 | `PUT`   | `/:id/permissions` | `requireAuth` + `requireOrgAccess` | `updateUserPermissionsSchema` | `user.permission.override` | Toggle permission overrides                                 |

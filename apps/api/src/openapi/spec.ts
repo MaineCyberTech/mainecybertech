@@ -424,6 +424,20 @@ const auth2: RouteDef[] = [
     params: [pathParam("id")],
   },
   {
+    method: "get",
+    path: "/users/{id}/export",
+    summary: "Export user data for a DSAR (profile, memberships, permission overrides)",
+    tag: "Users",
+    params: [pathParam("id")],
+  },
+  {
+    method: "delete",
+    path: "/users/{id}",
+    summary: "Erase a user account (super admin; DSAR erasure)",
+    tag: "Users",
+    params: [pathParam("id")],
+  },
+  {
     method: "patch",
     path: "/users/{id}/role",
     summary: "Update user role",

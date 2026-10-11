@@ -388,6 +388,85 @@ router.get("/:id/detail", requireAdmin, async (req, res, next) => {
   }
 });
 
+// PRIV-P2-005: DSAR access/export. Returns the identity and membership record
+// the platform holds for the subject so a rights request can be answered from
+// a documented, audited path (see docs/runbooks/dsar.md).
+router.get("/:id/export", async (req, res, next) => {
+  try {
+    const targetUserId = String(req.params.id);
+
+    if (req.authUser!.userId !== targetUserId) {
+      // Same gate as GET /:id: an admin who shares the caller's active org
+      // (or a platform admin) may export on the subject's behalf.
+      await assertSharesActiveOrg(req, targetUserId);
+
+      const supabase = getSupabaseAdmin();
+      const { data: membership } = await supabase
+        .from("memberships")
+        .select("roles!inner(id, key)")
+        .eq("user_id", req.authUser!.userId)
+        .eq("status", "approved")
+        .limit(1)
+        .maybeSingle();
+
+      const roleKey = roleKeyOf(membership?.roles);
+      const isAdmin = !!roleKey && ["admin", "super_admin"].includes(roleKey);
+      if (!isAdmin) {
+        throw new AppError("FORBIDDEN", "Admin access required to export another user's data", 403);
+      }
+    }
+
+    const supabase = getSupabaseAdmin();
+    const [
+      { data: profile, error: profileError },
+      { data: memberships, error: membershipError },
+      { data: overrides, error: overrideError },
+    ] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select(
+          "id, full_name, email, phone, title, default_organization_id, created_at, updated_at",
+        )
+        .eq("id", targetUserId)
+        .single(),
+      supabase
+        .from("memberships")
+        .select(
+          "id, organization_id, role_id, status, is_billing_contact, is_security_contact, created_at, roles(id, key, name), organizations(id, name)",
+        )
+        .eq("user_id", targetUserId),
+      supabase
+        .from("user_permission_overrides")
+        .select("id, organization_id, permission_id, is_allowed")
+        .eq("user_id", targetUserId),
+    ]);
+
+    if (profileError || !profile) throw new AppError("NOT_FOUND", "User not found", 404);
+    if (membershipError) throw new AppError("DB_ERROR", membershipError.message, 500);
+    if (overrideError) throw new AppError("DB_ERROR", overrideError.message, 500);
+
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "user.data.export",
+      entityType: "user",
+      entityId: targetUserId,
+      metadata: { scope: "identity_and_memberships" },
+    });
+
+    res.json(
+      success({
+        exportedAt: new Date().toISOString(),
+        subject: targetUserId,
+        profile,
+        memberships: memberships ?? [],
+        permissionOverrides: overrides ?? [],
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.patch("/:id/role", requirePermission("users", "manage"), async (req, res, next) => {
   try {
     const { roleId, organizationId } = z
@@ -558,6 +637,77 @@ router.put("/:id/permissions", requirePermission("users", "manage"), async (req,
     });
 
     res.json(success({ updated: true }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PRIV-P2-005: DSAR erasure. Platform super admins only — erasure deletes the
+// auth user (cascading the profile, memberships, overrides, sessions and MFA
+// material) after scrubbing the profile PII, so a failure between the two steps
+// cannot leave personal data behind. See docs/runbooks/dsar.md.
+router.delete("/:id", requirePermission("users", "manage"), async (req, res, next) => {
+  try {
+    const targetUserId = String(req.params.id);
+
+    if (targetUserId === req.authUser!.userId) {
+      throw new AppError("VALIDATION", "You cannot erase your own account", 400);
+    }
+
+    const supabase = getSupabaseAdmin();
+
+    const { data: caller, error: callerError } = await supabase
+      .from("profiles")
+      .select("is_super_admin")
+      .eq("id", req.authUser!.userId)
+      .maybeSingle();
+
+    if (callerError) throw new AppError("DB_ERROR", callerError.message, 500);
+    if (!caller?.is_super_admin) {
+      throw new AppError("FORBIDDEN", "Super admin access required for account erasure", 403);
+    }
+
+    const { data: target, error: targetError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", targetUserId)
+      .maybeSingle();
+
+    if (targetError) throw new AppError("DB_ERROR", targetError.message, 500);
+    if (!target) throw new AppError("NOT_FOUND", "User not found", 404);
+
+    // 1. Scrub the profile PII first (fail-safe: if the auth delete below
+    //    fails, the row is already de-identified).
+    const { error: scrubError } = await supabase
+      .from("profiles")
+      .update({
+        full_name: null,
+        email: null,
+        phone: null,
+        title: null,
+        avatar_url: null,
+        encrypted_pii: null,
+        metadata: {},
+        is_super_admin: false,
+      })
+      .eq("id", targetUserId);
+
+    if (scrubError) throw new AppError("DB_ERROR", scrubError.message, 500);
+
+    // 2. Delete the auth user. FK cascades remove the profile row, memberships,
+    //    permission overrides, sessions, MFA factors and recovery codes.
+    const { error: authError } = await supabase.auth.admin.deleteUser(targetUserId);
+    if (authError) throw new AppError("DB_ERROR", authError.message, 500);
+
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "user.account.erased",
+      entityType: "user",
+      entityId: targetUserId,
+      metadata: { method: "auth.admin.deleteUser + profile scrub" },
+    });
+
+    res.status(204).send();
   } catch (error) {
     next(error);
   }
