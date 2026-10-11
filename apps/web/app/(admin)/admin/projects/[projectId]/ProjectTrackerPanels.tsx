@@ -100,7 +100,7 @@ export default function ProjectTrackerPanels({ projectId }: { projectId: string 
 
   return (
     <div className="space-y-6">
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
 
       <section className="cyber-panel" aria-label="Project Phases">
         <h2 className="cyber-heading text-lg">Phases</h2>

@@ -79,7 +79,7 @@ export default function PortalCabClient({
 
   return (
     <div className="space-y-6">
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
 
       <section className="space-y-3" aria-label="Schedule CAB Meeting">
         <h2 className="text-lg font-medium text-slate-50">Schedule a meeting</h2>

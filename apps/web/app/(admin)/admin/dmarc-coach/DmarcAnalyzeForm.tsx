@@ -90,7 +90,7 @@ export default function DmarcAnalyzeForm() {
             Grade: {String((result as Record<string, unknown>).overall_grade ?? "—")}
           </span>
         )}
-        {error && <span className="text-sm text-red-400">{error}</span>}
+        {error && <span role="alert" className="text-sm text-red-400">{error}</span>}
       </div>
     </form>
   );

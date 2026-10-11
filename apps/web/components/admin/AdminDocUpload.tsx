@@ -88,6 +88,7 @@ export default function AdminDocUpload({ organizationId }: Props) {
       </button>
       {result ? (
         <div
+          role={result.ok ? "status" : "alert"}
           className={`rounded-lg border px-4 py-3 text-sm ${result.ok ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-red-500/20 bg-red-500/10 text-red-300"}`}
         >
           {result.ok ? "Document uploaded successfully." : result.error}

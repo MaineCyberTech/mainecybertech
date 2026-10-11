@@ -187,58 +187,58 @@ function TicketCard({
   };
 
   return (
-    <div className="relative">
-      <Link
-        href={`/admin/tickets/${ticket.id}`}
-        className="block rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-      >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="checkbox"
-                checked={selected}
-                onChange={handleCheckboxChange}
-                className="h-6 w-6 rounded border-white/20 bg-cyber-base text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
-                aria-label="Select ticket"
-              />
-              <p className="font-medium text-slate-50">{ticketSubject(ticket)}</p>
-              {ticket.external_jsm_issue_key ? (
-                <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[11px] text-blue-300">
-                  {ticket.external_jsm_issue_key}
-                </span>
-              ) : null}
-            </div>
-            <p className="mt-2 line-clamp-2 text-sm text-slate-400">
-              {ticketDescription(ticket) ?? "No description provided."}
-            </p>
+    <div className="relative rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-500/20 hover:bg-cyber-base/80">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={handleCheckboxChange}
+              className="h-6 w-6 rounded border-white/20 bg-cyber-base text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
+              aria-label="Select ticket"
+            />
+            <Link
+              href={`/admin/tickets/${ticket.id}`}
+              className="font-medium text-slate-50 transition hover:text-emerald-300"
+            >
+              {ticketSubject(ticket)}
+            </Link>
+            {ticket.external_jsm_issue_key ? (
+              <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[11px] text-blue-300">
+                {ticket.external_jsm_issue_key}
+              </span>
+            ) : null}
           </div>
-          <div className="relative flex flex-wrap items-center gap-2">
-            {onStatusChange ? (
-              <button
-                type="button"
-                onClick={handleStatusClick}
-                className={
-                  statusPillClass(status) + " cursor-pointer hover:ring-1 hover:ring-emerald-500/40"
-                }
-              >
-                {status}
-              </button>
-            ) : (
-              <span className={statusPillClass(status)}>{status}</span>
-            )}
-            <span className={priorityPillClass(priority)}>{priority}</span>
-          </div>
+          <p className="mt-2 line-clamp-2 text-sm text-slate-400">
+            {ticketDescription(ticket) ?? "No description provided."}
+          </p>
         </div>
-        <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-400">
-          <span>Org: {orgMap.get(ticket.organization_id) ?? ticket.organization_id}</span>
-          <span>Category: {ticketCategory(ticket)}</span>
-          <span>Assignee: {assigneeLabel(ticket)}</span>
-          <span title={formatDateTime(ticket.updated_at ?? ticket.created_at)}>
-            Updated {formatRelativeTime(ticket.updated_at ?? ticket.created_at)}
-          </span>
+        <div className="relative flex flex-wrap items-center gap-2">
+          {onStatusChange ? (
+            <button
+              type="button"
+              onClick={handleStatusClick}
+              className={
+                statusPillClass(status) + " cursor-pointer hover:ring-1 hover:ring-emerald-500/40"
+              }
+            >
+              {status}
+            </button>
+          ) : (
+            <span className={statusPillClass(status)}>{status}</span>
+          )}
+          <span className={priorityPillClass(priority)}>{priority}</span>
         </div>
-      </Link>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-400">
+        <span>Org: {orgMap.get(ticket.organization_id) ?? ticket.organization_id}</span>
+        <span>Category: {ticketCategory(ticket)}</span>
+        <span>Assignee: {assigneeLabel(ticket)}</span>
+        <span title={formatDateTime(ticket.updated_at ?? ticket.created_at)}>
+          Updated {formatRelativeTime(ticket.updated_at ?? ticket.created_at)}
+        </span>
+      </div>
       {dropdownOpen && onStatusChange ? (
         <StatusDropdown
           ticketId={ticket.id}
@@ -847,7 +847,7 @@ export default function AdminTicketCenterClient({
                   {isPending ? "Creating..." : "Create Ticket"}
                 </button>
               </div>
-              {formError && <p className="text-sm text-red-400">{formError}</p>}
+              {formError && <p role="alert" className="text-sm text-red-400">{formError}</p>}
             </form>
           </div>
         </div>

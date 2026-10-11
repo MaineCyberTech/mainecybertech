@@ -43,7 +43,7 @@ export default function AiPolicyGenerateButton({ id }: { id: string }) {
           {isPending ? "Generating…" : "Generate draft"}
         </button>
         {done && <span className="text-xs text-emerald-400">Draft generated.</span>}
-        {error && <span className="text-xs text-red-400">{error}</span>}
+        {error && <span role="alert" className="text-xs text-red-400">{error}</span>}
       </div>
     </div>
   );

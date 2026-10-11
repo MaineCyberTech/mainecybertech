@@ -92,7 +92,7 @@ export default function OnboardingCreateForm() {
           className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50"
         />
       </div>
-      {error && <p className="text-sm text-red-300">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
       <button
         type="submit"
         disabled={pending}

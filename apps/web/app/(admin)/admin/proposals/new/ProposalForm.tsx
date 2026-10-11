@@ -80,7 +80,7 @@ export default function ProposalForm() {
           </select>
         </div>
       </div>
-      {error && <p className="text-sm text-red-300">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
       <button
         type="submit"
         disabled={pending}

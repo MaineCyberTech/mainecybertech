@@ -88,7 +88,7 @@ export default function PortalFeedbackForm({ organizationId }: { organizationId:
           {isPending ? "Submitting…" : "Submit feedback"}
         </button>
         {done && <span className="text-sm text-emerald-400">Thank you - feedback submitted.</span>}
-        {error && <span className="text-sm text-red-400">{error}</span>}
+        {error && <span role="alert" className="text-sm text-red-400">{error}</span>}
       </div>
     </div>
   );

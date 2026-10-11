@@ -77,7 +77,7 @@ export default function FormCreateForm() {
           Example: [{'{key: "department", label: "Department", type: "text"}'}]
         </p>
       </div>
-      {error && <p className="text-sm text-red-300">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
       <button
         type="submit"
         disabled={pending}

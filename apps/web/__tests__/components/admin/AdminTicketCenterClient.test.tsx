@@ -157,4 +157,25 @@ describe("AdminTicketCenterClient", () => {
     const link = screen.getByText("Network Outage").closest("a");
     expect(link).toHaveAttribute("href", "/admin/tickets/t1");
   });
+
+  it("keeps per-row selection controls out of the ticket link", async () => {
+    const user = userEvent.setup();
+    render(
+      <AdminTicketCenterClient
+        tickets={tickets}
+        organizations={organizations}
+        createTicketAction={mockCreateTicketAction}
+        updateTicketStatusAction={jest.fn()}
+        bulkUpdateTicketsAction={jest.fn()}
+      />,
+    );
+
+    const checkbox = screen.getAllByRole("checkbox", { name: "Select ticket" })[0];
+    expect(checkbox.closest("a")).toBeNull();
+    expect(screen.getByRole("button", { name: "new" }).closest("a")).toBeNull();
+
+    await user.click(checkbox);
+    expect(checkbox).toBeChecked();
+    expect(screen.getByText("1 ticket selected")).toBeInTheDocument();
+  });
 });

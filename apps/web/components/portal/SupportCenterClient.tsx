@@ -324,7 +324,7 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
                   {isPending ? "Submitting..." : "Submit Ticket"}
                 </button>
               </div>
-              {formError && <p className="text-sm text-red-400">{formError}</p>}
+              {formError && <p role="alert" className="text-sm text-red-400">{formError}</p>}
             </form>
           </div>
         </div>

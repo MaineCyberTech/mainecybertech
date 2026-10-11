@@ -105,7 +105,7 @@ export default function ProposalEditForm({
           />
         </div>
       </div>
-      {error && <p className="text-sm text-red-300">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
       {saved && <p className="text-sm text-emerald-300">Proposal updated.</p>}
       <button
         type="submit"

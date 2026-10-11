@@ -435,7 +435,11 @@ export default function AdminProjectsClient({
                 </div>
               </div>
               <div className="flex items-center justify-end gap-3">
-                {formError && <span className="text-sm text-red-400">{formError}</span>}
+                {formError && (
+                  <span role="alert" className="text-sm text-red-400">
+                    {formError}
+                  </span>
+                )}
                 <button
                   type="button"
                   className="cyber-button-secondary"

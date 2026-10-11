@@ -96,7 +96,7 @@ export default function ClientPortalEntitlementsForm({
           {isPending ? "Saving…" : "Save modules"}
         </button>
         {done && <span className="text-xs text-emerald-400">Entitlements saved.</span>}
-        {error && <span className="text-xs text-red-400">{error}</span>}
+        {error && <span role="alert" className="text-xs text-red-400">{error}</span>}
       </div>
     </section>
   );
