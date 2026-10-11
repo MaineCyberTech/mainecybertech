@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
-import { success, AppError } from "../types";
+import { success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
@@ -86,77 +86,24 @@ router.post("/invite", rateLimitAdminOps, async (req, res, next) => {
     }
 
     const results: Array<{ email: string; status: string; message: string }> = [];
-<<<<<<< HEAD
     let createdAccounts = 0;
-=======
-    const validEntries: Array<{ index: number; email: string; fullName: string }> = [];
->>>>>>> e04d721e (perf: cache public storefront reads, memoize permission resolution, batch bulk invites, cap SSE streams)
 
-    entries.forEach((entry, index) => {
-      if (!entry.email || !entry.email.includes("@")) {
-        results[index] = { email: entry.email || "?", status: "error", message: "Invalid email" };
-        return;
-      }
-      validEntries.push({ index, email: entry.email, fullName: entry.fullName });
-    });
+    for (const entry of entries) {
+      const email = entry.email;
+      const fullName = entry.fullName;
 
-    // PERF-P2-004: batch the profile and membership lookups into set queries
-    // (and the new memberships into one insert) instead of 4 sequential
-    // Supabase calls per invite. A duplicate address inside one batch is
-    // reported as skipped — the old per-invite loop caught it via the
-    // membership lookup after the first insert.
-    const uniqueEntries = new Map<string, { index: number; email: string; fullName: string }>();
-    for (const entry of validEntries) {
-      if (uniqueEntries.has(entry.email)) {
-        results[entry.index] = {
-          email: entry.email,
-          status: "skipped",
-          message: "Duplicate email in request",
-        };
-        continue;
-      }
-      uniqueEntries.set(entry.email, entry);
-    }
-
-    // PostgREST `in` lists ride in the URL, so chunk large batches.
-    const LOOKUP_CHUNK_SIZE = 200;
-
-    const profileIdByEmail = new Map<string, string>();
-    const emails = [...uniqueEntries.keys()];
-    for (let i = 0; i < emails.length; i += LOOKUP_CHUNK_SIZE) {
-      const chunk = emails.slice(i, i + LOOKUP_CHUNK_SIZE);
-      const { data: profiles, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, email")
-        .in("email", chunk);
-      if (profileError) throw new AppError("DB_ERROR", profileError.message, 500);
-      for (const profile of profiles ?? []) {
-        if (profile.email) profileIdByEmail.set(String(profile.email).toLowerCase(), profile.id);
-      }
-    }
-
-    // Auth-account creation is the one call the admin API cannot batch; it is
-    // kept sequential so a partial failure still reports per-row results.
-    const userIdByEmail = new Map<string, string>();
-    for (const entry of uniqueEntries.values()) {
-      const existingId = profileIdByEmail.get(entry.email);
-      if (existingId) {
-        userIdByEmail.set(entry.email, existingId);
+      if (!email || !email.includes("@")) {
+        results.push({
+          email: email || "?",
+          status: "error",
+          message: "Invalid email",
+        });
         continue;
       }
 
       try {
-        const { data: signUpData, error: signUpError } = await supabase.auth.admin.createUser({
-          email: entry.email,
-          password: Array.from(
-            { length: 16 },
-            () => "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)],
-          ).join(""),
-          email_confirm: true,
-          user_metadata: { full_name: entry.fullName },
-        });
+        let userId: string | null = null;
 
-<<<<<<< HEAD
         const { data: existingProfile } = await supabase
           .from("profiles")
           .select("id")
@@ -205,71 +152,15 @@ router.post("/invite", rateLimitAdminOps, async (req, res, next) => {
             status: "skipped",
             message: `Already has membership (${existingMembership.status})`,
           });
-=======
-        if (signUpError || !signUpData.user) {
-          results[entry.index] = {
-            email: entry.email,
-            status: "error",
-            message: signUpError?.message || "Failed to create user",
-          };
->>>>>>> e04d721e (perf: cache public storefront reads, memoize permission resolution, batch bulk invites, cap SSE streams)
           continue;
         }
-        userIdByEmail.set(entry.email, signUpData.user.id);
-      } catch (err: unknown) {
-        results[entry.index] = {
-          email: entry.email,
-          status: "error",
-          message: err instanceof Error ? err.message : "Unknown error",
-        };
-      }
-    }
 
-    // One membership lookup per chunk covering every resolved user in the org.
-    const membershipStatusByUser = new Map<string, string>();
-    const userIds = [...new Set(userIdByEmail.values())];
-    for (let i = 0; i < userIds.length; i += LOOKUP_CHUNK_SIZE) {
-      const chunk = userIds.slice(i, i + LOOKUP_CHUNK_SIZE);
-      const { data: memberships, error: membershipError } = await supabase
-        .from("memberships")
-        .select("user_id, status")
-        .eq("organization_id", organizationId)
-        .in("user_id", chunk);
-      if (membershipError) throw new AppError("DB_ERROR", membershipError.message, 500);
-      for (const membership of memberships ?? []) {
-        membershipStatusByUser.set(membership.user_id, membership.status);
-      }
-    }
-
-    const toInvite: Array<{
-      entry: { index: number; email: string; fullName: string };
-      userId: string;
-    }> = [];
-    for (const entry of uniqueEntries.values()) {
-      const userId = userIdByEmail.get(entry.email);
-      if (!userId) continue; // account creation failed; already reported
-      const existingStatus = membershipStatusByUser.get(userId);
-      if (existingStatus) {
-        results[entry.index] = {
-          email: entry.email,
-          status: "skipped",
-          message: `Already has membership (${existingStatus})`,
-        };
-        continue;
-      }
-      toInvite.push({ entry, userId });
-    }
-
-    // Single insert for every pending membership (one round-trip, not N).
-    if (toInvite.length > 0) {
-      const { error: insertError } = await supabase.from("memberships").insert(
-        toInvite.map(({ userId }) => ({
+        await supabase.from("memberships").insert({
           organization_id: organizationId,
           user_id: userId,
           role_id: roleId,
           status: "pending",
           invited_by: req.authUser!.userId,
-<<<<<<< HEAD
         });
 
         // One result row per email: existing or newly-created users both end
@@ -288,14 +179,6 @@ router.post("/invite", rateLimitAdminOps, async (req, res, next) => {
           status: "error",
           message,
         });
-=======
-        })),
-      );
-      for (const { entry } of toInvite) {
-        results[entry.index] = insertError
-          ? { email: entry.email, status: "error", message: insertError.message }
-          : { email: entry.email, status: "invited", message: "Invited to organization" };
->>>>>>> e04d721e (perf: cache public storefront reads, memoize permission resolution, batch bulk invites, cap SSE streams)
       }
     }
 
