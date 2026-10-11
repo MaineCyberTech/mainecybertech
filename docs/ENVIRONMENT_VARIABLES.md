@@ -14,7 +14,7 @@
 | `NODE_ENV`                              | No       | `development`          | Node environment                                                                            |
 | `NEXT_PUBLIC_GA_ID`                     | No       | —                      | Google Analytics measurement ID (e.g. `G-XXXXXXXXXX`)                                       |
 | `NEXT_PUBLIC_TAWKTO_ID`                 | No       | —                      | Tawk.to widget ID (e.g. `66898d27e1e4f70f24ee3260/1i24kuosn`)                               |
-| `NEXT_PUBLIC_SENTRY_DSN`                | No       | —                      | Sentry DSN for error tracking                                                               |
+| `NEXT_PUBLIC_SENTRY_DSN`                | No       | —                      | Web Sentry DSN (public by design); delivered as a web build arg by `deploy-do.yml` (inlined into the client bundle) and as the web service runtime env |
 | `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | No       | `0.2` prod / `0` other | Client-side Sentry trace sample rate (0–1); invalid values use the default                  |
 | `NEXT_PUBLIC_SENTRY_RELEASE`            | No       | `NEXT_PUBLIC_GIT_SHA`  | Client-side Sentry release identifier                                                       |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`        | No       | —                      | Cloudflare Turnstile site key (contact form captcha)                                        |

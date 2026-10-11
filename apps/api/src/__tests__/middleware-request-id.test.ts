@@ -1,5 +1,6 @@
 import { jest } from "@jest/globals";
-import type { Request, Response, NextFunction } from "express";
+import express, { type Request, type Response, type NextFunction } from "express";
+import request from "supertest";
 
 jest.mock("../config/env", () => ({
   getEnv: jest.fn().mockReturnValue({
@@ -25,7 +26,8 @@ jest.mock("../lib/logger", () => ({
   },
 }));
 
-import { requestId, requestLogger } from "../middleware/request-id";
+import { requestId, requestLogger, routeLabel } from "../middleware/request-id";
+import { httpRequestsTotal } from "../lib/metrics";
 
 describe("requestId middleware", () => {
   it("generates a UUID when no X-Request-ID header is provided", () => {
@@ -142,5 +144,91 @@ describe("requestLogger middleware", () => {
     );
 
     Date.now = orig5xx;
+  });
+
+  it("labels metrics with the route template instead of the raw path (OBS-P2-010)", async () => {
+    const listeners: Record<string, () => void> = {};
+    const rawPath = "/api/v1/tickets/4f2c9d1e-1111-2222-3333-444455556666";
+    const req = {
+      id: "metrics-req-id",
+      log: { info: mockLog, warn: mockLog, error: mockLog, debug: mockLog },
+      method: "GET",
+      path: rawPath,
+      baseUrl: "/api/v1/tickets",
+      route: { path: "/:id" },
+      headers: {},
+      ip: "127.0.0.1",
+    } as unknown as Request;
+
+    const res = {
+      statusCode: 200,
+      on: jest.fn((event: string, handler: () => void) => {
+        listeners[event] = handler;
+      }),
+    } as unknown as Response;
+
+    requestLogger(req, res, jest.fn());
+    listeners.finish();
+
+    const routes = (await httpRequestsTotal.get()).values.map((v) => v.labels.route);
+    expect(routes).toContain("/api/v1/tickets/:id");
+    // The concrete resource id must never become a label value.
+    expect(routes).not.toContain(rawPath);
+  });
+
+  it("records the route template for a real Express router (OBS-P2-010)", async () => {
+    const app = express();
+    app.use(requestId);
+    app.use(requestLogger);
+    app.get("/api/v1/tickets/:id", (_req, res) => {
+      res.status(200).end();
+    });
+
+    await request(app).get("/api/v1/tickets/4f2c9d1e-1111-2222-3333-444455556666").expect(200);
+    // The metric is recorded from the response's `finish` event, which can fire
+    // a tick after the client receives the response; let it settle.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const routes = (await httpRequestsTotal.get()).values.map((v) => v.labels.route);
+    expect(routes).toContain("/api/v1/tickets/:id");
+    expect(routes).not.toContain("/api/v1/tickets/4f2c9d1e-1111-2222-3333-444455556666");
+  });
+});
+
+describe("routeLabel (OBS-P2-010 / PERF-P2-001)", () => {
+  it("uses the Express route template with its mount prefix", () => {
+    const req = {
+      baseUrl: "/api/v1/tickets",
+      route: { path: "/:id" },
+    } as unknown as Request;
+
+    expect(routeLabel(req)).toBe("/api/v1/tickets/:id");
+  });
+
+  it("collapses a mounted router's root route to the mount path", () => {
+    const req = { baseUrl: "/health", route: { path: "/" } } as unknown as Request;
+
+    expect(routeLabel(req)).toBe("/health");
+  });
+
+  it("collapses an app-level root route to /", () => {
+    const req = { baseUrl: "", route: { path: "/" } } as unknown as Request;
+
+    expect(routeLabel(req)).toBe("/");
+  });
+
+  it("returns a bounded bucket when no route matched (404s, /metrics)", () => {
+    const req = {
+      baseUrl: "",
+      path: "/api/v1/tickets/4f2c9d1e-1111-2222-3333-444455556666",
+    } as unknown as Request;
+
+    expect(routeLabel(req)).toBe("unmatched");
+  });
+
+  it("falls back to the bounded bucket for non-string route paths", () => {
+    const req = { baseUrl: "/api/v1", route: { path: ["/a", "/b"] } } as unknown as Request;
+
+    expect(routeLabel(req)).toBe("unmatched");
   });
 });

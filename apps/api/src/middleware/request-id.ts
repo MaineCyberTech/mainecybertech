@@ -19,6 +19,28 @@ export function requestId(req: Request, _res: Response, next: NextFunction) {
   next();
 }
 
+/**
+ * OBS-P2-010 / PERF-P2-001: Prometheus labels must be bounded, so HTTP metrics
+ * are labelled with the matched Express route template rather than the concrete
+ * request path. A raw path such as `/api/v1/tickets/4f2c...` mints a new series
+ * per resource id, which grows the TSDB without bound. The router sets
+ * `req.route` when a route matches (before `res.on("finish")` fires) and
+ * `req.baseUrl` carries the mount prefix, so together they reconstruct the
+ * template (`/api/v1/tickets/:id`). Requests that never matched a route (404s,
+ * middleware-only paths such as `/metrics`) collapse into one bounded bucket.
+ */
+export function routeLabel(req: Request): string {
+  const matched = (req as Request & { route?: { path?: unknown } }).route;
+  const routePath = matched?.path;
+  if (typeof routePath === "string" && routePath.length > 0) {
+    const base = req.baseUrl || "";
+    // A mounted router's root route (`/`) is fully described by its mount path.
+    const suffix = routePath === "/" ? "" : routePath;
+    return `${base}${suffix}` || "/";
+  }
+  return "unmatched";
+}
+
 export function requestLogger(req: Request, res: Response, next: NextFunction) {
   const start = Date.now();
 
@@ -38,13 +60,14 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
       "Request completed",
     );
 
+    const route = routeLabel(req);
     httpRequestsTotal.inc({
       method: req.method,
-      route: req.path,
+      route,
       status_code: String(res.statusCode),
     });
     httpRequestDuration.observe(
-      { method: req.method, route: req.path, status_code: String(res.statusCode) },
+      { method: req.method, route, status_code: String(res.statusCode) },
       duration / 1000,
     );
   });

@@ -15,7 +15,9 @@ x-app-env: &app-env
   CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
   APP_BASE_URL: https://${APP_DOMAIN:-app.mainecybertech.com}
 
-# Bound container logs so the droplet's disk cannot fill up.
+# Bound container logs so the droplet's disk cannot fill up. Deploy-do also
+# snapshots the running stack's logs before `compose down` destroys them
+# (OBS-P2-015); see docs/MONITORING_AND_ALERTING.md > Application-Level Logging.
 x-logging: &default-logging
   driver: json-file
   options:
@@ -191,6 +193,10 @@ services:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: http://api:4000
       NEXT_TELEMETRY_DISABLED: 1
+      # OBS-P2-011: the web Sentry configs read NEXT_PUBLIC_SENTRY_DSN, not
+      # SENTRY_DSN. The build arg inlines it into the client bundle; this
+      # runtime copy covers the standalone server. Both come from the deploy.
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
     depends_on:
       api:

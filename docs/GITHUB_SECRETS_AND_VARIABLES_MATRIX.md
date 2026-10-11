@@ -143,6 +143,7 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 | `SUPABASE_PROJECT_REF`           | yes | yes  | Supabase project reference for migrations                     |
 | `DROPLET_IP`                     | opt | opt  | Optional droplet IPv4 fallback when the DO API/Terraform fail |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | yes | yes  | Turnstile site key baked into the web image build arg         |
+| `NEXT_PUBLIC_SENTRY_DSN`         | opt | opt  | Web Sentry DSN (public by design) baked into the web image build arg and passed to the web service env; falls back to the `SENTRY_DSN` secret when unset (OBS-P2-011) |
 | `ALERTMANAGER_SLACK_CHANNEL`     | opt | opt  | Slack channel name for Alertmanager receivers (non-secret; e.g. `#alerts`) |
 | `S3_BUCKET`                      | —   | yes  | Backup bucket **name** (see contract above)                   |
 | `S3_PREFIX`                      | —   | yes  | Backup key prefix (default `database-backups`)                |
@@ -199,6 +200,11 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 3. **Add variables** to the appropriate environment scopes (or repo-wide):
    - `SUPABASE_PROJECT_REF` — Supabase project reference for migrations
    - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` — Turnstile site key baked into the web build
+   - `NEXT_PUBLIC_SENTRY_DSN` — web Sentry DSN (same value as `SENTRY_DSN`;
+     Sentry DSNs are public by design). Required for web error tracking in
+     production (OBS-P2-011). `deploy-do.yml` prefers this variable and falls
+     back to the repo-scoped `SENTRY_DSN` secret; if neither is visible to the
+     `build-web` job the web build has no DSN and browser errors go unreported.
    - `DROPLET_IP` — optional droplet IPv4 fallback (dev has it set; add to `prod` when known)
    - `S3_BUCKET`, `S3_PREFIX`, `STORAGE_BUCKETS` — in the **`dev`** environment,
      where the backup/restore workflows read them (see the backup location
