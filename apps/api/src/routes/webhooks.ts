@@ -13,6 +13,7 @@ import {
 } from "../lib/webhook-signature";
 import { claimIdempotencyKey, storeIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
 import { recordWebhookDelivery } from "../lib/metrics";
+import { notifyBillingPaymentFailure } from "../lib/billing-dunning";
 import { type Row } from "../lib/db-types";
 import { timingSafeCompare } from "../lib/timing-safe";
 
@@ -208,6 +209,17 @@ router.post("/stripe", async (req, res, next) => {
             },
             { onConflict: "stripe_invoice_id" },
           );
+
+          // BILL-P2-004: dunning visibility. A failed charge previously just
+          // flipped the invoice row; notify the org's billing contacts so the
+          // card gets fixed before the subscription is suspended.
+          if (event.type === "invoice.payment_failed") {
+            await notifyBillingPaymentFailure({
+              organizationId: customer.organization_id,
+              invoice: inv,
+              supabase,
+            });
+          }
         }
       }
     }
