@@ -5660,14 +5660,12 @@ export type Database = {
           created_at: string | null;
           event: string;
           id: string;
-          ip_address: string | null;
           metadata: Json | null;
           page: string | null;
           product_id: string | null;
           promo_id: string | null;
           quiz_id: string | null;
           quote_id: string | null;
-          user_agent: string | null;
         };
         Insert: {
           event: string;
@@ -5676,14 +5674,12 @@ export type Database = {
           category_id?: string | null;
           created_at?: string | null;
           id?: string | null;
-          ip_address?: string | null;
           metadata?: Json | null;
           page?: string | null;
           product_id?: string | null;
           promo_id?: string | null;
           quiz_id?: string | null;
           quote_id?: string | null;
-          user_agent?: string | null;
         };
         Update: {
           anonymous_id?: string | null;
@@ -5692,14 +5688,12 @@ export type Database = {
           created_at?: string | null;
           event?: string | null;
           id?: string | null;
-          ip_address?: string | null;
           metadata?: Json | null;
           page?: string | null;
           product_id?: string | null;
           promo_id?: string | null;
           quiz_id?: string | null;
           quote_id?: string | null;
-          user_agent?: string | null;
         };
         Relationships: [
         ];

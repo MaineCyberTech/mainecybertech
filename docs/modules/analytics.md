@@ -11,19 +11,23 @@ Store analytics tracking and admin dashboards. Public events are tracked anonymo
 ## Key Features
 
 - `POST /api/v1/analytics/track` — anonymous event tracking from the storefront (category views, product views, conversion funnels)
+- `GET /api/v1/analytics/csrf` — safe bootstrap that issues the double-submit CSRF cookie the storefront tracker echoes in `X-CSRF-Token` (empty body)
 - `GET /api/v1/analytics` — admin analytics dashboard data (auth + admin required)
-- `GET /api/v1/analytics/summary` — compact summary metrics for dashboards
-- Client-side analytics helpers in `apps/web/lib/catalog/analytics.ts` (event registry, privacy rules)
+- `GET /api/v1/analytics/summary` — compact summary metrics for dashboards, backed by the `get_analytics_summary` RPC
+- Client-side helpers in `apps/web/lib/catalog/analytics.ts` (event registry, privacy rules). Storefront views fire `store_view`, `category_view` and `product_detail_view`; the service finder fires `quiz_complete`; the quote builder fires `quote_submit`
+- The admin page consumes the live `summary()` / `list()` endpoints and shows the static event registry for reference
 
 ## Endpoints
 
-| Method | Path                       | Description                             |
-| ------ | -------------------------- | --------------------------------------- |
-| POST   | /api/v1/analytics/track    | Record an anonymous analytics event     |
-| GET    | /api/v1/analytics          | Admin analytics dashboard data          |
-| GET    | /api/v1/analytics/summary  | Admin summary metrics                   |
+| Method | Path                      | Description                              |
+| ------ | ------------------------- | ---------------------------------------- |
+| GET    | /api/v1/analytics/csrf    | Bootstrap the CSRF cookie for tracking   |
+| POST   | /api/v1/analytics/track   | Record an anonymous analytics event      |
+| GET    | /api/v1/analytics         | Admin analytics dashboard data           |
+| GET    | /api/v1/analytics/summary | Admin summary metrics                    |
 
 ## Privacy
 
-- Tracking events contain no PII (page/category/product identifiers only)
-- Admin endpoints are gated by `requireAuth` + `requireAdmin`
+- Tracking events contain no PII: the route stores page/category/product identifiers only. Visitor IP address and user-agent are never written, and migration `5302441` dropped the `ip_address`/`user_agent` columns (AN-P2-002).
+- `store_analytics_events` rows are purged after 90 days by the worker `retention` task (`storeAnalyticsRetentionDays`, AN-P2-004).
+- Admin endpoints are gated by `requireAuth` + `requireAdmin`.

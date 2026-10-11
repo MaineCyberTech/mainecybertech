@@ -1339,6 +1339,13 @@ const businessModules: RouteDef[] = [
     params: [pathParam("id")],
   },
   {
+    method: "get",
+    path: "/analytics/csrf",
+    summary: "Bootstrap CSRF cookie for public analytics tracking",
+    tag: "Analytics",
+    auth: false,
+  },
+  {
     method: "post",
     path: "/analytics/track",
     summary: "Track analytics event (public)",

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import type { CatalogProduct } from "@/lib/catalog/types";
 import { getClientApi } from "@/lib/client-api";
+import { track } from "@/lib/catalog/analytics";
 import {
   getQuoteItems,
   addToQuote,
@@ -194,6 +195,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
       setForm({ name: "", email: "", phone: "", notes: "" });
       localStorage.removeItem("mct_quote");
       clearQuote();
+      track("quote_submit", { page: "/store/quote" });
     } catch {
       setStatus({
         type: "error",

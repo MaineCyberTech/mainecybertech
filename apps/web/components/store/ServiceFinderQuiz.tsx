@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { getServiceFinderQuiz, getProductById } from "@/lib/catalog/loader";
 import type { QuizQuestion, CatalogProduct } from "@/lib/catalog/types";
+import { track } from "@/lib/catalog/analytics";
 import StoreProductCard from "./StoreProductCard";
 
 interface ServiceFinderQuizProps {
@@ -64,6 +65,7 @@ export default function ServiceFinderQuiz({ questions }: ServiceFinderQuizProps)
   const handleNext = useCallback(() => {
     if (isLastQuestion) {
       setShowResults(true);
+      track("quiz_complete", { page: "/store/quiz" });
     } else {
       setCurrentStep((s) => s + 1);
     }

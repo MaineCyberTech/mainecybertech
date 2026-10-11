@@ -26,6 +26,7 @@ jest.mock("pino", () => {
 
 jest.mock("dotenv/config", () => ({}));
 
+<<<<<<< HEAD
 type Row = {
   id: string;
   created_at?: string;
@@ -109,6 +110,43 @@ function makeSupabase(state: TableState, opts: MockOpts = {}) {
   }
 
   return { from, rpc, rpcCalls };
+=======
+type Row = { id: string; created_at?: string };
+type TableState = Record<string, Row[]>;
+
+function makeSupabase(state: TableState, opts: { failOn?: string } = {}) {
+  return {
+    from(table: string) {
+      const api = {
+        _cutoff: null as string | null,
+        select(_cols: string) {
+          return api;
+        },
+        delete() {
+          return api;
+        },
+        lt(_col: string, cutoff: string) {
+          api._cutoff = cutoff;
+          return api;
+        },
+        limit(n: number) {
+          const rows = (state[table] ?? [])
+            .filter((r) => (api._cutoff && r.created_at ? r.created_at < api._cutoff : true))
+            .slice(0, n);
+          return Promise.resolve({ data: rows, error: null });
+        },
+        in(_col: string, ids: string[]) {
+          if (opts.failOn === table) {
+            return Promise.resolve({ data: null, error: { message: "permission denied" } });
+          }
+          state[table] = (state[table] ?? []).filter((r) => !ids.includes(r.id));
+          return Promise.resolve({ data: null, error: null });
+        },
+      };
+      return api;
+    },
+  };
+>>>>>>> 73c604c4 (fix(analytics): drop visitor PII, wire storefront capture, retention + admin summary (AN-P2-002/003/004, FEAT-P2-003))
 }
 
 const rows = (n: number): Row[] => Array.from({ length: n }, (_, i) => ({ id: `id-${i}` }));
@@ -149,10 +187,27 @@ describe("retentionTask (DATA-P1-002)", () => {
     expect(createClient).not.toHaveBeenCalled();
   });
 
+<<<<<<< HEAD
   it("archives audit rows before deleting them and batches notification deletes", async () => {
     const state: TableState = { audit_logs: rows(2500), notifications: rows(10) };
     const supabase = makeSupabase(state);
     (createClient as unknown as jest.Mock).mockReturnValue(supabase);
+=======
+  it("refuses a non-positive store analytics window (AN-P2-004)", async () => {
+    const res = await retentionTask({ storeAnalyticsRetentionDays: 0 });
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/storeAnalyticsRetentionDays must be a positive number of days/);
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("deletes in bounded batches and reports the real count", async () => {
+    const state: TableState = {
+      audit_logs: rows(2500),
+      notifications: rows(10),
+      store_analytics_events: rows(5),
+    };
+    (createClient as unknown as jest.Mock).mockReturnValue(makeSupabase(state));
+>>>>>>> 73c604c4 (fix(analytics): drop visitor PII, wire storefront capture, retention + admin summary (AN-P2-002/003/004, FEAT-P2-003))
 
     const res = await retentionTask({});
 
@@ -170,6 +225,26 @@ describe("retentionTask (DATA-P1-002)", () => {
     // Notifications still use bounded batches (1000 + 1000 + 500 would be 2500;
     // 10 rows means one short batch).
     expect(state.notifications).toHaveLength(0);
+    expect(state.store_analytics_events).toHaveLength(0);
+  });
+
+  it("purges store analytics events older than the cutoff (AN-P2-004)", async () => {
+    const old = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString();
+    const recent = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+    const state: TableState = {
+      audit_logs: [],
+      notifications: [],
+      store_analytics_events: [
+        { id: "old-1", created_at: old },
+        { id: "recent-1", created_at: recent },
+      ],
+    };
+    (createClient as unknown as jest.Mock).mockReturnValue(makeSupabase(state));
+
+    const res = await retentionTask({});
+
+    expect(res.ok).toBe(true);
+    expect(state.store_analytics_events.map((row) => row.id)).toEqual(["recent-1"]);
   });
 
   it("returns ok:false and keeps the rows when the audit archive fails", async () => {
