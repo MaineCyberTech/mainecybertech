@@ -486,3 +486,30 @@ tests:
       - eval_time: 30m
         alertname: MCTWorkerQueueBacklog
         exp_alerts: []
+
+  # CASE 31: BILL-P2-003 - any new reconciliation drift MUST fire.
+  - interval: 1m
+    input_series:
+      - series: 'worker_stripe_reconcile_drift_total{kind="subscription_status"}'
+        values: '0+1x60'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: MCTStripeReconcileDrift
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              kind: subscription_status
+            exp_annotations:
+              summary: "Stripe reconciliation detected billing drift"
+              description: "The stripe-reconcile task found at least one mirror-vs-Stripe mismatch in the last 25 hours (subscription status, invoice count/sum, or payment count/sum). Check the worker logs for the organization and drift kind, then compare the local billing mirror with Stripe."
+
+  # CASE 32: a clean reconciliation (no drift) MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'worker_stripe_reconcile_drift_total{kind="subscription_status"}'
+        values: '0+0x60'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: MCTStripeReconcileDrift
+        exp_alerts: []
