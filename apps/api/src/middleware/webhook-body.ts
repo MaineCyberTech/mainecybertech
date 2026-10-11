@@ -42,20 +42,32 @@ function jsonParser(limit: string): RequestHandler {
 }
 
 export function webhookBodyParser(): RequestHandler {
-  const providerParsers = new Map<string, RequestHandler>();
-  for (const [provider, limit] of Object.entries(WEBHOOK_BODY_LIMITS)) {
-    providerParsers.set(`/api/v1/webhooks/${provider}`, jsonParser(limit));
-  }
+  const stripeParser = jsonParser(WEBHOOK_BODY_LIMITS.stripe);
+  const jiraParser = jsonParser(WEBHOOK_BODY_LIMITS.jira);
+  const jsmParser = jsonParser(WEBHOOK_BODY_LIMITS.jsm);
+  const m365Parser = jsonParser(WEBHOOK_BODY_LIMITS.m365);
   const fallbackParser = jsonParser("10mb");
 
   return (req, res, next) => {
     // Normalize a trailing slash so `/stripe/` gets the provider cap too.
+    // A static switch (not a request-path-keyed lookup) keeps the dispatch
+    // table closed over our own parsers.
     const path = req.path.length > 1 ? req.path.replace(/\/+$/, "") : req.path;
-    const providerParser = providerParsers.get(path);
-    if (providerParser) {
-      providerParser(req, res, next);
-      return;
+    switch (path) {
+      case "/api/v1/webhooks/stripe":
+        stripeParser(req, res, next);
+        return;
+      case "/api/v1/webhooks/jira":
+        jiraParser(req, res, next);
+        return;
+      case "/api/v1/webhooks/jsm":
+        jsmParser(req, res, next);
+        return;
+      case "/api/v1/webhooks/m365":
+        m365Parser(req, res, next);
+        return;
+      default:
+        fallbackParser(req, res, next);
     }
-    fallbackParser(req, res, next);
   };
 }
