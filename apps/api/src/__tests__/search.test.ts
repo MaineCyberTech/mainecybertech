@@ -105,10 +105,33 @@ describe("Search API", () => {
 
   it("honors ?limit and returns per-entity counts [SEARCH-P2-004]", async () => {
     const supabase = mockAuth();
-    const builder = createMockBuilder({ data: [], error: null, count: 7 });
-    // Every table resolves through the same builder so the five entity queries
-    // (and the membership/profile lookups they depend on) see the count.
-    supabase.from.mockReturnValue(builder);
+    const builders: Record<string, any[]> = {};
+    // Table-aware: the caller is a super admin, so every document is readable
+    // (is_super_admin() short-circuits can_read_document) and the exact DB count
+    // is reported. The entity queries all return count 7.
+    supabase.from.mockImplementation((table: string) => {
+      let data: unknown = [];
+      let count: number | undefined = 7;
+      if (table === "profiles") {
+        // First call resolves the caller's profile (maybeSingle, count unused);
+        // later calls are the user search, which needs the entity count.
+        data = (builders.profiles?.length ?? 0) === 0 ? { is_super_admin: true } : [];
+      } else if (table === "memberships") {
+        data =
+          (builders.memberships?.length ?? 0) === 0
+            ? [
+                {
+                  organization_id: "00000000-0000-0000-0000-00000000000a",
+                  roles: [{ id: "r1", key: "super_admin" }],
+                },
+              ]
+            : [];
+        count = undefined;
+      }
+      const builder = createMockBuilder({ data, error: null, count });
+      (builders[table] ??= []).push(builder);
+      return builder;
+    });
 
     const res = await request(app)
       .get("/api/v1/search?q=test&limit=10")
@@ -123,7 +146,11 @@ describe("Search API", () => {
       projects: 7,
       documents: 7,
     });
-    expect(builder.limit).toHaveBeenCalledWith(10);
+    // Entity queries honor the caller page size...
+    expect(builders.tickets?.[0].limit).toHaveBeenCalledWith(10);
+    // ...and documents over-fetch a bounded window before the visibility filter
+    // drops unreadable rows (SEARCH-P2-008): min(100, 10 * 5).
+    expect(builders.documents?.[0].limit).toHaveBeenCalledWith(50);
   });
 
   it("returns 401 without auth token", async () => {
