@@ -81,10 +81,10 @@ what it can; the rest are review gates.
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,721         | 148    | Jest + supertest                  |
-| Web     | 1,905         | 286    | Jest + Testing Library            |
-| SDK     | 308           | 3      | Jest (mocked fetch)               |
-| Worker  | 245           | 26     | Jest (env schema + task handlers) |
+| API     | 1,721         | 148   | Jest + supertest                  |
+| Web     | 1,905         | 286   | Jest + Testing Library            |
+| SDK     | 308           | 3   | Jest (mocked fetch)               |
+| Worker  | 245           | 26   | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
 
 Suite counts and the E2E spec count are counted from the tree by
