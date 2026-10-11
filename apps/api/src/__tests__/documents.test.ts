@@ -26,7 +26,7 @@ jest.mock("../services/audit", () => ({
   logAuditEvent: jest.fn(),
 }));
 
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 
 /*
@@ -878,6 +878,52 @@ describe("documents routes", () => {
       expect(logAuditEvent).toHaveBeenCalledWith(
         expect.objectContaining({ action: "document.create" }),
       );
+    });
+
+    it("writes storage objects with the service-role client, not the scoped user client (FILE-P2-008)", async () => {
+      const newDoc = { ...DOCUMENT, id: "uploaded-doc" };
+      const admin = mockSupabase();
+      admin.from.mockReturnValue(createMockBuilder({ data: newDoc, error: null } as MockResult));
+      const adminStorage = {
+        from: jest.fn().mockReturnValue({
+          upload: jest.fn().mockResolvedValue({ data: { path: "new-path" }, error: null }),
+          remove: jest.fn().mockResolvedValue({ data: null, error: null }),
+          createSignedUrl: jest.fn(),
+        }),
+      };
+      admin.storage = adminStorage;
+
+      // Simulate a deployment with RLS writes enabled for `documents`: the
+      // scoped client is a distinct, user-scoped client. The bucket no longer
+      // grants authenticated INSERT/UPDATE (FILE-P2-008), so an object write
+      // through the user client would fail — the route must use service_role.
+      const userClient = {
+        from: jest
+          .fn()
+          .mockReturnValue(createMockBuilder({ data: newDoc, error: null } as MockResult)),
+        storage: {
+          from: jest.fn().mockReturnValue({
+            upload: jest.fn(),
+            remove: jest.fn(),
+          }),
+        },
+      };
+      (getScopedClient as jest.Mock).mockReturnValueOnce(userClient);
+
+      const res = await request(app)
+        .post("/api/v1/documents/upload")
+        .set("Authorization", "Bearer token-123")
+        .field("organizationId", "00000000-0000-0000-0000-000000000001")
+        .field("name", "Service Role Upload")
+        .attach("file", Buffer.from("test content"), "test.txt");
+
+      expect(res.status).toBe(201);
+      expect(adminStorage.from).toHaveBeenCalledWith("documents");
+      expect(adminStorage.from("documents").upload).toHaveBeenCalled();
+      expect(userClient.storage.from).not.toHaveBeenCalled();
+      // DB writes still use the scoped client so the RLS rollout applies.
+      expect(getScopedClient).toHaveBeenCalledWith(expect.anything(), "documents", "write");
+      expect(userClient.from).toHaveBeenCalledWith("documents");
     });
 
     it("returns 400 when no file provided", async () => {
