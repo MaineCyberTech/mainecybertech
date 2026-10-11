@@ -86,6 +86,10 @@ jest.mock("../lib/logger", () => ({
   },
 }));
 
+jest.mock("../lib/notify", () => ({
+  notifyAndEmail: jest.fn(),
+}));
+
 const app = createTestApp();
 app.use("/api/v1/webhooks", webhooksRouter);
 app.use(errorHandler);
@@ -257,6 +261,63 @@ describe("webhooks routes", () => {
       const upsertArgs = builders["payments"].upsert.mock.calls[0][0];
       expect(upsertArgs.status).toBe("failed");
       expect(upsertArgs.paid_at).toBeNull();
+    });
+
+    it("notifies the org billing contacts on invoice.payment_failed (BILL-P2-004)", async () => {
+      mockStripeEvent({
+        type: "invoice.payment_failed",
+        id: "evt_inv_fail",
+        data: {
+          object: {
+            customer: "cus_1",
+            id: "in_fail",
+            number: "INV-2002",
+            status: "open",
+            subtotal: 5000,
+            tax: 0,
+            total: 5000,
+            currency: "usd",
+            hosted_invoice_url: "https://invoice.stripe.com/fail",
+            invoice_pdf: null,
+            due_date: 1700000000,
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+        memberships: {
+          data: [
+            { user_id: "u-billing", role_id: "role-billing", roles: { key: "client-billing" } },
+          ],
+          error: null,
+        },
+        role_permissions: {
+          data: [{ role_id: "role-billing", permissions: { module_key: "billing" } }],
+          error: null,
+        },
+        profiles: { data: [{ id: "u-billing", email: "ap@acme.example" }], error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "invoice.payment_failed", id: "evt_inv_fail" });
+
+      expect(res.status).toBe(200);
+      const { notifyAndEmail } = await import("../lib/notify");
+      expect(notifyAndEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "u-billing",
+          organizationId: "org-1",
+          module: "billing",
+          moduleId: "in_fail",
+          action: "payment_failed",
+          email: "ap@acme.example",
+        }),
+      );
     });
 
     it("marks the linked payment refunded on charge.refunded (BILL-P1-003)", async () => {

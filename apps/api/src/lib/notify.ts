@@ -220,7 +220,11 @@ export async function notifyAndEmail(
         ? `/portal/projects/${moduleIdSegment}`
         : opts.module === "documents" && opts.moduleId
           ? `/portal/documents/${moduleIdSegment}`
-          : "";
+          : opts.module === "billing"
+            ? // Billing is org-scoped (no per-row page); the portal billing page
+              // hosts the Stripe portal entry point (BILL-P2-004 dunning link).
+              "/portal/billing"
+            : "";
 
   const emailTo = opts.email;
   const emailSkipped = !channels.email || !emailTo;

@@ -179,7 +179,11 @@ router.post("/sign-up", rateLimitAuth, async (req, res, next) => {
       email,
       password,
       options: {
-        emailRedirectTo: `${req.protocol}://${req.get("host")}/auth/callback`,
+        // The confirmation link must land on the WEB /auth/callback route.
+        // Building it from the request host pointed it at the API host, which
+        // serves no such route and 404'd (USE-P1-002). Only a trusted origin
+        // (CORS allowlist / APP_BASE_URL) is honoured — never the raw Origin.
+        emailRedirectTo: `${resolveTrustedRedirectOrigin(req.headers.origin)}/auth/callback`,
         data: { full_name: fullName ?? null },
       },
     });
@@ -326,7 +330,11 @@ router.post("/forgot-password", rateLimitAuth, rateLimitEmail, async (req, res, 
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       // Only ever redirect to a trusted origin — never an echoed Origin header.
-      redirectTo: `${resolveTrustedRedirectOrigin(req.headers.origin)}/password-reset`,
+      // The link must go through the web /auth/callback route so the PKCE
+      // `code` is exchanged and a session cookie is set; /password-reset alone
+      // ignored the token and the reset endpoint requires a session
+      // (USE-P1-001).
+      redirectTo: `${resolveTrustedRedirectOrigin(req.headers.origin)}/auth/callback?next=/password-reset`,
     });
 
     if (error) {

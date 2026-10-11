@@ -202,6 +202,40 @@ describe("memberships routes", () => {
       expect(res.status).toBe(200);
     });
 
+    // USE-P1-003: the admin queue sends a status-only PATCH; the membership
+    // keeps its current role instead of requiring (or clearing) roleId.
+    it("approves a membership with a status-only PATCH", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({
+        data: { ...MEMBERSHIP, status: "approved" },
+        error: null,
+      });
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .patch("/api/v1/memberships/mem-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ status: "approved" });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.status).toBe("approved");
+      // The role must not be overwritten (or nulled) by a status transition.
+      expect(builder.update).toHaveBeenCalledWith({ status: "approved" });
+    });
+
+    it("rejects an empty-string roleId", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(createMockBuilder({ data: MEMBERSHIP, error: null }));
+
+      const res = await request(app)
+        .patch("/api/v1/memberships/mem-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ roleId: "", status: "approved" });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("VALIDATION");
+    });
+
     it("returns 404 when the membership belongs to another org", async () => {
       const supabase = mockAuth();
       supabase.from.mockReturnValue(

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCookieOptions } from "@/lib/cookie-domain";
 import { getClientEnv } from "@/lib/env";
+import { resolvePostAuthRedirect } from "@/lib/auth/callback-redirect";
 
 const SESSION_COOKIE = "mct_session";
 const API_URL = getClientEnv().NEXT_PUBLIC_API_URL;
@@ -8,6 +9,7 @@ const API_URL = getClientEnv().NEXT_PUBLIC_API_URL;
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const next = searchParams.get("next");
   const host = request.headers.get("host") || "";
 
   if (!code) {
@@ -30,7 +32,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/login`);
     }
 
-    const response = NextResponse.redirect(`${origin}/portal/dashboard`);
+    const response = NextResponse.redirect(`${origin}${resolvePostAuthRedirect(next)}`);
     response.cookies.set(
       SESSION_COOKIE,
       json.data.accessToken,

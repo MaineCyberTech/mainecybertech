@@ -5,7 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
-import { AppError, success } from "../types";
+import { AppError, failure, success } from "../types";
 import { getEnv } from "../config/env";
 import { httpClients } from "../lib/http-client";
 import { logger } from "../lib/logger";
@@ -52,6 +52,75 @@ type StripePaymentIntent = {
   invoice?: string | null;
   customer?: string | null;
 };
+
+// BILL-P2-002: page through Stripe list endpoints. Fixed page sizes
+// (20/10/20) silently dropped every object past the first page; hitting the
+// page cap is reported as a failed sync (mirrors the JSM sync pattern)
+// instead of a partial success.
+const STRIPE_PAGE_SIZE = 100;
+const STRIPE_MAX_PAGES = 10; // 1000 objects per list, per customer, per run
+
+type StripeListPage<T> = {
+  data?: T[];
+  has_more?: boolean;
+};
+
+type StripePageResult<T> = {
+  items: T[];
+  truncated: boolean;
+  error?: string;
+};
+
+/**
+ * Fetch every page of a Stripe list endpoint with `starting_after`, bounded by
+ * STRIPE_MAX_PAGES. Never throws: a failed page is returned as `error` (with
+ * whatever was fetched so far) and a `has_more` left at the cap as
+ * `truncated`, so the caller can fail the sync loudly instead of reporting
+ * success for a partial mirror.
+ */
+async function fetchStripePages<T extends { id: string }>(
+  url: string,
+  params: Record<string, string>,
+  headers: Record<string, string>,
+  label: string,
+): Promise<StripePageResult<T>> {
+  const items: T[] = [];
+  let startingAfter: string | null = null;
+
+  for (let page = 0; page < STRIPE_MAX_PAGES; page++) {
+    const query = new URLSearchParams({ ...params, limit: String(STRIPE_PAGE_SIZE) });
+    if (startingAfter) query.set("starting_after", startingAfter);
+
+    try {
+      const res = await httpClients.stripe.get(`${url}?${query.toString()}`, { headers });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        return {
+          items,
+          truncated: false,
+          error: `${label}: Stripe API ${res.status}${detail ? `: ${detail.slice(0, 200)}` : ""}`,
+        };
+      }
+
+      const body = (await res.json()) as StripeListPage<T>;
+      const pageItems = body.data ?? [];
+      items.push(...pageItems);
+
+      if (!body.has_more || pageItems.length === 0) {
+        return { items, truncated: false };
+      }
+
+      startingAfter = pageItems[pageItems.length - 1]?.id ?? null;
+      if (!startingAfter) return { items, truncated: false };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { items, truncated: false, error: `${label}: ${message}` };
+    }
+  }
+
+  // `has_more` was still true when the page cap was reached.
+  return { items, truncated: true };
+}
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -251,83 +320,97 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
     }
 
     let synced = 0;
+    const counts = { invoices: 0, subscriptions: 0, payments: 0 };
+    const errors: string[] = [];
+
     for (const customer of customers) {
       if (!customer.stripe_customer_id) continue;
+      const customerId = customer.stripe_customer_id;
 
-      const [invoicesRes, subsRes, paymentsRes] = await Promise.all([
-        httpClients.stripe.get(
-          `https://api.stripe.com/v1/invoices?customer=${customer.stripe_customer_id}&limit=20`,
-          { headers: stripeHeaders },
+      const [invoicesPage, subsPage, paymentsPage] = await Promise.all([
+        fetchStripePages<StripeInvoice>(
+          "https://api.stripe.com/v1/invoices",
+          { customer: customerId },
+          stripeHeaders,
+          `invoices (${customerId})`,
         ),
-        httpClients.stripe.get(
-          `https://api.stripe.com/v1/subscriptions?customer=${customer.stripe_customer_id}&limit=10`,
-          { headers: stripeHeaders },
+        fetchStripePages<StripeSubscription>(
+          "https://api.stripe.com/v1/subscriptions",
+          { customer: customerId },
+          stripeHeaders,
+          `subscriptions (${customerId})`,
         ),
-        httpClients.stripe.get(
-          `https://api.stripe.com/v1/payment_intents?customer=${customer.stripe_customer_id}&limit=20`,
-          { headers: stripeHeaders },
+        fetchStripePages<StripePaymentIntent>(
+          "https://api.stripe.com/v1/payment_intents",
+          { customer: customerId },
+          stripeHeaders,
+          `payment_intents (${customerId})`,
         ),
       ]);
 
-      if (invoicesRes.ok) {
-        const invoicesData = (await invoicesRes.json()) as { data: StripeInvoice[] };
-        for (const inv of invoicesData.data ?? []) {
-          const status =
-            inv.status === "open" && new Date((inv.due_date ?? 0) * 1000) < new Date()
-              ? "overdue"
-              : inv.status;
-          await supabase.from("invoices").upsert(
-            {
-              organization_id: customer.organization_id,
-              stripe_invoice_id: inv.id,
-              invoice_number: inv.number,
-              status: status as never,
-              // Stripe already returns amounts in the smallest currency unit (cents)
-              subtotal_cents: Math.round(inv.subtotal),
-              tax_cents: Math.round(inv.tax ?? 0),
-              total_cents: Math.round(inv.total),
-              currency: inv.currency,
-              hosted_invoice_url: inv.hosted_invoice_url,
-              invoice_pdf_url: inv.invoice_pdf,
-              due_at: inv.due_date ? new Date((inv.due_date ?? 0) * 1000).toISOString() : null,
-              paid_at:
-                inv.status === "paid"
-                  ? new Date((inv.status_transitions?.paid_at ?? 0) * 1000).toISOString()
-                  : null,
-            },
-            { onConflict: "stripe_invoice_id" },
-          );
-        }
+      for (const pageError of [invoicesPage.error, subsPage.error, paymentsPage.error]) {
+        if (pageError) errors.push(pageError);
+      }
+      if (invoicesPage.truncated || subsPage.truncated || paymentsPage.truncated) {
+        errors.push(
+          `page cap (${STRIPE_MAX_PAGES} pages of ${STRIPE_PAGE_SIZE}) reached for customer ${customerId}`,
+        );
       }
 
-      if (subsRes.ok) {
-        const subsData = (await subsRes.json()) as { data: StripeSubscription[] };
-        for (const sub of subsData.data ?? []) {
-          const price = sub.items?.data?.[0]?.price;
-          await supabase.from("subscriptions").upsert(
-            {
-              organization_id: customer.organization_id,
-              stripe_subscription_id: sub.id,
-              plan_name: price?.nickname ?? price?.product ?? "Unknown",
-              status: sub.status,
-              current_period_start: sub.current_period_start
-                ? new Date(sub.current_period_start * 1000).toISOString()
+      for (const inv of invoicesPage.items) {
+        const status =
+          inv.status === "open" && new Date((inv.due_date ?? 0) * 1000) < new Date()
+            ? "overdue"
+            : inv.status;
+        await supabase.from("invoices").upsert(
+          {
+            organization_id: customer.organization_id,
+            stripe_invoice_id: inv.id,
+            invoice_number: inv.number,
+            status: status as never,
+            // Stripe already returns amounts in the smallest currency unit (cents)
+            subtotal_cents: Math.round(inv.subtotal),
+            tax_cents: Math.round(inv.tax ?? 0),
+            total_cents: Math.round(inv.total),
+            currency: inv.currency,
+            hosted_invoice_url: inv.hosted_invoice_url,
+            invoice_pdf_url: inv.invoice_pdf,
+            due_at: inv.due_date ? new Date((inv.due_date ?? 0) * 1000).toISOString() : null,
+            paid_at:
+              inv.status === "paid"
+                ? new Date((inv.status_transitions?.paid_at ?? 0) * 1000).toISOString()
                 : null,
-              current_period_end: sub.current_period_end
-                ? new Date(sub.current_period_end * 1000).toISOString()
-                : null,
-              amount_cents: price?.unit_amount ?? 0,
-              currency: price?.currency ?? "usd",
-            },
-            { onConflict: "stripe_subscription_id" },
-          );
-        }
+          },
+          { onConflict: "stripe_invoice_id" },
+        );
+        counts.invoices++;
+      }
+
+      for (const sub of subsPage.items) {
+        const price = sub.items?.data?.[0]?.price;
+        await supabase.from("subscriptions").upsert(
+          {
+            organization_id: customer.organization_id,
+            stripe_subscription_id: sub.id,
+            plan_name: price?.nickname ?? price?.product ?? "Unknown",
+            status: sub.status,
+            current_period_start: sub.current_period_start
+              ? new Date(sub.current_period_start * 1000).toISOString()
+              : null,
+            current_period_end: sub.current_period_end
+              ? new Date(sub.current_period_end * 1000).toISOString()
+              : null,
+            amount_cents: price?.unit_amount ?? 0,
+            currency: price?.currency ?? "usd",
+          },
+          { onConflict: "stripe_subscription_id" },
+        );
+        counts.subscriptions++;
       }
 
       // Populate payment history (BILL-P1-002). PaymentIntents are Stripe's
       // canonical payment object; link to the local invoice when one exists.
-      if (paymentsRes.ok) {
-        const paymentsData = (await paymentsRes.json()) as { data: StripePaymentIntent[] };
+      if (paymentsPage.items.length) {
         const { data: orgInvoices } = await supabase
           .from("invoices")
           .select("id, stripe_invoice_id")
@@ -336,7 +419,7 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
           (orgInvoices ?? []).map((inv) => [inv.stripe_invoice_id, inv.id]),
         );
 
-        for (const pi of paymentsData.data ?? []) {
+        for (const pi of paymentsPage.items) {
           const succeeded = pi.status === "succeeded";
           await supabase.from("payments").upsert(
             {
@@ -356,6 +439,7 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
             },
             { onConflict: "stripe_payment_intent_id" },
           );
+          counts.payments++;
         }
       }
 
@@ -367,10 +451,24 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
       action: "billing.sync",
       entityType: "billing_customer",
       organizationId: targetOrg,
-      metadata: { organizationId: targetOrg, synced },
+      metadata: { organizationId: targetOrg, synced, counts, errors: errors.length },
     });
 
-    res.json(success({ synced }));
+    if (errors.length > 0) {
+      // Fail closed: a sync that skipped a Stripe page or stopped at the page
+      // cap must not be acknowledged as a complete mirror.
+      res.status(502).json(
+        failure(
+          "STRIPE_SYNC_INCOMPLETE",
+          `Stripe sync incomplete: ${errors.length} error(s)`,
+          502,
+          { synced, counts, errors },
+        ),
+      );
+      return;
+    }
+
+    res.json(success({ synced, counts }));
   } catch (error) {
     next(error);
   }

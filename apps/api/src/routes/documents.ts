@@ -20,6 +20,7 @@ import {
 } from "../validators/document";
 import { z } from "zod";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { canReadDocumentById } from "../lib/document-visibility";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { recordDocumentCreated } from "../lib/metrics";
@@ -606,12 +607,20 @@ router.post("/:id/signed-url", requirePermission("documents", "create"), async (
     const supabase = getScopedClient(req, "documents", "write");
     let query = supabase
       .from("documents")
-      .select("storage_bucket, storage_path")
+      .select("id, organization_id, visibility, uploaded_by, storage_bucket, storage_path")
       .eq("id", String(req.params.id));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data: doc, error: docError } = await query.single();
 
     if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
+
+    // FILE-P2-007: the service-role client bypasses RLS, so the
+    // `can_read_document` visibility model is enforced in code. An unreadable
+    // row gets the same 404 as a missing one — never reveal that it exists.
+    if (!(await canReadDocumentById(req.authUser!.userId, doc))) {
+      throw new AppError("NOT_FOUND", "Document not found", 404);
+    }
+
     if (!doc.storage_bucket || !doc.storage_path)
       throw new AppError("BAD_REQUEST", "Document has no storage reference", 400);
 
@@ -821,13 +830,20 @@ router.get(
       // org column of its own (see migration 5302026), so the org-scoping check
       // can only be made via the parent. Without this, a caller in org A could
       // mint a signed URL for a retained version belonging to org B's document.
+      // FILE-P2-007: the parent must also satisfy `can_read_document` — the
+      // service-role client bypasses RLS. Unreadable parents 404 exactly like
+      // a missing document.
       let docQuery = supabase
         .from("documents")
-        .select("storage_bucket")
+        .select("id, organization_id, visibility, uploaded_by, storage_bucket")
         .eq("id", String(req.params.id));
       if (orgId) docQuery = docQuery.eq("organization_id", orgId);
       const { data: doc, error: docError } = await docQuery.single();
       if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
+
+      if (!(await canReadDocumentById(req.authUser!.userId, doc))) {
+        throw new AppError("NOT_FOUND", "Document not found", 404);
+      }
 
       // The version row must belong to THIS document. A version id from a
       // different document is refused (404) rather than leaking that it exists.

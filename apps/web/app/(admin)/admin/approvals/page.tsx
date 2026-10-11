@@ -5,12 +5,8 @@ import type { Organization, Profile } from "@mct/sdk";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import {
-  approveOrganization,
-  rejectOrganization,
-  approveMembership,
-  rejectMembership,
-} from "./actions";
+import { approveOrganization, rejectOrganization } from "./actions";
+import MembershipApprovalActions from "./MembershipApprovalActions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Approvals - Admin - Maine CyberTech" };
@@ -112,17 +108,7 @@ export default async function ApprovalQueuePage() {
                       </p>
                     </div>
 
-                    <div className="flex flex-wrap gap-3">
-                      <form action={approveMembership}>
-                        <input type="hidden" name="membershipId" value={membership.id} />
-                        <SubmitButton className="cyber-button">Approve User</SubmitButton>
-                      </form>
-
-                      <form action={rejectMembership}>
-                        <input type="hidden" name="membershipId" value={membership.id} />
-                        <SubmitButton className="cyber-button-secondary">Reject User</SubmitButton>
-                      </form>
-                    </div>
+                    <MembershipApprovalActions membershipId={membership.id} />
                   </div>
                 </div>
               );

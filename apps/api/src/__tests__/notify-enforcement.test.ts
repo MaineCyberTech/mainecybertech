@@ -319,6 +319,28 @@ describe("notification email link escaping (CodeQL js/xss)", () => {
   });
 });
 
+describe("billing notification link (BILL-P2-004)", () => {
+  it("links dunning emails to the portal billing page", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    await notifyAndEmail({
+      ...baseOpts,
+      module: "billing",
+      moduleId: "in_fail",
+      action: "payment_failed",
+      title: "Payment failed",
+      body: "Invoice INV-2002 could not be charged.",
+      email: "user@example.com",
+    });
+
+    const payload = (enqueueTask as jest.Mock).mock.calls[0][1] as { text: string; html: string };
+    expect(payload.text).toContain("http://localhost:3000/portal/billing");
+    expect(payload.html).toContain("http://localhost:3000/portal/billing");
+  });
+});
+
 describe("createNotification dedup key (NOTIF-P1-002)", () => {
   it("sets notification_key on the insert and upserts on conflict", async () => {
     const supabase = fakeSupabase({ preferences: [] });
