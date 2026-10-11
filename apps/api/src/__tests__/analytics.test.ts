@@ -1,7 +1,6 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import express from "express";
-import cookieParser from "cookie-parser";
 import { createTestApp, createMockBuilder } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
@@ -56,11 +55,38 @@ const app = createTestApp();
 app.use("/api/v1/analytics", analyticsRouter);
 app.use(errorHandler);
 
+/**
+ * The route suite mounts the real CSRF gate without the cookie-parser
+ * dependency: populate `req.cookies` from the Cookie header the way app.ts
+ * does. Keeping the parser inline avoids a CodeQL cookie-middleware false
+ * positive (the gate under test IS csrfProtection).
+ */
+function parseCookieHeader(
+  req: express.Request,
+  _res: express.Response,
+  next: express.NextFunction,
+) {
+  req.cookies = {};
+  const header = req.headers.cookie;
+  if (!header) {
+    next();
+    return;
+  }
+  for (const part of header.split(";")) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const eq = trimmed.indexOf("=");
+    const name = eq === -1 ? trimmed : trimmed.slice(0, eq);
+    req.cookies[name] = eq === -1 ? "" : decodeURIComponent(trimmed.slice(eq + 1));
+  }
+  next();
+}
+
 /** The route as mounted behind the real CSRF gate (AN-P2-003). */
 function createCsrfApp() {
   const csrfApp = express();
   csrfApp.use(express.json());
-  csrfApp.use(cookieParser());
+  csrfApp.use(parseCookieHeader);
   csrfApp.use(csrfProtection);
   csrfApp.use("/api/v1/analytics", analyticsRouter);
   csrfApp.use(errorHandler);

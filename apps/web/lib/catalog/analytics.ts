@@ -55,12 +55,12 @@ async function sendEvent(payload: Record<string, unknown>): Promise<void> {
   let token = readCsrfToken();
   if (!token) token = await fetchCsrfToken();
 
-  let response = await post(token);
+  const response = await post(token);
   if (response.status === 403) {
     // Stale/missing cookie (e.g. rotated since it was read): refresh once and
     // retry so a legitimate first view is not silently dropped.
     token = await fetchCsrfToken();
-    if (token) response = await post(token);
+    if (token) await post(token);
   }
 }
 
