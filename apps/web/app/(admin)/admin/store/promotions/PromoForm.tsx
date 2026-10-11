@@ -57,7 +57,7 @@ export default function PromoForm({
       <div onClick={() => setOpen(true)}>{children}</div>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60" onClick={() => setOpen(false)} />
           <div
             role="dialog"
@@ -67,7 +67,11 @@ export default function PromoForm({
             onKeyDown={(e) => {
               if (e.key === "Escape") setOpen(false);
             }}
-            className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl"
+            // `min-w-0` drops the flex `min-width:auto` content floor that
+            // made Chrome size this dialog to 437px (mobile E2E measured it
+            // against a 361px viewport; Safari clamps to `w-full` instead).
+            // `p-4` on the overlay keeps a 1rem gutter at small widths.
+            className="relative z-10 max-h-[90vh] w-full min-w-0 max-w-lg overflow-y-auto rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl"
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 id="promo-form-title" className="text-lg font-bold text-slate-50">
