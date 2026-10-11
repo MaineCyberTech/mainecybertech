@@ -75,7 +75,13 @@ Use environment-scoped values wherever possible.
 | `JIRA_WEBHOOK_SECRET`        | —   | yes  | Inbound Jira webhook signature verification (API)    |
 | `JSM_WEBHOOK_SECRET`         | —   | yes  | Inbound JSM webhook signature verification (API)     |
 | `M365_CLIENT_STATE`          | —   | yes  | Inbound M365 webhook validation state (API)          |
-| `METRICS_TOKEN`              | —   | yes  | Optional bearer gate for `GET /metrics`              |
+| `METRICS_TOKEN`              | yes | yes  | Bearer gate for `GET /metrics`; **required for the Prometheus scrape** (an empty token makes the scrape 404 and false-fires `MCTServiceDown`) |
+| `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` | yes | yes | External **dead-man's-switch** heartbeat URL, not on the droplet (IR-P0-003); prod deploys fail closed when empty, dev warns |
+| `ALERTMANAGER_CRITICAL_WEBHOOK_URL` | yes | yes | Critical-alert webhook — the ntfy `portal-alerts` topic in the deployed environment (deploy warns, does not fail, when empty: NOTIF-P2-011) |
+| `ALERTMANAGER_DEFAULT_WEBHOOK_URL` | opt | opt | Catch-all webhook for non-critical alerts — ntfy `portal-alerts` in the deployed environment |
+| `ALERTMANAGER_SLACK_API_URL` | opt | opt | Slack incoming-webhook URL used by the default/critical receivers (fallback) |
+| `ALERTMANAGER_WEBHOOK_USER`  | yes | yes  | Basic-auth user for the critical/default webhooks (ntfy relay user `portal-relay`) |
+| `ALERTMANAGER_WEBHOOK_PASS`  | yes | yes  | Basic-auth password for the above (secret)           |
 
 `M365_WEBHOOK_SECRET` is retired — inbound M365 webhooks validate with
 `M365_CLIENT_STATE` (the single authoritative M365 secret).
@@ -94,6 +100,10 @@ environment (none of the three runs against prod; DR-P0-001):
 | `BACKUP_ENCRYPTION_KEY`   | yes | —    | openssl passphrase encrypting/decrypting backup objects (`db-backup.yml`, `db-restore-test.yml`, storage backup) |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | —  | Supabase Storage REST access for `scripts/backup-storage.sh` |
 | `S3_BACKUP_BUCKET`        | yes | —    | **Legacy** full-URI/bucket name holding backups; prefer the `S3_BUCKET` variable. Accepted (normalised) by the restore paths for backwards compatibility |
+| `NTFY_ALERTS_URL`         | yes | —    | ntfy topic URL for backup/storage-backup/restore-test failure notifications (primary channel) |
+| `NTFY_ALERTS_USER`        | yes | —    | ntfy basic-auth user for the above (write-only relay user) |
+| `NTFY_ALERTS_PASS`        | yes | —    | ntfy basic-auth password for the above (secret)      |
+| `SLACK_WEBHOOK_URL`       | yes | —    | Slack webhook for backup/restore failure notifications (fallback; ntfy is primary) |
 | `SLACK_WEBHOOK_URL`       | yes | —    | Slack webhook for backup/restore failure notifications |
 
 ### Backup location contract
@@ -133,8 +143,9 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 | `SUPABASE_PROJECT_REF`           | yes | yes  | Supabase project reference for migrations                     |
 | `DROPLET_IP`                     | opt | opt  | Optional droplet IPv4 fallback when the DO API/Terraform fail |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | yes | yes  | Turnstile site key baked into the web image build arg         |
-| `S3_BUCKET`                      | yes | —    | Backup bucket **name** (see contract above)                   |
-| `S3_PREFIX`                      | yes | —    | Backup key prefix (default `database-backups`)                |
+| `ALERTMANAGER_SLACK_CHANNEL`     | opt | opt  | Slack channel name for Alertmanager receivers (non-secret; e.g. `#alerts`) |
+| `S3_BUCKET`                      | —   | yes  | Backup bucket **name** (see contract above)                   |
+| `S3_PREFIX`                      | —   | yes  | Backup key prefix (default `database-backups`)                |
 | `S3_OFFSITE_BUCKET`              | opt | opt  | Second destination for an offsite/cross-region backup copy    |
 | `S3_OFFSITE_PREFIX`              | opt | opt  | Prefix on the offsite bucket (defaults to `S3_PREFIX`)        |
 | `STORAGE_BUCKETS`                | yes | —    | Storage buckets to back up (default `documents avatars logos`) |
@@ -170,6 +181,10 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
    - `SUPABASE_ACCESS_TOKEN` — from the Supabase dashboard (CLI migrations)
    - `JWT_SECRET` — generate a secure random string
    - `REDIS_PASSWORD`, `FIELD_ENCRYPTION_KEY`, `TURNSTILE_SECRET_KEY`, `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` — deployment/runtime config forwarded by `deploy-do.yml`
+   - `METRICS_TOKEN` — bearer token shared by the API `/metrics` gate and the Prometheus scrape; required wherever the compose stack runs (dev and `prod-approval`)
+   - `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` — external dead-man's-switch heartbeat URL (not on the droplet); **required for prod** (deploys fail closed without it), dev warns
+   - `ALERTMANAGER_CRITICAL_WEBHOOK_URL` / `ALERTMANAGER_DEFAULT_WEBHOOK_URL` / `ALERTMANAGER_WEBHOOK_USER` / `ALERTMANAGER_WEBHOOK_PASS` — Alertmanager → ntfy `portal-alerts` delivery (see `docs/MONITORING_AND_ALERTING.md` §9)
+   - `NTFY_ALERTS_URL` / `NTFY_ALERTS_USER` / `NTFY_ALERTS_PASS` — ntfy notifications for the backup / storage-backup / restore-test workflows (Slack remains a fallback)
    - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — from Stripe dashboard
    - `CHROMATIC_PROJECT_TOKEN` — from the Chromatic project (visual regression)
    - `SCHEDULE_DISPATCH_TOKEN` — optional **repo-scoped** token with
