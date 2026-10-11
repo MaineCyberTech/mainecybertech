@@ -349,6 +349,15 @@ function projectSubRoute(
         const { error } = await supabase.from(table).delete().eq("id", String(req.params.id));
 
         if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+        await logAuditEvent({
+          organizationId: orgId,
+          actorUserId: req.authUser!.userId,
+          action: `${resource}.deleted`,
+          entityType: resource,
+          entityId: String(req.params.id),
+        });
+
         res.status(204).send();
       } catch (err) {
         next(err);

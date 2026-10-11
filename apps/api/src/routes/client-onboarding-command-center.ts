@@ -185,6 +185,7 @@ router.delete(
       "id, organization_id",
     );
     const userId = getUserId(req);
+    // Audit is written by deleteOnboardingRecord (action: client_onboarding.delete).
     const result = await deleteOnboardingRecord(record.organization_id as string, userId, getParam(req, "id"));
     res.json(result);
   } catch (error) {

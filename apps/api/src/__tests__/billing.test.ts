@@ -175,65 +175,108 @@ describe("billing routes", () => {
   });
 
   describe("POST /create-portal-session", () => {
-    function mockStripePortal() {
+    const ORG_A = "00000000-0000-0000-0000-000000000001";
+
+    /**
+     * Table-aware mock for the portal path: the route first probes memberships
+     * for a billing contact, then (if needed) resolves effective permissions.
+     */
+    function mockStripePortal(
+      opts: {
+        billingContact?: boolean;
+        billingManage?: boolean;
+        superAdmin?: boolean;
+        customer?: MockResult;
+      } = {},
+    ) {
       (httpClients.stripe.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: async () => ({ url: "https://billing.stripe.com/session/xyz" }),
       });
-      supabase.from.mockReturnValue(
-        createMockBuilder({
-          data: { stripe_customer_id: "cus_123" },
-          error: null,
-        } as MockResult),
-      );
+      const builders: Record<string, ReturnType<typeof createMockBuilder>> = {};
+      let membershipCalls = 0;
+      supabase.from.mockImplementation((table: string) => {
+        let result: MockResult;
+        if (table === "memberships") {
+          membershipCalls += 1;
+          if (opts.billingContact) {
+            result = { data: { id: "membership-1" }, error: null };
+          } else if (opts.billingManage && membershipCalls > 1) {
+            result = {
+              data: [
+                {
+                  id: "membership-1",
+                  organization_id: ORG_A,
+                  role_id: "role-finance",
+                  status: "approved",
+                  roles: { id: "role-finance", key: "finance" },
+                },
+              ],
+              error: null,
+            };
+          } else {
+            result = { data: null, error: null };
+          }
+        } else if (table === "billing_customers") {
+          result = opts.customer ?? { data: { stripe_customer_id: "cus_123" }, error: null };
+        } else if (table === "profiles") {
+          result = { data: { is_super_admin: opts.superAdmin ?? false }, error: null };
+        } else if (table === "role_permissions") {
+          result = opts.billingManage
+            ? { data: [{ role_id: "role-finance", permission_id: "perm-billing" }], error: null }
+            : { data: [], error: null };
+        } else if (table === "permissions") {
+          result = opts.billingManage
+            ? {
+                data: [
+                  {
+                    id: "perm-billing",
+                    module_key: "billing",
+                    action_key: "manage",
+                    description: null,
+                  },
+                ],
+                error: null,
+              }
+            : { data: [], error: null };
+        } else {
+          result = { data: null, error: null };
+        }
+        const builder = createMockBuilder(result);
+        builders[table] = builder;
+        return builder;
+      });
+      return builders;
     }
 
     it("reads the org from the body (SDK sends organizationId in the body)", async () => {
-      mockStripePortal();
+      const builders = mockStripePortal({ billingContact: true });
       const res = await request(app)
         .post("/api/v1/billing/create-portal-session")
         .set("Authorization", "Bearer token")
-        .send({ organizationId: "00000000-0000-0000-0000-000000000001" });
+        .send({ organizationId: ORG_A });
       expect(res.status).toBe(200);
       expect(res.body.data.url).toBe("https://billing.stripe.com/session/xyz");
-      const builder = supabase.from.mock.results[0].value as ReturnType<
-        typeof createMockBuilder
-      >;
-      expect(builder.eq).toHaveBeenCalledWith(
-        "organization_id",
-        "00000000-0000-0000-0000-000000000001",
-      );
+      expect(builders.billing_customers.eq).toHaveBeenCalledWith("organization_id", ORG_A);
     });
 
     it("still accepts organization_id from the query string", async () => {
-      mockStripePortal();
+      const builders = mockStripePortal({ billingContact: true });
       const res = await request(app)
-        .post("/api/v1/billing/create-portal-session?organization_id=00000000-0000-0000-0000-000000000001")
+        .post(`/api/v1/billing/create-portal-session?organization_id=${ORG_A}`)
         .set("Authorization", "Bearer token");
       expect(res.status).toBe(200);
-      const builder = supabase.from.mock.results[0].value as ReturnType<
-        typeof createMockBuilder
-      >;
-      expect(builder.eq).toHaveBeenCalledWith(
-        "organization_id",
-        "00000000-0000-0000-0000-000000000001",
-      );
+      expect(builders.billing_customers.eq).toHaveBeenCalledWith("organization_id", ORG_A);
     });
 
     it("falls back to the X-Active-Org header (web client sends no body org)", async () => {
-      mockStripePortal();
+      const builders = mockStripePortal({ billingContact: true });
       const res = await request(app)
         .post("/api/v1/billing/create-portal-session")
         .set("Authorization", "Bearer token")
-        .set("X-Active-Org", "00000000-0000-0000-0000-000000000001");
+        .set("X-Active-Org", ORG_A);
       expect(res.status).toBe(200);
-      const builder = supabase.from.mock.results[0].value as ReturnType<
-        typeof createMockBuilder
-      >;
-      expect(builder.eq).toHaveBeenCalledWith(
-        "organization_id",
-        "00000000-0000-0000-0000-000000000001",
-      );
+      expect(builders.billing_customers.eq).toHaveBeenCalledWith("organization_id", ORG_A);
     });
 
     it("returns 400 when no org can be resolved", async () => {
@@ -245,18 +288,57 @@ describe("billing routes", () => {
     });
 
     it("returns 404 when the org has no Stripe customer", async () => {
-      mockStripePortal();
-      supabase.from.mockReturnValue(
-        createMockBuilder({
-          data: null,
-          error: { code: "PGRST116", message: "No rows" },
-        } as MockResult),
-      );
+      mockStripePortal({
+        billingContact: true,
+        customer: { data: null, error: { code: "PGRST116", message: "No rows" } },
+      });
       const res = await request(app)
         .post("/api/v1/billing/create-portal-session")
         .set("Authorization", "Bearer token")
-        .send({ organizationId: "00000000-0000-0000-0000-000000000001" });
+        .send({ organizationId: ORG_A });
       expect(res.status).toBe(404);
+    });
+
+    it("allows a billing contact to open the portal", async () => {
+      const builders = mockStripePortal({ billingContact: true });
+      const res = await request(app)
+        .post("/api/v1/billing/create-portal-session")
+        .set("Authorization", "Bearer token")
+        .send({ organizationId: ORG_A });
+      expect(res.status).toBe(200);
+      expect(builders.memberships.eq).toHaveBeenCalledWith("is_billing_contact", true);
+      expect(httpClients.stripe.fetch).toHaveBeenCalled();
+    });
+
+    it("returns 403 for a member who is not a billing contact", async () => {
+      mockStripePortal({ billingContact: false });
+      const res = await request(app)
+        .post("/api/v1/billing/create-portal-session")
+        .set("Authorization", "Bearer token")
+        .send({ organizationId: ORG_A });
+      expect(res.status).toBe(403);
+      expect(res.body.error?.code).toBe("FORBIDDEN");
+      expect(httpClients.stripe.fetch).not.toHaveBeenCalled();
+    });
+
+    it("allows a member with the billing:manage permission", async () => {
+      mockStripePortal({ billingContact: false, billingManage: true });
+      const res = await request(app)
+        .post("/api/v1/billing/create-portal-session")
+        .set("Authorization", "Bearer token")
+        .send({ organizationId: ORG_A });
+      expect(res.status).toBe(200);
+      expect(httpClients.stripe.fetch).toHaveBeenCalled();
+    });
+
+    it("allows a super admin (admin bypass)", async () => {
+      mockStripePortal({ billingContact: false, superAdmin: true });
+      const res = await request(app)
+        .post("/api/v1/billing/create-portal-session")
+        .set("Authorization", "Bearer token")
+        .send({ organizationId: ORG_A });
+      expect(res.status).toBe(200);
+      expect(httpClients.stripe.fetch).toHaveBeenCalled();
     });
   });
 

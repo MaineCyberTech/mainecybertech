@@ -144,6 +144,7 @@ router.delete(
       const orgId = getOrgId(req);
       const userId = getUserId(req);
       const id = getParam(req, "id");
+      // Audit is written by deleteDynamicForm (entity_type: dynamic_form).
       const result = await deleteDynamicForm(orgId, userId, id);
       res.json(result);
     } catch (error) {

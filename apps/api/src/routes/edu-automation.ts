@@ -601,13 +601,22 @@ router.delete(
   async (req, res, next) => {
     try {
       const supabase = getScopedClient(req, "edu-automation", "write");
+      const organizationId = req.query.organization_id as string;
       const { error } = await supabase
         .from("phishing_targets")
         .delete()
         .eq("id", String(req.params.targetId))
         .eq("campaign_id", String(req.params.id))
-        .eq("organization_id", req.query.organization_id as string);
+        .eq("organization_id", organizationId);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
+      await logAuditEvent({
+        organizationId,
+        actorUserId: req.authUser!.userId,
+        action: "phishing_target.deleted",
+        entityType: "phishing_target",
+        entityId: String(req.params.targetId),
+        metadata: { campaignId: String(req.params.id) },
+      });
       res.status(204).send();
     } catch (err) {
       next(err);

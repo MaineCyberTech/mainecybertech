@@ -49,6 +49,7 @@ jest.mock("node:dns", () => ({
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";
+import { logAuditEvent } from "../services/audit";
 import uptimeMonitorRouter from "../routes/uptime-monitor";
 
 const authToken = "Bearer test-token";
@@ -209,6 +210,13 @@ describe("Uptime Monitor API", () => {
         .delete("/api/v1/uptime-monitor/checks/c1")
         .set("Authorization", authToken);
       expect(res.status).toBe(204);
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "uptime_check.deleted",
+          entityType: "uptime_check",
+          entityId: "c1",
+        }),
+      );
     });
   });
 

@@ -42,6 +42,7 @@ jest.mock("../services/audit", () => ({
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";
+import { logAuditEvent } from "../services/audit";
 import approvalsRouter from "../routes/approvals";
 
 const authToken = "Bearer test-token";
@@ -235,6 +236,113 @@ describe("Approvals API", () => {
         .send({});
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe("Approval state guards (ADMIN-P2-007)", () => {
+    const APPROVAL_ID = "00000000-0000-0000-0000-000000000099";
+    const pendingRow = (overrides: Record<string, unknown> = {}) => ({
+      id: APPROVAL_ID,
+      organization_id: testOrgId,
+      request_type: "proposal",
+      request_subject: "New firewall proposal",
+      requested_by: "user-2",
+      status: "pending",
+      version: 1,
+      ...overrides,
+    });
+
+    function mockApprovalRow(overrides: Record<string, unknown> = {}) {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(createMockBuilder({ data: pendingRow(overrides), error: null }));
+      return supabase;
+    }
+
+    it("blocks approving your own request with 403", async () => {
+      mockApprovalRow({ requested_by: "user-1" });
+
+      const res = await request(app)
+        .post(`/api/v1/approvals/${APPROVAL_ID}/approve`)
+        .set("Authorization", authToken)
+        .send({ organizationId: testOrgId, notes: "looks good" });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error?.code).toBe("FORBIDDEN");
+    });
+
+    it("blocks rejecting your own request with 403", async () => {
+      mockApprovalRow({ requested_by: "user-1" });
+
+      const res = await request(app)
+        .post(`/api/v1/approvals/${APPROVAL_ID}/reject`)
+        .set("Authorization", authToken)
+        .send({ organizationId: testOrgId, reason: "no" });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error?.code).toBe("FORBIDDEN");
+    });
+
+    it("blocks approving a non-pending request with 400", async () => {
+      mockApprovalRow({ status: "approved" });
+
+      const res = await request(app)
+        .post(`/api/v1/approvals/${APPROVAL_ID}/approve`)
+        .set("Authorization", authToken)
+        .send({ organizationId: testOrgId });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error?.code).toBe("INVALID_STATE");
+    });
+
+    it("blocks rejecting a non-pending request with 400", async () => {
+      mockApprovalRow({ status: "rejected" });
+
+      const res = await request(app)
+        .post(`/api/v1/approvals/${APPROVAL_ID}/reject`)
+        .set("Authorization", authToken)
+        .send({ organizationId: testOrgId, reason: "no" });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error?.code).toBe("INVALID_STATE");
+    });
+
+    it("blocks cancelling an approved request with 400", async () => {
+      mockApprovalRow({ status: "approved" });
+
+      const res = await request(app)
+        .post(`/api/v1/approvals/${APPROVAL_ID}/cancel`)
+        .set("Authorization", authToken)
+        .send({ organizationId: testOrgId, reason: "changed my mind" });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error?.code).toBe("INVALID_STATE");
+    });
+
+    it("blocks cancelling an already-cancelled request with 400", async () => {
+      mockApprovalRow({ status: "cancelled" });
+
+      const res = await request(app)
+        .post(`/api/v1/approvals/${APPROVAL_ID}/cancel`)
+        .set("Authorization", authToken)
+        .send({ organizationId: testOrgId });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error?.code).toBe("INVALID_STATE");
+    });
+
+    it("still allows a different user to approve a pending request", async () => {
+      mockApprovalRow();
+
+      const res = await request(app)
+        .post(`/api/v1/approvals/${APPROVAL_ID}/approve`)
+        .set("Authorization", authToken)
+        .send({ organizationId: testOrgId, notes: "ok" });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.id).toBe(APPROVAL_ID);
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ action: "approval.proposal.approved", entityId: APPROVAL_ID }),
+      );
     });
   });
 

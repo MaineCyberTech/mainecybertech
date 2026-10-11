@@ -195,12 +195,20 @@ router.patch("/:id", requirePermission("license-optimizer", "edit"), async (req,
 router.delete("/:id", requirePermission("license-optimizer", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "license-optimizer", "write");
+    const organizationId = req.query.organization_id as string;
     const { error } = await supabase
       .from("license_allocations")
       .delete()
       .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string);
+      .eq("organization_id", organizationId);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    await logAuditEvent({
+      organizationId,
+      actorUserId: req.authUser!.userId,
+      action: "license.deleted",
+      entityType: "license",
+      entityId: String(req.params.id),
+    });
     res.status(204).send();
   } catch (err) {
     next(err);
