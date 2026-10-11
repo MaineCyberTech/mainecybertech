@@ -8,6 +8,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { loadOwned } from "../lib/tenant";
 import { updateMembershipSchema } from "../validators/membership";
+import { assertCanAssignRole, resolveRoleKey } from "../lib/role-assignment";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -81,6 +82,11 @@ router.post("/invite", requirePermission("users", "manage"), async (req, res, ne
       throw new AppError("NOT_FOUND", `No user found with email ${email}`, 404);
     }
 
+    // SEC-P1-001: the role must exist and the caller may only grant it when
+    // allowed (cross-tenant roles require a platform super admin).
+    const inviteRoleKey = await resolveRoleKey(supabase, roleId);
+    await assertCanAssignRole(supabase, req.authUser!.userId, inviteRoleKey, userByEmail.id);
+
     const { data: existing } = await supabase
       .from("memberships")
       .select("id")
@@ -124,7 +130,22 @@ router.patch("/:id", requirePermission("users", "manage"), async (req, res, next
   try {
     const parsed = updateMembershipSchema.parse(req.body);
     const supabase = getScopedClient(req, "memberships", "write");
-    await loadOwned(req, supabase as any, "memberships", String(req.params.id));
+    const membership = await loadOwned(req, supabase as any, "memberships", String(req.params.id));
+
+    // SEC-P1-001 / ADMIN-P1-003: validate the new role and guard the
+    // assignment; also require a super admin to touch a membership that
+    // currently holds a cross-tenant role.
+    const nextRoleKey = await resolveRoleKey(supabase, parsed.roleId);
+    await assertCanAssignRole(
+      supabase,
+      req.authUser!.userId,
+      nextRoleKey,
+      membership.user_id as string,
+    );
+    if (membership.role_id) {
+      const currentRoleKey = await resolveRoleKey(supabase, membership.role_id as string);
+      await assertCanAssignRole(supabase, req.authUser!.userId, currentRoleKey);
+    }
 
     const { data, error } = await supabase
       .from("memberships")

@@ -92,6 +92,8 @@ describe("Bulk API", () => {
     const supabase = mockAuthAndAdmin();
     // requireAdmin → memberships query
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
+    // SEC-P1-001 role guard -> resolveRoleKey (non-cross-tenant role)
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: { key: "member" }, error: null }));
     // Route handler → profiles query for existing user
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
 
@@ -111,6 +113,8 @@ describe("Bulk API", () => {
     const supabase = mockAuthAndAdmin();
     // requireAdmin → memberships query
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
+    // SEC-P1-001 role guard -> resolveRoleKey (non-cross-tenant role)
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: { key: "member" }, error: null }));
     // profiles query → no existing user
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
     // auth.admin.createUser → success
@@ -140,6 +144,8 @@ describe("Bulk API", () => {
     const supabase = mockAuthAndAdmin();
     // requireAdmin ? memberships query
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
+    // SEC-P1-001 role guard -> resolveRoleKey (non-cross-tenant role)
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: { key: "member" }, error: null }));
     // profiles query ? no existing user
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
     // auth.admin.createUser ? success
@@ -168,6 +174,8 @@ describe("Bulk API", () => {
     const supabase = mockAuthAndAdmin();
     // requireAdmin → memberships query
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
+    // SEC-P1-001 role guard -> resolveRoleKey (non-cross-tenant role)
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: { key: "member" }, error: null }));
     // profiles query → existing user found
     supabase.from.mockReturnValueOnce(
       createMockBuilder({ data: { id: "existing-user" }, error: null }),

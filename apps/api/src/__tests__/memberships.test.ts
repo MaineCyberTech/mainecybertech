@@ -137,6 +137,7 @@ describe("memberships routes", () => {
       const supabase = mockAuth();
       supabase.from
         .mockReturnValueOnce(createMockBuilder({ data: { id: "user-2" }, error: null }))
+        .mockReturnValueOnce(createMockBuilder({ data: { key: "member" }, error: null }))
         .mockReturnValueOnce(createMockBuilder({ data: null, error: null }))
         .mockReturnValueOnce(createMockBuilder({ data: { id: "new-mem" }, error: null }));
 
@@ -172,6 +173,7 @@ describe("memberships routes", () => {
       const supabase = mockAuth();
       supabase.from
         .mockReturnValueOnce(createMockBuilder({ data: { id: "user-2" }, error: null }))
+        .mockReturnValueOnce(createMockBuilder({ data: { key: "member" }, error: null }))
         .mockReturnValueOnce(createMockBuilder({ data: { id: "existing-mem" }, error: null }));
 
       const res = await request(app)
@@ -190,9 +192,12 @@ describe("memberships routes", () => {
   describe("PATCH /:id", () => {
     it("updates a membership (admin only)", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(
-        createMockBuilder({ data: { ...MEMBERSHIP, status: "approved" }, error: null }),
-      );
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "roles") return createMockBuilder({ data: { key: "member" }, error: null });
+        if (table === "profiles")
+          return createMockBuilder({ data: { is_super_admin: true }, error: null });
+        return createMockBuilder({ data: { ...MEMBERSHIP, status: "approved" }, error: null });
+      });
 
       const res = await request(app)
         .patch("/api/v1/memberships/mem-1")

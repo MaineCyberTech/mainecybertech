@@ -14,6 +14,7 @@ import {
 import { queryInt } from "../lib/query";
 import { roleKeyOf } from "../lib/roles";
 import { setActiveUsers } from "../lib/metrics";
+import { assertCanAssignRole, resolveRoleKey } from "../lib/role-assignment";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -403,21 +404,15 @@ router.patch("/:id/role", requirePermission("users", "manage"), async (req, res,
 
     const supabase = getSupabaseAdmin();
 
-    const { data: targetRole } = await supabase
-      .from("roles")
-      .select("key")
-      .eq("id", roleId)
-      .single();
-    if (targetRole?.key === "super_admin") {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_super_admin")
-        .eq("id", req.authUser!.userId)
-        .single();
-      if (!profile?.is_super_admin) {
-        throw new AppError("FORBIDDEN", "Only super admins can assign the super_admin role", 403);
-      }
-    }
+    // SEC-P1-001 / ADMIN-P1-003: shared guard — cross-tenant roles require a
+    // platform super admin, and non-super-admins cannot change their own role.
+    const targetRoleKey = await resolveRoleKey(supabase, roleId);
+    await assertCanAssignRole(
+      supabase,
+      req.authUser!.userId,
+      targetRoleKey,
+      String(req.params.id),
+    );
 
     const { error } = await supabase
       .from("memberships")
