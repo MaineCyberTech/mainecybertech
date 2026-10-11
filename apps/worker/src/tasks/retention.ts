@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { wsTransport } from "../services/supabase";
 import { env } from "../env";
 import { logger } from "../logger";
+import { loadActiveRetentionPolicies, resolveRetentionDays } from "../lib/retention-policy";
 import type { TaskHandler, TaskResult } from "../task-registry";
 
 interface RetentionConfig {
@@ -88,12 +89,44 @@ async function purgeInBatches(
   return { table, deleted, batches, truncated: true };
 }
 
+/**
+ * Archive audit rows older than `cutoff` and delete them, via the DB function
+ * added in 5302440 (DATA-P2-005). The copy and the delete happen in one
+ * transaction, so a failed archive can never destroy a row. The function caps
+ * itself at BATCH_SIZE * MAX_BATCHES; hitting the cap means the backlog
+ * remains for the next run.
+ */
+async function archiveAuditLogs(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: SupabaseClient<any, any, any>,
+  cutoffIso: string,
+): Promise<PurgeOutcome> {
+  const { data, error } = await supabase.rpc("archive_audit_logs", {
+    p_cutoff: cutoffIso,
+    p_batch_size: BATCH_SIZE,
+    p_max_batches: MAX_BATCHES,
+  });
+
+  if (error) {
+    return { table: "audit_logs", deleted: 0, batches: 0, truncated: false, error: error.message };
+  }
+
+  const deleted = typeof data === "number" ? data : 0;
+  return {
+    table: "audit_logs",
+    deleted,
+    batches: Math.ceil(deleted / BATCH_SIZE),
+    truncated: deleted >= BATCH_SIZE * MAX_BATCHES,
+  };
+}
+
 export const retentionTask: TaskHandler = async (
   payload?: Record<string, unknown>,
 ): Promise<TaskResult> => {
+  const overrides = (payload ?? {}) as Partial<RetentionConfig>;
   const config = {
     ...DEFAULT_CONFIG,
-    ...(payload as Partial<RetentionConfig> | undefined),
+    ...overrides,
   };
 
   const supabaseUrl = env.SUPABASE_URL;
@@ -120,16 +153,34 @@ export const retentionTask: TaskHandler = async (
     realtime: { transport: wsTransport },
   });
 
+  // DATA-P2-006: prefer the product's retention_policies registry over the
+  // hardcoded windows. An explicit payload override (manual/operator runs)
+  // still wins; the registry is the next fallback, then the built-in default.
+  const policies = await loadActiveRetentionPolicies(supabase);
+  const auditWindow = resolveRetentionDays("audit_logs", config.auditLogRetentionDays, policies);
+  const notificationWindow = resolveRetentionDays(
+    "notifications",
+    config.notificationRetentionDays,
+    policies,
+  );
+
+  const auditDays =
+    typeof overrides.auditLogRetentionDays === "number"
+      ? overrides.auditLogRetentionDays
+      : auditWindow.days;
+  const notificationDays =
+    typeof overrides.notificationRetentionDays === "number"
+      ? overrides.notificationRetentionDays
+      : notificationWindow.days;
+
   const auditCutoff = new Date();
-  auditCutoff.setDate(auditCutoff.getDate() - config.auditLogRetentionDays);
+  auditCutoff.setDate(auditCutoff.getDate() - auditDays);
 
   const notificationCutoff = new Date();
-  notificationCutoff.setDate(notificationCutoff.getDate() - config.notificationRetentionDays);
+  notificationCutoff.setDate(notificationCutoff.getDate() - notificationDays);
 
   const outcomes: PurgeOutcome[] = [];
-  outcomes.push(
-    await purgeInBatches(supabase, "audit_logs", auditCutoff.toISOString()),
-  );
+  outcomes.push(await archiveAuditLogs(supabase, auditCutoff.toISOString()));
   outcomes.push(
     await purgeInBatches(supabase, "notifications", notificationCutoff.toISOString()),
   );
@@ -146,7 +197,27 @@ export const retentionTask: TaskHandler = async (
     .join(" | ");
 
   logger.info(
-    { outcomes, auditCutoff: auditCutoff.toISOString(), notificationCutoff: notificationCutoff.toISOString() },
+    {
+      outcomes,
+      auditCutoff: auditCutoff.toISOString(),
+      notificationCutoff: notificationCutoff.toISOString(),
+      windows: {
+        auditLogs: {
+          days: auditDays,
+          source:
+            typeof overrides.auditLogRetentionDays === "number" ? "payload" : auditWindow.source,
+          matchingPolicies: auditWindow.matchingPolicies,
+        },
+        notifications: {
+          days: notificationDays,
+          source:
+            typeof overrides.notificationRetentionDays === "number"
+              ? "payload"
+              : notificationWindow.source,
+          matchingPolicies: notificationWindow.matchingPolicies,
+        },
+      },
+    },
     `[retention] ${summary}`,
   );
 

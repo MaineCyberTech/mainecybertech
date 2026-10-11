@@ -29,7 +29,12 @@ jest.mock("../services/audit", () => ({
 import { getSupabaseAdmin } from "../services/supabase";
 
 function mockAuth() {
-  const supabase = { from: jest.fn(), auth: { getUser: jest.fn() }, rpc: jest.fn(), storage: { from: jest.fn() } };
+  const supabase = {
+    from: jest.fn(),
+    auth: { getUser: jest.fn() },
+    rpc: jest.fn().mockResolvedValue({ data: 0, error: null }),
+    storage: { from: jest.fn() },
+  };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
   supabase.auth.getUser.mockResolvedValue({
     data: { user: { id: "user-1", email: "test@example.com" } },
@@ -311,6 +316,56 @@ describe("organizations routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(204);
+    });
+
+    it("archives the org's audit history before deleting (DATA-P2-005)", async () => {
+      const supabase = mockAuth();
+      const auditBuilder = createMockBuilder({ data: null, error: null });
+      const deleteBuilder = createMockBuilder({ data: null, error: null });
+      supabase.from.mockReturnValueOnce(auditBuilder).mockReturnValue(deleteBuilder);
+
+      const res = await request(app)
+        .delete("/api/v1/organizations/org-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(204);
+      expect(supabase.rpc).toHaveBeenCalledWith("archive_org_audit_logs", {
+        p_organization_id: "org-1",
+      });
+      // Archive RPC must complete before the cascade delete fires.
+      expect(supabase.rpc.mock.invocationCallOrder[0]).toBeLessThan(
+        deleteBuilder.delete.mock.invocationCallOrder[0],
+      );
+    });
+
+    it("fails closed when the audit archive fails", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({ data: null, error: null });
+      supabase.from.mockReturnValue(builder);
+      supabase.rpc.mockResolvedValueOnce({
+        data: null,
+        error: { message: "archive unavailable" },
+      });
+
+      const res = await request(app)
+        .delete("/api/v1/organizations/org-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(500);
+      expect(builder.delete).not.toHaveBeenCalled();
+    });
+
+    it("fails closed when audit rows remain after archiving", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({ data: null, error: null, count: 3 });
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .delete("/api/v1/organizations/org-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(409);
+      expect(builder.delete).not.toHaveBeenCalled();
     });
   });
 
