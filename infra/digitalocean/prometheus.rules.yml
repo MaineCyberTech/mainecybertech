@@ -30,6 +30,57 @@ groups:
           summary: "MCT 5xx error rate above 5% ({{ $labels.job }})"
           description: "The 5xx error rate for {{ $labels.job }} has been above 5% for 5 minutes."
 
+      # OBS-P2-009: SLO #2 in docs/SLO.md promises a page at p95 > 2s for 10m;
+      # until now the latency objective was dashboard-only.
+      - alert: MCTHighRequestLatency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(portal_http_request_duration_seconds_bucket[10m]))
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "MCT API p95 latency above 2s"
+          description: "API p95 request latency has been above 2 seconds for 10 minutes (SLO #2). Check the dashboard and recent deploys."
+
+      # OBS-P2-009: an open circuit breaker fails calls fast; the Supabase
+      # breaker guards the primary datastore, so this is user-impacting.
+      - alert: MCTCircuitBreakerOpen
+        expr: portal_circuit_breaker_status == 2
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Circuit breaker {{ $labels.name }} is open"
+          description: "Circuit breaker {{ $labels.name }} has been open for 5 minutes: calls through it are failing fast. Check the dependency health and recent error logs."
+
+      # OBS-P2-009: auth failures are a golden signal for credential stuffing /
+      # brute force and for a broken login path. Ratio AND an absolute floor so
+      # a single typo at low volume cannot alert.
+      - alert: MCTAuthFailureRateHigh
+        expr: |
+          (
+            sum(rate(portal_auth_attempts_total{result="failure"}[10m]))
+            /
+            clamp_min(sum(rate(portal_auth_attempts_total[10m])), 0.0001)
+            > 0.5
+          )
+          and
+          (
+            sum(rate(portal_auth_attempts_total{result="failure"}[10m])) > 0.05
+          )
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "MCT authentication failure ratio above 50%"
+          description: "More than half of authentication attempts have failed for 10 minutes (at least 3 failures/minute). This can be credential stuffing/brute force or a broken login path - review the auth logs."
+
       - alert: Watchdog
         expr: vector(1)
         labels:
@@ -54,6 +105,20 @@ groups:
         annotations:
           summary: "Elevated cross-tenant (impersonation) access volume"
           description: "More than 0.5 cross-tenant access events/second over 10 minutes. Review GET /api/v1/audit/impersonation."
+
+      # IR-P2-002 / OBS-P2-005 / MT-P2-005: companion to MCTImpersonationBurst.
+      # Impersonation is a privileged action and should be rare; this low-volume
+      # rule surfaces a single event (the burst rule only catches sustained
+      # volume). The metric carries no organization label, so a true first-seen
+      # actor->org alert still needs a counter/label change.
+      - alert: MCTImpersonationActivity
+        expr: increase(portal_impersonation_events_total[15m]) > 0
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Cross-tenant (impersonation) access by {{ $labels.actor_role_key }} from {{ $labels.source }}"
+          description: "A cross-tenant access event was recorded in the last 15 minutes (role {{ $labels.actor_role_key }}, source {{ $labels.source }}). Review GET /api/v1/audit/impersonation and confirm the access was expected."
 
       # IR-P1-006: runtime signal for tenant-isolation regressions.
       #
@@ -140,4 +205,124 @@ groups:
         annotations:
           summary: "Module {{ $labels.module }} stopped serving through the RLS-enforcing client"
           description: "Module {{ $labels.module }} previously served tenant queries through the RLS-enforcing client but has produced none for 30 minutes while still handling traffic. It likely dropped out of RLS_READS_ENABLED / RLS_WRITES_ENABLED. Check the allow-lists in the droplet .env."
+
+  - name: mct-delivery-pipeline
+    rules:
+      # IR-P2-003 / OBS-P2-006 / WH-P2-010: the dead-letter counters exist on
+      # both sides (API + worker) but nothing consumed them. Any accumulation is
+      # alertable: a dead letter means a consumer permanently missed an event.
+      - alert: MCTWebhookDeadLettersAccumulating
+        expr: |
+          increase(portal_webhook_dead_letters_total[1h]) > 0
+          or
+          increase(worker_webhook_dead_letters_total[1h]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Webhook deliveries moved to the dead-letter set ({{ $labels.event }})"
+          description: "One or more outbound webhook deliveries for event {{ $labels.event }} exhausted their retries in the last hour. Check the dead-letter store and replay once the receiver is healthy."
+
+      # WH-P2-010: a sustained failure ratio above 50% is a delivery outage,
+      # not a blip; critical so it reaches the on-call receiver.
+      - alert: MCTWebhookDeliveryFailureRateHigh
+        expr: |
+          (
+            sum by (job) (rate(portal_webhook_deliveries_total{status="failed"}[15m]))
+            /
+            clamp_min(sum by (job) (rate(portal_webhook_deliveries_total[15m])), 0.0001)
+            > 0.5
+          )
+          or
+          (
+            sum by (job) (rate(worker_webhook_deliveries_total{status="failed"}[15m]))
+            /
+            clamp_min(sum by (job) (rate(worker_webhook_deliveries_total[15m])), 0.0001)
+            > 0.5
+          )
+        for: 15m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Webhook delivery failure ratio above 50% ({{ $labels.job }})"
+          description: "More than half of outbound webhook deliveries on {{ $labels.job }} have failed for 15 minutes. Consumers are missing events; check the delivery error logs and the receiver endpoints."
+
+      # NOTIF-P1-003: delivery failures were metered but unalerted. SLO #4
+      # (docs/SLO.md) is >= 99% success; 5% over 30m is the actionable version.
+      # Skipped deliveries are excluded from the denominator because in_app
+      # skips are dedup hits, not failures.
+      - alert: MCTNotificationDeliveryFailureRateHigh
+        expr: |
+          (
+            sum by (channel, job) (rate(portal_notification_delivery_total{status="failed"}[30m]))
+            /
+            clamp_min(
+              sum by (channel, job) (rate(portal_notification_delivery_total{status=~"success|failed"}[30m])),
+              0.0001
+            )
+            > 0.05
+          )
+          or
+          (
+            sum by (channel, job) (rate(worker_notification_delivery_total{status="failed"}[30m]))
+            /
+            clamp_min(
+              sum by (channel, job) (rate(worker_notification_delivery_total{status=~"success|failed"}[30m])),
+              0.0001
+            )
+            > 0.05
+          )
+        for: 30m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Notification delivery failures above 5% ({{ $labels.channel }})"
+          description: "More than 5% of {{ $labels.channel }} deliveries on {{ $labels.job }} have failed for 30 minutes. Check SMTP/provider errors; recipients are not being notified."
+
+      # NOTIF-P1-003: a skipped email means SMTP is not configured. The senders
+      # meter it, but nothing alerts, so email notifications silently stop.
+      - alert: MCTNotificationEmailSkipped
+        expr: |
+          increase(portal_notification_delivery_total{channel="email",status="skipped"}[1h]) > 0
+          or
+          increase(worker_notification_delivery_total{channel="email",status="skipped"}[1h]) > 0
+        for: 15m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Notification emails are being skipped"
+          description: "At least one email delivery was skipped in the last hour because SMTP is not configured. Recipients are silently not receiving email notifications - check the SMTP_* environment."
+
+  - name: mct-worker-health
+    rules:
+      # OBS-P2-009 / CHAIN-P2-010: any non-success worker execution is a lost
+      # job; no_handler means the queue delivered a task type this build has no
+      # handler for.
+      - alert: MCTWorkerTaskFailures
+        expr: sum by (task_type) (rate(worker_task_executions_total{status=~"failure|error|no_handler"}[15m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Worker task {{ $labels.task_type }} is failing"
+          description: "Task type {{ $labels.task_type }} has recorded failure/error/no_handler executions for 10 minutes. Check the worker logs for {{ $labels.task_type }}."
+
+      # OBS-P2-009: backlog signal. Deliberately NOT keyed on the
+      # queue="unavailable" series: the worker sets that gauge to 0 and never
+      # clears it (and it is also set when the queue is disabled by config), so
+      # its presence is not an alertable condition.
+      - alert: MCTWorkerQueueBacklog
+        expr: worker_task_queue_depth{queue="mct-tasks"} > 50
+        for: 15m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Worker task queue backlog above 50"
+          description: "More than 50 tasks have been waiting/active in the BullMQ queue for 15 minutes. Tasks are not draining - check worker health, Redis latency and the failing task types."
 

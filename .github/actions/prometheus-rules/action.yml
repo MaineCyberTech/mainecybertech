@@ -1,0 +1,34 @@
+name: Prometheus alert rules
+description: >
+  Validate infra/digitalocean/prometheus.rules.yml with `promtool check rules`
+  and run the rule unit tests in prometheus.rules.test.yml with `promtool test
+  rules`, using the same digest-pinned prom/prometheus image as the droplet
+  compose stack. `check rules` is syntax-only, so `test rules` is what catches
+  a rule that can never fire. Shared by test.yml (PRs) and validate.yml (push
+  deploy gate) so the two definitions cannot drift apart (IR-P2-010 /
+  OBS-P2-012).
+
+runs:
+  using: composite
+  steps:
+    - name: Check and test alert rules
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Digest-pinned to the image in infra/digitalocean/docker-compose.yml.
+        IMAGE="prom/prometheus:v3.5.1@sha256:4b05278adfb2e2781063781edd7ca88cc649ea5270cea1696618886a37eeb298"
+        # The digest makes the content deterministic; the retry keeps a
+        # transient registry error from failing the required test job.
+        for attempt in 1 2 3; do
+          if docker pull "$IMAGE"; then break; fi
+          if [ "$attempt" = 3 ]; then
+            echo "::error::could not pull $IMAGE after 3 attempts"
+            exit 1
+          fi
+          echo "docker pull attempt $attempt failed; retrying in 5s" >&2
+          sleep 5
+        done
+        docker run --rm -v "$PWD/infra/digitalocean:/cfg:ro" --entrypoint /bin/promtool "$IMAGE" \
+          check rules /cfg/prometheus.rules.yml
+        docker run --rm -v "$PWD/infra/digitalocean:/cfg:ro" --entrypoint /bin/promtool "$IMAGE" \
+          test rules /cfg/prometheus.rules.test.yml

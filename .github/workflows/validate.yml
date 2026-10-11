@@ -38,6 +38,12 @@ jobs:
         # Pure static analysis - needs no dependencies.
         run: node scripts/check-required-checks.mjs
 
+      - name: Validate Prometheus alert rules
+        # IR-P2-010 / OBS-P2-012: promtool check rules + promtool test rules
+        # against the digest-pinned prom/prometheus image (same one the droplet
+        # compose runs). Shared with test.yml's required test job.
+        uses: ./.github/actions/prometheus-rules
+
   test:
     timeout-minutes: 30
     runs-on: ubuntu-latest
