@@ -152,6 +152,37 @@ describe("worker insertNotification (NOTIF-P1-001/002)", () => {
   });
 });
 
+describe("worker notification sensitivity filter (NOTIF-P2-005)", () => {
+  it("redacts credential-like content before the row is stored", async () => {
+    const { client, inserts } = fakeSupabase({ preferences: [] });
+    // Assembled at runtime so the repo's diff-based secret scanner does not
+    // flag the fixture itself.
+    const secret = ["AKIA", "IOSFODNN7EXAMPLE"].join("");
+
+    await insertNotification(client, {
+      ...input,
+      body: `Credentials: ${secret} password=hunter2`,
+    });
+
+    const storedBody = String(inserts[0].body);
+    expect(storedBody).not.toContain(secret);
+    expect(storedBody).not.toContain("hunter2");
+    expect(storedBody).toContain("[redacted]");
+  });
+
+  it("derives the dedup key from the sanitized content so retries still dedupe", async () => {
+    const { client, seenKeys } = fakeSupabase({ preferences: [] });
+    const raw = { ...input, body: "api_key=abcdef123456" };
+
+    const first = await insertNotification(client, raw);
+    const second = await insertNotification(client, raw);
+
+    expect(first.inserted).toBe(true);
+    expect(second.deduped).toBe(true);
+    expect(seenKeys.size).toBe(1);
+  });
+});
+
 describe("claimNotificationEmail (NOTIF-P2-004)", () => {
   it("returns true when this run inserted the notification", async () => {
     const { claimIdempotencyKey } = await import("../lib/idempotency");

@@ -178,6 +178,14 @@ Worker (`apps/worker/src/metrics.ts`):
 | `worker_webhook_deliveries_total`        | Counter   | `status`, `event`     |
 | `worker_webhook_dead_letters_total`      | Counter   | `event`               |
 
+`portal_notification_delivery_total` records the API-side email enqueue as
+`status="queued"` — a hand-off, not a delivery (NOTIF-P2-010). The notification
+delivery SLO (#4 in `docs/SLO.md`) is therefore computed from the worker's
+terminal `worker_notification_delivery_total{status=~"success|failed"}`
+outcomes, which carry the real SMTP result; `MCTNotificationDeliveryFailureRateHigh`
+alerts on the same ratio (its API branch still covers inline fallback sends),
+and `skipped` is tracked separately by `MCTNotificationEmailSkipped`.
+
 `worker_queue_connected` is 1 while the worker's BullMQ connections are ready and 0 when either is lost; `MCTWorkerQueueDisconnected` alerts on `== 0` for 5m, and `MCTWorkerQueueBacklogGrowing` alerts on a growing `worker_task_queue_depth` (RES-P2-008) alongside the absolute `MCTWorkerQueueBacklog` rule (OBS-P2-009).
 
 The alert rules in `prometheus.rules.yml` query these metrics: `MCTHighRequestErrorRate` → `portal_http_requests_total{status_code=~"5.."}`; `MCTImpersonationBurst` → `portal_impersonation_events_total`; `MCTTenantScopeRegression` and `MCTRlsEnforcedShareCollapsed` → `portal_rls_bypass_total` / `portal_rls_enforced_total`.

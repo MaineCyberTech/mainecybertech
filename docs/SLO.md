@@ -1,11 +1,11 @@
 # Service Level Objectives (SLOs) and Dashboards
 
-**Owner:** Platform/Engineering lead · **Last reviewed:** 2026-10-03 · **Review cadence:** quarterly
+**Owner:** Platform/Engineering lead · **Last reviewed:** 2026-10-11 · **Review cadence:** quarterly
 
 This document defines what "healthy" means for the MCT platform, so alert
 thresholds and capacity decisions are not ad hoc (`OBS-P2-002`). Metrics come
-from `apps/api/src/lib/metrics.ts` and are scraped by Prometheus
-(`infra/digitalocean/prometheus.yml`).
+from `apps/api/src/lib/metrics.ts` (API) and `apps/worker/src/metrics.ts`
+(worker), and are scraped by Prometheus (`infra/digitalocean/prometheus.yml`).
 
 ## Objectives
 
@@ -14,8 +14,15 @@ from `apps/api/src/lib/metrics.ts` and are scraped by Prometheus
 | 1 | API availability (non-5xx share) | ≥ 99.9% | `sum(rate(portal_http_requests_total{status_code!~"5.."}[30d])) / clamp_min(sum(rate(portal_http_requests_total[30d])), 0.0001)` | `MCTHighRequestErrorRate` (>5% for 5m is the fast-burn page) |
 | 2 | API latency p95 | < 500 ms | `histogram_quantile(0.95, sum by (le) (rate(portal_http_request_duration_seconds_bucket[5m])))` | (dashboard; page at p95 > 2s for 10m) |
 | 3 | Webhook delivery success | ≥ 99% | `sum(rate(portal_webhook_deliveries_total{status="success"}[30d])) / clamp_min(sum(rate(portal_webhook_deliveries_total[30d])), 0.0001)` | webhook backlog runbook |
-| 4 | Notification delivery success | ≥ 99% | `sum(rate(portal_notification_delivery_total{status="success"}[30d])) / clamp_min(sum(rate(portal_notification_delivery_total[30d])), 0.0001)` | dashboard |
+| 4 | Notification delivery success (worker terminal outcomes, per channel) | ≥ 99% | `sum by (channel) (rate(worker_notification_delivery_total{status="success"}[30d])) / clamp_min(sum by (channel) (rate(worker_notification_delivery_total{status=~"success\|failed"}[30d])), 0.0001)` | `MCTNotificationDeliveryFailureRateHigh` (>5% for 30m is the fast-burn page) |
 | 5 | RLS-enforced share (rollout signal) | trend up | `sum(rate(portal_rls_enforced_total[30d])) / clamp_min(sum(rate(portal_rls_enforced_total[30d])) + sum(rate(portal_rls_bypass_total[30d])), 0.0001)` | `MCTRlsEnforcedShareCollapsed` |
+
+> Notification SLO semantics (NOTIF-P2-010): the API records a successful email
+> enqueue as `portal_notification_delivery_total{status="queued"}` — a hand-off,
+> not a delivery — so objective 4 counts only the worker's terminal outcomes
+> (`worker_notification_delivery_total`). `skipped` outcomes (SMTP not
+> configured / channel disabled) are excluded from the ratio and are covered by
+> `MCTNotificationEmailSkipped` instead.
 
 > Gap: worker job success and BullMQ queue depth are not exported as metrics
 > yet, so SLOs for them are not defined here. Adding a worker counter/gauge is a

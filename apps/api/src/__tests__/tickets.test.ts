@@ -25,7 +25,13 @@ jest.mock("../services/audit", () => ({
   logAuditEvent: jest.fn(),
 }));
 
+jest.mock("../lib/notify", () => ({
+  notifyAndEmail: jest.fn(),
+  createNotification: jest.fn(),
+}));
+
 import { getSupabaseAdmin } from "../services/supabase";
+import { notifyAndEmail } from "../lib/notify";
 
 function mockAuth() {
   const supabase = { from: jest.fn(), auth: { getUser: jest.fn() }, rpc: jest.fn() };
@@ -202,6 +208,49 @@ describe("tickets routes", () => {
         });
 
       expect(res.status).toBe(201);
+    });
+
+    it("notifies with an abstract body that omits the comment excerpt (NOTIF-P2-005)", async () => {
+      mockAuth();
+      const supabase = (getSupabaseAdmin as jest.Mock)();
+      const ticket = {
+        id: "00000000-0000-0000-0000-000000000010",
+        organization_id: "00000000-0000-0000-0000-000000000001",
+        title: "Printer offline",
+        created_by: "user-2",
+        assigned_to: null,
+      };
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "tickets") return createMockBuilder({ data: ticket, error: null });
+        if (table === "profiles") {
+          return createMockBuilder({
+            data: [{ id: "user-2", email: "other@example.com" }],
+            error: null,
+          });
+        }
+        return createMockBuilder({ data: { id: "comment-9" }, error: null });
+      });
+
+      const secret = "correct-horse-battery-staple";
+      const res = await request(app)
+        .post("/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments")
+        .set("Authorization", "Bearer token-123")
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          body: `the admin password=${secret} is on the whiteboard`,
+          isInternal: false,
+        });
+
+      expect(res.status).toBe(201);
+      expect(notifyAndEmail).toHaveBeenCalledTimes(1);
+      const call = (notifyAndEmail as jest.Mock).mock.calls[0][0] as {
+        body: string;
+        notificationKey: string;
+      };
+      expect(call.body).not.toContain(secret);
+      expect(call.body).not.toContain("whiteboard");
+      expect(call.body).toContain("Printer offline");
+      expect(call.notificationKey).toBe("ticket-comment-comment-9-user-2");
     });
   });
 

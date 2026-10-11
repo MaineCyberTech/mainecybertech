@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "./logger";
+import { redactSensitiveContent } from "./notification-content";
 import { recordNotificationDelivery, recordNotificationSuppressed } from "./metrics";
 import { claimIdempotencyKey } from "./lib/idempotency";
 
@@ -141,6 +142,11 @@ export async function insertNotification(
     return { inserted: false, deduped: false, suppressed: true };
   }
 
+  // NOTIF-P2-005: filter secrets/PII before the row is stored (and before the
+  // dedup key is derived, so a retried replay still hashes identically).
+  const title = redactSensitiveContent(input.title);
+  const body = redactSensitiveContent(input.body);
+
   const notificationKey =
     input.notificationKey ??
     buildNotificationKey({
@@ -148,8 +154,8 @@ export async function insertNotification(
       module: input.module,
       moduleId: input.moduleId,
       action: input.action,
-      title: input.title,
-      body: input.body,
+      title,
+      body,
     });
 
   try {
@@ -159,8 +165,8 @@ export async function insertNotification(
         {
           user_id: input.userId,
           organization_id: input.organizationId ?? null,
-          title: input.title,
-          body: input.body,
+          title,
+          body,
           module: input.module,
           module_id: input.moduleId ?? null,
           action: input.action,
@@ -172,7 +178,7 @@ export async function insertNotification(
 
     if (error) {
       logger.warn(
-        { error: error.message, userId: input.userId, title: input.title },
+        { error: error.message, userId: input.userId, title },
         "Failed to create in-app notification",
       );
       recordNotificationDelivery("in_app", "failed");
@@ -187,7 +193,7 @@ export async function insertNotification(
       {
         error: error instanceof Error ? error.message : String(error),
         userId: input.userId,
-        title: input.title,
+        title,
         notificationKey,
       },
       "Failed to create in-app notification",

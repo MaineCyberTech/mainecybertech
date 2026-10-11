@@ -341,6 +341,86 @@ describe("billing notification link (BILL-P2-004)", () => {
   });
 });
 
+describe("notification content sensitivity filter (NOTIF-P2-005)", () => {
+  it("redacts credential-like content before storing and emailing", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    // Assembled at runtime so the repo's diff-based secret scanner does not
+    // flag the fixture itself.
+    const secret = ["AKIA", "IOSFODNN7EXAMPLE"].join("");
+    await notifyAndEmail({
+      ...baseOpts,
+      body: `Server credentials in the ticket: ${secret} (password=hunter2)`,
+      email: "user@example.com",
+    });
+
+    const storedBody = String(supabase.inserts[0].body);
+    expect(storedBody).not.toContain(secret);
+    expect(storedBody).not.toContain("hunter2");
+    expect(storedBody).toContain("[redacted]");
+
+    const payload = (enqueueTask as jest.Mock).mock.calls[0][1] as {
+      text: string;
+      html: string;
+    };
+    expect(payload.text).not.toContain(secret);
+    expect(payload.text).not.toContain("hunter2");
+    expect(payload.html).not.toContain(secret);
+    expect(payload.html).not.toContain("hunter2");
+  });
+});
+
+describe("notification delivery metric semantics (NOTIF-P2-010)", () => {
+  const emailMetric = async (status: string) => {
+    const metric = await notificationDeliveryTotal.get();
+    return (
+      metric.values.find(
+        (v) => v.labels.channel === "email" && v.labels.status === status,
+      )?.value ?? 0
+    );
+  };
+
+  it("records a successful enqueue as queued, not as a delivery success", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+    (enqueueTask as jest.Mock).mockResolvedValue(true);
+
+    const queuedBefore = await emailMetric("queued");
+    const successBefore = await emailMetric("success");
+
+    const result = await notifyAndEmail({
+      ...baseOpts,
+      body: `queued-metric-${Date.now()}`,
+      email: "user@example.com",
+    });
+
+    expect(result.emailQueued).toBe(true);
+    expect(await emailMetric("queued")).toBe(queuedBefore + 1);
+    expect(await emailMetric("success")).toBe(successBefore);
+  });
+
+  it("records an inline send outcome as a terminal success", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+    (enqueueTask as jest.Mock).mockResolvedValue(false);
+    (sendEmail as jest.Mock).mockResolvedValue(true);
+
+    const successBefore = await emailMetric("success");
+
+    await notifyAndEmail({
+      ...baseOpts,
+      body: `inline-metric-${Date.now()}`,
+      email: "user@example.com",
+    });
+
+    expect(await emailMetric("success")).toBe(successBefore + 1);
+  });
+});
+
 describe("createNotification dedup key (NOTIF-P1-002)", () => {
   it("sets notification_key on the insert and upserts on conflict", async () => {
     const supabase = fakeSupabase({ preferences: [] });

@@ -388,10 +388,17 @@ router.post("/:id/comments", requirePermission("tickets", "edit"), async (req, r
             userId: profile.id,
             organizationId: ticket.organization_id,
             title: "New Comment on Ticket",
-            body: `${req.authUser!.email} commented on "${ticket.title}": "${parsed.body.slice(0, 100)}${parsed.body.length > 100 ? "..." : ""}"`,
+            // NOTIF-P2-005: the comment excerpt is deliberately NOT included.
+            // Raw comment text can carry credentials/PII; the notification is an
+            // abstract plus the deep link instead. The comment id is the natural
+            // idempotency key, so distinct comments still notify while a retry
+            // of the same comment dedupes. It is namespaced per recipient so
+            // several participants each get their own row.
+            body: `${req.authUser!.email} commented on "${ticket.title}".`,
             module: "tickets",
             moduleId: String(req.params.id),
             action: "comment",
+            notificationKey: `ticket-comment-${String(data.id)}-${profile.id}`,
             email: profile.email ?? undefined,
           });
         }
