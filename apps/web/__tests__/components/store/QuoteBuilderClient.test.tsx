@@ -54,14 +54,45 @@ describe("QuoteBuilderClient [AN-P2-003]", () => {
     fireEvent.change(await screen.findByLabelText(/^Name/), { target: { value: "Test User" } });
     fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: "test@example.com" } });
     fireEvent.change(screen.getByLabelText(/^Phone/), { target: { value: "555-0100" } });
+    fireEvent.click(screen.getByLabelText(/I agree to the/i));
 
     await waitFor(() => expect(screen.getByText("Submit Quote Request")).toBeEnabled());
     fireEvent.click(screen.getByText("Submit Quote Request"));
 
     await waitFor(() => expect(mockSubmitQuote).toHaveBeenCalledTimes(1));
+    expect(mockSubmitQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ consent: true, consentVersion: "1" }),
+    );
     await waitFor(() =>
       expect(mockTrack).toHaveBeenCalledWith("quote_submit", { page: "/store/quote" }),
     );
+  });
+
+  it("keeps submission disabled until the Privacy Policy consent box is checked [PRIV-P2-002]", async () => {
+    const product = products.find((entry) => entry.display);
+    localStorage.setItem(
+      "mct_quote",
+      JSON.stringify([
+        {
+          productId: product!.id,
+          name: product!.name,
+          priceRange: product!.priceRange,
+          riskLevel: product!.riskLevel,
+          purchaseMode: product!.purchaseMode,
+          tags: product!.tags,
+        },
+      ]),
+    );
+
+    render(<QuoteBuilderClient products={products} />);
+
+    fireEvent.change(await screen.findByLabelText(/^Name/), { target: { value: "Test User" } });
+    fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: "test@example.com" } });
+    fireEvent.change(screen.getByLabelText(/^Phone/), { target: { value: "555-0100" } });
+
+    expect(screen.getByText("Submit Quote Request")).toBeDisabled();
+    fireEvent.click(screen.getByLabelText(/I agree to the/i));
+    await waitFor(() => expect(screen.getByText("Submit Quote Request")).toBeEnabled());
   });
 
   it("does not track quote_submit when the API rejects the submission", async () => {
@@ -86,6 +117,7 @@ describe("QuoteBuilderClient [AN-P2-003]", () => {
     fireEvent.change(await screen.findByLabelText(/^Name/), { target: { value: "Test User" } });
     fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: "test@example.com" } });
     fireEvent.change(screen.getByLabelText(/^Phone/), { target: { value: "555-0100" } });
+    fireEvent.click(screen.getByLabelText(/I agree to the/i));
 
     await waitFor(() => expect(screen.getByText("Submit Quote Request")).toBeEnabled());
     fireEvent.click(screen.getByText("Submit Quote Request"));

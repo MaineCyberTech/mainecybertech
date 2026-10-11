@@ -1,3 +1,5 @@
+import { hasAnalyticsConsent } from "../consent";
+
 interface TrackEvent {
   event: string;
   page?: string;
@@ -67,11 +69,16 @@ async function sendEvent(payload: Record<string, unknown>): Promise<void> {
 /**
  * Fire-and-forget storefront event. Kept synchronous for callers: the event
  * is logged immediately and the network send happens in the background.
+ *
+ * PRIV-P2-002: the first-party analytics payload is opt-in, matching the
+ * GA/Tawk.to gate. Without a stored grant the event stays in the local log and
+ * nothing is sent.
  */
 export function track(event: string, data?: Omit<TrackEvent, "event">): void {
   const entry: TrackEvent = { event, ...data };
   eventLog.push(entry);
   if (typeof window === "undefined") return;
+  if (!hasAnalyticsConsent()) return;
   try {
     const payload = {
       ...entry,

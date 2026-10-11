@@ -20,7 +20,7 @@
 | Atlassian | Jira Service Management | Ticket tracking for submitted requests | Requestor name/email, message | US/EU | Atlassian DPA; verify executed copy |
 | Google LLC | Google Analytics | Consent-gated usage analytics | Cookie ids, usage events, IP | Global | Google processing terms; verify executed copy |
 | Tawk.to Inc. | Live chat | Consent-gated visitor chat | Messages, IP, browsing context | US | **To confirm** |
-| ip-api.com | Geolocation | Consent-gated visitor geolocation (HTTPS) | Visitor IP | Global | **To confirm** (free endpoint; no DPA on record — operator decision) |
+| ip-api.com | Geolocation | Consent-gated visitor geolocation (HTTPS; only city/region/country fields requested) | Visitor IP | Global | **To confirm** (free endpoint; no DPA on record — operator decision) |
 | DigitalOcean | Cloud infrastructure | Hosting for API, worker, web, backups | All platform data at rest | US | DigitalOcean DPA; verify executed copy |
 
 Notes:

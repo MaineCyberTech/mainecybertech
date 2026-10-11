@@ -7,20 +7,31 @@ import { logAuditEvent } from "../services/audit";
 import { logger } from "../lib/logger";
 import { httpClients } from "../lib/http-client";
 import { isBotUserAgent, shouldSendVisitorAlert } from "../lib/bot-detection";
+import { consentVersionFrom } from "../lib/consent";
 
 const router: ReturnType<typeof Router> = Router();
 
-// AN-P2-005: HTTPS by default. The ip-api.com free tier is HTTP-only, so
-// operators must opt in to a plaintext provider explicitly (or use a licensed
-// HTTPS endpoint) via GEO_LOOKUP_URL.
+// AN-P2-005 / PRIV-P2-006: HTTPS only. The ip-api.com free tier is HTTP-only,
+// so operators must point GEO_LOOKUP_URL at a licensed/HTTPS endpoint; env
+// validation rejects plaintext URLs.
 const DEFAULT_GEO_LOOKUP_URL = "https://ip-api.com/json/";
+// PRIV-P2-006: only the fields this route persists are requested. The
+// provider's full record (lat/lon, ISP, timezone, ...) is never fetched.
+const GEO_LOOKUP_FIELDS = "status,city,regionName,country";
 
 async function lookupVisitorLocation(ipAddress: string): Promise<string> {
   try {
     const cleanIp = ipAddress.replace("::ffff:", "");
     const baseUrl = getEnv().GEO_LOOKUP_URL ?? DEFAULT_GEO_LOOKUP_URL;
+    // PRIV-P2-006: fail closed on a plaintext endpoint — the visitor IP must
+    // never be sent over HTTP. GEO_LOOKUP_URL is validated as HTTPS at boot;
+    // this also guards direct callers with a hand-built env.
+    if (!baseUrl.startsWith("https://")) {
+      logger.warn("GEO_LOOKUP_URL is not HTTPS — skipping visitor geolocation");
+      return "Unknown";
+    }
     const geoRes = await httpClients.geo.get(
-      `${baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`}${cleanIp}`,
+      `${baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`}${cleanIp}?fields=${GEO_LOOKUP_FIELDS}`,
     );
     const geoData: {
       status: string;
@@ -48,9 +59,11 @@ const submitSchema = z.object({
   urgency: z.string().min(1).max(50),
   message: z.string().min(1).max(5000),
   captchaToken: z.string().min(1).max(10000).optional(),
-  // PRIV-P2-001: the form's consent checkbox is persisted server-side on the
-  // interaction row instead of living only in the browser.
+  // PRIV-P2-001 / PRIV-P2-002: the form's consent checkbox is persisted
+  // server-side on the interaction row instead of living only in the browser,
+  // together with the privacy-policy version the visitor was shown.
   consent: z.boolean().optional(),
+  consentVersion: z.string().min(1).max(64).optional(),
 });
 
 async function verifyCaptcha(token: string): Promise<boolean> {
@@ -94,6 +107,9 @@ router.get("/init", async (req, res, next) => {
     // visitor has explicitly opted in. The web app appends `consent=granted`
     // once a stored choice exists.
     const consentGranted = req.query.consent === "granted";
+    // PRIV-P2-002: record which privacy-policy version the visitor consented
+    // to, alongside the timestamp (default-deny when no version is supplied).
+    const consentVersion = consentGranted ? consentVersionFrom(req.query.consentVersion) : null;
     const location = consentGranted && !isBot ? await lookupVisitorLocation(ipAddress) : "Unknown";
 
     const { error } = await supabase.from("public_interactions").insert({
@@ -105,6 +121,7 @@ router.get("/init", async (req, res, next) => {
       referrer,
       is_bot: isBot,
       consent_at: consentGranted ? new Date().toISOString() : null,
+      consent_version: consentVersion,
     });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -157,6 +174,13 @@ router.post("/submit", async (req, res, next) => {
     const parsed = submitSchema.parse(req.body);
     const env = getEnv();
 
+    // PRIV-P2-002: the lead carries PII, so consent is required server-side
+    // (previously a client could omit the flag and the submission was stored
+    // anyway). The decision and the policy version are persisted below.
+    if (parsed.consent !== true) {
+      throw new AppError("CONSENT_REQUIRED", "Consent to the Privacy Policy is required.", 400);
+    }
+
     // SEC-P2-002: Turnstile is mandatory in production (env validation refuses
     // to boot without TURNSTILE_SECRET_KEY). When configured anywhere, a
     // verified token is required. Previously the check was skipped whenever the
@@ -183,19 +207,15 @@ router.post("/submit", async (req, res, next) => {
       throw new AppError("NOT_FOUND", "Session expired. Please refresh the page.", 404);
     }
 
-    // PRIV-P2-001 / AN-P2-005: the row is created before consent, so IP and
-    // user-agent are captured here — at submit time — only when the visitor
-    // has consented. The consent decision itself is persisted server-side.
-    const consentGranted = parsed.consent === true;
+    // PRIV-P2-001 / AN-P2-005 / PRIV-P2-002: consent is required above, so IP
+    // and user-agent are captured here at submit time, and the consent record
+    // (timestamp + policy version) is persisted server-side.
     const submittedAt = new Date().toISOString();
-    const effectiveIp =
-      record.ip_address ?? (consentGranted ? req.ip || req.socket.remoteAddress || null : null);
+    const effectiveIp = record.ip_address ?? (req.ip || req.socket.remoteAddress || null);
     const effectiveUserAgent =
-      record.user_agent ??
-      (consentGranted ? (req.headers["user-agent"] as string) || null : null);
-    const consentAt = consentGranted
-      ? (record.consent_at ?? submittedAt)
-      : (record.consent_at ?? null);
+      record.user_agent ?? ((req.headers["user-agent"] as string) || null);
+    const consentAt = record.consent_at ?? submittedAt;
+    const consentVersion = record.consent_version ?? consentVersionFrom(parsed.consentVersion);
 
     const { error: updateError } = await supabase
       .from("public_interactions")
@@ -211,6 +231,7 @@ router.post("/submit", async (req, res, next) => {
         client_message: parsed.message,
         submitted_at: submittedAt,
         consent_at: consentAt,
+        consent_version: consentVersion,
         ip_address: effectiveIp,
         user_agent: effectiveUserAgent,
       })

@@ -98,6 +98,7 @@ const validQuote = {
   phone: "207-555-0100",
   notes: "We need help",
   items: [{ productId: "password-security-checkup", name: "Password Security Checkup" }],
+  consent: true,
 };
 
 describe("store quote submission wiring", () => {
@@ -113,8 +114,14 @@ describe("store quote submission wiring", () => {
       name: "Jane Buyer",
       email: "jane@example.com",
       phone: "207-555-0100",
+      consent_at: expect.any(String),
+      consent_version: "1",
     });
-    expect(inserts.store_quote_requests).toMatchObject({ status: "submitted" });
+    expect(inserts.store_quote_requests).toMatchObject({
+      status: "submitted",
+      consent_at: expect.any(String),
+      consent_version: "1",
+    });
     expect(inserts.store_quote_requests.customer).toMatchObject({ email: "jane@example.com" });
     expect(inserts.store_leads).toMatchObject({
       status: "new",
@@ -124,6 +131,30 @@ describe("store quote submission wiring", () => {
       follow_up_due_at: null,
     });
     expect(inserts.store_leads.score_breakdown).toEqual([]);
+  });
+
+  it("records the client-supplied policy version when present [PRIV-P2-002]", async () => {
+    const { inserts } = setup();
+
+    const res = await request(app)
+      .post("/api/v1/store/quotes")
+      .send({ ...validQuote, consentVersion: "2" });
+
+    expect(res.status).toBe(201);
+    expect(inserts.store_quotes.consent_version).toBe("2");
+    expect(inserts.store_quote_requests.consent_version).toBe("2");
+  });
+
+  it("rejects a quote without consent server-side [PRIV-P2-002]", async () => {
+    const { from } = setup();
+
+    const res = await request(app)
+      .post("/api/v1/store/quotes")
+      .send({ ...validQuote, consent: false });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("CONSENT_REQUIRED");
+    expect(from).not.toHaveBeenCalled();
   });
 
   it("scores the lead and schedules follow-up for high-intent quotes", async () => {

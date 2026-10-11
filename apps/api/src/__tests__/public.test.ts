@@ -123,6 +123,7 @@ describe("public routes", () => {
       employees: "11-50",
       urgency: "Medium - Planning Phase",
       message: "Looking for managed IT services.",
+      consent: true,
     });
 
     expect(res.status).toBe(200);
@@ -141,6 +142,7 @@ describe("public routes", () => {
       employees: "11-50",
       urgency: "Medium - Planning Phase",
       message: "Looking for managed IT services.",
+      consent: true,
     });
 
     expect(res.status).toBe(400);
@@ -163,6 +165,7 @@ describe("public routes", () => {
         employees: "11-50",
         urgency: "Medium - Planning Phase",
         message: "Looking for managed IT services.",
+        consent: true,
         captchaToken: "unverifiable-token",
       });
 
@@ -182,6 +185,7 @@ describe("public routes", () => {
       employees: "11-50",
       urgency: "Medium - Planning Phase",
       message: "Looking for managed IT services.",
+      consent: true,
     });
 
     expect(res.status).toBe(400);
@@ -218,6 +222,7 @@ describe("public routes", () => {
       employees: "11-50",
       urgency: "Medium - Planning Phase",
       message: "Looking for managed IT services.",
+      consent: true,
     });
 
     expect(res.status).toBe(404);
@@ -306,6 +311,7 @@ describe("public routes", () => {
         user_agent: null,
         location: "Unknown",
         consent_at: null,
+        consent_version: null,
       }),
     );
   });
@@ -327,12 +333,49 @@ describe("public routes", () => {
       .set("User-Agent", REAL_BROWSER_UA);
 
     expect(res.status).toBe(200);
-    expect(geoGet).toHaveBeenCalledWith(expect.stringMatching(/^https:\/\/ip-api\.com\/json\/.+/));
+    // PRIV-P2-006: HTTPS endpoint, and only the persisted fields are requested.
+    expect(geoGet).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^https:\/\/ip-api\.com\/json\/[^?]+\?fields=status,city,regionName,country$/,
+      ),
+    );
     expect(builder.insert).toHaveBeenCalledWith(
       expect.objectContaining({
         location: "Portland, Maine, US",
         consent_at: expect.any(String),
+        consent_version: "1",
       }),
+    );
+  });
+
+  it("GET /init?consent=granted&consentVersion=2 records the policy version [PRIV-P2-002]", async () => {
+    geoGet.mockResolvedValueOnce({ json: async () => ({ status: "fail" }) });
+    const builder = createMockBuilder({ data: null, error: null } as MockResult);
+    supabase.from.mockReturnValue(builder);
+
+    const res = await request(app)
+      .get("/api/v1/public/init?consent=granted&consentVersion=2")
+      .set("User-Agent", REAL_BROWSER_UA);
+
+    expect(res.status).toBe(200);
+    expect(builder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ consent_version: "2" }),
+    );
+  });
+
+  it("GET /init?consent=granted refuses a plaintext GEO_LOOKUP_URL [PRIV-P2-006]", async () => {
+    getEnvMock.mockReturnValue({ ...mockTestEnv, GEO_LOOKUP_URL: "http://geo.example/json/" });
+    const builder = createMockBuilder({ data: null, error: null } as MockResult);
+    supabase.from.mockReturnValue(builder);
+
+    const res = await request(app)
+      .get("/api/v1/public/init?consent=granted")
+      .set("User-Agent", REAL_BROWSER_UA);
+
+    expect(res.status).toBe(200);
+    expect(geoGet).not.toHaveBeenCalled();
+    expect(builder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ location: "Unknown", ip_address: expect.any(String) }),
     );
   });
 
@@ -392,36 +435,18 @@ describe("public routes", () => {
     expect(updateBuilder.update).toHaveBeenCalledWith(
       expect.objectContaining({
         consent_at: expect.any(String),
+        consent_version: "1",
         ip_address: expect.any(String),
         user_agent: expect.any(String),
       }),
     );
   });
 
-  it("POST /submit without consent leaves consent_at and IP unset [PRIV-P2-001]", async () => {
-    const trackingId = crypto.randomUUID();
-    const updateBuilder = createMockBuilder({ data: null, error: null } as MockResult);
-    supabase.from
-      .mockReturnValueOnce(
-        createMockBuilder({
-          data: [
-            {
-              id: trackingId,
-              location: "Unknown",
-              platform: "Windows",
-              ip_address: null,
-              referrer: "Direct",
-              user_agent: null,
-            },
-          ],
-          error: null,
-        } as MockResult),
-      )
-      .mockReturnValueOnce(updateBuilder)
-      .mockReturnValue(createMockBuilder({ data: null, error: null } as MockResult));
+  it("POST /submit without consent is rejected server-side [PRIV-P2-002]", async () => {
+    supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null } as MockResult));
 
     const res = await request(app).post("/api/v1/public/submit").send({
-      trackingId,
+      trackingId: crypto.randomUUID(),
       company: "Test Corp",
       name: "John Doe",
       email: "john@test.com",
@@ -432,9 +457,8 @@ describe("public routes", () => {
       message: "Looking for managed IT services.",
     });
 
-    expect(res.status).toBe(200);
-    expect(updateBuilder.update).toHaveBeenCalledWith(
-      expect.objectContaining({ consent_at: null, ip_address: null, user_agent: null }),
-    );
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("CONSENT_REQUIRED");
+    expect(supabase.from).not.toHaveBeenCalled();
   });
 });
