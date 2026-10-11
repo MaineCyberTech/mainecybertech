@@ -170,7 +170,7 @@ const tickets = await client.tickets.list({ organizationId: "..." });
 pnpm test                    # All packages
 pnpm --filter=api test       # Single package
 pnpm --filter=web test:watch # Watch mode
-pnpm e2e                     # Playwright E2E (chromium only)
+pnpm e2e                     # Playwright E2E (chromium + mobile Chrome/Safari)
 ```
 
 ### Mock Builder (API tests)

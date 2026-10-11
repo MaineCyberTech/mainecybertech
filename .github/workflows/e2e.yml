@@ -62,7 +62,9 @@ jobs:
             ${{ runner.os }}-playwright-
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium
+        # mobile-safari runs WebKit (MOB-P2-003); --with-deps provisions its
+        # system libraries on the runner.
+        run: pnpm exec playwright install --with-deps chromium webkit
 
       - name: Install Supabase CLI
         # Pinned and installed from npm rather than `supabase/setup-cli` with

@@ -151,7 +151,7 @@ pnpm e2e                     # Playwright E2E
 | API SDK modules           | 60    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
 | Worker task files         | 13    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319   | Admin 203, Portal 86, Public 29, `forbidden` 1                                                                                                                         |
-| Web components            | 106   | `apps/web/components/`                                                                                                                                                 |
+| Web components            | 107   | `apps/web/components/`                                                                                                                                                 |
 | SQL migrations            | 136   | `supabase/migrations/` (latest: 5302438 public_interactions_consent)                                                                                              |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 21    | `.github/workflows/`                                                                                                                                                   |

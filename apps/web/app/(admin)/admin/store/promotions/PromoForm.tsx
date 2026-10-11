@@ -67,7 +67,7 @@ export default function PromoForm({
             onKeyDown={(e) => {
               if (e.key === "Escape") setOpen(false);
             }}
-            className="relative z-10 w-full max-w-lg rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl"
+            className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl"
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 id="promo-form-title" className="text-lg font-bold text-slate-50">
