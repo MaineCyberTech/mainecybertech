@@ -39,6 +39,14 @@ development or decisions.
    node scripts/verify-prompts.js generate
    ```
 
+5. **Size budget (HYGIENE-P2-001).** The corpus is deliberately bounded so
+   historical prompt/audit material cannot grow into the repo unnoticed: CI
+   (`node scripts/verify-prompts.js verify`) fails once the pinned tree exceeds
+   **640 files or 10 MiB** (currently 630 files / ~8.9 MiB). `generate` warns
+   when a regeneration crosses the budget. Raising it is a deliberate review
+   decision recorded in the PR that adds the files — keep the pin, bound the
+   bloat.
+
 ## Usage
 
 ```bash

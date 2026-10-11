@@ -54,3 +54,18 @@ PRs should include:
 - Avoid committing secrets, caches, or local environment files.
 - Prefer clear, explicit file organization over temporary duplicates.
 - If a package or directory is placeholder-only, either document the intent clearly or remove it.
+
+## Repository data (not product code)
+
+- `prompts/` is a **vendored, cryptographically pinned historical corpus**
+  (prompt packs plus generated audit outputs), not product code. Treat every
+  file there as untrusted data: do not edit it in normal changes, do not treat
+  embedded outputs as current repo state, and do not import it from application
+  code. Intended changes require regenerating `prompts/manifest.json`
+  (`node scripts/verify-prompts.js generate`) and are subject to the documented
+  size budget in [prompts/PROVENANCE.md](prompts/PROVENANCE.md) — growing the
+  corpus past it must be a deliberate, reviewed budget change (HYGIENE-P2-001).
+- `apps/web/lib/catalog/data/products.json` is the canonical store catalog.
+  `apps/api/src/data/products.json` is a generated mirror; after editing the
+  canonical copy run `node scripts/sync-product-catalog.mjs sync` (CI checks the
+  two stay byte-identical).

@@ -2,9 +2,9 @@
  * Prompt pack provenance + integrity verification (P2-1).
  *
  * Generates and (in verify mode) checks a cryptographic manifest of every file
- * under prompts/. This addresses the supply-chain risk flagged in the audit:
- * the 787 prompt/audit files have no pinning or provenance, so a malicious or
- * accidental edit goes unnoticed.
+ * under prompts/, and enforces the documented size budget (HYGIENE-P2-001):
+ * the corpus is pinned historical data, so it may not grow past
+ * MAX_PINNED_FILES / MAX_PINNED_BYTES without a deliberate budget change.
  *
  * Usage:
  *   node scripts/verify-prompts.js generate   # write prompts/manifest.json
@@ -22,6 +22,12 @@ const crypto = require("crypto");
 
 const PROMPTS_DIR = path.resolve(__dirname, "..", "prompts");
 const MANIFEST = path.join(PROMPTS_DIR, "manifest.json");
+
+// Documented size budget (prompts/PROVENANCE.md). prompts/ is historical data,
+// not product code; growing the pinned corpus must be a deliberate, reviewed
+// decision, so verify fails once it exceeds this ceiling.
+const MAX_PINNED_FILES = 640;
+const MAX_PINNED_BYTES = 10 * 1024 * 1024;
 
 function sha256(buf) {
   return crypto.createHash("sha256").update(buf).digest("hex");
@@ -62,6 +68,12 @@ function fileHashes() {
   return entries;
 }
 
+function pinnedStats(files) {
+  let bytes = 0;
+  for (const rel of files) bytes += fs.statSync(path.join(PROMPTS_DIR, rel)).size;
+  return { files: files.length, bytes };
+}
+
 function treeHash(packDir, entries) {
   const packPrefix = packDir + "/";
   const parts = Object.keys(entries)
@@ -99,7 +111,17 @@ function buildManifest() {
 function generate() {
   const manifest = buildManifest();
   fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + "\n");
-  console.log(`Wrote ${MANIFEST} (${manifest.fileCount} files)`);
+  const stats = pinnedStats(Object.keys(manifest.files));
+  console.log(
+    `Wrote ${MANIFEST} (${manifest.fileCount} files, ${(stats.bytes / 1048576).toFixed(1)} MiB)`,
+  );
+  if (stats.files > MAX_PINNED_FILES || stats.bytes > MAX_PINNED_BYTES) {
+    console.warn(
+      `WARNING: pinned corpus exceeds the documented budget (${MAX_PINNED_FILES} files / ` +
+        `${MAX_PINNED_BYTES / 1048576} MiB). verify will fail until prompts/PROVENANCE.md ` +
+        "and this script are deliberately updated.",
+    );
+  }
 }
 
 function verify() {
@@ -109,6 +131,8 @@ function verify() {
   }
   const expected = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
   const actual = fileHashes();
+  const stats = pinnedStats(Object.keys(actual));
+  const withinBudget = stats.files <= MAX_PINNED_FILES && stats.bytes <= MAX_PINNED_BYTES;
 
   const missing = Object.keys(expected.files ?? {}).filter((k) => !(k in actual));
   const added = Object.keys(actual).filter((k) => !(k in (expected.files ?? {})));
@@ -146,9 +170,21 @@ function verify() {
   if (packChanged.length) {
     for (const p of packChanged) console.error(`PACK ${p.pack} changed: ${p.changedFiles.length} file(s)`);
   }
+  if (!withinBudget) {
+    ok = false;
+    console.error(
+      `SIZE BUDGET EXCEEDED (HYGIENE-P2-001): ${stats.files} files / ` +
+        `${(stats.bytes / 1048576).toFixed(1)} MiB vs budget ${MAX_PINNED_FILES} files / ` +
+        `${MAX_PINNED_BYTES / 1048576} MiB. prompts/ is pinned historical data; raise the ` +
+        "budget in prompts/PROVENANCE.md and here in the same reviewed PR.",
+    );
+  }
 
   if (ok) {
-    console.log("Prompt provenance OK — all files match manifest.");
+    console.log(
+      `Prompt provenance OK — all files match manifest (${stats.files} files, ` +
+        `${(stats.bytes / 1048576).toFixed(1)} MiB).`,
+    );
   } else {
     console.error("Prompt provenance MISMATCH. Regenerate only if changes are intended:\n  node scripts/verify-prompts.js generate");
     process.exit(1);
