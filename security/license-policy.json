@@ -54,7 +54,8 @@
     "OSL-3.0",
     "RPL-1.5"
   ],
-  "comment_exceptions": "Weak-copyleft / non-OSI licenses already present in the resolved tree. Each entry is an explicit, reviewed acceptance, not a blanket allowance; the gate stays silent on these exact strings only.",
+  "comment_exceptions": "Weak-copyleft / non-OSI licenses already present in the resolved tree. Each entry is an explicit, reviewed acceptance, not a blanket allowance: scripts/license-gate.mjs matches on (license, package) and accepts only the packages listed here (a different package with the same license still fails, and UNKNOWN fails unless its package is named).",
+  "comment_expires": "Every entry MUST carry an `expires` date (YYYY-MM-DD). The gate treats a missing, malformed, or past date as expired: the exception no longer accepts anything and each package relying on it becomes a violation, so an accepted risk cannot outlive its review (SBOM-P2-010).",
   "exceptions": [
     {
       "license": "MPL-2.0",

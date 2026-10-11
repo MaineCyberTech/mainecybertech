@@ -1,0 +1,6 @@
+{
+  "MIT": [{ "name": "mit-pkg", "versions": ["1.0.0"] }],
+  "MPL-2.0": [{ "name": "scoped-pkg", "versions": ["2.0.0"] }],
+  "MIT AND MPL-2.0": [{ "name": "scoped-pkg", "versions": ["2.0.0"] }],
+  "UNKNOWN": [{ "name": "unknown-ok", "versions": ["3.0.0"] }]
+}

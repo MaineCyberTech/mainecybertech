@@ -27,7 +27,12 @@ the dev toolchain was invisible to CI.)
 ### Allowlist
 
 Known, genuinely unpatchable findings can be recorded in the policy `allowlist`
-with a reason and an expiry. They never block but are always printed.
+with a reason and an expiry. They never block while the entry is in date, but
+they are always printed. The expiry is enforced: a missing or malformed date, or
+a date before today, means the entry stops suppressing the finding and is itself
+reported as a policy violation (`LAPSED-ALLOWLIST`), so an accepted risk cannot
+silently outlive its review (SBOM-P2-010). Renewing means re-reviewing the
+advisory and moving the date forward in the same PR.
 
 | Advisory | Package | Scope | Reason |
 | --- | --- | --- | --- |
@@ -65,6 +70,12 @@ Governance:
 - Security updates should be triaged promptly; the audit noted a large backlog.
   When a Dependabot PR changes the resolved tree, the audit and license gates
   re-run automatically.
+- Advisories published between PRs/deploys are surfaced by the weekly
+  `dependency-rescan.yml` workflow (Mondays 06:00 UTC): it re-runs
+  `scripts/audit-gate.mjs --report` over the resolved tree plus a Trivy
+  filesystem scan, and uploads the reports as the `dependency-rescan` artifact.
+  It is report-only by design (SBOM-P2-012) — triage the artifact and open a
+  fix/Dependabot PR when a finding would block under the real gate.
 - `onlyBuiltDependencies` (root `package.json`) restricts postinstall scripts to
   an allowlist (`@sentry/cli`). Adding an entry requires review.
 

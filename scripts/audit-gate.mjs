@@ -13,8 +13,10 @@
  *   - any HIGH+ finding in production dependencies  -> block
  *   - everything else                                -> report only
  *
- * Known, reviewed exceptions live in the policy allowlist and never block, but
- * are printed so they stay visible (and should carry an expiry).
+ * Known, reviewed exceptions live in the policy allowlist. Each entry carries
+ * an `expires` date and only suppresses while that date is valid: a lapsed or
+ * date-less entry stops suppressing and is itself a violation, so an accepted
+ * risk cannot outlive its review (SBOM-P2-010).
  *
  * Usage:
  *   node scripts/audit-gate.mjs            # enforce + report
@@ -24,15 +26,13 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { evaluateAudit, rank } from "./lib/policy-gates.mjs";
+
 const ROOT = resolve(import.meta.dirname, "..");
 const POLICY = JSON.parse(
   readFileSync(resolve(ROOT, "security/dependency-audit-policy.json"), "utf8"),
 );
 const REPORT_ONLY = process.argv.includes("--report");
-
-const RANK = { info: 0, low: 1, moderate: 2, high: 3, critical: 4 };
-const rank = (severity) => RANK[String(severity).toLowerCase()] ?? 0;
-const atLeast = (severity, threshold) => rank(severity) >= rank(threshold);
 
 /** Run `pnpm audit --json`; pnpm exits non-zero when findings exist. */
 function audit(args) {
@@ -69,13 +69,6 @@ function index(advisories) {
   return map;
 }
 
-const { blockAtOrAboveProd, blockAtOrAboveAnyScope, reportDevAtOrAbove } =
-  POLICY.severityPolicy;
-
-const allowlist = new Map(
-  (POLICY.allowlist ?? []).map((entry) => [entry.id, entry]),
-);
-
 const full = audit([]);
 const prod = audit(["--prod"]);
 const prodIds = new Set(index(prod).keys());
@@ -85,82 +78,86 @@ function scopeOf(advisory) {
   return prodIds.has(id) ? "prod" : "dev";
 }
 
-const findings = [];
+const advisories = [];
 for (const advisory of full) {
   const id = String(advisory.github_advisory_id ?? advisory.id);
-  const severity = String(advisory.severity).toLowerCase();
-  const scope = scopeOf(advisory);
-  const allowed = allowlist.get(id);
-  findings.push({
+  advisories.push({
     id,
-    severity,
-    scope,
+    severity: String(advisory.severity).toLowerCase(),
+    scope: scopeOf(advisory),
     module: advisory.module_name,
     vulnerable: advisory.vulnerable_versions,
     patched: advisory.patched_versions,
-    allowed,
   });
 }
 
-findings.sort(
-  (a, b) =>
-    rank(b.severity) - rank(a.severity) || a.module.localeCompare(b.module),
-);
+advisories.sort((a, b) => rank(b.severity) - rank(a.severity) || a.module.localeCompare(b.module));
 
-const violations = [];
-for (const finding of findings) {
-  if (finding.allowed) continue;
-  if (atLeast(finding.severity, blockAtOrAboveAnyScope)) {
-    violations.push(finding);
-  } else if (finding.scope === "prod" && atLeast(finding.severity, blockAtOrAboveProd)) {
-    violations.push(finding);
-  }
-}
+const { findings, violations, allowlisted, reportedDev, expiredExceptions } = evaluateAudit(
+  advisories,
+  POLICY,
+);
 
 // Human-readable report — always printed so dev-tree advisories are visible.
 console.log("Dependency audit (all scopes)");
 console.log(`  total findings: ${findings.length}`);
 for (const finding of findings) {
-  const tag = finding.allowed
-    ? "ALLOWLISTED"
-    : violations.includes(finding)
-      ? "BLOCKING"
-      : "reported";
+  const tag = finding.lapsedAllowlist
+    ? "LAPSED-ALLOWLIST"
+    : finding.allowlist
+      ? "ALLOWLISTED"
+      : violations.includes(finding)
+        ? "BLOCKING"
+        : "reported";
   console.log(
     `  [${tag}] ${finding.severity.toUpperCase()} ${finding.scope} ` +
       `${finding.module}@${finding.vulnerable} -> ${finding.patched} (${finding.id})`,
   );
 }
 
-const allowlisted = findings.filter((f) => f.allowed);
 if (allowlisted.length) {
-  console.log("\nAllowlisted exceptions:");
+  console.log("\nAllowlisted exceptions (unexpired):");
   for (const finding of allowlisted) {
     console.log(
-      `  ${finding.id} ${finding.module} (${finding.scope}, ${finding.severity}) — ${finding.allowed.reason}`,
+      `  ${finding.id} ${finding.module} (${finding.scope}, ${finding.severity}) ` +
+        `— expires ${finding.allowlist.expires}; ${finding.allowlist.reason}`,
     );
   }
 }
 
-const reportedDev = findings.filter(
-  (f) =>
-    !f.allowed &&
-    !violations.includes(f) &&
-    f.scope === "dev" &&
-    atLeast(f.severity, reportDevAtOrAbove),
-);
+if (expiredExceptions.length) {
+  console.log(
+    `\n::warning::${expiredExceptions.length} allowlist exception(s) past their ` +
+      "`expires` date no longer suppress (renew or remove them):",
+  );
+  for (const exception of expiredExceptions) {
+    console.log(
+      `  ${exception.id} ${exception.module} (${exception.scope}, ${exception.severity}) ` +
+        `— ${exception.expiryReason}`,
+    );
+  }
+}
+
 if (reportedDev.length) {
   console.log(
     `\n::warning::${reportedDev.length} dev-tree advisory(ies) reported (non-blocking): ` +
-      reportedDev.map((f) => `${f.severity} ${f.module}`).join(", "),
+      reportedDev.map((finding) => `${finding.severity} ${finding.module}`).join(", "),
   );
 }
 
 if (violations.length && !REPORT_ONLY) {
+  const lapsed = violations.filter((finding) => finding.lapsedAllowlist).length;
   console.error(
     `\nFAIL: ${violations.length} dependency finding(s) violate the audit policy ` +
-      `(block CRITICAL any scope, block ${blockAtOrAboveProd.toUpperCase()}+ prod).`,
+      `(block CRITICAL any scope, block ${String(POLICY.severityPolicy.blockAtOrAboveProd).toUpperCase()}+ prod).`,
   );
+  if (lapsed) {
+    console.error(
+      `${lapsed} of them rely on an allowlist entry whose \`expires\` date has passed ` +
+        "(or is missing); renew the review in security/dependency-audit-policy.json " +
+        "or fix/remove the dependency.",
+    );
+  }
   process.exit(1);
 }
 

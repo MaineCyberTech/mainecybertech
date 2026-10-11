@@ -18,7 +18,8 @@ runs:
 
     - name: License policy gate
       # SBOM-P1-001: allowlist + documented exceptions from
-      # security/license-policy.json over the full resolved tree.
+      # security/license-policy.json over the full resolved tree. Exceptions
+      # are matched on (license, package) and must be unexpired (SBOM-P2-009/010).
       # Uses scripts/collect-licenses.mjs, NOT `pnpm licenses list --json`,
       # which exits 1 on pnpm 10.34.x and writes an error document to stdout
       # (ERR_PNPM_MISSING_PACKAGE_INDEX_FILE).
@@ -26,6 +27,13 @@ runs:
       run: |
         node scripts/collect-licenses.mjs --out licenses.json
         node scripts/license-gate.mjs licenses.json
+
+    - name: Self-test the policy gates (SBOM-P2-009/010)
+      # Fixture-driven: proves exception package-scoping, UNKNOWN fail-closed
+      # and `expires` enforcement actually work. Without this a regression in
+      # either gate would still print PASS.
+      shell: bash
+      run: node scripts/ci/check-supply-chain-gates.mjs
 
     - name: Ensure generated license/SBOM artifacts stay untracked
       # HYG-P3-002 / INV-P2-001: `licenses.json` and `sbom.cdx.json` are

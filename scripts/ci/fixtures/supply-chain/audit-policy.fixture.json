@@ -1,0 +1,26 @@
+{
+  "comment": "Fixture for scripts/ci/check-supply-chain-gates.mjs (SBOM-P2-010). Never used by the real gates.",
+  "severityPolicy": {
+    "blockAtOrAboveProd": "high",
+    "blockAtOrAboveAnyScope": "critical",
+    "reportDevAtOrAbove": "moderate"
+  },
+  "allowlist": [
+    {
+      "id": "GHSA-fixture-lapsed",
+      "package": "fixture-lapsed-pkg",
+      "severity": "low",
+      "scope": "dev",
+      "reason": "fixture: allowlist entry whose review date has passed",
+      "expires": "2020-01-01"
+    },
+    {
+      "id": "GHSA-fixture-valid",
+      "package": "fixture-valid-pkg",
+      "severity": "low",
+      "scope": "dev",
+      "reason": "fixture: allowlist entry still in date",
+      "expires": "2999-01-01"
+    }
+  ]
+}
