@@ -31,7 +31,7 @@ function findMigration(prefix: string): string {
 }
 
 describe("module updated_at trigger migration (DATA-P2-009)", () => {
-  const sql = findMigration("5302441");
+  const sql = findMigration("5302443");
 
   it("is wrapped in an explicit transaction", () => {
     expect(sql).toMatch(/^\s*begin\s*;/im);

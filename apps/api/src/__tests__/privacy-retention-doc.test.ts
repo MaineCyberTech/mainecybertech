@@ -33,7 +33,7 @@ const RETENTION_TASK = path.join(
 describe("contact-form retention policy alignment (PRIV-P2-003)", () => {
   it("publishes the same retention window the worker enforces", () => {
     const task = fs.readFileSync(RETENTION_TASK, "utf8");
-    const match = task.match(/const RETENTION_DAYS = (\d+)/);
+    const match = task.match(/const (?:DEFAULT_)?RETENTION_DAYS = (\d+)/);
     if (!match) {
       throw new Error(`RETENTION_DAYS not found in ${RETENTION_TASK}`);
     }
