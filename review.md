@@ -154,9 +154,9 @@ pnpm e2e                     # Playwright E2E
 | Web components            | 102   | `apps/web/components/`                                                                                                                                                 |
 | SQL migrations            | 135   | `supabase/migrations/` (latest: 5302437 protect_is_super_admin)                                                                                              |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                 |
-| GitHub Actions workflows  | 20    | `.github/workflows/`                                                                                                                                                   |
+| GitHub Actions workflows  | 21    | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 632   | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
-| Build/dev/utility scripts | 83    | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
+| Build/dev/utility scripts | 84    | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
 
 ## Database Types (2026-09-21)
 
@@ -282,7 +282,7 @@ SENTRY_DSN=
 
 ## CI/CD
 
-**20 GitHub Actions workflows** in `.github/workflows/`:
+**21 GitHub Actions workflows** in `.github/workflows/`:
 
 | Workflow                | Trigger            | Purpose                                                                                     |
 | ----------------------- | ------------------ | ------------------------------------------------------------------------------------------- |
@@ -306,6 +306,7 @@ SENTRY_DSN=
 | wireguard-endpoint.yml  | dispatch           | DO cloud-firewall management for the lab WireGuard endpoint (list / allow UDP)              |
 | dependency-review.yml   | pull_request       | Block PRs introducing vulnerable dependencies                                               |
 | sbom.yml                | push/PR/weekly     | CycloneDX SBOM artifact (`scripts/generate-sbom.mjs`)                                       |
+| alert-path-exercise.yml | schedule/manual    | Synthetic critical alert + ntfy check; dead-man's-switch drill (non-blocking, OBS-P2-014)   |
 
 **Deploy pipeline:** `setup` → (`build api/worker/web` ∥ `validate`) → (`e2e-gate` + `migrate-gate`, **prod-only**) → `deploy` via SSH (Caddy auto-restarts).
 
