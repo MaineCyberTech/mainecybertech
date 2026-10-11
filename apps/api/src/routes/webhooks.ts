@@ -12,6 +12,12 @@ import {
   rawBodyBuffer,
 } from "../lib/webhook-signature";
 import { claimIdempotencyKey, storeIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
+import {
+  jiraWebhookSchema,
+  jsmWebhookSchema,
+  m365WebhookSchema,
+  stripeWebhookSchema,
+} from "../lib/webhook-schemas";
 import { recordWebhookDelivery } from "../lib/metrics";
 import { notifyBillingPaymentFailure } from "../lib/billing-dunning";
 import { type Row } from "../lib/db-types";
@@ -224,6 +230,11 @@ router.post("/stripe", async (req, res, next) => {
         .json(failure("INVALID_SIGNATURE", "Webhook signature verification failed", 400));
       return;
     }
+
+    // WH-P2-006: minimal shape check on the verified event before processing.
+    // (Stripe's constructEvent is itself the parse+signature step, so this can
+    // only run after the HMAC check.)
+    event = stripeWebhookSchema.parse(event);
 
     logger.info({ type: event.type, id: event.id }, "Stripe webhook received");
     eventType = event.type;
@@ -508,7 +519,8 @@ router.post("/stripe", async (req, res, next) => {
 
 router.post("/jira", async (req, res, next) => {
   try {
-    const event = req.body;
+    // WH-P2-006: reject malformed payloads before any signature/HMAC work.
+    const event = jiraWebhookSchema.parse(req.body);
     const issueKey: string | undefined = event.issue?.key;
     const statusName: string | undefined = event.issue?.fields?.status?.name;
     const summary: string | undefined = event.issue?.fields?.summary;
@@ -610,7 +622,8 @@ router.post("/jira", async (req, res, next) => {
 
 router.post("/jsm", async (req, res, next) => {
   try {
-    const event = req.body;
+    // WH-P2-006: reject malformed payloads before any signature/HMAC work.
+    const event = jsmWebhookSchema.parse(req.body);
     const issueKey: string | undefined = event.issue?.key;
     const statusName: string | undefined = event.issue?.fields?.status?.name;
     const summary: string | undefined = event.issue?.fields?.summary;
@@ -728,8 +741,10 @@ router.get("/m365", (req, res) => {
 router.post("/m365", async (req, res, next) => {
   let claimedKey: string | null = null;
   try {
-    const event = req.body;
-    logger.info({ resource: event.resource }, "M365 webhook received");
+    // WH-P2-006: minimal shape check before clientState verification; a
+    // non-object body or a non-array/empty `value` is rejected with 400.
+    const event = m365WebhookSchema.parse(req.body);
+    logger.info({ resource: event.value[0]?.resource }, "M365 webhook received");
 
     const clientState = getEnv().M365_CLIENT_STATE;
     if (!clientState) {
@@ -739,11 +754,6 @@ router.post("/m365", async (req, res, next) => {
     }
 
     const value = event.value;
-    if (!Array.isArray(value) || value.length === 0) {
-      logger.warn("M365 webhook received with no value array");
-      res.json(success({ received: true }));
-      return;
-    }
 
     for (const notification of value) {
       // clientState is the only authentication for M365 change notifications
@@ -762,7 +772,7 @@ router.post("/m365", async (req, res, next) => {
     }
 
     if (!validateWebhookTimestamp(event)) {
-      logger.warn({ resource: event.resource }, "M365 webhook timestamp outside tolerance");
+      logger.warn({ resource: value[0]?.resource }, "M365 webhook timestamp outside tolerance");
       res.status(400).json(failure("BAD_REQUEST", "Webhook timestamp outside tolerance", 400));
       return;
     }

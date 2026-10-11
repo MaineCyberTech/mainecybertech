@@ -7,6 +7,10 @@ export interface WebhookEndpoint {
   name: string;
   url: string;
   secret?: string | null;
+  /** When the signing secret was last set/rotated (null for legacy rows). */
+  secret_rotated_at?: string | null;
+  /** Advisory rotation deadline for the signing secret (not enforced on delivery). */
+  secret_expires_at?: string | null;
   events: string[];
   is_active: boolean;
   last_success_at?: string | null;
@@ -56,6 +60,7 @@ export class WebhooksApi {
     name: string;
     url: string;
     secret?: string | null;
+    secretExpiresAt?: string | null;
     events: string[];
   }) {
     return this.client.post<WebhookEndpoint>("/api/v1/webhook-endpoints", data);
@@ -67,6 +72,7 @@ export class WebhooksApi {
       name?: string;
       url?: string;
       secret?: string | null;
+      secretExpiresAt?: string | null;
       events?: string[];
       isActive?: boolean;
     },

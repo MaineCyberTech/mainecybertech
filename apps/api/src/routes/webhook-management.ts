@@ -8,6 +8,8 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { AppError, success } from "../types";
+import { logger } from "../lib/logger";
+import { encryptField, decryptSecretValue } from "../lib/field-encryption";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
 import { pinnedFetch } from "../lib/pinned-fetch";
 import { assertResourceOrg, loadOwned } from "../lib/tenant";
@@ -26,10 +28,35 @@ function maskSecret(secret: string | null | undefined): string | null {
   return secret.slice(0, 4) + "****" + secret.slice(-4);
 }
 
+/**
+ * WH-P2-008 / ACM-P2-007: signing secrets are encrypted at rest (AES-256-GCM
+ * `v1:` payloads via lib/field-encryption). Legacy plaintext values decrypt to
+ * themselves, so endpoints created before encryption keep signing; new writes
+ * are always encrypted. Returns null when no secret is set OR the stored value
+ * cannot be decrypted (wrong/rotated key) — callers must fail closed rather
+ * than sign with a corrupted value.
+ */
+function readSecret(stored: string | null | undefined): string | null {
+  if (!stored) return null;
+  const decrypted = decryptSecretValue(stored);
+  if (!decrypted.ok) {
+    logger.warn({ err: decrypted.error }, "Webhook signing secret could not be decrypted");
+    return null;
+  }
+  return decrypted.value;
+}
+
+/** Advisory rotation deadline for outbound signing secrets (90-day cadence). */
+const SECRET_ROTATION_DAYS = 90;
+
+function defaultSecretExpiry(from: Date): string {
+  return new Date(from.getTime() + SECRET_ROTATION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+
 function maskWebhookData(data: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!data) return null;
   if (data.secret) {
-    data.secret = maskSecret(data.secret as string);
+    data.secret = maskSecret(readSecret(data.secret as string));
   }
   return data;
 }
@@ -39,6 +66,7 @@ const createSchema = z.object({
   name: z.string().min(1).max(200),
   url: z.string().url().max(2000),
   secret: z.string().max(500).optional().nullable(),
+  secretExpiresAt: z.string().datetime().optional().nullable(),
   events: z.array(z.string().min(1)).min(1, "At least one event is required"),
 });
 
@@ -46,11 +74,12 @@ const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   url: z.string().url().max(2000).optional(),
   secret: z.string().max(500).optional().nullable(),
+  secretExpiresAt: z.string().datetime().optional().nullable(),
   events: z.array(z.string().min(1)).min(1).optional(),
   isActive: z.boolean().optional(),
 });
 
-router.get("/", async (req, res, next) => {
+router.get("/", requirePermission("webhooks", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "webhook-management", "read");
     const orgId = req.query.organization_id as string | undefined;
@@ -72,7 +101,7 @@ router.get("/", async (req, res, next) => {
 // Dead-letter routes MUST stay above the `/:id` routes so "dead-letters" is
 // never captured as a webhook endpoint id.
 
-router.get("/dead-letters", async (req, res, next) => {
+router.get("/dead-letters", requirePermission("webhooks", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "webhook-management", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));
@@ -272,7 +301,7 @@ router.delete(
   },
 );
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requirePermission("webhooks", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "webhook-management", "read");
     await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
@@ -293,13 +322,21 @@ router.post("/", requirePermission("webhooks", "manage"), async (req, res, next)
     await assertSafeWebhookUrl(parsed.url);
     const supabase = getScopedClient(req, "webhook-management", "write");
 
+    // WH-P2-008: encrypt the signing secret at rest and record rotation
+    // metadata. `secretExpiresAt` is advisory (see docs/SECRETS_ROTATION.md);
+    // it is surfaced to operators but does not gate delivery.
+    const rotatedAt = parsed.secret ? new Date() : null;
     const { data, error } = await supabase
       .from("webhook_endpoints")
       .insert({
         organization_id: parsed.organizationId,
         name: parsed.name,
         url: parsed.url,
-        secret: parsed.secret ?? null,
+        secret: parsed.secret ? encryptField(parsed.secret) : null,
+        secret_rotated_at: rotatedAt ? rotatedAt.toISOString() : null,
+        secret_expires_at: rotatedAt
+          ? (parsed.secretExpiresAt ?? defaultSecretExpiry(rotatedAt))
+          : null,
         events: parsed.events,
         created_by: req.authUser!.userId,
       })
@@ -317,7 +354,7 @@ router.post("/", requirePermission("webhooks", "manage"), async (req, res, next)
       metadata: { name: parsed.name, url: parsed.url },
     });
 
-    res.status(201).json(success(data));
+    res.status(201).json(success(maskWebhookData(data)));
   } catch (error) {
     next(error);
   }
@@ -353,7 +390,20 @@ router.patch(
       const updateData: Record<string, unknown> = {};
       if (parsed.name !== undefined) updateData.name = parsed.name;
       if (parsed.url !== undefined) updateData.url = parsed.url;
-      if (parsed.secret !== undefined) updateData.secret = parsed.secret;
+      if (parsed.secret !== undefined) {
+        if (parsed.secret) {
+          // WH-P2-008: re-encrypt on rotation and reset the rotation metadata.
+          const rotatedAt = new Date();
+          updateData.secret = encryptField(parsed.secret);
+          updateData.secret_rotated_at = rotatedAt.toISOString();
+          updateData.secret_expires_at =
+            parsed.secretExpiresAt ?? defaultSecretExpiry(rotatedAt);
+        } else {
+          updateData.secret = null;
+          updateData.secret_rotated_at = null;
+          updateData.secret_expires_at = null;
+        }
+      }
       if (parsed.events !== undefined) updateData.events = parsed.events;
       if (parsed.isActive !== undefined) updateData.is_active = parsed.isActive;
 
@@ -377,7 +427,7 @@ router.patch(
         metadata: parsed,
       });
 
-      res.json(success(data));
+      res.json(success(maskWebhookData(data)));
     } catch (error) {
       next(error);
     }
@@ -411,7 +461,7 @@ router.delete("/:id", requirePermission("webhooks", "manage"), async (req, res, 
   }
 });
 
-router.get("/:id/deliveries", async (req, res, next) => {
+router.get("/:id/deliveries", requirePermission("webhooks", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "webhook-management", "read");
     const orgId = req.query.organization_id as string | undefined;
@@ -461,9 +511,15 @@ router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, re
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (webhook.secret) {
+    const signingSecret = webhook.secret ? readSecret(webhook.secret) : null;
+    if (webhook.secret && !signingSecret) {
+      // Fail closed: a configured secret that cannot be decrypted must not be
+      // reported as a successful unsigned test delivery.
+      throw new AppError("CONFIG_ERROR", "Webhook signing secret could not be decrypted", 500);
+    }
+    if (signingSecret) {
       const hmac = crypto
-        .createHmac("sha256", webhook.secret)
+        .createHmac("sha256", signingSecret)
         .update(JSON.stringify(payload))
         .digest("hex");
       headers["X-Webhook-Signature"] = `sha256=${hmac}`;

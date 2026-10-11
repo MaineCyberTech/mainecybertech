@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
+import { decryptSecretValue } from "../lib/field-encryption";
 import { assertSafeUrl } from "../lib/ssrf-guard";
 import { pinnedFetch } from "../lib/pinned-fetch";
 import { claimIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
@@ -100,7 +101,38 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
       }
 
       if (endpoint.secret) {
-        const hmac = crypto.createHmac("sha256", endpoint.secret).update(body).digest("hex");
+        // WH-P2-008: signing secrets are encrypted at rest; decrypt before
+        // signing. A configured secret that cannot be decrypted fails closed
+        // (failed + dead-lettered) instead of going out unsigned.
+        const decrypted = decryptSecretValue(endpoint.secret);
+        if (!decrypted.ok) {
+          failCount++;
+          const secretError = "Signing secret could not be decrypted";
+          await supabase.from("webhook_deliveries").insert({
+            webhook_id: endpoint.id,
+            event,
+            status: "failed",
+            request_body: { event, data },
+            error: secretError,
+            retry_count: 0,
+            dead_letter: true,
+            ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
+          });
+          recordWebhookDelivery("failed", event);
+          recordWebhookDeadLetter(event);
+          await supabase
+            .from("webhook_endpoints")
+            .update({
+              last_failure_at: new Date().toISOString(),
+              last_error: secretError,
+            })
+            .eq("id", endpoint.id);
+          continue;
+        }
+        const hmac = crypto
+          .createHmac("sha256", decrypted.value)
+          .update(body)
+          .digest("hex");
         headers["X-Webhook-Signature"] = `sha256=${hmac}`;
       }
 
