@@ -10,7 +10,7 @@ import { getEnv } from "../config/env";
 import { httpClients } from "../lib/http-client";
 import { logger } from "../lib/logger";
 import { queryInt } from "../lib/query";
-import { resolveAdminTenantScope } from "../lib/admin-scope";
+import { resolveAdminTenantScope, applyOrgScope, applyRequestedOrg } from "../lib/admin-scope";
 import { resolveEffectivePermissions, ADMIN_BYPASS_KEYS } from "../lib/permissions";
 
 type StripePrice = {
@@ -126,12 +126,49 @@ const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
 
+/**
+ * BILL-P2-008: billing reads previously ran with no org predicate whenever no
+ * organization was resolved — a cross-tenant role holder (`admin`/
+ * `super_admin`) without an explicit org got an all-tenant read with no
+ * super-admin gate and no audit. Audit implicit all-tenant reads here; each
+ * GET handler below applies the mandatory `resolveAdminTenantScope` predicate.
+ */
+router.use(async (req, _res, next) => {
+  try {
+    if (req.method !== "GET") {
+      next();
+      return;
+    }
+    const scope = await resolveAdminTenantScope(req);
+    const requestedOrg =
+      typeof req.query.organization_id === "string" ? req.query.organization_id : undefined;
+    if (scope.allTenants && !requestedOrg) {
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "billing.cross_tenant_read",
+        entityType: "billing",
+        metadata: { path: req.path },
+      });
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/summary", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "billing", "read");
-    const orgId = req.query.organization_id as string | undefined;
+    const scope = await resolveAdminTenantScope(req);
+    const requestedOrg =
+      typeof req.query.organization_id === "string" ? req.query.organization_id : undefined;
 
-    const baseQuery = orgId ? (qb: any) => qb.eq("organization_id", orgId) : (qb: any) => qb;
+    const baseQuery = (qb: any) =>
+      applyOrgScope(
+        applyRequestedOrg(qb, "organization_id", requestedOrg, scope),
+        "organization_id",
+        scope,
+      );
 
     const [
       { count: activeSubs },
@@ -186,11 +223,14 @@ router.get("/invoices", async (req, res, next) => {
     const page = Math.max(1, queryInt(req.query.page, 1));
     const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 20)));
     const offset = (page - 1) * limit;
-    const orgId = req.query.organization_id as string | undefined;
+    const scope = await resolveAdminTenantScope(req);
+    const requestedOrg =
+      typeof req.query.organization_id === "string" ? req.query.organization_id : undefined;
     const statusFilter = req.query.status as string | undefined;
 
     let query = supabase.from("invoices").select("*", { count: "exact" });
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
+    query = applyOrgScope(query, "organization_id", scope);
     if (statusFilter) query = query.eq("status", statusFilter as never);
 
     const { data, error, count } = await query
@@ -207,9 +247,12 @@ router.get("/invoices", async (req, res, next) => {
 router.get("/invoices/:id", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "billing", "read");
-    const orgId = req.query.organization_id as string | undefined;
+    const scope = await resolveAdminTenantScope(req);
+    const requestedOrg =
+      typeof req.query.organization_id === "string" ? req.query.organization_id : undefined;
     let query = supabase.from("invoices").select("*").eq("id", String(req.params.id));
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
+    query = applyOrgScope(query, "organization_id", scope);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Invoice not found", 404);
     res.json(success(data));
@@ -221,10 +264,13 @@ router.get("/invoices/:id", async (req, res, next) => {
 router.get("/subscriptions", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "billing", "read");
-    const orgId = req.query.organization_id as string | undefined;
+    const scope = await resolveAdminTenantScope(req);
+    const requestedOrg =
+      typeof req.query.organization_id === "string" ? req.query.organization_id : undefined;
 
     let query = supabase.from("subscriptions").select("*");
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
+    query = applyOrgScope(query, "organization_id", scope);
 
     const { data, error } = await query.order("created_at", {
       ascending: false,
@@ -242,12 +288,15 @@ router.get("/payments", async (req, res, next) => {
     const page = Math.max(1, queryInt(req.query.page, 1));
     const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 20)));
     const offset = (page - 1) * limit;
-    const orgId = req.query.organization_id as string | undefined;
+    const scope = await resolveAdminTenantScope(req);
+    const requestedOrg =
+      typeof req.query.organization_id === "string" ? req.query.organization_id : undefined;
 
     let query = supabase
       .from("payments")
       .select("*, invoices!inner(invoice_number, status)", { count: "exact" });
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
+    query = applyOrgScope(query, "organization_id", scope);
 
     const { data, error, count } = await query
       .order("created_at", { ascending: false })
@@ -262,10 +311,13 @@ router.get("/payments", async (req, res, next) => {
 router.get("/billing-customer", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "billing", "read");
-    const orgId = req.query.organization_id as string | undefined;
+    const scope = await resolveAdminTenantScope(req);
+    const requestedOrg =
+      typeof req.query.organization_id === "string" ? req.query.organization_id : undefined;
 
     let query = supabase.from("billing_customers").select("*");
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
+    query = applyOrgScope(query, "organization_id", scope);
     const { data, error } = await query.single();
     if (error && error.code !== "PGRST116") throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data ?? null));
@@ -419,7 +471,27 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
           (orgInvoices ?? []).map((inv) => [inv.stripe_invoice_id, inv.id]),
         );
 
+        // BILL-P2-007: refunds are terminal and Stripe's PaymentIntent status
+        // stays `succeeded` after a charge refund, so a sync would otherwise
+        // overwrite a locally recorded refunded/partially_refunded status.
+        const { data: orgPayments } = await supabase
+          .from("payments")
+          .select("stripe_payment_intent_id, status")
+          .eq("organization_id", customer.organization_id);
+        const terminalPaymentIntents = new Set(
+          (orgPayments ?? [])
+            .filter(
+              (payment) =>
+                payment.status === "refunded" || payment.status === "partially_refunded",
+            )
+            .map((payment) => payment.stripe_payment_intent_id),
+        );
+
         for (const pi of paymentsPage.items) {
+          if (terminalPaymentIntents.has(pi.id)) {
+            // Keep the terminal refund status; do not downgrade it to the PI status.
+            continue;
+          }
           const succeeded = pi.status === "succeeded";
           await supabase.from("payments").upsert(
             {

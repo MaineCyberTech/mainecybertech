@@ -3,7 +3,7 @@ import crypto from "crypto";
 import Stripe from "stripe";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logger } from "../lib/logger";
-import { failure, success } from "../types";
+import { AppError, failure, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { getEnv } from "../config/env";
 import {
@@ -33,22 +33,28 @@ async function logWebhookDelivery(
   idempotencyKey: string,
 ): Promise<void> {
   const supabase = getSupabaseAdmin();
-  try {
-    // Persist only a truncated, PII-safe summary. The raw inbound payload
-    // (which can contain Stripe/JSM/M365 PII) is intentionally NOT stored.
-    await supabase.from("webhook_deliveries").insert({
-      webhook_id: null,
-      event,
-      status: "success",
-      request_body: { event, receivedAt: new Date().toISOString() },
-      response_status: 200,
-      response_body: null,
-      idempotency_key: idempotencyKey,
-    });
-    await storeIdempotencyKey(idempotencyKey, "done");
-  } catch (err) {
-    logger.warn({ err }, `Failed to log ${event} webhook delivery`);
+  // Persist only a truncated, PII-safe summary. The raw inbound payload
+  // (which can contain Stripe/JSM/M365 PII) is intentionally NOT stored.
+  const { error } = await supabase.from("webhook_deliveries").insert({
+    webhook_id: null,
+    event,
+    status: "success",
+    request_body: { event, receivedAt: new Date().toISOString() },
+    response_status: 200,
+    response_body: null,
+    idempotency_key: idempotencyKey,
+  });
+  if (error) {
+    // Do not mark the event processed: the delivery record is part of the
+    // processed state, so a failed insert must release the claim and let the
+    // sender retry (BILL-P2-006).
+    throw new AppError(
+      "DB_ERROR",
+      `Failed to log ${event} webhook delivery: ${error.message}`,
+      500,
+    );
   }
+  await storeIdempotencyKey(idempotencyKey, "done");
 }
 
 async function dedupWebhook(key: string, ttlSeconds?: number): Promise<boolean> {
@@ -120,6 +126,59 @@ function mapPaymentIntentStatus(status: string): string {
   return "pending";
 }
 
+/**
+ * BILL-P2-007: terminal mirror states are monotonic. Stripe does not guarantee
+ * delivery ordering and retries can deliver a stale snapshot after a later
+ * event has already been applied (e.g. a `payment_intent.succeeded` retried
+ * after `charge.refunded`). Once a row reaches a terminal state, a later event
+ * must not move it back to a non-terminal one.
+ */
+const TERMINAL_PAYMENT_STATUSES = new Set(["refunded", "partially_refunded"]);
+const TERMINAL_INVOICE_STATUSES = new Set(["void"]);
+const TERMINAL_SUBSCRIPTION_STATUSES = new Set(["canceled", "incomplete_expired"]);
+
+/**
+ * Read the current status of a Stripe mirror row, keyed by its Stripe id.
+ * Throws on a read failure so the event is retried rather than applying a
+ * transition that could downgrade a terminal state.
+ */
+async function readMirrorStatus(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  table: "payments" | "invoices" | "subscriptions",
+  idColumn: string,
+  idValue: string,
+): Promise<string | null> {
+  // The generated client types do not accept a dynamic table/column pair; the
+  // runtime builder is duck-typed, matching lib/admin-scope.ts.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from(table) as any)
+    .select("status")
+    .eq(idColumn, idValue)
+    .maybeSingle();
+  if (error) {
+    throw new AppError("DB_ERROR", `Failed to read ${table} status: ${error.message}`, 500);
+  }
+  return (data as { status?: string | null } | null)?.status ?? null;
+}
+
+/**
+ * BILL-P2-006: every Stripe mirror write is checked. A failed write throws so
+ * the idempotency claim is released (Stripe retries) instead of acknowledging
+ * the event with the mirror silently missing the change.
+ */
+function assertMirrorWrite(
+  error: { message: string } | null | undefined,
+  context: string,
+): void {
+  if (error) {
+    throw new AppError(
+      "DB_ERROR",
+      `Stripe webhook write failed (${context}): ${error.message}`,
+      500,
+    );
+  }
+}
+
 const JSM_STATUS_MAP: Record<string, string> = {
   Open: "new",
   "In Progress": "in_progress",
@@ -131,6 +190,9 @@ const JSM_STATUS_MAP: Record<string, string> = {
 
 router.post("/stripe", async (req, res, next) => {
   let claimedKey: string | null = null;
+  // Set once the signature verifies; lets the catch below emit a failed
+  // delivery metric for the event (BILL-P2-006).
+  let eventType: string | null = null;
   try {
     const signature = req.headers["stripe-signature"] as string | undefined;
     if (!signature) {
@@ -164,6 +226,7 @@ router.post("/stripe", async (req, res, next) => {
     }
 
     logger.info({ type: event.type, id: event.id }, "Stripe webhook received");
+    eventType = event.type;
 
     const stripeKey = `stripe-${event.id}`;
     claimedKey = stripeKey;
@@ -184,41 +247,61 @@ router.post("/stripe", async (req, res, next) => {
           .single();
 
         if (customer) {
-          const status =
-            inv.status === "open" && inv.due_date && new Date(inv.due_date * 1000) < new Date()
-              ? "overdue"
-              : inv.status;
-          await supabase.from("invoices").upsert(
-            {
-              organization_id: customer.organization_id,
-              stripe_invoice_id: inv.id,
-              invoice_number: inv.number,
-              status,
-              // Stripe already returns amounts in the smallest currency unit (cents)
-              subtotal_cents: Math.round(inv.subtotal),
-              tax_cents: Math.round(inv.tax ?? 0),
-              total_cents: Math.round(inv.total),
-              currency: inv.currency,
-              hosted_invoice_url: inv.hosted_invoice_url,
-              invoice_pdf_url: inv.invoice_pdf,
-              due_at: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
-              paid_at:
-                inv.status === "paid"
-                  ? new Date(inv.status_transitions?.paid_at * 1000).toISOString()
-                  : null,
-            },
-            { onConflict: "stripe_invoice_id" },
+          // BILL-P2-007: a void invoice is terminal — a late or retried
+          // invoice.paid/payment_failed event must not resurrect it.
+          const currentInvoiceStatus = await readMirrorStatus(
+            supabase,
+            "invoices",
+            "stripe_invoice_id",
+            inv.id,
           );
+          if (TERMINAL_INVOICE_STATUSES.has(currentInvoiceStatus ?? "")) {
+            logger.info(
+              {
+                stripeInvoiceId: inv.id,
+                currentStatus: currentInvoiceStatus,
+                eventType: event.type,
+              },
+              "Skipping stale Stripe invoice event (terminal state)",
+            );
+          } else {
+            const status =
+              inv.status === "open" && inv.due_date && new Date(inv.due_date * 1000) < new Date()
+                ? "overdue"
+                : inv.status;
+            const { error: invoiceWriteError } = await supabase.from("invoices").upsert(
+              {
+                organization_id: customer.organization_id,
+                stripe_invoice_id: inv.id,
+                invoice_number: inv.number,
+                status,
+                // Stripe already returns amounts in the smallest currency unit (cents)
+                subtotal_cents: Math.round(inv.subtotal),
+                tax_cents: Math.round(inv.tax ?? 0),
+                total_cents: Math.round(inv.total),
+                currency: inv.currency,
+                hosted_invoice_url: inv.hosted_invoice_url,
+                invoice_pdf_url: inv.invoice_pdf,
+                due_at: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
+                paid_at:
+                  inv.status === "paid"
+                    ? new Date(inv.status_transitions?.paid_at * 1000).toISOString()
+                    : null,
+              },
+              { onConflict: "stripe_invoice_id" },
+            );
+            assertMirrorWrite(invoiceWriteError, "invoices.upsert");
 
-          // BILL-P2-004: dunning visibility. A failed charge previously just
-          // flipped the invoice row; notify the org's billing contacts so the
-          // card gets fixed before the subscription is suspended.
-          if (event.type === "invoice.payment_failed") {
-            await notifyBillingPaymentFailure({
-              organizationId: customer.organization_id,
-              invoice: inv,
-              supabase,
-            });
+            // BILL-P2-004: dunning visibility. A failed charge previously just
+            // flipped the invoice row; notify the org's billing contacts so the
+            // card gets fixed before the subscription is suspended.
+            if (event.type === "invoice.payment_failed") {
+              await notifyBillingPaymentFailure({
+                organizationId: customer.organization_id,
+                invoice: inv,
+                supabase,
+              });
+            }
           }
         }
       }
@@ -238,24 +321,44 @@ router.post("/stripe", async (req, res, next) => {
           .single();
 
         if (customer) {
-          const price = sub.items?.data?.[0]?.price;
-          await supabase.from("subscriptions").upsert(
-            {
-              organization_id: customer.organization_id,
-              stripe_subscription_id: sub.id,
-              plan_name: price?.nickname ?? price?.product ?? "Unknown",
-              status: sub.status,
-              current_period_start: sub.current_period_start
-                ? new Date(sub.current_period_start * 1000).toISOString()
-                : null,
-              current_period_end: sub.current_period_end
-                ? new Date(sub.current_period_end * 1000).toISOString()
-                : null,
-              amount_cents: price?.unit_amount ?? 0,
-              currency: price?.currency ?? "usd",
-            },
-            { onConflict: "stripe_subscription_id" },
+          // BILL-P2-007: canceled/incomplete_expired subscriptions are
+          // terminal — a late subscription.updated must not resurrect them.
+          const currentSubscriptionStatus = await readMirrorStatus(
+            supabase,
+            "subscriptions",
+            "stripe_subscription_id",
+            sub.id,
           );
+          if (TERMINAL_SUBSCRIPTION_STATUSES.has(currentSubscriptionStatus ?? "")) {
+            logger.info(
+              {
+                stripeSubscriptionId: sub.id,
+                currentStatus: currentSubscriptionStatus,
+                eventType: event.type,
+              },
+              "Skipping stale Stripe subscription event (terminal state)",
+            );
+          } else {
+            const price = sub.items?.data?.[0]?.price;
+            const { error: subscriptionWriteError } = await supabase.from("subscriptions").upsert(
+              {
+                organization_id: customer.organization_id,
+                stripe_subscription_id: sub.id,
+                plan_name: price?.nickname ?? price?.product ?? "Unknown",
+                status: sub.status,
+                current_period_start: sub.current_period_start
+                  ? new Date(sub.current_period_start * 1000).toISOString()
+                  : null,
+                current_period_end: sub.current_period_end
+                  ? new Date(sub.current_period_end * 1000).toISOString()
+                  : null,
+                amount_cents: price?.unit_amount ?? 0,
+                currency: price?.currency ?? "usd",
+              },
+              { onConflict: "stripe_subscription_id" },
+            );
+            assertMirrorWrite(subscriptionWriteError, "subscriptions.upsert");
+          }
         }
       }
     }
@@ -263,14 +366,17 @@ router.post("/stripe", async (req, res, next) => {
     if (event.type === "checkout.session.completed") {
       const session = event.data?.object;
       if (session?.customer && session?.client_reference_id) {
-        await supabase.from("billing_customers").upsert(
-          {
-            organization_id: session.client_reference_id,
-            stripe_customer_id: session.customer,
-            billing_email: session.customer_details?.email ?? null,
-          },
-          { onConflict: "organization_id" },
-        );
+        const { error: billingCustomerWriteError } = await supabase
+          .from("billing_customers")
+          .upsert(
+            {
+              organization_id: session.client_reference_id,
+              stripe_customer_id: session.customer,
+              billing_email: session.customer_details?.email ?? null,
+            },
+            { onConflict: "organization_id" },
+          );
+        assertMirrorWrite(billingCustomerWriteError, "billing_customers.upsert");
       }
     }
 
@@ -289,21 +395,42 @@ router.post("/stripe", async (req, res, next) => {
           invoiceId: pi.invoice,
         });
         if (organizationId) {
-          const succeeded = pi.status === "succeeded";
-          await supabase.from("payments").upsert(
-            {
-              organization_id: organizationId,
-              invoice_id: invoiceRowId,
-              stripe_payment_intent_id: pi.id,
-              amount_cents: Math.round(
-                succeeded ? (pi.amount_received ?? pi.amount) : pi.amount,
-              ),
-              currency: pi.currency,
-              status: mapPaymentIntentStatus(pi.status),
-              paid_at: succeeded ? new Date((pi.created ?? 0) * 1000).toISOString() : null,
-            },
-            { onConflict: "stripe_payment_intent_id" },
+          // BILL-P2-007: refunds are terminal — a late or retried
+          // payment_intent event must not downgrade refunded back to
+          // succeeded/failed/pending.
+          const currentPaymentStatus = await readMirrorStatus(
+            supabase,
+            "payments",
+            "stripe_payment_intent_id",
+            pi.id,
           );
+          if (TERMINAL_PAYMENT_STATUSES.has(currentPaymentStatus ?? "")) {
+            logger.info(
+              {
+                stripePaymentIntentId: pi.id,
+                currentStatus: currentPaymentStatus,
+                eventType: event.type,
+              },
+              "Skipping stale Stripe payment event (terminal state)",
+            );
+          } else {
+            const succeeded = pi.status === "succeeded";
+            const { error: paymentWriteError } = await supabase.from("payments").upsert(
+              {
+                organization_id: organizationId,
+                invoice_id: invoiceRowId,
+                stripe_payment_intent_id: pi.id,
+                amount_cents: Math.round(
+                  succeeded ? (pi.amount_received ?? pi.amount) : pi.amount,
+                ),
+                currency: pi.currency,
+                status: mapPaymentIntentStatus(pi.status),
+                paid_at: succeeded ? new Date((pi.created ?? 0) * 1000).toISOString() : null,
+              },
+              { onConflict: "stripe_payment_intent_id" },
+            );
+            assertMirrorWrite(paymentWriteError, "payments.upsert");
+          }
         }
       }
     }
@@ -317,12 +444,25 @@ router.post("/stripe", async (req, res, next) => {
       if (paymentIntentId) {
         const fullyRefunded =
           typeof charge.amount === "number" && charge.amount_refunded >= charge.amount;
-        const { error: refundErr } = await supabase
-          .from("payments")
-          .update({ status: fullyRefunded ? "refunded" : "partially_refunded" })
-          .eq("stripe_payment_intent_id", paymentIntentId);
-        if (refundErr) {
-          logger.warn({ err: refundErr, paymentIntentId }, "Failed to record charge refund");
+        const currentPaymentStatus = await readMirrorStatus(
+          supabase,
+          "payments",
+          "stripe_payment_intent_id",
+          paymentIntentId,
+        );
+        if (currentPaymentStatus === "refunded" && !fullyRefunded) {
+          // BILL-P2-007: a stale partial-refund snapshot must not downgrade a
+          // full refund.
+          logger.info(
+            { stripePaymentIntentId: paymentIntentId, currentStatus: currentPaymentStatus },
+            "Skipping stale partial refund (payment already fully refunded)",
+          );
+        } else {
+          const { error: refundErr } = await supabase
+            .from("payments")
+            .update({ status: fullyRefunded ? "refunded" : "partially_refunded" })
+            .eq("stripe_payment_intent_id", paymentIntentId);
+          assertMirrorWrite(refundErr, "payments.update refund");
         }
       }
     }
@@ -332,10 +472,11 @@ router.post("/stripe", async (req, res, next) => {
       const inv = event.data?.object;
       if (inv?.id) {
         const status = event.type === "invoice.voided" ? "void" : "uncollectible";
-        await supabase
+        const { error: invoiceVoidWriteError } = await supabase
           .from("invoices")
           .update({ status })
           .eq("stripe_invoice_id", inv.id);
+        assertMirrorWrite(invoiceVoidWriteError, "invoices.update lifecycle");
       }
     }
 
@@ -355,6 +496,11 @@ router.post("/stripe", async (req, res, next) => {
     // (claim-before-process must not persist a "duplicate" on failure).
     if (claimedKey) {
       await deleteIdempotencyKey(claimedKey).catch(() => undefined);
+    }
+    if (eventType) {
+      // BILL-P2-006: a mirror-write (or any processing) failure is a failed
+      // delivery, not a success — surface it so it is alertable.
+      recordWebhookDelivery("failed", `stripe.${eventType}`);
     }
     next(error);
   }
