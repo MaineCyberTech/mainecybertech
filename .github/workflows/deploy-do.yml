@@ -926,7 +926,6 @@ jobs:
 
             # Health gate: only prune the previous images once the new
             # containers report healthy, so a failed deploy can still roll
-<<<<<<< HEAD
             # back. Use the containers' own healthchecks (probing the app
             # ports from the host does not work - they are not published).
             # INFRA-P2-007: assert EVERY service that declares a healthcheck,
@@ -938,9 +937,6 @@ jobs:
               docker inspect --format '{{.State.Health.Status}}' "mct-portal-$1-1" 2>/dev/null || echo "missing"
             }
             GATED_SERVICES="redis api worker web alertmanager prometheus caddy"
-=======
-            # back. Use the containers' own healthchecks.
->>>>>>> 584385e3 (ci(deploy): replace stop-the-world down/up with a rolling recreate (RES-P2-010))
             healthy=0
             for attempt in $(seq 1 18); do
               unhealthy=""

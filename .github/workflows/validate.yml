@@ -30,6 +30,18 @@ jobs:
             exit 1
           fi
 
+      - name: Reject merge-conflict markers
+        # The 2026-10-11 remediation wave merged a workflow file with conflict
+        # markers, which made deploy-do fail with zero jobs (invalid YAML) and
+        # blocked every deploy until repaired. Fail the gate on any marker
+        # outside the archived audit corpus.
+        run: |
+          set -e
+          if git grep -nE '^(<<<<<<< |=======$|>>>>>>> )' -- . ':!docs/audits'; then
+            echo "::error::Merge-conflict markers found in tracked files."
+            exit 1
+          fi
+
       - name: Validate Prometheus alert rules
         # IR-P2-010 / OBS-P2-012: promtool check rules + promtool test rules
         # against the digest-pinned prom/prometheus image (same one the droplet
