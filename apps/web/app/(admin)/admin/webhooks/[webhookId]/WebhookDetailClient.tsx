@@ -1,23 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { WEBHOOK_EVENTS } from "@mct/sdk/webhook-events";
 import { getClientApi } from "@/lib/client-api";
 import { formatDateTime } from "@/lib/format";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
-
-const EVENT_OPTIONS = [
-  "ticket.created",
-  "ticket.updated",
-  "ticket.assigned",
-  "project.created",
-  "project.updated",
-  "document.created",
-  "document.updated",
-  "membership.created",
-  "membership.updated",
-  "billing.invoice.paid",
-  "billing.invoice.overdue",
-];
 
 type Props = {
   webhook: {
@@ -181,7 +168,7 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
           <div>
             <label className="cyber-label">Events</label>
             <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {EVENT_OPTIONS.map((event) => (
+              {WEBHOOK_EVENTS.map((event) => (
                 <label key={event} className="flex cursor-pointer items-center gap-2">
                   <input
                     type="checkbox"

@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import type { WebhookEvent } from "@mct/sdk/webhook-events";
 import { getSupabaseAdmin } from "../services/supabase";
 import { enqueueTask } from "./task-producer";
 import { logger } from "./logger";
@@ -18,7 +19,7 @@ const RETRY_FACTOR = 2;
  * dispatched event maps to the same key across the API and worker layers.
  */
 export function buildOutboundIdempotencyKey(
-  event: string,
+  event: WebhookEvent,
   organizationId: string,
   data: Record<string, unknown>,
 ): string {
@@ -133,7 +134,7 @@ async function enqueueDeadLetter(
 }
 
 export async function dispatchWebhook(
-  event: string,
+  event: WebhookEvent,
   organizationId: string,
   data: Record<string, unknown>,
 ): Promise<void> {

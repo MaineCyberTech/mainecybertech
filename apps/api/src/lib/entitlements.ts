@@ -7,6 +7,12 @@
  * `requireEntitlement` middleware a single source of truth so the set the
  * client renders can never diverge from the set the server enforces.
  *
+ * EVOL-P2-001: the module lists are now derived from `@mct/sdk`'s
+ * MODULE_REGISTRY (`entitlement: "default" | "subscription"`) instead of
+ * hand-maintained literals. That fixes the old `support` key, which never
+ * matched the permission/nav module key `tickets`, and ties the API set to the
+ * same catalog the admin entitlement form and MODULE_LABELS use.
+ *
  * Precedence (matches the bootstrap payload):
  *   1. Admin-provisioned `client_portal_entitlements` rows for the org
  *      (when at least one enabled row exists) win outright.
@@ -14,30 +20,21 @@
  *      subscription unlocks the premium modules, anything else falls back to
  *      the default set.
  */
+import { MODULE_REGISTRY } from "@mct/sdk/module-registry";
 import { getSupabaseAdmin } from "../services/supabase";
 import { AppError } from "../types";
 
 /** Modules every tenant gets regardless of subscription state. */
-export const DEFAULT_ENABLED_MODULES: string[] = [
-  "dashboard",
-  "support",
-  "documents",
-  "projects",
-  "billing",
-  "status",
-  "notifications",
-  "profile",
-];
+export const DEFAULT_ENABLED_MODULES: string[] = Object.values(MODULE_REGISTRY)
+  .filter((module) => module.entitlement === "default")
+  .map((module) => module.key);
 
 /** Modules unlocked when an org has an active/trialing subscription. */
 export const SUBSCRIPTION_ENABLED_MODULES: string[] = [
   ...DEFAULT_ENABLED_MODULES,
-  "findings",
-  "security-ops",
-  "governance",
-  "training-hub",
-  "service-catalog",
-  "qbr",
+  ...Object.values(MODULE_REGISTRY)
+    .filter((module) => module.entitlement === "subscription")
+    .map((module) => module.key),
 ];
 
 /**

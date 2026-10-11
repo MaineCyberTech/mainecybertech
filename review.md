@@ -83,13 +83,13 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,179 tests, all passing. 468 suites.**
+**4,179 tests, all passing. 473 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,721         | 152   | Jest + supertest                  |
-| Web     | 1,905         | 286   | Jest + Testing Library            |
-| SDK     | 308           | 3   | Jest (mocked fetch)               |
+| API     | 1,721         | 154   | Jest + supertest                  |
+| Web     | 1,905         | 288   | Jest + Testing Library            |
+| SDK     | 308           | 4   | Jest (mocked fetch)               |
 | Worker  | 245           | 27   | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
 
@@ -153,7 +153,7 @@ pnpm e2e                     # Playwright E2E
 | Category                  | Count | Notes                                                                                                                                                                  |
 | ------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | API route files           | 62    | `apps/api/src/routes/*.ts` (75 incl. `routes/final/` + `routes/store/`)                                                                                                |
-| API SDK modules           | 60    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
+| API SDK modules           | 62    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
 | Worker task files         | 13    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319 | Admin 203, Portal 86, Public 29, `forbidden` 1 |
 | Web components            | 121 | `apps/web/components/`                                                                                                                                                 |

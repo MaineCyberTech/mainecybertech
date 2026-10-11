@@ -1,24 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
+import { MODULE_REGISTRY } from "@mct/sdk/module-registry";
 import { getClientApi } from "@/lib/client-api";
 
-const PORTAL_MODULES = [
-  "dashboard",
-  "support",
-  "documents",
-  "projects",
-  "billing",
-  "status",
-  "notifications",
-  "profile",
-  "findings",
-  "security-ops",
-  "governance",
-  "training-hub",
-  "service-catalog",
-  "qbr",
-];
+/**
+ * EVOL-P2-001: derived from the shared module registry instead of a local
+ * literal. The old list carried a `support` key that did not match the
+ * permission/nav module key (`tickets`), so the checkbox could not gate the
+ * module the rest of the platform uses.
+ */
+const PORTAL_MODULES = Object.values(MODULE_REGISTRY)
+  .filter((module) => module.entitlement)
+  .map((module) => module.key);
 
 export default function ClientPortalEntitlementsForm({
   organizationId,

@@ -1,21 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { WEBHOOK_EVENTS } from "@mct/sdk/webhook-events";
 import { getClientApi } from "@/lib/client-api";
-
-const EVENT_OPTIONS = [
-  "ticket.created",
-  "ticket.updated",
-  "ticket.assigned",
-  "project.created",
-  "project.updated",
-  "document.created",
-  "document.updated",
-  "membership.created",
-  "membership.updated",
-  "billing.invoice.paid",
-  "billing.invoice.overdue",
-];
 
 type Props = {
   organizations: { id: string; name: string }[];
@@ -111,7 +98,7 @@ export default function NewWebhookForm({ organizations }: Props) {
           Events
         </label>
         <div id="webhook-events" className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {EVENT_OPTIONS.map((event) => (
+          {WEBHOOK_EVENTS.map((event) => (
             <label key={event} className="flex cursor-pointer items-center gap-2">
               <input type="checkbox" name="events" value={event} className="accent-emerald-600" />
               <span className="text-xs text-slate-300">{event}</span>

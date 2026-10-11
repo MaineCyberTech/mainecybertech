@@ -6,6 +6,8 @@
  * `tickets:view`, `organizations:delete`, `webhooks:manage`.
  */
 
+import { MODULE_REGISTRY } from "@mct/sdk/module-registry";
+
 export type PermissionScope = "admin" | "portal" | "both";
 
 export const permKey = (moduleKey: string, actionKey: string): string =>
@@ -42,98 +44,15 @@ export function can(
   return hasPermission(perms.keys, moduleKey, actionKey);
 }
 
-export const MODULE_LABELS: Record<string, string> = {
-  dashboard: "Dashboard",
-  tickets: "Tickets",
-  documents: "Documents",
-  projects: "Projects",
-  approvals: "Approvals",
-  notifications: "Notifications",
-  organizations: "Organizations",
-  users: "Users",
-  roles: "Roles",
-  memberships: "Memberships",
-  audit: "Audit",
-  billing: "Billing",
-  settings: "Settings",
-  "bulk-invite": "Bulk Invite",
-  governance: "Governance",
-  incidents: "Incidents",
-  "break-glass": "Break Glass",
-  "id-verify": "ID Verify",
-  "dmarc-coach": "DMARC Coach",
-  "patch-compliance": "Patch Compliance",
-  "endpoint-security": "Endpoint Security",
-  "m365-hardening": "M365 Hardening",
-  "security-suite": "Security Suite",
-  "security-ops": "Security Ops",
-  "risk-register": "Risk Register",
-  tabletop: "Tabletop",
-  "phishing-simulations": "Phishing Simulations",
-  "incident-response": "Incident Response",
-  assets: "Assets",
-  findings: "Findings",
-  "domain-monitors": "Domain Monitors",
-  "website-monitors": "Website Monitors",
-  dmarc: "DMARC",
-  "license-optimizer": "License Optimizer",
-  "uptime-monitor": "Uptime Monitor",
-  "field-services": "Field Services",
-  status: "Status",
-  "status-pages": "Status Pages",
-  "camera-calculator": "Camera Calculator",
-  "network-port-maps": "Port Maps",
-  "hardware-staging": "Hardware Staging",
-  "time-entries": "Time Entries",
-  runbooks: "Runbooks",
-  "sop-library": "SOP Library",
-  "backup-dr": "Backup & DR",
-  "device-profiles": "Device Profiles",
-  "dns-changes": "DNS Changes",
-  "saas-audit": "SaaS Audit",
-  sharepoint: "SharePoint",
-  budgets: "Budgets",
-  procurement: "Procurement",
-  automation: "Automation",
-  scoreboard: "Scoreboard",
-  "identity-verification": "Identity Verification",
-  "client-knowledge-base": "Knowledge Base",
-  "change-requests": "Change Requests",
-  "compliance-readiness": "Compliance Readiness",
-  onboarding: "Onboarding",
-  offboarding: "Offboarding",
-  "file-requests": "File Requests",
-  "vendor-contracts": "Vendor Contracts",
-  "vendor-contacts": "Vendor Contacts",
-  "training-hub": "Training Hub",
-  "insurance-binder": "Insurance Binder",
-  "client-onboarding-command-center": "Onboarding Command Center",
-  "dynamic-forms": "Dynamic Forms",
-  "satisfaction-pulse": "Satisfaction Pulse",
-  store: "Store",
-  "store-products": "Store Products",
-  "store-promotions": "Store Promotions",
-  "store-quotes": "Store Quotes",
-  "store-campaigns": "Store Campaigns",
-  "store-analytics": "Store Analytics",
-  "store-categories": "Store Categories",
-  "api-keys": "API Keys",
-  webhooks: "Webhooks",
-  ai: "AI Tools",
-  "edu-automation": "Edu Automation",
-  health: "Health",
-  sla: "SLA",
-  proposals: "Proposals",
-  qbr: "QBR Reports",
-  "service-catalog": "Service Catalog",
-  "business-os": "Business OS",
-  final: "More Tools",
-  search: "Global Search",
-  vendors: "Vendors",
-  licenses: "Licenses",
-  timeline: "Timeline",
-  profile: "Profile",
-};
+/**
+ * Module display labels (EVOL-P2-001) — derived from the shared module
+ * registry (`@mct/sdk/module-registry`) instead of a hand-maintained map.
+ * Order follows the registry declaration order, which is what
+ * `RolePermissionsEditor` relies on for its module ordering.
+ */
+export const MODULE_LABELS: Record<string, string> = Object.fromEntries(
+  Object.values(MODULE_REGISTRY).map((module) => [module.key, module.name]),
+);
 
 export const PERMISSION_GROUPS: Array<{ key: string; label: string; scope: PermissionScope }> = [
   { key: "core", label: "Core", scope: "both" },
