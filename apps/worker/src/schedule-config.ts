@@ -46,6 +46,8 @@ export const scheduledScans: ScheduledScan[] = [
   { name: "qbr-scheduled-generate", intervalMs: SCAN_INTERVAL_DAILY_MS, offsetMin: 63 },
   { name: "retention", intervalMs: SCAN_INTERVAL_DAILY_MS, offsetMin: 70 },
   { name: "orphan-cleanup", intervalMs: SCAN_INTERVAL_6H_MS, offsetMin: 76 },
+  // SEC-P2-017 / ACM-P2-005: deactivate then delete expired API keys.
+  { name: "api-key-prune", intervalMs: SCAN_INTERVAL_DAILY_MS, offsetMin: 83 },
   {
     name: "scheduled-notifications",
     intervalMs: SCAN_INTERVAL_DAILY_MS,

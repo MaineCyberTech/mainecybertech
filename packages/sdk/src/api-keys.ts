@@ -29,6 +29,8 @@ export class ApiKeysApi {
     organizationId: string;
     name: string;
     expiresAt?: string;
+    /** Scope cap in `${module}:${action}` catalog format; omit for none. */
+    permissions?: string[];
   }): Promise<ApiKeyWithSecret> {
     return this.client.post<ApiKeyWithSecret>("/api/v1/api-keys", data);
   }
