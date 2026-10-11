@@ -211,6 +211,9 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus.rules.yml:/etc/prometheus/rules.yml:ro
+      # METRICS_TOKEN, written 0600 by the deploy, for the authenticated
+      # mct-api scrape (the API 404s unauthenticated /metrics requests).
+      - ./metrics-token:/etc/prometheus/metrics-token:ro
       # Named volume (not tmpfs): TSDB must survive restarts/deploys or the 30d
       # retention window is lost on every compose down/up. tmpfs also blew the
       # 256MB mem_limit. Disk is cheap; metrics history is not.

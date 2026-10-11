@@ -285,6 +285,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - `supabase-migrations` now runs a pre-push `db push --dry-run` and publishes
   the planned migration set as an artifact (uploaded before the real push, so
   it survives a failed apply) — the plan is no longer discarded (IR-P2-006).
+- Prometheus authenticates the API `/metrics` scrape with the `METRICS_TOKEN`
+  bearer credential (mounted as a 0600 credentials file), so a healthy API no
+  longer trips the `MCTServiceDown` alert — the endpoint 404s unauthenticated.
 - Alertmanager's critical and default receivers now support basic auth and the
   live deployment posts them to the org ntfy instance
   (`https://ntfy.mainecybertech.us/portal-alerts`) via a write-only
