@@ -55,12 +55,8 @@ All secrets must be rotated periodically to limit exposure from credential leaks
 | 45  | `TURNSTILE_SECRET_KEY`        | API                          | Every 180 days                                  | Cloudflare Turnstile → Settings → Secret Key              |
 | 46  | `METRICS_TOKEN`               | API                          | Every 90 days                                   | `openssl rand -hex 32` (optional `/metrics` gate)         |
 | 47  | `FIELD_ENCRYPTION_KEY`        | API                          | Only with a re-encryption plan (see below)      | `openssl rand -hex 32`                                    |
-<<<<<<< HEAD
 | 48  | `SCHEDULE_DISPATCH_TOKEN`     | retired (was backup-dispatch) | — (retired)                                     | Retired with `backup-dispatch.yml` (CI-P2-010); revoke or let any provisioned token expire |
-=======
-| 48  | `SCHEDULE_DISPATCH_TOKEN`     | backup-dispatch workflow     | Every 90 days                                   | Repo-scoped GitHub App installation token (preferred) or fine-grained PAT with `actions: write`; repository-scoped only |
 | 49  | Outbound webhook signing secret (`webhook_endpoints.secret`, per endpoint) | API, Worker | Every 90 days (advisory `secret_expires_at`) | Admin UI or `PATCH /api/v1/webhook-endpoints/:id` (generate with `openssl rand -hex 32`) |
->>>>>>> 6935d667 (fix(webhooks): per-provider ingress caps, read authz, encrypted secrets)
 
 ## Rotation Procedures
 
