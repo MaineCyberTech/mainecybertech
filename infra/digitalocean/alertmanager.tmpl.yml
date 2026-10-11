@@ -1,13 +1,18 @@
 # Alertmanager configuration TEMPLATE for the MCT portal stack (IR-P0-003).
 #
 # This file is a ${VAR} template, NOT a loadable Alertmanager config. It is
-# rendered by `envsubst` at container start (see the alertmanager service in
-# docker-compose.yml, which runs:
-#   /bin/sh -c 'envsubst < /etc/alertmanager/alertmanager.tmpl.yml > /etc/alertmanager/alertmanager.yml && exec /bin/alertmanager ...'
-# ). This is required because Alertmanager does NOT understand shell-style
-# `${VAR:-default}` defaults — a literal `${...}` in a `url:` fails config
-# validation with "first path segment in URL cannot contain colon". The
-# compose file therefore supplies defaults for every variable below.
+# rendered at container start by the alertmanager service's awk one-liner (see
+# docker-compose.yml), which substitutes every placeholder below from the
+# environment and fails if any placeholder survives. This is required because
+# Alertmanager does NOT understand shell-style `${VAR:-default}` defaults — a
+# literal `${...}` in a `url:` fails config validation with "first path segment
+# in URL cannot contain colon". The compose file therefore supplies defaults
+# for every variable below.
+#
+# The live receiver is the org ntfy instance (https://ntfy.mainecybertech.us):
+# critical and default alerts post to the portal topic and ntfy turns the
+# webhook body into the notification. Basic auth uses a portal-specific,
+# write-only relay user (ALERTMANAGER_WEBHOOK_USER/PASS).
 #
 # This is the DELIVERY half of the alerting path. Prometheus (see prometheus.yml
 # `alerting:`) forwards firing alerts here; Alertmanager fans them out to the
@@ -39,6 +44,11 @@
 #     Leave unset to use the generic webhook receivers only.
 #   ALERTMANAGER_SLACK_CHANNEL
 #     Slack channel name for the above (e.g. "#alerts"). Non-secret.
+#   ALERTMANAGER_WEBHOOK_USER / ALERTMANAGER_WEBHOOK_PASS
+#     Basic-auth credentials sent with the critical/default webhook POSTs (the
+#     ntfy relay user). Both are required whenever those URLs point at ntfy;
+#     compose substitutes a non-secret placeholder when unset so the config
+#     still validates.
 #
 # See docs/MONITORING_AND_ALERTING.md §9 for the operating model and the
 # "what happens when the whole stack dies" walkthrough.
@@ -98,6 +108,10 @@ receivers:
     webhook_configs:
       - url: "${ALERTMANAGER_DEFAULT_WEBHOOK_URL}"
         send_resolved: true
+        http_config:
+          basic_auth:
+            username: "${ALERTMANAGER_WEBHOOK_USER}"
+            password: "${ALERTMANAGER_WEBHOOK_PASS}"
     slack_configs:
       - api_url: "${ALERTMANAGER_SLACK_API_URL}"
         channel: "${ALERTMANAGER_SLACK_CHANNEL}"
@@ -113,6 +127,10 @@ receivers:
     webhook_configs:
       - url: "${ALERTMANAGER_CRITICAL_WEBHOOK_URL}"
         send_resolved: true
+        http_config:
+          basic_auth:
+            username: "${ALERTMANAGER_WEBHOOK_USER}"
+            password: "${ALERTMANAGER_WEBHOOK_PASS}"
     slack_configs:
       - api_url: "${ALERTMANAGER_SLACK_API_URL}"
         channel: "${ALERTMANAGER_SLACK_CHANNEL}"
