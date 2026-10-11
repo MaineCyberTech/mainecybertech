@@ -249,10 +249,13 @@ groups:
           summary: "Webhook delivery failure ratio above 50% ({{ $labels.job }})"
           description: "More than half of outbound webhook deliveries on {{ $labels.job }} have failed for 15 minutes. Consumers are missing events; check the delivery error logs and the receiver endpoints."
 
-      # NOTIF-P1-003: delivery failures were metered but unalerted. SLO #4
-      # (docs/SLO.md) is >= 99% success; 5% over 30m is the actionable version.
-      # Skipped deliveries are excluded from the denominator because in_app
-      # skips are dedup hits, not failures.
+      # NOTIF-P1-003 / NOTIF-P2-010: delivery failures were metered but unalerted.
+      # SLO #4 (docs/SLO.md) is >= 99% success; 5% over 30m is the actionable
+      # version. This rule is also the alert on the SLO ratio: the API records a
+      # successful email enqueue as `queued` (a hand-off, not a delivery), so the
+      # denominator below counts only terminal outcomes and the worker branch
+      # carries the real send result. Skipped deliveries are excluded from the
+      # denominator because in_app skips are dedup hits, not failures.
       - alert: MCTNotificationDeliveryFailureRateHigh
         expr: |
           (

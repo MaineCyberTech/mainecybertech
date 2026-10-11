@@ -230,11 +230,15 @@ export function recordIdempotencyKeyHit() {
 
 /**
  * Record the outcome of a notification/email delivery attempt.
- * `status` is `success`, `failed`, or `skipped` (e.g. SMTP not configured).
+ *
+ * Terminal outcomes are `success`, `failed` or `skipped` (e.g. SMTP not
+ * configured). `queued` is the API-side hand-off to the worker queue
+ * (NOTIF-P2-010): an enqueue is NOT a delivery, so the delivery SLO
+ * (docs/SLO.md) counts only the worker's terminal outcomes.
  */
 export function recordNotificationDelivery(
   channel: "in_app" | "email",
-  status: "success" | "failed" | "skipped",
+  status: "success" | "failed" | "skipped" | "queued",
 ) {
   notificationDeliveryTotal.inc({ channel, status });
 }

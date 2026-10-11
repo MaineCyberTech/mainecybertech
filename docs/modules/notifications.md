@@ -38,3 +38,23 @@ Key fields: `id`, `user_id`, `title`, `body`, `type`, `read`, `organization_id`,
 
 - Admin: full CRUD + create/delete any notification
 - Client: read own notifications + mark read (portal)
+
+## Content Sensitivity (NOTIF-P2-005)
+
+Notification bodies are filtered by `redactSensitiveContent`
+(`apps/api/src/lib/notification-content.ts`, mirrored in
+`apps/worker/src/notification-content.ts`): credential-like values
+(password/API-key/token assignments, bearer tokens, provider key shapes,
+PEM private-key blocks), SSNs and Luhn-valid card numbers are replaced with
+`[redacted]` before the row is stored or an email is queued. Ticket-comment
+notifications carry an abstract body plus the deep link instead of the raw
+comment excerpt.
+
+## Delivery Metrics (NOTIF-P2-010)
+
+A successful API-side email enqueue is recorded as
+`portal_notification_delivery_total{status="queued"}` — a hand-off, not a
+delivery. The worker records the terminal outcome
+(`worker_notification_delivery_total`); the delivery SLO in `docs/SLO.md` and
+`MCTNotificationDeliveryFailureRateHigh` are computed from those worker
+outcomes.

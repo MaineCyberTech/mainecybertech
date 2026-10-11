@@ -10,6 +10,7 @@ import {
   buildNotificationKey,
   claimNotificationEmail,
 } from "../notification-store";
+import { redactSensitiveContent } from "../notification-content";
 import { recordNotificationDelivery, recordNotificationSuppressed } from "../metrics";
 
 interface NotificationPayload {
@@ -154,7 +155,12 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           const projName = Array.isArray(task.projects)
             ? (task.projects as Array<{ name: string }>)[0]?.name
             : ((task.projects as { name: string } | null)?.name ?? null);
-          const body = `"${task.title}"${isOverdue ? " is overdue" : " is due within 24 hours"}${projName ? ` in project ${projName}` : ""}.`;
+          // NOTIF-P2-005: task/project names are user-supplied; run the
+          // sensitivity filter before the body is stored or emailed.
+          const taskTitle = redactSensitiveContent(task.title);
+          const body = redactSensitiveContent(
+            `"${taskTitle}"${isOverdue ? " is overdue" : " is due within 24 hours"}${projName ? ` in project ${projName}` : ""}.`,
+          );
           const link = `${appBaseUrl}/portal/projects/${task.project_id}`;
 
           // Dedupe: the scan runs daily and a task can stay overdue for days,
@@ -209,7 +215,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           } else {
             const emailSent = await sendEmail({
               to: profile.email,
-              subject: `[Maine CyberTech] ${title}: ${task.title}`,
+              subject: `[Maine CyberTech] ${title}: ${taskTitle}`,
               text: `Hello ${profile.full_name ?? "there"},\n\n${body}\n\nView your project: ${link}`,
               html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(body)}</p><p><a href="${link}">View project</a></p>`,
             });
@@ -277,8 +283,10 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           module: "tickets",
         });
 
-        const ticketTitle = p.title ?? "Ticket Updated";
-        const ticketBody = p.body ?? "A ticket has been updated.";
+        // NOTIF-P2-005: ticket payload text is user-supplied; run the
+        // sensitivity filter before the body is stored or emailed.
+        const ticketTitle = redactSensitiveContent(p.title ?? "Ticket Updated");
+        const ticketBody = redactSensitiveContent(p.body ?? "A ticket has been updated.");
         // NOTIF-P2-004: one atomic claim per notification owns the email send.
         const notificationKey = buildNotificationKey({
           userId: p.targetUserId,
@@ -324,7 +332,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
         }
 
         logger.info(
-          { userId: p.targetUserId, title: p.title },
+          { userId: p.targetUserId, title: ticketTitle },
           "Ticket responded notification sent",
         );
         return { ok: true };
@@ -351,21 +359,23 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           module: "system",
         });
 
-        const customBody = p.body ?? "";
+        // NOTIF-P2-005: admin-supplied text is filtered before storage/email.
+        const customTitle = redactSensitiveContent(p.title ?? "");
+        const customBody = redactSensitiveContent(p.body ?? "");
         // NOTIF-P2-004: one atomic claim per notification owns the email send.
         const notificationKey = buildNotificationKey({
           userId: p.targetUserId,
           module: "system",
           moduleId: null,
           action: "created",
-          title: p.title,
+          title: customTitle,
           body: customBody,
         });
         const inApp = await insertNotification(
           supabase,
           {
             userId: p.targetUserId,
-            title: p.title,
+            title: customTitle,
             body: customBody,
             module: "system",
             moduleId: null,
@@ -389,14 +399,14 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
         } else {
           const emailSent = await sendEmail({
             to: profile.email,
-            subject: `[Maine CyberTech] ${p.title}`,
+            subject: `[Maine CyberTech] ${customTitle}`,
             text: `Hello ${profile.full_name ?? "there"},\n\n${customBody}`,
             html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(customBody)}</p>`,
           });
           recordNotificationDelivery("email", emailSent ? "success" : "failed");
         }
 
-        logger.info({ userId: p.targetUserId, title: p.title }, "Custom notification sent");
+        logger.info({ userId: p.targetUserId, title: customTitle }, "Custom notification sent");
         return { ok: true };
       }
 

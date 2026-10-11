@@ -6,6 +6,7 @@ import { logger } from "./logger";
 import { getEnv } from "../config/env";
 import { claimIdempotencyKey } from "./idempotency";
 import { resolveChannels, type ResolvedChannels } from "./notification-channels";
+import { redactSensitiveContent } from "./notification-content";
 import {
   recordNotificationDelivery,
   recordNotificationDedup,
@@ -56,6 +57,15 @@ export function escapeHtml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+/** NOTIF-P2-005: apply the sensitivity filter to the stored/emailed fields. */
+function sanitizeNotificationOptions(opts: NotifyOptions): NotifyOptions {
+  return {
+    ...opts,
+    title: redactSensitiveContent(opts.title),
+    body: redactSensitiveContent(opts.body),
+  };
 }
 
 /**
@@ -129,19 +139,23 @@ export async function createNotification(
     return { inserted: false, deduped: false, suppressed: true };
   }
 
+  // NOTIF-P2-005: filter secrets/PII before the row is stored (and before the
+  // dedup key is derived, so a retried replay still hashes identically).
+  const safeOpts = sanitizeNotificationOptions(opts);
+
   const notificationKey =
     opts.notificationKey ??
     buildNotificationKey({
-      userId: opts.userId,
-      module: opts.module,
-      moduleId: opts.moduleId,
-      action: opts.action,
-      title: opts.title,
-      body: opts.body,
+      userId: safeOpts.userId,
+      module: safeOpts.module,
+      moduleId: safeOpts.moduleId,
+      action: safeOpts.action,
+      title: safeOpts.title,
+      body: safeOpts.body,
     });
 
   try {
-    const { inserted, deduped } = await insertNotification(opts, notificationKey);
+    const { inserted, deduped } = await insertNotification(safeOpts, notificationKey);
     if (deduped) recordNotificationDedup("in_app");
     recordNotificationDelivery("in_app", inserted ? "success" : "skipped");
     return { inserted, deduped, suppressed: false };
@@ -150,7 +164,7 @@ export async function createNotification(
       {
         error: error instanceof Error ? error.message : String(error),
         userId: opts.userId,
-        title: opts.title,
+        title: safeOpts.title,
         notificationKey,
       },
       "Failed to create in-app notification",
@@ -192,20 +206,24 @@ export async function notifyAndEmail(
     module: opts.module,
   });
 
+  // NOTIF-P2-005: filter secrets/PII once for both channels; the sanitized
+  // values feed the dedup key, the stored row and the email payload.
+  const safeOpts = sanitizeNotificationOptions(opts);
+
   // Derive the dedup key once and share it with the email claim below so both
   // channels are gated by the same `notification_key`.
   const notificationKey =
     opts.notificationKey ??
     buildNotificationKey({
-      userId: opts.userId,
-      module: opts.module,
-      moduleId: opts.moduleId,
-      action: opts.action,
-      title: opts.title,
-      body: opts.body,
+      userId: safeOpts.userId,
+      module: safeOpts.module,
+      moduleId: safeOpts.moduleId,
+      action: safeOpts.action,
+      title: safeOpts.title,
+      body: safeOpts.body,
     });
 
-  const inApp = await createNotification({ ...opts, notificationKey }, channels);
+  const inApp = await createNotification({ ...safeOpts, notificationKey }, channels);
 
   const baseUrl = getEnv().APP_BASE_URL;
   // CodeQL js/xss (alert #6): the module id is user-provided route data (e.g.
@@ -254,20 +272,23 @@ export async function notifyAndEmail(
 
   const emailPayload = {
     to: emailTo,
-    subject: `[Maine CyberTech] ${opts.title}`,
-    text: `${opts.body}\n\nView: ${baseUrl}${modulePath}`,
+    subject: `[Maine CyberTech] ${safeOpts.title}`,
+    text: `${safeOpts.body}\n\nView: ${baseUrl}${modulePath}`,
     html:
-      opts.emailHtml ??
-      `<p>${escapeHtml(opts.body).replace(/\n/g, "<br/>")}</p>${modulePath ? `<p><a href="${escapeHtml(`${baseUrl}${modulePath}`)}">View details</a></p>` : ""}`,
+      opts.emailHtml != null
+        ? redactSensitiveContent(opts.emailHtml)
+        : `<p>${escapeHtml(safeOpts.body).replace(/\n/g, "<br/>")}</p>${modulePath ? `<p><a href="${escapeHtml(`${baseUrl}${modulePath}`)}">View details</a></p>` : ""}`,
   };
 
   // Route email through the worker queue when available (retries + backoff);
   // fall back to sending inline so the notification is never lost.
   const enqueued = await enqueueTask("notification-email", emailPayload);
   if (enqueued) {
-    // The worker owns delivery from here; a queued job is recorded as a
-    // successful hand-off so an enqueue is never mistaken for a failed send.
-    recordNotificationDelivery("email", "success");
+    // NOTIF-P2-010: a queued job is a hand-off, not a delivery. Record it as
+    // `queued` so a successful enqueue can never be read as a successful send;
+    // the worker records the terminal outcome on its own counter, which the
+    // delivery SLO (docs/SLO.md) is computed from.
+    recordNotificationDelivery("email", "queued");
     return { ...inApp, emailQueued: true, emailSent: false, emailSkipped: false };
   }
 
