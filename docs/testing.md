@@ -13,7 +13,7 @@ hand-maintained — the current totals live in [README.md](../README.md) and
 | Web     | Jest + ts-jest + Testing Library            | custom jsdom (`jest-custom-environment.js`) | `apps/web/jest.config.mjs`      | `pnpm --filter=web test`    |
 | SDK     | Jest + ts-jest (fetch mocked)               | `node`                                      | `packages/sdk/jest.config.mjs`  | `pnpm --filter=sdk test`    |
 | Worker  | Jest + ts-jest (env schema + task handlers) | `node`                                      | `apps/worker/jest.config.mjs`   | `pnpm --filter=worker test` |
-| E2E     | Playwright (chromium) + axe-core            | real browsers against the running stack     | `apps/web/playwright.config.ts` | `pnpm e2e`                  |
+| E2E     | Playwright (chromium + Pixel 7/iPhone 13 mobile) + axe-core | real browsers against the running stack     | `apps/web/playwright.config.ts` | `pnpm e2e`                  |
 
 ## Running suites
 
@@ -49,7 +49,7 @@ E2E needs the full local stack:
    `e2e.yml` builds and starts both apps explicitly.
 
 ```bash
-pnpm exec playwright install chromium
+pnpm exec playwright install --with-deps chromium webkit
 pnpm e2e                 # apps/web/e2e/**/*.spec.ts
 ```
 

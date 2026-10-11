@@ -102,7 +102,7 @@ export function Dialog({
         ref={dialogRef}
         tabIndex={-1}
         className={cn(
-          "fixed inset-0 z-50 flex items-center justify-center p-4",
+          "fixed inset-0 z-50 flex items-start justify-center p-4 sm:items-center",
           "animate-in fade-in-0 zoom-in-95 duration-200",
         )}
         role="dialog"
@@ -113,7 +113,7 @@ export function Dialog({
       >
         <div
           className={cn(
-            "relative w-full overflow-hidden rounded-xl border border-white/10 bg-[#0A1118]/95 shadow-[0_25px_50px_rgba(0,0,0,0.5)] backdrop-blur-md",
+            "relative max-h-[90vh] w-full overflow-y-auto rounded-xl border border-white/10 bg-[#0A1118]/95 shadow-[0_25px_50px_rgba(0,0,0,0.5)] backdrop-blur-md",
             "animate-in slide-in-from-bottom-4 zoom-in-95 duration-200",
             sizeStyles[size],
           )}

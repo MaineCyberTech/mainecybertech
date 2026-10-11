@@ -104,7 +104,7 @@ export default function ContactForm() {
   }
 
   const inputCls = (field: keyof FormData) =>
-    `w-full rounded border border-white/10 bg-cyber-base/60 px-4 py-3 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 focus:shadow-[0_0_10px_rgba(5,150,105,0.2)] ${errors[field] ? "border-red-500" : ""}`;
+    `w-full rounded border border-white/10 bg-cyber-base/60 px-4 py-3 text-base text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 focus:shadow-[0_0_10px_rgba(5,150,105,0.2)] sm:text-sm ${errors[field] ? "border-red-500" : ""}`;
 
   const labelCls = "mb-2 block text-xs font-semibold uppercase tracking-widest text-slate-300";
 

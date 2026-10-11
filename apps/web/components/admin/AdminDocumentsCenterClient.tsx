@@ -1787,7 +1787,7 @@ export default function AdminDocumentsCenterClient({
             onKeyDown={(e) => {
               if (e.key === "Escape") setShowCreateModal(false);
             }}
-            className="w-full max-w-3xl rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
+            className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
           >
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
               <div>

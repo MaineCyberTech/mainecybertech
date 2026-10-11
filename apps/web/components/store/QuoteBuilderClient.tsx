@@ -300,7 +300,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90"
+                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-base text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 sm:text-sm"
                   required
                 />
               </div>
@@ -316,7 +316,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90"
+                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-base text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 sm:text-sm"
                   required
                 />
               </div>
@@ -332,7 +332,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90"
+                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-base text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 sm:text-sm"
                   required
                 />
               </div>
@@ -348,7 +348,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                   rows={3}
                   value={form.notes}
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90"
+                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-base text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 sm:text-sm"
                 />
               </div>
 

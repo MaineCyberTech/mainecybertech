@@ -46,7 +46,7 @@ The platform is designed to support:
 - SDK package with retry logic (296 tests)
 - worker framework with 28 registered task handlers (104 tests)
 - Docker images for all services (web, api, worker)
-- E2E tests with Playwright (90 spec files)
+- E2E tests with Playwright (91 spec files)
 - CI/CD pipelines (test, lint, typecheck, build, deploy, E2E)
 - Security hardening (XSS prevention, CSP headers, rate limiting)
 - Performance optimization (database indexes, response caching)
@@ -125,7 +125,7 @@ terraform apply -var-file=env/prod.tfvars
 
 ```bash
 pnpm test                    # All unit tests (3,490)
-pnpm e2e                     # E2E tests (90 spec files)
+pnpm e2e                     # E2E tests (91 spec files)
 pnpm --filter=api dev        # API dev server
 pnpm --filter=web dev        # Web dev server (auto-started by Playwright)
 pnpm --filter=api typecheck  # TypeScript check
@@ -244,7 +244,7 @@ pnpm --filter=web test:coverage
 
 ```bash
 # Install browsers (first time)
-pnpm exec playwright install chromium
+pnpm exec playwright install --with-deps chromium webkit
 
 # Run E2E tests
 pnpm --filter=web e2e

@@ -222,7 +222,7 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
             onKeyDown={(e) => {
               if (e.key === "Escape") setOpenModal(false);
             }}
-            className="w-full max-w-2xl rounded-xl border border-white/10 bg-cyber-card-deep shadow-2xl"
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-white/10 bg-cyber-card-deep shadow-2xl"
           >
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <div>

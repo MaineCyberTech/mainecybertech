@@ -4,6 +4,7 @@ import { Inter, Orbitron } from "next/font/google";
 import { ThemeProvider } from "@mct/ui/providers/ThemeProvider";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { RouteAnnouncer } from "@/components/RouteAnnouncer";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { VersionBadge } from "@/components/version-badge";
 
 const inter = Inter({
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider defaultTheme="dark" storageKey="mct-theme-dark">
           <ToastProvider>
             <RouteAnnouncer />
+            <ServiceWorkerRegistrar />
             <div>{children}</div>
             <VersionBadge />
           </ToastProvider>
