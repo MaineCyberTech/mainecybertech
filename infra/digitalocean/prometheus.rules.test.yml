@@ -513,3 +513,69 @@ tests:
       - eval_time: 10m
         alertname: MCTStripeReconcileDrift
         exp_alerts: []
+
+  # CASE 33: a queue that stays disconnected MUST fire MCTWorkerQueueDisconnected.
+  - interval: 1m
+    input_series:
+      - series: 'worker_queue_connected'
+        values: '0+0x60'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: MCTWorkerQueueDisconnected
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              team: platform
+            exp_annotations:
+              summary: "MCT worker lost its BullMQ (Redis) queue connection"
+              description: "worker_queue_connected has been 0 for 5 minutes: the worker cannot consume queued tasks, and scheduled tasks fall back to direct execution. Check Redis (docker compose ps redis) and the worker logs; the worker container also reports unhealthy on /health."
+
+  # CASE 34: a connected queue MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'worker_queue_connected'
+        values: '1+0x60'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: MCTWorkerQueueDisconnected
+        exp_alerts: []
+
+  # CASE 35: a backlog growing faster than the consumer drains it MUST fire
+  # MCTWorkerQueueBacklogGrowing, even while it is below the absolute
+  # MCTWorkerQueueBacklog threshold.
+  - interval: 1m
+    input_series:
+      - series: 'worker_task_queue_depth{queue="mct-tasks"}'
+        values: '0+5x60'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: MCTWorkerQueueBacklogGrowing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              queue: mct-tasks
+            exp_annotations:
+              summary: "MCT worker task queue backlog is growing"
+              description: "worker_task_queue_depth for mct-tasks is above 20 and has grown by more than 25 jobs over 10 minutes, sustained for 10 minutes. Arrivals are outpacing the consumer - check the worker logs, Redis latency and worker concurrency."
+
+  # CASE 36: a large FLAT backlog MUST stay quiet on the growth rule - that
+  # shape is covered by the absolute MCTWorkerQueueBacklog rule (CASE 28).
+  - interval: 1m
+    input_series:
+      - series: 'worker_task_queue_depth{queue="mct-tasks"}'
+        values: '150+0x60'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: MCTWorkerQueueBacklogGrowing
+        exp_alerts: []
+
+  # CASE 37: a small flat backlog MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'worker_task_queue_depth{queue="mct-tasks"}'
+        values: '5+0x60'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: MCTWorkerQueueBacklogGrowing
+        exp_alerts: []

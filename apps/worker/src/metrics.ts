@@ -1,6 +1,7 @@
 import promClient from "prom-client";
 import { getRegisteredTaskTypes } from "./task-registry";
 import { getTaskQueueStats } from "./producer";
+import { getWorkerQueueHealth } from "./queue-health";
 
 const register = new promClient.Registry();
 
@@ -25,6 +26,14 @@ export const taskQueueDepth = new promClient.Gauge({
   name: "worker_task_queue_depth",
   help: "Current number of tasks waiting or active in the BullMQ queue (set only when the queue connection is available)",
   labelNames: ["queue"] as const,
+  registers: [register],
+});
+
+// RES-P2-008: 1 while the worker's BullMQ connections are ready, 0 when the
+// producer Queue or the consumer Worker has lost its Redis connection.
+export const workerQueueConnected = new promClient.Gauge({
+  name: "worker_queue_connected",
+  help: "1 when the worker's BullMQ queue connections (producer and consumer) are ready, or BullMQ is not the active queue backend; 0 when a connection is lost",
   registers: [register],
 });
 
@@ -114,6 +123,10 @@ export async function getMetrics(): Promise<string> {
   } else {
     taskQueueDepth.set({ queue: "unavailable" }, 0);
   }
+
+  // RES-P2-008: scrape-time connectivity read (producer's cached state plus
+  // the consumer's connection lifecycle state).
+  workerQueueConnected.set(getWorkerQueueHealth().connected ? 1 : 0);
 
   return register.metrics();
 }

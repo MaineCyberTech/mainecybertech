@@ -92,9 +92,12 @@ Returns **503** with `"degraded"` if any check fails.
     "m365-calendar-sync",
     "scheduled-notifications"
   ],
-  "shuttingDown": false
+  "shuttingDown": false,
+  "queue": { "connected": true }
 }
 ```
+
+Returns **503** with `"status": "degraded"` when the BullMQ queue connection (producer Queue or consumer Worker) is lost, so the compose healthcheck and the deploy health gate fail on a queue outage (RES-P2-008).
 
 ---
 
@@ -147,12 +150,15 @@ Worker (`apps/worker/src/metrics.ts`):
 | `worker_task_executions_total`           | Counter   | `task_type`, `status` |
 | `worker_task_execution_duration_seconds` | Histogram | `task_type`           |
 | `worker_task_queue_depth`                | Gauge     | `queue`               |
+| `worker_queue_connected`                 | Gauge     | —                     |
 | `worker_registered_tasks`                | Gauge     | —                     |
 | `worker_memory_usage_bytes`              | Gauge     | —                     |
 | `worker_notification_delivery_total`     | Counter   | `channel`, `status`   |
 | `worker_notification_suppressed_total`   | Counter   | `channel`, `module`   |
 | `worker_webhook_deliveries_total`        | Counter   | `status`, `event`     |
 | `worker_webhook_dead_letters_total`      | Counter   | `event`               |
+
+`worker_queue_connected` is 1 while the worker's BullMQ connections are ready and 0 when either is lost; `MCTWorkerQueueDisconnected` alerts on `== 0` for 5m, and `MCTWorkerQueueBacklogGrowing` alerts on a growing `worker_task_queue_depth` (RES-P2-008) alongside the absolute `MCTWorkerQueueBacklog` rule (OBS-P2-009).
 
 The alert rules in `prometheus.rules.yml` query these metrics: `MCTHighRequestErrorRate` → `portal_http_requests_total{status_code=~"5.."}`; `MCTImpersonationBurst` → `portal_impersonation_events_total`; `MCTTenantScopeRegression` and `MCTRlsEnforcedShareCollapsed` → `portal_rls_bypass_total` / `portal_rls_enforced_total`.
 

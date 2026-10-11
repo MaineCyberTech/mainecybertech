@@ -348,3 +348,41 @@ groups:
           summary: "Stripe reconciliation detected billing drift"
           description: "The stripe-reconcile task found at least one mirror-vs-Stripe mismatch in the last 25 hours (subscription status, invoice count/sum, or payment count/sum). Check the worker logs for the organization and drift kind, then compare the local billing mirror with Stripe."
 
+
+  # RES-P2-008: worker queue connectivity. The worker exports
+  # worker_queue_connected (1 while both its BullMQ producer Queue and consumer
+  # Worker hold a ready Redis connection, 0 when either is lost). In the same
+  # disconnected state the worker /health probe returns 503, so a lost queue
+  # also fails the compose healthcheck and the deploy gate. This complements
+  # MCTWorkerQueueBacklog above: a disconnected queue freezes the depth gauge
+  # (or moves it to queue="unavailable"), which the backlog rule cannot see.
+  # Delivery requires Alertmanager (see the file header).
+  - name: mct-worker-queue
+    rules:
+      - alert: MCTWorkerQueueDisconnected
+        expr: worker_queue_connected == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "MCT worker lost its BullMQ (Redis) queue connection"
+          description: "worker_queue_connected has been 0 for 5 minutes: the worker cannot consume queued tasks, and scheduled tasks fall back to direct execution. Check Redis (docker compose ps redis) and the worker logs; the worker container also reports unhealthy on /health."
+
+      # RES-P2-008 / IR-P1-003: backlog GROWTH, complementing the absolute
+      # MCTWorkerQueueBacklog rule (OBS-P2-009). A backlog that is climbing on
+      # top of a non-trivial base means arrivals outpace the consumer well
+      # before the absolute threshold is reached. The queue="unavailable"
+      # series (the disconnected shape) is deliberately not matched here.
+      - alert: MCTWorkerQueueBacklogGrowing
+        expr: |
+          worker_task_queue_depth{queue="mct-tasks"} > 20
+          and
+          delta(worker_task_queue_depth{queue="mct-tasks"}[10m]) > 25
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "MCT worker task queue backlog is growing"
+          description: "worker_task_queue_depth for mct-tasks is above 20 and has grown by more than 25 jobs over 10 minutes, sustained for 10 minutes. Arrivals are outpacing the consumer - check the worker logs, Redis latency and worker concurrency."

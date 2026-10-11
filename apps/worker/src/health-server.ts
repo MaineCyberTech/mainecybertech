@@ -3,15 +3,17 @@ import { logger } from "./logger";
 import { getRegisteredTaskTypes } from "./task-registry";
 import { isShuttingDown } from "./shutdown";
 import { getMetrics, getMetricsContentType } from "./metrics";
-import { getTaskQueueHealth } from "./producer";
+import { getWorkerQueueHealth } from "./queue-health";
 
 export function startHealthServer(port: number = 3001): http.Server {
   const server = http.createServer((req, res) => {
     if (req.url === "/health") {
-      const queueHealth = getTaskQueueHealth();
+      const queueHealth = getWorkerQueueHealth();
       const shuttingDown = isShuttingDown();
-      // Health check should pass if not shutting down; queue degraded is OK for liveness
-      const healthy = !shuttingDown;
+      // RES-P2-008: a lost queue connection is a real failure, not just a
+      // "degraded" label — 503 makes the compose healthcheck and the deploy
+      // gate act on it.
+      const healthy = !shuttingDown && queueHealth.connected;
 
       res.statusCode = healthy ? 200 : 503;
       res.setHeader("Content-Type", "application/json");
