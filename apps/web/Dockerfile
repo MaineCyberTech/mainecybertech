@@ -20,12 +20,17 @@ ARG NEXT_PUBLIC_GIT_SHA
 ARG NEXT_PUBLIC_BUILD_TIME
 ARG NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ARG NEXT_PUBLIC_SENTRY_DSN
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4000}
 ENV NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION:-0.0.0-dev}
 ENV NEXT_PUBLIC_GIT_SHA=${NEXT_PUBLIC_GIT_SHA:-local}
 ENV NEXT_PUBLIC_BUILD_TIME=${NEXT_PUBLIC_BUILD_TIME:-}
 ENV NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED=${NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED:-false}
 ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+# OBS-P2-011: the web Sentry configs read NEXT_PUBLIC_SENTRY_DSN, which Next
+# inlines into the client bundle at build time. Without this build arg the web
+# client had no DSN in production even though the deploy provided SENTRY_DSN.
+ENV NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN:-}
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages ./packages

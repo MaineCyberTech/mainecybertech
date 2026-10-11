@@ -46,6 +46,25 @@ docker compose logs -f web       # Follow web logs
 docker compose logs --tail=200   # Last 200 lines all services
 ```
 
+### Retention across deploys
+
+Container logs use Docker's `json-file` driver with rotation (`max-size: 10m`,
+`max-file: 3` per container — `infra/digitalocean/docker-compose.yml`). Because
+`deploy-do.yml` runs `docker compose down` on every deploy (and on rollback),
+that would otherwise destroy the containers' logs. Immediately before the
+`down`, the deploy snapshots the running stack's logs, gzipped, to
+`/opt/mct-portal/logs/pre-deploy-<UTC timestamp>.log.gz` and keeps only the
+last 7 snapshots:
+
+```bash
+ls -1t /opt/mct-portal/logs/                                  # newest first
+zcat /opt/mct-portal/logs/pre-deploy-20261011T042600Z.log.gz | less
+```
+
+Shipping logs off-box (e.g. a `vector` sidecar to Loki / Grafana Cloud /
+Datadog) remains an operator follow-up; until then these droplet-local
+snapshots are the cross-deploy history.
+
 Forward logs to a central service (future):
 
 - `vector` sidecar to ship to Datadog / Grafana Cloud / Loki
@@ -162,6 +181,8 @@ Worker (`apps/worker/src/metrics.ts`):
 
 The alert rules in `prometheus.rules.yml` query these metrics: `MCTHighRequestErrorRate` → `portal_http_requests_total{status_code=~"5.."}`; `MCTImpersonationBurst` → `portal_impersonation_events_total`; `MCTTenantScopeRegression` and `MCTRlsEnforcedShareCollapsed` → `portal_rls_bypass_total` / `portal_rls_enforced_total`.
 
+The `route` label on the two HTTP metrics is the matched Express route template (`req.baseUrl + req.route.path`, e.g. `/api/v1/tickets/:id`), not the concrete request path; requests that never matched a route (404s, `/metrics`) collapse to `unmatched`. Resource ids therefore never become label values and Prometheus series stay bounded (OBS-P2-010 / PERF-P2-001).
+
 ### Scraping
 
 The compose `prometheus` service scrapes the API on the internal network; no public exposure.
@@ -180,7 +201,7 @@ and a total loss of the droplet is not independently detected until an operator 
 
 ## 5. Sentry Error Tracking
 
-Initialized in all 3 services but **skipped when `SENTRY_DSN` is unset** (safe in local dev).
+Initialized in all 3 services but **skipped when the DSN is unset** (safe in local dev). The API and worker read `SENTRY_DSN`; the web app reads `NEXT_PUBLIC_SENTRY_DSN` (the same DSN — Sentry DSNs are public by design). `deploy-do.yml` delivers it to the web image as a build arg (Next inlines `NEXT_PUBLIC_*` into the client bundle, which is required for browser error capture) and writes it to the droplet `.env` for the web service runtime env. When it is missing in a production web build, `apps/web/instrumentation.ts` logs a boot warning (OBS-P2-011).
 
 | Service    | Init location                                     | Capture                                                                            |
 | ---------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
