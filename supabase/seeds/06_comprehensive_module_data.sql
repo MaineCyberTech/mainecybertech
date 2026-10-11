@@ -780,12 +780,14 @@ insert into public.store_proposal_drafts (id, quote_request_id, status, sections
   ('83230000-0000-0000-0000-000000000003'::uuid, '83200000-0000-0000-0000-000000000002'::uuid, 'approved', jsonb_build_object('executive_summary', 'Store IT support for Brightline locations.', 'pricing', jsonb_build_object('total', 15900)), '66ce903f-6fe0-45da-878b-a0398e6b1981'::uuid, '66ce903f-6fe0-45da-878b-a0398e6b1981'::uuid)
 on conflict (id) do nothing;
 
-insert into public.store_analytics_events (event, page, product_id, category_id, promo_id, quiz_id, quote_id, campaign_id, metadata, anonymous_id, ip_address, user_agent) values
-  ('product_view', '/store/products', 'managed-workstation', null, null, null, null, null, jsonb_build_object('source', 'seed'), 'anon-seed-0001', '127.0.0.1', 'seed-bot/1.0'),
-  ('quote_submit', '/store/quote', null, null, '70600000-0000-0000-0000-000000000001', null, null, null, jsonb_build_object('source', 'seed'), 'anon-seed-0002', '127.0.0.1', 'seed-bot/1.0'),
-  ('promo_click', '/store', null, null, '70600000-0000-0000-0000-000000000002', null, null, null, jsonb_build_object('source', 'seed'), 'anon-seed-0003', '127.0.0.1', 'seed-bot/1.0'),
-  ('category_view', '/store/categories', null, 'store-it-support', null, null, null, null, jsonb_build_object('source', 'seed'), 'anon-seed-0004', '127.0.0.1', 'seed-bot/1.0'),
-  ('quiz_start', '/store/quiz', null, null, null, 'quiz-cyber-baseline', null, null, jsonb_build_object('source', 'seed'), 'anon-seed-0005', '127.0.0.1', 'seed-bot/1.0');
+-- AN-P2-002: ip_address/user_agent are not part of the analytics contract and
+-- were dropped in migration 5302441; seeding them now fails the seed run.
+insert into public.store_analytics_events (event, page, product_id, category_id, promo_id, quiz_id, quote_id, campaign_id, metadata, anonymous_id) values
+  ('product_view', '/store/products', 'managed-workstation', null, null, null, null, null, jsonb_build_object('source', 'seed'), 'anon-seed-0001'),
+  ('quote_submit', '/store/quote', null, null, '70600000-0000-0000-0000-000000000001', null, null, null, jsonb_build_object('source', 'seed'), 'anon-seed-0002'),
+  ('promo_click', '/store', null, null, '70600000-0000-0000-0000-000000000002', null, null, null, jsonb_build_object('source', 'seed'), 'anon-seed-0003'),
+  ('category_view', '/store/categories', null, 'store-it-support', null, null, null, null, jsonb_build_object('source', 'seed'), 'anon-seed-0004'),
+  ('quiz_start', '/store/quiz', null, null, null, 'quiz-cyber-baseline', null, null, jsonb_build_object('source', 'seed'), 'anon-seed-0005');
 
 -- =========================================================
 -- 29. CUSTOM FORMS / CLIENT RUNBOOKS / BUDGET ROADMAPS
