@@ -2614,6 +2614,7 @@ export type Database = {
           tax_cents: number;
           total_cents: number;
           updated_at: string;
+          voided_at: string | null;
         };
         Insert: {
           organization_id: string;
@@ -2631,6 +2632,7 @@ export type Database = {
           tax_cents?: number | null;
           total_cents?: number | null;
           updated_at?: string | null;
+          voided_at?: string | null;
         };
         Update: {
           created_at?: string | null;
@@ -2648,6 +2650,7 @@ export type Database = {
           tax_cents?: number | null;
           total_cents?: number | null;
           updated_at?: string | null;
+          voided_at?: string | null;
         };
         Relationships: [
           { foreignKeyName: "invoices_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
@@ -3680,6 +3683,8 @@ export type Database = {
           invoice_id: string | null;
           organization_id: string;
           paid_at: string | null;
+          refund_amount_cents: number | null;
+          refunded_at: string | null;
           status: string;
           stripe_payment_intent_id: string | null;
         };
@@ -3692,6 +3697,8 @@ export type Database = {
           id?: string | null;
           invoice_id?: string | null;
           paid_at?: string | null;
+          refund_amount_cents?: number | null;
+          refunded_at?: string | null;
           stripe_payment_intent_id?: string | null;
         };
         Update: {
@@ -3702,6 +3709,8 @@ export type Database = {
           invoice_id?: string | null;
           organization_id?: string | null;
           paid_at?: string | null;
+          refund_amount_cents?: number | null;
+          refunded_at?: string | null;
           status?: string | null;
           stripe_payment_intent_id?: string | null;
         };
@@ -6134,16 +6143,22 @@ export type Database = {
       subscriptions: {
         Row: {
           amount_cents: number | null;
+          cancel_at_period_end: boolean;
+          canceled_at: string | null;
           created_at: string;
           currency: string | null;
           current_period_end: string | null;
           current_period_start: string | null;
           id: string;
+          interval: string | null;
           metadata: Json;
           organization_id: string;
           plan_name: string;
+          quantity: number | null;
           status: string;
           stripe_subscription_id: string | null;
+          trial_end: string | null;
+          trial_start: string | null;
           updated_at: string;
         };
         Insert: {
@@ -6151,27 +6166,39 @@ export type Database = {
           plan_name: string;
           status: string;
           amount_cents?: number | null;
+          cancel_at_period_end?: boolean | null;
+          canceled_at?: string | null;
           created_at?: string | null;
           currency?: string | null;
           current_period_end?: string | null;
           current_period_start?: string | null;
           id?: string | null;
+          interval?: string | null;
           metadata?: Json | null;
+          quantity?: number | null;
           stripe_subscription_id?: string | null;
+          trial_end?: string | null;
+          trial_start?: string | null;
           updated_at?: string | null;
         };
         Update: {
           amount_cents?: number | null;
+          cancel_at_period_end?: boolean | null;
+          canceled_at?: string | null;
           created_at?: string | null;
           currency?: string | null;
           current_period_end?: string | null;
           current_period_start?: string | null;
           id?: string | null;
+          interval?: string | null;
           metadata?: Json | null;
           organization_id?: string | null;
           plan_name?: string | null;
+          quantity?: number | null;
           status?: string | null;
           stripe_subscription_id?: string | null;
+          trial_end?: string | null;
+          trial_start?: string | null;
           updated_at?: string | null;
         };
         Relationships: [

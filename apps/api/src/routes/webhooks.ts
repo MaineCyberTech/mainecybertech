@@ -183,6 +183,22 @@ function assertMirrorWrite(
       500,
     );
   }
+ * Epoch-seconds timestamp of the most recent refund on a charge (BILL-P2-001),
+ * falling back to the Stripe event's `created` when the charge payload does not
+ * embed the refund list. Returns null when neither is available so callers can
+ * persist an explicit null instead of guessing.
+ */
+function refundTimestampSeconds(
+  charge: { refunds?: { data?: Array<{ created?: number | null }> } | null } | null | undefined,
+  fallback?: number | null,
+): number | null {
+  const refunds = Array.isArray(charge?.refunds?.data) ? charge.refunds.data : [];
+  let latest = 0;
+  for (const refund of refunds) {
+    if (typeof refund?.created === "number" && refund.created > latest) latest = refund.created;
+  }
+  if (latest > 0) return latest;
+  return typeof fallback === "number" ? fallback : null;
 }
 
 const JSM_STATUS_MAP: Record<string, string> = {
@@ -350,7 +366,8 @@ router.post("/stripe", async (req, res, next) => {
               "Skipping stale Stripe subscription event (terminal state)",
             );
           } else {
-            const price = sub.items?.data?.[0]?.price;
+            const item = sub.items?.data?.[0];
+            const price = item?.price;
             const { error: subscriptionWriteError } = await supabase.from("subscriptions").upsert(
               {
                 organization_id: customer.organization_id,
@@ -365,8 +382,15 @@ router.post("/stripe", async (req, res, next) => {
                   : null,
                 amount_cents: price?.unit_amount ?? 0,
                 currency: price?.currency ?? "usd",
+                // BILL-P2-001/P2-005: trial, interval and cancellation lifecycle.
+                interval: price?.recurring?.interval ?? null,
+                trial_start: sub.trial_start ? new Date(sub.trial_start * 1000).toISOString() : null,
+                trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+                cancel_at_period_end: sub.cancel_at_period_end ?? false,
+                canceled_at: sub.canceled_at ? new Date(sub.canceled_at * 1000).toISOString() : null,
+                quantity: item?.quantity ?? null,
               },
-              { onConflict: "stripe_subscription_id" },
+              { onConflict: "stripe_subscription_id" }
             );
             assertMirrorWrite(subscriptionWriteError, "subscriptions.upsert");
           }
@@ -448,7 +472,8 @@ router.post("/stripe", async (req, res, next) => {
 
     // Refunds → update the linked payment (BILL-P1-003). A charge may not have
     // a local PaymentIntent row (e.g. created before this handler shipped), so
-    // this is a best-effort update keyed on the PI id.
+    // this is a best-effort update keyed on the PI id. The refunded amount and
+    // timestamp are stored alongside the status (BILL-P2-001).
     if (event.type === "charge.refunded") {
       const charge = event.data?.object;
       const paymentIntentId = charge?.payment_intent;
@@ -474,18 +499,37 @@ router.post("/stripe", async (req, res, next) => {
             .update({ status: fullyRefunded ? "refunded" : "partially_refunded" })
             .eq("stripe_payment_intent_id", paymentIntentId);
           assertMirrorWrite(refundErr, "payments.update refund");
+        } else {
+          const refundedAt = refundTimestampSeconds(charge, event.created);
+          const { error: refundErr } = await supabase
+            .from("payments")
+            .update({
+              status: fullyRefunded ? "refunded" : "partially_refunded",
+              refund_amount_cents: Math.round(charge.amount_refunded ?? 0),
+              refunded_at: refundedAt ? new Date(refundedAt * 1000).toISOString() : null,
+            })
+            .eq("stripe_payment_intent_id", paymentIntentId);
+          assertMirrorWrite(refundErr, "payments.update refund");
         }
       }
     }
 
-    // Invoice lifecycle → map void / uncollectible onto the existing enum.
+    // Invoice lifecycle → map void / uncollectible onto the existing enum and
+    // timestamp the void transition (BILL-P2-005).
     if (event.type === "invoice.voided" || event.type === "invoice.marked_uncollectible") {
       const inv = event.data?.object;
       if (inv?.id) {
         const status = event.type === "invoice.voided" ? "void" : "uncollectible";
+        const voidedAt = inv.status_transitions?.voided_at ?? event.created;
         const { error: invoiceVoidWriteError } = await supabase
           .from("invoices")
-          .update({ status })
+          .update({
+            status,
+            voided_at:
+              event.type === "invoice.voided" && voidedAt
+                ? new Date(voidedAt * 1000).toISOString()
+                : undefined,
+          })
           .eq("stripe_invoice_id", inv.id);
         assertMirrorWrite(invoiceVoidWriteError, "invoices.update lifecycle");
       }
