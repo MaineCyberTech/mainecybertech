@@ -150,7 +150,11 @@ describe("retentionTask (DATA-P1-002)", () => {
   });
 
   it("archives audit rows before deleting them and batches notification deletes", async () => {
-    const state: TableState = { audit_logs: rows(2500), notifications: rows(10) };
+    const state: TableState = {
+      audit_logs: rows(2500),
+      notifications: rows(10),
+      store_analytics_events: rows(5),
+    };
     const supabase = makeSupabase(state);
     (createClient as unknown as jest.Mock).mockReturnValue(supabase);
 
@@ -185,7 +189,8 @@ describe("retentionTask (DATA-P1-002)", () => {
       notifications: rows(10),
       store_analytics_events: rows(5),
     };
-    (createClient as unknown as jest.Mock).mockReturnValue(makeSupabase(state));
+    const supabase = makeSupabase(state);
+    (createClient as unknown as jest.Mock).mockReturnValue(supabase);
 
     const res = await retentionTask({});
 
