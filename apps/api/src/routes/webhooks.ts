@@ -183,6 +183,8 @@ function assertMirrorWrite(
       500,
     );
   }
+
+/**
  * Epoch-seconds timestamp of the most recent refund on a charge (BILL-P2-001),
  * falling back to the Stripe event's `created` when the charge payload does not
  * embed the refund list. Returns null when neither is available so callers can
