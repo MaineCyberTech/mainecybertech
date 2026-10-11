@@ -1,6 +1,7 @@
 import { jest } from "@jest/globals";
 import {
   assertCanAssignRole,
+  assertCanManageRoleCatalog,
   isCrossTenantRoleKey,
   resolveRoleKey,
 } from "../lib/role-assignment";
@@ -64,5 +65,27 @@ describe("role-assignment guard [SEC-P1-001 / ADMIN-P1-003 / CHAIN-P1-004]", () 
   it("rejects an unknown role id", async () => {
     const supabase = makeClient({ roles: { data: null, error: null } });
     await expect(resolveRoleKey(supabase, "role-missing")).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe("role-catalog guard [SEC-P2-003]", () => {
+  it("rejects a delegated role manager without the super-admin profile flag", async () => {
+    const supabase = makeClient({ profiles: { data: { is_super_admin: false }, error: null } });
+    await expect(assertCanManageRoleCatalog(supabase, "caller-1")).rejects.toMatchObject({
+      status: 403,
+      code: "FORBIDDEN",
+    });
+  });
+
+  it("rejects a caller with no profile row", async () => {
+    const supabase = makeClient({ profiles: { data: null, error: null } });
+    await expect(assertCanManageRoleCatalog(supabase, "caller-1")).rejects.toMatchObject({
+      status: 403,
+    });
+  });
+
+  it("allows a platform super admin", async () => {
+    const supabase = makeClient({ profiles: { data: { is_super_admin: true }, error: null } });
+    await expect(assertCanManageRoleCatalog(supabase, "caller-1")).resolves.toBeUndefined();
   });
 });

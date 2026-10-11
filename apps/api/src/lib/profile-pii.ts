@@ -27,3 +27,29 @@ export function decryptProfilePii(encrypted: Record<string, unknown> | null | un
   if (!encrypted) return {};
   return decryptObject(encrypted) as ProfilePiiMap;
 }
+
+/**
+ * SEC-P2-002: the encrypted mirror is the READ path for profile PII.
+ *
+ * Replaces the plaintext PII columns on an API response row with the values
+ * decrypted from `encrypted_pii` and strips the ciphertext column itself. The
+ * plaintext columns are only a transitional fallback for rows written before
+ * the one-time backfill (`scripts/backfill-profile-pii.mjs`); once every row
+ * has `encrypted_pii`, the plaintext duplicates can be dropped by a follow-up
+ * migration without changing the response shape.
+ */
+export function decryptProfileRow(row: Record<string, unknown>): Record<string, unknown> {
+  const { encrypted_pii: encrypted, ...rest } = row;
+  const decrypted = decryptProfilePii(
+    (encrypted ?? null) as Record<string, unknown> | null,
+  );
+
+  for (const field of PROFILE_PII_FIELDS) {
+    const value = decrypted[field];
+    if (value !== undefined) {
+      rest[field] = value;
+    }
+  }
+
+  return rest;
+}

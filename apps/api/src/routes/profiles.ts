@@ -4,7 +4,12 @@ import multer from "multer";
 import { getSupabaseAdmin, getSupabaseUser } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
-import { encryptProfilePii, type ProfilePiiMap } from "../lib/profile-pii";
+import {
+  encryptProfilePii,
+  decryptProfilePii,
+  decryptProfileRow,
+  type ProfilePiiMap,
+} from "../lib/profile-pii";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess, assertSharesActiveOrg } from "../middleware/org-access";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
@@ -77,14 +82,14 @@ router.get("/", async (req, res, next) => {
         .eq("email", email.toLowerCase())
         .maybeSingle();
       if (profileError) throw new AppError("DB_ERROR", profileError.message, 500);
-      res.json(success(profile ?? null));
+      res.json(success(profile ? decryptProfileRow(profile) : null));
       return;
     }
 
     const { data, error } = await query;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data));
+    res.json(success((data ?? []).map(decryptProfileRow)));
   } catch (error) {
     next(error);
   }
@@ -111,7 +116,7 @@ router.get("/:id", async (req, res, next) => {
       .single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Profile not found", 404);
-    res.json(success(data));
+    res.json(success(decryptProfileRow(data)));
   } catch (error) {
     next(error);
   }
@@ -161,11 +166,18 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     if (parsed.phone !== undefined) updateData.phone = parsed.phone;
     if (parsed.title !== undefined) updateData.title = parsed.title;
 
+    // SEC-P2-002: merge changes over the ENCRYPTED copy when it exists (the
+    // read source of truth), falling back to the plaintext mirror for rows
+    // that have not been backfilled yet — so a write never clobbers a newer
+    // encrypted value with a stale plaintext one.
+    const decryptedCurrent = decryptProfilePii(
+      current.encrypted_pii as Record<string, unknown> | null | undefined,
+    );
     const currentPii: ProfilePiiMap = {
-      full_name: current.full_name ?? null,
-      email: current.email ?? null,
-      phone: current.phone ?? null,
-      title: current.title ?? null,
+      full_name: decryptedCurrent.full_name ?? current.full_name ?? null,
+      email: decryptedCurrent.email ?? current.email ?? null,
+      phone: decryptedCurrent.phone ?? current.phone ?? null,
+      title: decryptedCurrent.title ?? current.title ?? null,
     };
     const changesPii: ProfilePiiMap = {
       full_name: (updateData.full_name as string | undefined) ?? undefined,
@@ -195,7 +207,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
       metadata: updateData,
     });
 
-    res.json(success(data));
+    res.json(success(decryptProfileRow(data)));
   } catch (error) {
     next(error);
   }
