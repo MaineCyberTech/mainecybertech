@@ -179,6 +179,7 @@ export default function PrivacyPage() {
               for lead tracking are retained under those providers&apos; retention settings and may
               persist longer. Analytics data is retained in accordance with Google
               Analytics&apos; data retention settings.
+              Analytics&apos; data retention settings. First-party store analytics events (event
             </p>
           </section>
 

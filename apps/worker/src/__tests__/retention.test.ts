@@ -150,7 +150,11 @@ describe("retentionTask (DATA-P1-002)", () => {
   });
 
   it("archives audit rows before deleting them and batches notification deletes", async () => {
-    const state: TableState = { audit_logs: rows(2500), notifications: rows(10) };
+    const state: TableState = {
+      audit_logs: rows(2500),
+      notifications: rows(10),
+      store_analytics_events: rows(5),
+    };
     const supabase = makeSupabase(state);
     (createClient as unknown as jest.Mock).mockReturnValue(supabase);
 
@@ -170,6 +174,60 @@ describe("retentionTask (DATA-P1-002)", () => {
     // Notifications still use bounded batches (1000 + 1000 + 500 would be 2500;
     // 10 rows means one short batch).
     expect(state.notifications).toHaveLength(0);
+    expect(state.store_analytics_events).toHaveLength(0);
+  });
+  it("refuses a non-positive store analytics window (AN-P2-004)", async () => {
+    const res = await retentionTask({ storeAnalyticsRetentionDays: 0 });
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/storeAnalyticsRetentionDays must be a positive number of days/);
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("deletes in bounded batches and reports the real count", async () => {
+    const state: TableState = {
+      audit_logs: rows(2500),
+      notifications: rows(10),
+      store_analytics_events: rows(5),
+    };
+    const supabase = makeSupabase(state);
+    (createClient as unknown as jest.Mock).mockReturnValue(supabase);
+
+    const res = await retentionTask({});
+
+    expect(res.ok).toBe(true);
+    // The audit purge goes through the archive RPC, not a bare delete.
+    expect(supabase.rpcCalls).toHaveLength(1);
+    expect(supabase.rpcCalls[0].fn).toBe("archive_audit_logs");
+    expect(supabase.rpcCalls[0].args).toMatchObject({
+      p_cutoff: expect.any(String),
+      p_batch_size: 1000,
+      p_max_batches: 200,
+    });
+    expect(state.audit_logs).toHaveLength(0);
+    expect(state.audit_log_archive).toHaveLength(2500);
+    // Notifications still use bounded batches (1000 + 1000 + 500 would be 2500;
+    // 10 rows means one short batch).
+    expect(state.notifications).toHaveLength(0);
+    expect(state.store_analytics_events).toHaveLength(0);
+  });
+
+  it("purges store analytics events older than the cutoff (AN-P2-004)", async () => {
+    const old = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString();
+    const recent = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+    const state: TableState = {
+      audit_logs: [],
+      notifications: [],
+      store_analytics_events: [
+        { id: "old-1", created_at: old },
+        { id: "recent-1", created_at: recent },
+      ],
+    };
+    (createClient as unknown as jest.Mock).mockReturnValue(makeSupabase(state));
+
+    const res = await retentionTask({});
+
+    expect(res.ok).toBe(true);
+    expect(state.store_analytics_events.map((row) => row.id)).toEqual(["recent-1"]);
   });
 
   it("returns ok:false and keeps the rows when the audit archive fails", async () => {

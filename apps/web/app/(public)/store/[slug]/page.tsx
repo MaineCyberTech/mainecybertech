@@ -12,6 +12,7 @@ import TrustBadgeList from "@/components/store/TrustBadgeList";
 import IntakeFormRenderer from "@/components/store/IntakeFormRenderer";
 import { TrustPanelFromProduct } from "@/components/store/TrustPanel";
 import StickyMobileCta from "@/components/store/StickyMobileCta";
+import StoreAnalyticsTracker from "@/components/store/StoreAnalyticsTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,11 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
 
   return (
     <section className="min-h-screen px-4 pb-20 pt-32 sm:px-6 sm:pt-40">
+      <StoreAnalyticsTracker
+        event="product_detail_view"
+        page={`/store/${slug}`}
+        productId={product.id}
+      />
       <div className="mx-auto max-w-4xl">
         <nav className="mb-8 text-sm font-semibold uppercase tracking-widest text-slate-500">
           <Link

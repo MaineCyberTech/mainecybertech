@@ -23,12 +23,22 @@ const trackSchema = z.object({
   anonymousId: z.string().max(200).optional(),
 });
 
+// GET /api/v1/analytics/csrf - bootstrap the double-submit CSRF cookie for the
+// public storefront tracker (AN-P2-003). The token itself is issued by
+// csrfProtection on this safe request; the body is intentionally empty.
+router.get("/csrf", (_req, res) => {
+  res.status(204).end();
+});
+
 // POST /api/v1/analytics/track - public analytics event tracking
 router.post("/track", async (req, res, next) => {
   try {
     const parsed = trackSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
+    // AN-P2-002: tracking events carry no PII. The caller's IP and
+    // user-agent are deliberately NOT stored (the columns were dropped in
+    // migration 5302441), matching docs/modules/analytics.md.
     const { error } = await supabase.from("store_analytics_events").insert({
       event: parsed.event,
       page: parsed.page || null,
@@ -40,8 +50,6 @@ router.post("/track", async (req, res, next) => {
       campaign_id: parsed.campaignId || null,
       metadata: toJson(parsed.metadata || {}),
       anonymous_id: parsed.anonymousId || null,
-      ip_address: req.ip || req.socket.remoteAddress || null,
-      user_agent: (req.headers["user-agent"] as string) || null,
     });
 
     if (error) {

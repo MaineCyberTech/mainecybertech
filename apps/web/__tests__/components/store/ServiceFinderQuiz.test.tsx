@@ -1,6 +1,12 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import ServiceFinderQuiz from "@/components/store/ServiceFinderQuiz";
 import { getQuizQuestions } from "@/lib/catalog/loader";
+
+const mockTrack = jest.fn();
+
+jest.mock("@/lib/catalog/analytics", () => ({
+  track: (...args: unknown[]) => mockTrack(...args),
+}));
 
 jest.mock("next/link", () => {
   return ({ children, href, ...rest }: any) => (
@@ -19,6 +25,8 @@ jest.mock("@/components/store/StoreProductCard", () => {
 const questions = getQuizQuestions();
 
 describe("ServiceFinderQuiz", () => {
+  beforeEach(() => jest.clearAllMocks());
+
   it("renders first question", () => {
     render(<ServiceFinderQuiz questions={questions} />);
     expect(screen.getByText("What are you trying to improve first?")).toBeInTheDocument();
@@ -32,5 +40,18 @@ describe("ServiceFinderQuiz", () => {
   it('has "Next" button', () => {
     render(<ServiceFinderQuiz questions={questions} />);
     expect(screen.getByText("Next →")).toBeInTheDocument();
+  });
+
+  it("tracks quiz_complete on the last step [AN-P2-003]", () => {
+    render(<ServiceFinderQuiz questions={questions} />);
+
+    questions.forEach((question, index) => {
+      fireEvent.click(screen.getByText(question.options[0].label));
+      fireEvent.click(
+        screen.getByText(index === questions.length - 1 ? "See Results →" : "Next →"),
+      );
+    });
+
+    expect(mockTrack).toHaveBeenCalledWith("quiz_complete", { page: "/store/quiz" });
   });
 });

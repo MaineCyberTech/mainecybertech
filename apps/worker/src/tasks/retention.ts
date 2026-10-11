@@ -8,11 +8,14 @@ import type { TaskHandler, TaskResult } from "../task-registry";
 interface RetentionConfig {
   auditLogRetentionDays: number;
   notificationRetentionDays: number;
+  /** AN-P2-004: first-party storefront analytics rows (no PII). */
+  storeAnalyticsRetentionDays: number;
 }
 
 const DEFAULT_CONFIG: RetentionConfig = {
   auditLogRetentionDays: 365,
   notificationRetentionDays: 90,
+  storeAnalyticsRetentionDays: 90,
 };
 
 /**
@@ -141,6 +144,7 @@ export const retentionTask: TaskHandler = async (
   for (const [name, days] of [
     ["auditLogRetentionDays", config.auditLogRetentionDays],
     ["notificationRetentionDays", config.notificationRetentionDays],
+    ["storeAnalyticsRetentionDays", config.storeAnalyticsRetentionDays],
   ] as const) {
     if (typeof days !== "number" || !Number.isFinite(days) || days <= 0) {
       const error = `refusing to purge: ${name} must be a positive number of days (got ${String(days)})`;
@@ -179,10 +183,17 @@ export const retentionTask: TaskHandler = async (
   const notificationCutoff = new Date();
   notificationCutoff.setDate(notificationCutoff.getDate() - notificationDays);
 
+  const storeAnalyticsCutoff = new Date();
+  storeAnalyticsCutoff.setDate(storeAnalyticsCutoff.getDate() - config.storeAnalyticsRetentionDays);
+
   const outcomes: PurgeOutcome[] = [];
   outcomes.push(await archiveAuditLogs(supabase, auditCutoff.toISOString()));
   outcomes.push(
     await purgeInBatches(supabase, "notifications", notificationCutoff.toISOString()),
+  );
+  // AN-P2-004: storefront events previously had no retention path.
+  outcomes.push(
+    await purgeInBatches(supabase, "store_analytics_events", storeAnalyticsCutoff.toISOString()),
   );
 
   const failures = outcomes.filter((o) => o.error);
@@ -217,6 +228,7 @@ export const retentionTask: TaskHandler = async (
           matchingPolicies: notificationWindow.matchingPolicies,
         },
       },
+      storeAnalyticsCutoff: storeAnalyticsCutoff.toISOString(),
     },
     `[retention] ${summary}`,
   );

@@ -197,6 +197,23 @@ paths:
           description: "Internal server error"
       security:
         - bearerAuth: []
+  "/analytics/csrf":
+    get:
+      tags:
+        - "Analytics"
+      summary: "Bootstrap CSRF cookie for public analytics tracking"
+      responses:
+        200:
+          description: "Success"
+        400:
+          description: "Bad request"
+        401:
+          description: "Unauthorized"
+        403:
+          description: "Forbidden"
+        500:
+          description: "Internal server error"
+      security: []
   "/analytics/summary":
     get:
       tags:

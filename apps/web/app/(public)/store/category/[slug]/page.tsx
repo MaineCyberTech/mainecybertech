@@ -1,5 +1,6 @@
 import { loadCatalog, categoryBySlug, productsInCategory } from "@/lib/catalog/catalog-source";
 import StoreProductCard from "@/components/store/StoreProductCard";
+import StoreAnalyticsTracker from "@/components/store/StoreAnalyticsTracker";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -34,6 +35,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   return (
     <section className="min-h-screen px-4 pb-20 pt-32 sm:px-6 sm:pt-40">
+      <StoreAnalyticsTracker
+        event="category_view"
+        page={`/store/category/${slug}`}
+        categoryId={category.id}
+      />
       <div className="mx-auto max-w-7xl">
         <nav className="mb-8 text-sm font-semibold uppercase tracking-widest text-slate-500">
           <Link

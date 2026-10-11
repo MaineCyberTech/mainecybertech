@@ -11,6 +11,7 @@ import MiniPackageComparison from "@/components/store/MiniPackageComparison";
 import StickyMobileCta from "@/components/store/StickyMobileCta";
 import StoreProductCard from "@/components/store/StoreProductCard";
 import StoreCategoryCard from "@/components/store/StoreCategoryCard";
+import StoreAnalyticsTracker from "@/components/store/StoreAnalyticsTracker";
 import CampaignBanner from "@/components/store/CampaignBanner";
 import PackageLadderGrid from "@/components/store/PackageLadderGrid";
 import Link from "next/link";
@@ -58,6 +59,7 @@ export default async function StorePage() {
 
   return (
     <>
+      <StoreAnalyticsTracker event="store_view" page="/store" />
       <section className="flex min-h-[60vh] items-center justify-center px-4 pb-16 pt-24 text-center sm:pb-24 sm:pt-32">
         <div className="max-w-4xl">
           <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl lg:text-6xl">
