@@ -4,7 +4,7 @@ import type { Database } from "@mct/sdk/database.types";
 import { getEnv } from "../config/env";
 import WebSocket from "ws";
 import { createSupabaseCircuitBreaker, CircuitBreaker } from "../lib/circuit-breaker";
-import { recordRlsBypass, recordRlsEnforced } from "../lib/metrics";
+import { dbQueryDuration, recordRlsBypass, recordRlsEnforced } from "../lib/metrics";
 
 let _adminClient: SupabaseClient<Database> | null = null;
 const circuitBreaker = createSupabaseCircuitBreaker();
@@ -19,11 +19,45 @@ function isTestEnv(): boolean {
  * cascading to every downstream request. In test environments the breaker is
  * bypassed to preserve existing test behavior.
  */
-function circuitBreakingFetch(...args: Parameters<typeof fetch>): ReturnType<typeof fetch> {
+/**
+ * IR-P2-001: label a Supabase REST call for the dbQueryDuration histogram.
+ * Returns null for non-REST traffic (auth/realtime/storage) so only actual
+ * table queries are observed.
+ */
+function restLabels(
+  input: Parameters<typeof fetch>[0],
+  init?: Parameters<typeof fetch>[1],
+): { operation: string; table: string } | null {
+  try {
+    const href =
+      typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    const url = new URL(href);
+    const match = url.pathname.match(/\/rest\/v1\/([^/?]+)/);
+    if (!match) return null;
+    const method = (
+      init?.method ?? (typeof input === "object" && "method" in input ? input.method : "GET")
+    ).toUpperCase();
+    const operation =
+      { GET: "select", POST: "insert", PATCH: "update", PUT: "upsert", DELETE: "delete" }[
+        method
+      ] ?? method.toLowerCase();
+    return { operation, table: match[1] };
+  } catch {
+    return null;
+  }
+}
+
+async function circuitBreakingFetch(...args: Parameters<typeof fetch>): Promise<Response> {
   if (isTestEnv()) {
     return fetch(...args);
   }
-  return circuitBreaker.execute(() => fetch(...args));
+  const started = Date.now();
+  const labels = restLabels(args[0], args[1]);
+  try {
+    return await circuitBreaker.execute(() => fetch(...args));
+  } finally {
+    if (labels) dbQueryDuration.observe(labels, (Date.now() - started) / 1000);
+  }
 }
 
 export function getSupabaseAdmin(): SupabaseClient<Database> {

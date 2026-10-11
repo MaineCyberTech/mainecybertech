@@ -114,7 +114,7 @@ Unhealthy containers are automatically restarted via `restart: unless-stopped`.
 
 ## 4. Prometheus Metrics (implemented)
 
-`GET /metrics` (`apps/api/src/app.ts`) exposes Prometheus-formatted counters and histograms, optionally gated by `METRICS_TOKEN` (returns 404 when the token is set and not supplied). `infra/digitalocean/docker-compose.yml` runs a `prometheus` service (`prom/prometheus:v3.5.1`) that scrapes it using `prometheus.yml` + `prometheus.rules.yml`. In production Caddy returns 404 for `/metrics`, so scraping is internal to the compose network.
+`GET /metrics` (`apps/api/src/app.ts`) exposes Prometheus-formatted counters and histograms, optionally gated by `METRICS_TOKEN` (returns 404 when the token is set and not supplied). `infra/digitalocean/docker-compose.yml` runs a `prometheus` service (`prom/prometheus:v3.5.1`) that scrapes it using `prometheus.yml` + `prometheus.rules.yml`, authenticating the API scrape with the `METRICS_TOKEN` bearer credential from the deploy-written `metrics-token` credentials file. In production Caddy returns 404 for `/metrics`, so scraping is internal to the compose network.
 
 ### Custom metrics
 
@@ -333,6 +333,8 @@ them). **Names only — never commit the values.**
 | `ALERTMANAGER_DEFAULT_WEBHOOK_URL` | Optional | Catch-all receiver for non-critical alerts. |
 | `ALERTMANAGER_SLACK_API_URL` | Optional | Slack incoming-webhook URL used by the default/critical receivers. |
 | `ALERTMANAGER_SLACK_CHANNEL` | Optional | Slack channel name (e.g. `#alerts`). Non-secret. |
+| `ALERTMANAGER_WEBHOOK_USER` | With a webhook URL | Basic-auth username sent with the critical/default webhook POSTs (the ntfy relay user, e.g. `portal-relay`). |
+| `ALERTMANAGER_WEBHOOK_PASS` | With a webhook URL | Basic-auth password for the above. Secret. |
 
 If a variable is unset, compose substitutes a no-op localhost URL so the stack still
 starts — but **the dead-man's switch is only real when `ALERTMANAGER_WATCHDOG_WEBHOOK_URL`

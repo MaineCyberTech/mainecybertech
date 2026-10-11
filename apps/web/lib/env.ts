@@ -79,6 +79,18 @@ export function getClientEnv(): ClientEnv {
     NEXT_PUBLIC_LOG_ENDPOINT: process.env.NEXT_PUBLIC_LOG_ENDPOINT,
     NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD: process.env.NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD,
   };
+
+  // SECRET-P3-002: a production build with no NEXT_PUBLIC_API_URL used to fall
+  // back to http://localhost:4000 with only a console warning, so the deployed
+  // app silently pointed at nothing. Fail loudly instead; the deploy workflow
+  // always passes it as a build arg, so this only fires on misconfiguration.
+  if (process.env.NODE_ENV === "production" && !raw.NEXT_PUBLIC_API_URL) {
+    throw new Error(
+      "[env] NEXT_PUBLIC_API_URL is required in production; refusing to fall back to " +
+        `${DEFAULTS.NEXT_PUBLIC_API_URL}. Set it as a build arg (see deploy-do.yml build-web).`,
+    );
+  }
+
   const result = clientEnvSchema.safeParse(raw);
   if (result.success) {
     const data = result.data;

@@ -133,6 +133,17 @@ export function recordWebhookDelivery(status: "success" | "failed", event: strin
   webhookDeliveriesTotal.inc({ status, event });
 }
 
+export const webhookDeadLettersTotal = new Counter({
+  name: "portal_webhook_dead_letters_total",
+  help: "Total outbound webhook deliveries moved to the dead-letter set",
+  labelNames: ["event"],
+  registers: [register],
+});
+
+export function recordWebhookDeadLetter(event: string) {
+  webhookDeadLettersTotal.inc({ event });
+}
+
 /**
  * Tenant-isolation boundary telemetry (IR-P1-006).
  *

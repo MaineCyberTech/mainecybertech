@@ -1,4 +1,4 @@
-import { validateWebhookTimestamp } from "../lib/webhook-signature";
+import { validateWebhookTimestamp, rawBodyBuffer } from "../lib/webhook-signature";
 
 describe("validateWebhookTimestamp", () => {
   const nowMs = Date.now();
@@ -38,5 +38,25 @@ describe("validateWebhookTimestamp", () => {
     expect(
       validateWebhookTimestamp({ timestamp: nowMs }, undefined, { requireTimestamp: true }),
     ).toBe(true);
+  });
+});
+
+describe("rawBodyBuffer [WH-P2-004]", () => {
+  it("returns the exact bytes for a captured string body", () => {
+    const buf = rawBodyBuffer('{"a":1}');
+    expect(buf).toBeInstanceOf(Buffer);
+    expect(buf?.toString("utf8")).toBe('{"a":1}');
+  });
+
+  it("passes through an existing Buffer untouched", () => {
+    const original = Buffer.from([0x7b, 0x7d]);
+    expect(rawBodyBuffer(original)).toBe(original);
+  });
+
+  it("returns null for absent or non-body values so callers fail closed", () => {
+    expect(rawBodyBuffer(undefined)).toBeNull();
+    expect(rawBodyBuffer(null)).toBeNull();
+    expect(rawBodyBuffer({ a: 1 })).toBeNull();
+    expect(rawBodyBuffer(42)).toBeNull();
   });
 });

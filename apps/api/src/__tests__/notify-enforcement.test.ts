@@ -223,6 +223,25 @@ describe("notifyAndEmail preference enforcement (NOTIF-P1-001)", () => {
   });
 });
 
+describe("notification email link escaping (CodeQL js/xss)", () => {
+  it("percent-encodes the module id and escapes the href", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    await notifyAndEmail({
+      ...baseOpts,
+      moduleId: '"><script>alert(1)</script>',
+      email: "user@example.com",
+    });
+
+    const payload = (enqueueTask as jest.Mock).mock.calls[0][1] as { html: string };
+    // The payload is percent-encoded, so it cannot terminate the href attribute.
+    expect(payload.html).toContain("%22%3E%3Cscript%3E");
+    expect(payload.html).not.toContain('"><script>');
+  });
+});
+
 describe("createNotification dedup key (NOTIF-P1-002)", () => {
   it("sets notification_key on the insert and upserts on conflict", async () => {
     const supabase = fakeSupabase({ preferences: [] });

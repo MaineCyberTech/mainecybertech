@@ -14,6 +14,8 @@ import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { isPlatformAdminKey, PLATFORM_ADMIN_KEYS, roleKeyOf } from "../lib/roles";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import {
+  applyOrgScope,
+  applyRequestedOrg,
   NO_ORG_MATCH,
   resolveAdminTenantScope,
   type AdminTenantScope,
@@ -26,6 +28,7 @@ import {
   bulkTicketUpdateSchema,
 } from "../validators/ticket";
 import { queryInt } from "../lib/query";
+import { recordTicketCreated } from "../lib/metrics";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -55,8 +58,17 @@ router.get("/export", async (req, res, next) => {
 
     let query = supabase.from("tickets").select("*");
 
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    // FILE-P2-006: exports must never default to all tenants. A genuine
+    // cross-tenant admin sees every org; everyone else is limited to their
+    // approved orgs, and an explicit ?organization_id may only narrow.
+    const scope = await resolveAdminTenantScope(req);
+    query = applyRequestedOrg(
+      query,
+      "organization_id",
+      req.query.organization_id as string | undefined,
+      scope,
+    );
+    query = applyOrgScope(query, "organization_id", scope);
 
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter as never);
@@ -64,6 +76,15 @@ router.get("/export", async (req, res, next) => {
     const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    // ADMIN-P2-001: every sensitive export is audit-logged (row count only,
+    // never the exported content).
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "ticket.export",
+      entityType: "ticket",
+      metadata: { rowCount: data?.length ?? 0 },
+    });
 
     sendExportResponse(res, data ?? [], ticketExportColumns, "tickets");
   } catch (error) {
@@ -196,6 +217,8 @@ router.post("/", requirePermission("tickets", "create"), async (req, res, next) 
         }
       }
     }
+
+    recordTicketCreated();
 
     res.status(201).json(success(data));
   } catch (error) {

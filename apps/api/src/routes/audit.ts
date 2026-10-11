@@ -4,6 +4,7 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { requireOrgAccess } from "../middleware/org-access";
+import { logAuditEvent } from "../services/audit";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { queryInt } from "../lib/query";
 import {
@@ -88,6 +89,14 @@ router.get("/export", async (req, res, next) => {
     const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    // ADMIN-P2-001: exporting the audit trail is itself audited (row count only).
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "audit.export",
+      entityType: "audit_log",
+      metadata: { rowCount: data?.length ?? 0 },
+    });
 
     sendExportResponse(res, data ?? [], auditExportColumns, "audit");
   } catch (error) {

@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "./logger";
 import { recordNotificationDelivery, recordNotificationSuppressed } from "./metrics";
+import { claimIdempotencyKey } from "./lib/idempotency";
 
 /**
  * Worker-side notification preference enforcement + dedup (NOTIF-P1-001/002).
@@ -194,4 +195,23 @@ export async function insertNotification(
     recordNotificationDelivery("in_app", "failed");
     return { inserted: false, deduped: false, suppressed: false };
   }
+}
+
+/**
+ * NOTIF-P2-004: decide whether THIS run owns the email send.
+ *
+ * `insertNotification`'s `notification_key` upsert is an atomic claim: only the
+ * first writer gets `inserted: true`, so a retried job (BullMQ attempts/SQS
+ * redelivery) or a concurrent replica must not email again. When the in-app
+ * channel is disabled by preference no notification row is written, so fall
+ * back to the idempotency store (24h TTL) — a retry inside that window still
+ * cannot double-send.
+ */
+export async function claimNotificationEmail(
+  inApp: InsertNotificationResult,
+  notificationKey: string,
+): Promise<boolean> {
+  if (inApp.inserted) return true;
+  if (inApp.deduped) return false;
+  return claimIdempotencyKey(`notif-email-${notificationKey}`, "sent");
 }

@@ -33,6 +33,7 @@ jest.mock("../config/env", () => ({
 jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
     getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
+jest.mock("../lib/metrics", () => ({ recordSearchQuery: jest.fn() }));
 jest.mock("../middleware/admin", () => ({
   requireAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
@@ -95,6 +96,34 @@ describe("Search API", () => {
     expect(res.body.data).toHaveProperty("tickets");
     expect(res.body.data).toHaveProperty("projects");
     expect(res.body.data).toHaveProperty("documents");
+    // IR-P2-001: the search counter is wired.
+    const { recordSearchQuery } = jest.requireMock("../lib/metrics") as {
+      recordSearchQuery: jest.Mock;
+    };
+    expect(recordSearchQuery).toHaveBeenCalled();
+  });
+
+  it("honors ?limit and returns per-entity counts [SEARCH-P2-004]", async () => {
+    const supabase = mockAuth();
+    const builder = createMockBuilder({ data: [], error: null, count: 7 });
+    // Every table resolves through the same builder so the five entity queries
+    // (and the membership/profile lookups they depend on) see the count.
+    supabase.from.mockReturnValue(builder);
+
+    const res = await request(app)
+      .get("/api/v1/search?q=test&limit=10")
+      .set("Authorization", authToken);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.limit).toBe(10);
+    expect(res.body.data.counts).toEqual({
+      users: 7,
+      organizations: 7,
+      tickets: 7,
+      projects: 7,
+      documents: 7,
+    });
+    expect(builder.limit).toHaveBeenCalledWith(10);
   });
 
   it("returns 401 without auth token", async () => {

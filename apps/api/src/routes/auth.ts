@@ -249,6 +249,8 @@ router.post("/callback", rateLimitAuth, async (req, res, next) => {
           apikey: env.SUPABASE_ANON_KEY,
         },
         body: JSON.stringify(body),
+        // RES-P2-004: a hung GoTrue call must not hold the request forever.
+        signal: AbortSignal.timeout(10_000),
       },
     );
 
@@ -275,6 +277,8 @@ router.post("/callback", rateLimitAuth, async (req, res, next) => {
         apikey: env.SUPABASE_ANON_KEY,
         Authorization: `Bearer ${accessToken}`,
       },
+      // RES-P2-004: bounded; a failure here is logged and does not block sign-in.
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (!rpcRes.ok) {

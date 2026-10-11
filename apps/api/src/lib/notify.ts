@@ -173,13 +173,18 @@ export async function notifyAndEmail(
   const inApp = await createNotification(opts, channels);
 
   const baseUrl = getEnv().APP_BASE_URL;
+  // CodeQL js/xss (alert #6): the module id is user-provided route data (e.g.
+  // a ticket id). Percent-encode it before it becomes a path segment so it
+  // cannot terminate the href attribute, and escape the final URL as defense
+  // in depth below.
+  const moduleIdSegment = opts.moduleId ? encodeURIComponent(opts.moduleId) : "";
   const modulePath =
     opts.module === "tickets" && opts.moduleId
-      ? `/portal/tickets/${opts.moduleId}`
+      ? `/portal/tickets/${moduleIdSegment}`
       : opts.module === "projects" && opts.moduleId
-        ? `/portal/projects/${opts.moduleId}`
+        ? `/portal/projects/${moduleIdSegment}`
         : opts.module === "documents" && opts.moduleId
-          ? `/portal/documents/${opts.moduleId}`
+          ? `/portal/documents/${moduleIdSegment}`
           : "";
 
   const emailTo = opts.email;
@@ -202,7 +207,7 @@ export async function notifyAndEmail(
     text: `${opts.body}\n\nView: ${baseUrl}${modulePath}`,
     html:
       opts.emailHtml ??
-      `<p>${escapeHtml(opts.body).replace(/\n/g, "<br/>")}</p>${modulePath ? `<p><a href="${baseUrl}${modulePath}">View details</a></p>` : ""}`,
+      `<p>${escapeHtml(opts.body).replace(/\n/g, "<br/>")}</p>${modulePath ? `<p><a href="${escapeHtml(`${baseUrl}${modulePath}`)}">View details</a></p>` : ""}`,
   };
 
   // Route email through the worker queue when available (retries + backoff);

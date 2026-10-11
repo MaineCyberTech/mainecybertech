@@ -14,6 +14,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
+import { applyOrgScope, applyRequestedOrg, resolveAdminTenantScope } from "../lib/admin-scope";
 import {
   createApprovalSchema,
   updateApprovalSchema,
@@ -50,8 +51,17 @@ router.get("/export", async (req, res, next) => {
 
     let query = supabase.from("approval_requests").select("*");
 
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    // FILE-P2-006: exports must never default to all tenants. A genuine
+    // cross-tenant admin sees every org; everyone else is limited to their
+    // approved orgs, and an explicit ?organization_id may only narrow.
+    const scope = await resolveAdminTenantScope(req);
+    query = applyRequestedOrg(
+      query,
+      "organization_id",
+      req.query.organization_id as string | undefined,
+      scope,
+    );
+    query = applyOrgScope(query, "organization_id", scope);
 
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter as never);

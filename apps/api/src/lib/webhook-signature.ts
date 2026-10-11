@@ -22,6 +22,19 @@ export function verifyWebhookSignature(
 
 const TIMESTAMP_TOLERANCE_MS = 5 * 60 * 1000; // 5 minutes
 
+/**
+ * WH-P2-004: signature verification must run over the exact bytes received.
+ * `express.json({ verify })` records them on `req.rawBody`, but a missing value
+ * must FAIL CLOSED — re-serializing `req.body` can differ byte-for-byte from
+ * what the provider signed, so the fallback produced an unpredictable verdict.
+ * Returns null when no raw body is available.
+ */
+export function rawBodyBuffer(value: unknown): Buffer | null {
+  if (Buffer.isBuffer(value)) return value;
+  if (typeof value === "string") return Buffer.from(value);
+  return null;
+}
+
 function extractTimestamp(payload: Record<string, unknown>): number | null {
   // Check common timestamp fields in webhook payloads
   const ts =

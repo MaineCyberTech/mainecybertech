@@ -79,6 +79,17 @@ const app = createTestApp();
 app.use("/api/v1/approvals", approvalsRouter);
 app.use(errorHandler);
 
+
+jest.mock("../lib/admin-scope", () => ({
+  ...jest.requireActual("../lib/admin-scope"),
+  // FILE-P2-006: exports are scoped to the caller's approved orgs; tests run
+  // as a single-org admin so the mandatory predicate is exercised.
+  resolveAdminTenantScope: jest.fn().mockResolvedValue({
+    allTenants: false,
+    orgIds: ["00000000-0000-0000-0000-000000000001"],
+  }),
+}));
+
 describe("Approvals API", () => {
   beforeEach(() => {
     jest.clearAllMocks();

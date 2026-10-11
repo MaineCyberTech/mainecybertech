@@ -34,6 +34,16 @@ process.on("uncaughtException", (error) => {
   process.exit(1);
 });
 
+// Log-and-continue for non-fatal async rejections. Background promises
+// (scheduled scans, webhook dispatch, queue producers) can reject without the
+// worker being unusable — exiting on every unhandled rejection would
+// restart-loop the container and interrupt unrelated in-flight work. Fatal
+// states are still handled by the uncaughtException path above.
+process.on("unhandledRejection", (reason) => {
+  logger.error({ err: reason }, "Unhandled promise rejection — continuing");
+  Sentry.captureException(reason, { extra: { phase: "unhandled-rejection" } });
+});
+
 // ============= Scheduled Tasks =============
 async function runScheduledTask(
   type: string,

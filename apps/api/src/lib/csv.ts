@@ -5,9 +5,24 @@ export interface CsvColumn {
   label?: string;
 }
 
-function escapeCsvValue(v: unknown): string {
+/**
+ * FILE-P2-006: spreadsheet formula injection. Excel/Sheets/LibreOffice execute
+ * a cell whose text starts with `=`, `+`, `-`, `@`, tab or carriage return, so
+ * a user-controlled value like `=HYPERLINK(...)` becomes a live formula when
+ * an exported CSV is opened. Prefix the standard text marker (`'`) so the cell
+ * is treated as text. Plain numbers (e.g. `-12.5`) are left untouched — they
+ * cannot be formulas and mangling them would corrupt the export.
+ */
+function needsFormulaGuard(s: string): boolean {
+  if (!/^[=+\-@\t\r]/.test(s)) return false;
+  return !/^[-+]?\d+(\.\d+)?$/.test(s);
+}
+
+/** Quote/escape a single value for CSV output (also applies the formula guard). */
+export function escapeCsvValue(v: unknown): string {
   if (v === null || v === undefined) return "";
-  const s = typeof v === "object" ? JSON.stringify(v) : String(v);
+  const raw = typeof v === "object" ? JSON.stringify(v) : String(v);
+  const s = needsFormulaGuard(raw) ? `'${raw}` : raw;
   if (s.includes(",") || s.includes('"') || s.includes("\n")) {
     return `"${s.replace(/"/g, '""')}"`;
   }
@@ -55,5 +70,3 @@ export function sendExportResponse<T extends Record<string, unknown>>(
   );
   res.send(csv);
 }
-
-

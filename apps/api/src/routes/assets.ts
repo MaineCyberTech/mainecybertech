@@ -8,6 +8,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
+import { applyOrgScope, applyRequestedOrg, resolveAdminTenantScope } from "../lib/admin-scope";
 import { assertResourceOrg } from "../lib/tenant";
 import { createAssetSchema, updateAssetSchema } from "../validators/assets";
 import { queryInt } from "../lib/query";
@@ -40,8 +41,17 @@ router.get("/export", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "assets", "read");
     let query = supabase.from("assets").select("*");
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    // FILE-P2-006: exports must never default to all tenants. A genuine
+    // cross-tenant admin sees every org; everyone else is limited to their
+    // approved orgs, and an explicit ?organization_id may only narrow.
+    const scope = await resolveAdminTenantScope(req);
+    query = applyRequestedOrg(
+      query,
+      "organization_id",
+      req.query.organization_id as string | undefined,
+      scope,
+    );
+    query = applyOrgScope(query, "organization_id", scope);
     const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({

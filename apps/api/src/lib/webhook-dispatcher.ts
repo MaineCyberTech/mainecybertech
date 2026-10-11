@@ -5,6 +5,7 @@ import { logger } from "./logger";
 import { claimIdempotencyKey, deleteIdempotencyKey } from "./idempotency";
 import { assertSafeWebhookUrl } from "./ssrf-guard";
 import { pinnedFetch } from "./pinned-fetch";
+import { recordWebhookDelivery, recordWebhookDeadLetter } from "./metrics";
 
 const MAX_ATTEMPTS = 3;
 const RETRY_BASE_MS = 200;
@@ -32,6 +33,8 @@ type DeliveryResult = {
   status: number;
   body: string;
   error: string | null;
+  /** Actual attempts made (1 for a terminal 4xx; up to MAX_ATTEMPTS for 5xx/network). */
+  attempts: number;
 };
 
 async function deliverWithRetry(
@@ -71,6 +74,7 @@ async function deliverWithRetry(
           status: res.status,
           body: await res.text().catch(() => ""),
           error: null,
+          attempts: attempt,
         };
       }
     } catch (e) {
@@ -86,7 +90,12 @@ async function deliverWithRetry(
     }
   }
 
-  return { status: lastStatus, body: lastBody, error: lastError ?? "unknown delivery error" };
+  return {
+    status: lastStatus,
+    body: lastBody,
+    error: lastError ?? "unknown delivery error",
+    attempts: MAX_ATTEMPTS,
+  };
 }
 
 async function enqueueDeadLetter(
@@ -110,6 +119,9 @@ async function enqueueDeadLetter(
         { err: dlqError.message, endpointId, event },
         "Failed to enqueue webhook dead letter",
       );
+    } else {
+      // WH-P2-003: DLQ outcomes are metered too.
+      recordWebhookDeadLetter(event);
     }
   } catch (err) {
     logger.warn(
@@ -184,40 +196,44 @@ export async function dispatchWebhook(
       const result = await deliverWithRetry(endpoint.url, headers, body);
       const responseStatus = result.status;
       const error = result.error;
+      const failed = Boolean(error) || responseStatus >= 400;
 
       const duration = Date.now() - start;
 
       // Persist only a truncated, PII-safe summary — never the raw outbound
-      // payload or the inbound response body.
+      // payload or the inbound response body. WH-P2-002: record the ACTUAL
+      // attempts and mark failed rows dead-lettered — the inline path already
+      // exhausted its retries and enqueued a dead letter below, so the worker
+      // retry task must not retry the same delivery (single retry owner).
       await supabase.from("webhook_deliveries").insert({
         webhook_id: endpoint.id,
         event,
-        status: error
-          ? "failed"
-          : responseStatus >= 200 && responseStatus < 300
-            ? "success"
-            : "failed",
+        status: failed ? "failed" : "success",
         request_body: { event, receivedAt },
         response_status: responseStatus || null,
         response_body: null,
         error,
         duration_ms: duration,
-        retry_count: MAX_ATTEMPTS,
+        retry_count: result.attempts,
+        dead_letter: failed,
         idempotency_key: idempotencyKey,
       });
 
-      const failed = Boolean(error) || responseStatus >= 400;
+      // WH-P2-003: meter the outbound outcome (previously only inbound
+      // success incremented the counter).
+      recordWebhookDelivery(failed ? "failed" : "success", event);
+
       if (failed) {
-        // Release the claim on failure so the worker retry task (or a later
-        // dispatch) can reprocess this event. On success the claim is left in
-        // place as the durable dedup marker.
+        // Release the claim on failure so a later dispatch can reprocess this
+        // event. On success the claim is left in place as the durable dedup
+        // marker.
         await deleteIdempotencyKey(idempotencyKey);
         await enqueueDeadLetter(
           supabase,
           endpoint.id,
           event,
           error || `HTTP ${responseStatus}`,
-          MAX_ATTEMPTS,
+          result.attempts,
         );
       }
 

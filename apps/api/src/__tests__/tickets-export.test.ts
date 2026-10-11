@@ -55,6 +55,17 @@ const app = createTestApp();
 app.use("/api/v1/tickets", ticketsRouter);
 app.use(errorHandler);
 
+
+jest.mock("../lib/admin-scope", () => ({
+  ...jest.requireActual("../lib/admin-scope"),
+  // FILE-P2-006: exports are scoped to the caller's approved orgs; tests run
+  // as a single-org admin so the mandatory predicate is exercised.
+  resolveAdminTenantScope: jest.fn().mockResolvedValue({
+    allTenants: false,
+    orgIds: ["00000000-0000-0000-0000-000000000001"],
+  }),
+}));
+
 describe("Ticket export endpoint", () => {
   let supabase: any;
 
@@ -146,5 +157,20 @@ describe("Ticket export endpoint", () => {
   it("GET /export returns 401 without auth", async () => {
     const res = await request(app).get("/api/v1/tickets/export");
     expect(res.status).toBe(401);
+  });
+
+  it("audit-logs the export (row count only) [ADMIN-P2-001]", async () => {
+    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null } as MockResult));
+    const { logAuditEvent } = await import("../services/audit");
+    (logAuditEvent as jest.Mock).mockClear();
+
+    const res = await request(app)
+      .get("/api/v1/tickets/export")
+      .set("Authorization", "Bearer token");
+
+    expect(res.status).toBe(200);
+    expect(logAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "ticket.export", entityType: "ticket" }),
+    );
   });
 });

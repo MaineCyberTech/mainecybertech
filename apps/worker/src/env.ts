@@ -51,6 +51,18 @@ export const envSchema = z
         message: "REDIS_URL is required when QUEUE_BACKEND=bullmq",
       });
     }
+    // RES-P2-003: the `inline` backend makes the worker idle forever (tasks
+    // are only executed by callers falling back in-process), so production
+    // must never start with it — queued work would stall silently while
+    // health stays green.
+    if (val.NODE_ENV === "production" && val.QUEUE_BACKEND === "inline") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["QUEUE_BACKEND"],
+        message:
+          "QUEUE_BACKEND=inline is not allowed when NODE_ENV=production (the worker would idle and stall queued work)",
+      });
+    }
   });
 
 export type Env = z.infer<typeof envSchema>;
@@ -81,6 +93,11 @@ let env: Env;
 try {
   env = parseEnv(process.env);
   console.log("Environment validation passed");
+  // NOTIF-P2-002: queued email is skipped without SMTP; make that visible at
+  // boot (non-fatal so a deployment without SMTP still starts).
+  if (env.NODE_ENV === "production" && !env.SMTP_HOST) {
+    console.warn("SMTP_HOST is not configured — queued notification email will be skipped");
+  }
 } catch (error) {
   throw new Error(
     `Invalid environment variables: ${error instanceof Error ? error.message : String(error)}`,

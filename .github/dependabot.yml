@@ -48,6 +48,49 @@ updates:
       - "dependencies"
       - "docker"
 
+  # CTR-P2-001: the app Dockerfiles and the prod compose pin base images by
+  # digest; Dependabot scans per-directory, so each location needs its own
+  # entry to keep the pins refreshed (weekly PRs).
+  - package-ecosystem: "docker"
+    directory: "/apps/api"
+    target-branch: "develop"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  - package-ecosystem: "docker"
+    directory: "/apps/web"
+    target-branch: "develop"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  - package-ecosystem: "docker"
+    directory: "/apps/worker"
+    target-branch: "develop"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  - package-ecosystem: "docker"
+    directory: "/infra/digitalocean"
+    target-branch: "develop"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "docker"
+
   - package-ecosystem: "terraform"
     directory: "/infra/terraform/digitalocean"
     target-branch: "develop"

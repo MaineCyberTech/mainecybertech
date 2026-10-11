@@ -57,7 +57,20 @@ jobs:
 
       - name: Notify on failure
         if: failure()
+        env:
+          NTFY_URL: ${{ secrets.NTFY_ALERTS_URL }}
+          NTFY_USER: ${{ secrets.NTFY_ALERTS_USER }}
+          NTFY_PASS: ${{ secrets.NTFY_ALERTS_PASS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          curl -sf -X POST -H "Content-Type: application/json" \
-            -d '{"text":"❌ Supabase Storage backup failed — uploaded files may not be recoverable. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \
-            "${{ secrets.SLACK_WEBHOOK_URL }}" 2>/dev/null || true
+          MESSAGE="❌ Supabase Storage backup failed — uploaded files may not be recoverable. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # Notifications go to the org ntfy topic; Slack remains a fallback
+          # while SLACK_WEBHOOK_URL is configured.
+          if [ -n "$NTFY_URL" ]; then
+            curl -sf -u "$NTFY_USER:$NTFY_PASS" \
+              -H "Title: Storage backup failed" -H "Priority: high" -H "Tags: rotating_light" \
+              -d "$MESSAGE" "$NTFY_URL" || true
+          elif [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -sf -X POST -H "Content-Type: application/json" \
+              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL" || true
+          fi

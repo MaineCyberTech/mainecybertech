@@ -1,6 +1,7 @@
 import Redis from "ioredis";
 import { getEnv, resolveRedisUrl } from "../config/env";
 import { logger } from "./logger";
+import { recordIdempotencyKeyHit } from "./metrics";
 
 let redisClient: Redis | null = null;
 let memoryMutex: Promise<void> | null = null;
@@ -106,6 +107,7 @@ export async function claimIdempotencyKey(
   if (redis) {
     try {
       const result = await redis.set(prefixedKey, value, "EX", ttlSeconds, "NX");
+      if (result !== "OK") recordIdempotencyKeyHit();
       return result === "OK";
     } catch (err: unknown) {
       logger.warn(
@@ -119,6 +121,7 @@ export async function claimIdempotencyKey(
   try {
     const entry = IN_MEMORY_FALLBACK.get(key);
     if (entry && entry.expiresAt > Date.now()) {
+      recordIdempotencyKeyHit();
       return false;
     }
     evictInMemoryIfNeeded();

@@ -34,6 +34,8 @@ async function verifyCaptcha(token: string): Promise<boolean> {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,
+      // RES-P2-004: bound the call; the catch below fails closed on timeout.
+      signal: AbortSignal.timeout(5_000),
     });
     const data = (await res.json()) as { success: boolean };
     return data.success === true;

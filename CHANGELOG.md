@@ -215,6 +215,113 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - Deploy SSH now verifies the droplet host key: both `appleboy/ssh-action`
   steps pin a fingerprint and the health-check `ssh` builds a known_hosts file
   from `DO_SSH_HOST_KEY` instead of `StrictHostKeyChecking=no` (CI-P3-003).
+- Worker resilience: an `unhandledRejection` handler now logs-and-continues
+  (matching the API) instead of falling through to the fatal path, and graceful
+  shutdown arms a force-exit watchdog (`WORKER_SHUTDOWN_TIMEOUT_MS`, default
+  30s) so a task that never settles cannot hang the drain until SIGKILL
+  (NOTIF-P2-003 / RES-P2-001 / RES-P3-001). The BullMQ path also marks the
+  process as draining, so `/health` reports `draining`/503 during shutdown.
+- Outbound calls in `routes/public.ts` (Turnstile siteverify) and
+  `routes/auth.ts` (GoTrue token exchange, `bootstrap_portal_access` RPC) are
+  bounded with `AbortSignal.timeout` so a hung provider cannot hold a request
+  open indefinitely (RES-P2-004).
+- Inbound webhook signatures fail closed: Jira/JSM verification now requires
+  the captured raw body (`rawBodyBuffer`) instead of falling back to
+  re-serialized `req.body`, which is not signature-stable (WH-P2-004).
+- M365 change notifications enforce a replay window: the atomic idempotency
+  claim on the full-notification digest is held for 7 days (Graph sends no
+  event timestamp and does not sign payloads), so a captured retransmission
+  cannot be reprocessed (WH-P2-001).
+- CSV exports neutralize spreadsheet formula injection and never default to
+  all tenants: `escapeCsvValue` prefixes formula-leading values (`= + - @`,
+  tab, CR) with a text marker while leaving plain numbers untouched, and the
+  approvals/assets/tickets/projects/proposals/findings/domain-monitors export
+  routes apply the mandatory `resolveAdminTenantScope` predicate — an
+  explicit `?organization_id` may only narrow, and an empty scope fails
+  closed (FILE-P2-006).
+- `apps/worker/.env.example` documents `APP_BASE_URL` (notification email
+  links; falls back to `API_BASE_URL`) — it was in the schema but missing from
+  the template (SECRET-P3-001).
+- The web client env fails fast in production when `NEXT_PUBLIC_API_URL` is
+  missing instead of silently falling back to `http://localhost:4000`
+  (SECRET-P3-002).
+- The API and worker compose healthchecks set `start_period: 30s` so
+  boot-time failures no longer consume the retries budget before the services
+  are up (CTR-P3-001).
+- Every sensitive export is audit-logged: the tickets, projects and audit
+  exports now write an `*.export` audit event with the row count (never the
+  exported content), matching approvals/assets/proposals/findings/
+  domain-monitors (ADMIN-P2-001).
+- Outbound webhook deliveries record the **actual** attempt count instead of
+  the fixed maximum, and failed inline deliveries are persisted as
+  dead-lettered so the worker retry task no longer re-retries them — one
+  retry owner per delivery (WH-P2-002).
+- Webhook outcomes are metered on both sides: outbound success/failure
+  counters in the API and worker, plus a dead-letter counter incremented when
+  a delivery is moved to the DLQ (WH-P2-003).
+- Scheduled notification emails are now atomic: the `notification_key` upsert
+  is the claim that decides which run owns the email send, and when the
+  in-app channel is disabled by preference the idempotency store provides the
+  claim — a retried job or concurrent replica can no longer double-send
+  (NOTIF-P2-004).
+- Admin search accepts `?limit` (default 5, hard cap 25) and returns
+  per-entity `counts` alongside the result arrays, replacing the silent
+  5-result ceiling with caller-controlled paging and totals
+  (SEARCH-P2-004).
+- The local compose `e2e` service is profile-gated (`--profile e2e`), so a
+  plain `docker compose up` no longer starts the repo-wide-mounted test
+  container, and `E2E_ADMIN_PASSWORD` must be supplied explicitly instead of
+  shipping a weak default (CTR-P2-002).
+- New scheduled **Secret history scan** workflow: a checksum-pinned gitleaks
+  scans the full git history weekly (and on demand), verifies the reviewed
+  allowlist still catches a synthetic key, and uploads the JSON report as a
+  durable artifact (SECRET-P2-003). The tree scan stays diff-scoped on PRs.
+- Notification email links percent-encode the module id and HTML-escape the
+  final href, closing the CodeQL `js/xss` flow from a ticket id into the email
+  body (code scanning alert #6).
+- The API's inline email fallback now retries transient SMTP failures (up to
+  three attempts with backoff) before reporting failure; the send result was
+  already surfaced through logs and delivery metrics (NOTIF-P2-006).
+- `supabase-migrations` now runs a pre-push `db push --dry-run` and publishes
+  the planned migration set as an artifact (uploaded before the real push, so
+  it survives a failed apply) — the plan is no longer discarded (IR-P2-006).
+- Backup, storage-backup, and restore-test failures now notify the org ntfy
+  topic (`NTFY_ALERTS_URL/USER/PASS`), with the Slack webhook kept as a
+  fallback while it is configured.
+- Prometheus authenticates the API `/metrics` scrape with the `METRICS_TOKEN`
+  bearer credential (mounted as a 0600 credentials file), so a healthy API no
+  longer trips the `MCTServiceDown` alert — the endpoint 404s unauthenticated.
+- Alertmanager's critical and default receivers now support basic auth and the
+  live deployment posts them to the org ntfy instance
+  (`https://ntfy.mainecybertech.us/portal-alerts`) via a write-only
+  `portal-relay` user (`ALERTMANAGER_WEBHOOK_USER/PASS`, set as environment
+  secrets).
+- Production no longer degrades to email no-ops silently: the API logs an
+  error at boot when SMTP is unconfigured (emails are skipped and metered) and
+  the worker warns at startup (NOTIF-P2-002). Fail-closed was reverted — the
+  deployment does not have SMTP yet and must still serve traffic; configuring
+  SMTP remains the operator action that closes the finding.
+- The worker refuses to start in production with `QUEUE_BACKEND=inline`, which
+  would idle forever and stall queued work while health stayed green
+  (RES-P2-003).
+- The SSE notification stream now asserts the caller's resolved organization on
+  both the initial unread query and every realtime insert/update, so rows from
+  another org are dropped instead of streamed (MT-P2-004).
+- Dependabot now watches the digest-pinned base images in `apps/api`,
+  `apps/web`, `apps/worker`, and `infra/digitalocean` (weekly Docker PRs), not
+  just the root compose (CTR-P2-001).
+- Wired the declared-but-unused metrics: organization/project/ticket/document
+  creation counters, search queries, idempotency-key hits, active
+  organization/user gauges, and the database query duration histogram on
+  Supabase REST calls (IR-P2-001).
+- `docs/API_ERROR_HANDLING.md` now documents the implemented error contract —
+  the `{code, message, status, details?}` envelope, 400 (not 422) validation
+  responses with code `VALIDATION`, the actual code vocabulary, and
+  `X-Request-ID` as the traceability header (API-P2-003).
+- The JSM ticket sync now paginates the search (100/page, capped at 20 pages
+  with truncation reported as a failure instead of silent success), retries
+  transient HTTP failures, and counts failed ticket updates as errors
+  (API-P2-002).
 
 ### Changed
 
