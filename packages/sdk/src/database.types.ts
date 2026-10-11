@@ -6975,6 +6975,8 @@ export type Database = {
           name: string;
           organization_id: string;
           secret: string | null;
+          secret_expires_at: string | null;
+          secret_rotated_at: string | null;
           updated_at: string;
           url: string;
           version: number;
@@ -6992,6 +6994,8 @@ export type Database = {
           last_failure_at?: string | null;
           last_success_at?: string | null;
           secret?: string | null;
+          secret_expires_at?: string | null;
+          secret_rotated_at?: string | null;
           updated_at?: string | null;
           version?: number | null;
         };
@@ -7007,6 +7011,8 @@ export type Database = {
           name?: string | null;
           organization_id?: string | null;
           secret?: string | null;
+          secret_expires_at?: string | null;
+          secret_rotated_at?: string | null;
           updated_at?: string | null;
           url?: string | null;
           version?: number | null;

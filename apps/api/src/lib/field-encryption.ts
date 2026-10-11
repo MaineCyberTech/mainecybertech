@@ -95,3 +95,25 @@ export function decryptObject(obj: Record<string, unknown>): Record<string, unkn
   }
   return out;
 }
+
+export type SecretDecryptResult = { ok: true; value: string } | { ok: false; error: string };
+
+/**
+ * Decrypt a stored secret (e.g. a webhook endpoint signing secret), reporting
+ * failure instead of throwing so callers can fail closed. A `v1:` payload with
+ * no configured key is an error, not a pass-through: signing with the
+ * ciphertext would silently produce signatures the receiver cannot verify.
+ * Legacy plaintext values (no `v1:`/`plain:` envelope) decrypt to themselves.
+ */
+export function decryptSecretValue(payload: string): SecretDecryptResult {
+  if (payload.startsWith("v1:") && !getKey()) {
+    return { ok: false, error: "FIELD_ENCRYPTION_KEY is not configured" };
+  }
+  try {
+    return { ok: true, value: decryptField(payload) };
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    logger.error({ err: error }, "failed to decrypt stored secret");
+    return { ok: false, error };
+  }
+}

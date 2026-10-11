@@ -12,6 +12,21 @@ export function errorHandler(
 ) {
   const requestId = req.id;
 
+  // WH-P2-006: body-parser failures are client errors, not 500s. Oversized
+  // bodies (per-provider webhook caps, global limit) must surface as 413 and
+  // malformed JSON as 400 — previously both fell through to the generic 500.
+  const bodyParserError = error as Error & { type?: string };
+  if (bodyParserError.type === "entity.too.large") {
+    logger.warn({ requestId, path: req.path }, "Request body too large");
+    res.status(413).json(failure("PAYLOAD_TOO_LARGE", "Request body too large", 413));
+    return;
+  }
+  if (bodyParserError.type === "entity.parse.failed") {
+    logger.warn({ requestId, path: req.path }, "Malformed JSON body");
+    res.status(400).json(failure("INVALID_JSON", "Malformed JSON body", 400));
+    return;
+  }
+
   Sentry.captureException(error, {
     extra: { requestId, path: req.path, method: req.method },
     user: req.authUser ? { id: req.authUser.userId, email: req.authUser.email } : undefined,

@@ -1,5 +1,11 @@
 import { jest } from "@jest/globals";
-import { encryptField, decryptField, encryptObject, decryptObject } from "../lib/field-encryption";
+import {
+  encryptField,
+  decryptField,
+  decryptSecretValue,
+  encryptObject,
+  decryptObject,
+} from "../lib/field-encryption";
 
 const mockEnv: { current: Record<string, unknown> } = {
   current: {
@@ -78,5 +84,22 @@ describe("field-encryption", () => {
 
   it("still reads legacy plaintext values without rewriting them [SEC-P1-001]", () => {
     expect(decryptField("plain:legacy-value")).toBe("legacy-value");
+  });
+
+  it("decryptSecretValue fails closed for a v1 payload without a key", () => {
+    mockEnv.current = { NODE_ENV: "test", FIELD_ENCRYPTION_KEY: undefined };
+    expect(decryptSecretValue("v1:AAAA:BBBB:CCCC")).toEqual({
+      ok: false,
+      error: expect.stringContaining("FIELD_ENCRYPTION_KEY"),
+    });
+  });
+
+  it("decryptSecretValue decrypts v1 and passes legacy plaintext through", () => {
+    expect(decryptSecretValue("legacy-plaintext-secret")).toEqual({
+      ok: true,
+      value: "legacy-plaintext-secret",
+    });
+    const enc = encryptField("rotated-webhook-secret");
+    expect(decryptSecretValue(enc)).toEqual({ ok: true, value: "rotated-webhook-secret" });
   });
 });

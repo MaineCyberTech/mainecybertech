@@ -7,6 +7,7 @@ import { getEnv } from "./config/env";
 import { errorHandler } from "./middleware/error";
 import { notFoundHandler } from "./middleware/not-found";
 import { requestId, requestLogger } from "./middleware/request-id";
+import { webhookBodyParser } from "./middleware/webhook-body";
 import { logger } from "./lib/logger";
 import { rateLimitByUser, rateLimitMetrics } from "./middleware/rate-limit";
 import { inputSanitizer } from "./middleware/security";
@@ -107,17 +108,7 @@ export function createApp(): Express {
       credentials: true,
     }),
   );
-  app.use(
-    express.json({
-      limit: "10mb",
-      // CSP reports arrive as `application/csp-report` (legacy report-uri) or
-      // `application/reports+json` (Reporting API); both are JSON payloads.
-      type: ["application/json", "application/csp-report", "application/reports+json"],
-      verify: (req: express.Request & { rawBody?: string }, _res, buf) => {
-        req.rawBody = buf.toString();
-      },
-    }),
-  );
+  app.use(webhookBodyParser());
   app.use(cookieParser());
   app.use(securityHeaders);
   app.use(inputSanitizer);

@@ -16,6 +16,10 @@ export const envSchema = z
     SUPABASE_URL: z.string().url(),
     SUPABASE_ANON_KEY: z.string().min(1),
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+    // AES-256-GCM key (hex/base64, 32 bytes) used to decrypt outbound webhook
+    // signing secrets at rest. Written by the deploy workflow; without it
+    // encrypted secrets cannot be decrypted and deliveries fail closed.
+    FIELD_ENCRYPTION_KEY: z.string().optional(),
     STRIPE_SECRET_KEY: z.string().optional(),
     JIRA_BASE_URL: z.string().optional(),
     JIRA_EMAIL: z.string().optional(),

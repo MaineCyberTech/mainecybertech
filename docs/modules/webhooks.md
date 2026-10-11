@@ -38,6 +38,27 @@ Writes: `invoices`, `subscriptions`, `billing_customers`, `project_tasks`, `tick
 - Stripe: `stripe-signature` header verified against `STRIPE_WEBHOOK_SECRET`
 - Jira/JSM/M365: `x-hub-signature` header verified against respective `*_WEBHOOK_SECRET`
 
+## Ingress hardening (WH-P2-006)
+
+Each provider route has an explicit body cap enforced by
+`apps/api/src/middleware/webhook-body.ts` **before** the body is parsed or any
+signature/clientState check runs (oversized → `413 PAYLOAD_TOO_LARGE`):
+
+| Provider | Cap   |
+| -------- | ----- |
+| stripe   | 1mb   |
+| jira     | 512kb |
+| jsm      | 512kb |
+| m365     | 256kb |
+
+Minimal per-provider Zod schemas (`apps/api/src/lib/webhook-schemas.ts`) reject
+non-object/malformed payloads with `400 VALIDATION` before handler logic. They
+are shape checks, not full provider contracts — unknown fields are preserved.
+
+Residual: inbound webhook paths are still exempt from the global IP rate
+limiter (`app.ts`) because provider retries can burst; a dedicated per-provider
+rate limit remains a tracked follow-up.
+
 ## Status Maps
 
 **Jira:** To Do→todo, In Progress→in_progress, Under Review/Code Review→in_review, Done→done, Blocked→blocked

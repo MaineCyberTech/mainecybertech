@@ -56,6 +56,7 @@ All secrets must be rotated periodically to limit exposure from credential leaks
 | 46  | `METRICS_TOKEN`               | API                          | Every 90 days                                   | `openssl rand -hex 32` (optional `/metrics` gate)         |
 | 47  | `FIELD_ENCRYPTION_KEY`        | API                          | Only with a re-encryption plan (see below)      | `openssl rand -hex 32`                                    |
 | 48  | `SCHEDULE_DISPATCH_TOKEN`     | retired (was backup-dispatch) | — (retired)                                     | Retired with `backup-dispatch.yml` (CI-P2-010); revoke or let any provisioned token expire |
+| 49  | Outbound webhook signing secret (`webhook_endpoints.secret`, per endpoint) | API, Worker | Every 90 days (advisory `secret_expires_at`) | Admin UI or `PATCH /api/v1/webhook-endpoints/:id` (generate with `openssl rand -hex 32`) |
 
 ## Rotation Procedures
 
@@ -84,9 +85,11 @@ break-glass copy of the current key in the agreed escrow location (see
 ### FIELD_ENCRYPTION_KEY — Handle with care (PII depends on it)
 
 `FIELD_ENCRYPTION_KEY` is the AES-256-GCM key that encrypts `profiles.encrypted_pii`
-at rest (`apps/api/src/lib/field-encryption.ts`). Rotating it **immediately makes
-every existing `encrypted_pii` value undecryptable** unless the rows are
-re-encrypted.
+and outbound webhook signing secrets (`webhook_endpoints.secret`) at rest
+(`apps/api/src/lib/field-encryption.ts`). Rotating it **immediately makes every
+existing `encrypted_pii` value and `v1:` webhook secret undecryptable** unless
+the rows are re-encrypted. Webhook deliveries whose secret cannot be decrypted
+fail closed (recorded failed + dead-lettered, never sent unsigned).
 
 Safe rotation procedure:
 
@@ -95,8 +98,41 @@ Safe rotation procedure:
 2. Re-encrypt existing rows with the new key using the backfill script
    (`node scripts/backfill-profile-pii.mjs` — it reads the plaintext columns and
    writes a fresh `encrypted_pii` copy).
-3. Verify a sample of profiles decrypt correctly, then discard the old key.
-4. Store a break-glass copy of the current key in the agreed escrow location.
+3. Re-set each outbound webhook endpoint secret (`PATCH /api/v1/webhook-endpoints/:id`
+   with the same secret value) so it is re-encrypted under the new key.
+4. Verify a sample of profiles decrypt correctly and a webhook test delivery
+   (`POST /api/v1/webhook-endpoints/:id/test`) succeeds, then discard the old key.
+5. Store a break-glass copy of the current key in the agreed escrow location.
+
+### Outbound webhook signing secrets (`webhook_endpoints.secret`)
+
+Per-endpoint HMAC signing secrets are stored **encrypted at rest** (AES-256-GCM,
+`v1:` payloads) and carry `secret_rotated_at` / `secret_expires_at` metadata
+(default expiry: rotated_at + 90 days; override with `secretExpiresAt` on
+create/update). Expiry is advisory — it does not gate delivery.
+
+Rotate one endpoint (no deploy required):
+
+```
+curl -X PATCH https://api.mainecybertech.com/api/v1/webhook-endpoints/<id> \
+  -H "Authorization: Bearer <session>" -H "If-Match: <version>" \
+  -H "Content-Type: application/json" \
+  -d '{"secret":"<new 32-byte hex>"}'
+```
+
+Update the receiver to the new secret first (or in the same change window), then
+PATCH. Find secrets due/overdue for rotation:
+
+```sql
+select id, organization_id, name, secret_rotated_at, secret_expires_at
+from public.webhook_endpoints
+where secret is not null
+  and (secret_expires_at is null or secret_expires_at < now())
+order by secret_expires_at nulls first;
+```
+
+Endpoints created before the encryption rollout store legacy plaintext secrets;
+re-encrypt them by re-setting the secret once via the PATCH above.
 
 ### JWT_SECRET — Zero-Downtime Multi-Secret Rotation
 

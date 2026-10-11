@@ -1,5 +1,6 @@
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
+import { decryptSecretValue } from "../lib/field-encryption";
 import { assertSafeUrl } from "../lib/ssrf-guard";
 import { pinnedFetch } from "../lib/pinned-fetch";
 import { recordWebhookDelivery, recordWebhookDeadLetter } from "../metrics";
@@ -174,8 +175,19 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
         }
 
         if (endpoint.secret) {
+          // WH-P2-008: decrypt the encrypted-at-rest signing secret. A
+          // decryption failure throws into the per-delivery catch below, which
+          // retries and eventually dead-letters rather than signing with a
+          // corrupted value.
+          const decrypted = decryptSecretValue(endpoint.secret);
+          if (!decrypted.ok) {
+            throw new Error(`Signing secret could not be decrypted: ${decrypted.error}`);
+          }
           const crypto = await import("crypto");
-          const hmac = crypto.createHmac("sha256", endpoint.secret).update(body).digest("hex");
+          const hmac = crypto
+            .createHmac("sha256", decrypted.value)
+            .update(body)
+            .digest("hex");
           headers["X-Webhook-Signature"] = `sha256=${hmac}`;
         }
 

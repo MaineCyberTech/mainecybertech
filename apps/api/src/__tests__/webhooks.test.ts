@@ -1,6 +1,8 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
+import express from "express";
 import webhooksRouter from "../routes/webhooks";
+import { webhookBodyParser } from "../middleware/webhook-body";
 import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
 import { getEnv } from "../config/env";
 import { errorHandler } from "../middleware/error";
@@ -99,6 +101,13 @@ jest.mock("../lib/notify", () => ({
 const app = createTestApp();
 app.use("/api/v1/webhooks", webhooksRouter);
 app.use(errorHandler);
+
+// WH-P2-006: production mounts the per-provider body caps before the global
+// parser; this app mirrors that ordering so the caps are exercised end-to-end.
+const cappedApp = express();
+cappedApp.use(webhookBodyParser());
+cappedApp.use("/api/v1/webhooks", webhooksRouter);
+cappedApp.use(errorHandler);
 
 describe("webhooks routes", () => {
   beforeEach(() => {
@@ -878,6 +887,70 @@ describe("webhooks routes", () => {
       expect(claimIdempotencyKey).toHaveBeenCalled();
       // Third argument is the TTL in seconds: the enforced replay window.
       expect((claimIdempotencyKey as jest.Mock).mock.calls[0][2]).toBe(7 * 24 * 60 * 60);
+    });
+  });
+
+  describe("inbound payload caps and schemas [WH-P2-006]", () => {
+    it("rejects a Stripe body over the 1mb provider cap with 413", async () => {
+      const res = await request(cappedApp)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({
+          id: "evt_big",
+          type: "checkout.session.completed",
+          padding: "x".repeat(1024 * 1024 + 1024),
+        });
+
+      expect(res.status).toBe(413);
+      expect(res.body.error?.code).toBe("PAYLOAD_TOO_LARGE");
+    });
+
+    it("rejects an M365 body over its 256kb provider cap with 413", async () => {
+      const res = await request(cappedApp)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [{ clientState: "m365-client-state", padding: "x".repeat(300 * 1024) }],
+        });
+
+      expect(res.status).toBe(413);
+      expect(res.body.error?.code).toBe("PAYLOAD_TOO_LARGE");
+    });
+
+    it("rejects a malformed Jira payload with 400 before signature verification", async () => {
+      const { verifyWebhookSignature } = await import("../lib/webhook-signature");
+      (verifyWebhookSignature as jest.Mock).mockClear();
+
+      const res = await request(cappedApp)
+        .post("/api/v1/webhooks/jira")
+        .set("x-hub-signature", "sig_123")
+        .send([{ webhookEvent: "issue_created" }]);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error?.code).toBe("VALIDATION");
+      // The schema gate runs before the HMAC comparison (WH-P2-006).
+      expect(verifyWebhookSignature).not.toHaveBeenCalled();
+    });
+
+    it("rejects an M365 payload whose value is not a non-empty array with 400", async () => {
+      const res = await request(cappedApp)
+        .post("/api/v1/webhooks/m365")
+        .send({ value: "not-an-array" });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error?.code).toBe("VALIDATION");
+    });
+
+    it("still accepts a valid payload under the cap", async () => {
+      const res = await request(cappedApp)
+        .post("/api/v1/webhooks/jira")
+        .set("x-hub-signature", "sig_123")
+        .send({
+          webhookEvent: "issue_created",
+          issue: { key: "PROJ-1", fields: { status: { name: "To Do" }, summary: "ok" } },
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
     });
   });
 
