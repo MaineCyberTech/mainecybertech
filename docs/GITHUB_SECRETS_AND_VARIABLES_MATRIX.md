@@ -134,7 +134,10 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 | `SUPABASE_ACCESS_TOKEN`   | yes | yes  | Supabase CLI auth for `supabase link` / `db push` (`supabase-migrations.yml`) |
 | `CHROMATIC_PROJECT_TOKEN` | yes | yes  | Chromatic visual-regression upload (`chromatic.yml`, best-effort job)         |
 | `E2E_JWT_SECRET`          | opt | opt  | Optional E2E JWT secret; `e2e.yml` falls back to a built-in test value        |
-| `SCHEDULE_DISPATCH_TOKEN` | opt | opt  | Optional **repo-scoped** PAT / GitHub App token with `actions: write` for `backup-dispatch.yml` workflow dispatch; the dispatcher falls back to `GITHUB_TOKEN` (granted `actions: write`) and warns when this is absent (DR-P0-001; see `docs/SECRETS_ROTATION.md`) |
+
+> `SCHEDULE_DISPATCH_TOKEN` was retired with `backup-dispatch.yml`
+> (CI-P2-010): the backup workflows are scheduled on the default branch, so
+> no dispatcher token is needed. Revoke any token provisioned for it.
 
 ## Repository or environment variables required by workflows
 
@@ -188,13 +191,6 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
    - `NTFY_ALERTS_URL` / `NTFY_ALERTS_USER` / `NTFY_ALERTS_PASS` — ntfy notifications for the backup / storage-backup / restore-test workflows (Slack remains a fallback)
    - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — from Stripe dashboard
    - `CHROMATIC_PROJECT_TOKEN` — from the Chromatic project (visual regression)
-   - `SCHEDULE_DISPATCH_TOKEN` — optional **repo-scoped** token with
-     `actions: write` used by `backup-dispatch.yml` to dispatch the develop
-     backup/restore workflows. The dispatcher falls back to `GITHUB_TOKEN`
-     (granted `actions: write`) and warns when the secret is absent, so it is
-     only required where org policy blocks GITHUB_TOKEN dispatches. Prefer a
-     repository-scoped GitHub App installation token (short expiry) over a
-     classic PAT; rotate every 90 days (see `docs/SECRETS_ROTATION.md`)
    - Integration secrets as needed (Jira, JSM, M365, SMTP, Sentry, Teams webhooks)
 
 3. **Add variables** to the appropriate environment scopes (or repo-wide):

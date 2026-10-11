@@ -5,7 +5,7 @@ what to check first.
 
 ## Quick checklist
 
-- [ ] PR is green: `test`, `lint`, `typecheck`, `codeql`, `e2e`.
+- [ ] PR is green: `test`, `security-scan`, `secrets-scan`, `lint`, `typecheck`, `codeql`, `e2e`.
 - [ ] `CHANGELOG.md` `[Unreleased]` section reflects the change.
 - [ ] Schema changes are in `supabase/migrations/`.
 - [ ] The deploy run's `validate` gate is green.
@@ -75,8 +75,9 @@ pass before the deploy step:
 
 ## Production deploy
 
-1. Merge `develop` → `main` (or dispatch `deploy-do` with
-   `deploy_target: prod`).
+1. Merge `develop` → `main`. A manual `deploy-do` dispatch with
+   `deploy_target: prod` is only accepted from the `main` ref (BP-P2-006), so
+   promote first.
 2. Prod-only gates run when the resolved environment is `prod`: `e2e-gate`
    (Playwright) and `migrate-gate` (`supabase-migrations.yml`); dev skips both
    to keep deploys fast.

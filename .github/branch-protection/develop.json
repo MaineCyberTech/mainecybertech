@@ -3,8 +3,11 @@
     "strict": true,
     "contexts": [
       "Test / test (20.x)",
+      "Test / security-scan",
+      "Test / secrets-scan",
       "Lint / lint (20.x)",
-      "TypeCheck / typecheck"
+      "TypeCheck / typecheck",
+      "CodeQL / Analyze (javascript-typescript)"
     ]
   },
   "enforce_admins": true,

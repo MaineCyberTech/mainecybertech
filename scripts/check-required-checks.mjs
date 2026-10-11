@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Guard: every required status check in .github/branch-protection/*.json must
- * be a check-run name that some workflow actually emits.
+ * be a check-run name that some workflow actually emits, and the workflow
+ * emitting it must not path-filter its `pull_request` trigger.
  *
  * Why this exists (audit findings CI-P1-002 / BP-P1-001, run 20261002-0344):
  * when a required context does not match a real check-run, GitHub shows the
@@ -11,28 +12,73 @@
  * be treated as an app-level status, so it could be silently satisfied by any
  * app publishing that name instead of running the actual workflow.
  *
+ * A path-filtered required workflow is the same class of bug (BP-P2-004 /
+ * CI-P2-009): the workflow only starts when the changed files match its
+ * `paths:` list, so a PR that misses those paths never gets the check-run and
+ * stays blocked on a check that can never report.
+ *
  * Usage:
  *   node scripts/check-required-checks.mjs            # fail on any gap
  *   node scripts/check-required-checks.mjs --warn     # report, exit 0
+ *   node scripts/check-required-checks.mjs \
+ *     --workflows-dir <dir> --branch-protection-dir <dir>   # fixtures
  *
- * Wired into CI via .github/workflows/validate.yml.
+ * Wired into CI via .github/actions/unit-tests (PR gate + deploy gate);
+ * scripts/ci/check-required-checks.sh also runs a negative fixture through it.
  */
 
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import process from "node:process";
 
-const WF_DIR = ".github/workflows";
-const BP_DIR = ".github/branch-protection";
-const WARN_ONLY = process.argv.includes("--warn");
+const args = process.argv.slice(2);
+function argValue(name, fallback) {
+  const eq = args.find((a) => a.startsWith(`--${name}=`));
+  if (eq) return eq.slice(name.length + 3);
+  const i = args.indexOf(`--${name}`);
+  if (i !== -1 && i + 1 < args.length && !args[i + 1].startsWith("--")) {
+    return args[i + 1];
+  }
+  return fallback;
+}
+
+const WF_DIR = argValue("workflows-dir", ".github/workflows");
+const BP_DIR = argValue("branch-protection-dir", ".github/branch-protection");
+const WARN_ONLY = args.includes("--warn");
+
+/** True when the workflow's `pull_request` trigger carries `paths:` /
+ * `paths-ignore:`, i.e. the workflow does not run for every PR. */
+function pullRequestPathFiltered(text) {
+  const lines = text.split(/\r?\n/);
+  let inOn = false;
+  let inPr = false;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const indent = line.length - line.trimStart().length;
+    if (!inOn) {
+      if (/^on:\s*$/.test(line)) inOn = true;
+      continue;
+    }
+    if (indent === 0) break; // next top-level key ends the `on:` block
+    if (indent === 2) {
+      inPr = /^pull_request(_target)?:/.test(trimmed);
+      continue;
+    }
+    if (inPr && /^(paths|paths-ignore):/.test(trimmed)) return true;
+  }
+  return false;
+}
 
 /** Minimal extraction of workflow `name:`, jobs, and matrix values.
  *
  * Check-run naming rules being modelled:
  * - A job with a `matrix:` and NO explicit job `name:` reports as
  *   "<workflow name> / <job id> (<matrix value>)" - one per matrix entry.
- * - A job WITH an explicit `name:` keeps that literal string (matrix vars are
- *   not expanded in the job name by GitHub).
+ * - A job WITH an explicit `name:` reports "<workflow name> / <name>", with
+ *   any `${{ matrix.<key> }}` reference expanded per value: GitHub expands
+ *   matrix variables in job names (CodeQL's live "Analyze
+ *   (javascript-typescript)" check-run is the example).
  * - A job with no matrix reports as "<workflow name> / <job id>".
  */
 function parseWorkflow(text) {
@@ -84,12 +130,13 @@ function parseWorkflow(text) {
         section = null;
       } else {
         // e.g. "        node-version: [20.x]"
-        const m = /^ {8}[A-Za-z0-9_-]+:\s*\[(.*?)\]\s*$/.exec(line);
+        const m = /^ {8}([A-Za-z0-9_-]+):\s*\[(.*?)\]\s*$/.exec(line);
         if (m) {
-          for (const v of m[1].split(",")) {
-            const val = v.trim().replace(/^["']|["']$/g, "");
-            if (val) current.matrix.push(val);
-          }
+          const values = m[2]
+            .split(",")
+            .map((v) => v.trim().replace(/^["']|["']$/g, ""))
+            .filter(Boolean);
+          if (values.length) current.matrix.push({ key: m[1], values });
         }
       }
     }
@@ -98,21 +145,36 @@ function parseWorkflow(text) {
   return { workflowName, jobs };
 }
 
+/** Every check-run name a parsed job emits (see parseWorkflow rules). */
+function emittedNames(job) {
+  if (!job.name) {
+    if (!job.matrix.length) return [job.id];
+    return job.matrix[0].values.map((v) => `${job.id} (${v})`);
+  }
+  let names = [job.name];
+  for (const { key, values } of job.matrix) {
+    const ref = `\\$\\{\\{\\s*matrix\\.${key}\\s*\\}\\}`;
+    if (!names.some((n) => new RegExp(ref).test(n))) continue;
+    const expanded = [];
+    for (const n of names) {
+      for (const v of values) expanded.push(n.replace(new RegExp(ref, "g"), () => v));
+    }
+    names = expanded;
+  }
+  return names;
+}
+
 const emitted = new Map(); // check-run name -> source file
+const pathFiltered = new Set(); // workflow files with a filtered pull_request
 const files = (await readdir(WF_DIR)).filter((f) => /\.ya?ml$/.test(f));
 for (const f of files) {
   const text = await readFile(join(WF_DIR, f), "utf8");
+  if (pullRequestPathFiltered(text)) pathFiltered.add(f);
   const { workflowName, jobs } = parseWorkflow(text);
   if (!workflowName) continue;
   for (const job of jobs) {
-    if (job.name) {
-      emitted.set(`${workflowName} / ${job.name}`, f);
-    } else if (job.matrix.length) {
-      for (const v of job.matrix) {
-        emitted.set(`${workflowName} / ${job.id} (${v})`, f);
-      }
-    } else {
-      emitted.set(`${workflowName} / ${job.id}`, f);
+    for (const name of emittedNames(job)) {
+      emitted.set(`${workflowName} / ${name}`, f);
     }
   }
 }
@@ -132,9 +194,7 @@ for (const f of bpFiles) {
   const branch = f.replace(/\.json$/, "");
 
   for (const ctx of contexts) {
-    if (emitted.has(ctx)) {
-      console.log(`  OK      ${branch}: "${ctx}" <- ${emitted.get(ctx)}`);
-    } else {
+    if (!emitted.has(ctx)) {
       failures++;
       console.error(
         `  MISSING ${branch}: "${ctx}" is required but no workflow emits it`,
@@ -143,7 +203,20 @@ for (const f of bpFiles) {
         k.toLowerCase().includes(ctx.toLowerCase().split(" ")[0]),
       );
       if (hints.length) console.error(`          did you mean: ${hints.join(", ")}`);
+      continue;
     }
+    const source = emitted.get(ctx);
+    if (pathFiltered.has(source)) {
+      failures++;
+      console.error(
+        `  FILTERED ${branch}: "${ctx}" is required, but ${source} path-filters its pull_request trigger`,
+      );
+      console.error(
+        "           a PR that misses those paths never reports this check, so it can never merge",
+      );
+      continue;
+    }
+    console.log(`  OK      ${branch}: "${ctx}" <- ${source}`);
   }
 }
 
@@ -152,7 +225,9 @@ console.log(
 );
 
 if (failures > 0) {
-  console.error(`\nFAIL: ${failures} required check(s) do not match any workflow.`);
+  console.error(
+    `\nFAIL: ${failures} required check(s) are missing, renamed, or path-filtered.`,
+  );
   if (!WARN_ONLY) process.exit(1);
   console.error("(--warn: not failing the build)");
 } else {

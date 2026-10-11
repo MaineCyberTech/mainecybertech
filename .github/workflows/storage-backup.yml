@@ -12,8 +12,9 @@ name: Storage Backup
 #   S3_BACKUP_BUCKET secret). Optional: S3_PREFIX, S3_OFFSITE_BUCKET,
 #   S3_ENDPOINT (default https://nyc3.digitaloceanspaces.com).
 #
-# NOTE: this workflow does not run from `main` unless the file is present there
-# (same default-branch caveat as db-backup.yml — see backup-dispatch.yml).
+# NOTE: schedules only fire from the default branch (`main`), so this file must
+# stay on `main`. The interim backup-dispatch.yml dispatcher was retired once
+# the backup workflows landed there (CI-P2-010).
 
 on:
   schedule:

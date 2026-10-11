@@ -46,10 +46,12 @@
 | `validate-sbom.mjs` | Fail CI on a malformed / regressed SBOM (structure, refs, count floor). |
 | `audit-gate.mjs` | Dependency vulnerability gate for all scopes — see `docs/DEPENDENCY_POLICY.md`. |
 | `license-gate.mjs` | License allow/deny gate with documented exceptions — see `docs/LICENSE_POLICY.md`. |
+| `check-required-checks.mjs` | Fail when a required branch-protection context is not emitted by any workflow, or is emitted by a path-filtered `pull_request` workflow (BP-P2-004/BP-P2-005/CI-P2-009). |
+| `ci/check-required-checks.sh` | Self-test for `check-required-checks.mjs`: runs the guard on the live tree plus a path-filtered negative fixture. |
 
 ## Subdirectories
 
 | Directory | Purpose |
 | --------- | ------- |
-| `ci/` | CI helper scripts (`generate_badges.py`, `history_logger.py`). |
+| `ci/` | CI helper scripts and guard self-tests (`generate_badges.py`, `history_logger.py`, `check-migration-transactions.sh`, `check-required-checks.sh`). |
 | `load-testing/` | Load-test scripts (smoke, auth, SSE, tickets) — see its `README.md`. |

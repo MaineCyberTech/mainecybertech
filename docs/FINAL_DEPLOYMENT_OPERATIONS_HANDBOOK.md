@@ -159,7 +159,8 @@ terraform apply -var-file=env/prod.tfvars
 ### Automated rollback (via workflow_dispatch)
 
 1. Go to GitHub Actions → `deploy-do.yml` → "Run workflow"
-2. Set `deploy_target` (dev or prod)
+2. Set `deploy_target` (dev or prod; `prod` requires running from the `main`
+   branch — BP-P2-006)
 3. Optionally set `rollback_sha` to the 7–40 char lowercase-hex SHA of the
    previous working commit
 4. Run the workflow
