@@ -1,5 +1,10 @@
 import { jest } from "@jest/globals";
-import { encryptProfilePii, decryptProfilePii, PROFILE_PII_FIELDS } from "../lib/profile-pii";
+import {
+  encryptProfilePii,
+  decryptProfilePii,
+  decryptProfileRow,
+  PROFILE_PII_FIELDS,
+} from "../lib/profile-pii";
 import { decryptObject } from "../lib/field-encryption";
 
 jest.mock("../config/env", () => {
@@ -75,6 +80,58 @@ describe("profile-pii", () => {
       email: "jane@example.com",
       phone: "1",
       title: "Eng",
+    });
+  });
+
+  describe("decryptProfileRow [SEC-P2-002]", () => {
+    it("returns decrypted values instead of the plaintext mirror columns", () => {
+      const row = {
+        id: "p1",
+        full_name: "Stale Plaintext",
+        email: "stale@example.com",
+        phone: "000",
+        title: "Stale",
+        encrypted_pii: encryptProfilePii(
+          { full_name: "Jane Doe", email: "jane@example.com", phone: "555", title: "Engineer" },
+          {},
+        ),
+      };
+
+      const out = decryptProfileRow(row);
+
+      expect(out.full_name).toBe("Jane Doe");
+      expect(out.email).toBe("jane@example.com");
+      expect(out.phone).toBe("555");
+      expect(out.title).toBe("Engineer");
+    });
+
+    it("strips the encrypted_pii column from the response", () => {
+      const out = decryptProfileRow({
+        id: "p1",
+        encrypted_pii: encryptProfilePii({ full_name: "Jane" }, {}),
+      });
+
+      expect("encrypted_pii" in out).toBe(false);
+    });
+
+    it("falls back to the plaintext columns for not-yet-backfilled rows", () => {
+      const out = decryptProfileRow({
+        id: "p1",
+        full_name: "Legacy User",
+        email: "legacy@example.com",
+        phone: null,
+        title: null,
+        encrypted_pii: null,
+      });
+
+      expect(out.full_name).toBe("Legacy User");
+      expect(out.email).toBe("legacy@example.com");
+      expect(out.phone).toBeNull();
+    });
+
+    it("keeps non-PII columns untouched", () => {
+      const out = decryptProfileRow({ id: "p1", avatar_url: "https://cdn/a.png" });
+      expect(out.avatar_url).toBe("https://cdn/a.png");
     });
   });
 });

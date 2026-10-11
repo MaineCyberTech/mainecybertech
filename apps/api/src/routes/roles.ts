@@ -7,6 +7,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
 import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
+import { assertCanManageRoleCatalog } from "../lib/role-assignment";
 import type { UpdateRow } from "../lib/db-types";
 
 const router: ReturnType<typeof Router> = Router();
@@ -92,11 +93,12 @@ const updateRoleSchema = z.object({
   description: z.string().max(500).optional().nullable(),
 });
 
-// POST /api/v1/roles - create a custom role (admin)
+// POST /api/v1/roles - create a custom role (platform super admin only)
 router.post("/", requirePermission("roles", "manage"), async (req, res, next) => {
   try {
     const parsed = createRoleSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await assertCanManageRoleCatalog(supabase, req.authUser!.userId);
 
     const { data, error } = await supabase
       .from("roles")
@@ -135,11 +137,12 @@ router.post("/", requirePermission("roles", "manage"), async (req, res, next) =>
   }
 });
 
-// PATCH /api/v1/roles/:id - update role name/description (admin)
+// PATCH /api/v1/roles/:id - update role name/description (platform super admin only)
 router.patch("/:id", requirePermission("roles", "manage"), async (req, res, next) => {
   try {
     const parsed = updateRoleSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await assertCanManageRoleCatalog(supabase, req.authUser!.userId);
 
     const { data: existing } = await supabase
       .from("roles")
@@ -181,10 +184,11 @@ router.patch("/:id", requirePermission("roles", "manage"), async (req, res, next
   }
 });
 
-// DELETE /api/v1/roles/:id - delete a custom role (admin)
+// DELETE /api/v1/roles/:id - delete a custom role (platform super admin only)
 router.delete("/:id", requirePermission("roles", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await assertCanManageRoleCatalog(supabase, req.authUser!.userId);
 
     const { data: existing } = await supabase
       .from("roles")
@@ -259,6 +263,7 @@ router.put("/:id/permissions", requirePermission("roles", "manage"), async (req,
       .parse(req.body);
 
     const supabase = getSupabaseAdmin();
+    await assertCanManageRoleCatalog(supabase, req.authUser!.userId);
 
     const { data: role } = await supabase
       .from("roles")

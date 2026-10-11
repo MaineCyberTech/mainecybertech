@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from "express";
 import { requireAuth } from "../middleware/auth";
 import jwt from "jsonwebtoken";
 import { getSupabaseAdmin } from "../services/supabase";
+import { clearMfaFactorCache } from "../lib/mfa";
 
 jest.mock("../config/env", () => ({
   getEnv: jest.fn().mockReturnValue({
@@ -42,6 +43,7 @@ function mockRes(): Partial<Response> {
 describe("requireAuth — local JWT verification", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearMfaFactorCache();
   });
 
   it("maps an expired token to HTTP 401 (not the invalid status 40101)", async () => {
@@ -63,12 +65,27 @@ describe("requireAuth — local JWT verification", () => {
     expect(getSupabaseAdmin).not.toHaveBeenCalled();
   });
 
-  it("accepts a valid unexpired token without contacting Supabase", async () => {
+  it("accepts a valid unexpired token without a Supabase getUser round-trip", async () => {
     (jwt.verify as jest.Mock).mockReturnValue({
       sub: "user-1",
       email: "test@example.com",
       exp: Math.floor(Date.now() / 1000) + 3600,
     });
+
+    // SEC-P2-005: requireAuth consults the cached GoTrue factor list (admin
+    // API) to decide whether a privileged session needs aal2; it must NOT
+    // re-verify the local JWT via `auth.getUser`.
+    const supabase = {
+      auth: {
+        getUser: jest.fn(),
+        admin: {
+          mfa: {
+            listFactors: jest.fn().mockResolvedValue({ data: { factors: [] }, error: null }),
+          },
+        },
+      },
+    };
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
 
     const req = mockReq({ authorization: "Bearer valid-token" }) as Request;
     const res = mockRes() as Response;
@@ -78,7 +95,7 @@ describe("requireAuth — local JWT verification", () => {
 
     expect(req.authUser).toEqual({ userId: "user-1", email: "test@example.com" });
     expect(next).toHaveBeenCalledWith();
-    expect(getSupabaseAdmin).not.toHaveBeenCalled();
+    expect(supabase.auth.getUser).not.toHaveBeenCalled();
   });
 
   it("does not hang when the Supabase getUser fallback times out", async () => {

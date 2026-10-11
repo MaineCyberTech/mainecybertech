@@ -250,4 +250,82 @@ describe("roles routes", () => {
       expect(res.status).toBe(403);
     });
   });
+
+  describe("role catalog mutations (SEC-P2-003)", () => {
+    it("rejects a tenant roles:manage holder creating a role", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: { is_super_admin: false }, error: null }),
+      );
+
+      const res = await request(app)
+        .post("/api/v1/roles")
+        .set("Authorization", "Bearer token-123")
+        .send({ key: "custom", name: "Custom" });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.message).toMatch(/super admin/i);
+    });
+
+    it("allows a platform super admin to create a role", async () => {
+      const supabase = mockAuth();
+      supabase.from
+        .mockReturnValueOnce(createMockBuilder({ data: { is_super_admin: true }, error: null }))
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: { id: "role-new", key: "custom", name: "Custom", is_system: false },
+            error: null,
+          }),
+        );
+
+      const res = await request(app)
+        .post("/api/v1/roles")
+        .set("Authorization", "Bearer token-123")
+        .send({ key: "custom", name: "Custom" });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.key).toBe("custom");
+    });
+
+    it("rejects a tenant roles:manage holder updating a role", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: { is_super_admin: false }, error: null }),
+      );
+
+      const res = await request(app)
+        .patch("/api/v1/roles/role-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ name: "Renamed" });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("rejects a tenant roles:manage holder deleting a role", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: { is_super_admin: false }, error: null }),
+      );
+
+      const res = await request(app)
+        .delete("/api/v1/roles/role-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
+    });
+
+    it("rejects a tenant roles:manage holder changing role permissions", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: { is_super_admin: false }, error: null }),
+      );
+
+      const res = await request(app)
+        .put("/api/v1/roles/role-1/permissions")
+        .set("Authorization", "Bearer token-123")
+        .send({ permissionId: "perm-1", hasPermission: true });
+
+      expect(res.status).toBe(403);
+    });
+  });
 });

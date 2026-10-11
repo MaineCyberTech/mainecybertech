@@ -45,22 +45,30 @@ Test-account one-click login refuses MFA accounts and points to `/login`.
 
 ## Enforcement (`aal2`)
 
-Controlled by `MFA_ENFORCEMENT_ENABLED` (`apps/api/src/config/env.ts`, default
-`false`). When enabled, `apps/api/src/lib/mfa.ts` is wired into
+Broad enforcement is opt-in via `MFA_ENFORCEMENT_ENABLED`
+(`apps/api/src/config/env.ts`, default `false`). **`admin`/`super_admin`
+sessions are always enforced regardless of that flag** (SEC-P2-005): a
+privileged user with a verified factor must complete `aal2`, so the
+highest-authority accounts cannot operate with password-only sessions just
+because the deploy flag is unset. `apps/api/src/lib/mfa.ts` is wired into
 `requireAuth` (`apps/api/src/middleware/auth.ts`):
 
 - An `aal1` session that has a **verified** factor is rejected with
-  `403 MFA_REQUIRED` on every non-`/auth/*` route.
+  `403 MFA_REQUIRED` on every non-`/auth/*` route — always for
+  `admin`/`super_admin`, and for everyone else when the flag is `true`.
 - A user with **no** factor is never blocked.
-- The factor lookup is cached for 60s and **fails open** with a warning — a
-  GoTrue blip cannot lock every user out.
+- The factor lookup (and the privileged-role lookup for the flag-off path) is
+  cached for 60s and **fails open** with a warning — a GoTrue blip cannot lock
+  every user out.
 - The web admin/portal layouts detect `MFA_REQUIRED` and redirect to
   `/portal/profile/security?mfa=required`, where the challenge is completed.
 
 ### Enabling it
 
 1. Enable TOTP at the Supabase project level.
-2. Set `MFA_ENFORCEMENT_ENABLED=true` on the API service (deploy env).
+2. Set `MFA_ENFORCEMENT_ENABLED=true` on the API service (deploy env) to
+   enforce `aal2` for all users with a verified factor. `admin`/`super_admin`
+   accounts are enforced either way.
 3. Verify: an enrolled user gets a step-up page; an unenrolled user is
    unaffected.
 
@@ -115,12 +123,12 @@ SDK equivalents: `auth.mfaGenerateRecoveryCodes()`, `auth.mfaRecoveryCodes()`,
   the user cannot authenticate at all, an operator with Supabase project access
   must clear the factor out-of-band through the GoTrue admin API or the
   Supabase dashboard (`Authentication → Users`).
-- **Enforcement interaction.** With `MFA_ENFORCEMENT_ENABLED=true`, a user who
-  has a _verified_ factor but only an `aal1` session is rejected with
-  `403 MFA_REQUIRED` on every non-`/auth/*` route until the factor is removed or
-  a challenge is verified. The factor lookup is cached for 60s
-  (`apps/api/src/lib/mfa.ts`); spending a recovery code clears that cache entry
-  so access is restored immediately.
+- **Enforcement interaction.** With `MFA_ENFORCEMENT_ENABLED=true` (and always
+  for `admin`/`super_admin`), a user who has a _verified_ factor but only an
+  `aal1` session is rejected with `403 MFA_REQUIRED` on every non-`/auth/*`
+  route until the factor is removed or a challenge is verified. The factor
+  lookup is cached for 60s (`apps/api/src/lib/mfa.ts`); spending a recovery code
+  clears that cache entry so access is restored immediately.
 - **After a reset, sign out and sign back in** (or clear the `mct_session`
   cookie) to get a clean session. A login that was waiting on the removed
   factor holds a stale `mct_mfa_pending` cookie that can no longer complete —

@@ -10,6 +10,7 @@ import { logger } from "../lib/logger";
 import { rateLimitAuth, rateLimitEmail } from "../middleware/rate-limit";
 import { recordAuthAttempt } from "../lib/metrics";
 import { clearMfaFactorCache, decodeAssuranceLevel, userHasVerifiedFactor } from "../lib/mfa";
+import { decryptProfilePii } from "../lib/profile-pii";
 import {
   CODE_COUNT,
   findMatchingRecoveryCode,
@@ -76,7 +77,7 @@ router.get("/me", requireAuth, async (req, res, next) => {
     const { data: profile, error } = await supabase
       .from("profiles")
       .select(
-        "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
+        "id, full_name, email, phone, title, encrypted_pii, is_super_admin, default_organization_id, created_at",
       )
       .eq("id", req.authUser!.userId)
       .single();
@@ -86,13 +87,19 @@ router.get("/me", requireAuth, async (req, res, next) => {
       return;
     }
 
+    // SEC-P2-002: prefer the encrypted mirror as the source of truth for PII;
+    // the plaintext columns are only a fallback for not-yet-backfilled rows.
+    const pii = decryptProfilePii(
+      profile.encrypted_pii as Record<string, unknown> | null | undefined,
+    );
+
     res.json(
       success({
         userId: profile.id,
-        email: profile.email,
-        fullName: profile.full_name,
-        phone: profile.phone,
-        title: profile.title,
+        email: pii.email ?? profile.email,
+        fullName: pii.full_name ?? profile.full_name,
+        phone: pii.phone ?? profile.phone,
+        title: pii.title ?? profile.title,
         isSuperAdmin: profile.is_super_admin,
         defaultOrganizationId: profile.default_organization_id,
         createdAt: profile.created_at,

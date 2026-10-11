@@ -42,6 +42,34 @@ export async function assertCanAssignRole(
 }
 
 /**
+ * SEC-P2-003: the `roles` / `role_permissions` catalog is GLOBAL — it has no
+ * `organization_id` — while `roles:manage` is a tenant-delegable permission.
+ * A delegated role manager in any one org could therefore rename roles, delete
+ * custom roles, or grant/revoke permissions for every tenant. Catalog
+ * mutations are a platform-super-admin action, matching the role-assignment
+ * guard above; tenant admins keep read access (`requireAdmin`) and can still
+ * be granted `roles:manage` for other purposes without mutating the catalog.
+ */
+export async function assertCanManageRoleCatalog(
+  supabase: SupabaseClient<Database>,
+  callerUserId: string,
+): Promise<void> {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_super_admin")
+    .eq("id", callerUserId)
+    .maybeSingle();
+
+  if (!profile?.is_super_admin) {
+    throw new AppError(
+      "FORBIDDEN",
+      "Only platform super admins can manage the global role catalog",
+      403,
+    );
+  }
+}
+
+/**
  * Resolve a role id to its catalog key and reject unknown ids, so assignment
  * paths cannot smuggle an arbitrary/unknown role into a membership.
  */

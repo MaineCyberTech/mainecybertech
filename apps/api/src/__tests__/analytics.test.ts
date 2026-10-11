@@ -141,6 +141,16 @@ describe("Analytics API", () => {
     // SEARCH-P2-005: the route must call the RPC the migration now defines.
     expect(supabase.rpc).toHaveBeenCalledWith("get_analytics_summary");
   });
+
+  it("calls the get_analytics_summary RPC defined by migration 5302440 (SEC-P2-011)", async () => {
+    const supabase = mockAuth();
+    supabase.rpc.mockReturnValue(createMockBuilder({ data: [], error: null }));
+
+    const res = await request(app).get("/api/v1/analytics/summary").set("Authorization", authToken);
+
+    expect(res.status).toBe(200);
+    expect(supabase.rpc).toHaveBeenCalledWith("get_analytics_summary");
+  });
 });
 
 describe("Analytics API behind the CSRF gate (AN-P2-003)", () => {

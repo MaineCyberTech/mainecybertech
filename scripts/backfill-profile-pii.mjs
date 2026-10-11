@@ -3,8 +3,15 @@
  *
  * One-time, idempotent, additive. Reads plaintext PII columns (full_name,
  * email, phone, title) from the `profiles` table and writes an encrypted JSON
- * copy into `encrypted_pii`. Plaintext columns are NEVER modified, so existing
- * API reads are unaffected (non-breaking).
+ * copy into `encrypted_pii`. Plaintext columns are NEVER modified, so the
+ * script is non-breaking.
+ *
+ * OPERATOR STEP (SEC-P2-002): run this once per environment so every existing
+ * row has an encrypted copy. Profile reads (apps/api/src/routes/profiles.ts,
+ * /auth/me) decrypt `encrypted_pii` as the source of truth and fall back to
+ * the plaintext columns only for rows that have not been backfilled. Once the
+ * backfill is verified, the plaintext duplicates can be dropped by a follow-up
+ * migration after every remaining plaintext reader is migrated.
  *
  * Encryption format is identical to apps/api/src/lib/field-encryption.ts so
  * the API can decrypt these rows at runtime: `v1:<ivB64>:<tagB64>:<encB64>`.
