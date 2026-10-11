@@ -335,9 +335,12 @@ describe("users routes", () => {
 
     it("returns 404 when the subject does not exist", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(
-        createMockBuilder({ data: null, error: { message: "Not found", code: "PGRST116" } }),
-      );
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "memberships") {
+          return createMockBuilder({ data: { roles: { id: "r1", key: "admin" } }, error: null });
+        }
+        return createMockBuilder({ data: null, error: { message: "Not found", code: "PGRST116" } });
+      });
 
       const res = await request(app)
         .get("/api/v1/users/missing/export")
