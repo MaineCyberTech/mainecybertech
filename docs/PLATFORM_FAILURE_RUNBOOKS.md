@@ -1,6 +1,6 @@
 # Platform Failure Runbooks
 
-**Owner:** Platform/Engineering lead · **Last reviewed:** 2026-10-03 · **Review cadence:** quarterly
+**Owner:** Platform/Engineering lead · **Last reviewed:** 2026-10-11 · **Review cadence:** quarterly
 
 Companion to [`INCIDENT_RESPONSE.md`](INCIDENT_RESPONSE.md) and
 [`ROLLBACK_PROCEDURES.md`](ROLLBACK_PROCEDURES.md). These are the operator
@@ -74,8 +74,11 @@ page incident.
    storefront falls back to the bundled offline catalog
    (`apps/web/lib/catalog/catalog-source.ts`), so static pages stay up while the
    API is degraded.
-3. Post a status-page update (`docs/features/public-status-page.md`) and follow
-   the Supabase incident. Do **not** fail over the database by hand.
+3. Post a status update to the platform status topic
+   ([`STATUS_AND_COMMUNICATION.md`](STATUS_AND_COMMUNICATION.md)) and follow
+   the Supabase incident. The per-tenant status-page *product feature*
+   (`docs/features/public-status-page.md`) is unrelated — it publishes tenants'
+   own service status, not MCT's. Do **not** fail over the database by hand.
 
 ## 3. Failed deploy
 
@@ -105,7 +108,9 @@ JSM / M365 delivery failures.
 
 - **Runbooks are only real once exercised.** Record each drill below with date,
   operator, variant, and the observed pass/fail — an empty row is an unverified
-  path.
+  path. Operators are assigned from the on-call rota
+  ([`templates/ONCALL_ROTA.md`](templates/ONCALL_ROTA.md)); until the rota is
+  filled, every `_unassigned_` row is itself a gap (`IR-P2-008`).
 - At minimum exercise once before go-live: single-host restore (section 0) and
   the database restore (`db-restore-test.yml`).
 

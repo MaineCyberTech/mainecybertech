@@ -1,6 +1,6 @@
 # Data Breach Response Plan — MCT Platform
 
-**Owner:** Security lead · **Last reviewed:** 2026-10-02 · **Review cadence:** quarterly
+**Owner:** Security lead · **Last reviewed:** 2026-10-11 · **Review cadence:** quarterly
 
 This is the *privacy / data-breach* companion to the platform incident response
 plan in `docs/INCIDENT_RESPONSE.md`. That document tells you how to run an
@@ -282,6 +282,9 @@ data, how many data subjects, and what harm is foreseeable.*
 
 - The **Security lead** owns the assessment and presents the facts.
 - The **Incident Commander** runs the incident and communication cadence.
+- Role assignments and escalation contacts come from the on-call rota in
+  [`INCIDENT_RESPONSE.md`](INCIDENT_RESPONSE.md) §8 (fill
+  [`templates/ONCALL_ROTA.md`](templates/ONCALL_ROTA.md) before go-live).
 - The **notification decision is made jointly by the Security lead and Legal /
   DPO**, recorded in the breach register, and approved by MCT leadership before
   any external notice.
@@ -409,7 +412,8 @@ its target is escalated.
 
 Within **5 business days** of closing a breach, the Security lead produces a
 blameless post-incident review using the platform-IR postmortem format
-(`docs/INCIDENT_RESPONSE.md` §4.4) with a **breach-specific** addition:
+([`templates/POSTMORTEM.md`](templates/POSTMORTEM.md); see
+`docs/INCIDENT_RESPONSE.md` §4.4) with a **breach-specific** addition:
 
 - What personal data was actually affected, and was the assessment accurate?
 - Did detection sources (§3) work, and how long did detection take? Explicitly
@@ -431,7 +435,7 @@ An incident that produces no documentation, config, or control change is **not
 closed** (same rule as `docs/INCIDENT_RESPONSE.md` §4.4). Update this plan, the
 containment playbooks in §5, or the detection sources in §3 whenever the review
 shows a gap — and re-run the relevant tabletop scenario from
-`incident_tabletop_scenarios.md`.
+[`INCIDENT_TABLETOP_SCENARIOS.md`](INCIDENT_TABLETOP_SCENARIOS.md).
 
 ## 11. Related documents and current gaps
 
@@ -444,6 +448,8 @@ shows a gap — and re-run the relevant tabletop scenario from
 | `docs/MONITORING_AND_ALERTING.md` | Detection signals and logging |
 | `docs/ROLLBACK_PROCEDURES.md` | Migration/DB rollback used by §5.3 |
 | `docs/RTO_RPO.md` | Backup/restore targets referenced by §2.3 |
+| `docs/INCIDENT_TABLETOP_SCENARIOS.md` | Scenario catalog used by §10 |
+| `docs/templates/POSTMORTEM.md` | Post-incident review format used by §10 |
 | `SECURITY.md` | How to **report** a vulnerability to MCT |
 
 Known gaps that limit this plan until fixed (track in the risk register):
@@ -460,7 +466,8 @@ Known gaps that limit this plan until fixed (track in the risk register):
   (`DR-P0-001`, `DR-P0-002`, `IR-P1-004`, `IR-P1-005`) — an availability breach
   may be discovered only during recovery.
 - **On-call rota unassigned** (`docs/INCIDENT_RESPONSE.md` §8) — escalation
-  contacts for this plan are not yet named.
+  contacts for this plan are not yet named; fill
+  [`templates/ONCALL_ROTA.md`](templates/ONCALL_ROTA.md) (`IR-P2-008`).
 
 **Owner:** Security lead · **Review cadence:** quarterly, and after every
 declared breach.

@@ -266,6 +266,7 @@ The workflow includes a `rollback-on-failure` step that reverts to the previous 
 | **DO Monitoring**        | Droplet-level CPU, disk, memory         |
 | **Teams webhooks**       | Contact form leads (marketing, not ops) |
 | **Alertmanager → ntfy** (`portal-alerts` topic) | `critical`/`default` Prometheus alerts (see §9) |
+| **ntfy `portal-status`** (public) | Customer-facing platform status updates — [STATUS_AND_COMMUNICATION.md](STATUS_AND_COMMUNICATION.md); not the machine alert feed |
 | **Alertmanager → external dead-man's switch** | `Watchdog` heartbeat; URL still unset — operator action (see §9) |
 
 ### No dedicated pager/on-call

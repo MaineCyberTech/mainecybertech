@@ -1,7 +1,7 @@
 # Documentation Index
 
 > Canonical index for the Maine CyberTech Portal monorepo documentation.
-> Reconciled against the repo on 2026-09-27 — every link below targets a real file.
+> Reconciled against the repo on 2026-10-11 — every link below targets a real file.
 
 ## Quick Start
 
@@ -84,6 +84,20 @@
 | [RTO_RPO.md](RTO_RPO.md)                                                         | Recovery time objective / recovery point objective |
 | [PRIVACY.md](PRIVACY.md)                                                         | Data classification, retention schedule, DSAR pointer |
 | [SUBPROCESSORS.md](SUBPROCESSORS.md)                                             | Vendor/purpose/data/region/DPA subprocessor list   |
+
+## Incident Response & Continuity
+
+| Document | Purpose |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| [INCIDENT_RESPONSE.md](INCIDENT_RESPONSE.md)                                                   | Platform incident response plan: severity, roles, phases, comms, postmortem |
+| [DATA_BREACH_RESPONSE.md](DATA_BREACH_RESPONSE.md)                                             | Data-breach response, assessment, Legal-gated notification decision |
+| [PLATFORM_FAILURE_RUNBOOKS.md](PLATFORM_FAILURE_RUNBOOKS.md)                                   | Operator runbooks for the top failure modes + drill record       |
+| [STATUS_AND_COMMUNICATION.md](STATUS_AND_COMMUNICATION.md)                                     | Platform status/communication surface (ntfy `portal-status`)     |
+| [INCIDENT_TABLETOP_SCENARIOS.md](INCIDENT_TABLETOP_SCENARIOS.md)                               | 12-scenario tabletop catalog + readiness inventory               |
+| [INCIDENT_TABLETOP_DRYRUN_2026-10-11.md](INCIDENT_TABLETOP_DRYRUN_2026-10-11.md)               | First recorded tabletop exercise (IR-011 desk dry-run)           |
+| [templates/ONCALL_ROTA.md](templates/ONCALL_ROTA.md)                                           | On-call rota & escalation template (fill before go-live)         |
+| [templates/INCIDENT_COMMS.md](templates/INCIDENT_COMMS.md)                                     | Incident communication templates                                 |
+| [templates/POSTMORTEM.md](templates/POSTMORTEM.md)                                             | Blameless postmortem template                                    |
 
 ## Deployment & Operations
 
