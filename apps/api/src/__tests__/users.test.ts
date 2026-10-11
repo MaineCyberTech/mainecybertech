@@ -150,7 +150,10 @@ describe("users routes", () => {
 
   describe("PATCH /:id/role", () => {
     it("updates a user role (admin only)", async () => {
-      const supabase = mockAdmin();
+      // mockAuth (not mockAdmin): the queued admin fixture would be consumed
+      // by the new role lookup instead of the admin middleware, hiding the
+      // guard under test.
+      const supabase = mockAuth();
       supabase.from.mockImplementation((table: string) => {
         if (table === "roles") return createMockBuilder({ data: { key: "member" }, error: null });
         if (table === "profiles")
@@ -168,7 +171,7 @@ describe("users routes", () => {
     });
 
     it("rejects a non-super-admin granting a cross-tenant role [SEC-P1-001]", async () => {
-      const supabase = mockAdmin();
+      const supabase = mockAuth();
       supabase.from.mockImplementation((table: string) => {
         if (table === "roles") return createMockBuilder({ data: { key: "admin" }, error: null });
         if (table === "profiles")
