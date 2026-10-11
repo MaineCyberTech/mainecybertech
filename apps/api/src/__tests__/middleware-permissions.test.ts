@@ -24,6 +24,13 @@ jest.mock("../services/supabase", () => ({
 
 import { getSupabaseAdmin } from "../services/supabase";
 import { requirePermission } from "../middleware/permissions";
+import { clearPermissionCache } from "../lib/permissions";
+
+// PERF-P2-003: every suite below reuses user-1/ORG, so the short-TTL cache
+// must be reset between tests (or stale resolutions would satisfy the mocks).
+beforeEach(() => {
+  clearPermissionCache();
+});
 
 const ORG = "00000000-0000-0000-0000-000000000001";
 const OTHER_ORG = "00000000-0000-0000-0000-000000000099";

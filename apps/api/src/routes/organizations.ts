@@ -10,6 +10,7 @@ import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-lock
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
 import { rateLimitAdminOps } from "../middleware/rate-limit";
+import { clearPermissionCache } from "../lib/permissions";
 import { resolveAdminTenantScope } from "../lib/admin-scope";
 import {
   createOrganizationSchema,
@@ -138,6 +139,10 @@ router.post("/onboard", rateLimitAdminOps, requireAdmin, async (req, res, next) 
       .single();
 
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);
+
+    // PERF-P2-003: onboarding inserts an approved membership; the new admin's
+    // cached resolution (if any) must be dropped.
+    clearPermissionCache(userId);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

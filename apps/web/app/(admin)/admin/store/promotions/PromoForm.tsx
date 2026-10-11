@@ -67,11 +67,13 @@ export default function PromoForm({
             onKeyDown={(e) => {
               if (e.key === "Escape") setOpen(false);
             }}
-            // `min-w-0` drops the flex `min-width:auto` content floor that
-            // made Chrome size this dialog to 437px (mobile E2E measured it
-            // against a 361px viewport; Safari clamps to `w-full` instead).
-            // `p-4` on the overlay keeps a 1rem gutter at small widths.
-            className="relative z-10 max-h-[90vh] w-full min-w-0 max-w-lg overflow-y-auto rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl"
+            // `w-[calc(100vw-2rem)]` pins the width to the viewport
+            // regardless of the containing block (a transformed ancestor or
+            // flex min-content chain can otherwise size this to 405-437px
+            // on Chrome against a 361px viewport). `min-w-0` drops the flex
+            // `min-width:auto` floor and `overflow-x-hidden` clips wide
+            // children. `p-4` on the overlay keeps a 1rem gutter.
+            className="relative z-10 max-h-[90vh] w-[calc(100vw-2rem)] min-w-0 max-w-lg overflow-y-auto overflow-x-hidden rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl"
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 id="promo-form-title" className="text-lg font-bold text-slate-50">

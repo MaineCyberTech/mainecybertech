@@ -37,6 +37,7 @@ jest.mock("../lib/http-client", () => ({
 
 import { getSupabaseAdmin } from "../services/supabase";
 import { httpClients } from "../lib/http-client";
+import { clearPermissionCache } from "../lib/permissions";
 
 function mockAuth() {
   const supabase: any = { from: jest.fn(), auth: { getUser: jest.fn() } };
@@ -86,6 +87,9 @@ describe("billing routes", () => {
     supabase = mockAuth();
     stubOrgId = null;
     jest.clearAllMocks();
+    // PERF-P2-003: the portal-session path resolves permissions directly, so
+    // reset the short-TTL cache between tests (same user/org fixtures).
+    clearPermissionCache();
   });
 
   const ORG_DEFAULT = "00000000-0000-0000-0000-000000000001";

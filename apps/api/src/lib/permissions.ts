@@ -18,6 +18,51 @@ import { AppError } from "../types";
 import { roleKeyOf } from "./roles";
 
 /**
+ * PERF-P2-003: short-TTL, per-process cache of resolved effective permissions.
+ *
+ * Every gated request used to fan out 4-6 hosted-Supabase reads, and
+ * requirePermission + requireEntitlement resolved the same user twice per
+ * request. Results are cached by `userId:orgId` for a short window so
+ * repeated requests (and the double resolution inside one request) reuse one
+ * resolution; in-flight promises are shared so concurrent requests for the
+ * same key also dedupe. Failures are never cached.
+ *
+ * Writes that change a user's grants call `clearPermissionCache(userId)`
+ * (or clear the whole map for global role-catalog changes), so revocations
+ * apply immediately on the instance that served the write; the TTL bounds
+ * staleness everywhere else.
+ */
+const PERMISSION_CACHE_TTL_MS = 15_000;
+const MAX_PERMISSION_CACHE_ENTRIES = 5_000;
+
+interface PermissionCacheEntry {
+  promise: Promise<EffectivePermissions>;
+  expires: number;
+}
+
+const permissionCache = new Map<string, PermissionCacheEntry>();
+
+function permissionCacheKey(userId: string, orgId?: string | null): string {
+  return `${userId}:${orgId ?? "*"}`;
+}
+
+/**
+ * Drop cached resolutions for one user (all org scopes) or the whole cache
+ * when no user is given (global role/permission catalog changes). Also the
+ * test-only reset hook used by permission middleware suites.
+ */
+export function clearPermissionCache(userId?: string): void {
+  if (!userId) {
+    permissionCache.clear();
+    return;
+  }
+  const prefix = `${userId}:`;
+  for (const key of [...permissionCache.keys()]) {
+    if (key.startsWith(prefix)) permissionCache.delete(key);
+  }
+}
+
+/**
  * Role keys that the requirePermission middleware treats as having every
  * permission (same trust level as requireAdmin). `admin` is included even
  * though its catalog grants exclude `delete` actions — the middleware
@@ -47,6 +92,37 @@ export interface EffectivePermissions {
 }
 
 export async function resolveEffectivePermissions(
+  userId: string,
+  orgId?: string | null,
+): Promise<EffectivePermissions> {
+  const key = permissionCacheKey(userId, orgId);
+  const cached = permissionCache.get(key);
+  if (cached && cached.expires > Date.now()) return cached.promise;
+
+  const promise = resolveEffectivePermissionsUncached(userId, orgId).catch((error) => {
+    // Never cache failures: the next request must retry.
+    permissionCache.delete(key);
+    throw error;
+  });
+
+  // Bound the map: drop expired entries, then evict oldest if still full.
+  if (permissionCache.size >= MAX_PERMISSION_CACHE_ENTRIES) {
+    const now = Date.now();
+    for (const [entryKey, entry] of permissionCache) {
+      if (entry.expires <= now) permissionCache.delete(entryKey);
+    }
+    while (permissionCache.size >= MAX_PERMISSION_CACHE_ENTRIES) {
+      const oldest = permissionCache.keys().next();
+      if (oldest.done) break;
+      permissionCache.delete(oldest.value);
+    }
+  }
+
+  permissionCache.set(key, { promise, expires: Date.now() + PERMISSION_CACHE_TTL_MS });
+  return promise;
+}
+
+async function resolveEffectivePermissionsUncached(
   userId: string,
   orgId?: string | null,
 ): Promise<EffectivePermissions> {

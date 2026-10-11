@@ -20,9 +20,38 @@ Redis-backed response cache with an in-memory fallback:
   an existing one (hot entries expire instead of being refreshed forever).
   Responses expose `X-Cache: HIT|MISS`.
 - **Invalidation:** `invalidateCache("/api/v1/...")` is called after mutations
-  — currently the organization and role mutation handlers (8 call sites).
+  — the organization, role and store-catalog mutation handlers (14 call sites).
   Redis invalidation uses batched `SCAN` + `DEL` (never `KEYS`); it is
   best-effort and the TTL is the backstop.
+
+## Permission resolution cache
+
+[`apps/api/src/lib/permissions.ts`](../apps/api/src/lib/permissions.ts)
+resolves effective permissions (profile → approved memberships →
+role_permissions → overrides → permission catalog) behind a short-TTL
+per-process cache:
+
+- **Key:** `userId:orgId` (`*` for the org-agnostic scope), TTL **15s**;
+  in-flight promises are shared so concurrent requests dedupe, and failures
+  are never cached.
+- **Effect:** a gated request that also runs `requireEntitlement` resolves the
+  caller once instead of twice, and repeated requests inside the TTL skip the
+  4–6 Supabase reads.
+- **Invalidation:** `clearPermissionCache(userId)` runs after role, membership
+  and permission-override writes (and account erasure); global role-catalog
+  changes clear the whole map. The TTL bounds staleness on other replicas.
+
+## SSE notification streams
+
+[`apps/api/src/routes/notifications.ts`](../apps/api/src/routes/notifications.ts):
+
+- A per-process cap (`SSE_MAX_STREAMS = 200`) rejects further streams with
+  `503` + `Retry-After: 10`; the bell client falls back to polling on error.
+- All streams for the same user share one Supabase Realtime channel
+  (refcounted, removed with the last subscriber), so subscriptions scale with
+  distinct users rather than open tabs or reconnect storms.
+- Streams re-validate the session JWT every 5 minutes and send a 30s
+  keepalive.
 
 ## Rate limits
 
@@ -74,6 +103,13 @@ is per-process, so horizontally scaled replicas each keep their own counters.
   (`(portal)/portal/layout.tsx`) layouts set `export const dynamic =
 "force-dynamic"` so authenticated shells are never statically prerendered
   with stale data.
+- Public storefront pages stay `force-dynamic` but their catalog reads are
+  cached: the API response-caches `/store/products` and `/store/categories`
+  (60s, evicted by catalog admin writes), and
+  [`lib/catalog/catalog-source.ts`](../apps/web/lib/catalog/catalog-source.ts)
+  keeps the assembled snapshot in-process for 60s so layout + page +
+  `generateMetadata` share one read. Admin catalog edits surface within the
+  web cache TTL.
 - The browser talks only to the API (no direct Supabase client), and
   notifications use the server-sent-events stream rather than 30s polling.
 - Theme is pinned dark-only (no half-rendered light mode / flash).

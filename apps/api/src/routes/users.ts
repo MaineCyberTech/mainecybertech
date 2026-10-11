@@ -15,6 +15,7 @@ import { queryInt } from "../lib/query";
 import { roleKeyOf } from "../lib/roles";
 import { setActiveUsers } from "../lib/metrics";
 import { assertCanAssignRole, resolveRoleKey } from "../lib/role-assignment";
+import { clearPermissionCache } from "../lib/permissions";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -501,6 +502,9 @@ router.patch("/:id/role", requirePermission("users", "manage"), async (req, res,
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
+    // PERF-P2-003: the target's effective permissions changed.
+    clearPermissionCache(String(req.params.id));
+
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
       action: "user.role.update",
@@ -624,6 +628,9 @@ router.put("/:id/permissions", requirePermission("users", "manage"), async (req,
       if (error) throw new AppError("DB_ERROR", error.message, 500);
     }
 
+    // PERF-P2-003: overrides feed the resolver's cache key for this user.
+    clearPermissionCache(userId);
+
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
       action: "user.permission.override",
@@ -698,6 +705,9 @@ router.delete("/:id", requirePermission("users", "manage"), async (req, res, nex
     //    permission overrides, sessions, MFA factors and recovery codes.
     const { error: authError } = await supabase.auth.admin.deleteUser(targetUserId);
     if (authError) throw new AppError("DB_ERROR", authError.message, 500);
+
+    // PERF-P2-003: drop any cached resolution for the erased account.
+    clearPermissionCache(targetUserId);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
