@@ -560,13 +560,6 @@ router.post("/stripe", async (req, res, next) => {
           })
           .eq("stripe_invoice_id", inv.id);
         assertMirrorWrite(invoiceVoidWriteError, "invoices.update lifecycle");
-=======
-        const { error: voidError } = await supabase
-          .from("invoices")
-          .update({ status })
-          .eq("stripe_invoice_id", inv.id);
-        throwIfWriteFailed(voidError, "Stripe invoice status update");
->>>>>>> 4fbe52bf (fix(api): fail inbound webhooks when persistence fails (RES-P2-007))
       }
     }
 
