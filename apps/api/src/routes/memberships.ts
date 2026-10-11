@@ -134,14 +134,17 @@ router.patch("/:id", requirePermission("users", "manage"), async (req, res, next
 
     // SEC-P1-001 / ADMIN-P1-003: validate the new role and guard the
     // assignment; also require a super admin to touch a membership that
-    // currently holds a cross-tenant role.
-    const nextRoleKey = await resolveRoleKey(supabase, parsed.roleId);
-    await assertCanAssignRole(
-      supabase,
-      req.authUser!.userId,
-      nextRoleKey,
-      membership.user_id as string,
-    );
+    // currently holds a cross-tenant role. `roleId` is optional (USE-P1-003
+    // status-only transitions), so only guard when it is being changed.
+    if (parsed.roleId) {
+      const nextRoleKey = await resolveRoleKey(supabase, parsed.roleId);
+      await assertCanAssignRole(
+        supabase,
+        req.authUser!.userId,
+        nextRoleKey,
+        membership.user_id as string,
+      );
+    }
     if (membership.role_id) {
       const currentRoleKey = await resolveRoleKey(supabase, membership.role_id as string);
       await assertCanAssignRole(supabase, req.authUser!.userId, currentRoleKey);
