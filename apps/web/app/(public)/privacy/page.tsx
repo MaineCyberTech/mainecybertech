@@ -16,7 +16,7 @@ export default function PrivacyPage() {
         <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
           Privacy <span className="text-emerald-500">Policy</span>
         </h1>
-        <p className="mt-4 text-sm text-slate-500">Last updated: July 1, 2026</p>
+        <p className="mt-4 text-sm text-slate-500">Last updated: October 11, 2026</p>
 
         <div className="cyber-panel mt-10 space-y-8">
           <section>
@@ -79,7 +79,47 @@ export default function PrivacyPage() {
                 geolocate visitors who have accepted analytics. The lookup is only made after
                 consent and over HTTPS. No data is permanently stored by ip-api.com.
               </li>
+              <li>
+                <strong className="text-slate-200">Supabase</strong> &mdash; Database,
+                authentication and file storage for the portal.
+              </li>
+              <li>
+                <strong className="text-slate-200">Stripe</strong> &mdash; Payment processing and
+                invoicing for subscriptions. Card details are handled by Stripe and are not stored
+                by us.
+              </li>
+              <li>
+                <strong className="text-slate-200">Cloudflare Turnstile</strong> &mdash; Bot
+                protection on public forms.
+              </li>
+              <li>
+                <strong className="text-slate-200">Sentry</strong> &mdash; Error monitoring used to
+                keep the portal reliable.
+              </li>
+              <li>
+                <strong className="text-slate-200">Email delivery provider</strong> &mdash;
+                Transactional email such as invitations, notifications and password resets.
+              </li>
+              <li>
+                <strong className="text-slate-200">Microsoft 365 (Graph)</strong> &mdash; Calendar
+                synchronization for scheduling and service reminders.
+              </li>
+              <li>
+                <strong className="text-slate-200">DigitalOcean</strong> &mdash; Cloud
+                infrastructure hosting our servers.
+              </li>
             </ul>
+            <p className="cyber-text mt-4 leading-relaxed">
+              A current subprocessor list &mdash; including purpose, data categories and processing
+              region &mdash; is available on request at{" "}
+              <a
+                href="mailto:contact@mainecybertech.com"
+                className="text-emerald-400 transition hover:text-emerald-300"
+              >
+                contact@mainecybertech.com
+              </a>
+              .
+            </p>
           </section>
 
           <section>
@@ -134,8 +174,10 @@ export default function PrivacyPage() {
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
               We retain your personal information only as long as necessary to fulfill the purposes
-              described in this policy, or as required by law. Contact form submissions are retained
-              for up to three years. Analytics data is retained in accordance with Google
+              described in this policy, or as required by law. Contact form submissions are purged
+              from our systems after 90 days. Copies forwarded to Microsoft Teams and Atlassian JSM
+              for lead tracking are retained under those providers&apos; retention settings and may
+              persist longer. Analytics data is retained in accordance with Google
               Analytics&apos; data retention settings.
             </p>
           </section>

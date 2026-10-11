@@ -5,6 +5,78 @@ import { toJson } from "../lib/db-types";
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 100;
 
+const REDACTED = "[REDACTED]";
+
+/**
+ * Generic key names that identify a person only in context (`name`, `title`).
+ * Matched exactly (case-insensitive) so entity fields such as `file_name` or
+ * `company_name` are not over-redacted.
+ */
+const PII_EXACT_KEYS = new Set([
+  "name",
+  "first_name",
+  "firstname",
+  "middle_name",
+  "middlename",
+  "last_name",
+  "lastname",
+  "display_name",
+  "displayname",
+  "title",
+  "job_title",
+  "jobtitle",
+]);
+
+/**
+ * Unambiguous PII tokens, matched anywhere in the key so variants such as
+ * `password_hash`, `adminEmail` and `refresh_token` are still caught.
+ */
+const PII_SUBSTRING_KEYS = [
+  "full_name",
+  "fullname",
+  "email",
+  "phone",
+  "password",
+  "token",
+  "secret",
+];
+
+function isPiiKey(key: string): boolean {
+  const lower = key.toLowerCase();
+  return PII_EXACT_KEYS.has(lower) || PII_SUBSTRING_KEYS.some((field) => lower.includes(field));
+}
+
+/**
+ * Recursively replace values held under PII keys.
+ *
+ * Audit PRIV-P2-004: the previous filter only inspected top-level keys and
+ * missed `name`/`title`/`job_title`, so person names and job titles were
+ * stored in `audit_logs.metadata` in plaintext for the full 365-day retention
+ * (and exported to any org admin). Scrubbing nested objects/arrays keeps the
+ * guarantee while still redacting at the key level. Values that are personal
+ * data but sit under a non-PII key (e.g. a free-text message) are not covered
+ * by this transform — callers must not log them.
+ */
+export function redactAuditMetadata(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((entry) => redactAuditMetadata(entry));
+  }
+  if (value !== null && typeof value === "object") {
+    const proto = Object.getPrototypeOf(value);
+    if (proto !== Object.prototype && proto !== null) {
+      // Non-plain objects (Date, Buffer, …) pass through; JSON.stringify at
+      // insert time handles them and recursing would destroy their shape.
+      return value;
+    }
+    const scrubbed: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+      scrubbed[key] = isPiiKey(key) ? REDACTED : redactAuditMetadata(entry);
+    }
+    return scrubbed;
+  }
+  return value;
+}
+
 type AuditEventInput = {
   organizationId?: string | null;
   actorUserId?: string | null;
@@ -28,21 +100,8 @@ export async function logAuditEvent(input: AuditEventInput) {
     action: input.action,
     entity_type: input.entityType,
     entity_id: input.entityId ?? null,
-    metadata: input.metadata ?? {},
+    metadata: redactAuditMetadata(input.metadata ?? {}) as Record<string, unknown>,
   };
-
-  const piiFields = ["full_name", "email", "phone", "password", "token", "secret"];
-  if (data.metadata && typeof data.metadata === "object") {
-    const sanitized: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(data.metadata as Record<string, unknown>)) {
-      if (piiFields.some((f) => key.toLowerCase().includes(f.toLowerCase()))) {
-        sanitized[key] = "[REDACTED]";
-      } else {
-        sanitized[key] = value;
-      }
-    }
-    data.metadata = sanitized;
-  }
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     const { error } = await supabase

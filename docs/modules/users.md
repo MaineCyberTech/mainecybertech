@@ -16,6 +16,7 @@ User administration system with multi-org role management, permission matrix ove
 - Per-user permission overrides (toggles on top of role defaults)
 - Permission matrix view (role + user overrides combined)
 - Multi-org user display with "N more orgs" badge
+- DSAR export (`/:id/export`) and erasure (`DELETE /:id`, super admin only) per `docs/runbooks/dsar.md`
 
 ## Endpoints
 
@@ -25,6 +26,8 @@ User administration system with multi-org role management, permission matrix ove
 | GET    | /api/v1/users/compound        | List users with role + permission counts |
 | GET    | /api/v1/users/:id             | Get user by ID                           |
 | GET    | /api/v1/users/:id/detail      | Get user with full membership detail     |
+| GET    | /api/v1/users/:id/export      | DSAR export (profile + memberships + overrides) |
+| DELETE | /api/v1/users/:id             | DSAR erasure (super admin): scrub + delete auth user |
 | PATCH  | /api/v1/users/:id/role        | Update user role (org-scoped)            |
 | GET    | /api/v1/users/:id/permissions | Get user permission overrides            |
 | PUT    | /api/v1/users/:id/permissions | Set user permission overrides            |
@@ -37,3 +40,4 @@ Key tables: `profiles`, `memberships`, `organizations`, `roles`, `permissions`, 
 
 - Admin: full access to all user management operations
 - Client: no access
+- DSAR erasure requires a platform super admin (`profiles.is_super_admin`); DSAR export is self-service or org-admin scoped

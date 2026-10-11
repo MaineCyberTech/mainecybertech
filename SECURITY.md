@@ -25,6 +25,9 @@ Only the `main` branch (production) and `develop` (staging) are supported. Older
 - [docs/DEPENDENCY_POLICY.md](docs/DEPENDENCY_POLICY.md)
 - [docs/LICENSE_POLICY.md](docs/LICENSE_POLICY.md)
 - [docs/SBOM_PROCESS.md](docs/SBOM_PROCESS.md)
+- [docs/PRIVACY.md](docs/PRIVACY.md)
+- [docs/SUBPROCESSORS.md](docs/SUBPROCESSORS.md)
+- [docs/runbooks/dsar.md](docs/runbooks/dsar.md)
 
 ## Supply chain
 

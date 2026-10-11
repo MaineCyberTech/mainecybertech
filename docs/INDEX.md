@@ -82,6 +82,8 @@
 | [DEPENDENCY_POLICY.md](DEPENDENCY_POLICY.md)                                     | Vulnerability gate, overrides, update governance   |
 | [SBOM_PROCESS.md](SBOM_PROCESS.md)                                               | SBOM generation, scope, validation, verification   |
 | [RTO_RPO.md](RTO_RPO.md)                                                         | Recovery time objective / recovery point objective |
+| [PRIVACY.md](PRIVACY.md)                                                         | Data classification, retention schedule, DSAR pointer |
+| [SUBPROCESSORS.md](SUBPROCESSORS.md)                                             | Vendor/purpose/data/region/DPA subprocessor list   |
 
 ## Deployment & Operations
 
@@ -187,11 +189,14 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 | -------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | [features/README.md](features/README.md)                                                     | Index of the 60 module feature specs          |
 | [runbooks/README.md](runbooks/README.md)                                                     | Index of the 60 module runbooks               |
+| [runbooks/dsar.md](runbooks/dsar.md)                                                         | DSAR access/export/erasure + offboarding      |
 | [features/client-onboarding-command-center.md](features/client-onboarding-command-center.md) | Client onboarding command center feature spec |
 | [runbooks/client-onboarding-command-center.md](runbooks/client-onboarding-command-center.md) | Client onboarding command center runbook      |
 
-> `docs/features/` and `docs/runbooks/` each contain 60 files (one per module);
-> both `README.md` indexes list every file with its title.
+> `docs/features/` and the module-runbook section of `docs/runbooks/` each
+> contain 60 files (one per module); both `README.md` indexes list every file
+> with its title. `docs/runbooks/` additionally carries platform runbooks such
+> as `dsar.md`.
 
 ## Additional References
 
