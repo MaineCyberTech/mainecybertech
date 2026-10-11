@@ -359,6 +359,55 @@ export type Database = {
           { foreignKeyName: "assets_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };
+      audit_log_archive: {
+        Row: {
+          action: string;
+          actor_type: "user" | "system" | "service";
+          actor_user_id: string | null;
+          archive_reason: string;
+          archived_at: string;
+          created_at: string;
+          entity_id: string | null;
+          entity_type: string;
+          id: string;
+          ip_address: string | null;
+          metadata: Json;
+          organization_id: string | null;
+          user_agent: string | null;
+        };
+        Insert: {
+          action: string;
+          created_at: string;
+          entity_type: string;
+          id: string;
+          actor_type?: "user" | "system" | "service" | null;
+          actor_user_id?: string | null;
+          archive_reason?: string | null;
+          archived_at?: string | null;
+          entity_id?: string | null;
+          ip_address?: string | null;
+          metadata?: Json | null;
+          organization_id?: string | null;
+          user_agent?: string | null;
+        };
+        Update: {
+          action?: string | null;
+          actor_type?: "user" | "system" | "service" | null;
+          actor_user_id?: string | null;
+          archive_reason?: string | null;
+          archived_at?: string | null;
+          created_at?: string | null;
+          entity_id?: string | null;
+          entity_type?: string | null;
+          id?: string | null;
+          ip_address?: string | null;
+          metadata?: Json | null;
+          organization_id?: string | null;
+          user_agent?: string | null;
+        };
+        Relationships: [
+        ];
+      };
       audit_logs: {
         Row: {
           action: string;

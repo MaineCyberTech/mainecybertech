@@ -152,7 +152,7 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 13    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319 | Admin 203, Portal 86, Public 29, `forbidden` 1 |
 | Web components            | 108 | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 139 | `supabase/migrations/` (latest: 5302441_webhook_endpoint_secret_metadata)))))))))))                                                                                              |
+| SQL migrations            | 141 | `supabase/migrations/` (latest: 5302443_module_updated_at_triggers))))))))))))))))                                                                                              |
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 22 | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 632 | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
@@ -595,7 +595,7 @@ pipefail`); `docs/module-matrix-mapping.md` maps all 60 prompt-pack modules to
   validates live responses (412 paths, 0 missing). Generating the SDK from the
   spec remains a follow-up.
 - **CI schema guards**: `scripts/generate-db-types.js --check` and
-  `scripts/verify-rls.mjs` (137 tables, all RLS-enabled, 1021 policies) wired
+  `scripts/verify-rls.mjs` (137 tables, all RLS-enabled, 1022 policies) wired
   into `test.yml` + `validate.yml`; `docs/RLS-coverage-matrix.md` is now a
   snapshot with the script as the live source.
 - **CSP reporting + SAST**: unauthenticated `POST /api/v1/public/csp-report`

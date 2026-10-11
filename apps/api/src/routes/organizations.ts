@@ -412,10 +412,41 @@ router.delete(
   async (req, res, next) => {
     try {
       const supabase = getScopedClient(req, "organizations", "write");
-      const { error } = await supabase
-        .from("organizations")
-        .delete()
-        .eq("id", String(req.params.id));
+      // The archive is a privileged compliance step, so it always runs with the
+      // service-role client (the archive RPC is not executable by anon/
+      // authenticated). The organization delete below keeps the scoped client
+      // so RLS, when enabled for this module, still gates it.
+      const admin = getSupabaseAdmin();
+      const orgId = String(req.params.id);
+
+      // DATA-P2-005: audit_logs.organization_id is `on delete cascade`, so the
+      // delete below would destroy the org's compliance history. Copy it to
+      // the append-only archive first and fail closed: if the archive step
+      // fails, or any audit row remains, the organization is not deleted.
+      const { error: archiveError } = await admin.rpc(
+        "archive_org_audit_logs",
+        // `as never`: the generated Database type declares
+        // `Functions: Record<string, never>`, so RPC args are untyped here.
+        { p_organization_id: orgId } as never,
+      );
+      if (archiveError) {
+        throw new AppError("DB_ERROR", `audit archive failed: ${archiveError.message}`, 500);
+      }
+
+      const { count, error: remainingError } = await admin
+        .from("audit_logs")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", orgId);
+      if (remainingError) throw new AppError("DB_ERROR", remainingError.message, 500);
+      if ((count ?? 0) > 0) {
+        throw new AppError(
+          "CONFLICT",
+          "Audit history could not be fully archived; organization was not deleted",
+          409,
+        );
+      }
+
+      const { error } = await supabase.from("organizations").delete().eq("id", orgId);
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -423,7 +454,7 @@ router.delete(
         actorUserId: req.authUser!.userId,
         action: "organization.delete",
         entityType: "organization",
-        entityId: String(req.params.id),
+        entityId: orgId,
       });
 
       res.status(204).send();

@@ -119,6 +119,10 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       for (const [k, v] of Object.entries(parsed)) {
         if (k !== "organizationId") fields[snake(k)] = v;
       }
+      // DATA-P2-009: set the modification timestamp server-side. The create
+      // schema does not declare updated_at, so a caller cannot mass-assign it;
+      // the DB trigger (5302441) is the backstop for non-API writes.
+      fields.updated_at = new Date().toISOString();
       const { data, error } = await sb
         .from(table)
         .update(fields as never)

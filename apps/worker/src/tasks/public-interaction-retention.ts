@@ -1,21 +1,38 @@
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
+import { loadActiveRetentionPolicies, resolveRetentionDays } from "../lib/retention-policy";
 import type { TaskResult } from "../task-registry";
 
-const RETENTION_DAYS = 90;
+const DEFAULT_RETENTION_DAYS = 90;
 
 export async function publicInteractionRetention(
   payload: Record<string, unknown>,
 ): Promise<TaskResult> {
   try {
-    const retentionDays =
-      typeof payload.retentionDays === "number" ? payload.retentionDays : RETENTION_DAYS;
+    // A 0/negative/NaN payload window would set the cutoff to "now" and wipe
+    // the table; refuse instead (same guard as the main retention task).
+    const requested = typeof payload.retentionDays === "number" ? payload.retentionDays : undefined;
+    if (requested !== undefined && (!Number.isFinite(requested) || requested <= 0)) {
+      const error = `refusing to purge: retentionDays must be a positive number of days (got ${String(requested)})`;
+      logger.error({ retentionDays: requested }, `Public interaction retention: ${error}`);
+      return { ok: false, error };
+    }
+
+    const supabase = getSupabaseAdmin();
+
+    // DATA-P2-006: an explicit payload window wins, then the active
+    // retention_policies registry, then the built-in 90-day default.
+    const policies = await loadActiveRetentionPolicies(supabase);
+    const window = resolveRetentionDays(
+      "public_interactions",
+      DEFAULT_RETENTION_DAYS,
+      policies,
+    );
+    const retentionDays = requested ?? window.days;
 
     const cutoff = new Date(
       Date.now() - retentionDays * 24 * 60 * 60 * 1000,
     ).toISOString();
-
-    const supabase = getSupabaseAdmin();
 
     const { data: deleted, error } = await supabase
       .from("public_interactions")
@@ -32,7 +49,15 @@ export async function publicInteractionRetention(
     }
 
     const purged = deleted?.length ?? 0;
-    logger.info({ purged, retentionDays, cutoff }, "Public interaction retention purge complete");
+    logger.info(
+      {
+        purged,
+        retentionDays,
+        cutoff,
+        window: { source: window.source, matchingPolicies: window.matchingPolicies },
+      },
+      "Public interaction retention purge complete",
+    );
     return { ok: true };
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : String(error);
