@@ -372,18 +372,21 @@ describe("public routes", () => {
       .mockReturnValueOnce(updateBuilder)
       .mockReturnValue(createMockBuilder({ data: null, error: null } as MockResult));
 
-    const res = await request(app).post("/api/v1/public/submit").send({
-      trackingId,
-      company: "Test Corp",
-      name: "John Doe",
-      email: "john@test.com",
-      phone: "207-555-0100",
-      services: "Managed IT Support",
-      employees: "11-50",
-      urgency: "Medium - Planning Phase",
-      message: "Looking for managed IT services.",
-      consent: true,
-    });
+    const res = await request(app)
+      .post("/api/v1/public/submit")
+      .set("User-Agent", REAL_BROWSER_UA)
+      .send({
+        trackingId,
+        company: "Test Corp",
+        name: "John Doe",
+        email: "john@test.com",
+        phone: "207-555-0100",
+        services: "Managed IT Support",
+        employees: "11-50",
+        urgency: "Medium - Planning Phase",
+        message: "Looking for managed IT services.",
+        consent: true,
+      });
 
     expect(res.status).toBe(200);
     expect(updateBuilder.update).toHaveBeenCalledWith(
