@@ -9,11 +9,8 @@ import { requirePermission } from "../middleware/permissions";
 import { loadOwned } from "../lib/tenant";
 import { updateMembershipSchema } from "../validators/membership";
 import { assertCanAssignRole, resolveRoleKey } from "../lib/role-assignment";
-<<<<<<< HEAD
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
-=======
 import { clearPermissionCache } from "../lib/permissions";
->>>>>>> 958d59b9 (perf: cache public storefront reads, memoize permission resolution, batch bulk invites, cap SSE streams)
 
 const router: ReturnType<typeof Router> = Router();
 
