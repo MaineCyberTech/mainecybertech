@@ -880,22 +880,36 @@ jobs:
             # containers report healthy, so a failed deploy can still roll
             # back. Use the containers' own healthchecks (probing the app
             # ports from the host does not work - they are not published).
+            # INFRA-P2-007: assert EVERY service that declares a healthcheck,
+            # not just api/web/worker. A restart-looping alertmanager (which
+            # also takes prometheus down via depends_on), a broken caddy
+            # config or a dead redis used to deploy green with the alerting
+            # and reverse-proxy path silently gone.
             container_health() {
               docker inspect --format '{{.State.Health.Status}}' "mct-portal-$1-1" 2>/dev/null || echo "missing"
             }
+            GATED_SERVICES="redis api worker web alertmanager prometheus caddy"
             healthy=0
             for attempt in $(seq 1 18); do
-              if [ "$(container_health api)" = "healthy" ] && [ "$(container_health web)" = "healthy" ] && [ "$(container_health worker)" = "healthy" ]; then
+              unhealthy=""
+              for svc in $GATED_SERVICES; do
+                status="$(container_health "$svc")"
+                [ "$status" = "healthy" ] || unhealthy="${unhealthy} ${svc}=${status}"
+              done
+              if [ -z "$unhealthy" ]; then
                 healthy=1
-                echo "Health checks passed (attempt $attempt)"
+                echo "Health checks passed (attempt $attempt): ${GATED_SERVICES}"
                 break
               fi
-              echo "Waiting for services to become healthy (attempt $attempt/18)..."
+              echo "Waiting for services to become healthy (attempt $attempt/18):${unhealthy}"
               sleep 10
             done
             if [ "$healthy" != "1" ]; then
-              echo "=== Caddy logs (last 30 lines) ==="
-              docker compose -p mct-portal logs --tail=30 caddy 2>/dev/null || true
+              echo "=== Alerting/proxy logs (last 30 lines each) ==="
+              for svc in caddy alertmanager prometheus; do
+                echo "--- ${svc} ---"
+                docker compose -p mct-portal logs --tail=30 "$svc" 2>/dev/null || true
+              done
               if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "${{ env.IMAGE_TAG }}" ]; then
                 echo "Attempting rollback to previously running tag $PREV_TAG" >&2
                 docker compose -p mct-portal down --remove-orphans || true

@@ -1,0 +1,24 @@
+name: ShellCheck incident-path scripts
+description: >
+  Lint the deploy/backup/rollback scripts with shellcheck (preinstalled on the
+  ubuntu runner). The manual rollback script shipped with an unbound
+  GHCR_TOKEN reference, a non-fatal worker check and a wrong image prefix
+  (INFRA-P2-006); this gate keeps the incident-path scripts statically clean.
+  Shared by test.yml (PRs) and validate.yml (push deploy gate) so the two
+  definitions cannot drift apart.
+
+runs:
+  using: composite
+  steps:
+    - name: ShellCheck incident-path scripts
+      shell: bash
+      # --severity=warning: notes/style are advisory; warnings/errors fail.
+      run: |
+        set -e
+        shellcheck --version
+        shellcheck --severity=warning \
+          scripts/rollback.sh \
+          scripts/backup-database.sh \
+          scripts/backup-storage.sh \
+          scripts/restore-database.sh \
+          scripts/restore-storage.sh

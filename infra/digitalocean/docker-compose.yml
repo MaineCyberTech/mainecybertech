@@ -241,6 +241,14 @@ services:
     # shared box rather than isolate it.
     pids_limit: 256
     read_only: true
+    # INFRA-P2-007: prometheus had no healthcheck, so the deploy gate could
+    # not assert it. /-/ready returns 200 once the TSDB is ready to serve.
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   # Alertmanager — alert DELIVERY + the dead-man's switch (IR-P0-003).
   # Prometheus forwards firing alerts here (see prometheus.yml `alerting:`).

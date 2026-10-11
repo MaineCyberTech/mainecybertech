@@ -88,9 +88,10 @@ Use environment-scoped values wherever possible.
 
 ## Secrets required by the database backup / restore workflows
 
-`db-backup.yml`, `db-restore-test.yml` and `storage-backup.yml` all attach
+`db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml`,
+`storage-restore-test.yml` and `backup-staleness-check.yml` all attach
 `environment: dev`, so the rows below are provisioned in the **`dev`**
-environment (none of the three runs against prod; DR-P0-001):
+environment (none of them runs against prod; DR-P0-001):
 
 | Secret                    | Dev | Prod | Purpose                                               |
 | ------------------------- | --- | ---- | ----------------------------------------------------- |
@@ -188,7 +189,7 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
    - `METRICS_TOKEN` — bearer token shared by the API `/metrics` gate and the Prometheus scrape; required wherever the compose stack runs (dev and `prod-approval`)
    - `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` — external dead-man's-switch heartbeat URL (not on the droplet); **required for prod** (deploys fail closed without it), dev warns
    - `ALERTMANAGER_CRITICAL_WEBHOOK_URL` / `ALERTMANAGER_DEFAULT_WEBHOOK_URL` / `ALERTMANAGER_WEBHOOK_USER` / `ALERTMANAGER_WEBHOOK_PASS` — Alertmanager → ntfy `portal-alerts` delivery (see `docs/MONITORING_AND_ALERTING.md` §9)
-   - `NTFY_ALERTS_URL` / `NTFY_ALERTS_USER` / `NTFY_ALERTS_PASS` — ntfy notifications for the backup / storage-backup / restore-test workflows (Slack remains a fallback)
+   - `NTFY_ALERTS_URL` / `NTFY_ALERTS_USER` / `NTFY_ALERTS_PASS` — ntfy notifications for the backup / storage-backup / restore-test / staleness-check workflows (Slack remains a fallback)
    - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — from Stripe dashboard
    - `CHROMATIC_PROJECT_TOKEN` — from the Chromatic project (visual regression)
    - Integration secrets as needed (Jira, JSM, M365, SMTP, Sentry, Teams webhooks)

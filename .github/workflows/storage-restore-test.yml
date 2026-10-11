@@ -1,0 +1,117 @@
+name: Storage Restore Test
+
+# Weekly restore test for uploaded files (DR-P2-002). Mirrors
+# db-restore-test.yml: it resolves the NEWEST storage archive from the
+# Spaces/S3 backup location, decrypts it when encrypted, extracts it into a
+# throwaway staging directory, and ASSERTS that the archive carries the
+# manifest the backup wrote, that the manifest's object_count equals the
+# extracted file count, and that the archive is not empty.
+#
+# `scripts/restore-storage.sh --verify-only` performs every assertion without
+# uploading anything, so no Supabase credentials are needed and no live bucket
+# is touched. A green run is the storage-restore exercise artifact the
+# backup/restore drill asks for (docs/RTO_RPO.md, docs/ROLLBACK_PROCEDURES.md
+# §3b). A restore INTO a scratch Supabase project remains an operator drill.
+#
+# NOTE: this workflow does not run from `main` unless the file is present there
+# (same default-branch caveat as the other backup workflows — see
+# backup-dispatch.yml).
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"   # Every Monday at 7 AM UTC, after the database test
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  restore-test:
+    # Backups target the dev database/buckets; the dev environment holds
+    # the Spaces secrets these jobs resolve.
+    environment: dev
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Find latest storage backup
+        id: find-backup
+        env:
+          # Destination contract mirrors scripts/backup-storage.sh (DR-P1-002):
+          # S3_BUCKET is a bucket NAME and S3_PREFIX a key prefix. A legacy
+          # full-URI S3_BACKUP_BUCKET is accepted and normalised below.
+          S3_BUCKET: ${{ vars.S3_BUCKET || secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
+          S3_PREFIX: ${{ vars.S3_PREFIX || 'storage-backups' }}
+          # Prefer dedicated AWS_* secrets; fall back to the Spaces keys the
+          # dev environment already carries (Spaces is S3-compatible).
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ENDPOINT_URL: ${{ vars.S3_ENDPOINT || 'https://nyc3.digitaloceanspaces.com' }}
+        run: |
+          set -euo pipefail
+          # Accept both "bucket" and "s3://bucket[/prefix]" shapes, then always
+          # build a canonical s3://bucket/prefix/ path.
+          RAW_BUCKET="${S3_BUCKET#s3://}"
+          RAW_BUCKET="${RAW_BUCKET%/}"
+          S3_PATH="s3://${RAW_BUCKET}/${S3_PREFIX}/"
+          echo "Resolved backup location: ${S3_PATH}"
+          LATEST=$(aws s3 ls "${S3_PATH}" --recursive \
+            | sort | tail -1 | awk '{print $4}')
+          if [ -z "${LATEST}" ]; then
+            echo "::error::No storage backups found under ${S3_PATH} — nothing to restore-test"
+            exit 1
+          fi
+          # `aws s3 ls --recursive` returns the FULL key (including the prefix).
+          # Strip it if present and rebuild the URI once so the object path can
+          # never be double-prefixed.
+          REL="${LATEST#"${S3_PREFIX}/"}"
+          echo "backup_file=${LATEST}" >> "$GITHUB_OUTPUT"
+          echo "backup_uri=s3://${RAW_BUCKET}/${S3_PREFIX}/${REL}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify archive against its manifest
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ENDPOINT_URL: ${{ vars.S3_ENDPOINT || 'https://nyc3.digitaloceanspaces.com' }}
+          # Same key the backup uses (DR-P1-003). If the object is `.enc` but
+          # the key is missing the script FAILS, not silently skips.
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+          STAGE_DIR: ${{ runner.temp }}/storage-restore
+        run: |
+          bash scripts/restore-storage.sh --verify-only \
+            --archive-file "${{ steps.find-backup.outputs.backup_uri }}"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf "${RUNNER_TEMP}/storage-restore" \
+            /tmp/storage-restore.download /tmp/storage-restore.tar.gz
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          NTFY_URL: ${{ secrets.NTFY_ALERTS_URL }}
+          NTFY_USER: ${{ secrets.NTFY_ALERTS_USER }}
+          NTFY_PASS: ${{ secrets.NTFY_ALERTS_PASS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE="❌ Storage restore test failed — uploaded files may not be recoverable. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # DR-P2-003: do not swallow delivery failures. A notifier that fails
+          # silently (or a missing channel) is exactly how a backup outage goes
+          # unnoticed, so this step must fail loudly — the run is already red.
+          if [ -n "$NTFY_URL" ]; then
+            curl -sf -u "$NTFY_USER:$NTFY_PASS" \
+              -H "Title: Storage restore test failed" -H "Priority: high" -H "Tags: rotating_light" \
+              -d "$MESSAGE" "$NTFY_URL"
+            echo "Notified via ntfy"
+          elif [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -sf -X POST -H "Content-Type: application/json" \
+              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL"
+            echo "Notified via Slack"
+          else
+            echo "::error::Restore-test failure notification could not be delivered: set NTFY_ALERTS_URL or SLACK_WEBHOOK_URL"
+            exit 1
+          fi

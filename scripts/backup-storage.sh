@@ -21,6 +21,7 @@
 #   STORAGE_BUCKETS            - space-separated buckets (default: documents avatars logos)
 #   BACKUP_ENCRYPTION_KEY      - openssl passphrase; encrypts the tarball at rest
 #   REQUIRE_BACKUP_ENCRYPTION  - "1" to fail if no key is set (CI sets this)
+#   VERIFY_BACKUP              - "1" to verify the archive (gzip tar + MANIFEST)
 #   S3_OFFSITE_BUCKET          - second destination bucket for an offsite copy
 set -euo pipefail
 
@@ -44,6 +45,9 @@ echo "Buckets: ${STORAGE_BUCKETS}"
 
 mkdir -p "${STAGE_DIR}"
 OBJECT_COUNT=0
+# Objects the Storage API reported (before download). A backup that downloads
+# fewer than it listed is partial and must fail (DR-P2-001).
+LISTED_FILES=0
 
 api() {
   # api <method> <path> [curl-args...]
@@ -57,13 +61,21 @@ api() {
 # Recursively list object paths in a bucket via the Storage REST list endpoint.
 list_paths() {
   local bucket="$1" prefix="$2"
-  local body
-  body=$(printf '{"prefix":"%s","limit":1000,"offset":0}' "${prefix}")
-  local json
-  json=$(api POST "/storage/v1/object/list/${bucket}" \
-    -H "Content-Type: application/json" -d "${body}")
-  # Emit "<name>\t<is_folder>" per entry.
-  printf '%s' "${json}" | jq -r '.[] | "\(.name)\t\(if .id == null then "folder" else "file" end)"'
+  local offset=0 page_size body json
+  # The list endpoint caps a single response at `limit` entries. The previous
+  # version sent one request and silently dropped every object after the first
+  # 1000 (DR-P2-001). Keep paging until a short page proves the prefix is
+  # exhausted.
+  while :; do
+    body=$(printf '{"prefix":"%s","limit":1000,"offset":%d}' "${prefix}" "${offset}")
+    json=$(api POST "/storage/v1/object/list/${bucket}" \
+      -H "Content-Type: application/json" -d "${body}")
+    page_size=$(printf '%s' "${json}" | jq 'length')
+    # Emit "<name>\t<is_folder>" per entry.
+    printf '%s' "${json}" | jq -r '.[] | "\(.name)\t\(if .id == null then "folder" else "file" end)"'
+    [ "${page_size}" -lt 1000 ] && break
+    offset=$((offset + page_size))
+  done
 }
 
 walk_bucket() {
@@ -75,6 +87,7 @@ walk_bucket() {
     if [ "${kind}" = "folder" ]; then
       walk_bucket "${bucket}" "${full}"
     else
+      LISTED_FILES=$((LISTED_FILES + 1))
       local dest="${STAGE_DIR}/${bucket}/${full}"
       mkdir -p "$(dirname "${dest}")"
       api GET "/storage/v1/object/${bucket}/${full}" -o "${dest}"
@@ -89,7 +102,19 @@ for bucket in ${STORAGE_BUCKETS}; do
   walk_bucket "${bucket}" ""
 done
 
-echo "Downloaded ${OBJECT_COUNT} object(s)"
+echo "Listed ${LISTED_FILES} object(s); downloaded ${OBJECT_COUNT}"
+
+# DR-P2-001: an empty or truncated mirror must fail, not upload and report
+# success. `set -e` already aborts on a failed download, so the two counts
+# should always match; assert both invariants anyway.
+if [ "${OBJECT_COUNT}" -eq 0 ]; then
+  echo "ERROR: no objects were downloaded — refusing to record an empty storage backup" >&2
+  exit 1
+fi
+if [ "${OBJECT_COUNT}" -ne "${LISTED_FILES}" ]; then
+  echo "ERROR: downloaded ${OBJECT_COUNT} object(s) but the listing reported ${LISTED_FILES} — refusing to record a partial backup" >&2
+  exit 1
+fi
 
 # Manifest so a restore can prove what was captured.
 cat > "${STAGE_DIR}/MANIFEST.txt" <<EOF
@@ -103,6 +128,19 @@ EOF
 ARCHIVE_PATH="${BACKUP_DIR}/${ARCHIVE_NAME}"
 tar -C "${STAGE_DIR}" -czf "${ARCHIVE_PATH}" .
 echo "Archive created: ${ARCHIVE_PATH} ($(du -h "${ARCHIVE_PATH}" | cut -f1))"
+
+# DR-P2-001: same integrity gate as the database backup (VERIFY_BACKUP) — the
+# archive must be a readable gzip tar that carries the manifest, so a corrupt
+# or manifest-less archive cannot be uploaded and called a backup.
+if [ -n "${VERIFY_BACKUP:-}" ]; then
+  echo "Verifying archive integrity (tar -tzf)..."
+  tar -tzf "${ARCHIVE_PATH}" >/dev/null
+  if ! tar -tzf "${ARCHIVE_PATH}" | grep -qE '(^|/)MANIFEST\.txt$'; then
+    echo "ERROR: archive does not contain MANIFEST.txt" >&2
+    exit 1
+  fi
+  echo "Archive integrity check passed"
+fi
 
 UPLOAD_PATH="${ARCHIVE_PATH}"
 if [ -n "${BACKUP_ENCRYPTION_KEY:-}" ]; then

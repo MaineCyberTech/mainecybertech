@@ -1,0 +1,113 @@
+name: Backup Staleness Check
+
+# DR-P2-003: independent backup-staleness alarm. The backup workflows only
+# report their own failure, so a disabled workflow, a dropped cron or broken
+# notifier credentials can stop backups silently. This check runs on its OWN
+# schedule and asks the GitHub API for the newest SUCCESSFUL run of each
+# backup and restore-test workflow. It does not depend on the backup jobs —
+# a run that never started is exactly the state it detects.
+#
+# It is independent of the backup jobs but still GitHub Actions: if Actions is
+# down or disabled repo-wide, nothing here runs either. The operator follow-up
+# for that residual is an external heartbeat/dead-man's switch (see
+# docs/MONITORING_AND_ALERTING.md §9) that the backup workflows ping on
+# success.
+#
+# NOTE: schedules only fire from the default branch; this file must be present
+# on `main` for the cron to fire there. backup-dispatch.yml can also dispatch
+# it on develop (target `staleness`).
+
+on:
+  schedule:
+    - cron: "0 8 * * *"   # daily, after the 04:00 db backup and 05:00 storage backup
+  workflow_dispatch:
+    inputs:
+      max_age_hours:
+        description: "Fail when the newest successful backup is older than this many hours"
+        required: false
+        default: "30"
+      max_age_hours_restore:
+        description: "Fail when the newest successful restore test is older than this many hours"
+        required: false
+        default: "200"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  staleness:
+    # The ntfy/Slack notification secrets live in the `dev` environment (same
+    # as the backup workflows this check watches).
+    environment: dev
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check the newest successful runs
+        env:
+          # actions: read is enough for `gh run list`; the dispatch PAT is only
+          # preferred so a restricted GITHUB_TOKEN policy cannot break the check.
+          GH_TOKEN: ${{ secrets.SCHEDULE_DISPATCH_TOKEN || secrets.GITHUB_TOKEN }}
+          MAX_AGE_HOURS: ${{ inputs.max_age_hours || '30' }}
+          MAX_AGE_HOURS_RESTORE: ${{ inputs.max_age_hours_restore || '200' }}
+        run: |
+          set -euo pipefail
+          fail=0
+
+          # Deliberately not filtered by branch: the schedules run from `main`
+          # while backup-dispatch.yml pokes `develop`, and a success on either
+          # proves the backup ran. A stale/disabled workflow has no recent
+          # success anywhere.
+          check() {
+            local wf="$1" label="$2" limit="$3" created age_h
+            created=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$wf" \
+              --status success --limit 1 --json createdAt --jq '.[0].createdAt // empty')
+            if [ -z "$created" ]; then
+              echo "::error::${label}: no successful run of ${wf} was ever recorded"
+              fail=1
+              return
+            fi
+            age_h=$(( ( $(date -u +%s) - $(date -u -d "$created" +%s) ) / 3600 ))
+            echo "${label}: newest success ${created} (${age_h}h ago; limit ${limit}h)"
+            if [ "$age_h" -gt "$limit" ]; then
+              echo "::error::${label}: newest successful run is ${age_h}h old (limit ${limit}h) — backups may have stopped"
+              fail=1
+            fi
+          }
+
+          check db-backup.yml "Database backup" "$MAX_AGE_HOURS"
+          check storage-backup.yml "Storage backup" "$MAX_AGE_HOURS"
+          check db-restore-test.yml "Database restore test" "$MAX_AGE_HOURS_RESTORE"
+          check storage-restore-test.yml "Storage restore test" "$MAX_AGE_HOURS_RESTORE"
+
+          if [ "$fail" -ne 0 ]; then
+            echo "BACKUP STALENESS CHECK FAILED"
+            exit 1
+          fi
+          echo "All backups and restore tests are within their freshness limits."
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          NTFY_URL: ${{ secrets.NTFY_ALERTS_URL }}
+          NTFY_USER: ${{ secrets.NTFY_ALERTS_USER }}
+          NTFY_PASS: ${{ secrets.NTFY_ALERTS_PASS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE="❌ Backup staleness check failed — a backup or restore test has not succeeded within its freshness window. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # DR-P2-003: do not swallow delivery failures. A notifier that fails
+          # silently (or a missing channel) is exactly how a backup outage goes
+          # unnoticed, so this step must fail loudly — the run is already red.
+          if [ -n "$NTFY_URL" ]; then
+            curl -sf -u "$NTFY_USER:$NTFY_PASS" \
+              -H "Title: Backup staleness check failed" -H "Priority: high" -H "Tags: rotating_light" \
+              -d "$MESSAGE" "$NTFY_URL"
+            echo "Notified via ntfy"
+          elif [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -sf -X POST -H "Content-Type: application/json" \
+              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL"
+            echo "Notified via Slack"
+          else
+            echo "::error::Staleness alert could not be delivered: set NTFY_ALERTS_URL or SLACK_WEBHOOK_URL"
+            exit 1
+          fi
