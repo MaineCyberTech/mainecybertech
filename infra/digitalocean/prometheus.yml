@@ -19,6 +19,13 @@ alerting:
 scrape_configs:
   - job_name: mct-api
     metrics_path: /metrics
+    # The API gates /metrics behind METRICS_TOKEN and returns 404 when the
+    # bearer token is missing, so an unauthenticated scrape reports the target
+    # down and the MCTServiceDown rule fires on a healthy API. The deploy
+    # writes the token to this file (0600) and compose mounts it read-only.
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/metrics-token
     static_configs:
       - targets: ["api:4000"]
         labels:

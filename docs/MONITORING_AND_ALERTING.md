@@ -114,7 +114,7 @@ Unhealthy containers are automatically restarted via `restart: unless-stopped`.
 
 ## 4. Prometheus Metrics (implemented)
 
-`GET /metrics` (`apps/api/src/app.ts`) exposes Prometheus-formatted counters and histograms, optionally gated by `METRICS_TOKEN` (returns 404 when the token is set and not supplied). `infra/digitalocean/docker-compose.yml` runs a `prometheus` service (`prom/prometheus:v3.5.1`) that scrapes it using `prometheus.yml` + `prometheus.rules.yml`. In production Caddy returns 404 for `/metrics`, so scraping is internal to the compose network.
+`GET /metrics` (`apps/api/src/app.ts`) exposes Prometheus-formatted counters and histograms, optionally gated by `METRICS_TOKEN` (returns 404 when the token is set and not supplied). `infra/digitalocean/docker-compose.yml` runs a `prometheus` service (`prom/prometheus:v3.5.1`) that scrapes it using `prometheus.yml` + `prometheus.rules.yml`, authenticating the API scrape with the `METRICS_TOKEN` bearer credential from the deploy-written `metrics-token` credentials file. In production Caddy returns 404 for `/metrics`, so scraping is internal to the compose network.
 
 ### Custom metrics
 
