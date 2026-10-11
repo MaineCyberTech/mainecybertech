@@ -97,7 +97,8 @@ describe("QBR API", () => {
   });
 
   it("fails closed without a resolved or explicit org (MT-P2-002)", async () => {
-    mockAuth();
+    const supabase = mockAuth();
+    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
     const res = await request(app).get("/api/v1/qbr").set("Authorization", authToken);
     expect(res.status).toBe(403);
   });
