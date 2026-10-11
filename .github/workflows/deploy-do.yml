@@ -720,7 +720,11 @@ jobs:
             # environment (the deploy step's envs list does not include it, so
             # writing it there produced an empty file and a down scrape).
             printf '%s' "$METRICS_TOKEN" > /opt/mct-portal/metrics-token
-            chmod 600 /opt/mct-portal/metrics-token
+            # The prom/prometheus image runs as nobody (65534); a root-owned
+            # 0600 file is unreadable to it ("unable to read authorization
+            # credential"). Hand it to the container user, mode 400.
+            chown 65534:65534 /opt/mct-portal/metrics-token
+            chmod 400 /opt/mct-portal/metrics-token
             # IR-P0-003 fail-closed guard: the whole point of the dead-man's
             # switch is that a silent failure of the monitoring path must be
             # detectable. Compose would happily fall back to a no-op loopback URL
