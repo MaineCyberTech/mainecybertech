@@ -7,7 +7,13 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   timeout: 45000,
   workers: process.env.CI ? 1 : undefined,
-  reporter: [["html", { outputFolder: "../../.playwright-report" }], ["list"]],
+  reporter: [
+    ["html", { outputFolder: "../../.playwright-report" }],
+    ["list"],
+    // Machine-readable results for the CI flake summary (TEST-P2-003). Lives
+    // in outputDir so it uploads with the failure artifact.
+    ["json", { outputFile: "../../.playwright-results/results.json" }],
+  ],
   outputDir: "../../.playwright-results",
 
   use: {

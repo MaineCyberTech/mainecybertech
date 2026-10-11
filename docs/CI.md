@@ -128,7 +128,17 @@ visible; it never applies (`CI-P2-002`).
   `test.yml`.
 - The docs-counts, docs-links, DB-types and RLS-hygiene guards run in both
   `test.yml` and `validate.yml`, so a deploy cannot ship drifted docs or schema
-  state.
+  state. The docs-counts guard also verifies the `docs/testing.md`
+  coverage-threshold table against the jest configs, the per-package suite
+  counts against the tree, and — with `MCT_VERIFY_TEST_COUNTS=1` (set in the
+  `unit-tests` composite) — the per-package test totals against the
+  `.jest-results.json` written by `test:coverage` (TEST-P2-007/008).
+- The E2E job writes a Playwright JSON report and prints a flake summary
+  (retried tests) to the job summary on every run, including the `a11y-breadth`
+  call (TEST-P2-003). Note the gate asymmetry: E2E runs on every PR, but the
+  **deploy-time** E2E gate is prod-only (`deploy-do.yml` `if: name == 'prod'`),
+  so dev deploys rely on the PR run and the prod gate stays unexercised until
+  the `prod` environment has its secrets (operator action).
 - Every required check (`test`/`security-scan`/`secrets-scan`, `lint`,
   `typecheck`, `e2e`, `Dependency Review`, `CodeQL`) deliberately has **no
   `paths:` filter on `pull_request`** (BP-P2-004 / CI-P2-009): a path-filtered

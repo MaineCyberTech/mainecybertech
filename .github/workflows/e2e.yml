@@ -165,6 +165,12 @@ jobs:
           E2E_ADMIN_PASSWORD: 1
           A11Y_FULL: ${{ inputs.a11y_full && '1' || '0' }}
 
+      - name: E2E flake summary
+        # Always runs so retry/flake counts are recorded even when the suite
+        # fails; warns but never fails the job (flake is data, not a gate yet).
+        if: always()
+        run: node scripts/e2e-flake-summary.mjs .playwright-results/results.json
+
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

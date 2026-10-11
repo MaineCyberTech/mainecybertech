@@ -6,6 +6,7 @@ dist/
 build/
 .turbo/
 coverage/
+.jest-results.json
 .nyc_output/
 storybook-static/
 *.tsbuildinfo

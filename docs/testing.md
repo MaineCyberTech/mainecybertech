@@ -29,14 +29,36 @@ Root scripts run through Turborepo:
 | `pnpm --filter=api exec jest src/__tests__/auth.test.ts` | One file                                                      |
 | `pnpm e2e`                                               | Playwright E2E (`pnpm --filter=web e2e`)                      |
 
-Coverage thresholds (`coverageThreshold.global` in each `jest.config.mjs`):
+Coverage thresholds (`coverageThreshold.global` in each `jest.config.mjs`; this
+table is compared against the configs by `scripts/check-docs-counts.mjs` so it
+cannot drift again — TEST-P2-007):
 
 | Package | Branches | Functions | Lines | Statements |
 | ------- | -------- | --------- | ----- | ---------- |
-| API     | 30       | 50        | 55    | 58         |
-| Web     | 38       | 38        | 45    | 46         |
+| API     | 45       | 70        | 74    | 70         |
+| Web     | 39       | 39        | 47    | 47         |
 | SDK     | 33       | 38        | 40    | 40         |
-| Worker  | 5        | 15        | 12    | 12         |
+| Worker  | 25       | 15        | 12    | 12         |
+
+The worker floor is intentionally the lowest of the four: its suite covers the
+scheduled task handlers, not the whole process surface. The branch floor was
+raised from 5 to 25 when the `module-tasks` suite landed (TEST-P2-002); raise
+the remaining worker thresholds as coverage grows.
+
+### What `pnpm test:coverage` does NOT cover
+
+`pnpm test:coverage` is the Jest gate only. It does **not** run or prove:
+
+- E2E flows (`pnpm e2e` — separate `e2e.yml` job; prod-only on deploy);
+- accessibility scans (`a11y.spec.ts`, 25-route gate);
+- visual regression (Chromatic is non-blocking) or load tests (k6 is manual);
+- migration apply/drift, backup/restore, RLS runtime checks or a prod smoke
+  probe (those are separate workflows, or absent — see `docs/CI.md`).
+
+The per-package test totals in `AGENTS.md`/`README.md` are verified against the
+`--json` results file each package writes to `.jest-results.json` during
+`test:coverage` (CI sets `MCT_VERIFY_TEST_COUNTS=1`); suite counts are counted
+from the tree by `scripts/check-docs-counts.mjs`.
 
 ## E2E stack
 
@@ -54,14 +76,18 @@ pnpm e2e                 # apps/web/e2e/**/*.spec.ts
 ```
 
 Environment: `E2E_BASE_URL` (default `http://localhost:3000`),
-`E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` (the defaults target local seed
-accounts only). The `setup` project signs in once and writes
-`.playwright-auth.json`; specs reuse that session. `apps/web/e2e/fixtures.ts`
-exports `gotoApp`, `setActiveOrg`, `visibleWithin` (prefer it for
-data-dependent gates — a slow render skips a branch instead of failing) and
-`clickOrGoto`. CI is single-worker with 2 retries; a test gets 45s, actions
-15s, navigations 30s; failures upload `.playwright-report/` and
-`.playwright-results/`.
+`E2E_API_URL` (default `http://localhost:4000`; the setup project waits for
+this `/health` before retrying a login), `E2E_ADMIN_EMAIL` /
+`E2E_ADMIN_PASSWORD` (the defaults target local seed accounts only). The
+`setup` project signs in once and writes `.playwright-auth.json`; specs reuse
+that session. `apps/web/e2e/fixtures.ts` exports `gotoApp` (prefer it for
+authenticated routes: it waits for the shell and gives a deterministic failure
+point), `setActiveOrg`, `visibleWithin` (prefer it for data-dependent gates — a
+slow render skips a branch instead of failing) and `clickOrGoto`. CI is
+single-worker with 2 retries; a test gets 45s, actions 15s, navigations 30s.
+The JSON reporter writes `.playwright-results/results.json` and the E2E job
+prints a flake summary (retried/flaky tests — TEST-P2-003) to the job summary;
+failures upload `.playwright-report/` and `.playwright-results/`.
 
 Accessibility: `apps/web/e2e/a11y.spec.ts` scans 25 core routes against
 `critical`/`serious` axe rules (WCAG 2.0/2.1/2.2 A+AA, `wcag22aa` included).

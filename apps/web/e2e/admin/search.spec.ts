@@ -19,10 +19,19 @@ test.describe("admin global search", () => {
   test("short query does not trigger search", async ({ page }) => {
     await page.goto("/admin");
     const searchInput = page.getByPlaceholder(/search/i).first();
+
+    // A 1-char query is below the component's 2-char minimum, so no search
+    // request may be issued. Watch the network instead of sleeping: the
+    // promise resolves (and the assertion fails) if one fires, and otherwise
+    // times out just past the 300ms debounce window.
+    const searchFired = page
+      .waitForRequest((request) => request.url().includes("/api/v1/search"), { timeout: 1_000 })
+      .then(() => true)
+      .catch(() => false);
+
     await searchInput.fill("a");
-    // Negative assertion: wait past the debounce window to prove the query
-    // was ignored (absence cannot be awaited like presence).
-    await page.waitForTimeout(600);
+
+    expect(await searchFired).toBe(false);
     await expect(page.getByText(/no results/i)).not.toBeVisible();
   });
 });
