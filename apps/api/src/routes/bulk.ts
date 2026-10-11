@@ -6,6 +6,7 @@ import { success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
+import { assertCanAssignRole, resolveRoleKey } from "../lib/role-assignment";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth, requireOrgAccess, requireAdmin);
@@ -48,6 +49,11 @@ router.post("/invite", async (req, res, next) => {
       .parse(req.body);
 
     const supabase = getSupabaseAdmin();
+
+    // SEC-P1-001: the bulk invite assigns the same role to every row — guard
+    // it once up front (cross-tenant roles require a platform super admin).
+    const bulkRoleKey = await resolveRoleKey(supabase, roleId);
+    await assertCanAssignRole(supabase, req.authUser!.userId, bulkRoleKey);
 
     type Entry = { email: string; fullName: string };
     const entries: Entry[] = [];

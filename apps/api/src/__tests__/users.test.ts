@@ -150,8 +150,16 @@ describe("users routes", () => {
 
   describe("PATCH /:id/role", () => {
     it("updates a user role (admin only)", async () => {
-      const supabase = mockAdmin();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      // mockAuth (not mockAdmin): the queued admin fixture would be consumed
+      // by the new role lookup instead of the admin middleware, hiding the
+      // guard under test.
+      const supabase = mockAuth();
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "roles") return createMockBuilder({ data: { key: "member" }, error: null });
+        if (table === "profiles")
+          return createMockBuilder({ data: { is_super_admin: true }, error: null });
+        return createMockBuilder({ data: null, error: null });
+      });
 
       const res = await request(app)
         .patch("/api/v1/users/user-1/role")
@@ -160,6 +168,23 @@ describe("users routes", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.updated).toBe(true);
+    });
+
+    it("rejects a non-super-admin granting a cross-tenant role [SEC-P1-001]", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "roles") return createMockBuilder({ data: { key: "admin" }, error: null });
+        if (table === "profiles")
+          return createMockBuilder({ data: { is_super_admin: false }, error: null });
+        return createMockBuilder({ data: null, error: null });
+      });
+
+      const res = await request(app)
+        .patch("/api/v1/users/user-2/role")
+        .set("Authorization", "Bearer token-123")
+        .send({ roleId: "role-admin", organizationId: "org-1" });
+
+      expect(res.status).toBe(403);
     });
 
     it("returns 400 when roleId missing", async () => {

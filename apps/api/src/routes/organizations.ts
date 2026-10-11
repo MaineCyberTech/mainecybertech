@@ -19,6 +19,7 @@ import {
 } from "../validators/organization";
 import { queryInt } from "../lib/query";
 import { recordOrganizationCreated } from "../lib/metrics";
+import { assertCanAssignRole } from "../lib/role-assignment";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -82,6 +83,10 @@ router.post("/onboard", requireAdmin, async (req, res, next) => {
 
     if (roleError) throw new AppError("DB_ERROR", roleError.message, 500);
     if (!role) throw new AppError("NOT_FOUND", `Role ${parsed.adminRoleKey} not found`, 404);
+
+    // SEC-P1-001: onboarding assigns a cross-tenant admin role, so only a
+    // platform super admin may run it.
+    await assertCanAssignRole(supabase, req.authUser!.userId, parsed.adminRoleKey);
 
     const { data: existingProfile } = await supabase
       .from("profiles")
