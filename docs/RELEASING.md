@@ -72,6 +72,9 @@ pass before the deploy step:
   — fill every section, including Breaking Changes, Migrations (with the
   release's migration filenames) and Operator Actions, and use the result as
   the GitHub Release body.
+- The running manifest of behavior-affecting changes (RLS/entitlement/retention
+  and other breaking migrations) is [`UPGRADE.md`](UPGRADE.md); the template's
+  Migrations list remains the per-release source of filenames.
 
 ## Production deploy
 
@@ -147,8 +150,13 @@ first:
 - `DO_API_TOKEN` returns HTTP 401; dev falls back to the `DROPLET_IP`
   environment variable, but prod has no fallback set. Rotate the token and/or
   set `DROPLET_IP` for prod.
-- `main` is far behind `develop`; scheduled `db-backup`/`db-restore-test`/
-  `sbom` runs only fire from the default branch and recent backup runs have
-  failed — verify the database secrets before relying on them.
+- Branch state: the last promotion was PR #168 (`main` @ `8d299b8d`,
+  2026-10-11); `develop` accumulates commits until the next promotion, so the
+  branches can point in either direction between releases — compare them with
+  `git log --oneline origin/main..origin/develop` (and the reverse) instead of
+  assuming. Scheduled `db-backup`/`db-restore-test`/`sbom` runs only fire from
+  the default branch, so unpromoted `develop` work is not covered by them, and
+  recent backup runs have failed — verify the database secrets before relying
+  on them.
 - E2E has known run-to-run flakiness on data-dependent tests under CI/Supabase
   contention; re-run before treating a failure as a product regression.

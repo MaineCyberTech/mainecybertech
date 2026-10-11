@@ -12,6 +12,12 @@ could not be verified. Nothing previously closed is reopened here: statuses are
 carried from the 2026-10-11 register, and a row only moves backwards where that
 register records a residual (e.g. `EXEC-P1-001`).
 
+**Status source:** the run's reconciled register
+([`audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/risk_register.md`](audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/risk_register.md),
+reconciled at `fb9f16ce`, 2026-10-11). Where this document and the register
+disagree, the register wins — re-read this file after each reconciliation so a
+stale status cannot outlive it.
+
 **Gate owner:** release owner (ops/release). **Review by:** before the first
 `main` → prod deploy, and after every audit re-run.
 
@@ -29,7 +35,8 @@ deploy. See [`RELEASING.md`](RELEASING.md) for the branch model and deploy path.
 | **NO-GO** | Any P0/P1 finding is open or partially fixed, or any exit criterion lacks an artifact. |
 
 The 2026-10-11 run records **NO-GO** (advisory): P0 ×8, P1 ×89, with
-`DR-P0-001` (no successful backup run) open and `IR-P0-003` (dead-man's switch
+`DR-P0-001` partially fixed (the repo-side dispatcher is fixed; the operator
+backup secrets are still unprovisioned) and `IR-P0-003` (dead-man's switch
 configured but not exercised) partially fixed.
 
 > Status is deliberately recorded as *decision / owner / evidence required*,
@@ -42,7 +49,7 @@ configured but not exercised) partially fixed.
 | Final finding | Title | Status at `8d299b8` | Exit condition (all must hold) | Owner |
 | --- | --- | --- | --- | --- |
 | `FINAL-P1-001` | P0 data-loss path and unverified "fixed" claim block a clean release | `verified-fixed` (code); `EXEC-P1-001` `partially-fixed` (closure artifact) | Orphan cleanup lists per known prefix and reconciles full paths; any entry with a null `id` is treated as a folder and never passed to `storage.remove`; a pre-remove guard rejects any non-object key; a regression test models Supabase `list(path)` semantics and fails on the pre-fix code. Code + tests are present at `8d299b8` (`DATA-P0-001` verified-fixed); remaining: record the deployed-commit (or, until the first prod deploy exists, an equivalent staging/CI) regression artifact, or owner-accept the code-level tests (`EXEC-P1-001`). | worker/data + release |
-| `FINAL-P2-001` | Governance and observability gaps mean the platform cannot yet detect or control production failure | `partially-fixed` | `prod`/`prod-approval` provisioned with secrets/vars + required reviewers; one dry `main` deploy green; alert routing wired and a synthetic alert delivered; a dated green `db-restore-test` with row assertions; a documented single-host SPOF/backup plan. Routing is now wired (`OBS-P2-001` verified-fixed; Alertmanager → ntfy); still missing: reviewer configuration (`CI-P1-001`), a synthetic delivery and a missed-heartbeat drill (`OBS-P2-014`), and any successful restore run (`DR-P0-001`, `DR-P1-001`). | ops/release |
+| `FINAL-P2-001` | Governance and observability gaps mean the platform cannot yet detect or control production failure | `partially-fixed` | `prod`/`prod-approval` provisioned with secrets/vars + required reviewers; one dry `main` deploy green; alert routing wired and a synthetic alert delivered; a dated green `db-restore-test` with row assertions; a documented single-host SPOF/backup plan. Routing is now wired (`OBS-P2-001` verified-fixed; Alertmanager → ntfy); still missing: reviewer configuration (`CI-P1-001`), a synthetic delivery and a missed-heartbeat drill (`OBS-P2-014`), and any successful restore run (`DR-P0-001`; the `DR-P1-001` baseline-loader bug is fixed). | ops/release |
 | `FINAL-P2-002` | Residual authorization/secret defaults need explicit decisions | `partially-fixed` | Each fail-open default is either made to fail closed in production or explicitly owner-accepted with a recorded decision (see register below). All five controls are now fail-closed in code; the decision record itself is still stale (`EXEC-P2-001`) and `API-P2-001` remains open. | security/API |
 | `FINAL-P2-004` | Release-gate artifacts contradict the reconciled register | `open` | The run's published gate/summary/index carry the reconciled NO-GO verdict on `develop`, and this document is rebound to a resolvable commit (done here). Remaining: a guard asserting `manifest.releaseGate == gate verdict` and that the gate commit resolves from `main`. | audit owner + release |
 
@@ -57,7 +64,7 @@ A prod release is blocked until every row below is green or owner-accepted.
 | 3 | `SEC-P2-013` — production requires `TURNSTILE_SECRET_KEY`; `/public/submit` fails closed without a verified token. | `verified-fixed` |
 | 4 | `CI-P1-001` / `CI-P1-003` — `prod` and `prod-approval` have the required secrets/vars and required reviewers; one dry `main` deploy is green. | `still-open` (operator action) |
 | 5 | `OBS-P2-001` — Alertmanager is wired to a receiver and a synthetic alert is delivered. Residual: `IR-P0-003` external watchdog URL unset + no missed-heartbeat drill. | routing `verified-fixed` (ntfy); exercise/URL outstanding |
-| 6 | `OBS-P2-003` — a dated `db-restore-test` run is green with row assertions. Blocked by `DR-P0-001` (no successful backup run) and `DR-P1-001` (baseline-load bug). | `partially-fixed` |
+| 6 | `OBS-P2-003` — a dated `db-restore-test` run is green with row assertions. `DR-P1-001` (baseline loader) is `verified-fixed`; still blocked by `DR-P0-001`'s operator residual (backup secrets unprovisioned) until a dated green run exists. | `partially-fixed` |
 | 7 | `BP-P1-002` / `CI-P1-002` — branch protection sets `enforce_admins: true` and requires CODEOWNERS review, with matching required checks. | `verified-fixed` in code; live application is a repo-admin action |
 
 ## Fail-closed decisions register (`FINAL-P2-002`)

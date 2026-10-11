@@ -198,7 +198,11 @@ artifact. A restore INTO a scratch Supabase project remains an operator drill.
 
 ## 4. Terraform Rollback
 
-### Roll back infrastructure via git revert
+### Roll back infrastructure via git revert + a manual apply
+
+`terraform-do.yml` is **manual-dispatch only** — there are no push/PR triggers
+(by design; see the header in `.github/workflows/terraform-do.yml`), so a push
+neither plans nor applies anything.
 
 ```bash
 # On your local machine
@@ -209,12 +213,23 @@ git log --oneline infra/terraform/digitalocean/
 
 # Revert the offending commit (creates a new commit that undoes the changes)
 git revert <bad-commit-hash>
-
-# Push to trigger terraform-do workflow
-git push origin <branch>
+git push origin <branch>   # merge it as usual; this does NOT apply Terraform
 ```
 
-The `terraform-do.yml` workflow will run a plan on the PR/push and apply automatically (dev) or require prod-approval (main).
+Then dispatch the workflow:
+
+1. **Actions → terraform-do → Run workflow**
+2. Select the branch: `main` for prod, `develop` for dev.
+3. Leave **apply** off to run a plan only; check the plan output.
+4. Re-run with **apply** on to apply the reverted configuration.
+
+The prod apply (`terraform-apply-prod`) runs only from `main`, attaches the
+`prod-approval` environment, and waits on `e2e-gate` and `migrate-gate`; the dev
+apply (`terraform-apply-dev`) runs from `develop` under the `dev` environment.
+The weekly scheduled run is **plan-only**: it stays skipped until the operator
+sets the repository variable `TF_DRIFT_PLAN_ENABLED` to `true` (after the
+`DO_API_TOKEN` rotation) and fails the run when the plan is non-empty. It never
+applies — every apply is the manual dispatch above.
 
 ### Roll back a single resource
 
