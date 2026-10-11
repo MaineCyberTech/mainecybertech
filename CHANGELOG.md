@@ -285,6 +285,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - `supabase-migrations` now runs a pre-push `db push --dry-run` and publishes
   the planned migration set as an artifact (uploaded before the real push, so
   it survives a failed apply) — the plan is no longer discarded (IR-P2-006).
+- Backup, storage-backup, and restore-test failures now notify the org ntfy
+  topic (`NTFY_ALERTS_URL/USER/PASS`), with the Slack webhook kept as a
+  fallback while it is configured.
 - Prometheus authenticates the API `/metrics` scrape with the `METRICS_TOKEN`
   bearer credential (mounted as a 0600 credentials file), so a healthy API no
   longer trips the `MCTServiceDown` alert — the endpoint 404s unauthenticated.
