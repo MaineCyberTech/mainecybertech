@@ -163,6 +163,50 @@ describe("business OS routes", () => {
         expect(builders[table].in).toHaveBeenCalledWith("organization_id", [ORG_A]);
       }
     });
+
+    it("regression: does not serve a cached all-tenant summary to a single-org admin", async () => {
+      // A platform admin fills the cache with the all-tenant aggregate.
+      mockSupabase(
+        superAdminTables({
+          organizations: {
+            data: [
+              { id: "org-1", name: "Org One", status: "approved", created_at: "2025-01-01T00:00:00Z" },
+              { id: "org-2", name: "Org Two", status: "approved", created_at: "2025-02-01T00:00:00Z" },
+            ],
+            error: null,
+            count: 2,
+          },
+        }),
+      );
+
+      const all = await request(app)
+        .get("/api/v1/business-os/summary")
+        .set("Authorization", "Bearer token-123");
+      expect(all.status).toBe(200);
+      expect(all.body.data.organizations.total).toBe(2);
+
+      // Same active org, narrower membership set: the cached all-tenant
+      // aggregate must not be served (MT-P1-004 / CHAIN-P1-006).
+      const { builders } = mockSupabase(
+        singleOrgAdminTables({
+          organizations: {
+            data: [
+              { id: ORG_A, name: "Org A", status: "approved", created_at: "2025-01-01T00:00:00Z" },
+            ],
+            error: null,
+            count: 1,
+          },
+        }),
+      );
+
+      const scoped = await request(app)
+        .get("/api/v1/business-os/summary")
+        .set("Authorization", "Bearer token-123");
+      expect(scoped.status).toBe(200);
+      expect(scoped.headers["x-cache"]).toBe("MISS");
+      expect(scoped.body.data.organizations.total).toBe(1);
+      expect(builders.organizations.in).toHaveBeenCalledWith("id", [ORG_A]);
+    });
   });
 
   describe("GET /recent-activity", () => {
