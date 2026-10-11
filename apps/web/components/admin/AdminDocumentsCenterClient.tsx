@@ -583,7 +583,7 @@ export default function AdminDocumentsCenterClient({
     action: () => Promise<ActionResult>;
     onSuccess?: (result: ActionResult) => void;
     successTitle: string;
-    successMessage: string;
+    successMessage: string | ((result: ActionResult) => string);
     successDocId?: string | null;
     successLabel?: string;
   }) {
@@ -609,7 +609,11 @@ export default function AdminDocumentsCenterClient({
       }
       onSuccess?.(result);
       if (successDocId) markSuccess(successDocId, successLabel ?? "Saved");
-      pushToast("success", successMessage, successTitle);
+      pushToast(
+        "success",
+        typeof successMessage === "function" ? successMessage(result) : successMessage,
+        successTitle,
+      );
       router.refresh();
     } catch (error) {
       rollback?.();
@@ -863,9 +867,16 @@ export default function AdminDocumentsCenterClient({
           setSelectedIds(removedIds);
         },
         action: () => bulkDeleteAction(formData),
-        onSuccess: () => setSelectedIds([]),
+        // Keep failed ids selected so the admin can retry just those.
+        onSuccess: (result) => setSelectedIds(result.failed?.map((f) => f.id) ?? []),
         successTitle: "Bulk delete complete",
-        successMessage: `${removedIds.length} documents were removed.`,
+        successMessage: (result) => {
+          const deleted = result.ids?.length ?? 0;
+          const failedCount = result.failed?.length ?? 0;
+          return failedCount
+            ? `${deleted} of ${deleted + failedCount} documents were removed; ${failedCount} failed.`
+            : `${deleted} documents were removed.`;
+        },
       });
       return;
     }

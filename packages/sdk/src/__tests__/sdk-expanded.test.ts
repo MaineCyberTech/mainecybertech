@@ -10,10 +10,16 @@ function mockResponse<T>(data: T, ok = true, status = 200): Promise<Response> {
   const body = ok
     ? { success: true, data }
     : { success: false, error: { code: "ERROR", message: "Test error", status } };
+  // A real 204 has no body and `res.json()` rejects; keep the mock faithful so
+  // delete tests exercise the empty-body path (USE-P1-004).
+  const json =
+    status === 204
+      ? () => Promise.reject(new SyntaxError("Unexpected end of JSON input"))
+      : () => Promise.resolve(body);
   return Promise.resolve({
     ok,
     status,
-    json: () => Promise.resolve(body),
+    json,
     headers: new Headers(),
     redirected: false,
     statusText: ok ? "OK" : "Error",

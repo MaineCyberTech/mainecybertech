@@ -23,7 +23,7 @@ export class MembershipsApi {
   update(
     id: string,
     data: {
-      roleId: string;
+      roleId?: string;
       status: string;
       isBillingContact?: boolean;
       isSecurityContact?: boolean;

@@ -141,6 +141,45 @@ describe("AdminDocumentsPage", () => {
     expect(typeof props.bulkMetadataAction).toBe("function");
   });
 
+  // USE-P1-004: the old bulk delete swallowed every per-item failure and
+  // always reported success; results must now say what actually happened.
+  it("bulk delete reports per-item results instead of swallowing failures", async () => {
+    mockDocsRemove.mockReset();
+    mockDocsRemove.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error("not found"));
+    const Page = (await import("@/app/(admin)/admin/documents/page")).default;
+    render(await Page());
+    const props = MockDocCenterClient.mock.calls[MockDocCenterClient.mock.calls.length - 1][0];
+
+    const formData = new FormData();
+    formData.set("deleteConfirmation", "DELETE");
+    formData.append("documentIds", "d1");
+    formData.append("documentIds", "d2");
+
+    const result = await props.bulkDeleteAction(formData);
+
+    expect(result.ok).toBe(true);
+    expect(result.ids).toEqual(["d1"]);
+    expect(result.failed).toEqual([{ id: "d2", error: "not found" }]);
+  });
+
+  it("bulk delete surfaces the API error when every item fails", async () => {
+    mockDocsRemove.mockReset();
+    mockDocsRemove.mockRejectedValueOnce(new Error("Forbidden"));
+    const Page = (await import("@/app/(admin)/admin/documents/page")).default;
+    render(await Page());
+    const props = MockDocCenterClient.mock.calls[MockDocCenterClient.mock.calls.length - 1][0];
+
+    const formData = new FormData();
+    formData.set("deleteConfirmation", "DELETE");
+    formData.append("documentIds", "d1");
+
+    const result = await props.bulkDeleteAction(formData);
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toBe("Forbidden");
+    expect(result.failed).toEqual([{ id: "d1", error: "Forbidden" }]);
+  });
+
   it("resolves signed URL for documents", async () => {
     mockDocsCreateSignedUrl.mockResolvedValue({ signedUrl: "https://cdn.example.com/doc.pdf" });
     const Page = (await import("@/app/(admin)/admin/documents/page")).default;

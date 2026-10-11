@@ -23,6 +23,33 @@ function jsonResponse(status: number, body: unknown): Response {
   } as Response;
 }
 
+/**
+ * A response with a truly empty body, like the API's 204 DELETE responses.
+ * `res.json()` rejects on these, which is exactly what the old client hit
+ * (USE-P1-004).
+ */
+function emptyResponse(status: number): Response {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: () => Promise.reject(new SyntaxError("Unexpected end of JSON input")),
+    blob: () => Promise.resolve(new Blob()),
+    headers: new Headers(),
+    redirected: false,
+    statusText: String(status),
+    type: "basic" as ResponseType,
+    url: "",
+    clone: function () {
+      return this;
+    },
+    body: null,
+    bodyUsed: false,
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+    formData: () => Promise.resolve(new FormData()),
+    text: () => Promise.resolve(""),
+  } as Response;
+}
+
 describe("ApiClient getBlob / postFormData", () => {
   let mockFetch: jest.Mock;
   const base = { baseUrl: "https://api.test.com", retries: { initialDelayMs: 1 } };
@@ -116,6 +143,70 @@ describe("ApiClient getBlob / postFormData", () => {
 
     const headers = (mockFetch.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
     expect(headers["Idempotency-Key"]).toBeUndefined();
+  });
+});
+
+describe("ApiClient empty-body responses (USE-P1-004)", () => {
+  let mockFetch: jest.Mock;
+  const base = { baseUrl: "https://api.test.com", retries: { initialDelayMs: 1 } };
+
+  beforeEach(() => {
+    mockFetch = jest.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+
+  it("resolves null for a 204 delete with an empty body", async () => {
+    mockFetch.mockResolvedValueOnce(emptyResponse(204));
+    const client = new ApiClient(base);
+
+    await expect(client.delete("/api/v1/widgets/1")).resolves.toBeNull();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("resolves null for a 200 with an empty body", async () => {
+    mockFetch.mockResolvedValueOnce(emptyResponse(200));
+    const client = new ApiClient(base);
+
+    await expect(client.post("/api/v1/widgets/1/actions")).resolves.toBeNull();
+  });
+
+  it("still throws a structured ApiError for an empty non-2xx body", async () => {
+    mockFetch.mockResolvedValueOnce(emptyResponse(404));
+    const client = new ApiClient(base);
+
+    await expect(client.delete("/api/v1/widgets/404")).rejects.toMatchObject({
+      name: "ApiError",
+      code: "UNKNOWN",
+      message: "HTTP 404",
+      status: 404,
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries a retryable status even when the error body is empty", async () => {
+    mockFetch
+      .mockResolvedValueOnce(emptyResponse(503))
+      .mockResolvedValueOnce(emptyResponse(204));
+    const client = new ApiClient(base);
+
+    await expect(client.delete("/api/v1/widgets/1")).resolves.toBeNull();
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("still prefers the structured error envelope when one is present", async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse(409, {
+        success: false,
+        error: { code: "CONFLICT", message: "already exists", status: 409 },
+      }),
+    );
+    const client = new ApiClient(base);
+
+    await expect(client.delete("/api/v1/widgets/1")).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "already exists",
+      status: 409,
+    });
   });
 });
 

@@ -49,6 +49,7 @@ type ActionResult = {
   document?: DocumentRecord;
   documentId?: string;
   ids?: string[];
+  failed?: { id: string; error: string }[];
   visibility?: string;
 };
 
@@ -452,15 +453,27 @@ export default async function AdminDocumentsPage() {
         return { ok: false, error: "Type DELETE to bulk remove document records." };
       }
 
+      // Delete per item and report the real outcome: the old loop swallowed
+      // every failure and always claimed success (USE-P1-004 / USE-P2-001).
+      const deleted: string[] = [];
+      const failed: { id: string; error: string }[] = [];
       for (const id of ids) {
         try {
           await api.documents.remove(id);
-        } catch {
-          // skip already-deleted docs
+          deleted.push(id);
+        } catch (error) {
+          failed.push({
+            id,
+            error: error instanceof Error ? error.message : "Delete failed",
+          });
         }
       }
 
-      return { ok: true, kind: "bulk_deleted", ids };
+      if (!deleted.length && failed.length) {
+        return { ok: false, error: failed[0].error, ids: [], failed };
+      }
+
+      return { ok: true, kind: "bulk_deleted", ids: deleted, failed };
     } catch (error) {
       return {
         ok: false,
