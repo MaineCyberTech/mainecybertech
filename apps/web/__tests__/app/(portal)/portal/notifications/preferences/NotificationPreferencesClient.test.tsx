@@ -25,9 +25,8 @@ describe("NotificationPreferencesClient", () => {
   it("saves preferences and shows the success banner", async () => {
     mockUpdatePreferences.mockResolvedValue({ updated: 10 });
     render(<NotificationPreferencesClient />);
-    await waitFor(() => expect(mockListPreferences).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole("button", { name: /save preferences/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /save preferences/i }));
 
     await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledTimes(1));
     expect(await screen.findByText(/preferences saved successfully/i)).toBeInTheDocument();
@@ -36,9 +35,8 @@ describe("NotificationPreferencesClient", () => {
   it("surfaces a save failure instead of swallowing it", async () => {
     mockUpdatePreferences.mockRejectedValue(new Error("organizationId is required"));
     render(<NotificationPreferencesClient />);
-    await waitFor(() => expect(mockListPreferences).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole("button", { name: /save preferences/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /save preferences/i }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/organizationId is required/i);
     expect(screen.queryByText(/preferences saved successfully/i)).not.toBeInTheDocument();
