@@ -12,7 +12,7 @@ branch.
 | TypeCheck             | `typecheck.yml`           | PR `main`, `develop`; dispatch                                     | Every PR (required check); push-side runs via `deploy-do` → `validate.yml`                                                                                                | `pnpm typecheck`                                                                                                                                                  | Blocking on PR      |
 | E2E                   | `e2e.yml`                 | PR `main`, `develop`; `workflow_call`; dispatch (`a11y_full`)      | Every PR (required on `main`; no `paths:` — BP-P2-004/CI-P2-009)                                                                                                         | Local Supabase + built API/web; Playwright chromium + mobile (Pixel 7/iPhone 13) E2E + axe (25-route gate, 68 with `A11Y_FULL`)                                   | Blocking on PR      |
 | Validate              | `validate.yml`            | `workflow_call` only                                               | —                                                                                                                                                                        | Deploy gate: audit, coverage tests + all guards, secrets scan, lint, typecheck, prompt provenance (`verify-prompts.js`), `review.md` sync, promtool alert-rule check + unit tests                         | Deploy gate         |
-| deploy-do             | `deploy-do.yml`           | push `main`, `develop`; dispatch (`deploy_target`, `rollback_sha`) | `apps/api/**`, `apps/web/**`, `apps/worker/**`, `packages/**`, `infra/digitalocean/**`, `pnpm-lock.yaml`, `package.json`, `deploy-do.yml`                               | Build 3 GHCR images; per-image Trivy image scan (CRITICAL/HIGH) + build-provenance attestation; **deploy-time provenance verification** (`verify-attestations` resolves the tag to a digest and runs `gh attestation verify`, fail-closed; `deploy` `needs:` it); `validate`; prod-only E2E + migration gates; SSH deploy to the droplet with container health gate and auto-rollback to the previous tag      | Blocking            |
+| deploy-do             | `deploy-do.yml`           | push `main`, `develop`; dispatch (`deploy_target`, `rollback_sha`) | `apps/api/**`, `apps/web/**`, `apps/worker/**`, `packages/**`, `infra/digitalocean/**`, `pnpm-lock.yaml`, `package.json`, `deploy-do.yml`                               | Build 3 GHCR images; per-image Trivy image scan (CRITICAL/HIGH) + build-provenance attestation; **deploy-time provenance + SBOM verification** (`verify-attestations` resolves the tag to a digest, verifies both predicates fail-closed, and passes the digests to `deploy`, which pulls/runs by digest — SBOM-P2-011; `deploy` `needs:` it); `validate`; prod-only E2E + migration gates; SSH deploy to the droplet with container health gate and auto-rollback to the previously running images      | Blocking            |
 | terraform-do          | `terraform-do.yml`        | dispatch only                                                      | n/a                                                                                                                                                                      | `fmt -check`, validate, plan; apply requires the `apply` input (disabled until the `DO_API_TOKEN` is rotated)                                                     | Manual              |
 | supabase-migrations   | `supabase-migrations.yml` | push `develop`, `main`; `workflow_call`; dispatch                  | `supabase/**`, `supabase-migrations.yml`                                                                                                                                 | `supabase db push --include-all` with pinned CLI 2.107.0; `prod`/`dev` environment; serialized per branch                                                         | Migrate gate (prod) |
 | build-push            | `build-push.yml`          | dispatch only                                                      | —                                                                                                                                                                        | Manual GHCR build of `mct-api`, `mct-worker`, `mct-web` (push triggers removed — `deploy-do` builds); per-image Trivy image scan (CRITICAL/HIGH), CycloneDX image SBOM bound to the pushed digest, and build-provenance attestation                                                              | Manual              |
@@ -26,6 +26,7 @@ branch.
 | Secret Rotation Reminder | `secret-rotation-reminder.yml` | quarterly (1 Jan/Apr/Jul/Oct, 09:00 UTC); dispatch | —                                                                                                                                                                        | Creates a deduplicated `secret-rotation` issue linking the rotation policy and checklist (SECRET-P2-002)                                                          | Scheduled           |
 | WireGuard lab endpoint | `wireguard-endpoint.yml`  | dispatch (`action`, `droplet`, `udp_port`)                         | —                                                                                                                                                                        | Lists droplets/firewalls or adds an inbound UDP rule for the lab WireGuard endpoint via the DO API (`DO_API_TOKEN`)                                               | Manual              |
 | SBOM                  | `sbom.yml`                | push + PR `main`, `develop`; weekly (Mon 05:00); dispatch          | —                                                                                                                                                                        | CycloneDX **lockfile** SBOM (licenses + dependency graph + commit binding) via `scripts/generate-sbom.mjs`, validated before upload; 30-day artifact (container **image** SBOMs are emitted by `build-push.yml`)                          | Artifact-only (not a gate) |
+| Dependency Re-scan    | `dependency-rescan.yml`   | weekly (Mon 06:00); dispatch                                        | —                                                                                                                                                                        | Report-only re-run of `scripts/audit-gate.mjs --report` over the resolved tree plus a Trivy filesystem scan; uploads the `dependency-rescan` artifact (SBOM-P2-012)                                                                 | Scheduled (non-blocking) |
 | Alert path exercise   | `alert-path-exercise.yml` | monthly (1st 09:00 UTC); dispatch (`environment`)                  | —                                                                                                                                                                        | Posts a synthetic `critical` alert through Alertmanager and verifies the webhook delivery counters (no failures); direct ntfy relay check; evidence in the run summary; see `ALERT_PATH_EXERCISE.md`                            | Triage-only (not a gate) |
 
 ## Deploy pipeline
@@ -42,51 +43,67 @@ setup → resolve-ip
 ```
 
 `deploy` writes the droplet `.env` via `printf` (secrets never interpolate into
-the remote shell), pulls the images, restarts the compose stack, and only
-prunes old images after the API, web and worker containers report healthy. A
-failed health gate rolls back to the previously running tag.
+the remote shell), pulls the verified image digests, restarts the compose stack,
+and only prunes old images after the API, web and worker containers report
+healthy. A failed health gate rolls back to the previously running images.
 
 ### Provenance verification at deploy (CTR-P1-003)
 
 Before any pull happens, the `verify-attestations` job proves each of
-`mct-api`, `mct-worker` and `mct-web` carries a build-provenance attestation
-signed by **this repository's** `deploy-do.yml`, bound to the exact digest
-being deployed. The deploy job `needs:` this job, so a failure blocks the
-deploy and appears as its own node in the workflow graph.
+`mct-api`, `mct-worker` and `mct-web` carries **both** attestations this
+pipeline produces, signed by **this repository's** `deploy-do.yml` and bound to
+the exact digest being deployed:
 
-The images are pulled by **tag** (`IMAGE_TAG` = the commit SHA) but the
-attestation is bound to a **digest**, so the job resolves the tag first:
+- the SLSA build-provenance predicate (`https://slsa.dev/provenance/v1`), and
+- the CycloneDX SBOM predicate (`https://cyclonedx.org/bom`, SBOM-P2-011).
+
+The deploy job `needs:` this job, so a failure blocks the deploy and appears as
+its own node in the workflow graph.
+
+The attestations are bound to a **digest**, so the job resolves each tag first
+and publishes the resolved digests as job outputs:
 
 ```bash
 # 1. tag -> immutable digest
 DIGEST=$(docker buildx imagetools inspect \
   ghcr.io/<owner>/mct-api:$IMAGE_TAG --format '{{.Manifest.Digest}}')
-# 2. verify the attestation for that digest
+# 2. verify both attestations for that digest
 gh attestation verify "oci://ghcr.io/<owner>/mct-api@$DIGEST" \
   --repo <owner>/<repo> \
   --signer-workflow <owner>/<repo>/.github/workflows/deploy-do.yml \
-  --source-digest "$IMAGE_TAG"
+  --source-digest "$IMAGE_TAG" \
+  --predicate-type https://slsa.dev/provenance/v1
+gh attestation verify "oci://ghcr.io/<owner>/mct-api@$DIGEST" \
+  --repo <owner>/<repo> \
+  --signer-workflow <owner>/<repo>/.github/workflows/deploy-do.yml \
+  --source-digest "$IMAGE_TAG" \
+  --predicate-type https://cyclonedx.org/bom
 ```
 
-`gh attestation verify` defaults to the `https://slsa.dev/provenance/v1`
-predicate type, which is what `actions/attest-build-provenance` emits, so no
-`--predicate-type` flag is needed. The additional `--signer-workflow` and
-`--source-digest` flags tighten the check beyond the required `--repo`: they
-pin the exact signing workflow and the commit that produced the image. The job
-needs `packages: read` (registry auth to resolve the tag and fetch the OCI
-referrers bundle) and `id-token: write`.
+The `--signer-workflow` and `--source-digest` flags tighten the check beyond the
+required `--repo`: they pin the exact signing workflow and the commit that
+produced the image. The job needs `packages: read` (registry auth to resolve the
+tag and fetch the OCI referrers bundle) and `id-token: write`.
+
+**The deploy pulls and runs the verified digests, not the tags** (SBOM-P2-011):
+the `deploy` job receives the digests as outputs and exports
+`MCT_<SERVICE>_IMAGE=<repo>@sha256:...` for compose
+(`infra/digitalocean/docker-compose.yml`), so re-pointing the mutable tag after
+verification cannot substitute the artifact. The tag-based compose default
+remains only for manual operator runs (`IMAGE_TAG=<sha> docker compose up -d`).
 
 **Policy:**
 
 - **Normal deploy (no `rollback_sha`)** — **fail closed**. The images were just
-  built and attested by this run; any missing, malformed, wrong-repo or
-  mismatched-subject attestation hard-fails the job.
+  built and attested by this run; any missing, malformed, wrong-repo,
+  mismatched-subject or missing-predicate attestation hard-fails the job.
 - **Rollback (`rollback_sha` set)** — **fail closed, with an explicit allow-list
   of legacy digests**. Verification is never bypassed. A rollback image must
-  either pass `gh attestation verify` normally, or its digest must appear in the
-  matching `LEGACY_MCT_*` list in `deploy-do.yml` (empty by default; adding one
-  is a reviewed PR), in which case it is recorded as an allow-listed, unverified
-  rollback in the job summary.
+  either pass both `gh attestation verify` checks normally, or its digest must
+  appear in the matching `LEGACY_MCT_*` list in `deploy-do.yml` (empty by
+  default; adding one is a reviewed PR), in which case it is recorded as an
+  allow-listed, unverified rollback in the job summary. A rollback still runs by
+  its resolved digest.
 
   > An earlier design tried to "verify when an attestation exists, tolerate its
   > absence". That is not implementable: `gh attestation verify` signals absent,

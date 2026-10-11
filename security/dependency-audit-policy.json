@@ -1,5 +1,6 @@
 {
   "comment": "Dependency vulnerability policy enforced by scripts/audit-gate.mjs (see docs/DEPENDENCY_POLICY.md).",
+  "comment_allowlist": "Allowlist entries suppress a finding only while their `expires` date (YYYY-MM-DD) is valid. A missing, malformed, or past date fails closed: the entry stops suppressing and is itself a violation, so an accepted risk cannot outlive its review (SBOM-P2-010).",
   "severityPolicy": {
     "comment": "prod findings are enforced at or above blockAtOrAboveProd; dev findings are only *reported* unless they reach blockAtOrAboveAnyScope. This deliberately keeps the build green for genuinely unpatchable dev-tool advisories while making them visible in the CI job summary.",
     "blockAtOrAboveProd": "high",

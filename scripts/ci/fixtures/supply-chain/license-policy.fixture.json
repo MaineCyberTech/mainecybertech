@@ -1,0 +1,25 @@
+{
+  "comment": "Fixture for scripts/ci/check-supply-chain-gates.mjs (SBOM-P2-009/010). Never used by the real gates.",
+  "allowedLicenses": ["MIT", "Apache-2.0"],
+  "deniedLicenses": ["GPL-3.0-only"],
+  "exceptions": [
+    {
+      "license": "MPL-2.0",
+      "packages": ["scoped-pkg"],
+      "reason": "fixture: package-scoped exception",
+      "expires": "2999-01-01"
+    },
+    {
+      "license": "UNKNOWN",
+      "packages": ["unknown-ok"],
+      "reason": "fixture: explicitly listed unlicensed package",
+      "expires": "2999-01-01"
+    },
+    {
+      "license": "FSL-1.1-MIT",
+      "packages": ["lapsed-pkg"],
+      "reason": "fixture: exception past its review date",
+      "expires": "2020-01-01"
+    }
+  ]
+}

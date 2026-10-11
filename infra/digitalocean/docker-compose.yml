@@ -64,11 +64,14 @@ services:
 
   # ===== Our Apps =====
   # App images are built+tagged by CI with the immutable commit SHA. The deploy
-  # workflow resolves each tag to its manifest digest and verifies the build
-  # attestation before `up` (see README.md > Container image pinning); they are
-  # not statically digest-pinned because the SHA tag changes per release.
+  # workflow resolves each tag to its manifest digest, verifies the build
+  # provenance AND CycloneDX SBOM attestations for that digest, then passes the
+  # digest here via MCT_<SERVICE>_IMAGE so the pull/run uses `@sha256:...`
+  # instead of the mutable tag (SBOM-P2-011; see docs/CI.md > "Provenance
+  # verification at deploy"). The tag-based fallback exists only for manual
+  # operator runs (`IMAGE_TAG=<sha> docker compose up -d`).
   api:
-    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-api:${IMAGE_TAG:?IMAGE_TAG must be set}
+    image: ${MCT_API_IMAGE:-${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-api:${IMAGE_TAG:?IMAGE_TAG must be set}}
     logging: *default-logging
     <<: *security
     environment:
@@ -139,7 +142,7 @@ services:
       start_period: 30s
 
   worker:
-    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:?IMAGE_TAG must be set}
+    image: ${MCT_WORKER_IMAGE:-${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:?IMAGE_TAG must be set}}
     logging: *default-logging
     <<: *security
     environment:
@@ -202,7 +205,7 @@ services:
       start_period: 30s
 
   web:
-    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:?IMAGE_TAG must be set}
+    image: ${MCT_WEB_IMAGE:-${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:?IMAGE_TAG must be set}}
     logging: *default-logging
     <<: *security
     environment:
