@@ -183,6 +183,7 @@ function assertMirrorWrite(
       500,
     );
   }
+}
 
 /**
  * Epoch-seconds timestamp of the most recent refund on a charge (BILL-P2-001),
@@ -495,12 +496,6 @@ router.post("/stripe", async (req, res, next) => {
             { stripePaymentIntentId: paymentIntentId, currentStatus: currentPaymentStatus },
             "Skipping stale partial refund (payment already fully refunded)",
           );
-        } else {
-          const { error: refundErr } = await supabase
-            .from("payments")
-            .update({ status: fullyRefunded ? "refunded" : "partially_refunded" })
-            .eq("stripe_payment_intent_id", paymentIntentId);
-          assertMirrorWrite(refundErr, "payments.update refund");
         } else {
           const refundedAt = refundTimestampSeconds(charge, event.created);
           const { error: refundErr } = await supabase
