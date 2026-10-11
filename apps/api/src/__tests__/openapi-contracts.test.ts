@@ -639,6 +639,8 @@ describe("OpenAPI contract — success response schemas", () => {
           email: "jane@example.com",
           notes: "We need help",
           items: [{ productId: "password-security-checkup", name: "Password Security Checkup" }],
+          // PRIV-P2-002: the route requires and records consent.
+          consent: true,
         });
       expectResponseMatchesSpec(res, "/store/quotes", "post");
     });
