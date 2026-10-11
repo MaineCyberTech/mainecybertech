@@ -419,7 +419,7 @@ tests:
               task_type: send-email
             exp_annotations:
               summary: "Worker task send-email is failing"
-              description: "Task type send-email has recorded failure/error/no_handler executions for 10 minutes. Check the worker logs for send-email."
+              description: "Task type send-email has recorded failure/error/timeout/no_handler executions for 10 minutes. Check the worker logs for send-email."
 
   # CASE 26: no_handler MUST fire as well (a task type this build cannot run).
   - interval: 1m
@@ -436,7 +436,7 @@ tests:
               task_type: unknown.task
             exp_annotations:
               summary: "Worker task unknown.task is failing"
-              description: "Task type unknown.task has recorded failure/error/no_handler executions for 10 minutes. Check the worker logs for unknown.task."
+              description: "Task type unknown.task has recorded failure/error/timeout/no_handler executions for 10 minutes. Check the worker logs for unknown.task."
 
   # CASE 27: successful executions MUST stay quiet.
   - interval: 1m
@@ -578,4 +578,48 @@ tests:
     alert_rule_test:
       - eval_time: 25m
         alertname: MCTWorkerQueueBacklogGrowing
+        exp_alerts: []
+
+  # CASE 38: a timed-out execution MUST fire MCTWorkerTaskFailures (RES-P2-002).
+  - interval: 1m
+    input_series:
+      - series: 'worker_task_executions_total{task_type="retention",status="timeout"}'
+        values: '0+1x60'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTWorkerTaskFailures
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              task_type: retention
+            exp_annotations:
+              summary: "Worker task retention is failing"
+              description: "Task type retention has recorded failure/error/timeout/no_handler executions for 10 minutes. Check the worker logs for retention."
+
+  # CASE 39: any dead-lettered task MUST fire MCTWorkerTaskDeadLettered (RES-P2-002).
+  - interval: 1m
+    input_series:
+      - series: 'worker_task_dead_letters_total{task_type="retention"}'
+        values: '0+1x60'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTWorkerTaskDeadLettered
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              task_type: retention
+            exp_annotations:
+              summary: "Worker task retention exhausted its retries"
+              description: "At least one retention task failed every retry attempt in the last 15 minutes and was written to task_dead_letters. It is no longer in the queue. Inspect the row (task_type, payload, error) and replay or fix the handler."
+
+  # CASE 40: no dead letters MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'worker_task_dead_letters_total{task_type="retention"}'
+        values: '0+0x60'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTWorkerTaskDeadLettered
         exp_alerts: []

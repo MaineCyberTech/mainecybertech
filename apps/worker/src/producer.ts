@@ -129,3 +129,14 @@ export function getTaskQueueHealth(): { connected: boolean; error?: string } {
   if (!q) return { connected: false, error: "queue not initialized" };
   return queueError ? { connected: false, error: queueError.message } : { connected: true };
 }
+
+/**
+ * Tear down the task-queue connection during graceful shutdown (RES-P2-009).
+ * Idempotent: safe when the queue was never created or was already closed.
+ */
+export async function closeTaskQueue(): Promise<void> {
+  const q = queue;
+  queue = null;
+  if (!q) return;
+  await q.close().catch(() => undefined);
+}

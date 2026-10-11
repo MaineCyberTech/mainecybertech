@@ -88,7 +88,9 @@
 | `SUPABASE_ANON_KEY`         | Yes      | —                            | Supabase publishable/anon key                                                   |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes      | —                            | Supabase service role key (for task DB access)                                  |
 | `WORKER_CONCURRENCY`        | No       | `10`                         | Max concurrent jobs                                                             |
-| `WORKER_TIMEOUT`            | No       | `30000`                      | Job timeout in ms                                                               |
+| `WORKER_TIMEOUT`            | No       | `30000`                      | BullMQ job lock duration in ms. NOT a handler deadline — see `WORKER_TASK_TIMEOUT_MS` |
+| `WORKER_TASK_TIMEOUT_MS`    | No       | `600000`                     | Real handler deadline in ms: at this point the task's AbortSignal fires and the task fails as `timeout` (0 disables). RES-P2-002 |
+| `WORKER_SHUTDOWN_TIMEOUT_MS` | No      | `30000`                      | Graceful-shutdown drain budget in ms; the worker force-exits (1) if still draining after this. Keep the compose `stop_grace_period` above it (60s in production). RES-P2-009 |
 | `QUEUE_BACKEND`             | No       | `inline`                     | Queue backend (`inline`, `sqs`, or `bullmq`; set to `bullmq` in docker-compose) |
 | `SQS_QUEUE_URL`             | No       | —                            | SQS queue URL for task processing                                               |
 | `STRIPE_SECRET_KEY`         | No       | —                            | Stripe API key for billing reconciliation                                       |

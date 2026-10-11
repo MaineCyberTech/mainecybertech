@@ -86,6 +86,22 @@ export function recordWebhookDeadLetter(event: string): void {
   webhookDeadLettersTotal.inc({ event });
 }
 
+/**
+ * RES-P2-002: generic (non-webhook) tasks that exhausted their BullMQ
+ * attempts and were written to `task_dead_letters`. Any increase means work
+ * is stuck and unreplayable without operator action.
+ */
+export const taskDeadLettersTotal = new promClient.Counter({
+  name: "worker_task_dead_letters_total",
+  help: "Total generic worker tasks moved to the task dead-letter set after exhausting retries",
+  labelNames: ["task_type"] as const,
+  registers: [register],
+});
+
+export function recordTaskDeadLetter(taskType: string): void {
+  taskDeadLettersTotal.inc({ task_type: taskType });
+}
+
 export function recordNotificationDelivery(
   channel: "in_app" | "email",
   status: "success" | "failed" | "skipped",

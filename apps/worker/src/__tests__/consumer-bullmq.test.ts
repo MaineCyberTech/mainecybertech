@@ -8,6 +8,9 @@ jest.mock("../logger", () => ({
 jest.mock("../task-registry", () => ({
   executeTask: jest.fn(),
 }));
+jest.mock("../task-dead-letters", () => ({
+  writeTaskDeadLetter: jest.fn(),
+}));
 jest.mock("../env", () => ({
   env: {
     REDIS_URL: "redis://localhost:6379",
@@ -82,5 +85,52 @@ describe("BullMQ consumer connection tracking (RES-P2-008)", () => {
     fakeWorkers()[0].emit("error", new Error("script failed"));
 
     expect(getConsumerConnection()).toEqual({ connected: true });
+  });
+});
+
+describe("BullMQ task dead letters (RES-P2-002)", () => {
+  it("writes a dead letter when the final attempt fails", () => {
+    const { writeTaskDeadLetter } = jest.requireMock("../task-dead-letters") as {
+      writeTaskDeadLetter: jest.Mock;
+    };
+    writeTaskDeadLetter.mockClear();
+
+    fakeWorkers()[0].emit(
+      "failed",
+      {
+        id: "job-1",
+        data: { type: "send-email", payload: { userId: "u1" } },
+        attemptsMade: 3,
+        opts: { attempts: 3 },
+      },
+      new Error("smtp down"),
+    );
+
+    expect(writeTaskDeadLetter).toHaveBeenCalledWith({
+      taskType: "send-email",
+      payload: { userId: "u1" },
+      error: "smtp down",
+      attempts: 3,
+    });
+  });
+
+  it("does not dead-letter an attempt that will still be retried", () => {
+    const { writeTaskDeadLetter } = jest.requireMock("../task-dead-letters") as {
+      writeTaskDeadLetter: jest.Mock;
+    };
+    writeTaskDeadLetter.mockClear();
+
+    fakeWorkers()[0].emit(
+      "failed",
+      {
+        id: "job-2",
+        data: { type: "send-email", payload: {} },
+        attemptsMade: 1,
+        opts: { attempts: 3 },
+      },
+      new Error("transient"),
+    );
+
+    expect(writeTaskDeadLetter).not.toHaveBeenCalled();
   });
 });

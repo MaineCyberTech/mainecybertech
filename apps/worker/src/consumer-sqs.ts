@@ -6,6 +6,7 @@ import {
   markShuttingDown,
   trackInFlight,
   drainInFlight,
+  closeWorkerResources,
 } from "./shutdown";
 
 interface SQSMessage {
@@ -143,4 +144,8 @@ export async function runWorkerTasks(): Promise<void> {
   }
 
   await drainInFlight();
+  // RES-P2-009: release the Redis-backed handles so the process can exit
+  // cleanly instead of waiting for the container stop timeout.
+  await closeWorkerResources();
+  process.exit(0);
 }
