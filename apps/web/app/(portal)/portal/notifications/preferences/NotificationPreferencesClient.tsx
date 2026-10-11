@@ -40,6 +40,7 @@ export default function NotificationPreferencesClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPrefs = useCallback(async () => {
     try {
@@ -77,6 +78,7 @@ export default function NotificationPreferencesClient() {
   async function handleSave() {
     setSaving(true);
     setSaved(false);
+    setError(null);
 
     const prefsPayload = MODULES.flatMap((m) =>
       CHANNELS.map((c) => ({
@@ -90,8 +92,15 @@ export default function NotificationPreferencesClient() {
       await getClientApi().notifications.updatePreferences({ preferences: prefsPayload });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch {
-      /* ignore */
+    } catch (err) {
+      // NOTIF-P1-004: surface the failure instead of pretending it saved.
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : "Failed to save preferences. Please try again.",
+      );
+      // Reload so the toggles show what the server actually stored.
+      await fetchPrefs();
     }
     setSaving(false);
   }
@@ -105,6 +114,15 @@ export default function NotificationPreferencesClient() {
       {saved ? (
         <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
           Preferences saved successfully.
+        </div>
+      ) : null}
+
+      {error ? (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+        >
+          {error}
         </div>
       ) : null}
 
