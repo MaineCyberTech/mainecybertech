@@ -715,6 +715,12 @@ jobs:
               printf 'ALERTMANAGER_WEBHOOK_PASS=%s\n' "$ALERTMANAGER_WEBHOOK_PASS"
             } >> /opt/mct-portal/.env
             chmod 600 /opt/mct-portal/.env
+            # Prometheus credentials_file for the authenticated mct-api scrape.
+            # Written HERE because METRICS_TOKEN is forwarded to this step's
+            # environment (the deploy step's envs list does not include it, so
+            # writing it there produced an empty file and a down scrape).
+            printf '%s' "$METRICS_TOKEN" > /opt/mct-portal/metrics-token
+            chmod 600 /opt/mct-portal/metrics-token
             # IR-P0-003 fail-closed guard: the whole point of the dead-man's
             # switch is that a silent failure of the monitoring path must be
             # detectable. Compose would happily fall back to a no-op loopback URL
@@ -788,9 +794,6 @@ jobs:
             cp /opt/mct-portal/repo/infra/digitalocean/redis-entrypoint.sh /opt/mct-portal/redis-entrypoint.sh
             cp /opt/mct-portal/repo/infra/digitalocean/prometheus.yml /opt/mct-portal/prometheus.yml
             cp /opt/mct-portal/repo/infra/digitalocean/prometheus.rules.yml /opt/mct-portal/prometheus.rules.yml
-            # Prometheus credentials_file for the authenticated mct-api scrape.
-            printf '%s' "$METRICS_TOKEN" > /opt/mct-portal/metrics-token
-            chmod 600 /opt/mct-portal/metrics-token
             # IR-P0-003: the alertmanager service in docker-compose.yml mounts
             # ./alertmanager.tmpl.yml read-only. If it is not copied, compose
             # creates a directory at that path and the container fails to start
