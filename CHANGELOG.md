@@ -136,6 +136,32 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Fixed
 
+- **Remediation wave, phase 2 (2026-10-11, 14 PRs, audit rerun).**
+  - Core workflows: bulk operations return per-item results; notification deep
+    links fixed; notification surfaces surface failures; SSE fallback interval
+    cleaned up; password-policy copy aligned (#197).
+  - UX/a11y: ticket-card interactive nesting fixed; inline errors announced
+    (`role="alert"`); missing page titles added with a route-title guard (#196).
+  - CI gates: E2E always reports on main; path-filtered required checks
+    rejected; security scans added to required-check JSON; prod dispatch
+    restricted to `main`; backup dispatcher retired (#198).
+  - Search: documents in portal/admin search with visibility filtering;
+    `get_analytics_summary` RPC; dedicated search rate limiter (#199).
+  - Billing: webhook writes fail closed and release claims; terminal states
+    are monotonic; tenant-scoped reads; trial/interval/void/refund lifecycle
+    columns and handling (#200, #203).
+  - Data: audit logs archived before purge/org-delete; retention windows from
+    the registry; `updated_at` triggers installed (#202).
+  - Privacy: DSAR export/erasure + runbook; recursive audit redaction; policy
+    reconciled; `PRIVACY.md`/`SUBPROCESSORS.md` (#204).
+  - Security: PII read path uses encrypted columns; role-catalog mutations are
+    super-admin-only; privileged sessions always require aal2 (#205).
+  - Infra/DR: rollback script fixed; deploy gate covers all services; storage
+    backups verified + restore-tested; staleness alarm (#206).
+  - Analytics: no IP/UA stored; storefront tracking wired with CSRF; 90-day
+    retention; admin summary consumer (#207).
+  - Resilience: real task deadline + `task_dead_letters` DLQ + alert; inbound
+    webhook persistence failures 5xx; graceful shutdown; rolling deploys (#208).
 - **Remediation wave (2026-10-11, 23 PRs, audit rerun).**
   - Role assignment is centralized (`assertCanAssignRole`): assigning a
     cross-tenant role requires a platform super admin, nobody can change their
