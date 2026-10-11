@@ -67,12 +67,25 @@ export default function AdminDocumentsBulkControls({
         pushToast("error", result.error ?? "Unexpected error.", "Bulk folder failed");
         return;
       }
-      onApplyFolderLocal(nextFolder, selectedIds);
-      pushToast(
-        "success",
-        `${selectedIds.length} document(s) moved to ${nextFolder}.`,
-        "Folder reassigned",
-      );
+      const succeeded = result.ids ?? [];
+      const failed = result.failed ?? [];
+      onApplyFolderLocal(nextFolder, succeeded);
+      if (failed.length) {
+        pushToast(
+          "warning",
+          `${succeeded.length} succeeded, ${failed.length} failed (${failed
+            .slice(0, 3)
+            .map((f) => f.id)
+            .join(", ")}${failed.length > 3 ? ", …" : ""}).`,
+          "Folder reassigned with failures",
+        );
+      } else {
+        pushToast(
+          "success",
+          `${succeeded.length} document(s) moved to ${nextFolder}.`,
+          "Folder reassigned",
+        );
+      }
       setShowFolderModal(false);
       setFolderValue("");
       onRefresh?.();
@@ -113,19 +126,32 @@ export default function AdminDocumentsBulkControls({
         pushToast("error", result.error ?? "Unexpected error.", "Bulk metadata failed");
         return;
       }
+      const succeeded = result.ids ?? [];
+      const failed = result.failed ?? [];
       onApplyMetadataLocal(
         {
           ...(safeDescription ? { description: safeDescription } : {}),
           ...(safeFolder ? { folder_path: safeFolder } : {}),
           ...(safeVisibility ? { visibility: safeVisibility } : {}),
         },
-        selectedIds,
+        succeeded,
       );
-      pushToast(
-        "success",
-        `${selectedIds.length} document(s) updated using safe apply rules.`,
-        "Metadata applied",
-      );
+      if (failed.length) {
+        pushToast(
+          "warning",
+          `${succeeded.length} succeeded, ${failed.length} failed (${failed
+            .slice(0, 3)
+            .map((f) => f.id)
+            .join(", ")}${failed.length > 3 ? ", …" : ""}).`,
+          "Metadata applied with failures",
+        );
+      } else {
+        pushToast(
+          "success",
+          `${succeeded.length} document(s) updated using safe apply rules.`,
+          "Metadata applied",
+        );
+      }
       setShowMetadataModal(false);
       setMetaDescription("");
       setMetaFolder("");

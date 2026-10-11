@@ -896,9 +896,26 @@ export default function AdminDocumentsCenterClient({
         busyKey: "bulk-visibility",
         rollback: () => setLocalDocuments(snapshot),
         action: () => bulkVisibilityAction(formData),
-        onSuccess: () => selectedIds.forEach((id) => markSuccess(id, "Bulk saved")),
+        onSuccess: (result) => {
+          const succeeded = new Set(result.ids ?? []);
+          setLocalDocuments(
+            snapshot.map((doc) => (succeeded.has(doc.id) ? { ...doc, visibility } : doc)),
+          );
+          // Keep failed ids selected so the admin can retry just those.
+          setSelectedIds(result.failed?.map((f) => f.id) ?? []);
+          succeeded.forEach((id) => markSuccess(id, "Bulk saved"));
+        },
         successTitle: "Bulk visibility updated",
-        successMessage: `${selectedIds.length} documents updated successfully.`,
+        successMessage: (result) => {
+          const updated = result.ids?.length ?? 0;
+          const failed = result.failed ?? [];
+          if (!failed.length) return `${updated} documents updated successfully.`;
+          const ids = failed
+            .slice(0, 3)
+            .map((f) => f.id)
+            .join(", ");
+          return `${updated} of ${updated + failed.length} documents updated; ${failed.length} failed (${ids}${failed.length > 3 ? ", …" : ""}).`;
+        },
       });
     }
   }

@@ -1,5 +1,5 @@
 import { ApiClient } from "./client";
-import type { Ticket, TicketComment, PaginatedResult } from "./types";
+import type { Ticket, TicketComment, PaginatedResult, BulkUpdateResult } from "./types";
 
 export class TicketsApi {
   constructor(private client: ApiClient) {}
@@ -79,11 +79,7 @@ export class TicketsApi {
   }
 
   bulkUpdate(ids: string[], updates: { status?: string; priority?: string }) {
-    return this.client.post<{
-      results: Array<{ id: string; success: boolean; error?: string }>;
-      successful: number;
-      failed: number;
-    }>("/api/v1/tickets/bulk", {
+    return this.client.post<BulkUpdateResult>("/api/v1/tickets/bulk", {
       ids,
       ...updates,
     });

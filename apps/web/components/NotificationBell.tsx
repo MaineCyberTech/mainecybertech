@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getClientApi } from "@/lib/client-api";
 import { getClientEnv } from "@/lib/env";
 import { formatDateTime } from "@/lib/format";
+import { notificationHref } from "@/lib/notification-links";
 
 const MODULES = ["tickets", "projects", "documents", "billing", "system"] as const;
 
@@ -32,8 +33,10 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
   const [loadingPrefs, setLoadingPrefs] = useState(false);
   const [prefError, setPrefError] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
+  const [recentError, setRecentError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const fallbackPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchUnread = useCallback(async () => {
     try {
@@ -53,8 +56,10 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
         unread: true,
       });
       setNotifications(result.items as NotificationItem[]);
+      setRecentError(false);
     } catch {
-      // Silently handle — recent notifications are non-critical
+      // Surface the failure instead of rendering a false "no notifications".
+      setRecentError(true);
     }
   }, []);
 
@@ -107,15 +112,23 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     });
 
     es.onerror = () => {
-      // Fallback to polling if SSE fails
+      // Fallback to polling if SSE fails. Keep the interval id in a ref so the
+      // effect cleanup can clear it: the previous version "returned" a cleanup
+      // from the onerror handler that was discarded, leaking one 30s poller per
+      // component instance (USE-P2-006).
       es.close();
-      const fallbackInterval = setInterval(fetchUnread, 30000);
-      return () => clearInterval(fallbackInterval);
+      if (fallbackPollRef.current === null) {
+        fallbackPollRef.current = setInterval(fetchUnread, 30000);
+      }
     };
 
     return () => {
       es.close();
       eventSourceRef.current = null;
+      if (fallbackPollRef.current !== null) {
+        clearInterval(fallbackPollRef.current);
+        fallbackPollRef.current = null;
+      }
     };
   }, [fetchUnread, fetchRecent, playNotificationChime]);
 
@@ -188,12 +201,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     }
   }
 
-  const moduleHref = (n: NotificationItem) => {
-    if (n.module === "tickets" && n.module_id) return `${basePath}/tickets/${n.module_id}`;
-    if (n.module === "projects" && n.module_id) return `${basePath}/projects/${n.module_id}`;
-    if (n.module === "documents" && n.module_id) return `${basePath}/documents/${n.module_id}`;
-    return `${basePath}/notifications`;
-  };
+  const moduleHref = (n: NotificationItem) => notificationHref(basePath, n);
 
   return (
     <div ref={dropdownRef} className="relative">
@@ -237,7 +245,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
           </div>
 
           <div className="max-h-80 overflow-y-auto">
-            {connectionError ? (
+            {connectionError || recentError ? (
               <div className="px-4 py-8 text-center text-sm text-amber-400">
                 Unable to load notifications
               </div>

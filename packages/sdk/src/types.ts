@@ -320,3 +320,25 @@ export interface DocumentAccessResponse {
   downloadUrl: string;
   expiresIn: number;
 }
+
+/**
+ * Per-row outcome returned by the API's bulk update endpoints
+ * (`POST /documents/bulk/*`, `POST /tickets/bulk`). The API returns
+ * `{ results, successful, failed, skipped? }`; callers must render the
+ * per-item outcome instead of assuming the requested count succeeded
+ * (USE-P2-001).
+ */
+export interface BulkUpdateResultRow {
+  id: string;
+  success: boolean;
+  error?: string;
+  version?: number;
+}
+
+export interface BulkUpdateResult {
+  results: BulkUpdateResultRow[];
+  successful: number;
+  failed: number;
+  /** Requested ids the caller may not touch (tickets bulk endpoint only). */
+  skipped?: number;
+}

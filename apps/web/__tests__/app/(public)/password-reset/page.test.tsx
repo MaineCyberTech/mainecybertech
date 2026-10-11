@@ -62,4 +62,11 @@ describe("PasswordResetPage", () => {
 
     expect(screen.getByText("Back to Login")).toBeInTheDocument();
   });
+
+  it("shows the shared password policy hint", () => {
+    const { default: Page } = require("@/app/(public)/password-reset/page");
+    render(React.createElement(Page));
+
+    expect(screen.getByTestId("password-policy-hint")).toHaveTextContent(/strong password/i);
+  });
 });

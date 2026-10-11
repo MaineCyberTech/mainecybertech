@@ -5,6 +5,7 @@ import type {
   DocumentShare,
   DocumentAccessResponse,
   PaginatedResult,
+  BulkUpdateResult,
 } from "./types";
 
 export class DocumentsApi {
@@ -101,10 +102,7 @@ export class DocumentsApi {
   }
 
   bulkFolder(data: { documentIds: string[]; folderPath: string }) {
-    return this.client.post<{ updated: number }>(
-      "/api/v1/documents/bulk/folder",
-      data,
-    );
+    return this.client.post<BulkUpdateResult>("/api/v1/documents/bulk/folder", data);
   }
 
   bulkMetadata(data: {
@@ -113,10 +111,7 @@ export class DocumentsApi {
     folderPath?: string | null;
     visibility?: string | null;
   }) {
-    return this.client.post<{ updated: number }>(
-      "/api/v1/documents/bulk/metadata",
-      data,
-    );
+    return this.client.post<BulkUpdateResult>("/api/v1/documents/bulk/metadata", data);
   }
 
   listVersions(id: string, params?: { page?: number; limit?: number }) {

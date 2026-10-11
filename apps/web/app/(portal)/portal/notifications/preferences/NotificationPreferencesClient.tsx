@@ -38,16 +38,26 @@ function moduleIcon(moduleKey: string) {
 export default function NotificationPreferencesClient() {
   const [preferences, setPreferences] = useState<Preference[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPrefs = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
     try {
       const result = await getClientApi().notifications.listPreferences();
       setPreferences(result.preferences);
-    } catch {
-      /* ignore */
+    } catch (err) {
+      // Do not render the all-on defaults when the load failed — that reads as
+      // a real preference state (USE-P2-005).
+      setPreferences([]);
+      setLoadError(
+        err instanceof Error && err.message
+          ? err.message
+          : "Failed to load preferences. Please try again.",
+      );
     }
     setLoading(false);
   }, []);
@@ -107,6 +117,20 @@ export default function NotificationPreferencesClient() {
 
   if (loading) {
     return <div className="py-8 text-center text-sm text-slate-400">Loading preferences...</div>;
+  }
+
+  if (loadError) {
+    return (
+      <div
+        role="alert"
+        className="flex flex-col items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-8 text-center text-sm text-red-300"
+      >
+        <p>{loadError}</p>
+        <button onClick={() => void fetchPrefs()} className="cyber-button-secondary text-xs">
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -188,9 +212,9 @@ export default function NotificationPreferencesClient() {
       </div>
 
       <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-xs text-slate-400">
-        Preferences are saved immediately and control whether new notifications are sent to each
-        channel. In-app notifications appear in the bell icon in the header. Email notifications
-        require SMTP to be configured on the server.
+        Preferences control whether new notifications are sent to each channel. Changes take
+        effect when you click Save Preferences. In-app notifications appear in the bell icon in the
+        header. Email notifications require SMTP to be configured on the server.
       </div>
     </div>
   );

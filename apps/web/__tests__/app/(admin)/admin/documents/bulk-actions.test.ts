@@ -21,7 +21,14 @@ describe("bulkFolderAction", () => {
   });
 
   it("moves documents to a folder", async () => {
-    mockBulkFolder.mockResolvedValue(undefined);
+    mockBulkFolder.mockResolvedValue({
+      results: [
+        { id: "doc-1", success: true },
+        { id: "doc-2", success: true },
+      ],
+      successful: 2,
+      failed: 0,
+    });
 
     const { bulkFolderAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
@@ -36,12 +43,75 @@ describe("bulkFolderAction", () => {
       ok: true,
       kind: "bulk_folder",
       ids: ["doc-1", "doc-2"],
+      failed: [],
       folderPath: "/Contracts",
     });
     expect(mockBulkFolder).toHaveBeenCalledWith({
       documentIds: ["doc-1", "doc-2"],
       folderPath: "/Contracts",
     });
+  });
+
+  it("reports per-item failures instead of the requested count", async () => {
+    mockBulkFolder.mockResolvedValue({
+      results: [
+        { id: "doc-1", success: true },
+        { id: "doc-2", success: false, error: "Version conflict" },
+      ],
+      successful: 1,
+      failed: 1,
+    });
+
+    const { bulkFolderAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
+
+    const formData = new FormData();
+    formData.append("documentIds", "doc-1");
+    formData.append("documentIds", "doc-2");
+    formData.set("folderPath", "/Contracts");
+
+    const result = await bulkFolderAction(formData);
+
+    expect(result.ok).toBe(true);
+    expect(result.ids).toEqual(["doc-1"]);
+    expect(result.failed).toEqual([{ id: "doc-2", error: "Version conflict" }]);
+  });
+
+  it("treats requested ids missing from the response as failures", async () => {
+    // The API pre-filters to the caller's tenant scope; doc-2 never made it
+    // into the RPC and must not be reported as a success.
+    mockBulkFolder.mockResolvedValue({
+      results: [{ id: "doc-1", success: true }],
+      successful: 1,
+      failed: 0,
+    });
+
+    const { bulkFolderAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
+
+    const formData = new FormData();
+    formData.append("documentIds", "doc-1");
+    formData.append("documentIds", "doc-2");
+    formData.set("folderPath", "/Contracts");
+
+    const result = await bulkFolderAction(formData);
+
+    expect(result.ok).toBe(true);
+    expect(result.ids).toEqual(["doc-1"]);
+    expect(result.failed).toEqual([{ id: "doc-2", error: "Not found or not accessible" }]);
+  });
+
+  it("fails closed when the API returns no per-item results", async () => {
+    mockBulkFolder.mockResolvedValue({ updated: 2 });
+
+    const { bulkFolderAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
+
+    const formData = new FormData();
+    formData.append("documentIds", "doc-1");
+    formData.set("folderPath", "/Contracts");
+
+    const result = await bulkFolderAction(formData);
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/per-item bulk results/i);
   });
 
   it("returns error when no document ids", async () => {
@@ -114,7 +184,11 @@ describe("bulkMetadataAction", () => {
   });
 
   it("applies description metadata", async () => {
-    mockBulkMetadata.mockResolvedValue(undefined);
+    mockBulkMetadata.mockResolvedValue({
+      results: [{ id: "doc-1", success: true }],
+      successful: 1,
+      failed: 0,
+    });
 
     const { bulkMetadataAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
@@ -128,6 +202,7 @@ describe("bulkMetadataAction", () => {
       ok: true,
       kind: "bulk_metadata",
       ids: ["doc-1"],
+      failed: [],
       applied: {
         description: "Updated description",
         folderPath: null,
@@ -143,7 +218,11 @@ describe("bulkMetadataAction", () => {
   });
 
   it("applies folder path and visibility", async () => {
-    mockBulkMetadata.mockResolvedValue(undefined);
+    mockBulkMetadata.mockResolvedValue({
+      results: [{ id: "doc-1", success: true }],
+      successful: 1,
+      failed: 0,
+    });
 
     const { bulkMetadataAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
@@ -158,6 +237,7 @@ describe("bulkMetadataAction", () => {
       ok: true,
       kind: "bulk_metadata",
       ids: ["doc-1"],
+      failed: [],
       applied: {
         description: null,
         folderPath: "/Archive",
@@ -173,6 +253,12 @@ describe("bulkMetadataAction", () => {
   });
 
   it("rejects invalid visibility value", async () => {
+    mockBulkMetadata.mockResolvedValue({
+      results: [{ id: "doc-1", success: true }],
+      successful: 1,
+      failed: 0,
+    });
+
     const { bulkMetadataAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
     const formData = new FormData();

@@ -41,4 +41,27 @@ describe("NotificationPreferencesClient", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(/organizationId is required/i);
     expect(screen.queryByText(/preferences saved successfully/i)).not.toBeInTheDocument();
   });
+
+  it("surfaces a load failure with a retry instead of rendering all-on defaults", async () => {
+    mockListPreferences.mockRejectedValueOnce(new Error("preferences unavailable"));
+    render(<NotificationPreferencesClient />);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("preferences unavailable");
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+
+    mockListPreferences.mockResolvedValueOnce({ preferences: [], modules: [], channels: [] });
+    fireEvent.click(screen.getByRole("button", { name: /retry/i }));
+
+    expect(await screen.findByRole("button", { name: /save preferences/i })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("describes the save-button model in the help copy", async () => {
+    render(<NotificationPreferencesClient />);
+
+    expect(
+      await screen.findByText(/changes take effect when you click save preferences/i),
+    ).toBeInTheDocument();
+  });
 });

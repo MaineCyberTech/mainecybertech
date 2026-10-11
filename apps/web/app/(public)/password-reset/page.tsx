@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getClientApi } from "@/lib/client-api";
 import { Button } from "@mct/ui/components/Button";
+import PasswordPolicyHint from "@/components/PasswordPolicyHint";
 
 export default function PasswordResetPage() {
   const router = useRouter();
@@ -18,12 +19,6 @@ export default function PasswordResetPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      setLoading(false);
-      return;
-    }
 
     try {
       await getClientApi().auth.resetPassword(email, password);
@@ -92,13 +87,13 @@ export default function PasswordResetPage() {
                   <input
                     id="password"
                     type="password"
-                    placeholder="Min 6 characters"
+                    placeholder="Enter a strong password"
                     required
                     value={password}
-                    minLength={6}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full rounded-md border border-white/10 bg-cyber-base/60 px-4 py-3 text-slate-50 outline-none transition focus:border-emerald-600"
                   />
+                  <PasswordPolicyHint className="mt-2 text-xs text-slate-400" />
                 </div>
                 <Button type="submit" disabled={loading} loading={loading} className="w-full">
                   {loading ? "Resetting..." : "Reset Password"}
