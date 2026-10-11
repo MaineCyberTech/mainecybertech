@@ -82,15 +82,19 @@ Use environment-scoped values wherever possible.
 
 ## Secrets required by the database backup / restore workflows
 
+`db-backup.yml`, `db-restore-test.yml` and `storage-backup.yml` all attach
+`environment: dev`, so the rows below are provisioned in the **`dev`**
+environment (none of the three runs against prod; DR-P0-001):
+
 | Secret                    | Dev | Prod | Purpose                                               |
 | ------------------------- | --- | ---- | ----------------------------------------------------- |
-| `SUPABASE_DB_URL`         | —   | yes  | Direct database connection string for `pg_dump`       |
-| `AWS_ACCESS_KEY_ID`       | —   | yes  | S3/Spaces key for backup upload and restore download; falls back to `DO_SPACES_ACCESS_KEY_ID` |
-| `AWS_SECRET_ACCESS_KEY`   | —   | yes  | S3/Spaces secret for backup upload and restore; falls back to `DO_SPACES_SECRET_ACCESS_KEY` |
-| `BACKUP_ENCRYPTION_KEY`   | —   | yes  | openssl passphrase encrypting/decrypting backup objects (`db-backup.yml`, `db-restore-test.yml`, storage backup) |
-| `SUPABASE_SERVICE_ROLE_KEY` | — | yes  | Supabase Storage REST access for `scripts/backup-storage.sh` |
-| `S3_BACKUP_BUCKET`        | —   | yes  | **Legacy** full-URI/bucket name holding backups; prefer the `S3_BUCKET` variable. Accepted (normalised) by the restore paths for backwards compatibility |
-| `SLACK_WEBHOOK_URL`       | —   | yes  | Slack webhook for backup/restore failure notifications |
+| `SUPABASE_DB_URL`         | yes | —    | Direct database connection string for `pg_dump`       |
+| `AWS_ACCESS_KEY_ID`       | yes | —    | S3/Spaces key for backup upload and restore download; falls back to `DO_SPACES_ACCESS_KEY_ID` |
+| `AWS_SECRET_ACCESS_KEY`   | yes | —    | S3/Spaces secret for backup upload and restore; falls back to `DO_SPACES_SECRET_ACCESS_KEY` |
+| `BACKUP_ENCRYPTION_KEY`   | yes | —    | openssl passphrase encrypting/decrypting backup objects (`db-backup.yml`, `db-restore-test.yml`, storage backup) |
+| `SUPABASE_SERVICE_ROLE_KEY` | yes | —  | Supabase Storage REST access for `scripts/backup-storage.sh` |
+| `S3_BACKUP_BUCKET`        | yes | —    | **Legacy** full-URI/bucket name holding backups; prefer the `S3_BUCKET` variable. Accepted (normalised) by the restore paths for backwards compatibility |
+| `SLACK_WEBHOOK_URL`       | yes | —    | Slack webhook for backup/restore failure notifications |
 
 ### Backup location contract
 
@@ -120,7 +124,7 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 | `SUPABASE_ACCESS_TOKEN`   | yes | yes  | Supabase CLI auth for `supabase link` / `db push` (`supabase-migrations.yml`) |
 | `CHROMATIC_PROJECT_TOKEN` | yes | yes  | Chromatic visual-regression upload (`chromatic.yml`, best-effort job)         |
 | `E2E_JWT_SECRET`          | opt | opt  | Optional E2E JWT secret; `e2e.yml` falls back to a built-in test value        |
-| `SCHEDULE_DISPATCH_TOKEN` | —   | yes  | Repo-scoped PAT / GitHub App token with `actions: write` for `backup-dispatch.yml` workflow dispatch (CONF-001; see `docs/SECRETS_ROTATION.md`) |
+| `SCHEDULE_DISPATCH_TOKEN` | opt | opt  | Optional **repo-scoped** PAT / GitHub App token with `actions: write` for `backup-dispatch.yml` workflow dispatch; the dispatcher falls back to `GITHUB_TOKEN` (granted `actions: write`) and warns when this is absent (DR-P0-001; see `docs/SECRETS_ROTATION.md`) |
 
 ## Repository or environment variables required by workflows
 
@@ -129,11 +133,11 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 | `SUPABASE_PROJECT_REF`           | yes | yes  | Supabase project reference for migrations                     |
 | `DROPLET_IP`                     | opt | opt  | Optional droplet IPv4 fallback when the DO API/Terraform fail |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | yes | yes  | Turnstile site key baked into the web image build arg         |
-| `S3_BUCKET`                      | —   | yes  | Backup bucket **name** (see contract above)                   |
-| `S3_PREFIX`                      | —   | yes  | Backup key prefix (default `database-backups`)                |
+| `S3_BUCKET`                      | yes | —    | Backup bucket **name** (see contract above)                   |
+| `S3_PREFIX`                      | yes | —    | Backup key prefix (default `database-backups`)                |
 | `S3_OFFSITE_BUCKET`              | opt | opt  | Second destination for an offsite/cross-region backup copy    |
 | `S3_OFFSITE_PREFIX`              | opt | opt  | Prefix on the offsite bucket (defaults to `S3_PREFIX`)        |
-| `STORAGE_BUCKETS`                | —   | yes  | Storage buckets to back up (default `documents avatars logos`) |
+| `STORAGE_BUCKETS`                | yes | —    | Storage buckets to back up (default `documents avatars logos`) |
 
 ## GitHub Environment Configuration Steps
 
@@ -154,7 +158,10 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
    - `DO_API_TOKEN` — from DigitalOcean dashboard
    - `DO_SSH_FINGERPRINT` — from DigitalOcean SSH keys page
    - `DO_SPACES_ACCESS_KEY_ID` / `DO_SPACES_SECRET_ACCESS_KEY` — from DO Spaces
-   - `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` — S3/Spaces credentials for backup and restore
+   - `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` — S3/Spaces credentials for backup and restore (the backup/restore workflows also accept the `dev` environment's `DO_SPACES_*` keys as fallback)
+   - `SUPABASE_DB_URL`, `BACKUP_ENCRYPTION_KEY` — in the **`dev`** environment,
+     where `db-backup.yml` / `db-restore-test.yml` / `storage-backup.yml` run
+     (DR-P0-001)
    - `CLOUDFLARE_API_TOKEN` — from Cloudflare dashboard
    - `CLOUDFLARE_ZONE_ID` / `CLOUDFLARE_ZONE_ID_US` — from Cloudflare dashboard
    - `CI_SSH_PRIVATE_KEY` — private key (e.g. `cat ~/.ssh/id_rsa`) for droplet SSH access
@@ -165,13 +172,19 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
    - `REDIS_PASSWORD`, `FIELD_ENCRYPTION_KEY`, `TURNSTILE_SECRET_KEY`, `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` — deployment/runtime config forwarded by `deploy-do.yml`
    - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — from Stripe dashboard
    - `CHROMATIC_PROJECT_TOKEN` — from the Chromatic project (visual regression)
-   - `SCHEDULE_DISPATCH_TOKEN` — repo-scoped token with `actions: write` used by
-     `backup-dispatch.yml` to dispatch the develop backup/restore workflows.
-     Prefer a repository-scoped GitHub App installation token (short expiry)
-     over a classic PAT; rotate every 90 days (see `docs/SECRETS_ROTATION.md`)
+   - `SCHEDULE_DISPATCH_TOKEN` — optional **repo-scoped** token with
+     `actions: write` used by `backup-dispatch.yml` to dispatch the develop
+     backup/restore workflows. The dispatcher falls back to `GITHUB_TOKEN`
+     (granted `actions: write`) and warns when the secret is absent, so it is
+     only required where org policy blocks GITHUB_TOKEN dispatches. Prefer a
+     repository-scoped GitHub App installation token (short expiry) over a
+     classic PAT; rotate every 90 days (see `docs/SECRETS_ROTATION.md`)
    - Integration secrets as needed (Jira, JSM, M365, SMTP, Sentry, Teams webhooks)
 
 3. **Add variables** to the appropriate environment scopes (or repo-wide):
    - `SUPABASE_PROJECT_REF` — Supabase project reference for migrations
    - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` — Turnstile site key baked into the web build
    - `DROPLET_IP` — optional droplet IPv4 fallback (dev has it set; add to `prod` when known)
+   - `S3_BUCKET`, `S3_PREFIX`, `STORAGE_BUCKETS` — in the **`dev`** environment,
+     where the backup/restore workflows read them (see the backup location
+     contract above)
