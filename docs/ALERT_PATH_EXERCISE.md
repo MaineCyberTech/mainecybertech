@@ -35,6 +35,10 @@ external grace period, since the heartbeat interval itself is 5 minutes).
 3. Confirm the ntfy notification appears in the `portal-alerts` topic.
 4. Record the run URL and the observation in the evidence table below.
 
+> GitHub only dispatches/schedules workflows that exist on the **default
+> branch**. Until this workflow is promoted there, use the manual run below
+> (the droplet script is self-contained).
+
 The workflow is intentionally **not** a required check: a red run is an
 alert-path signal, never a merge or deploy blocker. Scheduled runs (monthly)
 always target dev; use `workflow_dispatch` for prod.
