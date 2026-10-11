@@ -23,9 +23,17 @@ jobs:
           # The baseline file is the single source of truth for "verified"
           # (referenced by docs/INCIDENT_RESPONSE.md §4.3). Load it into the
           # job environment so the verification step cannot drift from it.
+          # $GITHUB_ENV accepts only KEY=VALUE lines — the file's comments and
+          # blank lines made `cat` fail, so the floors never loaded and the
+          # integrity assertions never ran (audit DR-P1-001). Keep only
+          # assignments, and fail fast if the file has none.
           set -euo pipefail
           if [ -f .github/restore-test-baseline.env ]; then
-            cat .github/restore-test-baseline.env >> "$GITHUB_ENV"
+            if ! grep -qE '^[A-Za-z_][A-Za-z0-9_]*=' .github/restore-test-baseline.env; then
+              echo "::error::.github/restore-test-baseline.env contains no KEY=VALUE floors"
+              exit 1
+            fi
+            grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .github/restore-test-baseline.env >> "$GITHUB_ENV"
           fi
 
       - name: Find latest backup
