@@ -30,6 +30,7 @@
 | [arch/evaluation/db-package-evaluation.md](arch/evaluation/db-package-evaluation.md) | Shared DB package evaluation                                       |
 | [GAP_ANALYSIS.md](GAP_ANALYSIS.md)                                                   | Historical (2026-08-01, AWS-era) gap analysis — kept for reference only |
 | [ADMIN_FEATURES.md](ADMIN_FEATURES.md)                                               | Webhook management, role editor, audit export, bulk import, Sentry |
+| [ADMIN_BULK_OPERATIONS.md](ADMIN_BULK_OPERATIONS.md)                                 | Bulk admin runbook: dry-run previews, confirmations, rate limits   |
 | [ORG_BRANDING.md](ORG_BRANDING.md)                                                   | Per-org branding: logo upload, colors, custom domains              |
 
 ### Audits & Reviews

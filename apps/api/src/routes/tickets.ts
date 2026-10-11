@@ -7,6 +7,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
+import { rateLimitAdminOps } from "../middleware/rate-limit";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { createNotification, notifyAndEmail } from "../lib/notify";
@@ -552,7 +553,8 @@ async function resolveOwnedTicketIds(
   return (data ?? []).map((t: { id: string }) => t.id);
 }
 
-router.post("/bulk", requireAdmin, async (req, res, next) => {
+// ADMIN-P2-005: mass ticket state transitions are an expensive admin op.
+router.post("/bulk", rateLimitAdminOps, requireAdmin, async (req, res, next) => {
   try {
     const { ids, status, priority } = bulkTicketUpdateSchema.parse(req.body);
 

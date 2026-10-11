@@ -65,6 +65,7 @@ jest.mock("../middleware/admin", () => ({
 jest.mock("../middleware/rate-limit", () => ({
   rateLimitAuth: (_req: unknown, _res: unknown, next: () => void) => next(),
   rateLimitEmail: (_req: unknown, _res: unknown, next: () => void) => next(),
+  rateLimitAdminOps: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
 jest.mock("../lib/logger", () => ({

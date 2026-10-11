@@ -10,6 +10,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { getEnv } from "../config/env";
 import { responseCacheNoRenew } from "../middleware/cache";
+import { rateLimitAdminOps } from "../middleware/rate-limit";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { validateUploadContent } from "../lib/upload-validation";
 import {
@@ -663,107 +664,200 @@ async function resolveOwnedDocumentIds(
   return (data ?? []).map((d: { id: string }) => d.id);
 }
 
-router.post("/bulk/folder", requirePermission("documents", "create"), async (req, res, next) => {
-  try {
-    const parsed = bulkFolderSchema.parse(req.body);
-    const supabase = getScopedClient(req, "documents", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+/**
+ * ADMIN-P2-003: build the dry-run preview for a bulk document update.
+ *
+ * Returns one row per document the caller may touch (same org pre-filter as
+ * the apply path), with the current value, the proposed value and the list of
+ * changed fields. Reads only — no RPC, no audit event — so an operator can
+ * review the affected set before sending the explicit apply.
+ */
+async function previewBulkUpdate(
+  supabase: SupabaseClient,
+  documentIds: string[],
+  orgId: string | undefined,
+  updateData: Record<string, unknown>,
+): Promise<{
+  requested: number;
+  matched: number;
+  skipped: number;
+  rows: Array<{
+    id: string;
+    before: Record<string, unknown>;
+    after: Record<string, unknown>;
+    changes: string[];
+  }>;
+}> {
+  let query = supabase
+    .from("documents")
+    .select("id, description, folder_path, visibility")
+    .in("id", documentIds);
+  if (orgId) query = query.eq("organization_id", orgId);
+  const { data, error } = await query;
+  if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    // The bulk RPC skips its per-row check for service-role calls, so the
-    // document ids MUST be pre-filtered to the caller's org.
-    const ownedIds = await resolveOwnedDocumentIds(supabase, parsed.documentIds, orgId);
-
-    const updates = ownedIds.map((id) => ({
-      id,
-      data: { folder_path: parsed.folderPath },
-    }));
-
-    const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
-      table_name: "documents",
-      updates,
-    } as never);
-
-    if (error) {
-      throw new AppError("DB_ERROR", error.message, 500);
+  const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
+  const previewRows = rows.map((row) => {
+    const before: Record<string, unknown> = {};
+    const after: Record<string, unknown> = {};
+    const changes: string[] = [];
+    for (const [key, value] of Object.entries(updateData)) {
+      before[key] = row[key] ?? null;
+      after[key] = value;
+      if ((row[key] ?? null) !== value) changes.push(key);
     }
+    return { id: String(row.id), before, after, changes };
+  });
 
-    const resultRows = (results as unknown as { success: boolean }[] | null) ?? [];
-    const successful = resultRows.filter((r) => r.success).length;
-    const failed = resultRows.filter((r) => !r.success);
+  return {
+    requested: documentIds.length,
+    matched: previewRows.length,
+    skipped: documentIds.length - previewRows.length,
+    rows: previewRows,
+  };
+}
 
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "document.bulk_folder",
-      entityType: "document",
-      metadata: {
-        documentIds: parsed.documentIds,
-        folderPath: parsed.folderPath,
-        successful,
-        failed: failed.length,
-      },
-    });
+router.post(
+  "/bulk/folder",
+  rateLimitAdminOps,
+  requirePermission("documents", "create"),
+  async (req, res, next) => {
+    try {
+      const parsed = bulkFolderSchema.parse(req.body);
+      const supabase = getScopedClient(req, "documents", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
-    res.json(success({ results, successful, failed: failed.length }));
-  } catch (error) {
-    next(error);
-  }
-});
+      // ADMIN-P2-003: dry-run returns the resolved rows + per-field diffs and
+      // writes nothing, so an operator can review the affected set first.
+      if (parsed.dryRun) {
+        const preview = await previewBulkUpdate(supabase, parsed.documentIds, orgId, {
+          folder_path: parsed.folderPath,
+        });
+        res.json(success({ dryRun: true, ...preview }));
+        return;
+      }
 
-router.post("/bulk/metadata", requirePermission("documents", "create"), async (req, res, next) => {
-  try {
-    const parsed = bulkMetadataSchema.parse(req.body);
-    const supabase = getScopedClient(req, "documents", "write");
+      // The bulk RPC skips its per-row check for service-role calls, so the
+      // document ids MUST be pre-filtered to the caller's org.
+      const ownedIds = await resolveOwnedDocumentIds(supabase, parsed.documentIds, orgId);
 
-    const updateData: Record<string, unknown> = {};
-    if (parsed.description !== undefined) updateData.description = parsed.description;
-    if (parsed.folderPath !== undefined) updateData.folder_path = parsed.folderPath;
-    if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
+      const updates = ownedIds.map((id) => ({
+        id,
+        data: { folder_path: parsed.folderPath },
+      }));
 
-    if (Object.keys(updateData).length === 0) {
-      throw new AppError("VALIDATION", "No fields to update", 400);
+      const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
+        table_name: "documents",
+        updates,
+      } as never);
+
+      if (error) {
+        throw new AppError("DB_ERROR", error.message, 500);
+      }
+
+      const resultRows = (results as unknown as { success: boolean }[] | null) ?? [];
+      const successful = resultRows.filter((r) => r.success).length;
+      const failed = resultRows.filter((r) => !r.success);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "document.bulk_folder",
+        entityType: "document",
+        metadata: {
+          documentIds: parsed.documentIds,
+          folderPath: parsed.folderPath,
+          successful,
+          failed: failed.length,
+        },
+      });
+
+      res.json(success({ results, successful, failed: failed.length }));
+    } catch (error) {
+      next(error);
     }
+  },
+);
 
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+router.post(
+  "/bulk/metadata",
+  rateLimitAdminOps,
+  requirePermission("documents", "create"),
+  async (req, res, next) => {
+    try {
+      const parsed = bulkMetadataSchema.parse(req.body);
+      const supabase = getScopedClient(req, "documents", "write");
 
-    // The bulk RPC skips its per-row check for service-role calls, so the
-    // document ids MUST be pre-filtered to the caller's org.
-    const ownedIds = await resolveOwnedDocumentIds(supabase, parsed.documentIds, orgId);
+      const updateData: Record<string, unknown> = {};
+      if (parsed.description !== undefined) updateData.description = parsed.description;
+      if (parsed.folderPath !== undefined) updateData.folder_path = parsed.folderPath;
+      if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
 
-    const updates = ownedIds.map((id) => ({
-      id,
-      data: updateData,
-    }));
+      if (Object.keys(updateData).length === 0) {
+        throw new AppError("VALIDATION", "No fields to update", 400);
+      }
 
-    const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
-      table_name: "documents",
-      updates,
-    } as never);
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
-    if (error) {
-      throw new AppError("DB_ERROR", error.message, 500);
+      // ADMIN-P2-003: dry-run returns the resolved rows + per-field diffs and
+      // writes nothing, so an operator can review the affected set first.
+      if (parsed.dryRun) {
+        const preview = await previewBulkUpdate(supabase, parsed.documentIds, orgId, updateData);
+        res.json(success({ dryRun: true, ...preview }));
+        return;
+      }
+
+      // ADMIN-P2-003: visibility changes are elevated — require the caller to
+      // echo an explicit confirmation after reviewing the dry-run preview.
+      // Only a concrete value counts: callers that send `visibility: null`
+      // (the web "keep current visibility" shape) are not changing it.
+      if (updateData.visibility != null && parsed.confirm !== true) {
+        throw new AppError(
+          "CONFIRMATION_REQUIRED",
+          "Bulk visibility changes require an explicit confirmation body: { confirm: true }",
+          400,
+        );
+      }
+
+      // The bulk RPC skips its per-row check for service-role calls, so the
+      // document ids MUST be pre-filtered to the caller's org.
+      const ownedIds = await resolveOwnedDocumentIds(supabase, parsed.documentIds, orgId);
+
+      const updates = ownedIds.map((id) => ({
+        id,
+        data: updateData,
+      }));
+
+      const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
+        table_name: "documents",
+        updates,
+      } as never);
+
+      if (error) {
+        throw new AppError("DB_ERROR", error.message, 500);
+      }
+
+      const resultRows = (results as unknown as { success: boolean }[] | null) ?? [];
+      const successful = resultRows.filter((r) => r.success).length;
+      const failed = resultRows.filter((r) => !r.success);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "document.bulk_metadata",
+        entityType: "document",
+        metadata: {
+          documentIds: parsed.documentIds,
+          fields: Object.keys(updateData),
+          successful,
+          failed: failed.length,
+        },
+      });
+
+      res.json(success({ results, successful, failed: failed.length }));
+    } catch (error) {
+      next(error);
     }
-
-    const resultRows = (results as unknown as { success: boolean }[] | null) ?? [];
-    const successful = resultRows.filter((r) => r.success).length;
-    const failed = resultRows.filter((r) => !r.success);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "document.bulk_metadata",
-      entityType: "document",
-      metadata: {
-        documentIds: parsed.documentIds,
-        fields: Object.keys(updateData),
-        successful,
-        failed: failed.length,
-      },
-    });
-
-    res.json(success({ results, successful, failed: failed.length }));
-  } catch (error) {
-    next(error);
-  }
-});
+  },
+);
 
 router.get("/:id/versions", async (req, res, next) => {
   try {

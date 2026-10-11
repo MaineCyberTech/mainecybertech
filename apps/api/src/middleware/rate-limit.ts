@@ -60,6 +60,24 @@ export const rateLimitSearch = rateLimit({
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
 
+/**
+ * ADMIN-P2-005: dedicated limiter for expensive/destructive admin operations
+ * (bulk invite, bulk document metadata/folder, organization onboarding and
+ * deletion). These paths fan out to hundreds of rows/users or cascade tenant
+ * data, so a compromised or careless admin token must not be able to hammer
+ * them at script speed. Cap at 10/minute per token (or IP when unauthenticated)
+ * — well above interactive admin use, low enough to bound abuse.
+ */
+export const rateLimitAdminOps = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: "Too many admin operations, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, req.ip),
+  skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
+});
+
 export const rateLimitAuth = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,

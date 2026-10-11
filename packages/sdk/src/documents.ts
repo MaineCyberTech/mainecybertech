@@ -5,6 +5,7 @@ import type {
   DocumentShare,
   DocumentAccessResponse,
   PaginatedResult,
+  BulkPreviewResult,
   BulkUpdateResult,
 } from "./types";
 
@@ -101,8 +102,19 @@ export class DocumentsApi {
     return this.client.postFormData<Document>("/api/v1/documents/upload", fd);
   }
 
-  bulkFolder(data: { documentIds: string[]; folderPath: string }) {
+  bulkFolder(data: { documentIds: string[]; folderPath: string; confirm?: boolean }) {
     return this.client.post<BulkUpdateResult>("/api/v1/documents/bulk/folder", data);
+  }
+
+  /**
+   * ADMIN-P2-003: resolve the rows a bulk folder apply would touch, without
+   * writing. Review `rows[].changes` before calling `bulkFolder` to apply.
+   */
+  previewBulkFolder(data: { documentIds: string[]; folderPath: string }) {
+    return this.client.post<BulkPreviewResult>("/api/v1/documents/bulk/folder", {
+      ...data,
+      dryRun: true,
+    });
   }
 
   bulkMetadata(data: {
@@ -110,8 +122,27 @@ export class DocumentsApi {
     description?: string | null;
     folderPath?: string | null;
     visibility?: string | null;
+    /** Required when the apply includes `visibility` (elevated operation). */
+    confirm?: boolean;
   }) {
     return this.client.post<BulkUpdateResult>("/api/v1/documents/bulk/metadata", data);
+  }
+
+  /**
+   * ADMIN-P2-003: resolve the rows/diffs a bulk metadata apply would produce,
+   * without writing. A subsequent `bulkMetadata` call that changes visibility
+   * must pass `confirm: true`.
+   */
+  previewBulkMetadata(data: {
+    documentIds: string[];
+    description?: string | null;
+    folderPath?: string | null;
+    visibility?: string | null;
+  }) {
+    return this.client.post<BulkPreviewResult>("/api/v1/documents/bulk/metadata", {
+      ...data,
+      dryRun: true,
+    });
   }
 
   listVersions(id: string, params?: { page?: number; limit?: number }) {

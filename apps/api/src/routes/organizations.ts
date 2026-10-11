@@ -9,6 +9,7 @@ import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
+import { rateLimitAdminOps } from "../middleware/rate-limit";
 import { resolveAdminTenantScope } from "../lib/admin-scope";
 import {
   createOrganizationSchema,
@@ -57,7 +58,7 @@ const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
 
-router.post("/onboard", requireAdmin, async (req, res, next) => {
+router.post("/onboard", rateLimitAdminOps, requireAdmin, async (req, res, next) => {
   try {
     const parsed = onboardSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -120,13 +121,18 @@ router.post("/onboard", requireAdmin, async (req, res, next) => {
       );
     }
 
+    // ADMIN-P2-004: the first admin membership starts `pending`, not
+    // `approved`. Auto-approving it meant an invited (unconfirmed) account
+    // could act for the brand-new tenant immediately; a platform super admin
+    // now approves it from the memberships queue after the invitee confirms
+    // their email. `approvalRequired` is returned so callers surface the step.
     const { data: membership, error: memError } = await supabase
       .from("memberships")
       .insert({
         organization_id: org.id,
         user_id: userId,
         role_id: role.id,
-        status: "approved",
+        status: "pending",
       })
       .select()
       .single();
@@ -138,7 +144,12 @@ router.post("/onboard", requireAdmin, async (req, res, next) => {
       action: "organization.onboard",
       entityType: "organization",
       entityId: org.id,
-      metadata: { name: parsed.name, adminEmail: parsed.adminEmail, invited },
+      metadata: {
+        name: parsed.name,
+        adminEmail: parsed.adminEmail,
+        invited,
+        approvalRequired: true,
+      },
     });
 
     invalidateCache(`/api/v1/organizations`);
@@ -148,6 +159,7 @@ router.post("/onboard", requireAdmin, async (req, res, next) => {
         adminUser: { id: userId, email: parsed.adminEmail },
         membership,
         invited,
+        approvalRequired: true,
       }),
     );
   } catch (error) {
@@ -407,6 +419,7 @@ router.patch(
 
 router.delete(
   "/:id",
+  rateLimitAdminOps,
   requireOrgAccessByParam,
   requirePermission("organizations", "manage"),
   async (req, res, next) => {

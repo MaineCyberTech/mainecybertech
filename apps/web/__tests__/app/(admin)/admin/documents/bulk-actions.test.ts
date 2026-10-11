@@ -244,11 +244,14 @@ describe("bulkMetadataAction", () => {
         visibility: "internal",
       },
     });
+    // ADMIN-P2-003: an apply that flips visibility carries the explicit
+    // confirmation the API requires for the elevated operation.
     expect(mockBulkMetadata).toHaveBeenCalledWith({
       documentIds: ["doc-1"],
       description: null,
       folderPath: "/Archive",
       visibility: "internal",
+      confirm: true,
     });
   });
 

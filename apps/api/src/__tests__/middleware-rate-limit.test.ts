@@ -2,6 +2,7 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 import {
+  rateLimitAdminOps,
   rateLimitByUser,
   rateLimitSearch,
   userRateLimitKeyGenerator,
@@ -80,6 +81,40 @@ describe("rateLimitSearch", () => {
       await request(app).get("/test").set("Authorization", "Bearer token-a");
     }
     const otherUser = await request(app).get("/test").set("Authorization", "Bearer token-b");
+    expect(otherUser.status).toBe(200);
+  }, 30000);
+});
+
+describe("rateLimitAdminOps", () => {
+  function createAdminOpsApp() {
+    const app = express();
+    app.use(rateLimitAdminOps);
+    app.get("/test", (_req, res) => res.json({ ok: true }));
+    return app;
+  }
+
+  it("caps destructive/expensive admin-op bursts per token [ADMIN-P2-005]", async () => {
+    const app = createAdminOpsApp();
+    let limited = 0;
+    for (let i = 0; i < 20; i++) {
+      const res = await request(app)
+        .get("/test")
+        .set("Authorization", "Bearer admin-op-burst-token");
+      if (res.status === 429) limited++;
+    }
+    // max = 10/min: calls 11-20 are rejected (matches the report's
+    // "20 rapid calls → 429" manual verification).
+    expect(limited).toBe(10);
+  }, 30000);
+
+  it("keeps a separate bucket per token", async () => {
+    const app = createAdminOpsApp();
+    for (let i = 0; i < 11; i++) {
+      await request(app).get("/test").set("Authorization", "Bearer busy-admin-token");
+    }
+    const otherUser = await request(app)
+      .get("/test")
+      .set("Authorization", "Bearer other-admin-token");
     expect(otherUser.status).toBe(200);
   }, 30000);
 });

@@ -63,6 +63,10 @@ export const updateDocumentSchema = z.object({
 export const bulkFolderSchema = z.object({
   documentIds: z.array(z.string().uuid()).min(1, "Select at least one document"),
   folderPath: z.string().min(1, "Folder path is required").max(500),
+  // ADMIN-P2-003: `dryRun` returns the resolved rows + field diffs without
+  // writing; `confirm` is the explicit second step for elevated applies.
+  dryRun: z.boolean().optional().default(false),
+  confirm: z.boolean().optional(),
 });
 
 export const bulkMetadataSchema = z.object({
@@ -70,4 +74,8 @@ export const bulkMetadataSchema = z.object({
   description: z.string().max(10000).optional().nullable(),
   folderPath: z.string().max(500).optional().nullable(),
   visibility: z.enum(["private", "org", "internal", "public"]).optional().nullable(),
+  // ADMIN-P2-003: `dryRun` returns the resolved rows + field diffs without
+  // writing; `confirm` is required when the apply flips visibility.
+  dryRun: z.boolean().optional().default(false),
+  confirm: z.boolean().optional(),
 });

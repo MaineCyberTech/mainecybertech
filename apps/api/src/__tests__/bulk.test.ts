@@ -45,7 +45,7 @@ function mockAuthAndAdmin() {
   const supabase = {
     from: jest.fn(),
     auth: {
-      admin: { createUser: jest.fn() },
+      admin: { createUser: jest.fn(), inviteUserByEmail: jest.fn() },
       getUser: jest.fn().mockResolvedValue({
         data: { user: { id: "user-1", email: "test@example.com" } },
         error: null,
@@ -117,8 +117,8 @@ describe("Bulk API", () => {
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: { key: "member" }, error: null }));
     // profiles query → no existing user
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
-    // auth.admin.createUser → success
-    supabase.auth.admin.createUser.mockResolvedValue({
+    // auth.admin.inviteUserByEmail → success (unconfirmed account)
+    supabase.auth.admin.inviteUserByEmail.mockResolvedValue({
       data: { user: { id: "new-user-1" } },
       error: null,
     });
@@ -138,6 +138,12 @@ describe("Bulk API", () => {
     expect(res.status).toBe(200);
     expect(res.body.data.results).toBeDefined();
     expect(Array.isArray(res.body.data.results)).toBe(true);
+    // ADMIN-P2-004: accounts are created via the email-confirmation invite
+    // flow, never pre-confirmed.
+    expect(supabase.auth.admin.inviteUserByEmail).toHaveBeenCalledWith("new@example.com", {
+      data: { full_name: "New User" },
+    });
+    expect(supabase.auth.admin.createUser).not.toHaveBeenCalled();
   });
 
   it("accepts the invites array payload (SDK/web form shape)", async () => {
@@ -148,8 +154,8 @@ describe("Bulk API", () => {
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: { key: "member" }, error: null }));
     // profiles query ? no existing user
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
-    // auth.admin.createUser ? success
-    supabase.auth.admin.createUser.mockResolvedValue({
+    // auth.admin.inviteUserByEmail ? success
+    supabase.auth.admin.inviteUserByEmail.mockResolvedValue({
       data: { user: { id: "new-user-2" } },
       error: null,
     });
@@ -168,6 +174,40 @@ describe("Bulk API", () => {
       });
     expect(res.status).toBe(200);
     expect(res.body.data.results[0].status).toBe("invited");
+  });
+
+  it("never pre-confirms newly invited accounts (ADMIN-P2-004)", async () => {
+    const supabase = mockAuthAndAdmin();
+    // requireAdmin → memberships query
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
+    // SEC-P1-001 role guard -> resolveRoleKey (non-cross-tenant role)
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: { key: "member" }, error: null }));
+    // profiles query → no existing user
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
+    // auth.admin.inviteUserByEmail → success (unconfirmed account)
+    supabase.auth.admin.inviteUserByEmail.mockResolvedValue({
+      data: { user: { id: "new-user-4" } },
+      error: null,
+    });
+    // memberships query → no existing membership
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
+    // memberships insert → success
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: { id: "m-4" }, error: null }));
+
+    const res = await request(app)
+      .post("/api/v1/bulk/invite")
+      .set("Authorization", authToken)
+      .send({
+        invites: [{ email: "confirm@example.com" }],
+        organizationId: testOrgId,
+        roleId: "00000000-0000-0000-0000-000000000020",
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.results[0].status).toBe("invited");
+    expect(res.body.data.results[0].message).toMatch(/email confirmation/i);
+    expect(supabase.auth.admin.inviteUserByEmail).toHaveBeenCalledTimes(1);
+    expect(supabase.auth.admin.createUser).not.toHaveBeenCalled();
   });
 
   it("invites an existing user that has no membership", async () => {

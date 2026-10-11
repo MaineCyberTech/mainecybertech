@@ -122,9 +122,15 @@ id,action,entity_type,entity_id,organization_id,actor_user_id,actor_type,metadat
 **Processing per row:**
 
 1. Look up user by email in `profiles` table
-2. If not found, create via `supabase.auth.admin.createUser()` (confirmed email, random password)
+2. If not found, invite via `supabase.auth.admin.inviteUserByEmail()` — the
+   auth account stays **unconfirmed** until the invitee clicks the email link
+   and sets a password (ADMIN-P2-004; there is no pre-confirmed/random-password
+   path any more)
 3. Check for existing membership (skip if already exists)
 4. Create membership with status `"pending"`
+
+The route is rate-limited to 10 requests/minute per token by `rateLimitAdminOps`
+(ADMIN-P2-005). See [ADMIN_BULK_OPERATIONS.md](ADMIN_BULK_OPERATIONS.md).
 
 **Response:** `{ results: [{ email, status, message }] }`
 
@@ -149,7 +155,7 @@ Form with:
 
 ### SDK
 
-No dedicated SDK method — uses direct `fetch()` or the form-based approach.
+`client.bulk.invite({ organizationId, roleId, invites })` in `packages/sdk/src/bulk.ts`.
 
 ---
 
