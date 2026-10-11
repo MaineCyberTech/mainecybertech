@@ -28,7 +28,7 @@
 | [adr/README.md](adr/README.md)                                                       | Architecture Decision Records (11 decisions)                       |
 | [MASTER_SYSTEM_ARCHITECTURE_REVIEW.md](MASTER_SYSTEM_ARCHITECTURE_REVIEW.md)         | 12-domain synthesis of the full system architecture                |
 | [arch/evaluation/db-package-evaluation.md](arch/evaluation/db-package-evaluation.md) | Shared DB package evaluation                                       |
-| [GAP_ANALYSIS.md](GAP_ANALYSIS.md)                                                   | Comprehensive gap analysis, known issues, recommendations          |
+| [GAP_ANALYSIS.md](GAP_ANALYSIS.md)                                                   | Historical (2026-08-01, AWS-era) gap analysis — kept for reference only |
 | [ADMIN_FEATURES.md](ADMIN_FEATURES.md)                                               | Webhook management, role editor, audit export, bulk import, Sentry |
 | [ORG_BRANDING.md](ORG_BRANDING.md)                                                   | Per-org branding: logo upload, colors, custom domains              |
 
@@ -53,7 +53,7 @@
 | [SUPABASE_MIGRATION_WORKFLOW.md](SUPABASE_MIGRATION_WORKFLOW.md)             | Migration workflow, schema vs seed, common mistakes |
 | [SUPABASE_MIGRATION_CHEATSHEET.md](SUPABASE_MIGRATION_CHEATSHEET.md)         | Quick reference for Supabase migrations             |
 | [migrations/naming-guide.md](migrations/naming-guide.md)                     | Database migration naming conventions               |
-| [technical-writing/migration-guide.md](technical-writing/migration-guide.md) | Comprehensive deployment and migration guide        |
+| [technical-writing/migration-guide.md](technical-writing/migration-guide.md) | Deployment and migration guide (points at the canonical workflow)   |
 | [VSCODE_GIT_QUICKSTART.md](VSCODE_GIT_QUICKSTART.md)                         | VS Code Git workflow guide                          |
 
 ## API & Integration
@@ -94,6 +94,7 @@
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md)                                                       | Common issues and fixes by service (new)                        |
 | [ROLLBACK_PROCEDURES.md](ROLLBACK_PROCEDURES.md)                                               | Docker, Supabase, Terraform rollback                            |
 | [RELEASING.md](RELEASING.md)                                                                   | Branch model, quality gates, production promotion, rollback     |
+| [UPGRADE.md](UPGRADE.md)                                                                       | Breaking changes and upgrade manifest for the current migration window |
 | [RELEASE_GATE.md](RELEASE_GATE.md)                                                             | Release-readiness gate: exit criteria, fail-closed decisions, go-live checklist |
 | [CI.md](CI.md)                                                                                 | GitHub Actions workflows: triggers, filters, gates, triage-only |
 | [PERFORMANCE.md](PERFORMANCE.md)                                                               | Response caching, rate limits, DB indexes, web performance      |

@@ -1,6 +1,13 @@
 # Gap Analysis & Recommendations
 
-> Comprehensive review of the Maine CyberTech Portal monorepo covering tests, code quality, infrastructure, security, and UX.
+> **Historical snapshot (2026-08-01) — AWS-era draft, not current.** This
+> document predates the DigitalOcean + Supabase + GitHub Actions stack and the
+> October 2026 remediation waves. It is kept for historical reference only; do
+> not rely on its counts, tables, or "remaining gaps". Current state lives in
+> [`RELEASE_GATE.md`](RELEASE_GATE.md), the [`audits/`](audits/README.md)
+> registers, and the `AGENTS.md` Known Debt section.
+>
+> Original header: Comprehensive review of the Maine CyberTech Portal monorepo covering tests, code quality, infrastructure, security, and UX.
 
 ## Test Summary
 
@@ -146,7 +153,7 @@ During a comprehensive audit the following were identified and fixed:
 
 ## Repo Audit (2026-06-26)
 
-Full 8-phase comparative audit against reference repo `C:\temp\chat` (chat-platform). See `prompts/repo_audit_prompt_pack/MERGED_REPO_AUDIT_SUMMARY.md` for full report.
+Full 8-phase comparative audit against a local-only chat-platform checkout. See `prompts/repo_audit_prompt_pack/MERGED_REPO_AUDIT_SUMMARY.md` for full report.
 
 ### Verified Findings — P0 Items Already Implemented
 

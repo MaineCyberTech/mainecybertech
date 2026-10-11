@@ -323,13 +323,13 @@ Error: Connection refused to database
 **Solution:**
 ```bash
 # Check if Supabase is running locally
-pnpm supabase:status
+supabase status
 
 # Start Supabase if needed
-pnpm supabase:start
+supabase start
 
-# Or use the reset script
-pnpm supabase:reset:auto
+# Or reset the local database (drops, re-applies migrations + seeds)
+supabase db reset
 ```
 
 ### 8. Port Conflicts
