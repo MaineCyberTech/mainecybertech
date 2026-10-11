@@ -68,14 +68,11 @@ jest.mock("../lib/idempotency", () => ({
   claimIdempotencyKey: jest.fn().mockResolvedValue(true),
   storeIdempotencyKey: jest.fn().mockResolvedValue(undefined),
   deleteIdempotencyKey: jest.fn().mockResolvedValue(undefined),
-<<<<<<< HEAD
 }));
 
 jest.mock("../lib/metrics", () => ({
   recordWebhookDelivery: jest.fn(),
   recordBillingDunningNotification: jest.fn(),
-=======
->>>>>>> 4fbe52bf (fix(api): fail inbound webhooks when persistence fails (RES-P2-007))
 }));
 
 jest.mock("../lib/webhook-signature", () => ({
@@ -463,7 +460,6 @@ describe("webhooks routes", () => {
       expect(updateArgs.status).toBe("uncollectible");
     });
 
-<<<<<<< HEAD
     it("fails the event and releases the claim when a mirror write fails (BILL-P2-006)", async () => {
       mockStripeEvent({
         type: "payment_intent.succeeded",
@@ -607,21 +603,6 @@ describe("webhooks routes", () => {
             subtotal: 500,
             tax: 0,
             total: 500,
-=======
-    it("returns 5xx and releases the claim when a persistence write fails [RES-P2-007]", async () => {
-      mockStripeEvent({
-        type: "invoice.paid",
-        id: "evt_fail_1",
-        data: {
-          object: {
-            customer: "cus_1",
-            id: "in_fail",
-            number: "INV-FAIL",
-            status: "paid",
-            subtotal: 100,
-            tax: 0,
-            total: 100,
->>>>>>> 4fbe52bf (fix(api): fail inbound webhooks when persistence fails (RES-P2-007))
             currency: "usd",
             hosted_invoice_url: null,
             invoice_pdf: null,
@@ -632,7 +613,6 @@ describe("webhooks routes", () => {
       });
 
       const supabaseModule = await import("../services/supabase");
-<<<<<<< HEAD
       const { supabase, builders } = mockSupabaseWithBuilders({
         billing_customers: { data: { organization_id: "org-1" }, error: null },
         invoices: { data: { status: "void" }, error: null },
@@ -678,7 +658,31 @@ describe("webhooks routes", () => {
 
       expect(res.status).toBe(200);
       expect(builders["subscriptions"].upsert).not.toHaveBeenCalled();
-=======
+    });
+
+    it("returns 5xx and releases the claim when a persistence write fails [RES-P2-007]", async () => {
+      mockStripeEvent({
+        type: "invoice.paid",
+        id: "evt_fail_1",
+        data: {
+          object: {
+            customer: "cus_1",
+            id: "in_fail",
+            number: "INV-FAIL",
+            status: "paid",
+            subtotal: 100,
+            tax: 0,
+            total: 100,
+            currency: "usd",
+            hosted_invoice_url: null,
+            invoice_pdf: null,
+            due_date: null,
+            status_transitions: { paid_at: 1700000000 },
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
       const { supabase } = mockSupabaseWithBuilders({
         billing_customers: { data: { organization_id: "org-1" }, error: null },
         // The invoice upsert fails (DB degradation) even though the customer
@@ -697,7 +701,6 @@ describe("webhooks routes", () => {
       // The claim must be released so Stripe's retry can reprocess the event.
       expect(deleteIdempotencyKey).toHaveBeenCalledWith("stripe-evt_fail_1");
       expect(storeIdempotencyKey).not.toHaveBeenCalled();
->>>>>>> 4fbe52bf (fix(api): fail inbound webhooks when persistence fails (RES-P2-007))
     });
 
     it("mirrors the trial, interval and cancellation lifecycle on customer.subscription.updated (BILL-P2-001/P2-005)", async () => {
