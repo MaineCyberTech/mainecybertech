@@ -50,6 +50,8 @@ Use environment-scoped values wherever possible.
 | `REDIS_PASSWORD`             | yes | yes  | Redis/BullMQ password written to the droplet `.env`  |
 | `FIELD_ENCRYPTION_KEY`       | yes | yes  | AES-256-GCM key for encrypted profile PII            |
 | `TURNSTILE_SECRET_KEY`       | yes | yes  | Cloudflare Turnstile captcha secret (contact form)   |
+| `MALWARE_SCANNER_URL`        | opt | opt  | Upload malware-scan endpoint (FILE-P2-003); unset = no-op. Point at a ClamAV sidecar or a VirusTotal proxy |
+| `MALWARE_SCANNER_API_KEY`    | opt | opt  | Optional `x-apikey` header for `MALWARE_SCANNER_URL` (e.g. VirusTotal proxy) |
 | `RLS_READS_ENABLED`          | yes | yes  | Module keys using the RLS (user-scoped) client reads |
 | `RLS_WRITES_ENABLED`         | yes | yes  | Module keys using the RLS client for writes          |
 | `SENTRY_DSN`                 | —   | yes  | Sentry DSN for error tracking                        |

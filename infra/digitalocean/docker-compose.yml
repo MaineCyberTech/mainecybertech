@@ -86,6 +86,10 @@ services:
       # Cloudflare Turnstile: when the secret is set, /public/submit requires a
       # valid captcha token (the site key is inlined into the web build).
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      # Upload malware scanning (FILE-P2-003). Unset = no-op; point at a
+      # ClamAV sidecar or a VirusTotal proxy (see docs/features/secure-file-request.md).
+      MALWARE_SCANNER_URL: ${MALWARE_SCANNER_URL:-}
+      MALWARE_SCANNER_API_KEY: ${MALWARE_SCANNER_API_KEY:-}
       # Prometheus /metrics bearer gate (unset => token gate disabled).
       METRICS_TOKEN: ${METRICS_TOKEN:-}
       MFA_ENFORCEMENT_ENABLED: ${MFA_ENFORCEMENT_ENABLED:-false}

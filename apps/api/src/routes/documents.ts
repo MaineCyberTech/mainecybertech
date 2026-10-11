@@ -13,6 +13,7 @@ import { responseCacheNoRenew } from "../middleware/cache";
 import { rateLimitAdminOps } from "../middleware/rate-limit";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { validateUploadContent } from "../lib/upload-validation";
+import { scanUploadForMalware } from "../lib/malware-scan";
 import {
   createDocumentSchema,
   updateDocumentSchema,
@@ -332,7 +333,8 @@ router.post(
       }
 
       // Sniff the bytes — the declared mimetype is not trusted. (FILE-P1-001)
-      validateUploadContent(file.buffer, file.mimetype);
+      // FILE-P2-005: extension is cross-checked against the detected container.
+      validateUploadContent(file.buffer, file.mimetype, file.originalname);
 
       const organizationId = String(req.body.organizationId ?? "").trim();
       const name = String(req.body.name ?? "").trim();
@@ -343,6 +345,10 @@ router.post(
       if (!organizationId || !name) {
         throw new AppError("VALIDATION", "Organization ID and name are required", 400);
       }
+
+      // FILE-P2-003: optional malware scan (no-op unless MALWARE_SCANNER_URL
+      // is configured). Runs before the object is written to storage.
+      await scanUploadForMalware(file.buffer, file.originalname, file.mimetype);
 
       const supabase = getScopedClient(req, "documents", "write");
       // Storage writes are service-role only (FILE-P2-008): the bucket no longer

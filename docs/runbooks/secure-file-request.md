@@ -36,12 +36,14 @@ MSP Operations / Client Services
 ### 2. File Rejected on Upload
 
 **Symptoms**: Uploader gets a 400 "File type ... is not allowed"
-**Causes**: Blocked extension (`.exe`, `.ps1`, etc.) or MIME not in `allowed_mime_types`
+**Causes**: Blocked extension (`.exe`, `.ps1`, etc.), MIME not in `allowed_mime_types`, content/extension mismatch from the sniffer (FILE-P2-005), or a malware-scan hit when `MALWARE_SCANNER_URL` is configured (FILE-P2-003)
 **Resolution**:
 
 1. Verify `allowed_mime_types` on the request
 2. Review `BLOCKED_EXTENSIONS` in `apps/api/src/routes/file-requests.ts`
 3. Ask the sender to re-encode/archive (e.g., `.zip` of the file)
+4. For content-mismatch errors, check the file really is the type its name claims (the API sniffs container signatures)
+5. For malware-scan rejections, confirm the file is clean; a 503 "Malware scanning is unavailable" means the configured scanner is down (uploads fail closed by design — see `docs/features/secure-file-request.md`)
 
 ### 3. Upload "Unavailable" on Public Page
 
