@@ -1,6 +1,6 @@
 {
   "run": "mainecybertech-20261011-0426-full-main-8d299b8",
-  "generated": "2026-10-11T07:49:51Z",
+  "generated": "2026-10-11T19:46:45Z",
   "sourceReports": 43,
   "counts": {
     "bySeverity": {
@@ -1165,7 +1165,7 @@
       "line": 414,
       "owner": "API platform",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1198,7 +1198,7 @@
       "line": 417,
       "owner": "API platform",
       "target": "this month",
-      "status": "still-open",
+      "status": "partially-fixed",
       "note": ""
     },
     {
@@ -1363,7 +1363,7 @@
       "line": 329,
       "owner": "API platform engineer + web",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1374,7 +1374,7 @@
       "line": 330,
       "owner": "@web + API platform",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1385,7 +1385,7 @@
       "line": 331,
       "owner": "data governance + platform/backend",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1539,7 +1539,7 @@
       "line": 272,
       "owner": "billing/backend",
       "target": "this month",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1583,7 +1583,7 @@
       "line": 276,
       "owner": "data/platform owner + billing/backend",
       "target": "this month",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1594,7 +1594,7 @@
       "line": 279,
       "owner": "billing/backend",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1605,7 +1605,7 @@
       "line": 280,
       "owner": "billing/backend",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1616,7 +1616,7 @@
       "line": 281,
       "owner": "billing/backend + API platform",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1660,7 +1660,7 @@
       "line": 316,
       "owner": "repo admin (owner decision)",
       "target": "this month",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1671,7 +1671,7 @@
       "line": 319,
       "owner": "platform/CI owner",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1682,7 +1682,7 @@
       "line": 320,
       "owner": "platform/CI owner",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1693,7 +1693,7 @@
       "line": 321,
       "owner": "security/CI owner",
       "target": "this month",
-      "status": "open",
+      "status": "partially-fixed",
       "note": ""
     },
     {
@@ -1902,7 +1902,7 @@
       "line": 419,
       "owner": "platform/CI owner",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1913,7 +1913,7 @@
       "line": 420,
       "owner": "platform/CI owner",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2034,7 +2034,7 @@
       "line": 307,
       "owner": "backend/data governance",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2045,7 +2045,7 @@
       "line": 308,
       "owner": "backend/data governance",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2078,7 +2078,7 @@
       "line": 313,
       "owner": "backend/data governance",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2188,7 +2188,7 @@
       "line": 427,
       "owner": "platform/backend + platform/ops",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2199,7 +2199,7 @@
       "line": 428,
       "owner": "platform/backend + platform/ops",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2210,7 +2210,7 @@
       "line": 429,
       "owner": "platform/ops",
       "target": "this month",
-      "status": "open",
+      "status": "partially-fixed",
       "note": ""
     },
     {
@@ -2353,7 +2353,7 @@
       "line": 667,
       "owner": "@web + API platform",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2617,7 +2617,7 @@
       "line": 394,
       "owner": "platform/infrastructure",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2628,7 +2628,7 @@
       "line": 395,
       "owner": "platform/infrastructure",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3134,7 +3134,7 @@
       "line": 319,
       "owner": "API platform",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3145,7 +3145,7 @@
       "line": 320,
       "owner": "web platform",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3189,7 +3189,7 @@
       "line": 324,
       "owner": "platform/ops",
       "target": "next quarter",
-      "status": "open",
+      "status": "partially-fixed",
       "note": ""
     },
     {
@@ -3222,7 +3222,7 @@
       "line": 312,
       "owner": "API principal engineer + observability owner",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3310,7 +3310,7 @@
       "line": 684,
       "owner": "security lead / @web (policy owner)",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3321,7 +3321,7 @@
       "line": 685,
       "owner": "API platform / security",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3332,7 +3332,7 @@
       "line": 686,
       "owner": "security lead + API platform",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3354,7 +3354,7 @@
       "line": 688,
       "owner": "security lead / compliance sponsor",
       "target": "next quarter",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3431,7 +3431,7 @@
       "line": 538,
       "owner": "platform/backend",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3486,7 +3486,7 @@
       "line": 548,
       "owner": "integrations/backend",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3508,7 +3508,7 @@
       "line": 550,
       "owner": "platform/backend",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3519,7 +3519,7 @@
       "line": 551,
       "owner": "platform/infrastructure",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3871,7 +3871,7 @@
       "line": 344,
       "owner": "search/backend + SDK",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3882,7 +3882,7 @@
       "line": 345,
       "owner": "web team",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3904,7 +3904,7 @@
       "line": 347,
       "owner": "search/backend + SRE",
       "target": "this month",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3926,7 +3926,7 @@
       "line": 349,
       "owner": "search/backend + web",
       "target": "this month",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3970,7 +3970,7 @@
       "line": 410,
       "owner": "API/backend + data governance",
       "target": "this month",
-      "status": "open",
+      "status": "partially-fixed",
       "note": ""
     },
     {
@@ -3981,7 +3981,7 @@
       "line": 411,
       "owner": "API platform / security",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4003,7 +4003,7 @@
       "line": 413,
       "owner": "API platform / security",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4069,7 +4069,7 @@
       "line": 423,
       "owner": "API team / security",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4355,7 +4355,7 @@
       "line": 479,
       "owner": "Web admin + API documents",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4388,7 +4388,7 @@
       "line": 482,
       "owner": "Web platform",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4399,7 +4399,7 @@
       "line": 483,
       "owner": "Web portal",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4410,7 +4410,7 @@
       "line": 484,
       "owner": "Web platform",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4465,7 +4465,7 @@
       "line": 489,
       "owner": "Web auth UX",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4476,7 +4476,7 @@
       "line": 479,
       "owner": "web UI engineer (admin tickets)",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4487,7 +4487,7 @@
       "line": 480,
       "owner": "web UI engineer",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4509,7 +4509,7 @@
       "line": 482,
       "owner": "web UI engineer",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4586,7 +4586,7 @@
       "line": 343,
       "owner": "integrations/backend",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4597,7 +4597,7 @@
       "line": 348,
       "owner": "API platform",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4608,7 +4608,7 @@
       "line": 349,
       "owner": "API platform + security",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
