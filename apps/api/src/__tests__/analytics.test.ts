@@ -97,5 +97,7 @@ describe("Analytics API", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data[0].count).toBe(3);
+    // SEARCH-P2-005: the route must call the RPC the migration now defines.
+    expect(supabase.rpc).toHaveBeenCalledWith("get_analytics_summary");
   });
 });

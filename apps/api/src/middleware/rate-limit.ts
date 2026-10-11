@@ -39,6 +39,27 @@ export const rateLimitByUser = rateLimit({
     req.ip === "::1",
 });
 
+/**
+ * SEARCH-P2-007: dedicated limiter for the typeahead-driven search routes.
+ *
+ * Both global search endpoints are called by a 300 ms-debounced typeahead, so a
+ * single session can emit many full-table searches per minute. The global
+ * per-user budget (600/15 min) is far too coarse to bound that burst and the
+ * endpoints are the most expensive read paths in the API. Cap the search
+ * surface at 60 requests/minute per token (or IP when unauthenticated) — well
+ * above human typing rates, low enough that a scripted client cannot turn the
+ * typeahead into a query amplifier.
+ */
+export const rateLimitSearch = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: "Too many search requests, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, req.ip),
+  skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
+});
+
 export const rateLimitAuth = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
