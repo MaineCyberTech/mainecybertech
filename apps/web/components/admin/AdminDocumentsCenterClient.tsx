@@ -25,6 +25,7 @@ type ActionResult = {
   document?: DocumentRecord;
   documentId?: string;
   ids?: string[];
+  failed?: { id: string; error: string }[];
   visibility?: string;
 };
 

@@ -1739,6 +1739,9 @@ describe("MCTClient", () => {
       mockFetch.mockResolvedValue(
         mockResponse(null).then((r) => {
           r.json = () => Promise.reject(new SyntaxError("Unexpected token"));
+          // Non-empty body: malformed JSON must still surface as an error,
+          // unlike an empty 204 body which resolves null (USE-P1-004).
+          r.text = () => Promise.resolve("not-json");
           return r;
         }),
       );

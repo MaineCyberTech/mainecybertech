@@ -96,13 +96,21 @@ export class ApiClient {
         // 204 (and other empty-body) responses are valid — e.g. every DELETE
         // endpoint. `res.json()` rejects on an empty body, which used to turn a
         // successful delete into a retried, then thrown, failure (USE-P1-004).
-        // Treat an empty/unparseable body as `null`; a stream/network error
-        // still propagates so the retry loop can handle it.
+        // The clone is taken BEFORE the body is read so a genuinely empty body
+        // can be told apart from malformed JSON, which must still error.
+        const clone = res.clone();
         let json: ApiResponse<T> | null = null;
         try {
           json = (await res.json()) as ApiResponse<T>;
         } catch (error) {
-          if (res.status === 204 || error instanceof SyntaxError) {
+          let bodyText: string | null = null;
+          try {
+            bodyText = await clone.text();
+          } catch {
+            bodyText = null;
+          }
+
+          if (bodyText !== null && bodyText.trim() === "") {
             json = null;
           } else {
             throw error;

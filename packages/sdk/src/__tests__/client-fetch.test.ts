@@ -151,6 +151,7 @@ describe("ApiClient empty-body responses (USE-P1-004)", () => {
   const base = { baseUrl: "https://api.test.com", retries: { initialDelayMs: 1 } };
 
   beforeEach(() => {
+    jest.useRealTimers();
     mockFetch = jest.fn();
     globalThis.fetch = mockFetch as unknown as typeof fetch;
   });
@@ -207,6 +208,16 @@ describe("ApiClient empty-body responses (USE-P1-004)", () => {
       message: "already exists",
       status: 409,
     });
+  });
+
+  it("still throws for a malformed non-empty JSON body", async () => {
+    const malformed = emptyResponse(200);
+    malformed.text = () => Promise.resolve("not-json");
+    // Persistent: the retry loop may re-request the same malformed body.
+    mockFetch.mockResolvedValue(malformed);
+    const client = new ApiClient(base);
+
+    await expect(client.get("/api/v1/widgets")).rejects.toThrow(SyntaxError);
   });
 });
 
