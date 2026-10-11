@@ -211,6 +211,36 @@ describe("webhook dead-letter routes", () => {
       );
     });
 
+    it("keeps the dead letter and returns 409 when there is no payload to replay [WH-P2-011]", async () => {
+      deadLetterBuilder = createMockBuilder({
+        data: {
+          ...deadLetterRow,
+          // Inline-dispatched failures store a PII-safe summary with no `data`.
+          request_body: { event: "ticket.created", receivedAt: "2026-09-01T09:00:00.000Z" },
+        },
+        error: null,
+      } as MockResult);
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "webhook_dead_letters") return deadLetterBuilder;
+        if (table === "webhook_endpoints") return endpointBuilder;
+        return deliveryBuilder;
+      });
+
+      const res = await request(app)
+        .post("/api/v1/webhook-endpoints/dead-letters/dl1/retry")
+        .set("Authorization", "Bearer token");
+
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe("CONFLICT");
+      expect(res.body.error.message).toContain("no stored payload");
+      // The dead letter must survive a refused retry: no delivery, no task,
+      // no delete, no audit — the admin sees the reason instead of a no-op.
+      expect(deliveryBuilder.insert).not.toHaveBeenCalled();
+      expect(enqueueTask).not.toHaveBeenCalled();
+      expect(deadLetterBuilder.delete).not.toHaveBeenCalled();
+      expect(logAuditEvent).not.toHaveBeenCalled();
+    });
+
     it("returns 404 (and does not retry) when the endpoint is in another org", async () => {
       endpointBuilder = createMockBuilder({
         data: { ...endpointRow, organization_id: OTHER },
