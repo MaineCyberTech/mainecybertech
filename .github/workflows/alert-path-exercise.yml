@@ -1,0 +1,114 @@
+name: Alert path exercise
+
+# Manual/monthly exercise of the alert delivery path (OBS-P2-014, NOTIF-P2-011).
+#
+# This workflow is deliberately NOT a required check and must never gate a
+# deploy or a merge: it is a monitoring-of-monitoring drill that posts a
+# synthetic `critical` alert into Alertmanager and verifies the webhook
+# delivery path. It does not stop or restart any container; the
+# missed-heartbeat drill for the off-box dead-man's switch stays a manual
+# operator procedure (see docs/ALERT_PATH_EXERCISE.md).
+#
+# Scheduled runs always target dev; use workflow_dispatch to exercise prod
+# (which attaches the approval-gated `prod-approval` environment).
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to exercise (prod dispatch is approval-gated)"
+        type: choice
+        options:
+          - dev
+          - prod
+        default: dev
+  schedule:
+    # Monthly, 1st at 09:00 UTC. Schedules only fire from the default branch.
+    - cron: "0 9 1 * *"
+
+permissions:
+  contents: read
+
+jobs:
+  exercise:
+    environment: ${{ (github.event.inputs.environment == 'prod') && 'prod-approval' || 'dev' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Resolve droplet IP
+        id: ip
+        env:
+          DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
+          DROPLET_IP_VAR: ${{ vars.DROPLET_IP }}
+          ENV_NAME: ${{ (github.event.inputs.environment == 'prod') && 'prod' || 'dev' }}
+        run: |
+          set -e
+          is_ipv4() { [[ "$1" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; }
+          IP=""
+          if is_ipv4 "${DROPLET_IP_VAR:-}"; then
+            IP="$DROPLET_IP_VAR"
+          elif [ -n "${DO_API_TOKEN:-}" ]; then
+            # Same resolution as deploy-do.yml: DO API is authoritative for the
+            # droplet's CURRENT IP; the DROPLET_IP variable is the escape hatch.
+            response=$(curl -sS -w '\n%{http_code}' -H "Authorization: Bearer $DO_API_TOKEN" \
+              "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" || true)
+            status=$(printf '%s' "$response" | tail -n1)
+            body=$(printf '%s' "$response" | sed '$d')
+            if [ "$status" = "200" ]; then
+              IP=$(printf '%s' "$body" | jq -r --arg name "mct-portal-$ENV_NAME" \
+                '[.droplets[] | select(.name == $name or (.name | startswith($name + "-")))]
+                 | sort_by(.created_at) | last
+                 | (.networks.v4[]? | select(.type == "public") | .ip_address) // empty' \
+                2>/dev/null | head -n1 || true)
+            fi
+          fi
+          if ! is_ipv4 "$IP"; then
+            echo "::error::Could not resolve the $ENV_NAME droplet IP. Set the DROPLET_IP variable or DO_API_TOKEN secret for this environment." >&2
+            exit 1
+          fi
+          echo "droplet_ip=$IP" >> "$GITHUB_OUTPUT"
+
+      - name: Verify ntfy topic credentials (direct relay check)
+        env:
+          NTFY_URL: ${{ secrets.NTFY_ALERTS_URL }}
+          NTFY_USER: ${{ secrets.NTFY_ALERTS_USER }}
+          NTFY_PASS: ${{ secrets.NTFY_ALERTS_PASS }}
+        run: |
+          # Direct check of the ntfy topic + write-only relay user. Skipped when
+          # the backup-notification secrets are not provisioned in this
+          # environment; the droplet step below still exercises
+          # Alertmanager -> ntfy end-to-end.
+          if [ -z "$NTFY_URL" ]; then
+            echo "NTFY_ALERTS_URL is not set in this environment — skipping the direct ntfy check."
+            exit 0
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' -u "$NTFY_USER:$NTFY_PASS" \
+            -H "Title: Alert path exercise" -H "Priority: low" -H "Tags: test_tube" \
+            -d "Alert-path exercise from ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "$NTFY_URL")
+          if [ "$code" != "200" ]; then
+            echo "::error::ntfy rejected the exercise notification (HTTP $code)" >&2
+            exit 1
+          fi
+          echo "ntfy accepted the exercise notification (HTTP 200)."
+
+      - name: Exercise alert delivery on the droplet
+        env:
+          CI_SSH_PRIVATE_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          DO_SSH_HOST_KEY: ${{ secrets.DO_SSH_HOST_KEY }}
+          DROPLET_IP: ${{ steps.ip.outputs.droplet_ip }}
+        run: |
+          set -euo pipefail
+          KEY_FILE="$(mktemp)"
+          printf '%s\n' "$CI_SSH_PRIVATE_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          # Pin the droplet host key (same pattern as the deploy health check)
+          # instead of trusting any presented key.
+          KNOWN_HOSTS="$(mktemp)"
+          printf '%s\n' "$DO_SSH_HOST_KEY" | awk -v ip="$DROPLET_IP" 'NF { print ip, $0 }' > "$KNOWN_HOSTS"
+          SSH="ssh -i $KEY_FILE -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$KNOWN_HOSTS -o ConnectTimeout=10 root@$DROPLET_IP"
+          # Run the versioned script from this checkout on the droplet. Its
+          # output is the exercise evidence and is mirrored into the run summary.
+          $SSH 'bash -s' < scripts/exercise-alert-path.sh | tee -a "$GITHUB_STEP_SUMMARY"

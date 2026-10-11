@@ -715,6 +715,23 @@ jobs:
               printf 'ALERTMANAGER_WEBHOOK_PASS=%s\n' "$ALERTMANAGER_WEBHOOK_PASS"
             } >> /opt/mct-portal/.env
             chmod 600 /opt/mct-portal/.env
+            # OBS-P2-013 fail-closed guard: an empty METRICS_TOKEN makes the API
+            # /metrics endpoint 404 and the authenticated Prometheus scrape fail,
+            # which false-fires MCTServiceDown and blinds monitoring. Production
+            # must not ship without the token, so fail the deploy rather than
+            # ship a permanently-down scrape; dev warns so iteration is not
+            # blocked. Mirrors the watchdog guard below. Checked BEFORE the
+            # credentials file is written so a failed prod deploy cannot clobber
+            # the running stack's token file (Prometheus re-reads it per scrape).
+            if [ -z "${METRICS_TOKEN:-}" ]; then
+              if [ "${{ needs.setup.outputs.name }}" = "prod" ]; then
+                echo "ERROR: METRICS_TOKEN is empty." >&2
+                echo "OBS-P2-013 requires a non-empty METRICS_TOKEN: the API /metrics gate returns 404 without it, the Prometheus scrape fails, and MCTServiceDown false-fires." >&2
+                echo "Set the repository/environment secret and re-run the deploy." >&2
+                exit 1
+              fi
+              echo "WARNING: METRICS_TOKEN is empty in the '${{ needs.setup.outputs.name }}' environment — the API /metrics scrape will 404 and MCTServiceDown will false-fire. Production deploys will fail until it is set." >&2
+            fi
             # Prometheus credentials_file for the authenticated mct-api scrape.
             # Written HERE because METRICS_TOKEN is forwarded to this step's
             # environment (the deploy step's envs list does not include it, so
