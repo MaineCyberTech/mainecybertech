@@ -77,11 +77,11 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,179 tests, all passing. 463 suites.**
+**4,179 tests, all passing. 464 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,721         | 148   | Jest + supertest                  |
+| API     | 1,721         | 149   | Jest + supertest                  |
 | Web     | 1,905         | 286   | Jest + Testing Library            |
 | SDK     | 308           | 3   | Jest (mocked fetch)               |
 | Worker  | 245           | 26   | Jest (env schema + task handlers) |
@@ -151,7 +151,7 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 13    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319 | Admin 203, Portal 86, Public 29, `forbidden` 1 |
 | Web components            | 109 | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 144 | `supabase/migrations/` (latest: 5302446_remove_analytics_pii_columns                                                                                              |
+| SQL migrations            | 146 | `supabase/migrations/` (latest: 5302448_store_quotes_insert_scope                                                                                              |
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 22 | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 632 | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
@@ -594,7 +594,7 @@ pipefail`); `docs/module-matrix-mapping.md` maps all 60 prompt-pack modules to
   validates live responses (412 paths, 0 missing). Generating the SDK from the
   spec remains a follow-up.
 - **CI schema guards**: `scripts/generate-db-types.js --check` and
-  `scripts/verify-rls.mjs` (137 tables, all RLS-enabled, 1022 policies) wired
+  `scripts/verify-rls.mjs` (137 tables, all RLS-enabled, 1025 policies) wired
   into `test.yml` + `validate.yml`; `docs/RLS-coverage-matrix.md` is now a
   snapshot with the script as the live source.
 - **CSP reporting + SAST**: unauthenticated `POST /api/v1/public/csp-report`
