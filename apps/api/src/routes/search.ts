@@ -13,7 +13,12 @@ import { recordSearchQuery } from "../lib/metrics";
 
 const router: ReturnType<typeof Router> = Router();
 
-router.use(requireAuth, requireAdmin, requireOrgAccess);
+// Order matters: requireOrgAccess must resolve the request's tenant scope
+// (`req.orgScope` / `req.orgId`) before requireAdmin runs, so the org-pinned
+// admin check applies and a plain tenant `admin` cannot widen scope with
+// another tenant's `?organization_id` (SEARCH-P2-009). Same order as
+// audit.ts / bulk.ts.
+router.use(requireAuth, requireOrgAccess, requireAdmin);
 
 router.get("/", async (req, res, next) => {
   try {
