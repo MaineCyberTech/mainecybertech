@@ -333,6 +333,8 @@ them). **Names only — never commit the values.**
 | `ALERTMANAGER_DEFAULT_WEBHOOK_URL` | Optional | Catch-all receiver for non-critical alerts. |
 | `ALERTMANAGER_SLACK_API_URL` | Optional | Slack incoming-webhook URL used by the default/critical receivers. |
 | `ALERTMANAGER_SLACK_CHANNEL` | Optional | Slack channel name (e.g. `#alerts`). Non-secret. |
+| `ALERTMANAGER_WEBHOOK_USER` | With a webhook URL | Basic-auth username sent with the critical/default webhook POSTs (the ntfy relay user, e.g. `portal-relay`). |
+| `ALERTMANAGER_WEBHOOK_PASS` | With a webhook URL | Basic-auth password for the above. Secret. |
 
 If a variable is unset, compose substitutes a no-op localhost URL so the stack still
 starts — but **the dead-man's switch is only real when `ALERTMANAGER_WATCHDOG_WEBHOOK_URL`

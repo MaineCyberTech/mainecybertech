@@ -255,6 +255,12 @@ services:
       ALERTMANAGER_DEFAULT_WEBHOOK_URL: ${ALERTMANAGER_DEFAULT_WEBHOOK_URL:-http://127.0.0.1:1/noop}
       ALERTMANAGER_SLACK_API_URL: ${ALERTMANAGER_SLACK_API_URL:-http://127.0.0.1:1/noop}
       ALERTMANAGER_SLACK_CHANNEL: ${ALERTMANAGER_SLACK_CHANNEL:-#alerts}
+      # Basic-auth credentials for the critical/default webhooks (ntfy relay
+      # user). Non-empty placeholders keep the rendered config valid when the
+      # receivers point at the no-op loopback URL; real values arrive from the
+      # droplet .env / GitHub environment secrets.
+      ALERTMANAGER_WEBHOOK_USER: ${ALERTMANAGER_WEBHOOK_USER:-unset}
+      ALERTMANAGER_WEBHOOK_PASS: ${ALERTMANAGER_WEBHOOK_PASS:-unset}
     volumes:
       # Mounted READ-ONLY as a template. Alertmanager has no shell-style variable
       # substitution of its own (a literal ${VAR} in a url: fails validation with
@@ -272,6 +278,8 @@ services:
         awk '{
           gsub(/\$\{ALERTMANAGER_DEFAULT_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_DEFAULT_WEBHOOK_URL"]);
           gsub(/\$\{ALERTMANAGER_CRITICAL_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_CRITICAL_WEBHOOK_URL"]);
+          gsub(/\$\{ALERTMANAGER_WEBHOOK_USER\}/, ENVIRON["ALERTMANAGER_WEBHOOK_USER"]);
+          gsub(/\$\{ALERTMANAGER_WEBHOOK_PASS\}/, ENVIRON["ALERTMANAGER_WEBHOOK_PASS"]);
           gsub(/\$\{ALERTMANAGER_WATCHDOG_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_WATCHDOG_WEBHOOK_URL"]);
           gsub(/\$\{ALERTMANAGER_SLACK_API_URL\}/, ENVIRON["ALERTMANAGER_SLACK_API_URL"]);
           gsub(/\$\{ALERTMANAGER_SLACK_CHANNEL\}/, ENVIRON["ALERTMANAGER_SLACK_CHANNEL"]);
