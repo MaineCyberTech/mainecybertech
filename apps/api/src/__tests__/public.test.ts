@@ -58,6 +58,10 @@ import { __resetVisitorAlertThrottle } from "../lib/bot-detection";
 
 const getEnvMock = getEnv as unknown as jest.Mock;
 const teamsPost = httpClients.teams.post as unknown as jest.Mock;
+const geoGet = httpClients.geo.get as unknown as jest.Mock;
+
+const REAL_BROWSER_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const app = createTestApp();
 app.use("/api/v1/public", publicRouter);
@@ -230,7 +234,7 @@ describe("public routes", () => {
   it("suppresses the visitor alert for crawler user-agents", async () => {
     supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null } as MockResult));
     const res = await request(app)
-      .get("/api/v1/public/init")
+      .get("/api/v1/public/init?consent=granted")
       .set(
         "User-Agent",
         "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
@@ -239,16 +243,23 @@ describe("public routes", () => {
     expect(teamsPost).not.toHaveBeenCalled();
   });
 
-  it("sends the visitor alert for a real browser user-agent", async () => {
+  it("sends the visitor alert for a real browser user-agent that consented", async () => {
     supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null } as MockResult));
     const res = await request(app)
-      .get("/api/v1/public/init")
+      .get("/api/v1/public/init?consent=granted")
       .set(
         "User-Agent",
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
       );
     expect(res.status).toBe(200);
     expect(teamsPost).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not send the visitor alert before consent [AN-P2-005]", async () => {
+    supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null } as MockResult));
+    const res = await request(app).get("/api/v1/public/init").set("User-Agent", REAL_BROWSER_UA);
+    expect(res.status).toBe(200);
+    expect(teamsPost).not.toHaveBeenCalled();
   });
 
   it("records is_bot=true on the interaction row for a crawler user-agent", async () => {
@@ -279,5 +290,148 @@ describe("public routes", () => {
 
     expect(res.status).toBe(200);
     expect(builder.insert).toHaveBeenCalledWith(expect.objectContaining({ is_bot: false }));
+  });
+
+  it("GET /init without consent makes no third-party call and stores no IP [AN-P2-005]", async () => {
+    const builder = createMockBuilder({ data: null, error: null } as MockResult);
+    supabase.from.mockReturnValue(builder);
+
+    const res = await request(app).get("/api/v1/public/init").set("User-Agent", REAL_BROWSER_UA);
+
+    expect(res.status).toBe(200);
+    expect(geoGet).not.toHaveBeenCalled();
+    expect(builder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ip_address: null,
+        user_agent: null,
+        location: "Unknown",
+        consent_at: null,
+      }),
+    );
+  });
+
+  it("GET /init?consent=granted geolocates over HTTPS and records consent [AN-P2-005]", async () => {
+    geoGet.mockResolvedValueOnce({
+      json: async () => ({
+        status: "success",
+        city: "Portland",
+        regionName: "Maine",
+        country: "US",
+      }),
+    });
+    const builder = createMockBuilder({ data: null, error: null } as MockResult);
+    supabase.from.mockReturnValue(builder);
+
+    const res = await request(app)
+      .get("/api/v1/public/init?consent=granted")
+      .set("User-Agent", REAL_BROWSER_UA);
+
+    expect(res.status).toBe(200);
+    expect(geoGet).toHaveBeenCalledWith(expect.stringMatching(/^https:\/\/ip-api\.com\/json\/.+/));
+    expect(builder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        location: "Portland, Maine, US",
+        consent_at: expect.any(String),
+      }),
+    );
+  });
+
+  it("GET /init?consent=granted still skips the geo lookup for bots [AN-P2-005]", async () => {
+    supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null } as MockResult));
+
+    const res = await request(app)
+      .get("/api/v1/public/init?consent=granted")
+      .set(
+        "User-Agent",
+        "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+      );
+
+    expect(res.status).toBe(200);
+    expect(geoGet).not.toHaveBeenCalled();
+  });
+
+  it("POST /submit records consent and captures IP/UA when the visitor consents [PRIV-P2-001]", async () => {
+    const trackingId = crypto.randomUUID();
+    const updateBuilder = createMockBuilder({ data: null, error: null } as MockResult);
+    supabase.from
+      .mockReturnValueOnce(
+        createMockBuilder({
+          data: [
+            {
+              id: trackingId,
+              location: "Unknown",
+              platform: "Windows",
+              ip_address: null,
+              referrer: "Direct",
+              user_agent: null,
+            },
+          ],
+          error: null,
+        } as MockResult),
+      )
+      .mockReturnValueOnce(updateBuilder)
+      .mockReturnValue(createMockBuilder({ data: null, error: null } as MockResult));
+
+    const res = await request(app).post("/api/v1/public/submit").send({
+      trackingId,
+      company: "Test Corp",
+      name: "John Doe",
+      email: "john@test.com",
+      phone: "207-555-0100",
+      services: "Managed IT Support",
+      employees: "11-50",
+      urgency: "Medium - Planning Phase",
+      message: "Looking for managed IT services.",
+      consent: true,
+    });
+
+    expect(res.status).toBe(200);
+    expect(updateBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        consent_at: expect.any(String),
+        ip_address: expect.any(String),
+        user_agent: expect.any(String),
+      }),
+    );
+  });
+
+  it("POST /submit without consent leaves consent_at and IP unset [PRIV-P2-001]", async () => {
+    const trackingId = crypto.randomUUID();
+    const updateBuilder = createMockBuilder({ data: null, error: null } as MockResult);
+    supabase.from
+      .mockReturnValueOnce(
+        createMockBuilder({
+          data: [
+            {
+              id: trackingId,
+              location: "Unknown",
+              platform: "Windows",
+              ip_address: null,
+              referrer: "Direct",
+              user_agent: null,
+            },
+          ],
+          error: null,
+        } as MockResult),
+      )
+      .mockReturnValueOnce(updateBuilder)
+      .mockReturnValue(createMockBuilder({ data: null, error: null } as MockResult));
+
+    const res = await request(app).post("/api/v1/public/submit").send({
+      trackingId,
+      company: "Test Corp",
+      name: "John Doe",
+      email: "john@test.com",
+      phone: "207-555-0100",
+      services: "Managed IT Support",
+      employees: "11-50",
+      urgency: "Medium - Planning Phase",
+      message: "Looking for managed IT services.",
+    });
+
+    expect(res.status).toBe(200);
+    expect(updateBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({ consent_at: null, ip_address: null, user_agent: null }),
+    );
   });
 });

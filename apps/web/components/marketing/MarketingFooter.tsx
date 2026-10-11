@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CookieSettingsButton from "../consent/CookieSettingsButton";
 import { siteConfig } from "@/lib/seo/site";
 
 const serviceLinks = [
@@ -104,6 +105,9 @@ export default function MarketingFooter() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <CookieSettingsButton />
+              </li>
             </ul>
           </nav>
         </div>

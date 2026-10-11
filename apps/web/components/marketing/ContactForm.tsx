@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { submitLead } from "../../app/(public)/contact/actions";
+import { fetchPublicInit } from "../../lib/public-init";
 import { getClientEnv } from "../../lib/env";
 
-const API_BASE = getClientEnv().NEXT_PUBLIC_API_URL;
 const TURNSTILE_SITE_KEY = getClientEnv().NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 interface FormData {
@@ -41,13 +41,10 @@ export default function ContactForm() {
   const turnstileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/v1/public/init`)
-      .then((r) => r.json())
-      .then((d) => {
-        setTrackingId(d.data.trackingId);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    fetchPublicInit().then((id) => {
+      setTrackingId(id);
+      setLoading(false);
+    });
   }, []);
 
   useEffect(() => {

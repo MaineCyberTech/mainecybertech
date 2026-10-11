@@ -4611,6 +4611,7 @@ export type Database = {
           client_name: string | null;
           client_phone: string | null;
           company_name: string | null;
+          consent_at: string | null;
           created_at: string | null;
           employees: string | null;
           id: string;
@@ -4631,6 +4632,7 @@ export type Database = {
           client_name?: string | null;
           client_phone?: string | null;
           company_name?: string | null;
+          consent_at?: string | null;
           created_at?: string | null;
           employees?: string | null;
           id?: string | null;
@@ -4651,6 +4653,7 @@ export type Database = {
           client_name?: string | null;
           client_phone?: string | null;
           company_name?: string | null;
+          consent_at?: string | null;
           created_at?: string | null;
           employees?: string | null;
           id?: string | null;

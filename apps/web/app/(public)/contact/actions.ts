@@ -22,10 +22,11 @@ export async function submitLead(data: {
       return { success: false, error: "You must consent to the Privacy Policy." };
     }
 
-    const { consent: _, ...payload } = data;
+    // PRIV-P2-001: `consent` is forwarded so the API can persist the decision
+    // server-side on the interaction row (previously it was browser-only).
     const res = await fetch(`${API_BASE}/api/v1/public/submit`, {
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     });
     const json = await res.json();
     if (!res.ok) return { success: false, error: json.error?.message || "Submission failed" };
