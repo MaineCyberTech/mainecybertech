@@ -344,6 +344,12 @@ router.post(
       }
 
       const supabase = getScopedClient(req, "documents", "write");
+      // Storage writes are service-role only (FILE-P2-008): the bucket no longer
+      // grants authenticated INSERT/UPDATE, so a user-scoped client (returned
+      // when RLS_WRITES_ENABLED includes `documents`) must not be used for the
+      // object write or its rollbacks. DB writes below keep the scoped client
+      // so the RLS rollout still applies to them.
+      const storage = getSupabaseAdmin().storage;
       // Bucket is pinned server-side (FILE-P2-001) — never read from req.body.
       const bucket = DOCUMENTS_BUCKET;
       const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "-");
@@ -353,7 +359,7 @@ router.post(
       const storagePath = `${organizationId}/${Date.now()}-${safeName}`;
       // Each upload gets a unique path, so a non-atomic upsert is never needed
       // and we fail closed on an unexpected collision instead of overwriting.
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await storage
         .from(bucket)
         .upload(storagePath, file.buffer, {
           contentType: file.mimetype || undefined,
@@ -380,7 +386,7 @@ router.post(
         const { data: current, error: fetchError } = await currentQuery.single();
 
         if (fetchError) {
-          await supabase.storage.from(bucket).remove([storagePath]);
+          await storage.from(bucket).remove([storagePath]);
           throw new AppError("NOT_FOUND", "Document not found", 404);
         }
 
@@ -401,7 +407,7 @@ router.post(
         const { data, error: updateError } = await updateQuery.select().single();
 
         if (updateError) {
-          await supabase.storage.from(bucket).remove([storagePath]);
+          await storage.from(bucket).remove([storagePath]);
           throw new AppError("DB_ERROR", updateError.message, 500);
         }
 
@@ -461,7 +467,7 @@ router.post(
           .single();
 
         if (error) {
-          await supabase.storage.from(bucket).remove([storagePath]);
+          await storage.from(bucket).remove([storagePath]);
           throw new AppError("DB_ERROR", error.message, 500);
         }
 
