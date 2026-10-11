@@ -58,6 +58,16 @@ jobs:
       test_accounts_enabled: ${{ steps.env.outputs.test_accounts_enabled }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Restrict prod dispatch to the main branch
+        # BP-P2-006: a manual dispatch with deploy_target=prod must come from
+        # the develop -> main promotion path, not an arbitrary feature branch.
+        # Push deploys to main are unaffected (they always target prod).
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'prod'
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::deploy_target=prod can only be dispatched from the main branch (got ${GITHUB_REF}). Promote develop -> main first."
+            exit 1
+          fi
       - name: Validate rollback SHA
         if: github.event.inputs.rollback_sha != ''
         run: |

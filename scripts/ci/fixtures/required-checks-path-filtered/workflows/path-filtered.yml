@@ -1,0 +1,15 @@
+# Negative fixture for scripts/ci/check-required-checks.sh (BP-P2-004).
+# The required context "Filtered Fixture / build" below is emitted by this
+# workflow, but its pull_request trigger is path-filtered, so the guard must
+# fail on it.
+name: Filtered Fixture
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/**"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo fixture

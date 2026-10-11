@@ -112,7 +112,7 @@ what it can; the rest are review gates.
   - **Migration order resolved:** #30 shipped `5302430`–`5302432`; #32 ships `5302433`–`5302436`. The rebase kept both sets; no renumbering is needed.
   - **Deliberately NOT fixed:** SEC-P2-005 / ACM-P2-003 (RLS bypassed because `getScopedClient` defaults to the service role). That is the documented incremental rollout via `RLS_READS_ENABLED`/`RLS_WRITES_ENABLED`, not a defect; flipping it wholesale is a product decision and is left as an operator action.
   - **CI status (2026-10-03):** #32's first run was red on TypeCheck and E2E (a scope error — `updateMetadataAction` referenced an `organizationId` that only exists in the create action — which also broke the web build) and on the `review.md` mirror check. Both were fixed; the rebased head is expected green. Docs-only follow-ups (#33–#37) are separate PRs.
-  - Operator actions that still gate a real deploy (none block `develop`): `BACKUP_ENCRYPTION_KEY`, `SCHEDULE_DISPATCH_TOKEN`, `ADMIN_IP_RANGES`, `ALERTMANAGER_WATCHDOG_WEBHOOK_URL`, `prod-approval` reviewers, and applying migrations `5302430`–`5302437`.
+  - Operator actions that still gate a real deploy (none block `develop`): `BACKUP_ENCRYPTION_KEY`, `ADMIN_IP_RANGES`, `ALERTMANAGER_WATCHDOG_WEBHOOK_URL`, `prod-approval` reviewers, and applying migrations `5302430`–`5302437`.
 
 ### Test patterns
 
@@ -301,7 +301,6 @@ SENTRY_DSN=
 | db-backup.yml           | schedule/manual    | Database backup to Spaces (encrypted, optional offsite)                                     |
 | db-restore-test.yml     | schedule/manual    | Restore a backup into a throwaway DB with integrity/freshness assertions                    |
 | storage-backup.yml      | schedule/manual    | Mirror Supabase Storage buckets to Spaces                                                   |
-| backup-dispatch.yml     | schedule/manual    | Runs on `main` to dispatch the develop backup/restore workflows                             |
 | secret-rotation-reminder.yml | schedule/manual | Quarterly secret-rotation issue (deduplicated, `secret-rotation` label)                     |
 | wireguard-endpoint.yml  | dispatch           | DO cloud-firewall management for the lab WireGuard endpoint (list / allow UDP)              |
 | dependency-review.yml   | pull_request       | Block PRs introducing vulnerable dependencies                                               |

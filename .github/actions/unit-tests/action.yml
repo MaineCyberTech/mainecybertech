@@ -2,8 +2,9 @@ name: Unit tests and schema guards
 description: >
   The coverage suite plus every repo guard (OpenAPI, docs counts/links, DB
   types, RLS hygiene, membership-predicate lint, migration transaction lint,
-  review.md mirror). Shared by test.yml (PRs) and validate.yml (push deploy
-  gate) so the two definitions cannot drift apart again.
+  required-check parity, review.md mirror). Shared by test.yml (PRs) and
+  validate.yml (push deploy gate) so the two definitions cannot drift apart
+  again.
 
 inputs:
   node-version:
@@ -66,6 +67,16 @@ runs:
       # fixture through the detector so a broken guard cannot pass silently.
       shell: bash
       run: scripts/ci/check-migration-transactions.sh
+
+    - name: Verify required branch-protection checks resolve (BP-P2-005)
+      # Every required context in .github/branch-protection/*.json must be a
+      # check-run name some workflow emits, and the emitting workflow's
+      # pull_request trigger must not be path-filtered (a filtered required
+      # check never reports on PRs that miss its paths - CI-P2-009). The
+      # wrapper also runs a negative fixture, so a broken guard cannot pass
+      # silently. Shared by the PR gate and the deploy gate.
+      shell: bash
+      run: scripts/ci/check-required-checks.sh
 
     - name: Verify review.md mirror is in sync
       shell: bash

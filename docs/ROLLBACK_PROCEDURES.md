@@ -5,9 +5,11 @@
 Trigger an automated rollback from GitHub Actions:
 
 1. Navigate to **Actions → deploy-do → Run workflow**
-2. Set **deploy_target** to `dev` or `prod`
-3. Set **rollback_sha** to the 7–40 char lowercase-hex SHA of the previous working commit
-4. Run the workflow
+2. Select the branch to run from: `main` for `prod` (a `prod` dispatch from
+   any other ref fails closed — BP-P2-006), `develop` for `dev`
+3. Set **deploy_target** to `dev` or `prod`
+4. Set **rollback_sha** to the 7–40 char lowercase-hex SHA of the previous working commit
+5. Run the workflow
 
 The workflow will deploy the images already published under the `rollback_sha` tag. **Builds are skipped when `rollback_sha` is set** (`build-api`/`build-worker`/`build-web` are gated on `rollback_sha == ''`), so the target image tag must already exist in GHCR — otherwise the pull on the droplet fails. Then it SSHes in and runs:
 

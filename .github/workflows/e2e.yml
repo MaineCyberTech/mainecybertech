@@ -9,17 +9,12 @@ on:
         default: false
   # Push trigger removed: the PR run plus the prod deploy's `workflow_call`
   # gate already cover changes, and a push trigger ran E2E 2-3x per change.
+  # No `paths:` filter on `pull_request` (BP-P2-004 / CI-P2-009):
+  # `E2E / e2e (20.x)` is a required check on `main`, and a path-filtered
+  # workflow never reports on PRs that miss the paths — leaving them blocked
+  # forever on a check that cannot run.
   pull_request:
     branches: [main, develop]
-    paths:
-      - "apps/web/e2e/**"
-      - "apps/web/playwright.config.ts"
-      - "apps/web/app/**"
-      - "apps/web/components/**"
-      - "packages/**"
-      - "supabase/seeds/**"
-      - "supabase/migrations/**"
-      - ".github/workflows/e2e.yml"
   workflow_call:
     inputs:
       a11y_full:
