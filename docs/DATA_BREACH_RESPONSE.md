@@ -134,17 +134,21 @@ plus human reports. The real sources for a *breach* are:
 | `audit_logs` table | Who did what to which entity, from which IP; rows written by `apps/api/src/services/audit.ts` (PII fields redacted). An "audit trail gap" is logged on insert failure — treat as a coverage loss. | `audit_logs`; service `apps/api/src/services/audit.ts` |
 | `impersonation_log` table | Platform-admin cross-tenant access (`actor_user_id`, `organization_id`, `reason`, `ip_address`). Unexpected volume or unexpected orgs = investigate as possible breach. | `impersonation_log` |
 | Sentry | Exceptions, e.g. DB errors on RLS-enabled modules, unexpected 403/empty-result spikes. | API/worker/web Sentry init |
-| Prometheus rules | `MCTServiceDown`, `MCTHighRequestErrorRate`, and `Watchdog`. | `infra/digitalocean/prometheus.rules.yml` |
+| Prometheus rules | `MCTServiceDown`, `MCTHighRequestErrorRate`, `MCTImpersonationBurst`, `MCTTenantScopeRegression`, and `Watchdog` (delivered via Alertmanager → ntfy). | `infra/digitalocean/prometheus.rules.yml` |
 | CI / CodeQL / secret scan | A committed secret (leaked service-role key, JWT secret, connection string) caught pre-commit or in CI. | `.husky/pre-commit`, `scripts/scan-secrets.sh`, `test.yml` `secrets-scan`, `codeql.yml` |
 | Tenant / user reports | "I can see another org's data", "my invoice is wrong", unexpected logins. | Support channel → security@mainecybertech.com |
-| Backup / restore jobs | Backup failure notices, restore anomalies (`db-backup.yml`, `db-restore-test.yml`). | GitHub Actions notifications + `SLACK_WEBHOOK_URL` |
+| Backup / restore jobs | Backup failure notices, restore anomalies (`db-backup.yml`, `db-restore-test.yml`). | GitHub Actions notifications + ntfy (`NTFY_ALERTS_*`; Slack fallback via `SLACK_WEBHOOK_URL`) |
 | Third-party notification | Supabase, DigitalOcean, Stripe, Cloudflare, Atlassian, Microsoft report an incident on their side. | Vendor security contact |
 
-**Known detection gap — must be stated in any breach timeline.** Alertmanager is
-**not deployed**; `prometheus.rules.yml` says delivery requires it. The `Watchdog`
-rule has no receiver, so a total loss of the monitoring path is silent. This is
-audit `IR-P0-003` and `IR-014`; until fixed, a breach could be detected late or
-by the tenant first. Track the fix as a P1 in the risk register.
+**Known detection gap — must be stated in any breach timeline.** Alertmanager
+**is deployed** and delivers `critical`/`default` Prometheus alerts to the org
+ntfy topic (`https://ntfy.mainecybertech.us/portal-alerts`). The `Watchdog`
+dead-man's-switch receiver is wired, but its external heartbeat URL
+(`ALERTMANAGER_WATCHDOG_WEBHOOK_URL`) is **still unset**, so a total loss of the
+droplet is not yet detected by an off-box system (prod deploys fail closed until
+it is provisioned). This is the residual of audit `IR-P0-003`; until the
+external heartbeat is provisioned and drilled, a breach could be detected late
+or by the tenant first. Track the residual as a P1 in the risk register.
 
 Additional low-visibility signals called out by the audit — audit-write failures,
 webhook dead-letter growth, worker health, and RLS regressions — currently have
@@ -409,7 +413,8 @@ blameless post-incident review using the platform-IR postmortem format
 
 - What personal data was actually affected, and was the assessment accurate?
 - Did detection sources (§3) work, and how long did detection take? Explicitly
-  record whether the **Alertmanager gap** (`IR-P0-003`) or an unalerted signal
+  record whether the **alerting-path residual** (`IR-P0-003`: external watchdog
+  URL unset, missed-heartbeat drill not recorded) or an unalerted signal
   (`IR-P1-006`, `IR-009`) contributed to latency.
 - Was the notification decision reached in time, and was it correct?
 - What evidence-preservation or chain-of-custody steps were missed?
@@ -443,8 +448,10 @@ shows a gap — and re-run the relevant tabletop scenario from
 
 Known gaps that limit this plan until fixed (track in the risk register):
 
-- **No Alertmanager / off-box receiver** (`IR-P0-003`, `IR-014`) — silent
-  monitoring loss; delayed breach detection.
+- **Off-box dead-man's switch not provisioned** (`IR-P0-003`) — Alertmanager →
+  ntfy delivery is live, but the external watchdog heartbeat URL is still unset,
+  so total droplet loss is silent off-box; delayed breach detection until the
+  URL is provisioned and the missed-heartbeat drill is recorded.
 - **No runtime RLS-regression alert** (`IR-P1-006`) — confidentiality breaches in
   §2.1 may be noticed only by a tenant.
 - **No alert on `audit_logs` write gaps or admin/impersonation abuse**

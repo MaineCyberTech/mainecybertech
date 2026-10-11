@@ -114,7 +114,7 @@ Unhealthy containers are automatically restarted via `restart: unless-stopped`.
 
 ## 4. Prometheus Metrics (implemented)
 
-`GET /metrics` (`apps/api/src/app.ts`) exposes Prometheus-formatted counters and histograms, optionally gated by `METRICS_TOKEN` (returns 404 when the token is set and not supplied). `infra/digitalocean/docker-compose.yml` runs a `prometheus` service (`prom/prometheus:v3.5.1`) that scrapes it using `prometheus.yml` + `prometheus.rules.yml`, authenticating the API scrape with the `METRICS_TOKEN` bearer credential from the deploy-written `metrics-token` credentials file. In production Caddy returns 404 for `/metrics`, so scraping is internal to the compose network.
+`GET /metrics` (`apps/api/src/app.ts`) exposes Prometheus-formatted counters and histograms behind a **fail-closed shared-token gate**: it returns **404 unless `METRICS_TOKEN` is configured and the caller presents it as a bearer token** (an unset token disables the endpoint rather than exposing metric labels). `infra/digitalocean/docker-compose.yml` runs a `prometheus` service (`prom/prometheus:v3.5.1`) that scrapes it using `prometheus.yml` + `prometheus.rules.yml`, authenticating the API scrape with the `METRICS_TOKEN` bearer credential from the deploy-written `metrics-token` credentials file (mode 400, owned by the container user so the scrape can read it). In production Caddy returns 404 for `/metrics`, so scraping is internal to the compose network.
 
 ### Custom metrics
 
@@ -125,13 +125,20 @@ API (`apps/api/src/lib/metrics.ts`, all prefixed `portal_`; default `process_*`/
 | `portal_http_requests_total`                                                 | Counter   | `method`, `route`, `status_code` | live               |
 | `portal_http_request_duration_seconds`                                       | Histogram | `method`, `route`, `status_code` | live               |
 | `portal_webhook_deliveries_total`                                            | Counter   | `status`, `event`                | live               |
+| `portal_webhook_dead_letters_total`                                          | Counter   | `event`                          | live               |
 | `portal_auth_attempts_total`                                                 | Counter   | `result`                         | live               |
 | `portal_circuit_breaker_status`                                              | Gauge     | `name`                           | live               |
-| `portal_db_query_duration_seconds`                                           | Histogram | `operation`, `table`             | defined, not wired |
-| `portal_organizations_created_total` etc. (`projects`/`tickets`/`documents`) | Counter   | —                                | defined, not wired |
-| `portal_search_queries_total`                                                | Counter   | —                                | defined, not wired |
-| `portal_active_organizations` / `portal_active_users`                        | Gauge     | —                                | defined, not wired |
-| `portal_idempotency_key_hits_total`                                          | Counter   | —                                | defined, not wired |
+| `portal_db_query_duration_seconds`                                           | Histogram | `operation`, `table`             | live               |
+| `portal_organizations_created_total` etc. (`projects`/`tickets`/`documents`) | Counter   | —                                | live               |
+| `portal_search_queries_total`                                                | Counter   | —                                | live               |
+| `portal_active_organizations` / `portal_active_users`                        | Gauge     | —                                | live               |
+| `portal_idempotency_key_hits_total`                                          | Counter   | —                                | live               |
+| `portal_impersonation_events_total`                                          | Counter   | `actor_role_key`, `source`       | live               |
+| `portal_rls_bypass_total`                                                    | Counter   | `module`, `kind`, `org_resolved` | live               |
+| `portal_rls_enforced_total`                                                  | Counter   | `module`, `kind`                 | live               |
+| `portal_notification_delivery_total`                                         | Counter   | `channel`, `status`              | live               |
+| `portal_notification_suppressed_total`                                       | Counter   | `channel`, `module`              | live               |
+| `portal_notification_dedup_total`                                            | Counter   | `channel`                        | live               |
 
 Worker (`apps/worker/src/metrics.ts`):
 
@@ -142,8 +149,12 @@ Worker (`apps/worker/src/metrics.ts`):
 | `worker_task_queue_depth`                | Gauge     | `queue`               |
 | `worker_registered_tasks`                | Gauge     | —                     |
 | `worker_memory_usage_bytes`              | Gauge     | —                     |
+| `worker_notification_delivery_total`     | Counter   | `channel`, `status`   |
+| `worker_notification_suppressed_total`   | Counter   | `channel`, `module`   |
+| `worker_webhook_deliveries_total`        | Counter   | `status`, `event`     |
+| `worker_webhook_dead_letters_total`      | Counter   | `event`               |
 
-The `MCTHighRequestErrorRate` alert in `prometheus.rules.yml` queries `portal_http_requests_total{status_code=~"5.."}`.
+The alert rules in `prometheus.rules.yml` query these metrics: `MCTHighRequestErrorRate` → `portal_http_requests_total{status_code=~"5.."}`; `MCTImpersonationBurst` → `portal_impersonation_events_total`; `MCTTenantScopeRegression` and `MCTRlsEnforcedShareCollapsed` → `portal_rls_bypass_total` / `portal_rls_enforced_total`.
 
 ### Scraping
 
@@ -152,8 +163,12 @@ The compose `prometheus` service scrapes the API on the internal network; no pub
 ### Alert delivery
 
 Firing alerts are forwarded to an **Alertmanager** service (`infra/digitalocean/alertmanager.tmpl.yml`)
-on the same internal network — see §9. Without a receiver, alerts are visible only in the
-internal Prometheus UI; §9 is what makes the `Watchdog` rule an actual off-box dead-man's switch.
+on the same internal network — see §9. The deployed receiver is the org **ntfy** instance:
+`critical` and `default` alerts POST to `https://ntfy.mainecybertech.us/portal-alerts` with basic
+auth from the write-only `portal-relay` user (`ALERTMANAGER_WEBHOOK_USER`/`ALERTMANAGER_WEBHOOK_PASS`).
+The `Watchdog` rule routes to a separate external dead-man's-switch receiver; that URL
+(`ALERTMANAGER_WATCHDOG_WEBHOOK_URL`) is **still unset**, so the off-box heartbeat is not yet live
+and a total loss of the droplet is not independently detected until an operator provisions it (§9).
 
 ---
 
@@ -210,7 +225,8 @@ The workflow includes a `rollback-on-failure` step that reverts to the previous 
 | Droplet CPU > 80%            | Warning  | DO monitoring            | Check for memory leak, scale  |
 | Droplet disk > 85%           | Warning  | DO monitoring            | Prune Docker images, logs     |
 | Supabase connection pool     | Warning  | Supabase dashboard       | Check for connection leaks    |
-| `Watchdog` (always firing)   | None     | Alertmanager → off-box dead-man's switch (§9) | Alert path itself died → external service pages |
+| Prometheus rules (`MCTServiceDown`, `MCTHighRequestErrorRate`, `MCTImpersonationBurst`, `MCTTenantScopeRegression`) | Critical/Warning | Alertmanager → ntfy `portal-alerts` | Investigate; delivery not yet exercised end-to-end |
+| `Watchdog` (always firing)   | None     | Alertmanager → off-box dead-man's switch (§9; URL still unset) | Alert path itself died → external service pages (once provisioned) |
 
 ### Notification channels
 
@@ -220,7 +236,8 @@ The workflow includes a `rollback-on-failure` step that reverts to the previous 
 | **Email (Sentry)**       | Critical error spikes                   |
 | **DO Monitoring**        | Droplet-level CPU, disk, memory         |
 | **Teams webhooks**       | Contact form leads (marketing, not ops) |
-| **Alertmanager → external receiver** | `Watchdog` dead-man's switch + `critical` Prometheus alerts (see §9) |
+| **Alertmanager → ntfy** (`portal-alerts` topic) | `critical`/`default` Prometheus alerts (see §9) |
+| **Alertmanager → external dead-man's switch** | `Watchdog` heartbeat; URL still unset — operator action (see §9) |
 
 ### No dedicated pager/on-call
 
@@ -228,11 +245,13 @@ This is a single-droplet deployment. Alerts are best-effort. The main alert path
 
 1. Sentry captures error → email notification
 2. Deploy fails → GitHub notification
-3. Prometheus alert fires → Alertmanager → external receiver (§9)
+3. Prometheus alert fires → Alertmanager → ntfy `portal-alerts` (§9)
 4. Operator SSHes in and follows incident response
 
 The **off-box dead-man's switch in §9 is the exception to "best-effort"**: it is the only
 path that survives the total loss of this droplet, because the receiver lives outside it.
+Its external heartbeat URL is still unset, so this path is configured but not yet live
+(see §9).
 
 ---
 
@@ -250,7 +269,7 @@ path that survives the total loss of this droplet, because the receiver lives ou
 
 6. Check Sentry for recent errors: `https://sentry.io/organizations/mainecybertech/`
 7. Check disk space: `df -h` (prune with `docker image prune -a` if >85%)
-8. Check memory: `docker stats` (limits: api 256m, worker 256m, web 256m, redis 48m, caddy 64m, prometheus 256m, alertmanager 128m)
+8. Check memory: `docker stats` (limits: api 256m, worker 256m, web 512m, redis 48m, caddy 64m, prometheus 256m, alertmanager 128m)
 9. Check Docker health status: `docker inspect --format='{{json .State.Health}}' <container>`
 
 ### Resolution
@@ -271,8 +290,9 @@ path that survives the total loss of this droplet, because the receiver lives ou
 ## 9. Alert Delivery & the Off-Box Dead-Man's Switch (IR-P0-003)
 
 This section documents the alert path that survives the failure of the monitoring stack
-itself. It closes audit finding **IR-P0-003** ("total loss of the monitoring/alerting path
-has no independent dead-man's-switch receiver").
+itself. It implements the fix for audit finding **IR-P0-003** ("total loss of the
+monitoring/alerting path has no independent dead-man's-switch receiver") — with one
+operator action still outstanding: the external heartbeat URL is not provisioned yet.
 
 ### Components
 
@@ -280,8 +300,8 @@ has no independent dead-man's-switch receiver").
 | --------- | ----- | ------- |
 | `prometheus` (`prometheus.yml`) | compose, internal only | Evaluates `prometheus.rules.yml`; forwards firing alerts via `alerting: alertmanagers:` → `alertmanager:9093` |
 | `alertmanager` (`alertmanager.tmpl.yml`) | compose, internal only (port 9093, **not published**) | Routes alerts to receivers. Compose renders `${VAR}` placeholders from the container environment at start (Alertmanager has no variable substitution of its own) |
-| External receiver | **off the droplet** | Generic webhook / Slack / pager for real alerts |
-| Off-box dead-man's switch | **off the droplet** | A ping/heartbeat URL (healthchecks.io-style) that alerts *you* when the pings stop |
+| ntfy receiver (**deployed**) | **off the droplet** (`https://ntfy.mainecybertech.us/portal-alerts`) | The live delivery path for `critical` and `default` alerts; basic auth with the write-only `portal-relay` user |
+| Off-box dead-man's switch (**not provisioned**) | **off the droplet** | A ping/heartbeat URL (healthchecks.io-style) that alerts *you* when the pings stop. `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` is **still unset**, so the watchdog heartbeat currently goes to the compose no-op URL instead of leaving the box |
 
 ### How an alert leaves the box
 
@@ -289,9 +309,9 @@ has no independent dead-man's-switch receiver").
 2. A firing alert (e.g. `MCTServiceDown`) is pushed to Alertmanager over the internal
    compose network (`http://alertmanager:9093`).
 3. Alertmanager's routing tree decides the receiver:
-   - `severity="critical"` → the **critical** receiver (external webhook / Slack), `repeat_interval: 1h`.
+   - `severity="critical"` → the **critical** receiver (ntfy `portal-alerts` webhook; Slack if configured), `repeat_interval: 1h`.
    - `alertname="Watchdog"` → the **watchdog** receiver (the dead-man's switch), `repeat_interval: 5m`.
-   - everything else → the **default** receiver.
+   - everything else → the **default** receiver (ntfy `portal-alerts` webhook; Slack if configured).
 4. The receiver calls an external URL over the droplet's egress. No inbound port is opened
    on the droplet — Alertmanager is reachable only inside the compose network.
 
@@ -299,10 +319,12 @@ has no independent dead-man's-switch receiver").
 
 The `Watchdog` rule is `expr: vector(1)` — it is *always* firing. That is deliberate.
 Prometheus therefore pushes a Watchdog alert to Alertmanager continuously, and
-Alertmanager pings the external `watchdog` receiver URL every 5 minutes. The external
-service (e.g. Healthchecks/Deadman) is configured with a grace period; as long as a ping
-arrives, it stays quiet. **If the pings stop, the external service pages you** — from a
-system that does not share the droplet.
+**once `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` points at an external service** Alertmanager
+pings that URL every 5 minutes. The external service (e.g. Healthchecks/Deadman) is
+configured with a grace period; as long as a ping arrives, it stays quiet. **If the pings
+stop, the external service pages you** — from a system that does not share the droplet.
+**The URL is still unset in the deployed environment**, so today the heartbeat stays on
+the box and this protection is configured but not yet live.
 
 This inverts the failure mode of ordinary alerting: instead of "an alert failed to arrive"
 being silent, "no heartbeat arrived" is itself the alarm.
@@ -319,7 +341,10 @@ being silent, "no heartbeat arrived" is itself the alarm.
 
 The dead-man's switch is the only channel that does not depend on anything inside the
 droplet. It should be tested by stopping `alertmanager` (or `prometheus`) and confirming
-the external service reports the missed heartbeat within its grace period.
+the external service reports the missed heartbeat within its grace period. While
+`ALERTMANAGER_WATCHDOG_WEBHOOK_URL` is unset, the "external service pages" outcomes in
+the table above do not apply — a total droplet loss is currently undetected off-box —
+and no missed-heartbeat drill has been recorded yet.
 
 ### Required environment variables
 
@@ -328,17 +353,18 @@ them). **Names only — never commit the values.**
 
 | Variable | Required? | What it is |
 | -------- | --------- | ---------- |
-| `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` | **Yes** | **The dead-man's switch.** An external ping/heartbeat URL (healthchecks.io-style) or an external webhook, **not hosted on this droplet**. |
-| `ALERTMANAGER_CRITICAL_WEBHOOK_URL` | Yes (for real alerts) | External inbound webhook for critical alerts (Slack/Teams/PagerDuty/Opsgenie/generic relay). |
-| `ALERTMANAGER_DEFAULT_WEBHOOK_URL` | Optional | Catch-all receiver for non-critical alerts. |
+| `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` | **Yes** | **The dead-man's switch.** An external ping/heartbeat URL (healthchecks.io-style) or an external webhook, **not hosted on this droplet**. **Still unset in the deployed environment** — provision it to make the off-box heartbeat real; production deploys fail closed without it. |
+| `ALERTMANAGER_CRITICAL_WEBHOOK_URL` | Yes (for real alerts) | External inbound webhook for critical alerts. Set to the ntfy `portal-alerts` topic (`https://ntfy.mainecybertech.us/portal-alerts`) in the deployed environment; Slack/Teams/PagerDuty/Opsgenie/generic relays also work. |
+| `ALERTMANAGER_DEFAULT_WEBHOOK_URL` | Optional | Catch-all receiver for non-critical alerts. Set to the ntfy `portal-alerts` topic in the deployed environment. |
 | `ALERTMANAGER_SLACK_API_URL` | Optional | Slack incoming-webhook URL used by the default/critical receivers. |
 | `ALERTMANAGER_SLACK_CHANNEL` | Optional | Slack channel name (e.g. `#alerts`). Non-secret. |
-| `ALERTMANAGER_WEBHOOK_USER` | With a webhook URL | Basic-auth username sent with the critical/default webhook POSTs (the ntfy relay user, e.g. `portal-relay`). |
+| `ALERTMANAGER_WEBHOOK_USER` | With a webhook URL | Basic-auth username sent with the critical/default webhook POSTs (the ntfy relay user `portal-relay` in the deployed environment). |
 | `ALERTMANAGER_WEBHOOK_PASS` | With a webhook URL | Basic-auth password for the above. Secret. |
 
 If a variable is unset, compose substitutes a no-op localhost URL so the stack still
 starts — but **the dead-man's switch is only real when `ALERTMANAGER_WATCHDOG_WEBHOOK_URL`
-points at an external service.** Verify it with:
+points at an external service.** That URL is still unset today, so this is the one open
+operator action on the alert path (audit `IR-P0-003`). Verify it with:
 
 ```bash
 # Alertmanager itself is healthy?
