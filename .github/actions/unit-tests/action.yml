@@ -86,3 +86,10 @@ runs:
     - name: Verify review.md mirror is in sync
       shell: bash
       run: node scripts/sync-review-md.mjs --check
+
+    - name: Verify store catalog copies are in sync (HYGIENE-P2-002)
+      # apps/api/src/data/products.json is a generated mirror of the canonical
+      # apps/web/lib/catalog/data/products.json; fail when a one-sided edit
+      # makes the API fallback/seed serve different copy than the storefront.
+      shell: bash
+      run: node scripts/sync-product-catalog.mjs check
