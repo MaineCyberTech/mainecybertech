@@ -51,6 +51,12 @@ function getQueue(): Queue | null {
       queueError = err instanceof Error ? err : new Error(String(err));
       logger.error({ error: queueError.message }, "Task queue (Redis) connection error");
     });
+    queue.on("ioredis:close", () => {
+      // RES-P2-008: surface a lost connection immediately instead of waiting
+      // for the next failed command; a later successful command clears it.
+      queueError = new Error("Redis connection closed");
+      logger.warn("Task queue (Redis) connection closed");
+    });
     return queue;
   } catch (err) {
     queueError = err instanceof Error ? err : new Error(String(err));
@@ -78,6 +84,8 @@ export async function enqueueTask(
       { type: taskType, payload },
       { delay: opts?.delayMs ? opts.delayMs : undefined },
     );
+    // A successful round-trip proves the connection recovered.
+    queueError = null;
     logger.info({ taskType }, "Task enqueued");
     return true;
   } catch (err) {
@@ -101,6 +109,8 @@ export async function getTaskQueueStats(): Promise<{
 
   try {
     const [waiting, active] = await Promise.all([q.getWaitingCount(), q.getActiveCount()]);
+    // A successful round-trip proves the connection recovered (RES-P2-008).
+    queueError = null;
     return { waiting, active };
   } catch (err) {
     logger.debug(
@@ -113,6 +123,9 @@ export async function getTaskQueueStats(): Promise<{
 
 export function getTaskQueueHealth(): { connected: boolean; error?: string } {
   if (!isTaskQueueEnabled()) return { connected: true };
-  if (!queue) return { connected: false, error: "queue not initialized" };
+  // Initialize lazily so a health probe can tell "not configured" apart from
+  // "configured but not connected yet" (RES-P2-008).
+  const q = getQueue();
+  if (!q) return { connected: false, error: "queue not initialized" };
   return queueError ? { connected: false, error: queueError.message } : { connected: true };
 }
