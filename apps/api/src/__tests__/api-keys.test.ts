@@ -121,6 +121,42 @@ describe("API Keys API", () => {
     expect(res.body.data.fullKey).toMatch(/^mct_/);
   });
 
+  it("stores permission scopes when provided on create (SEC-P2-004)", async () => {
+    const supabase = mockAuth();
+    const builder = createMockBuilder({
+      data: {
+        id: "k-3",
+        name: "Scoped Key",
+        key_prefix: "mct_sc",
+        is_active: true,
+        created_at: new Date().toISOString(),
+      },
+      error: null,
+    });
+    supabase.from.mockReturnValue(builder);
+    const res = await request(app)
+      .post("/api/v1/api-keys")
+      .set("Authorization", authToken)
+      .send({
+        organizationId: testOrgId,
+        name: "Scoped Key",
+        permissions: ["tickets:view", "documents:create"],
+      });
+    expect(res.status).toBe(201);
+    expect(builder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ permissions: ["tickets:view", "documents:create"] }),
+    );
+  });
+
+  it("rejects malformed permission scopes on create", async () => {
+    mockAuth();
+    const res = await request(app)
+      .post("/api/v1/api-keys")
+      .set("Authorization", authToken)
+      .send({ organizationId: testOrgId, name: "Bad Key", permissions: ["tickets:read"] });
+    expect(res.status).toBe(400);
+  });
+
   it("updates API key", async () => {
     const supabase = mockAuth();
     supabase.from.mockReturnValue(

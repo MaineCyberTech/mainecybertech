@@ -28,10 +28,11 @@ describe("schedule-config", () => {
         "qbr-scheduled-generate",
         "retention",
         "orphan-cleanup",
+        "api-key-prune",
         "scheduled-notifications",
       ]),
     );
-    expect(scheduledScans.length).toBe(17);
+    expect(scheduledScans.length).toBe(18);
   });
 
   it("does not schedule the per-tenant integration syncs unattended", () => {

@@ -149,7 +149,7 @@ pnpm e2e                     # Playwright E2E
 | ------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | API route files           | 62    | `apps/api/src/routes/*.ts` (75 incl. `routes/final/` + `routes/store/`)                                                                                                |
 | API SDK modules           | 60    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
-| Worker task files         | 12    | 28 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
+| Worker task files         | 13    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319   | Admin 203, Portal 86, Public 29, `forbidden` 1                                                                                                                         |
 | Web components            | 102   | `apps/web/components/`                                                                                                                                                 |
 | SQL migrations            | 134   | `supabase/migrations/` (latest: 5302436 restore_platform_admin_rls_gates)                                                                                              |

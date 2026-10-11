@@ -11,7 +11,7 @@ export const metadata = { title: "API Keys - Admin - Maine CyberTech" };
 
 export default async function AdminApiKeysPage() {
   await requireAdminAccess();
-  await requirePermission("api-keys", "view");
+  const permissions = await requirePermission("api-keys", "view");
   const api = getApiClient();
   const [organizationsResult, apiKeys] = await Promise.all([
     api.organizations.list({ limit: 100 }),
@@ -28,7 +28,11 @@ export default async function AdminApiKeysPage() {
       title="API Keys"
       description="Manage API keys for programmatic access across organizations."
     >
-      <AdminApiKeysClient organizations={organizations} initialKeys={apiKeys ?? []} />
+      <AdminApiKeysClient
+        organizations={organizations}
+        initialKeys={apiKeys ?? []}
+        availableScopes={permissions.keys}
+      />
     </AdminPageShell>
   );
 }

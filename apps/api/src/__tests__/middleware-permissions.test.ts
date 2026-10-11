@@ -28,9 +28,24 @@ import { requirePermission } from "../middleware/permissions";
 const ORG = "00000000-0000-0000-0000-000000000001";
 const OTHER_ORG = "00000000-0000-0000-0000-000000000099";
 
-function mockReq(opts: { userId?: string; orgId?: string; bodyOrgId?: string } = {}) {
+function mockReq(
+  opts: {
+    userId?: string;
+    orgId?: string;
+    bodyOrgId?: string;
+    apiKeyPermissions?: string[];
+  } = {},
+) {
   return {
     authUser: opts.userId ? { userId: opts.userId, email: "test@example.com" } : undefined,
+    apiKey: opts.apiKeyPermissions
+      ? {
+          id: "key-1",
+          organizationId: ORG,
+          permissions: opts.apiKeyPermissions,
+          prefix: "mct_abc12345",
+        }
+      : undefined,
     query: opts.orgId ? { organization_id: opts.orgId } : {},
     body: opts.bodyOrgId ? { organizationId: opts.bodyOrgId } : {},
     headers: {},
@@ -268,6 +283,112 @@ describe("requirePermission middleware", () => {
     await requirePermission("tickets", "create")(mockReq({}), mockRes(), next);
 
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 401 }));
+  });
+});
+
+describe("requirePermission — API-key scope cap (SEC-P2-004 / ACM-P2-008 / CHAIN-P2-008)", () => {
+  it("allows a scoped key when the creator's role also grants the permission", async () => {
+    mockSupabase([
+      NOT_SUPER,
+      { data: [membership("client_user")], error: null },
+      { data: [{ role_id: "role-a", permission_id: "p1" }], error: null },
+      { data: [], error: null },
+      {
+        data: [{ id: "p1", module_key: "tickets", action_key: "create", description: null }],
+        error: null,
+      },
+    ]);
+    const next = jest.fn();
+
+    await requirePermission("tickets", "create")(
+      mockReq({ userId: "user-1", orgId: ORG, apiKeyPermissions: ["tickets:create"] }),
+      mockRes(),
+      next,
+    );
+
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it("denies a key whose scopes omit the permission before any creator bypass", async () => {
+    const supabase = mockSupabase([]);
+    const next = jest.fn();
+
+    await requirePermission("tickets", "delete")(
+      mockReq({ userId: "user-1", orgId: ORG, apiKeyPermissions: ["tickets:view"] }),
+      mockRes(),
+      next,
+    );
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 403,
+        code: "FORBIDDEN",
+        message: "API key is not scoped for this permission",
+      }),
+    );
+    // The cap is evaluated before resolution, so even a super_admin creator
+    // cannot widen the key — no profile/membership lookups are made.
+    expect(supabase.from).not.toHaveBeenCalled();
+  });
+
+  it("denies a scoped key when the creator no longer holds the permission (intersection)", async () => {
+    mockSupabase([
+      NOT_SUPER,
+      { data: [membership("client_user")], error: null },
+      { data: [{ role_id: "role-a", permission_id: "p1" }], error: null },
+      { data: [], error: null },
+      {
+        data: [{ id: "p1", module_key: "tickets", action_key: "view", description: null }],
+        error: null,
+      },
+    ]);
+    const next = jest.fn();
+
+    await requirePermission("tickets", "delete")(
+      mockReq({ userId: "user-1", orgId: ORG, apiKeyPermissions: ["tickets:delete"] }),
+      mockRes(),
+      next,
+    );
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 403, code: "FORBIDDEN" }),
+    );
+  });
+
+  it("allows a scoped key through the creator's admin bypass when the scope is present", async () => {
+    mockSupabase([
+      NOT_SUPER,
+      { data: [membership("admin", ORG, "role-admin")], error: null },
+      { data: [{ role_id: "role-admin", permission_id: "p1" }], error: null },
+      { data: [], error: null },
+      {
+        data: [{ id: "p1", module_key: "tickets", action_key: "view", description: null }],
+        error: null,
+      },
+    ]);
+    const next = jest.fn();
+
+    await requirePermission("tickets", "delete")(
+      mockReq({ userId: "user-1", orgId: ORG, apiKeyPermissions: ["tickets:delete"] }),
+      mockRes(),
+      next,
+    );
+
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it("denies an API key with an empty scope list", async () => {
+    const supabase = mockSupabase([]);
+    const next = jest.fn();
+
+    await requirePermission("tickets", "view")(
+      mockReq({ userId: "user-1", orgId: ORG, apiKeyPermissions: [] }),
+      mockRes(),
+      next,
+    );
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 403 }));
+    expect(supabase.from).not.toHaveBeenCalled();
   });
 });
 

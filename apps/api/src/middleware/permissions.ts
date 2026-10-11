@@ -20,6 +20,14 @@
  * project-manager, finance, onboarding-specialist) are NOT bypassed —
  * they are governed by their role_permissions from the migration
  * 5302128 catalog. See docs for catalog gaps this surfaces.
+ *
+ * API keys are an additional cap (SEC-P2-004 / ACM-P2-008 / CHAIN-P2-008):
+ * when `req.apiKey` is present the key's stored scope list must contain the
+ * requested `${moduleKey}:${action}` before any creator-side resolution or
+ * admin bypass is considered. A key therefore acts with the INTERSECTION of
+ * its stored scopes and its creator's current effective permissions, and a
+ * scoped key minted by an admin/super_admin cannot use the creator's full
+ * authority.
  */
 import { type Request, type Response, type NextFunction } from "express";
 import { AppError } from "../types";
@@ -60,6 +68,17 @@ export function requirePermission(moduleKey: string, action: PermissionAction) {
         throw new AppError("UNAUTHORIZED", "Authentication required", 401);
       }
 
+      const permissionKey = `${moduleKey}:${action}`;
+
+      // API-key scope cap (SEC-P2-004 / ACM-P2-008 / CHAIN-P2-008): a key may
+      // only exercise the permissions it was minted with. This check runs
+      // before creator-side resolution so the admin/super_admin bypass below
+      // can never widen a scoped key to its creator's full authority. Keys
+      // with an empty scope list are denied every gated permission.
+      if (req.apiKey && !req.apiKey.permissions.includes(permissionKey)) {
+        throw new AppError("FORBIDDEN", "API key is not scoped for this permission", 403);
+      }
+
       const orgId = extractOrgId(req);
       const userId = req.authUser.userId;
 
@@ -70,7 +89,7 @@ export function requirePermission(moduleKey: string, action: PermissionAction) {
       if (
         resolved.isSuperAdmin ||
         resolved.roles.some(isAdminBypassRole) ||
-        resolved.keys.has(`${moduleKey}:${action}`)
+        resolved.keys.has(permissionKey)
       ) {
         return next();
       }

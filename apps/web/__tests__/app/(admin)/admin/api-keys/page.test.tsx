@@ -38,11 +38,12 @@ jest.mock("@/components/admin/AdminSubnav", () => {
 });
 
 jest.mock("@/components/admin/AdminApiKeysClient", () => {
-  return function MockAdminApiKeysClient({ organizations, initialKeys }: any) {
+  return function MockAdminApiKeysClient({ organizations, initialKeys, availableScopes }: any) {
     return (
       <div data-testid="api-keys-client">
         <span data-testid="org-count">{organizations.length}</span>
         <span data-testid="key-count">{initialKeys.length}</span>
+        <span data-testid="scope-count">{availableScopes.length}</span>
       </div>
     );
   };
@@ -52,6 +53,13 @@ describe("AdminApiKeysPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRequireAdminAccess.mockResolvedValue(undefined);
+    mockRequirePermission.mockResolvedValue({
+      isSuperAdmin: false,
+      permissions: [],
+      keys: ["api-keys:view", "tickets:view"],
+      roles: ["admin"],
+      memberships: [],
+    });
     mockOrgsList.mockResolvedValue([]);
     mockApiKeysList.mockResolvedValue([]);
   });
@@ -87,6 +95,12 @@ describe("AdminApiKeysPage", () => {
     render(await Page());
     expect(screen.getByTestId("org-count")).toHaveTextContent("0");
     expect(screen.getByTestId("key-count")).toHaveTextContent("0");
+  });
+
+  it("passes the admin's permission keys as available scopes", async () => {
+    const Page = (await import("@/app/(admin)/admin/api-keys/page")).default;
+    render(await Page());
+    expect(screen.getByTestId("scope-count")).toHaveTextContent("2");
   });
 
   it("calls requireAdminAccess", async () => {
