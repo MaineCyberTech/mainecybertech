@@ -36,6 +36,7 @@ jest.mock("../services/supabase", () => ({
 }));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 import { getSupabaseAdmin } from "../services/supabase";
+import { logAuditEvent } from "../services/audit";
 import router from "../routes/edu-automation";
 
 const auth = "Bearer test-token";
@@ -261,6 +262,24 @@ describe("Edu Automation API", () => {
       .set("Authorization", auth)
       .send({ email: "a@b.com" });
     expect(r.status).toBe(201);
+  });
+
+  it("deletes a phishing target and audit-logs it", async () => {
+    const s = ma();
+    s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+    const r = await request(app)
+      .delete(`/api/v1/edu-automation/phishing/c-1/targets/t-1?organization_id=${org}`)
+      .set("Authorization", auth);
+    expect(r.status).toBe(204);
+    expect(logAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId: org,
+        action: "phishing_target.deleted",
+        entityType: "phishing_target",
+        entityId: "t-1",
+        metadata: { campaignId: "c-1" },
+      }),
+    );
   });
 
   it("generates an AI policy draft from its fields", async () => {

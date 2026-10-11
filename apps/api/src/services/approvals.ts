@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from "./supabase";
 import { logAuditEvent } from "./audit";
 import { logger } from "../lib/logger";
 import { toJson } from "../lib/db-types";
+import { AppError } from "../types";
 
 export interface ApprovalRecord {
   id: string;
@@ -74,8 +75,14 @@ export async function approveRequest(
   const supabase = getSupabaseAdmin();
 
   const existing = await findApprovalById(requestId);
-  if (!existing) throw new Error("Approval request not found");
-  if (existing.status !== "pending") throw new Error("Request is no longer pending");
+  if (!existing) throw new AppError("NOT_FOUND", "Approval request not found", 404);
+  // ADMIN-P2-007: separation of duties — the requester cannot approve their own request.
+  if (existing.requested_by && existing.requested_by === approvedBy) {
+    throw new AppError("FORBIDDEN", "You cannot approve your own request", 403);
+  }
+  if (existing.status !== "pending") {
+    throw new AppError("INVALID_STATE", "Only pending requests can be approved", 400);
+  }
 
   const { data, error } = await supabase
     .from("approval_requests")
@@ -126,8 +133,14 @@ export async function rejectRequest(
   const supabase = getSupabaseAdmin();
 
   const existing = await findApprovalById(requestId);
-  if (!existing) throw new Error("Approval request not found");
-  if (existing.status !== "pending") throw new Error("Request is no longer pending");
+  if (!existing) throw new AppError("NOT_FOUND", "Approval request not found", 404);
+  // ADMIN-P2-007: separation of duties — the requester cannot reject their own request.
+  if (existing.requested_by && existing.requested_by === rejectedBy) {
+    throw new AppError("FORBIDDEN", "You cannot reject your own request", 403);
+  }
+  if (existing.status !== "pending") {
+    throw new AppError("INVALID_STATE", "Only pending requests can be rejected", 400);
+  }
 
   const { data, error } = await supabase
     .from("approval_requests")
@@ -175,7 +188,12 @@ export async function cancelRequest(
   const supabase = getSupabaseAdmin();
 
   const existing = await findApprovalById(requestId);
-  if (!existing) throw new Error("Approval request not found");
+  if (!existing) throw new AppError("NOT_FOUND", "Approval request not found", 404);
+  // ADMIN-P2-007: only pending requests can be cancelled; an approved/rejected/
+  // cancelled decision is terminal (a reversal would need a new request).
+  if (existing.status !== "pending") {
+    throw new AppError("INVALID_STATE", "Only pending requests can be cancelled", 400);
+  }
 
   const { data, error } = await supabase
     .from("approval_requests")

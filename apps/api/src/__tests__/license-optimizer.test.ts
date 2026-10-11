@@ -40,6 +40,7 @@ jest.mock("../middleware/permissions", () => ({
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";
+import { logAuditEvent } from "../services/audit";
 import licenseOptimizerRouter from "../routes/license-optimizer";
 
 const authToken = "Bearer test-token";
@@ -161,6 +162,13 @@ describe("License Optimizer API", () => {
       .delete("/api/v1/license-optimizer/00000000-0000-0000-0000-000000000100")
       .set("Authorization", authToken);
     expect(res.status).toBe(204);
+    expect(logAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "license.deleted",
+        entityType: "license",
+        entityId: "00000000-0000-0000-0000-000000000100",
+      }),
+    );
   });
 
   it("returns reclaimable licenses", async () => {

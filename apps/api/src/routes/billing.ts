@@ -1,6 +1,6 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { z } from "zod";
-import { getScopedClient } from "../services/supabase";
+import { getScopedClient, getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
@@ -11,6 +11,7 @@ import { httpClients } from "../lib/http-client";
 import { logger } from "../lib/logger";
 import { queryInt } from "../lib/query";
 import { resolveAdminTenantScope } from "../lib/admin-scope";
+import { resolveEffectivePermissions, ADMIN_BYPASS_KEYS } from "../lib/permissions";
 
 type StripePrice = {
   nickname?: string | null;
@@ -375,11 +376,46 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
   }
 });
 
-// NOTE: intentionally available to any member of the resolved org (customer
-// self-service billing portal). `billing:manage` is not required because the
-// catalog does not grant it to client roles, and the portal is the customer's
-// only way to update payment methods / cancel. Tighten here if billing
-// contacts become a distinct permission.
+// ADMIN-P2-009: the Stripe portal can change payment methods and cancel the
+// subscription, so it is restricted to the org's billing contacts and callers
+// holding `billing:manage` (finance / client-billing roles; admin and
+// super_admin bypass, matching requirePermission).
+async function assertBillingPortalAccess(req: Request, orgId: string) {
+  const userId = req.authUser!.userId;
+
+  const { data: billingContact, error } = await getSupabaseAdmin()
+    .from("memberships")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("organization_id", orgId)
+    .eq("status", "approved")
+    .eq("is_billing_contact", true)
+    .maybeSingle();
+
+  if (error) throw new AppError("DB_ERROR", error.message, 500);
+  if (billingContact) return;
+
+  const resolved = await resolveEffectivePermissions(userId, orgId);
+  const adminBypass = resolved.roles.some((key) =>
+    (ADMIN_BYPASS_KEYS as readonly string[]).includes(key),
+  );
+  if (resolved.isSuperAdmin || adminBypass || resolved.keys.has("billing:manage")) return;
+
+  // Platform admins (admin/super_admin in any org) may act on a tenant where
+  // they hold no membership — re-resolve org-agnostically before denying.
+  if (resolved.roles.length === 0) {
+    const fallback = await resolveEffectivePermissions(userId, null);
+    if (
+      fallback.isSuperAdmin ||
+      fallback.roles.some((key) => (ADMIN_BYPASS_KEYS as readonly string[]).includes(key))
+    ) {
+      return;
+    }
+  }
+
+  throw new AppError("FORBIDDEN", "Billing contact or billing permission required", 403);
+}
+
 router.post("/create-portal-session", async (req, res, next) => {
   try {
     const env = getEnv();
@@ -397,6 +433,10 @@ router.post("/create-portal-session", async (req, res, next) => {
       (activeOrgHeader?.length ? activeOrgHeader : undefined) ??
       (req.cookies?.["mct_active_org"] as string | undefined);
     if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
+
+    // ADMIN-P2-009: only billing contacts (or billing:manage holders) may
+    // open the portal session for this org.
+    await assertBillingPortalAccess(req, orgId);
 
     const { data: customer, error } = await supabase
       .from("billing_customers")
