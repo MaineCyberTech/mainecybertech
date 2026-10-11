@@ -36,6 +36,12 @@ jobs:
         # compose runs). Shared with test.yml's required test job.
         uses: ./.github/actions/prometheus-rules
 
+      - name: ShellCheck incident-path scripts
+        # INFRA-P2-006: the manual rollback script must stay statically clean
+        # (it shipped with an unbound GHCR_TOKEN reference and a wrong image
+        # prefix). Shared with test.yml's required test job.
+        uses: ./.github/actions/shellcheck
+
   test:
     timeout-minutes: 30
     runs-on: ubuntu-latest

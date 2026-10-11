@@ -46,6 +46,10 @@ jobs:
       # blocks the PR without needing a new required-check context.
       - uses: ./.github/actions/prometheus-rules
 
+      # INFRA-P2-006: shellcheck the incident-path scripts (deploy/backup/
+      # rollback). Shared with validate.yml's audit job.
+      - uses: ./.github/actions/shellcheck
+
   # Dependency audit — hard gate, no continue-on-error
   security-scan:
     timeout-minutes: 15

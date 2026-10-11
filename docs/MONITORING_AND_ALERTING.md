@@ -254,6 +254,7 @@ The workflow includes a `rollback-on-failure` step that reverts to the previous 
 | Supabase connection pool     | Warning  | Supabase dashboard       | Check for connection leaks    |
 | Prometheus rules (`MCTServiceDown`, `MCTHighRequestErrorRate`, `MCTImpersonationBurst`, `MCTTenantScopeRegression`) | Critical/Warning | Alertmanager → ntfy `portal-alerts` | Investigate; delivery not yet exercised end-to-end |
 | `Watchdog` (always firing)   | None     | Alertmanager → off-box dead-man's switch (§9; URL still unset) | Alert path itself died → external service pages (once provisioned) |
+| Backup/restore staleness (no successful backup or restore test within its freshness window) | Critical | `Backup Staleness Check` workflow → ntfy/Slack (fail-closed) | Check the backup workflow runs, Spaces credentials and `scripts/backup-*.sh` logs; the check is independent of the backup jobs |
 
 ### Notification channels
 

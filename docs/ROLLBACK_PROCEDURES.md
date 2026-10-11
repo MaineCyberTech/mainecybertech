@@ -172,17 +172,29 @@ User uploads (`documents`, `avatars`, `logos`) are backed up by
 `scripts/backup-storage.sh` via `.github/workflows/storage-backup.yml`.
 
 ```bash
-# Dry-run: show which objects would be restored
+# 1. Dry-run: show which objects would be restored
 SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
   ./scripts/restore-storage.sh --dry-run
 
-# Restore the newest archive (decrypts when BACKUP_ENCRYPTION_KEY is set)
+# 2. Verify the newest archive against its manifest WITHOUT uploading
+#    (decrypts when BACKUP_ENCRYPTION_KEY is set; no Supabase creds needed).
+#    This is what .github/workflows/storage-restore-test.yml runs weekly.
+BACKUP_ENCRYPTION_KEY=... ./scripts/restore-storage.sh --verify-only
+
+# 3. Restore the newest archive (decrypts when BACKUP_ENCRYPTION_KEY is set)
 BACKUP_ENCRYPTION_KEY=... ./scripts/restore-storage.sh
 ```
+
+The restore refuses an archive that does not carry `MANIFEST.txt`, is empty, or
+whose extracted file count does not match the manifest's `object_count` — a
+partial backup fails instead of silently restoring a subset.
 
 Storage objects are keyed by path, so a database restore and a storage restore
 together restore working `documents.storage_path` links. A DB-only restore
 leaves those rows pointing at missing objects — always pair the two.
+`.github/workflows/storage-restore-test.yml` exercises the verification weekly
+against the newest archive; a green run is the storage-restore exercise
+artifact. A restore INTO a scratch Supabase project remains an operator drill.
 
 ## 4. Terraform Rollback
 

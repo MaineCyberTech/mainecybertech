@@ -14,6 +14,7 @@
 #   ./scripts/restore-storage.sh                 # newest archive, upload all
 #   ./scripts/restore-storage.sh --archive-file s3://b/p/a.tar.gz.enc
 #   ./scripts/restore-storage.sh --dry-run       # show what would upload
+#   ./scripts/restore-storage.sh --verify-only   # assert the archive, no upload
 #
 # Optional:
 #   BACKUP_ENCRYPTION_KEY - needed when the archive is `.enc`
@@ -26,6 +27,7 @@ S3_PREFIX="${S3_PREFIX:-storage-backups}"
 S3_URI="s3://${S3_BUCKET}/${S3_PREFIX}"
 STAGE_DIR="${STAGE_DIR:-./storage-restore}"
 DRY_RUN=false
+VERIFY_ONLY=false
 ARCHIVE_FILE=""
 RESTORE_UPSERT="${RESTORE_UPSERT:-1}"
 
@@ -33,12 +35,16 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --archive-file) ARCHIVE_FILE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=true; shift ;;
+    --verify-only) VERIFY_ONLY=true; shift ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
 
-: "${SUPABASE_URL:?SUPABASE_URL is required}"
-: "${SUPABASE_SERVICE_ROLE_KEY:?SUPABASE_SERVICE_ROLE_KEY is required}"
+# Uploading needs the service-role credential; --verify-only/--dry-run do not.
+if [ "${DRY_RUN}" = false ] && [ "${VERIFY_ONLY}" = false ]; then
+  : "${SUPABASE_URL:?SUPABASE_URL is required}"
+  : "${SUPABASE_SERVICE_ROLE_KEY:?SUPABASE_SERVICE_ROLE_KEY is required}"
+fi
 
 upload_object() {
   # upload_object <bucket> <path> <local-file>
@@ -94,15 +100,41 @@ fi
 tar -C "${STAGE_DIR}" -xzf /tmp/storage-restore.tar.gz
 rm -f /tmp/storage-restore.tar.gz
 
-if [ -f "${STAGE_DIR}/MANIFEST.txt" ]; then
-  echo "Manifest:"; sed 's/^/  /' "${STAGE_DIR}/MANIFEST.txt"
+# DR-P2-002: assertions, not prints. The archive must carry the manifest the
+# backup wrote, the extracted file count must match the manifest's
+# object_count, and an empty archive must never be called a restore.
+if [ ! -f "${STAGE_DIR}/MANIFEST.txt" ]; then
+  echo "ERROR: archive does not contain MANIFEST.txt — not a storage backup" >&2
+  exit 1
+fi
+echo "Manifest:"; sed 's/^/  /' "${STAGE_DIR}/MANIFEST.txt"
+
+MANIFEST_OBJECTS="$(awk '/^object_count:/{print $2}' "${STAGE_DIR}/MANIFEST.txt")"
+ARCHIVE_FILES="$(find "${STAGE_DIR}" -type f ! -name MANIFEST.txt | wc -l | tr -d ' ')"
+echo "Archive contains ${ARCHIVE_FILES} object file(s); manifest object_count=${MANIFEST_OBJECTS:-missing}"
+if [ -z "${MANIFEST_OBJECTS}" ]; then
+  echo "ERROR: MANIFEST.txt has no object_count" >&2
+  exit 1
+fi
+if [ "${ARCHIVE_FILES}" -eq 0 ]; then
+  echo "ERROR: archive contains no objects — refusing to restore an empty backup" >&2
+  exit 1
+fi
+if [ "${ARCHIVE_FILES}" -ne "${MANIFEST_OBJECTS}" ]; then
+  echo "ERROR: archive contains ${ARCHIVE_FILES} file(s) but the manifest records ${MANIFEST_OBJECTS} — the backup is partial or corrupt" >&2
+  exit 1
+fi
+
+if [ "${VERIFY_ONLY}" = true ]; then
+  echo "=== VERIFY-ONLY complete: ${ARCHIVE_FILES} object(s) verified against the manifest ==="
+  exit 0
 fi
 
 restored=0
 for bucket_dir in "${STAGE_DIR}"/*/; do
   bucket="$(basename "${bucket_dir}")"
   [ -d "${bucket_dir}" ] || continue
-  if [ -n "${STORAGE_BUCKETS:-}" ] && ! printf '%s\n' ${STORAGE_BUCKETS} | grep -qx "${bucket}"; then
+  if [ -n "${STORAGE_BUCKETS:-}" ] && ! printf '%s\n' "${STORAGE_BUCKETS}" | grep -qx "${bucket}"; then
     echo "Skipping bucket ${bucket} (not in STORAGE_BUCKETS)"
     continue
   fi
@@ -119,6 +151,13 @@ for bucket_dir in "${STAGE_DIR}"/*/; do
   done < <(find "${bucket_dir}" -type f \
     ! -name MANIFEST.txt)
 done
+
+# A real restore with no bucket filter must upload exactly what the manifest
+# recorded (DR-P2-002). With STORAGE_BUCKETS set, a smaller count is expected.
+if [ "${DRY_RUN}" = false ] && [ -z "${STORAGE_BUCKETS:-}" ] && [ "${restored}" -ne "${MANIFEST_OBJECTS}" ]; then
+  echo "ERROR: restored ${restored} object(s) but the manifest records ${MANIFEST_OBJECTS}" >&2
+  exit 1
+fi
 
 rm -rf "${STAGE_DIR}"
 

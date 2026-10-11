@@ -54,6 +54,9 @@ jobs:
           STORAGE_BUCKETS: ${{ vars.STORAGE_BUCKETS || 'documents avatars logos' }}
           BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
           REQUIRE_BACKUP_ENCRYPTION: "1"
+          # Fail the job if the archive is not a readable tar carrying the
+          # manifest (DR-P2-001); the script also refuses empty/partial mirrors.
+          VERIFY_BACKUP: "1"
         run: bash scripts/backup-storage.sh
 
       - name: Notify on failure
@@ -65,13 +68,19 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           MESSAGE="❌ Supabase Storage backup failed — uploaded files may not be recoverable. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          # Notifications go to the org ntfy topic; Slack remains a fallback
-          # while SLACK_WEBHOOK_URL is configured.
+          # DR-P2-003: do not swallow delivery failures. A notifier that fails
+          # silently (or a missing channel) is exactly how a backup outage goes
+          # unnoticed, so this step must fail loudly — the run is already red.
           if [ -n "$NTFY_URL" ]; then
             curl -sf -u "$NTFY_USER:$NTFY_PASS" \
               -H "Title: Storage backup failed" -H "Priority: high" -H "Tags: rotating_light" \
-              -d "$MESSAGE" "$NTFY_URL" || true
+              -d "$MESSAGE" "$NTFY_URL"
+            echo "Notified via ntfy"
           elif [ -n "$SLACK_WEBHOOK_URL" ]; then
             curl -sf -X POST -H "Content-Type: application/json" \
-              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL" || true
+              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL"
+            echo "Notified via Slack"
+          else
+            echo "::error::Backup failure notification could not be delivered: set NTFY_ALERTS_URL or SLACK_WEBHOOK_URL"
+            exit 1
           fi
