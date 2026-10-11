@@ -12,6 +12,7 @@ import { getEnv } from "../config/env";
 import { responseCacheNoRenew } from "../middleware/cache";
 import { rateLimitAdminOps } from "../middleware/rate-limit";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
+import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { validateUploadContent } from "../lib/upload-validation";
 import { scanUploadForMalware } from "../lib/malware-scan";
 import {
@@ -305,6 +306,13 @@ router.post("/", requirePermission("documents", "create"), async (req, res, next
       metadata: { name: parsed.name },
     });
 
+    // EVOL-P2-002: catalogued outbound event for document creation.
+    dispatchWebhook("document.created", parsed.organizationId, {
+      documentId: data.id,
+      name: parsed.name,
+      visibility: parsed.visibility,
+    });
+
     recordDocumentCreated();
 
     res.status(201).json(success(data));
@@ -567,6 +575,13 @@ router.patch(
         entityType: "document",
         entityId: data.id,
         metadata: parsed,
+      });
+
+      // EVOL-P2-002: catalogued outbound event for document mutations.
+      dispatchWebhook("document.updated", data.organization_id, {
+        documentId: data.id,
+        name: data.name,
+        changed: Object.keys(parsed),
       });
 
       res.json(success(data));

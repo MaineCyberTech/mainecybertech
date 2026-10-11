@@ -279,6 +279,13 @@ router.patch(
         metadata: { ...parsed, version: data.version },
       });
 
+      // EVOL-P2-002: catalogued outbound events for every mutation, not just create.
+      dispatchWebhook("ticket.updated", data.organization_id, {
+        ticketId: data.id,
+        title: data.title,
+        status: data.status,
+      });
+
       if (parsed.assignedTo) {
         const { data: assignee } = await supabase
           .from("profiles")
@@ -298,6 +305,12 @@ router.patch(
             email: assignee.email ?? undefined,
           });
         }
+
+        dispatchWebhook("ticket.assigned", data.organization_id, {
+          ticketId: data.id,
+          title: data.title,
+          assignedTo: parsed.assignedTo,
+        });
       }
 
       res.json(success(data));

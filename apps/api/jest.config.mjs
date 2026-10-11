@@ -25,5 +25,9 @@ export default {
   moduleNameMapper: {
     "^(\\.\\.?\\/.*)\\.js$": "$1",
     "^redis$": "<rootDir>/src/__mocks__/redis.ts",
+    // EVOL-P2-001 / EVOL-P2-002: the dependency-free shared catalogs are
+    // imported via subpath exports; map them to source so ts-jest compiles
+    // them regardless of package-exports support.
+    "^@mct/sdk/(module-registry|webhook-events)$": "<rootDir>/../../packages/sdk/src/$1",
   },
 };

@@ -20,6 +20,7 @@ import {
 } from "../lib/webhook-schemas";
 import { recordWebhookDelivery } from "../lib/metrics";
 import { notifyBillingPaymentFailure } from "../lib/billing-dunning";
+import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { type Row } from "../lib/db-types";
 import { timingSafeCompare } from "../lib/timing-safe";
 
@@ -351,6 +352,30 @@ router.post("/stripe", async (req, res, next) => {
               { onConflict: "stripe_invoice_id" },
             );
             assertMirrorWrite(invoiceWriteError, "invoices.upsert");
+
+            // EVOL-P2-002: catalogued outbound invoice events. `invoice.paid`
+            // fires once the paid invoice is mirrored; `billing.invoice.overdue`
+            // fires when Stripe reports an open invoice past its due date (the
+            // `status` computed above), which is the natural overdue signal.
+            if (event.type === "invoice.paid") {
+              void dispatchWebhook("billing.invoice.paid", customer.organization_id, {
+                invoiceId: inv.id,
+                invoiceNumber: inv.number,
+                totalCents: Math.round(inv.total),
+                currency: inv.currency,
+                paidAt: inv.status_transitions?.paid_at
+                  ? new Date(inv.status_transitions.paid_at * 1000).toISOString()
+                  : null,
+              });
+            } else if (status === "overdue") {
+              void dispatchWebhook("billing.invoice.overdue", customer.organization_id, {
+                invoiceId: inv.id,
+                invoiceNumber: inv.number,
+                totalCents: Math.round(inv.total),
+                currency: inv.currency,
+                dueAt: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
+              });
+            }
 
             // BILL-P2-004: dunning visibility. A failed charge previously just
             // flipped the invoice row; notify the org's billing contacts so the

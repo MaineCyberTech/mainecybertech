@@ -472,3 +472,9 @@ export class MCTClient {
 }
 
 export type { Database } from "./database.types";
+
+// Shared platform catalogs (EVOL-P2-001 / EVOL-P2-002). Prefer the subpath
+// imports (`@mct/sdk/module-registry`, `@mct/sdk/webhook-events`) in the API so
+// tsup only bundles the dependency-free catalog file.
+export { MODULE_REGISTRY, type ModuleDefinition } from "./module-registry";
+export { WEBHOOK_EVENTS, isWebhookEvent, type WebhookEvent } from "./webhook-events";

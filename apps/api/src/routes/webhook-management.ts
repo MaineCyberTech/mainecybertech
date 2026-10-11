@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import crypto from "crypto";
+import { WEBHOOK_EVENTS } from "@mct/sdk/webhook-events";
 import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { requireAuth } from "../middleware/auth";
@@ -67,7 +68,9 @@ const createSchema = z.object({
   url: z.string().url().max(2000),
   secret: z.string().max(500).optional().nullable(),
   secretExpiresAt: z.string().datetime().optional().nullable(),
-  events: z.array(z.string().min(1)).min(1, "At least one event is required"),
+  // EVOL-P2-002: only catalogued events can be subscribed to. Previously any
+  // string was accepted, so subscribers could select events nothing emits.
+  events: z.array(z.enum(WEBHOOK_EVENTS)).min(1, "At least one event is required"),
 });
 
 const updateSchema = z.object({
@@ -75,7 +78,7 @@ const updateSchema = z.object({
   url: z.string().url().max(2000).optional(),
   secret: z.string().max(500).optional().nullable(),
   secretExpiresAt: z.string().datetime().optional().nullable(),
-  events: z.array(z.string().min(1)).min(1).optional(),
+  events: z.array(z.enum(WEBHOOK_EVENTS)).min(1).optional(),
   isActive: z.boolean().optional(),
 });
 

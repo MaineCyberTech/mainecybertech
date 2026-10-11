@@ -595,6 +595,13 @@ router.patch(
         metadata: parsed,
       });
 
+      // EVOL-P2-002: catalogued outbound event for project mutations.
+      dispatchWebhook("project.updated", data.organization_id, {
+        projectId: data.id,
+        name: data.name,
+        status: data.status,
+      });
+
       res.json(success(data));
     } catch (error) {
       next(error);

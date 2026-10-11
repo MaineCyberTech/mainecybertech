@@ -9,6 +9,7 @@ import { requirePermission } from "../middleware/permissions";
 import { loadOwned } from "../lib/tenant";
 import { updateMembershipSchema } from "../validators/membership";
 import { assertCanAssignRole, resolveRoleKey } from "../lib/role-assignment";
+import { dispatchWebhook } from "../lib/webhook-dispatcher";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -120,6 +121,14 @@ router.post("/invite", requirePermission("users", "manage"), async (req, res, ne
       metadata: { email, roleId },
     });
 
+    // EVOL-P2-002: catalogued outbound event for membership creation.
+    dispatchWebhook("membership.created", organizationId, {
+      membershipId: data.id,
+      userId: userByEmail.id,
+      roleId,
+      status: data.status,
+    });
+
     res.status(201).json(success(data));
   } catch (error) {
     next(error);
@@ -178,6 +187,15 @@ router.patch("/:id", requirePermission("users", "manage"), async (req, res, next
       entityType: "membership",
       entityId: data.id,
       metadata: parsed,
+    });
+
+    // EVOL-P2-002: catalogued outbound event for membership state changes
+    // (approve/reject, role change, contact flags).
+    dispatchWebhook("membership.updated", data.organization_id, {
+      membershipId: data.id,
+      userId: data.user_id,
+      status: data.status,
+      changed: Object.keys(parsed),
     });
 
     res.json(success(data));

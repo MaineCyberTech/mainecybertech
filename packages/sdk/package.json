@@ -7,7 +7,9 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./database.types": "./src/database.types.ts"
+    "./database.types": "./src/database.types.ts",
+    "./module-registry": "./src/module-registry.ts",
+    "./webhook-events": "./src/webhook-events.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

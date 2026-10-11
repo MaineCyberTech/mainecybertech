@@ -124,6 +124,30 @@ describe("webhook-management routes", () => {
     expect(res.status).toBe(400);
   });
 
+  it("POST / rejects uncatalogued event types (EVOL-P2-002)", async () => {
+    const adminSupabase = mockAuth();
+    adminSupabase.from.mockReturnValue(
+      createMockBuilder({
+        data: [{ id: "m1", roles: { id: "r1", key: "admin" } }],
+        error: null,
+      } as MockResult),
+    );
+
+    const res = await request(app)
+      .post("/api/v1/webhook-endpoints")
+      .set("Authorization", "Bearer token")
+      .send({
+        organizationId: "00000000-0000-0000-0000-000000000001",
+        name: "Unknown event hook",
+        url: "https://example.com/hook",
+        events: ["ticket.exploded"],
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error?.code).toBe("VALIDATION");
+    expect(adminSupabase.from).not.toHaveBeenCalledWith("webhook_endpoints");
+  });
+
   it("POST /:id/test rejects internal webhook URLs with 400 (SSRF guard) instead of fetching", async () => {
     const adminSupabase = mockAuth();
     adminSupabase.from.mockImplementation((table: string) => {
