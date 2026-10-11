@@ -117,3 +117,31 @@ export async function getMetrics(): Promise<string> {
 
   return register.metrics();
 }
+
+/**
+ * Stripe reconciliation drift (BILL-P2-003).
+ *
+ * The nightly `stripe-reconcile` task compares the local billing mirror with
+ * Stripe (the source of truth) and increments this counter for every mismatch
+ * it finds: a subscription status that disagrees, or an invoice/payment
+ * count/sum that does not line up. Any drift means the local copy - and the
+ * entitlements/billing views derived from it - is stale, so
+ * infra/digitalocean/prometheus.rules.yml alerts on new drift.
+ */
+export const stripeReconcileDriftTotal = new promClient.Counter({
+  name: "worker_stripe_reconcile_drift_total",
+  help: "Stripe reconciliation drift findings by kind",
+  labelNames: ["kind"] as const,
+  registers: [register],
+});
+
+export type StripeReconcileDriftKind =
+  | "subscription_status"
+  | "invoice_count"
+  | "invoice_sum"
+  | "payment_count"
+  | "payment_sum";
+
+export function recordStripeReconcileDrift(kind: StripeReconcileDriftKind): void {
+  stripeReconcileDriftTotal.inc({ kind });
+}

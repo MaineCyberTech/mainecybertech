@@ -326,3 +326,25 @@ groups:
           summary: "Worker task queue backlog above 50"
           description: "More than 50 tasks have been waiting/active in the BullMQ queue for 15 minutes. Tasks are not draining - check worker health, Redis latency and the failing task types."
 
+  # BILL-P2-003: nightly Stripe reconciliation drift.
+  #
+  # The worker's `stripe-reconcile` task compares the local billing mirror
+  # against Stripe (the source of truth), writes the fetched subscription state
+  # back, and fails the run (`ok:false`) when it finds drift or per-item
+  # errors. A failed run is already covered by MCTWorkerTaskFailures (above);
+  # this rule surfaces the drift itself, per kind, so a mirror that disagrees
+  # with Stripe is visible even while the next run repairs it. The 25h window
+  # covers the daily schedule: it fires when the most recent run produced
+  # drift and resolves once a clean run replaces it.
+  - name: mct-billing-reconcile
+    rules:
+      - alert: MCTStripeReconcileDrift
+        expr: increase(worker_stripe_reconcile_drift_total[25h]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Stripe reconciliation detected billing drift"
+          description: "The stripe-reconcile task found at least one mirror-vs-Stripe mismatch in the last 25 hours (subscription status, invoice count/sum, or payment count/sum). Check the worker logs for the organization and drift kind, then compare the local billing mirror with Stripe."
+
