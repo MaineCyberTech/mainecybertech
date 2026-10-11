@@ -313,7 +313,10 @@ router.post("/callback", rateLimitAuth, async (req, res, next) => {
 
 router.post("/sign-out", requireAuth, async (req, res, next) => {
   try {
-    const supabase = getScopedClient(req, "auth", "write");
+    // RLS-P2-007: auth.admin.* is service-role only. The scoped client uses the
+    // anon key + user JWT, so enabling `auth` in RLS_WRITES_ENABLED would break
+    // sign-out. Always use the admin client for GoTrue admin APIs.
+    const supabase = getSupabaseAdmin();
     const token = req.headers.authorization?.slice(7);
     if (token) {
       await supabase.auth.admin.signOut(token);
@@ -392,7 +395,8 @@ router.post(
         throw new AppError("WEAK_PASSWORD", pwdCheck.message || "Password is too weak", 400);
       }
 
-      const supabase = getScopedClient(req, "auth", "write");
+      // RLS-P2-007: GoTrue admin API — service-role client only (see sign-out).
+      const supabase = getSupabaseAdmin();
       const { error } = await supabase.auth.admin.updateUserById(req.authUser!.userId, {
         password,
       });

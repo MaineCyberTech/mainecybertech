@@ -29,7 +29,7 @@ jest.mock("../services/audit", () => ({
   logAuditEvent: jest.fn(),
 }));
 
-import { getSupabaseAdmin, getSupabaseUser } from "../services/supabase";
+import { getScopedClient, getSupabaseAdmin, getSupabaseUser } from "../services/supabase";
 import { clearMfaFactorCache } from "../lib/mfa";
 
 const app = createTestApp();
@@ -86,6 +86,7 @@ function mockSupabase() {
         mfa: {
           listFactors: jest.fn().mockResolvedValue({ data: { factors: [] }, error: null }),
         },
+        signOut: jest.fn().mockResolvedValue({ error: null }),
       },
     },
   };
@@ -327,6 +328,9 @@ describe("reset-password", () => {
     expect(supabase.auth.admin.updateUserById).toHaveBeenCalledWith("user-1", {
       password: "StrongP@ss1",
     });
+    // RLS-P2-007: auth.admin.* must go through the service-role client; the
+    // RLS-scoped client (anon key + user JWT) cannot call it.
+    expect(getScopedClient).not.toHaveBeenCalled();
   });
 
   it("returns 403 when email does not match authenticated user", async () => {
@@ -375,6 +379,33 @@ describe("reset-password", () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toBeDefined();
     expect(res.body.error.code).toBe("VALIDATION");
+  });
+});
+
+describe("POST /sign-out", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("revokes the session via the service-role admin client (RLS-P2-007)", async () => {
+    const supabase = mockSupabase();
+
+    const res = await request(app)
+      .post("/api/v1/auth/sign-out")
+      .set("Authorization", "Bearer token-123");
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(supabase.auth.admin.signOut).toHaveBeenCalledWith("token-123");
+    expect(getScopedClient).not.toHaveBeenCalled();
+  });
+
+  it("returns 401 without auth", async () => {
+    mockSupabase();
+
+    const res = await request(app).post("/api/v1/auth/sign-out");
+
+    expect(res.status).toBe(401);
   });
 });
 
