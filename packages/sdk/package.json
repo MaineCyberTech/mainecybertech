@@ -12,7 +12,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage --json --outputFile=.jest-results.json"
   },
   "dependencies": {
     "zod": "^3.24.1"

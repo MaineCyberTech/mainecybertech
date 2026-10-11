@@ -1,8 +1,11 @@
-import { test, expect } from "../fixtures";
+import { test, expect, gotoApp } from "../fixtures";
 
 test.describe("admin notification bell", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/admin");
+    // gotoApp waits for the authenticated shell so a transient layout fetch
+    // failure gives a deterministic failure point instead of a bell timeout
+    // (TEST-P2-003 names these specs as the flaky set).
+    await gotoApp(page, "/admin");
   });
 
   test("shows notification bell in admin header", async ({ page }) => {

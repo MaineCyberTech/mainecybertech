@@ -35,8 +35,13 @@ runs:
 
     - name: Check docs counts
       # Fails when README/AGENTS/INDEX state counts that have drifted from the
-      # repo (web components, unit tests, migrations, OpenAPI paths).
+      # repo (web components, unit tests/suites, migrations, OpenAPI paths,
+      # coverage thresholds). MCT_VERIFY_TEST_COUNTS=1 makes the per-package
+      # test totals fail-closed against the .jest-results.json files the
+      # coverage step above writes (TEST-P2-008).
       shell: bash
+      env:
+        MCT_VERIFY_TEST_COUNTS: "1"
       run: node scripts/check-docs-counts.mjs
 
     - name: Check docs links
