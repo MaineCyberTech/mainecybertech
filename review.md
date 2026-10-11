@@ -595,7 +595,7 @@ pipefail`); `docs/module-matrix-mapping.md` maps all 60 prompt-pack modules to
   validates live responses (412 paths, 0 missing). Generating the SDK from the
   spec remains a follow-up.
 - **CI schema guards**: `scripts/generate-db-types.js --check` and
-  `scripts/verify-rls.mjs` (137 tables, all RLS-enabled, 1021 policies) wired
+  `scripts/verify-rls.mjs` (137 tables, all RLS-enabled, 1022 policies) wired
   into `test.yml` + `validate.yml`; `docs/RLS-coverage-matrix.md` is now a
   snapshot with the script as the live source.
 - **CSP reporting + SAST**: unauthenticated `POST /api/v1/public/csp-report`
