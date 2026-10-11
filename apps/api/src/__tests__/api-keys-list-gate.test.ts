@@ -39,6 +39,7 @@ jest.mock("../middleware/org-access", () =>
 
 import { getSupabaseAdmin } from "../services/supabase";
 import apiKeysRouter from "../routes/api-keys";
+import { clearPermissionCache } from "../lib/permissions";
 
 const ORG = "00000000-0000-0000-0000-000000000001";
 const API_KEY_TOKEN = `mct_${"a".repeat(64)}`;
@@ -117,7 +118,10 @@ app.use("/api/v1/api-keys", apiKeysRouter);
 app.use(errorHandler);
 
 describe("GET /api-keys permission gate (ACM-P3-006)", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    clearPermissionCache();
+  });
 
   it("denies a session member without api-keys:view", async () => {
     mockSupabase({ grantedKeys: ["tickets:view"] });

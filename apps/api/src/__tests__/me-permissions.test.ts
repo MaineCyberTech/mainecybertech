@@ -22,6 +22,7 @@ jest.mock("../services/supabase", () => ({
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";
+import { clearPermissionCache } from "../lib/permissions";
 
 function mockAuth(userId = "user-1") {
   const supabase = { from: jest.fn(), auth: { getUser: jest.fn() } };
@@ -40,6 +41,7 @@ app.use(errorHandler);
 describe("GET /api/v1/me/permissions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearPermissionCache();
   });
 
   it("returns all permissions for super admins", async () => {

@@ -55,6 +55,7 @@ jest.mock("../middleware/org-access", () => ({
 
 import { getSupabaseAdmin } from "../services/supabase";
 import storeRouter from "../routes/store";
+import { invalidateCache } from "../middleware/cache";
 
 const ORG_A = "00000000-0000-0000-0000-00000000000a";
 const ORG_B = "00000000-0000-0000-0000-00000000000b";
@@ -442,5 +443,32 @@ describe("store quotes tenant isolation (MT-P0-005)", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data).toBeInstanceOf(Array);
+  });
+});
+
+describe("store catalog response cache invalidation (PERF-P2-002)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    invalidateCache();
+  });
+
+  it("evicts cached public reads when an admin mutates a product", async () => {
+    const { updates } = setup({ mode: "single" });
+
+    const first = await request(app).get("/api/v1/store/products");
+    expect(first.status).toBe(200);
+    expect(first.headers["x-cache"]).toBe("MISS");
+
+    const cached = await request(app).get("/api/v1/store/products");
+    expect(cached.headers["x-cache"]).toBe("HIT");
+
+    const patch = await request(app)
+      .patch("/api/v1/store/products/p-1")
+      .send({ name: "Patched" });
+    expect(patch.status).toBe(200);
+    expect(updates.store_products).toMatchObject({ name: "Patched" });
+
+    const afterWrite = await request(app).get("/api/v1/store/products");
+    expect(afterWrite.headers["x-cache"]).toBe("MISS");
   });
 });

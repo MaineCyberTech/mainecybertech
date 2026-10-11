@@ -29,6 +29,7 @@ import {
   requireActiveSubscription,
   clearEntitlementCache,
 } from "../middleware/entitlement";
+import { clearPermissionCache } from "../lib/permissions";
 
 const ORG = "00000000-0000-0000-0000-000000000001";
 
@@ -92,6 +93,7 @@ describe("requireEntitlement middleware", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     clearEntitlementCache();
+    clearPermissionCache();
   });
 
   it("allows an active-subscription org access to a gated module", async () => {
@@ -234,6 +236,7 @@ describe("requireActiveSubscription middleware", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     clearEntitlementCache();
+    clearPermissionCache();
   });
 
   it("allows an active subscription", async () => {

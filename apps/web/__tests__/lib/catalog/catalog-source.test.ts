@@ -8,6 +8,7 @@ jest.mock("@/lib/api", () => ({
 
 import {
   loadCatalog,
+  invalidateCatalogCache,
   visibleProducts,
   productBySlug,
   productsInCategory,
@@ -59,6 +60,7 @@ function mockDb(products: StoreProduct[], categories: StoreCategory[]) {
 describe("catalog-source", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    invalidateCatalogCache();
   });
 
   describe("loadCatalog", () => {
@@ -128,6 +130,44 @@ describe("catalog-source", () => {
 
       expect(snapshot.source).toBe("static");
       expect(snapshot.products.length).toBeGreaterThan(100);
+    });
+
+    it("serves repeated loads from the short-TTL cache (PERF-P2-002)", async () => {
+      mockDb([dbProduct()], [dbCategory()]);
+
+      const first = await loadCatalog();
+      const second = await loadCatalog();
+
+      expect(second).toBe(first);
+      const client = getApiClient.mock.results[0].value;
+      expect(client.store.listProducts).toHaveBeenCalledTimes(1);
+      expect(client.store.listCategories).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not pin the bundled-JSON fallback in the cache", async () => {
+      getApiClient.mockReturnValue({
+        store: {
+          listProducts: jest.fn().mockRejectedValue(new Error("API down")),
+          listCategories: jest.fn().mockRejectedValue(new Error("API down")),
+        },
+      });
+
+      await loadCatalog();
+      await loadCatalog();
+
+      const client = getApiClient.mock.results[0].value;
+      expect(client.store.listProducts).toHaveBeenCalledTimes(2);
+    });
+
+    it("reloads after invalidateCatalogCache()", async () => {
+      mockDb([dbProduct()], [dbCategory()]);
+
+      await loadCatalog();
+      invalidateCatalogCache();
+      await loadCatalog();
+
+      const client = getApiClient.mock.results[0].value;
+      expect(client.store.listProducts).toHaveBeenCalledTimes(2);
     });
   });
 

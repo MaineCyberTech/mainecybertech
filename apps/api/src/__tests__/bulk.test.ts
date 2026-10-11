@@ -216,9 +216,12 @@ describe("Bulk API", () => {
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
     // SEC-P1-001 role guard -> resolveRoleKey (non-cross-tenant role)
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: { key: "member" }, error: null }));
-    // profiles query → existing user found
+    // profiles query → existing user found (batched `in` lookup)
     supabase.from.mockReturnValueOnce(
-      createMockBuilder({ data: { id: "existing-user" }, error: null }),
+      createMockBuilder({
+        data: [{ id: "existing-user", email: "existing@example.com" }],
+        error: null,
+      }),
     );
     // memberships query → no existing membership
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
@@ -235,6 +238,51 @@ describe("Bulk API", () => {
       });
     expect(res.status).toBe(200);
     expect(res.body.data.results[0].status).toBe("invited");
+  });
+
+  it("batches profile/membership lookups and inserts once for multiple invites (PERF-P2-004)", async () => {
+    const supabase = mockAuthAndAdmin();
+    // requireAdmin → memberships query
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
+    // SEC-P1-001 role guard -> resolveRoleKey (non-cross-tenant role)
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: { key: "member" }, error: null }));
+    // batched profiles lookup → both addresses resolved in one query
+    supabase.from.mockReturnValueOnce(
+      createMockBuilder({
+        data: [
+          { id: "user-a", email: "a@example.com" },
+          { id: "user-b", email: "b@example.com" },
+        ],
+        error: null,
+      }),
+    );
+    // batched membership lookup → neither has a membership yet
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: [], error: null }));
+    // single membership insert for both invites
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: [{ id: "m-1" }], error: null }));
+
+    const res = await request(app)
+      .post("/api/v1/bulk/invite")
+      .set("Authorization", authToken)
+      .send({
+        invites: [{ email: "a@example.com" }, { email: "b@example.com" }],
+        organizationId: testOrgId,
+        roleId: "00000000-0000-0000-0000-000000000020",
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.results.map((r: { status: string }) => r.status)).toEqual([
+      "invited",
+      "invited",
+    ]);
+    // Two invites cost one profiles query and one route membership lookup
+    // (plus requireAdmin's own membership query and the single insert) — not
+    // four sequential calls per invite.
+    const profilesQueries = supabase.from.mock.calls.filter(
+      ([table]: [string]) => table === "profiles",
+    );
+    expect(profilesQueries).toHaveLength(1);
+    expect(supabase.auth.admin.createUser).not.toHaveBeenCalled();
   });
 
   it("returns 401 without auth token", async () => {

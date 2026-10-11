@@ -9,7 +9,11 @@ import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
+<<<<<<< HEAD
 import { rateLimitAdminOps } from "../middleware/rate-limit";
+=======
+import { clearPermissionCache } from "../lib/permissions";
+>>>>>>> e04d721e (perf: cache public storefront reads, memoize permission resolution, batch bulk invites, cap SSE streams)
 import { resolveAdminTenantScope } from "../lib/admin-scope";
 import {
   createOrganizationSchema,
@@ -138,6 +142,10 @@ router.post("/onboard", rateLimitAdminOps, requireAdmin, async (req, res, next) 
       .single();
 
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);
+
+    // PERF-P2-003: onboarding inserts an approved membership; the new admin's
+    // cached resolution (if any) must be dropped.
+    clearPermissionCache(userId);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

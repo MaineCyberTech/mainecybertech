@@ -4,6 +4,7 @@ import storeRouter from "../routes/store";
 import { createTestApp } from "./helpers";
 import { errorHandler } from "../middleware/error";
 import { getCategories, getProductsByCategory } from "../lib/store-catalog";
+import { invalidateCache } from "../middleware/cache";
 
 jest.mock("../config/env", () => ({
   getEnv: jest.fn().mockReturnValue({
@@ -54,6 +55,8 @@ app.use("/api/v1/store", storeRouter);
 app.use(errorHandler);
 
 describe("store catalog routes", () => {
+  beforeEach(() => invalidateCache());
+
   describe("GET /products", () => {
     it("returns all products", async () => {
       const res = await request(app).get("/api/v1/store/products");
@@ -72,6 +75,16 @@ describe("store catalog routes", () => {
       res.body.data.forEach((p: any) => {
         expect(p.categoryId).toBe("cybersecurity");
       });
+    });
+
+    it("serves repeated public reads from the response cache (PERF-P2-002)", async () => {
+      const first = await request(app).get("/api/v1/store/products");
+      const second = await request(app).get("/api/v1/store/products");
+
+      expect(first.status).toBe(200);
+      expect(first.headers["x-cache"]).toBe("MISS");
+      expect(second.headers["x-cache"]).toBe("HIT");
+      expect(second.body).toEqual(first.body);
     });
   });
 

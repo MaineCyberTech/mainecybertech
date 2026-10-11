@@ -15,11 +15,18 @@ import {
 } from "../../lib/store-catalog";
 import { toJson, type UpdateRow } from "../../lib/db-types";
 import { applyOrgScope, resolveAdminTenantScope } from "../../lib/admin-scope";
+import { responseCache, invalidateCache } from "../../middleware/cache";
+
+/** PERF-P2-002: public storefront reads are cached briefly (per-process/Redis)
+ *  so a page view no longer costs two uncached Supabase reads. Admin catalog
+ *  writes evict the whole /api/v1/store prefix below. */
+const CATALOG_CACHE_TTL_SECONDS = 60;
+const STORE_CACHE_PREFIX = "/api/v1/store";
 
 /** Store catalog: product/category reads (public) + admin CRUD. Extracted from `routes/store.ts` (same pattern as `routes/final/`). */
 export function registerCatalogRoutes(router: Router) {
   // GET /api/v1/store/products - list products (public)
-  router.get("/products", async (req, res, next) => {
+  router.get("/products", responseCache(CATALOG_CACHE_TTL_SECONDS), async (req, res, next) => {
     try {
       const category = String(req.query.category ?? "");
       const allProducts = await getProducts();
@@ -70,51 +77,63 @@ export function registerCatalogRoutes(router: Router) {
   );
 
   // GET /api/v1/store/products/:slug - product detail (public)
-  router.get("/products/:slug", async (req, res, next) => {
-    try {
-      const product = await getProductBySlug(String(req.params.slug));
-      if (!product) {
-        res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
-        return;
+  router.get(
+    "/products/:slug",
+    responseCache(CATALOG_CACHE_TTL_SECONDS),
+    async (req, res, next) => {
+      try {
+        const product = await getProductBySlug(String(req.params.slug));
+        if (!product) {
+          res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
+          return;
+        }
+        res.json(success(product));
+      } catch (err) {
+        next(err);
       }
-      res.json(success(product));
-    } catch (err) {
-      next(err);
-    }
-  });
+    },
+  );
 
   // GET /api/v1/store/categories - list categories (public)
-  router.get("/categories", async (req, res, next) => {
-    try {
-      // Fetch both collections once and count in memory (previously this was an
-      // N+1: one full product read per category).
-      const [cats, allProducts] = await Promise.all([getCategories(), getProducts()]);
-      const result = cats.map((c) => ({
-        ...c,
-        productCount: allProducts.filter(
-          (p) => p.categoryId === c.id || p.categoryId === c.slug || p.category === c.slug,
-        ).length,
-      }));
-      res.json(success(result));
-    } catch (err) {
-      next(err);
-    }
-  });
+  router.get(
+    "/categories",
+    responseCache(CATALOG_CACHE_TTL_SECONDS),
+    async (req, res, next) => {
+      try {
+        // Fetch both collections once and count in memory (previously this was an
+        // N+1: one full product read per category).
+        const [cats, allProducts] = await Promise.all([getCategories(), getProducts()]);
+        const result = cats.map((c) => ({
+          ...c,
+          productCount: allProducts.filter(
+            (p) => p.categoryId === c.id || p.categoryId === c.slug || p.category === c.slug,
+          ).length,
+        }));
+        res.json(success(result));
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
 
   // GET /api/v1/store/categories/:slug - category detail with products (public)
-  router.get("/categories/:slug", async (req, res, next) => {
-    try {
-      const category = await getCategoryBySlug(String(req.params.slug));
-      if (!category) {
-        res.status(404).json(failure("NOT_FOUND", "Category not found", 404));
-        return;
+  router.get(
+    "/categories/:slug",
+    responseCache(CATALOG_CACHE_TTL_SECONDS),
+    async (req, res, next) => {
+      try {
+        const category = await getCategoryBySlug(String(req.params.slug));
+        if (!category) {
+          res.status(404).json(failure("NOT_FOUND", "Category not found", 404));
+          return;
+        }
+        const products = await getProductsByCategory(category);
+        res.json(success({ ...category, products }));
+      } catch (err) {
+        next(err);
       }
-      const products = await getProductsByCategory(category);
-      res.json(success({ ...category, products }));
-    } catch (err) {
-      next(err);
-    }
-  });
+    },
+  );
 
   // ===== Admin CRUD for store catalog (P2-22/23) =====
   // The catalog is now DB-backed (store_products / store_categories). These
@@ -214,6 +233,7 @@ export function registerCatalogRoutes(router: Router) {
           entityId: data.id,
           metadata: { slug: parsed.slug },
         });
+        invalidateCache(STORE_CACHE_PREFIX);
         res.status(201).json(success(data));
       } catch (error) {
         if (error instanceof ZodError) {
@@ -284,6 +304,7 @@ export function registerCatalogRoutes(router: Router) {
           entityType: "store_product",
           entityId: String(String(req.params.id)),
         });
+        invalidateCache(STORE_CACHE_PREFIX);
         res.json(success(data));
       } catch (error) {
         if (error instanceof ZodError) {
@@ -335,6 +356,7 @@ export function registerCatalogRoutes(router: Router) {
           entityType: "store_product",
           entityId: String(String(req.params.id)),
         });
+        invalidateCache(STORE_CACHE_PREFIX);
         res.status(204).send();
       } catch (error) {
         next(error);
@@ -394,6 +416,7 @@ export function registerCatalogRoutes(router: Router) {
           entityId: data.id,
           metadata: { slug: parsed.slug },
         });
+        invalidateCache(STORE_CACHE_PREFIX);
         res.status(201).json(success(data));
       } catch (error) {
         if (error instanceof ZodError) {
@@ -454,6 +477,7 @@ export function registerCatalogRoutes(router: Router) {
           entityType: "store_category",
           entityId: String(String(req.params.id)),
         });
+        invalidateCache(STORE_CACHE_PREFIX);
         res.json(success(data));
       } catch (error) {
         if (error instanceof ZodError) {
@@ -505,6 +529,7 @@ export function registerCatalogRoutes(router: Router) {
           entityType: "store_category",
           entityId: String(String(req.params.id)),
         });
+        invalidateCache(STORE_CACHE_PREFIX);
         res.status(204).send();
       } catch (error) {
         next(error);

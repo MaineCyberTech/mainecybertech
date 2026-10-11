@@ -9,7 +9,11 @@ import { requirePermission } from "../middleware/permissions";
 import { loadOwned } from "../lib/tenant";
 import { updateMembershipSchema } from "../validators/membership";
 import { assertCanAssignRole, resolveRoleKey } from "../lib/role-assignment";
+<<<<<<< HEAD
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
+=======
+import { clearPermissionCache } from "../lib/permissions";
+>>>>>>> 958d59b9 (perf: cache public storefront reads, memoize permission resolution, batch bulk invites, cap SSE streams)
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -181,6 +185,9 @@ router.patch("/:id", requirePermission("users", "manage"), async (req, res, next
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     if (!data) throw new AppError("NOT_FOUND", "Membership not found", 404);
 
+    // PERF-P2-003: status/role changes alter the member's effective grants.
+    clearPermissionCache(membership.user_id as string);
+
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
       action: "membership.update",
@@ -207,10 +214,13 @@ router.patch("/:id", requirePermission("users", "manage"), async (req, res, next
 router.delete("/:id", requirePermission("users", "manage"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "memberships", "write");
-    await loadOwned(req, supabase as any, "memberships", String(req.params.id));
+    const membership = await loadOwned(req, supabase as any, "memberships", String(req.params.id));
     const { error } = await supabase.from("memberships").delete().eq("id", String(req.params.id));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    // PERF-P2-003: the removed member's grants must not be served from cache.
+    clearPermissionCache(membership.user_id as string);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

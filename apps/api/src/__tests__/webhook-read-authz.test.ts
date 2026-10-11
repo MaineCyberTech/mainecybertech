@@ -38,6 +38,7 @@ jest.mock("../middleware/org-access", () =>
 // without `webhooks:view` must be denied on every read route.
 
 import { getSupabaseAdmin } from "../services/supabase";
+import { clearPermissionCache } from "../lib/permissions";
 
 const app = createTestApp();
 app.use("/api/v1/webhook-endpoints", webhookManagementRouter);
@@ -97,7 +98,10 @@ function mockMember(withWebhooksView: boolean) {
 }
 
 describe("webhook read routes require webhooks:view [WH-P2-007 / ACM-P2-004]", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    clearPermissionCache();
+  });
 
   const readRoutes = [
     "/api/v1/webhook-endpoints",
