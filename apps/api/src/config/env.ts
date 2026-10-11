@@ -63,6 +63,15 @@ const envSchema = z.object({
   // routes/webhooks.ts. There is intentionally no M365_WEBHOOK_SECRET.
   M365_CLIENT_STATE: z.string().optional(),
   TURNSTILE_SECRET_KEY: z.string().optional(),
+  // FILE-P2-003: optional upload malware-scan endpoint. Unset (or empty, as
+  // the deploy writes the key even when the secret is unset) = scanning
+  // disabled (no-op). When set, uploads are POSTed to it before storage; see
+  // lib/malware-scan.ts and docs/features/secure-file-request.md.
+  MALWARE_SCANNER_URL: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().url().optional(),
+  ),
+  MALWARE_SCANNER_API_KEY: z.string().optional(),
   // Shared bearer token gating GET /metrics. When set, the endpoint 404s
   // without it; Prometheus must send `Authorization: Bearer <token>`.
   METRICS_TOKEN: z.string().optional(),

@@ -11,6 +11,7 @@ import { createFileRequestSchema, updateFileRequestSchema } from "../validators/
 import { createNotification } from "../lib/notify";
 import { queryInt } from "../lib/query";
 import { validateUploadContent } from "../lib/upload-validation";
+import { scanUploadForMalware } from "../lib/malware-scan";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -156,7 +157,11 @@ router.post(
       const storagePath = `${data.organization_id}/requests/${data.token}/${Date.now()}-${safeName}`;
       // Byte-sniff the content: declared MIME is untrusted (markup/SVG rejected,
       // images and PDFs must match their declared type).
-      validateUploadContent(req.file.buffer, req.file.mimetype);
+      // FILE-P2-005: extension is cross-checked against the detected container.
+      validateUploadContent(req.file.buffer, req.file.mimetype, req.file.originalname);
+
+      // FILE-P2-003: optional malware scan (no-op unless configured).
+      await scanUploadForMalware(req.file.buffer, req.file.originalname, req.file.mimetype);
       const { error: uploadError } = await supabase.storage
         .from("documents")
         .upload(storagePath, req.file.buffer, {
