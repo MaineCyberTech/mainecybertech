@@ -98,7 +98,10 @@ export default function AdminApiKeysClient({
   return (
     <div className="space-y-6">
       {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+        <div
+          role="alert"
+          className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300"
+        >
           {error}
         </div>
       )}

@@ -404,7 +404,10 @@ export default function ProductForm({
               </div>
 
               {error && (
-                <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
+                <div
+                  role="alert"
+                  className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300"
+                >
                   {error}
                 </div>
               )}

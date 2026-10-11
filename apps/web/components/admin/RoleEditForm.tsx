@@ -121,7 +121,7 @@ export default function RoleEditForm({ roleId, initialName, initialDescription, 
           className="cyber-input w-full"
         />
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p role="alert" className="text-xs text-red-400">{error}</p>}
       <div className="flex items-center gap-2">
         <button type="submit" disabled={loading} className="cyber-button">
           {loading ? "Saving..." : "Save"}

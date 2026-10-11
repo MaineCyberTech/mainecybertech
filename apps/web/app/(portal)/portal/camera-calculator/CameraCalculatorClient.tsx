@@ -145,7 +145,7 @@ export default function CameraCalculatorClient({ organizationId, initialItems }:
             </button>
           )}
         </div>
-        {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+        {error && <p role="alert" className="mt-3 text-sm text-red-400">{error}</p>}
         {savedMessage && <p className="mt-3 text-sm text-emerald-400">{savedMessage}</p>}
         {result && (
           <div className="mt-4 grid gap-3 rounded-md border border-white/10 bg-white/5 p-4 md:grid-cols-4">

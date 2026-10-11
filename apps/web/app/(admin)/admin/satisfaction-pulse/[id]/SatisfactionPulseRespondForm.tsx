@@ -76,7 +76,7 @@ export default function SatisfactionPulseRespondForm({
         {currentStatus === "responded" && (
           <span className="text-sm text-emerald-400">Responded</span>
         )}
-        {error && <span className="text-sm text-red-400">{error}</span>}
+        {error && <span role="alert" className="text-sm text-red-400">{error}</span>}
       </div>
     </div>
   );

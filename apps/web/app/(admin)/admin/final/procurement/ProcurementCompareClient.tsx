@@ -90,7 +90,7 @@ export default function ProcurementCompareClient({
           >
             {isPending ? "Comparing…" : "Compare Selected"}
           </button>
-          {error && <span className="text-sm text-red-400">{error}</span>}
+          {error && <span role="alert" className="text-sm text-red-400">{error}</span>}
         </div>
       )}
 

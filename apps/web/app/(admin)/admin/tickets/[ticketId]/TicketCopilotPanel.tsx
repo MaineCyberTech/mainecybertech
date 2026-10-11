@@ -96,7 +96,7 @@ export default function TicketCopilotPanel({
         </button>
       </div>
 
-      {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-sm text-red-400">{error}</p>}
 
       {summary && (
         <div className="mt-4 rounded-lg border border-white/10 bg-cyber-base/60 p-4">

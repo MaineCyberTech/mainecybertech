@@ -138,7 +138,7 @@ export default function CreateOrganizationForm() {
             placeholder="Managed IT Standard"
           />
         </div>
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p role="alert" className="text-xs text-red-400">{error}</p>}
         <button type="submit" disabled={loading} className="cyber-button w-full">
           {loading ? "Creating..." : "Create Organization"}
         </button>

@@ -163,7 +163,7 @@ export default function RecordDetail({
             )}
           </div>
         ))}
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p role="alert" className="text-xs text-red-400">{error}</p>}
         <button
           type="submit"
           disabled={pending}
@@ -201,7 +201,7 @@ export default function RecordDetail({
           </button>
         )}
       </div>
-      {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
+      {error && <p role="alert" className="mb-3 text-xs text-red-400">{error}</p>}
 
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
         {displayFields.map((f) => {

@@ -40,7 +40,7 @@ export default function DeleteButton({ id, name: _name }: { id: string; name: st
         >
           Cancel
         </button>
-        {error && <span className="text-[11px] text-red-400">{error}</span>}
+        {error && <span role="alert" className="text-[11px] text-red-400">{error}</span>}
       </div>
     );
   }

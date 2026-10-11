@@ -93,7 +93,7 @@ export default function RiskAcceptButton({ id, status }: { id: string; status: s
       )}
 
       {done && <p className="mt-2 text-xs text-emerald-400">{done}</p>}
-      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-xs text-red-400">{error}</p>}
     </div>
   );
 }

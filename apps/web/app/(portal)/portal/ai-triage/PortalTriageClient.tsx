@@ -95,7 +95,7 @@ export default function PortalTriageClient({ organizationId }: { organizationId:
         >
           {loading === "analyze" ? "Analyzing…" : "Analyze"}
         </button>
-        {error && <span className="text-sm text-red-400">{error}</span>}
+        {error && <span role="alert" className="text-sm text-red-400">{error}</span>}
         {ticketId && (
           <Link
             href={`/portal/support/${ticketId}`}

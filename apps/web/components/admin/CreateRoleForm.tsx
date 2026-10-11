@@ -103,7 +103,7 @@ export default function CreateRoleForm() {
             placeholder="What does this role do?"
           />
         </div>
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p role="alert" className="text-xs text-red-400">{error}</p>}
         <button type="submit" disabled={loading} className="cyber-button w-full">
           {loading ? "Creating..." : "Create Role"}
         </button>

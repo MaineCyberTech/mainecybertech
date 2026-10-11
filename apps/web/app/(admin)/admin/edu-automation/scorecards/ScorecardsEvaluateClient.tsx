@@ -46,7 +46,7 @@ export default function ScorecardsEvaluateClient({ organizationId }: { organizat
         >
           {isPending ? "Evaluating…" : "Assign Badges & History"}
         </button>
-        {error && <span className="text-sm text-red-400">{error}</span>}
+        {error && <span role="alert" className="text-sm text-red-400">{error}</span>}
       </div>
       {result && (
         <p className="mt-3 text-xs text-slate-400">

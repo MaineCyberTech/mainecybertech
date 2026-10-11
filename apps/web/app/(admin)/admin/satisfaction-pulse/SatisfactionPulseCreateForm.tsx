@@ -103,7 +103,7 @@ export default function SatisfactionPulseCreateForm() {
           {isPending ? "Creating…" : "Create Pulse"}
         </button>
         {saved && <span className="text-sm text-emerald-400">Pulse created.</span>}
-        {error && <span className="text-sm text-red-400">{error}</span>}
+        {error && <span role="alert" className="text-sm text-red-400">{error}</span>}
       </div>
     </form>
   );
