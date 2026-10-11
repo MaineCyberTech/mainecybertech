@@ -16,13 +16,18 @@ interface StripeSubscription {
   status: string;
   current_period_start?: number;
   current_period_end: number;
+  trial_start?: number | null;
+  trial_end?: number | null;
   cancel_at_period_end: boolean;
+  canceled_at?: number | null;
   items: {
     data: Array<{
+      quantity?: number | null;
       price: {
         id: string;
         unit_amount: number;
         currency: string;
+        recurring?: { interval?: string | null } | null;
       };
     }>;
   };
@@ -358,8 +363,12 @@ export const stripeReconcile: TaskHandler = async (payload): Promise<TaskResult>
 
       // Write the fetched Stripe state back to the mirror (never under
       // dryRun) so the local copy converges even when a webhook was missed.
+      // BILL-P2-001/P2-005: the trial, interval and cancellation lifecycle is
+      // mirrored too, so the mirror can answer trial-window / cancel-at-period-
+      // end / seat questions without a live Stripe call.
       if (!dryRun) {
-        const price = stripeSub.items?.data?.[0]?.price;
+        const item = stripeSub.items?.data?.[0];
+        const price = item?.price;
         const { error: writeBackError } = await supabase
           .from("subscriptions")
           .update({
@@ -368,6 +377,12 @@ export const stripeReconcile: TaskHandler = async (payload): Promise<TaskResult>
             current_period_end: toIsoOrNull(stripeSub.current_period_end),
             amount_cents: price?.unit_amount ?? 0,
             currency: price?.currency ?? "usd",
+            interval: price?.recurring?.interval ?? null,
+            trial_start: toIsoOrNull(stripeSub.trial_start),
+            trial_end: toIsoOrNull(stripeSub.trial_end),
+            cancel_at_period_end: stripeSub.cancel_at_period_end ?? false,
+            canceled_at: toIsoOrNull(stripeSub.canceled_at),
+            quantity: item?.quantity ?? null,
           })
           .eq("stripe_subscription_id", stripeSub.id);
 

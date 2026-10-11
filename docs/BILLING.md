@@ -36,6 +36,12 @@ Stripe API ──→ POST /api/v1/webhooks/stripe ──→ billing_customers / 
 | `current_period_end`     | timestamptz | Billing period end                         |
 | `amount_cents`           | bigint      | Amount in cents                            |
 | `currency`               | text        | ISO currency code (default `usd`)          |
+| `interval`               | text        | Stripe price interval (day/week/month/year)|
+| `trial_start`            | timestamptz | Trial start (when Stripe reports one)      |
+| `trial_end`              | timestamptz | Trial end                                  |
+| `cancel_at_period_end`   | boolean     | Cancels at period end (default `false`)    |
+| `canceled_at`            | timestamptz | When the subscription was canceled         |
+| `quantity`               | integer     | Subscription item seat count               |
 
 ### `invoices`
 
@@ -54,19 +60,22 @@ Stripe API ──→ POST /api/v1/webhooks/stripe ──→ billing_customers / 
 | `invoice_pdf_url`    | text                  | Invoice PDF download link                       |
 | `due_at`             | timestamptz           | Payment due date                                |
 | `paid_at`            | timestamptz           | Payment date                                    |
+| `voided_at`          | timestamptz           | When the invoice was voided                     |
 
 ### `payments`
 
-| Column                     | Type        | Description                |
-| -------------------------- | ----------- | -------------------------- |
-| `id`                       | UUID        | PK                         |
-| `organization_id`          | UUID        | FK → organizations         |
-| `invoice_id`               | UUID        | FK → invoices              |
-| `stripe_payment_intent_id` | text        | Stripe PI ID (unique)      |
-| `amount_cents`             | bigint      | Amount in cents            |
-| `currency`                 | text        | ISO currency code          |
-| `status`                   | text        | succeeded, failed, pending |
-| `paid_at`                  | timestamptz | Payment timestamp          |
+| Column                     | Type        | Description                                  |
+| -------------------------- | ----------- | -------------------------------------------- |
+| `id`                       | UUID        | PK                                           |
+| `organization_id`          | UUID        | FK → organizations                           |
+| `invoice_id`               | UUID        | FK → invoices                                |
+| `stripe_payment_intent_id` | text        | Stripe PI ID (unique)                        |
+| `amount_cents`             | bigint      | Amount in cents                              |
+| `currency`                 | text        | ISO currency code                            |
+| `status`                   | text        | succeeded, failed, pending, refunded, partially_refunded |
+| `paid_at`                  | timestamptz | Payment timestamp                            |
+| `refund_amount_cents`      | bigint      | Amount refunded so far, in cents             |
+| `refunded_at`              | timestamptz | When the (latest) refund was created         |
 
 ## API Endpoints
 
@@ -80,7 +89,7 @@ All endpoints at `/api/v1/billing/*`, require authentication.
 | `GET`  | `/subscriptions`    | All subscriptions, filterable by `organization_id`                   |
 | `GET`  | `/payments`         | Paginated payment list with joined invoice data                      |
 | `GET`  | `/billing-customer` | Single billing customer by `organization_id`                         |
-| `POST` | `/sync`             | Admin-only: pulls latest invoices + subscriptions + payments from Stripe |
+| `POST` | `/sync`             | Admin-only: pulls latest invoices + subscriptions + payments + charge refunds from Stripe |
 | `POST` | `/create-portal-session` | Any org member: Stripe-hosted billing portal URL                 |
 
 ## Webhook Handler
@@ -90,11 +99,11 @@ All endpoints at `/api/v1/billing/*`, require authentication.
 Stripe webhook `POST /api/v1/webhooks/stripe` handles:
 
 - `invoice.paid` / `invoice.payment_failed` → upserts invoice to DB
-- `invoice.voided` → sets invoice status to `void`
+- `invoice.voided` → sets invoice status to `void` and records `voided_at`
 - `invoice.marked_uncollectible` → sets invoice status to `uncollectible`
 - `payment_intent.succeeded` / `payment_intent.payment_failed` / `payment_intent.canceled` → upserts a `payments` row (linked to the invoice when resolvable)
-- `charge.refunded` → marks the linked payment `refunded` (or `partially_refunded`)
-- `customer.subscription.*` → upserts subscription to DB
+- `charge.refunded` → marks the linked payment `refunded` (or `partially_refunded`) and stores `refund_amount_cents` / `refunded_at`
+- `customer.subscription.*` → upserts subscription to DB, including `interval`, `trial_start`, `trial_end`, `cancel_at_period_end`, `canceled_at` and `quantity`
 - `checkout.session.completed` → creates/updates `billing_customers` via `client_reference_id`
 
 Requires `stripe-signature` header (validated for presence). Events are
@@ -122,8 +131,12 @@ still apply; only the plan boundary is relaxed.
 ## Payments
 
 `payments` is populated from `payment_intent.*` webhook events and from
-`POST /billing/sync` (`/v1/payment_intents?customer=...`). Payment history is
-therefore no longer seed-only. Amounts are stored in minor units (cents).
+`POST /billing/sync` (`/v1/payment_intents?customer=...`). Refund state is
+backfilled from `/v1/charges?customer=...` (the live path is
+`charge.refunded`), so a missed refund webhook still converges to
+`refunded` / `partially_refunded` with `refund_amount_cents` and `refunded_at`.
+Payment history is therefore no longer seed-only. Amounts are stored in minor
+units (cents).
 
 ## Worker Task: `stripe-reconcile`
 
@@ -131,9 +144,13 @@ therefore no longer seed-only. Amounts are stored in minor units (cents).
 
 Periodic batch task that:
 
-1. Queries approved `memberships` with `stripe_subscription_id`
-2. Fetches subscription status from Stripe API
-3. Suspends memberships where subscription is no longer active
+1. Queries billing customers with a Stripe customer id
+2. Fetches the preferred active/trialing subscription from Stripe
+3. Writes the fetched Stripe state back to the mirror — including `interval`,
+   `trial_start`, `trial_end`, `cancel_at_period_end`, `canceled_at` and
+   `quantity` (BILL-P2-001/P2-005)
+4. Suspends memberships where the subscription is terminal (canceled/unpaid/incomplete_expired)
+5. Detects invoice/payment drift and fails the run on drift or errors
 
 Configurable: `organizationId`, `dryRun`, `batchSize`.
 

@@ -33,7 +33,7 @@ Stripe-backed billing: invoices, subscriptions, payments, billing customer looku
 
 ## Data Model
 
-Key tables: `billing_customers` (organization_id, stripe_customer_id, billing_email), `invoices`, `subscriptions`, `payments` (stripe objects mirrored with org scoping). Requires `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` env vars.
+Key tables: `billing_customers` (organization_id, stripe_customer_id, billing_email), `invoices` (incl. `voided_at`), `subscriptions` (incl. `interval`, `trial_start`/`trial_end`, `cancel_at_period_end`, `canceled_at`, `quantity`), `payments` (incl. `refund_amount_cents`/`refunded_at`) — Stripe objects mirrored with org scoping. Requires `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` env vars.
 
 ## Access Control
 

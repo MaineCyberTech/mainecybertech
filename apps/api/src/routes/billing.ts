@@ -18,6 +18,7 @@ type StripePrice = {
   product?: string | null;
   unit_amount?: number | null;
   currency?: string | null;
+  recurring?: { interval?: string | null } | null;
 };
 
 type StripeInvoice = {
@@ -31,7 +32,7 @@ type StripeInvoice = {
   hosted_invoice_url: string | null;
   invoice_pdf: string | null;
   due_date: number | null;
-  status_transitions?: { paid_at?: number | null } | null;
+  status_transitions?: { paid_at?: number | null; voided_at?: number | null } | null;
 };
 
 type StripeSubscription = {
@@ -39,7 +40,19 @@ type StripeSubscription = {
   status: string;
   current_period_start: number | null;
   current_period_end: number | null;
-  items: { data: Array<{ price: StripePrice }> };
+  trial_start?: number | null;
+  trial_end?: number | null;
+  cancel_at_period_end?: boolean | null;
+  canceled_at?: number | null;
+  items: { data: Array<{ price: StripePrice; quantity?: number | null }> };
+};
+
+type StripeCharge = {
+  id: string;
+  payment_intent?: string | null;
+  amount?: number | null;
+  amount_refunded?: number | null;
+  refunds?: { data?: Array<{ created?: number | null }> } | null;
 };
 
 type StripePaymentIntent = {
@@ -155,6 +168,19 @@ router.use(async (req, _res, next) => {
     next(error);
   }
 });
+/**
+ * Epoch-seconds timestamp of the most recent refund on a charge (BILL-P2-001).
+ * Used by the sync's charge backfill; returns null when Stripe does not embed
+ * the refund list so callers persist an explicit null rather than guessing.
+ */
+function latestRefundCreated(charge: StripeCharge): number | null {
+  const refunds = Array.isArray(charge.refunds?.data) ? charge.refunds.data : [];
+  let latest = 0;
+  for (const refund of refunds) {
+    if (typeof refund?.created === "number" && refund.created > latest) latest = refund.created;
+  }
+  return latest > 0 ? latest : null;
+}
 
 router.get("/summary", async (req, res, next) => {
   try {
@@ -372,14 +398,14 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
     }
 
     let synced = 0;
-    const counts = { invoices: 0, subscriptions: 0, payments: 0 };
+    const counts = { invoices: 0, subscriptions: 0, payments: 0, refunds: 0 };
     const errors: string[] = [];
 
     for (const customer of customers) {
       if (!customer.stripe_customer_id) continue;
       const customerId = customer.stripe_customer_id;
 
-      const [invoicesPage, subsPage, paymentsPage] = await Promise.all([
+      const [invoicesPage, subsPage, paymentsPage, chargesPage] = await Promise.all([
         fetchStripePages<StripeInvoice>(
           "https://api.stripe.com/v1/invoices",
           { customer: customerId },
@@ -398,12 +424,28 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
           stripeHeaders,
           `payment_intents (${customerId})`,
         ),
+        fetchStripePages<StripeCharge>(
+          "https://api.stripe.com/v1/charges",
+          { customer: customerId },
+          stripeHeaders,
+          `charges (${customerId})`,
+        ),
       ]);
 
-      for (const pageError of [invoicesPage.error, subsPage.error, paymentsPage.error]) {
+      for (const pageError of [
+        invoicesPage.error,
+        subsPage.error,
+        paymentsPage.error,
+        chargesPage.error,
+      ]) {
         if (pageError) errors.push(pageError);
       }
-      if (invoicesPage.truncated || subsPage.truncated || paymentsPage.truncated) {
+      if (
+        invoicesPage.truncated ||
+        subsPage.truncated ||
+        paymentsPage.truncated ||
+        chargesPage.truncated
+      ) {
         errors.push(
           `page cap (${STRIPE_MAX_PAGES} pages of ${STRIPE_PAGE_SIZE}) reached for customer ${customerId}`,
         );
@@ -432,6 +474,11 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
               inv.status === "paid"
                 ? new Date((inv.status_transitions?.paid_at ?? 0) * 1000).toISOString()
                 : null,
+            // BILL-P2-005: timestamp the void transition. Undefined keeps any
+            // previously recorded value when Stripe omits status_transitions.
+            voided_at: inv.status_transitions?.voided_at
+              ? new Date(inv.status_transitions.voided_at * 1000).toISOString()
+              : undefined,
           },
           { onConflict: "stripe_invoice_id" },
         );
@@ -439,7 +486,8 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
       }
 
       for (const sub of subsPage.items) {
-        const price = sub.items?.data?.[0]?.price;
+        const item = sub.items?.data?.[0];
+        const price = item?.price;
         await supabase.from("subscriptions").upsert(
           {
             organization_id: customer.organization_id,
@@ -454,6 +502,13 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
               : null,
             amount_cents: price?.unit_amount ?? 0,
             currency: price?.currency ?? "usd",
+            // BILL-P2-001/P2-005: trial, interval and cancellation lifecycle.
+            interval: price?.recurring?.interval ?? null,
+            trial_start: sub.trial_start ? new Date(sub.trial_start * 1000).toISOString() : null,
+            trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+            cancel_at_period_end: sub.cancel_at_period_end ?? false,
+            canceled_at: sub.canceled_at ? new Date(sub.canceled_at * 1000).toISOString() : null,
+            quantity: item?.quantity ?? null,
           },
           { onConflict: "stripe_subscription_id" },
         );
@@ -513,6 +568,30 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
           );
           counts.payments++;
         }
+      }
+
+      // Refund backfill (BILL-P2-001): `charge.refunded` is the live path, but
+      // a missed webhook (or a refund that predates the handler) would leave
+      // the payment mirrored as succeeded. Stripe charges carry the refunded
+      // amount and (usually) the refund list, so replay them after the PI
+      // upsert — which also repairs the upsert's succeeded status.
+      for (const charge of chargesPage.items) {
+        const paymentIntentId = charge.payment_intent;
+        const refundedCents = charge.amount_refunded ?? 0;
+        if (!paymentIntentId || refundedCents <= 0) continue;
+
+        const fullyRefunded =
+          typeof charge.amount === "number" && refundedCents >= charge.amount;
+        const refundedAt = latestRefundCreated(charge);
+        await supabase
+          .from("payments")
+          .update({
+            status: fullyRefunded ? "refunded" : "partially_refunded",
+            refund_amount_cents: Math.round(refundedCents),
+            refunded_at: refundedAt ? new Date(refundedAt * 1000).toISOString() : null,
+          })
+          .eq("stripe_payment_intent_id", paymentIntentId);
+        counts.refunds++;
       }
 
       synced++;

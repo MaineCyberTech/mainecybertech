@@ -319,6 +319,60 @@ describe("stripeReconcile drift detection (BILL-P2-003)", () => {
     expect(driftMetric).not.toHaveBeenCalled();
   });
 
+  it("mirrors the trial, interval and cancellation lifecycle on write-back (BILL-P2-001/P2-005)", async () => {
+    const state = baseState({
+      subscriptions: [
+        {
+          organization_id: ORG,
+          stripe_subscription_id: "sub_test",
+          status: "trialing",
+          created_at: "2026-01-01T00:00:00.000Z",
+        },
+      ],
+    });
+    (createClient as unknown as jest.Mock).mockReturnValue(makeSupabase(state));
+    installFetch({
+      subscription: {
+        ...stripeSubscription("trialing"),
+        trial_start: 1_767_225_600,
+        trial_end: 1_768_089_600,
+        cancel_at_period_end: true,
+        canceled_at: null,
+        items: {
+          data: [
+            {
+              quantity: 5,
+              price: {
+                id: "price_test",
+                unit_amount: 9900,
+                currency: "usd",
+                recurring: { interval: "month" },
+              },
+            },
+          ],
+        },
+      },
+    });
+
+    const result = await stripeReconcile({});
+
+    expect(result.ok).toBe(true);
+    expect(state.subscriptionUpdates).toHaveLength(1);
+    expect(state.subscriptionUpdates[0].values).toMatchObject({
+      status: "trialing",
+      interval: "month",
+      cancel_at_period_end: true,
+      canceled_at: null,
+      quantity: 5,
+    });
+    expect(state.subscriptionUpdates[0].values.trial_start).toBe(
+      new Date(1_767_225_600 * 1000).toISOString(),
+    );
+    expect(state.subscriptionUpdates[0].values.trial_end).toBe(
+      new Date(1_768_089_600 * 1000).toISOString(),
+    );
+  });
+
   it("returns ok:false when the subscription mirror cannot be read", async () => {
     const state = baseState({ failSubscriptionSelect: true });
     (createClient as unknown as jest.Mock).mockReturnValue(makeSupabase(state));

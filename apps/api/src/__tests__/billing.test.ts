@@ -609,7 +609,9 @@ describe("billing routes", () => {
     }
 
     function mockStripePages(
-      pages: Record<"invoices" | "subscriptions" | "payment_intents", StripePage[]>,
+      pages: Partial<
+        Record<"invoices" | "subscriptions" | "payment_intents" | "charges", StripePage[]>
+      >,
     ) {
       const calls: Record<string, number> = {};
       (httpClients.stripe.get as jest.Mock).mockImplementation((url: string) => {
@@ -617,12 +619,15 @@ describe("billing routes", () => {
           ? "invoices"
           : url.includes("/subscriptions")
             ? "subscriptions"
-            : "payment_intents";
+            : url.includes("/charges")
+              ? "charges"
+              : "payment_intents";
+        const pageList = pages[kind] ?? [{ data: [], has_more: false }];
         const index = calls[kind] ?? 0;
         calls[kind] = index + 1;
         return Promise.resolve({
           ok: true,
-          json: async () => pages[kind][Math.min(index, pages[kind].length - 1)],
+          json: async () => pageList[Math.min(index, pageList.length - 1)],
         });
       });
     }
@@ -740,6 +745,168 @@ describe("billing routes", () => {
       );
       expect(paymentUpserts).toHaveLength(0);
       expect(res.body.data.counts.payments).toBe(0);
+    });
+
+    it("persists the trial, interval and cancellation lifecycle on synced subscriptions", async () => {
+      stubOrgId = ORG_A;
+      const builders = mockScopeAndCustomer();
+      mockStripePages({
+        subscriptions: [
+          {
+            data: [
+              {
+                id: "sub_1",
+                status: "trialing",
+                current_period_start: 1700000000,
+                current_period_end: 1702592000,
+                trial_start: 1700000000,
+                trial_end: 1701000000,
+                cancel_at_period_end: true,
+                canceled_at: null,
+                items: {
+                  data: [
+                    {
+                      quantity: 3,
+                      price: {
+                        nickname: "Pro",
+                        unit_amount: 9900,
+                        currency: "usd",
+                        recurring: { interval: "month" },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            has_more: false,
+          },
+        ],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({});
+
+      expect(res.status).toBe(200);
+      const upsertArgs = (builders.subscriptions ?? [])[0].upsert.mock.calls[0][0];
+      expect(upsertArgs.status).toBe("trialing");
+      expect(upsertArgs.interval).toBe("month");
+      expect(upsertArgs.trial_start).toBe(new Date(1700000000 * 1000).toISOString());
+      expect(upsertArgs.trial_end).toBe(new Date(1701000000 * 1000).toISOString());
+      expect(upsertArgs.cancel_at_period_end).toBe(true);
+      expect(upsertArgs.quantity).toBe(3);
+    });
+
+    it("timestamps void invoices on sync", async () => {
+      stubOrgId = ORG_A;
+      const builders = mockScopeAndCustomer();
+      mockStripePages({
+        invoices: [
+          {
+            data: [
+              {
+                id: "in_void",
+                number: "INV-V",
+                status: "void",
+                subtotal: 100,
+                tax: 0,
+                total: 100,
+                currency: "usd",
+                hosted_invoice_url: null,
+                invoice_pdf: null,
+                due_date: null,
+                status_transitions: { voided_at: 1700000900 },
+              },
+            ],
+            has_more: false,
+          },
+        ],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({});
+
+      expect(res.status).toBe(200);
+      const upsertArgs = (builders.invoices ?? [])[0].upsert.mock.calls[0][0];
+      expect(upsertArgs.status).toBe("void");
+      expect(upsertArgs.voided_at).toBe(new Date(1700000900 * 1000).toISOString());
+    });
+
+    it("backfills refunded payments from Stripe charges, repairing the PI upsert", async () => {
+      stubOrgId = ORG_A;
+      const builders = mockScopeAndCustomer();
+      mockStripePages({
+        payment_intents: [
+          {
+            data: [
+              {
+                id: "pi_1",
+                status: "succeeded",
+                amount: 55000,
+                amount_received: 55000,
+                currency: "usd",
+                created: 1700000000,
+                invoice: null,
+              },
+            ],
+            has_more: false,
+          },
+        ],
+        charges: [
+          {
+            data: [
+              {
+                id: "ch_1",
+                payment_intent: "pi_1",
+                amount: 55000,
+                amount_refunded: 10000,
+                refunds: { data: [{ id: "re_1", created: 1700000500 }] },
+              },
+            ],
+            has_more: false,
+          },
+        ],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({});
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.counts.refunds).toBe(1);
+
+      const refundUpdate = (builders.payments ?? [])
+        .map((builder) => builder.update.mock.calls[0]?.[0])
+        .find((args) => args && args.status === "partially_refunded");
+      expect(refundUpdate).toMatchObject({
+        status: "partially_refunded",
+        refund_amount_cents: 10000,
+        refunded_at: new Date(1700000500 * 1000).toISOString(),
+      });
+    });
+
+    it("fails the sync when the charges page cannot be fetched", async () => {
+      stubOrgId = ORG_A;
+      mockScopeAndCustomer();
+      (httpClients.stripe.get as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes("/charges")) {
+          return Promise.resolve({ ok: false, status: 500, text: async () => "upstream boom" });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({ data: [], has_more: false }) });
+      });
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({});
+
+      expect(res.status).toBe(502);
+      expect(res.body.error.details.errors[0]).toContain("charges");
+      expect(res.body.error.details.errors[0]).toContain("500");
     });
   });
 });

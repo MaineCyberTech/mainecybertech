@@ -346,6 +346,7 @@ describe("webhooks routes", () => {
             amount: 55000,
             amount_refunded: 55000,
             currency: "usd",
+            refunds: { data: [{ id: "re_1", created: 1700000500 }] },
           },
         },
       });
@@ -364,6 +365,9 @@ describe("webhooks routes", () => {
       expect(res.status).toBe(200);
       const updateArgs = builders["payments"].update.mock.calls[0][0];
       expect(updateArgs.status).toBe("refunded");
+      // BILL-P2-001: the refunded amount and date are stored alongside status.
+      expect(updateArgs.refund_amount_cents).toBe(55000);
+      expect(updateArgs.refunded_at).toBe(new Date(1700000500 * 1000).toISOString());
     });
 
     it("marks a partial refund as partially_refunded", async () => {
@@ -377,6 +381,7 @@ describe("webhooks routes", () => {
             amount: 55000,
             amount_refunded: 10000,
             currency: "usd",
+            refunds: { data: [{ id: "re_2", created: 1700000600 }] },
           },
         },
       });
@@ -395,13 +400,22 @@ describe("webhooks routes", () => {
       expect(res.status).toBe(200);
       const updateArgs = builders["payments"].update.mock.calls[0][0];
       expect(updateArgs.status).toBe("partially_refunded");
+      expect(updateArgs.refund_amount_cents).toBe(10000);
+      expect(updateArgs.refunded_at).toBe(new Date(1700000600 * 1000).toISOString());
     });
 
     it("maps invoice.voided onto the void status (BILL-P1-003)", async () => {
       mockStripeEvent({
         type: "invoice.voided",
         id: "evt_void_1",
-        data: { object: { id: "in_void", customer: "cus_1", status: "void" } },
+        data: {
+          object: {
+            id: "in_void",
+            customer: "cus_1",
+            status: "void",
+            status_transitions: { voided_at: 1700000900 },
+          },
+        },
       });
 
       const supabaseModule = await import("../services/supabase");
@@ -418,6 +432,8 @@ describe("webhooks routes", () => {
       expect(res.status).toBe(200);
       const updateArgs = builders["invoices"].update.mock.calls[0][0];
       expect(updateArgs.status).toBe("void");
+      // BILL-P2-005: the void transition is timestamped.
+      expect(updateArgs.voided_at).toBe(new Date(1700000900 * 1000).toISOString());
       expect(builders["invoices"].eq).toHaveBeenCalledWith("stripe_invoice_id", "in_void");
     });
 
@@ -642,6 +658,99 @@ describe("webhooks routes", () => {
 
       expect(res.status).toBe(200);
       expect(builders["subscriptions"].upsert).not.toHaveBeenCalled();
+    });
+
+    it("mirrors the trial, interval and cancellation lifecycle on customer.subscription.updated (BILL-P2-001/P2-005)", async () => {
+      mockStripeEvent({
+        type: "customer.subscription.updated",
+        id: "evt_sub_1",
+        data: {
+          object: {
+            id: "sub_123",
+            customer: "cus_1",
+            status: "trialing",
+            current_period_start: 1700000000,
+            current_period_end: 1702592000,
+            trial_start: 1700000000,
+            trial_end: 1701000000,
+            cancel_at_period_end: true,
+            canceled_at: null,
+            items: {
+              data: [
+                {
+                  quantity: 5,
+                  price: {
+                    nickname: "Pro",
+                    unit_amount: 9900,
+                    currency: "usd",
+                    recurring: { interval: "month" },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "customer.subscription.updated", id: "evt_sub_1" });
+
+      expect(res.status).toBe(200);
+      const upsertArgs = builders["subscriptions"].upsert.mock.calls[0][0];
+      expect(upsertArgs.status).toBe("trialing");
+      expect(upsertArgs.interval).toBe("month");
+      expect(upsertArgs.trial_start).toBe(new Date(1700000000 * 1000).toISOString());
+      expect(upsertArgs.trial_end).toBe(new Date(1701000000 * 1000).toISOString());
+      expect(upsertArgs.cancel_at_period_end).toBe(true);
+      expect(upsertArgs.canceled_at).toBeNull();
+      expect(upsertArgs.quantity).toBe(5);
+    });
+
+    it("persists canceled_at when a subscription is deleted (BILL-P2-001)", async () => {
+      mockStripeEvent({
+        type: "customer.subscription.deleted",
+        id: "evt_sub_del",
+        data: {
+          object: {
+            id: "sub_canceled",
+            customer: "cus_1",
+            status: "canceled",
+            current_period_start: 1700000000,
+            current_period_end: 1702592000,
+            trial_start: null,
+            trial_end: null,
+            cancel_at_period_end: false,
+            canceled_at: 1702000000,
+            items: { data: [{ quantity: 1, price: { nickname: "Pro" } }] },
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "customer.subscription.deleted", id: "evt_sub_del" });
+
+      expect(res.status).toBe(200);
+      const upsertArgs = builders["subscriptions"].upsert.mock.calls[0][0];
+      expect(upsertArgs.status).toBe("canceled");
+      expect(upsertArgs.canceled_at).toBe(new Date(1702000000 * 1000).toISOString());
+      expect(upsertArgs.cancel_at_period_end).toBe(false);
+      expect(upsertArgs.trial_end).toBeNull();
     });
   });
 
