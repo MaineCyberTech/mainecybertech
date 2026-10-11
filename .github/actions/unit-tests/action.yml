@@ -1,9 +1,9 @@
 name: Unit tests and schema guards
 description: >
   The coverage suite plus every repo guard (OpenAPI, docs counts/links, DB
-  types, RLS hygiene, membership-predicate lint, review.md mirror). Shared by
-  test.yml (PRs) and validate.yml (push deploy gate) so the two definitions
-  cannot drift apart again.
+  types, RLS hygiene, membership-predicate lint, migration transaction lint,
+  review.md mirror). Shared by test.yml (PRs) and validate.yml (push deploy
+  gate) so the two definitions cannot drift apart again.
 
 inputs:
   node-version:
@@ -57,6 +57,15 @@ runs:
       # tenant rows via the anon-key + JWT path.
       shell: bash
       run: node scripts/check-rls-predicate.mjs
+
+    - name: Verify destructive migrations are transaction-wrapped (DATA-P2-002)
+      # Fails when a migration contains `drop table` / `alter table ... drop
+      # column` outside begin;/commit;. Under psql autocommit a mid-file
+      # failure leaves the earlier drops committed, so the table-replacement
+      # migrations can lose data on a partial apply. Also runs a negative
+      # fixture through the detector so a broken guard cannot pass silently.
+      shell: bash
+      run: scripts/ci/check-migration-transactions.sh
 
     - name: Verify review.md mirror is in sync
       shell: bash

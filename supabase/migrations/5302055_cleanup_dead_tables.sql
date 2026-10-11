@@ -1,5 +1,11 @@
 -- Cleanup 9 dead tables with no API/SDK/frontend usage
 -- Keep webhook_dead_letters (active in 5302050)
+--
+-- Destructive: the drops below discard all rows in the named tables, and a
+-- fresh replay is applied statement-by-statement (psql autocommit), so the
+-- begin;/commit; wrapper keeps it atomic (DATA-P2-002).
+
+begin;
 
 drop table if exists public.appointments cascade;
 drop table if exists public.chat_messages cascade;
@@ -17,3 +23,5 @@ alter table public.memberships
   drop constraint if exists memberships_role_id_fkey,
   add constraint memberships_role_id_fkey
     foreign key (role_id) references public.roles(id) on delete cascade;
+
+commit;
