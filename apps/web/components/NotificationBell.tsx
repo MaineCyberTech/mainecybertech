@@ -30,6 +30,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [prefs, setPrefs] = useState<Record<string, boolean>>({});
   const [loadingPrefs, setLoadingPrefs] = useState(false);
+  const [prefError, setPrefError] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -174,13 +175,16 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
 
   async function handleTogglePref(moduleKey: string, enabled: boolean) {
     setPrefs((prev) => ({ ...prev, [moduleKey]: enabled }));
+    setPrefError(false);
     try {
       await getClientApi().notifications.updatePreferences({
         preferences: [{ moduleKey, channel: "email", enabled }],
       });
     } catch {
-      // Preference update failed — revert optimistic update
+      // Preference update failed — revert the optimistic toggle and surface it
+      // instead of silently leaving the UI out of sync with the server.
       setPrefs((prev) => ({ ...prev, [moduleKey]: !enabled }));
+      setPrefError(true);
     }
   }
 
@@ -341,6 +345,11 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
                 ))}
               </div>
             )}
+            {prefError ? (
+              <p role="alert" className="mt-2 text-[11px] text-red-400">
+                Couldn&apos;t save that preference. Please try again.
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}
