@@ -23,6 +23,7 @@ import {
 import { z } from "zod";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { canReadDocumentById } from "../lib/document-visibility";
+import { applyResolvedOrg } from "../lib/admin-scope";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { recordDocumentCreated } from "../lib/metrics";
@@ -217,9 +218,9 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     let query = supabase.from("documents").select("*", { count: "exact" });
-
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    // MT-P2-002: mandatory org predicate; fails closed without a resolved or
+    // explicit org instead of listing every tenant.
+    query = applyResolvedOrg(req, query);
 
     const visibility = req.query.visibility as string | undefined;
     if (visibility) query = query.eq("visibility", visibility as never);
@@ -247,10 +248,9 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "documents", "read");
     let query = supabase.from("documents").select("*").eq("id", String(req.params.id));
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = applyResolvedOrg(req, query);
     const { data, error } = await query.single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Document not found", 404);

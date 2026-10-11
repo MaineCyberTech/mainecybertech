@@ -46,8 +46,16 @@ jest.mock("../middleware/org-access", () => ({
   assertOrgScopeMatches: jest.fn(),
 }));
 
+// MT-P2-008: the convert handoff reads a platform-wide intake row, so it is
+// gated on resolveAdminTenantScope().allTenants; route tests run cross-tenant.
+jest.mock("../lib/admin-scope", () => ({
+  ...jest.requireActual("../lib/admin-scope"),
+  resolveAdminTenantScope: jest.fn().mockResolvedValue({ allTenants: true, orgIds: [] }),
+}));
+
 import { getSupabaseAdmin } from "../services/supabase";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
+import { resolveAdminTenantScope } from "../lib/admin-scope";
 import storeRouter from "../routes/store";
 
 const quoteRequestRow = {
@@ -205,5 +213,20 @@ describe("POST /store/quote-requests/:id/convert", () => {
       .send(validBody);
 
     expect(res.status).toBe(500);
+  });
+
+  it("denies a single-org admin the platform-wide intake handoff (MT-P2-008)", async () => {
+    const { inserts } = setup({ rows: { store_quote_requests: quoteRequestRow } });
+    (resolveAdminTenantScope as jest.Mock).mockResolvedValueOnce({
+      allTenants: false,
+      orgIds: [validBody.organizationId],
+    });
+
+    const res = await request(app)
+      .post("/api/v1/store/quote-requests/qr-1/convert")
+      .send(validBody);
+
+    expect(res.status).toBe(403);
+    expect(inserts.projects).toBeUndefined();
   });
 });

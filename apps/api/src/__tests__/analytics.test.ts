@@ -30,8 +30,17 @@ jest.mock("../middleware/admin", () => ({
   requireAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
+// MT-P2-008: the admin analytics list/summary are platform-wide surfaces gated
+// on resolveAdminTenantScope().allTenants; route tests run cross-tenant unless
+// a test overrides the scope.
+jest.mock("../lib/admin-scope", () => ({
+  ...jest.requireActual("../lib/admin-scope"),
+  resolveAdminTenantScope: jest.fn().mockResolvedValue({ allTenants: true, orgIds: [] }),
+}));
+
 import { getSupabaseAdmin } from "../services/supabase";
 import { csrfProtection } from "../middleware/csrf";
+import { resolveAdminTenantScope } from "../lib/admin-scope";
 import analyticsRouter from "../routes/analytics";
 
 const authToken = "Bearer test-token";
@@ -140,6 +149,33 @@ describe("Analytics API", () => {
     expect(res.body.data[0].count).toBe(3);
     // SEARCH-P2-005: the route must call the RPC the migration now defines.
     expect(supabase.rpc).toHaveBeenCalledWith("get_analytics_summary");
+  });
+
+  it("denies a single-org admin the platform-wide event list (MT-P2-008)", async () => {
+    mockAuth();
+    (resolveAdminTenantScope as jest.Mock).mockResolvedValueOnce({
+      allTenants: false,
+      orgIds: ["00000000-0000-0000-0000-000000000001"],
+    });
+
+    const res = await request(app).get("/api/v1/analytics").set("Authorization", authToken);
+
+    expect(res.status).toBe(403);
+  });
+
+  it("denies a single-org admin the platform-wide summary (MT-P2-008)", async () => {
+    const supabase = mockAuth();
+    (resolveAdminTenantScope as jest.Mock).mockResolvedValueOnce({
+      allTenants: false,
+      orgIds: ["00000000-0000-0000-0000-000000000001"],
+    });
+
+    const res = await request(app)
+      .get("/api/v1/analytics/summary")
+      .set("Authorization", authToken);
+
+    expect(res.status).toBe(403);
+    expect(supabase.rpc).not.toHaveBeenCalled();
   });
 
   it("calls the get_analytics_summary RPC defined by migration 5302440 (SEC-P2-011)", async () => {

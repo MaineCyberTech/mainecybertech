@@ -7,6 +7,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { requireEntitlement } from "../middleware/entitlement";
 import { createQbrReportSchema, updateQbrReportSchema } from "../validators/qbr";
+import { applyResolvedOrg } from "../lib/admin-scope";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 
@@ -22,10 +23,10 @@ router.get("/", async (req, res, next) => {
     const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    const q = supabase
-      .from("qbr_reports")
-      .select("*", { count: "exact" })
-      .eq("organization_id", req.query.organization_id as string);
+    // MT-P2-002: mandatory org predicate; fails closed without a resolved or
+    // explicit org instead of querying across tenants.
+    let q = supabase.from("qbr_reports").select("*", { count: "exact" });
+    q = applyResolvedOrg(req, q);
 
     const { data, error, count } = await q
       .order("created_at", { ascending: false })
@@ -42,12 +43,9 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "qbr", "read");
-    const { data, error } = await supabase
-      .from("qbr_reports")
-      .select("*")
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string)
-      .single();
+    let query = supabase.from("qbr_reports").select("*").eq("id", String(req.params.id));
+    query = applyResolvedOrg(req, query);
+    const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Report not found", 404);
     res.json(success(data));
   } catch (error) {
@@ -211,13 +209,12 @@ router.patch("/:id", requirePermission("qbr", "edit"), async (req, res, next) =>
     if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
     if (parsed.metadata !== undefined) updateData.metadata = parsed.metadata;
 
-    const { data, error } = await supabase
+    let updateQuery = supabase
       .from("qbr_reports")
       .update(updateData as never)
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string)
-      .select()
-      .single();
+      .eq("id", String(req.params.id));
+    updateQuery = applyResolvedOrg(req, updateQuery);
+    const { data, error } = await updateQuery.select().single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     if (!data) throw new AppError("NOT_FOUND", "Report not found", 404);
 
@@ -238,11 +235,9 @@ router.patch("/:id", requirePermission("qbr", "edit"), async (req, res, next) =>
 router.delete("/:id", requirePermission("qbr", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "qbr", "write");
-    const { error } = await supabase
-      .from("qbr_reports")
-      .delete()
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string);
+    let deleteQuery = supabase.from("qbr_reports").delete().eq("id", String(req.params.id));
+    deleteQuery = applyResolvedOrg(req, deleteQuery);
+    const { error } = await deleteQuery;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

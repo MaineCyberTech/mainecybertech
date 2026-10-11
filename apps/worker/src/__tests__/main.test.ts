@@ -209,6 +209,40 @@ describe("executeTask", () => {
     expect(result.error).toContain("Unknown task type");
   });
 
+  it("rejects tenant scope on a task that does not declare it [MT-P2-006]", async () => {
+    const handler = jest.fn<() => Promise<TaskResult>>().mockResolvedValue({ ok: true });
+    registerTask("scope-test", handler);
+
+    const result = await executeTask({
+      type: "scope-test",
+      payload: { organizationId: "00000000-0000-0000-0000-0000000000aa" },
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/does not accept tenant scope/i);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("validates declared tenant scope keys as UUIDs [MT-P2-006]", async () => {
+    const handler = jest.fn<() => Promise<TaskResult>>().mockResolvedValue({ ok: true });
+    registerTask("tenant-scope-test", handler, { tenantScopeKeys: ["organizationId"] });
+
+    const invalid = await executeTask({
+      type: "tenant-scope-test",
+      payload: { organizationId: "not-a-uuid" },
+    });
+    expect(invalid.ok).toBe(false);
+    expect(invalid.error).toMatch(/invalid organizationId/i);
+    expect(handler).not.toHaveBeenCalled();
+
+    const valid = await executeTask({
+      type: "tenant-scope-test",
+      payload: { organizationId: "00000000-0000-0000-0000-0000000000aa" },
+    });
+    expect(valid.ok).toBe(true);
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
   it("returns error when handler throws", async () => {
     const handler = jest
       .fn<() => Promise<TaskResult>>()
