@@ -75,7 +75,6 @@ async function logWebhookDelivery(
     response_body: null,
     idempotency_key: idempotencyKey,
   });
-<<<<<<< HEAD
   if (error) {
     // Do not mark the event processed: the delivery record is part of the
     // processed state, so a failed insert must release the claim and let the
@@ -86,12 +85,6 @@ async function logWebhookDelivery(
       500,
     );
   }
-=======
-  // RES-P2-007: a failed delivery log used to be swallowed while the handler
-  // still ACKed 200. Throw so the webhook fails and the outer catch releases
-  // the idempotency claim for the provider's retry.
-  throwIfWriteFailed(error, `webhook_deliveries insert for ${event}`);
->>>>>>> 4fbe52bf (fix(api): fail inbound webhooks when persistence fails (RES-P2-007))
   await storeIdempotencyKey(idempotencyKey, "done");
 }
 
@@ -314,7 +307,6 @@ router.post("/stripe", async (req, res, next) => {
         throwIfReadFailed(customerError, "Stripe billing customer lookup");
 
         if (customer) {
-<<<<<<< HEAD
           // BILL-P2-007: a void invoice is terminal — a late or retried
           // invoice.paid/payment_failed event must not resurrect it.
           const currentInvoiceStatus = await readMirrorStatus(
@@ -359,34 +351,6 @@ router.post("/stripe", async (req, res, next) => {
               { onConflict: "stripe_invoice_id" },
             );
             assertMirrorWrite(invoiceWriteError, "invoices.upsert");
-=======
-          const status =
-            inv.status === "open" && inv.due_date && new Date(inv.due_date * 1000) < new Date()
-              ? "overdue"
-              : inv.status;
-          const { error: invoiceError } = await supabase.from("invoices").upsert(
-            {
-              organization_id: customer.organization_id,
-              stripe_invoice_id: inv.id,
-              invoice_number: inv.number,
-              status,
-              // Stripe already returns amounts in the smallest currency unit (cents)
-              subtotal_cents: Math.round(inv.subtotal),
-              tax_cents: Math.round(inv.tax ?? 0),
-              total_cents: Math.round(inv.total),
-              currency: inv.currency,
-              hosted_invoice_url: inv.hosted_invoice_url,
-              invoice_pdf_url: inv.invoice_pdf,
-              due_at: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
-              paid_at:
-                inv.status === "paid"
-                  ? new Date(inv.status_transitions?.paid_at * 1000).toISOString()
-                  : null,
-            },
-            { onConflict: "stripe_invoice_id" },
-          );
-          throwIfWriteFailed(invoiceError, "Stripe invoice upsert");
->>>>>>> 4fbe52bf (fix(api): fail inbound webhooks when persistence fails (RES-P2-007))
 
             // BILL-P2-004: dunning visibility. A failed charge previously just
             // flipped the invoice row; notify the org's billing contacts so the
@@ -418,7 +382,6 @@ router.post("/stripe", async (req, res, next) => {
         throwIfReadFailed(customerError, "Stripe billing customer lookup");
 
         if (customer) {
-<<<<<<< HEAD
           // BILL-P2-007: canceled/incomplete_expired subscriptions are
           // terminal — a late subscription.updated must not resurrect them.
           const currentSubscriptionStatus = await readMirrorStatus(
@@ -465,27 +428,6 @@ router.post("/stripe", async (req, res, next) => {
             );
             assertMirrorWrite(subscriptionWriteError, "subscriptions.upsert");
           }
-=======
-          const price = sub.items?.data?.[0]?.price;
-          const { error: subscriptionError } = await supabase.from("subscriptions").upsert(
-            {
-              organization_id: customer.organization_id,
-              stripe_subscription_id: sub.id,
-              plan_name: price?.nickname ?? price?.product ?? "Unknown",
-              status: sub.status,
-              current_period_start: sub.current_period_start
-                ? new Date(sub.current_period_start * 1000).toISOString()
-                : null,
-              current_period_end: sub.current_period_end
-                ? new Date(sub.current_period_end * 1000).toISOString()
-                : null,
-              amount_cents: price?.unit_amount ?? 0,
-              currency: price?.currency ?? "usd",
-            },
-            { onConflict: "stripe_subscription_id" },
-          );
-          throwIfWriteFailed(subscriptionError, "Stripe subscription upsert");
->>>>>>> 4fbe52bf (fix(api): fail inbound webhooks when persistence fails (RES-P2-007))
         }
       }
     }
@@ -493,7 +435,6 @@ router.post("/stripe", async (req, res, next) => {
     if (event.type === "checkout.session.completed") {
       const session = event.data?.object;
       if (session?.customer && session?.client_reference_id) {
-<<<<<<< HEAD
         const { error: billingCustomerWriteError } = await supabase
           .from("billing_customers")
           .upsert(
@@ -505,17 +446,6 @@ router.post("/stripe", async (req, res, next) => {
             { onConflict: "organization_id" },
           );
         assertMirrorWrite(billingCustomerWriteError, "billing_customers.upsert");
-=======
-        const { error: checkoutError } = await supabase.from("billing_customers").upsert(
-          {
-            organization_id: session.client_reference_id,
-            stripe_customer_id: session.customer,
-            billing_email: session.customer_details?.email ?? null,
-          },
-          { onConflict: "organization_id" },
-        );
-        throwIfWriteFailed(checkoutError, "Stripe billing customer upsert");
->>>>>>> 4fbe52bf (fix(api): fail inbound webhooks when persistence fails (RES-P2-007))
       }
     }
 
@@ -534,7 +464,6 @@ router.post("/stripe", async (req, res, next) => {
           invoiceId: pi.invoice,
         });
         if (organizationId) {
-<<<<<<< HEAD
           // BILL-P2-007: refunds are terminal — a late or retried
           // payment_intent event must not downgrade refunded back to
           // succeeded/failed/pending.
@@ -571,44 +500,20 @@ router.post("/stripe", async (req, res, next) => {
             );
             assertMirrorWrite(paymentWriteError, "payments.upsert");
           }
-=======
-          const succeeded = pi.status === "succeeded";
-          const { error: paymentError } = await supabase.from("payments").upsert(
-            {
-              organization_id: organizationId,
-              invoice_id: invoiceRowId,
-              stripe_payment_intent_id: pi.id,
-              amount_cents: Math.round(
-                succeeded ? (pi.amount_received ?? pi.amount) : pi.amount,
-              ),
-              currency: pi.currency,
-              status: mapPaymentIntentStatus(pi.status),
-              paid_at: succeeded ? new Date((pi.created ?? 0) * 1000).toISOString() : null,
-            },
-            { onConflict: "stripe_payment_intent_id" },
-          );
-          throwIfWriteFailed(paymentError, "Stripe payment upsert");
->>>>>>> 4fbe52bf (fix(api): fail inbound webhooks when persistence fails (RES-P2-007))
         }
       }
     }
 
     // Refunds → update the linked payment (BILL-P1-003). A charge may not have
     // a local PaymentIntent row (e.g. created before this handler shipped), so
-<<<<<<< HEAD
     // this is a best-effort update keyed on the PI id. The refunded amount and
     // timestamp are stored alongside the status (BILL-P2-001).
-=======
-    // a zero-row update is not an error; a failed update throws so Stripe
-    // retries (RES-P2-007).
->>>>>>> 46eb7a1d (fix(api): fail inbound webhooks when persistence fails (RES-P2-007))
     if (event.type === "charge.refunded") {
       const charge = event.data?.object;
       const paymentIntentId = charge?.payment_intent;
       if (paymentIntentId) {
         const fullyRefunded =
           typeof charge.amount === "number" && charge.amount_refunded >= charge.amount;
-<<<<<<< HEAD
         const currentPaymentStatus = await readMirrorStatus(
           supabase,
           "payments",
@@ -634,13 +539,6 @@ router.post("/stripe", async (req, res, next) => {
             .eq("stripe_payment_intent_id", paymentIntentId);
           assertMirrorWrite(refundErr, "payments.update refund");
         }
-=======
-        const { error: refundErr } = await supabase
-          .from("payments")
-          .update({ status: fullyRefunded ? "refunded" : "partially_refunded" })
-          .eq("stripe_payment_intent_id", paymentIntentId);
-        throwIfWriteFailed(refundErr, "Stripe refund update");
->>>>>>> 4fbe52bf (fix(api): fail inbound webhooks when persistence fails (RES-P2-007))
       }
     }
 
@@ -650,11 +548,7 @@ router.post("/stripe", async (req, res, next) => {
       const inv = event.data?.object;
       if (inv?.id) {
         const status = event.type === "invoice.voided" ? "void" : "uncollectible";
-<<<<<<< HEAD
         const voidedAt = inv.status_transitions?.voided_at ?? event.created;
-=======
-<<<<<<< HEAD
->>>>>>> 46eb7a1d (fix(api): fail inbound webhooks when persistence fails (RES-P2-007))
         const { error: invoiceVoidWriteError } = await supabase
           .from("invoices")
           .update({
