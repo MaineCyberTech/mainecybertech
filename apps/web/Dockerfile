@@ -1,4 +1,4 @@
-FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS base
+FROM node:25-alpine@sha256:bdf2cca6fe3dabd014ea60163eca3f0f7015fbd5c7ee1b0e9ccb4ced6eb02ef4 AS base
 WORKDIR /app
 RUN corepack enable \
  && (corepack prepare pnpm@10 --activate \
@@ -39,7 +39,7 @@ COPY apps/web ./apps/web
 RUN pnpm --filter=./apps/web build && rm -rf /app/apps/web/.next/cache
 
 # Runtime
-FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS runner
+FROM node:25-alpine@sha256:bdf2cca6fe3dabd014ea60163eca3f0f7015fbd5c7ee1b0e9ccb4ced6eb02ef4 AS runner
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
 ENV NODE_ENV=production
