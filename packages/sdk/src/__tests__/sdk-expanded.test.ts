@@ -829,10 +829,18 @@ describe("SDK modules — expanded coverage", () => {
   describe("SearchApi", () => {
     it("performs admin search", async () => {
       mockFetch.mockResolvedValue(
-        mockResponse({ projects: [], tickets: [], users: [], organizations: [] }),
+        mockResponse({
+          projects: [],
+          tickets: [],
+          users: [],
+          organizations: [],
+          documents: [{ id: "d1", name: "Report" }],
+        }),
       );
       const result = await client.search.admin("test");
       expect(result.projects).toHaveLength(0);
+      // SEARCH-P2-003: the admin payload includes documents.
+      expect(result.documents).toHaveLength(1);
     });
     it("performs portal search", async () => {
       mockFetch.mockResolvedValue(mockResponse({ projects: [], tickets: [], documents: [] }));

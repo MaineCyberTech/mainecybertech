@@ -1,17 +1,31 @@
 import { ApiClient } from "./client";
 import type { Project, Ticket, User, Organization } from "./types";
 
+/**
+ * Document rows returned by the search endpoints. The API projects only these
+ * columns (not the full `Document` record), and admin search additionally
+ * filters by the `can_read_document` visibility model.
+ */
+export interface SearchDocument {
+  id: string;
+  name: string;
+  organization_id: string;
+  mime_type?: string | null;
+  visibility?: string | null;
+}
+
 export interface SearchResult {
   projects: Project[];
   tickets: Ticket[];
   users: User[];
   organizations: Organization[];
+  documents: SearchDocument[];
 }
 
 export interface PortalSearchResult {
   projects: Project[];
   tickets: Ticket[];
-  documents: Array<{ id: string; name: string; organization_id: string; mime_type?: string | null }>;
+  documents: SearchDocument[];
 }
 
 export class SearchApi {

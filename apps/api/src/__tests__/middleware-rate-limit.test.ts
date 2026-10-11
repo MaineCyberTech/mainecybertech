@@ -1,7 +1,11 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import express from "express";
-import { rateLimitByUser, userRateLimitKeyGenerator } from "../middleware/rate-limit";
+import {
+  rateLimitByUser,
+  rateLimitSearch,
+  userRateLimitKeyGenerator,
+} from "../middleware/rate-limit";
 
 jest.mock("../config/env", () => ({
   getEnv: jest.fn().mockReturnValue({
@@ -50,6 +54,34 @@ describe("rateLimitByUser", () => {
     const res = await request(app).get("/health");
     expect(res.status).toBe(200);
   });
+});
+
+describe("rateLimitSearch", () => {
+  function createSearchApp() {
+    const app = express();
+    app.use(rateLimitSearch);
+    app.get("/test", (_req, res) => res.json({ ok: true }));
+    return app;
+  }
+
+  it("caps typeahead bursts per token [SEARCH-P2-007]", async () => {
+    const app = createSearchApp();
+    let limited = 0;
+    for (let i = 0; i < 61; i++) {
+      const res = await request(app).get("/test").set("Authorization", "Bearer burst-token");
+      if (res.status === 429) limited++;
+    }
+    expect(limited).toBe(1);
+  }, 30000);
+
+  it("keeps a separate bucket per token", async () => {
+    const app = createSearchApp();
+    for (let i = 0; i < 61; i++) {
+      await request(app).get("/test").set("Authorization", "Bearer token-a");
+    }
+    const otherUser = await request(app).get("/test").set("Authorization", "Bearer token-b");
+    expect(otherUser.status).toBe(200);
+  }, 30000);
 });
 
 describe("userRateLimitKeyGenerator", () => {

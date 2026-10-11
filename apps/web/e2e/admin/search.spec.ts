@@ -12,7 +12,7 @@ test.describe("admin global search", () => {
     await searchInput.fill("test");
     // The dropdown opens after a 300ms debounce; rely on the auto-waiting
     // assertion instead of a fixed sleep.
-    const dropdown = page.getByText(/no results|users|organizations|tickets|projects/i);
+    const dropdown = page.getByText(/no results|users|organizations|tickets|projects|documents/i);
     await expect(dropdown.first()).toBeVisible({ timeout: 10000 });
   });
 

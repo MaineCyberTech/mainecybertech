@@ -26,7 +26,13 @@ jest.mock("../services/audit", () => ({
   logAuditEvent: jest.fn(),
 }));
 
+jest.mock("../lib/metrics", () => ({
+  recordSearchQuery: jest.fn(),
+}));
+
 import { getSupabaseAdmin } from "../services/supabase";
+
+const ORG_A = "00000000-0000-0000-0000-000000000001";
 
 function mockAuth() {
   const supabase = { from: jest.fn(), auth: { getUser: jest.fn() } };
@@ -57,7 +63,7 @@ describe("search portal routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
-      expect(res.body.data).toEqual({ tickets: [], projects: [] });
+      expect(res.body.data).toEqual({ tickets: [], projects: [], documents: [] });
     });
 
     it("returns empty results when query is too short", async () => {
@@ -68,7 +74,7 @@ describe("search portal routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
-      expect(res.body.data).toEqual({ tickets: [], projects: [] });
+      expect(res.body.data).toEqual({ tickets: [], projects: [], documents: [] });
     });
 
     it("returns empty results when user has no memberships", async () => {
@@ -80,7 +86,7 @@ describe("search portal routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
-      expect(res.body.data).toEqual({ tickets: [], projects: [] });
+      expect(res.body.data).toEqual({ tickets: [], projects: [], documents: [] });
     });
 
     it("returns search results", async () => {
@@ -93,9 +99,12 @@ describe("search portal routes", () => {
       supabase.from.mockImplementation((table: string) => {
         if (table === "memberships") {
           return createMockBuilder({
-            data: [{ organization_id: "00000000-0000-0000-0000-000000000001" }],
+            data: [{ organization_id: ORG_A }],
             error: null,
           });
+        }
+        if (table === "documents") {
+          return createMockBuilder({ data: [], error: null });
         }
         const builder = createMockBuilder({
           data: table === "tickets" ? mockTickets : mockProjects,
@@ -112,6 +121,78 @@ describe("search portal routes", () => {
       expect(res.status).toBe(200);
       expect(res.body.data.tickets).toEqual(mockTickets);
       expect(res.body.data.projects).toEqual(mockProjects);
+      expect(res.body.data.documents).toEqual([]);
+      // SEARCH-P2-005: the portal route now feeds the search counter.
+      const { recordSearchQuery } = jest.requireMock("../lib/metrics") as {
+        recordSearchQuery: jest.Mock;
+      };
+      expect(recordSearchQuery).toHaveBeenCalled();
+    });
+
+    it("returns readable documents and hides private ones [SEARCH-P2-002]", async () => {
+      const supabase = mockAuth();
+      const orgDoc = {
+        id: "doc-org",
+        name: "Org handbook",
+        mime_type: "application/pdf",
+        visibility: "org",
+        organization_id: ORG_A,
+        uploaded_by: "user-2",
+      };
+      const publicDoc = {
+        id: "doc-public",
+        name: "Public flyer",
+        mime_type: "image/png",
+        visibility: "public",
+        organization_id: ORG_A,
+        uploaded_by: "user-2",
+      };
+      const privateDoc = {
+        id: "doc-private",
+        name: "Private notes",
+        mime_type: "application/pdf",
+        visibility: "private",
+        organization_id: ORG_A,
+        uploaded_by: "user-2",
+      };
+
+      supabase.from.mockImplementation((table: string) => {
+        let data: unknown = [];
+        switch (table) {
+          case "memberships":
+            data = [
+              {
+                organization_id: ORG_A,
+                role_id: "role-client-user",
+                roles: [{ key: "client_user" }],
+              },
+            ];
+            break;
+          case "profiles":
+            data = { is_super_admin: false };
+            break;
+          case "documents":
+            data = [orgDoc, publicDoc, privateDoc];
+            break;
+          default:
+            data = [];
+        }
+        const builder = createMockBuilder({ data, error: null });
+        (builder as any).or = jest.fn(() => builder);
+        return builder;
+      });
+
+      const res = await request(app)
+        .get("/api/v1/search/portal?q=hand")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      // The visibility model matches admin search: org/public survive, private
+      // (no uploader/role/grant match) is dropped.
+      expect(res.body.data.documents.map((d: { id: string }) => d.id)).toEqual([
+        "doc-org",
+        "doc-public",
+      ]);
     });
   });
 });

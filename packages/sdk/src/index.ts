@@ -97,7 +97,12 @@ import {
 import { FieldServicesApi } from "./field-services";
 import { EduAutomationApi } from "./edu-automation";
 import { FinalApi } from "./final";
-import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
+import {
+  SearchApi,
+  type SearchResult,
+  type PortalSearchResult,
+  type SearchDocument,
+} from "./search";
 import type {
   ClientOnboardingRecord,
   ChecklistItem,
@@ -238,6 +243,7 @@ export type {
   BulkInviteResult,
   SearchResult,
   PortalSearchResult,
+  SearchDocument,
   ApprovalRequest,
   ApprovalStats,
   ApprovalDetail,

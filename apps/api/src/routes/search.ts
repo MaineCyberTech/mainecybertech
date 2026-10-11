@@ -11,8 +11,13 @@ import { sanitizeSearchTerm } from "../lib/search";
 import { queryInt } from "../lib/query";
 import { isCrossTenantKey, roleKeyOf } from "../lib/roles";
 import { recordSearchQuery } from "../lib/metrics";
+import { rateLimitSearch } from "../middleware/rate-limit";
 
 const router: ReturnType<typeof Router> = Router();
+
+// SEARCH-P2-007: the admin typeahead hits this route on every debounced
+// keystroke; bound the burst before the auth/database work.
+router.use(rateLimitSearch);
 
 // Order matters: requireOrgAccess must resolve the request's tenant scope
 // (`req.orgScope` / `req.orgId`) before requireAdmin runs, so the org-pinned
