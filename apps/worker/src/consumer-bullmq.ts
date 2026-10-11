@@ -2,8 +2,14 @@ import { Worker as BullWorker, type Job } from "bullmq";
 import { env, resolveRedisUrl } from "./env";
 import { executeTask } from "./task-registry";
 import { logger } from "./logger";
-import { isShuttingDown, drainInFlight, markShuttingDown } from "./shutdown";
+import {
+  isShuttingDown,
+  drainInFlight,
+  markShuttingDown,
+  closeWorkerResources,
+} from "./shutdown";
 import { getConsumerConnection, reportConsumerConnection } from "./queue-state";
+import { writeTaskDeadLetter } from "./task-dead-letters";
 
 let bullWorker: BullWorker | null = null;
 
@@ -35,10 +41,24 @@ export async function runBullMQWorker(): Promise<void> {
   );
 
   bullWorker.on("failed", (job, error) => {
+    const task = job?.data as TaskMessage | undefined;
+    const attemptsMade = job?.attemptsMade ?? 0;
+    const maxAttempts = job?.opts?.attempts ?? 1;
     logger.error(
-      { jobId: job?.id, type: job?.data?.type, error: error.message },
-      "BullMQ job failed permanently",
+      { jobId: job?.id, type: task?.type, error: error.message, attemptsMade, maxAttempts },
+      "BullMQ job failed",
     );
+    // RES-P2-002: once the retries are exhausted the job falls out of Redis.
+    // Persist it to the task dead-letter set so the failure is queryable and
+    // replayable, and let worker_task_dead_letters_total drive the alert.
+    if (task?.type && attemptsMade >= maxAttempts) {
+      void writeTaskDeadLetter({
+        taskType: task.type,
+        payload: task.payload ?? {},
+        error: error.message,
+        attempts: attemptsMade,
+      });
+    }
   });
 
   // RES-P2-008: feed the consumer's BullMQ connection state into the
@@ -85,7 +105,13 @@ export async function runBullMQWorker(): Promise<void> {
       logger.info("Shutdown signal received — closing BullMQ worker...");
       await bullWorker?.close();
       await drainInFlight();
+      // RES-P2-009: release the Redis-backed handles (scan lock, idempotency,
+      // producer queue) so the event loop can empty. Open sockets would keep
+      // the process alive until Docker's stop timeout SIGKILLs it.
+      await closeWorkerResources();
+      logger.info("Worker shut down gracefully");
       resolve();
+      process.exit(0);
     };
     process.on("SIGTERM", shutdown);
     process.on("SIGINT", shutdown);

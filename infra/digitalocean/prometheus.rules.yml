@@ -301,16 +301,29 @@ groups:
     rules:
       # OBS-P2-009 / CHAIN-P2-010: any non-success worker execution is a lost
       # job; no_handler means the queue delivered a task type this build has no
-      # handler for.
+      # handler for, timeout means the handler exceeded WORKER_TASK_TIMEOUT_MS.
       - alert: MCTWorkerTaskFailures
-        expr: sum by (task_type) (rate(worker_task_executions_total{status=~"failure|error|no_handler"}[15m])) > 0
+        expr: sum by (task_type) (rate(worker_task_executions_total{status=~"failure|error|timeout|no_handler"}[15m])) > 0
         for: 10m
         labels:
           severity: warning
           team: platform
         annotations:
           summary: "Worker task {{ $labels.task_type }} is failing"
-          description: "Task type {{ $labels.task_type }} has recorded failure/error/no_handler executions for 10 minutes. Check the worker logs for {{ $labels.task_type }}."
+          description: "Task type {{ $labels.task_type }} has recorded failure/error/timeout/no_handler executions for 10 minutes. Check the worker logs for {{ $labels.task_type }}."
+
+      # RES-P2-002: a task that exhausted its BullMQ retries was written to
+      # task_dead_letters and is no longer in Redis. Any increase means work
+      # was permanently dropped and needs operator review/replay.
+      - alert: MCTWorkerTaskDeadLettered
+        expr: increase(worker_task_dead_letters_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Worker task {{ $labels.task_type }} exhausted its retries"
+          description: "At least one {{ $labels.task_type }} task failed every retry attempt in the last 15 minutes and was written to task_dead_letters. It is no longer in the queue. Inspect the row (task_type, payload, error) and replay or fix the handler."
 
       # OBS-P2-009: backlog signal. Deliberately NOT keyed on the
       # queue="unavailable" series: the worker sets that gauge to 0 and never

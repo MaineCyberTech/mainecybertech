@@ -3,6 +3,16 @@ import { jest } from "@jest/globals";
 jest.mock("../logger", () => ({
   logger: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
 }));
+// RES-P2-009: shutdown must close the Redis-backed handles the worker owns.
+jest.mock("../lib/scan-lock", () => ({
+  closeScanLock: jest.fn(async () => {}),
+}));
+jest.mock("../lib/idempotency", () => ({
+  closeIdempotency: jest.fn(async () => {}),
+}));
+jest.mock("../producer", () => ({
+  closeTaskQueue: jest.fn(async () => {}),
+}));
 
 /**
  * shutdown.ts keeps module-level state (shuttingDown, in-flight set, watchdog),
@@ -75,5 +85,41 @@ describe("worker shutdown", () => {
     mod.markShuttingDown();
     expect(() => jest.advanceTimersByTime(4_999)).not.toThrow();
     expect(() => jest.advanceTimersByTime(1)).toThrow("exit:1");
+  });
+
+  it("closes the Redis-backed resources on shutdown [RES-P2-009]", async () => {
+    let closeResources: () => Promise<void> = async () => {};
+    let scanLock: { closeScanLock: jest.Mock } | undefined;
+    let idempotency: { closeIdempotency: jest.Mock } | undefined;
+    let producer: { closeTaskQueue: jest.Mock } | undefined;
+
+    // Capture the modules from the same isolated registry shutdown.ts loads,
+    // otherwise the assertions would inspect a different mock instance.
+    jest.isolateModules(() => {
+      const mod = require("../shutdown") as typeof import("../shutdown");
+      closeResources = mod.closeWorkerResources;
+      scanLock = require("../lib/scan-lock") as { closeScanLock: jest.Mock };
+      idempotency = require("../lib/idempotency") as { closeIdempotency: jest.Mock };
+      producer = require("../producer") as { closeTaskQueue: jest.Mock };
+    });
+
+    await closeResources();
+
+    expect(scanLock!.closeScanLock).toHaveBeenCalledTimes(1);
+    expect(idempotency!.closeIdempotency).toHaveBeenCalledTimes(1);
+    expect(producer!.closeTaskQueue).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not reject when closing a resource fails [RES-P2-009]", async () => {
+    let closeResources: () => Promise<void> = async () => {};
+
+    jest.isolateModules(() => {
+      const mod = require("../shutdown") as typeof import("../shutdown");
+      const scanLock = require("../lib/scan-lock") as { closeScanLock: jest.Mock };
+      scanLock.closeScanLock.mockRejectedValueOnce(new Error("quit failed"));
+      closeResources = mod.closeWorkerResources;
+    });
+
+    await expect(closeResources()).resolves.toBeUndefined();
   });
 });

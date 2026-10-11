@@ -6264,6 +6264,37 @@ export type Database = {
           { foreignKeyName: "tabletop_exercises_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };
+      task_dead_letters: {
+        Row: {
+          attempts: number;
+          created_at: string;
+          error: string | null;
+          id: string;
+          last_attempt_at: string;
+          payload: Json;
+          task_type: string;
+        };
+        Insert: {
+          task_type: string;
+          attempts?: number | null;
+          created_at?: string | null;
+          error?: string | null;
+          id?: string | null;
+          last_attempt_at?: string | null;
+          payload?: Json | null;
+        };
+        Update: {
+          attempts?: number | null;
+          created_at?: string | null;
+          error?: string | null;
+          id?: string | null;
+          last_attempt_at?: string | null;
+          payload?: Json | null;
+          task_type?: string | null;
+        };
+        Relationships: [
+        ];
+      };
       ticket_comments: {
         Row: {
           author_id: string;

@@ -6,6 +6,7 @@ import {
   getRegisteredTaskTypes,
   executeTask,
   type TaskMessage,
+  type TaskHandler,
   type TaskResult,
 } from "../task-registry";
 
@@ -35,6 +36,7 @@ describe("env schema", () => {
     expect(env.LOG_LEVEL).toBe("info");
     expect(env.WORKER_CONCURRENCY).toBe(10);
     expect(env.WORKER_TIMEOUT).toBe(30000);
+    expect(env.WORKER_TASK_TIMEOUT_MS).toBe(600000);
     expect(env.SUPABASE_URL).toBe("https://test.supabase.co");
     expect(env.SUPABASE_ANON_KEY).toBe("test-anon-key");
   });
@@ -46,6 +48,7 @@ describe("env schema", () => {
       LOG_LEVEL: "debug",
       WORKER_CONCURRENCY: "5",
       WORKER_TIMEOUT: "60000",
+      WORKER_TASK_TIMEOUT_MS: "900000",
       SUPABASE_URL: "https://test.supabase.co",
       SUPABASE_ANON_KEY: "test-key",
       SMTP_HOST: "smtp.test.local",
@@ -57,6 +60,7 @@ describe("env schema", () => {
     expect(env.LOG_LEVEL).toBe("debug");
     expect(env.WORKER_CONCURRENCY).toBe(5);
     expect(env.WORKER_TIMEOUT).toBe(60000);
+    expect(env.WORKER_TASK_TIMEOUT_MS).toBe(900000);
     expect(env.SUPABASE_URL).toBe("https://test.supabase.co");
     expect(env.SUPABASE_ANON_KEY).toBe("test-key");
   });
@@ -189,7 +193,10 @@ describe("executeTask", () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(handler).toHaveBeenCalledWith({ key: "value" });
+    expect(handler).toHaveBeenCalledWith(
+      { key: "value" },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 
   it("returns error for unknown task type", async () => {
@@ -215,6 +222,34 @@ describe("executeTask", () => {
 
     expect(result.ok).toBe(false);
     expect(result.error).toBe("handler exploded");
+  });
+
+  it("aborts a handler that exceeds its deadline [RES-P2-002]", async () => {
+    let receivedSignal: AbortSignal | undefined;
+    const handler: TaskHandler = (_payload, context) =>
+      new Promise<TaskResult>((resolve) => {
+        receivedSignal = context?.signal;
+        context?.signal.addEventListener("abort", () =>
+          resolve({ ok: false, error: "aborted by signal" }),
+        );
+      });
+    registerTask("slow-task", handler);
+
+    const result = await executeTask({ type: "slow-task", payload: {} }, { timeoutMs: 20 });
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("timed out");
+    expect(receivedSignal?.aborted).toBe(true);
+  });
+
+  it("fails a handler that never settles even if it ignores the signal [RES-P2-002]", async () => {
+    const handler: TaskHandler = () => new Promise<TaskResult>(() => {});
+    registerTask("hung-task", handler);
+
+    const result = await executeTask({ type: "hung-task", payload: {} }, { timeoutMs: 20 });
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("timed out");
   });
 
   it("ping task returns ok", async () => {

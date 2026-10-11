@@ -33,6 +33,31 @@ const router: ReturnType<typeof Router> = Router();
  */
 const M365_REPLAY_WINDOW_SECONDS = 7 * 24 * 60 * 60;
 
+type SupabaseErrorLike = { message?: string; code?: string } | null | undefined;
+
+/**
+ * RES-P2-007: supabase-js reports failures in `{ error }` instead of throwing,
+ * and these handlers used to ACK 200 regardless — during a DB degradation
+ * Stripe/Jira/JSM/M365 events were accepted, never retried, and the 24h
+ * idempotency claim blocked replays. Persistence steps now throw so the outer
+ * catch releases the claim and the provider sees a 5xx to retry.
+ */
+function throwIfWriteFailed(error: SupabaseErrorLike, context: string): void {
+  if (error) {
+    throw new Error(`${context} failed: ${error.message ?? "unknown Supabase error"}`);
+  }
+}
+
+/**
+ * As above, for reads: PGRST116 (`.single()` matched no row) is an expected
+ * "unknown customer/issue" case for these handlers, not a persistence failure.
+ */
+function throwIfReadFailed(error: SupabaseErrorLike, context: string): void {
+  if (error && error.code !== "PGRST116") {
+    throw new Error(`${context} failed: ${error.message ?? "unknown Supabase error"}`);
+  }
+}
+
 async function logWebhookDelivery(
   event: string,
   _reqBody: unknown,
@@ -88,8 +113,10 @@ const JIRA_STATUS_MAP: Record<string, string> = {
  * Resolve the local organization + invoice row for a Stripe object that may
  * carry a `customer` and/or `invoice` (Stripe invoice id) reference. Used by
  * the payment/refund handlers below to keep the `payments` table linked to
- * its invoice. Returns nulls rather than throwing so webhook processing never
- * fails on an unknown customer (Stripe would otherwise retry forever).
+ * its invoice. Unknown customers/invoices resolve to nulls (PGRST116) rather
+ * than throwing so processing does not fail on events for objects we have
+ * never seen (Stripe would otherwise retry forever); genuine DB errors still
+ * throw so the provider retries (RES-P2-007).
  */
 async function resolveBillingRefs(
   supabase: ReturnType<typeof getSupabaseAdmin>,
@@ -97,21 +124,23 @@ async function resolveBillingRefs(
 ): Promise<{ organizationId: string | null; invoiceRowId: string | null }> {
   let organizationId: string | null = null;
   if (opts.customer) {
-    const { data: customer } = await supabase
+    const { data: customer, error: customerError } = await supabase
       .from("billing_customers")
       .select("organization_id")
       .eq("stripe_customer_id", opts.customer)
       .single();
+    throwIfReadFailed(customerError, "Stripe billing customer lookup");
     organizationId = customer?.organization_id ?? null;
   }
 
   let invoiceRowId: string | null = null;
   if (opts.invoiceId) {
-    const { data: invoice } = await supabase
+    const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
       .select("id, organization_id")
       .eq("stripe_invoice_id", opts.invoiceId)
       .single();
+    throwIfReadFailed(invoiceError, "Stripe invoice lookup");
     invoiceRowId = invoice?.id ?? null;
     organizationId = organizationId ?? invoice?.organization_id ?? null;
   }
@@ -270,11 +299,12 @@ router.post("/stripe", async (req, res, next) => {
     if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
       const inv = event.data?.object;
       if (inv?.customer) {
-        const { data: customer } = await supabase
+        const { data: customer, error: customerError } = await supabase
           .from("billing_customers")
           .select("organization_id")
           .eq("stripe_customer_id", inv.customer)
           .single();
+        throwIfReadFailed(customerError, "Stripe billing customer lookup");
 
         if (customer) {
           // BILL-P2-007: a void invoice is terminal — a late or retried
@@ -344,11 +374,12 @@ router.post("/stripe", async (req, res, next) => {
     ) {
       const sub = event.data?.object;
       if (sub?.customer) {
-        const { data: customer } = await supabase
+        const { data: customer, error: customerError } = await supabase
           .from("billing_customers")
           .select("organization_id")
           .eq("stripe_customer_id", sub.customer)
           .single();
+        throwIfReadFailed(customerError, "Stripe billing customer lookup");
 
         if (customer) {
           // BILL-P2-007: canceled/incomplete_expired subscriptions are
@@ -532,12 +563,17 @@ router.post("/stripe", async (req, res, next) => {
       }
     }
 
-    await logAuditEvent({
+    const stripeAuditOk = await logAuditEvent({
       actorType: "system",
       action: `stripe.${event.type}`,
       entityType: "stripe_event",
       metadata: { id: event.id },
     });
+    // RES-P2-007: an audit-trail gap must fail the webhook so Stripe retries;
+    // the business upserts above are idempotent.
+    if (stripeAuditOk === false) {
+      throw new Error(`audit log write failed for stripe.${event.type}`);
+    }
 
     await logWebhookDelivery(`stripe.${event.type}`, req.body, `stripe-${event.id}`);
     recordWebhookDelivery("success", `stripe.${event.type}`);
@@ -621,17 +657,19 @@ router.post("/jira", async (req, res, next) => {
         const supabase = getSupabaseAdmin();
         const mappedStatus =
           JIRA_STATUS_MAP[statusName] ?? statusName.toLowerCase().replace(/\s+/g, "_");
-        const { data: task } = await supabase
+        const { data: task, error: taskError } = await supabase
           .from("project_tasks")
           .select("id, status")
           .eq("external_jira_issue_key", issueKey)
           .single();
+        throwIfReadFailed(taskError, "Jira project task lookup");
 
         if (task && task.status !== mappedStatus) {
-          await supabase
+          const { error: updateError } = await supabase
             .from("project_tasks")
             .update({ status: mappedStatus as Row<"project_tasks">["status"] })
             .eq("id", task.id);
+          throwIfWriteFailed(updateError, "Jira project task status update");
           logger.info(
             { issueKey, taskId: task.id, from: task.status, to: mappedStatus },
             "Task status synced from Jira webhook",
@@ -639,12 +677,15 @@ router.post("/jira", async (req, res, next) => {
         }
       }
 
-      await logAuditEvent({
+      const jiraAuditOk = await logAuditEvent({
         actorType: "system",
         action: `jira.${event.webhookEvent ?? "unknown"}`,
         entityType: "jira_event",
         metadata: { issue: issueKey, summary, status: statusName },
       });
+      if (jiraAuditOk === false) {
+        throw new Error(`audit log write failed for jira.${event.webhookEvent ?? "unknown"}`);
+      }
 
       await logWebhookDelivery(`jira.${event.webhookEvent ?? "unknown"}`, req.body, jiraKey);
       recordWebhookDelivery("success", `jira.${event.webhookEvent ?? "unknown"}`);
@@ -724,17 +765,19 @@ router.post("/jsm", async (req, res, next) => {
         const supabase = getSupabaseAdmin();
         const mappedStatus =
           JSM_STATUS_MAP[statusName] ?? statusName.toLowerCase().replace(/\s+/g, "_");
-        const { data: ticket } = await supabase
+        const { data: ticket, error: ticketError } = await supabase
           .from("tickets")
           .select("id, status")
           .eq("external_jsm_issue_key", issueKey)
           .single();
+        throwIfReadFailed(ticketError, "JSM ticket lookup");
 
         if (ticket && ticket.status !== mappedStatus) {
-          await supabase
+          const { error: updateError } = await supabase
             .from("tickets")
             .update({ status: mappedStatus as Row<"tickets">["status"] })
             .eq("id", ticket.id);
+          throwIfWriteFailed(updateError, "JSM ticket status update");
           logger.info(
             {
               issueKey,
@@ -747,12 +790,15 @@ router.post("/jsm", async (req, res, next) => {
         }
       }
 
-      await logAuditEvent({
+      const jsmAuditOk = await logAuditEvent({
         actorType: "system",
         action: `jsm.${event.webhookEvent ?? "unknown"}`,
         entityType: "jsm_event",
         metadata: { issue: issueKey, summary, status: statusName },
       });
+      if (jsmAuditOk === false) {
+        throw new Error(`audit log write failed for jsm.${event.webhookEvent ?? "unknown"}`);
+      }
 
       await logWebhookDelivery(`jsm.${event.webhookEvent ?? "unknown"}`, req.body, jsmKey);
       recordWebhookDelivery("success", `jsm.${event.webhookEvent ?? "unknown"}`);
@@ -840,12 +886,15 @@ router.post("/m365", async (req, res, next) => {
       return;
     }
 
-    await logAuditEvent({
+    const m365AuditOk = await logAuditEvent({
       actorType: "system",
       action: "m365.webhook",
       entityType: "m365_event",
       metadata: { resource, changeType, notificationCount: value.length },
     });
+    if (m365AuditOk === false) {
+      throw new Error("audit log write failed for m365.webhook");
+    }
 
     await logWebhookDelivery("m365.webhook", req.body, m365Key);
     recordWebhookDelivery("success", "m365.webhook");

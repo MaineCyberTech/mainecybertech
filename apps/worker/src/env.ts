@@ -8,6 +8,11 @@ export const envSchema = z
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
     WORKER_CONCURRENCY: z.coerce.number().int().positive().default(10),
     WORKER_TIMEOUT: z.coerce.number().int().positive().default(30000),
+    // RES-P2-002: the BullMQ lock duration above is not a handler deadline.
+    // This is the real per-task deadline: the registry aborts the handler's
+    // AbortSignal and fails the task once it elapses. Default 10 minutes —
+    // longer than the longest scan lock TTL, short enough to surface a hang.
+    WORKER_TASK_TIMEOUT_MS: z.coerce.number().int().positive().default(600000),
     QUEUE_BACKEND: z.enum(["bullmq", "sqs", "inline"]).default("inline"),
     REDIS_URL: z.string().url().optional(),
     TASK_QUEUE_ENABLED: z.enum(["true", "false"]).optional(),

@@ -802,7 +802,8 @@ jobs:
             printf '%s\n' "$CF_ORIGIN_KEY" > /opt/mct-portal/certs/privkey.pem
             chmod 600 /opt/mct-portal/certs/privkey.pem
             # NOTE: no `docker image prune` here — old mct-* images are still in
-            # use until compose down/up, so pruning pre-pull would remove nothing.
+            # use until the rolling recreate below replaces them, so pruning
+            # pre-pull would remove nothing.
             # Retry pulls — the droplet's connection to GHCR can reset mid-pull.
             pull_retry() {
               local img="$1" attempt=1
@@ -837,12 +838,11 @@ jobs:
             # (or, worse, the alerting path is silently absent).
             cp /opt/mct-portal/repo/infra/digitalocean/alertmanager.tmpl.yml /opt/mct-portal/alertmanager.tmpl.yml
             cd /opt/mct-portal
-            # OBS-P2-015: `compose down` deletes the containers and with them
-            # their json-file logs, so incident evidence vanished on every
-            # deploy. Snapshot the running stack's logs (gzipped, last 7 kept)
-            # before destroying them. Shipping off-box remains an operator
-            # follow-up (see docs/MONITORING_AND_ALERTING.md > Application-Level
-            # Logging).
+            # OBS-P2-015: replacing a container destroys its json-file logs, so
+            # incident evidence vanished on every deploy. Snapshot the running
+            # stack's logs (gzipped, last 7 kept) before the rolling recreate.
+            # Shipping off-box remains an operator follow-up (see
+            # docs/MONITORING_AND_ALERTING.md > Application-Level Logging).
             if docker compose -p mct-portal ps -q 2>/dev/null | grep -q .; then
               mkdir -p /opt/mct-portal/logs
               LOG_STAMP=$(date -u +%Y%m%dT%H%M%SZ)
@@ -854,22 +854,70 @@ jobs:
             fi
             # Remember what is currently running so a failed deploy can revert.
             PREV_TAG=$(docker inspect --format '{{.Config.Image}}' mct-portal-api-1 2>/dev/null | sed 's/.*://')
-            docker compose -p mct-portal down --remove-orphans || true
-            docker rm -f mct-portal-caddy-1 2>/dev/null || true
-            # A failed `compose up` must not leave the site down: the previous
-            # stack was already stopped by the `down` above. Restore it before
-            # exiting (the health-gate rollback below only covers the case
-            # where `up` succeeded but containers never became healthy).
-            if ! IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans; then
-              echo "ERROR: docker compose up failed; restoring the previous stack" >&2
-              docker compose -p mct-portal logs --tail=40 redis 2>/dev/null || true
+            # Health probe for a compose container (probing the app ports from
+            # the host does not work — only caddy publishes ports).
+            container_health() {
+              docker inspect --format '{{.State.Health.Status}}' "mct-portal-$1-1" 2>/dev/null || echo "missing"
+            }
+            recreate_service() {
+              local svc="$1" tag="$2"
+              IMAGE_TAG="$tag" GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} \
+                docker compose -p mct-portal up -d --no-deps --remove-orphans "$svc"
+            }
+            wait_service_healthy() {
+              local svc="$1" attempts="${2:-18}"
+              for attempt in $(seq 1 "$attempts"); do
+                if [ "$(container_health "$svc")" = "healthy" ]; then
+                  echo "$svc healthy (attempt $attempt)"
+                  return 0
+                fi
+                echo "Waiting for $svc to become healthy (attempt $attempt/$attempts)..."
+                sleep 10
+              done
+              return 1
+            }
+            rollback_stack() {
+              echo "Rolling back to previously running tag $PREV_TAG" >&2
+              docker compose -p mct-portal down --remove-orphans || true
+              IMAGE_TAG="$PREV_TAG" GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} \
+                docker compose -p mct-portal up -d --remove-orphans || true
+            }
+            # RES-P2-010: rolling recreate. Previously `compose down` stopped
+            # the whole stack, so every release and rollback was a planned full
+            # outage. `up -d --no-deps` replaces ONE service at a time while
+            # caddy keeps serving the others; wait for each to become healthy
+            # before touching the next so a bad revision stops the rollout
+            # early instead of taking every service down.
+            deploy_failed=0
+            for svc in api worker web; do
+              if ! recreate_service "$svc" "${{ env.IMAGE_TAG }}"; then
+                echo "ERROR: docker compose up failed for $svc" >&2
+                deploy_failed=1
+                break
+              fi
+              if ! wait_service_healthy "$svc"; then
+                echo "ERROR: $svc did not become healthy after recreate" >&2
+                deploy_failed=1
+                break
+              fi
+            done
+            if [ "$deploy_failed" = "1" ]; then
+              docker compose -p mct-portal logs --tail=40 "$svc" 2>/dev/null || true
               if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "${{ env.IMAGE_TAG }}" ]; then
-                echo "Rolling back to previously running tag $PREV_TAG" >&2
-                docker compose -p mct-portal down --remove-orphans || true
-                IMAGE_TAG="$PREV_TAG" GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans || true
+                rollback_stack
               fi
               exit 1
             fi
+            # Refresh the proxy last (a changed Caddyfile is only picked up by a
+            # recreated container) — the app services behind it are healthy.
+            docker rm -f mct-portal-caddy-1 2>/dev/null || true
+            if ! recreate_service caddy "${{ env.IMAGE_TAG }}"; then
+              echo "ERROR: failed to recreate caddy" >&2
+              exit 1
+            fi
+            # Bring any remaining changed services (redis, prometheus,
+            # alertmanager) up to date; a no-op for unchanged ones.
+            IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans
             sleep 15
             echo "=== Docker compose ps ==="
             docker compose -p mct-portal ps --format 'table {{.Name}}\t{{.Status}}\t{{.Ports}}'
@@ -878,6 +926,7 @@ jobs:
 
             # Health gate: only prune the previous images once the new
             # containers report healthy, so a failed deploy can still roll
+<<<<<<< HEAD
             # back. Use the containers' own healthchecks (probing the app
             # ports from the host does not work - they are not published).
             # INFRA-P2-007: assert EVERY service that declares a healthcheck,
@@ -889,6 +938,9 @@ jobs:
               docker inspect --format '{{.State.Health.Status}}' "mct-portal-$1-1" 2>/dev/null || echo "missing"
             }
             GATED_SERVICES="redis api worker web alertmanager prometheus caddy"
+=======
+            # back. Use the containers' own healthchecks.
+>>>>>>> 584385e3 (ci(deploy): replace stop-the-world down/up with a rolling recreate (RES-P2-010))
             healthy=0
             for attempt in $(seq 1 18); do
               unhealthy=""
@@ -912,8 +964,7 @@ jobs:
               done
               if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "${{ env.IMAGE_TAG }}" ]; then
                 echo "Attempting rollback to previously running tag $PREV_TAG" >&2
-                docker compose -p mct-portal down --remove-orphans || true
-                IMAGE_TAG="$PREV_TAG" GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans || true
+                rollback_stack
               fi
               echo "ERROR: health checks failed after deploy" >&2
               exit 1

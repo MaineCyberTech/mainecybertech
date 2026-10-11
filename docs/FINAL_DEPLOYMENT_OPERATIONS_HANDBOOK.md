@@ -34,7 +34,7 @@ Pipeline:
 1. **Setup** — Determine environment from branch (develop→dev, main→prod) or manual input, resolve domains, compute CORS_ORIGIN
 2. **Resolve IP** — Query DO API to get the droplet's public IPv4
 3. **Build 3 images** (parallel) — Build and push API, worker, and web images to GHCR with SHA tag (`ghcr.io/mainecybertech/mainecybertech/mct-{api,worker,web}:<sha>`)
-4. **Deploy** — SSH into droplet, write `.env` from GitHub secrets, pull images from GHCR, copy compose file and per-environment Caddyfile, set up Cloudflare Origin CA certs, `docker compose up -d` with `IMAGE_TAG=<sha>`
+4. **Deploy** — SSH into droplet, write `.env` from GitHub secrets, pull images from GHCR, copy compose file and per-environment Caddyfile, set up Cloudflare Origin CA certs, then **rolling-recreate** the app services (`docker compose up -d --no-deps api|worker|web`, waiting for each to become healthy) and refresh Caddy last. The rest of the stack (redis, prometheus, alertmanager) is only recreated when its compose config changed.
 5. **Health check** — Poll `https://api.<domain>/health` (200/526) and `https://app.<domain>/login` (non-000)
 
 ### Deploy Gates
@@ -79,7 +79,13 @@ docker compose -p mct-portal logs --tail=50 web
 # Restart a single service
 docker compose -p mct-portal restart api
 
-# Full container restart (zero-downtime not guaranteed on single droplet)
+# Rolling recreate of the app services (deploys do this automatically; one
+# service is replaced at a time while Caddy keeps serving the others)
+docker compose -p mct-portal up -d --no-deps api
+docker compose -p mct-portal up -d --no-deps worker
+docker compose -p mct-portal up -d --no-deps web
+
+# Full container restart (brief outage on this single-droplet topology)
 docker compose -p mct-portal down --remove-orphans
 docker compose -p mct-portal up -d --remove-orphans
 ```

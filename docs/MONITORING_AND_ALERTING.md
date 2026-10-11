@@ -50,9 +50,10 @@ docker compose logs --tail=200   # Last 200 lines all services
 
 Container logs use Docker's `json-file` driver with rotation (`max-size: 10m`,
 `max-file: 3` per container — `infra/digitalocean/docker-compose.yml`). Because
-`deploy-do.yml` runs `docker compose down` on every deploy (and on rollback),
-that would otherwise destroy the containers' logs. Immediately before the
-`down`, the deploy snapshots the running stack's logs, gzipped, to
+`deploy-do.yml` recreates the app containers on every deploy (and rollback
+still runs `docker compose down`/`up`), replacing a container would otherwise
+destroy its logs. Immediately before the rolling recreate, the deploy snapshots
+the running stack's logs, gzipped, to
 `/opt/mct-portal/logs/pre-deploy-<UTC timestamp>.log.gz` and keeps only the
 last 7 snapshots:
 

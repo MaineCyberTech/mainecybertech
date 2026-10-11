@@ -60,7 +60,7 @@ jest.mock("../services/supabase", () => {
 });
 
 jest.mock("../services/audit", () => ({
-  logAuditEvent: jest.fn(),
+  logAuditEvent: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock("../lib/idempotency", () => ({
@@ -660,6 +660,49 @@ describe("webhooks routes", () => {
       expect(builders["subscriptions"].upsert).not.toHaveBeenCalled();
     });
 
+    it("returns 5xx and releases the claim when a persistence write fails [RES-P2-007]", async () => {
+      mockStripeEvent({
+        type: "invoice.paid",
+        id: "evt_fail_1",
+        data: {
+          object: {
+            customer: "cus_1",
+            id: "in_fail",
+            number: "INV-FAIL",
+            status: "paid",
+            subtotal: 100,
+            tax: 0,
+            total: 100,
+            currency: "usd",
+            hosted_invoice_url: null,
+            invoice_pdf: null,
+            due_date: null,
+            status_transitions: { paid_at: 1700000000 },
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+        // The invoice upsert fails (DB degradation) even though the customer
+        // lookup succeeded.
+        invoices: { data: null, error: { message: "connection refused", code: "57P01" } },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const { deleteIdempotencyKey, storeIdempotencyKey } = await import("../lib/idempotency");
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "invoice.paid", id: "evt_fail_1" });
+
+      expect(res.status).toBeGreaterThanOrEqual(500);
+      // The claim must be released so Stripe's retry can reprocess the event.
+      expect(deleteIdempotencyKey).toHaveBeenCalledWith("stripe-evt_fail_1");
+      expect(storeIdempotencyKey).not.toHaveBeenCalled();
+    });
+
     it("mirrors the trial, interval and cancellation lifecycle on customer.subscription.updated (BILL-P2-001/P2-005)", async () => {
       mockStripeEvent({
         type: "customer.subscription.updated",
@@ -769,6 +812,40 @@ describe("webhooks routes", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
+    });
+
+    it("returns 5xx and releases the claim when the task update fails [RES-P2-007]", async () => {
+      const supabaseModule = await import("../services/supabase");
+      let projectTaskCalls = 0;
+      const supabase = {
+        from: jest.fn().mockImplementation((table: string) => {
+          if (table === "project_tasks") {
+            projectTaskCalls += 1;
+            // First call: the status lookup succeeds. Second call: the update
+            // hits the degraded DB.
+            return projectTaskCalls === 1
+              ? createMockBuilder({ data: { id: "task-1", status: "todo" }, error: null })
+              : createMockBuilder({ data: null, error: { message: "db down" } });
+          }
+          return createMockBuilder({ data: null, error: null });
+        }),
+      };
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const { deleteIdempotencyKey } = await import("../lib/idempotency");
+      const res = await request(app)
+        .post("/api/v1/webhooks/jira")
+        .set("x-hub-signature", "sig_123")
+        .send({
+          webhookEvent: "issue_updated",
+          issue: {
+            key: "PROJ-777",
+            fields: { status: { name: "Done" }, summary: "Status change" },
+          },
+        });
+
+      expect(res.status).toBeGreaterThanOrEqual(500);
+      expect(deleteIdempotencyKey).toHaveBeenCalled();
     });
 
     it("returns 401 when signature header missing", async () => {
@@ -887,6 +964,29 @@ describe("webhooks routes", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
+    });
+
+    it("returns 5xx and releases the claim when the audit write fails [RES-P2-007]", async () => {
+      const { logAuditEvent } = await import("../services/audit");
+      (logAuditEvent as jest.Mock).mockResolvedValueOnce(false);
+
+      const { deleteIdempotencyKey } = await import("../lib/idempotency");
+      const res = await request(app)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [
+            {
+              resource: "users/auditfail",
+              changeType: "updated",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+              resourceData: { id: "auditfail" },
+            },
+          ],
+        });
+
+      expect(res.status).toBeGreaterThanOrEqual(500);
+      expect(deleteIdempotencyKey).toHaveBeenCalled();
     });
 
     it("rejects M365 webhook with wrong clientState", async () => {
