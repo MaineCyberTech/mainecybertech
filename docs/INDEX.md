@@ -96,6 +96,7 @@
 | [CI.md](CI.md)                                                                                 | GitHub Actions workflows: triggers, filters, gates, triage-only |
 | [PERFORMANCE.md](PERFORMANCE.md)                                                               | Response caching, rate limits, DB indexes, web performance      |
 | [MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md)                                       | Monitoring strategy, alerting setup, dashboards                 |
+| [ALERT_PATH_EXERCISE.md](ALERT_PATH_EXERCISE.md)                                               | Alert-delivery / dead-man's-switch exercise + evidence (OBS-P2-014) |
 | [DEPLOYMENT_OPTIONS_COMPARISON.md](DEPLOYMENT_OPTIONS_COMPARISON.md)                           | Cost analysis: Vercel vs AWS vs hybrid                          |
 | [PRODUCTION_VS_TESTING_DOMAINS.md](PRODUCTION_VS_TESTING_DOMAINS.md)                           | Production vs testing domain configuration                      |
 | [CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md](CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md) | Cloudflare caching and proxy configuration                      |
