@@ -77,11 +77,11 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,179 tests, all passing. 463 suites.**
+**4,179 tests, all passing. 464 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,721         | 148   | Jest + supertest                  |
+| API     | 1,721         | 149   | Jest + supertest                  |
 | Web     | 1,905         | 286   | Jest + Testing Library            |
 | SDK     | 308           | 3   | Jest (mocked fetch)               |
 | Worker  | 245           | 26   | Jest (env schema + task handlers) |
