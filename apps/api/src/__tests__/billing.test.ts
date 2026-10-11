@@ -292,9 +292,13 @@ describe("billing routes", () => {
         builders[table] = builder;
         return builder;
       });
-      // Stripe returns no data, so the sync only reaches the customer query —
-      // enough to prove which tenant was selected.
-      (httpClients.stripe.get as jest.Mock).mockResolvedValue({ ok: false });
+      // Stripe returns empty pages so the sync completes and the test only
+      // proves which tenant was selected (a failed Stripe call now fails the
+      // sync — see the pagination suite below).
+      (httpClients.stripe.get as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [], has_more: false }),
+      });
       return builders;
     }
 
@@ -355,6 +359,148 @@ describe("billing routes", () => {
         .send({});
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe("POST /sync pagination (BILL-P2-002)", () => {
+    const ORG_A = "00000000-0000-0000-0000-000000000001";
+    const CUSTOMER = "cus_A";
+
+    type StripePage = { data: Array<Record<string, unknown>>; has_more: boolean };
+
+    function invoicePage(id: string, hasMore: boolean): StripePage {
+      return {
+        data: [
+          {
+            id,
+            number: id.toUpperCase(),
+            status: "open",
+            subtotal: 100,
+            tax: 0,
+            total: 100,
+            currency: "usd",
+            hosted_invoice_url: null,
+            invoice_pdf: null,
+            due_date: null,
+          },
+        ],
+        has_more: hasMore,
+      };
+    }
+
+    function mockScopeAndCustomer() {
+      const builders: Record<string, any[]> = {};
+      supabase.from.mockImplementation((table: string) => {
+        let result: MockResult;
+        if (table === "memberships") {
+          result = {
+            data: [{ organization_id: ORG_A, roles: { id: "role-1", key: "admin" } }],
+            error: null,
+          };
+        } else if (table === "profiles") {
+          result = { data: { is_super_admin: false }, error: null };
+        } else if (table === "billing_customers") {
+          result = {
+            data: [{ stripe_customer_id: CUSTOMER, organization_id: ORG_A }],
+            error: null,
+          };
+        } else {
+          result = { data: null, error: null };
+        }
+        const builder = createMockBuilder(result);
+        (builders[table] ??= []).push(builder);
+        return builder;
+      });
+      return builders;
+    }
+
+    function mockStripePages(
+      pages: Record<"invoices" | "subscriptions" | "payment_intents", StripePage[]>,
+    ) {
+      const calls: Record<string, number> = {};
+      (httpClients.stripe.get as jest.Mock).mockImplementation((url: string) => {
+        const kind = url.includes("/invoices")
+          ? "invoices"
+          : url.includes("/subscriptions")
+            ? "subscriptions"
+            : "payment_intents";
+        const index = calls[kind] ?? 0;
+        calls[kind] = index + 1;
+        return Promise.resolve({
+          ok: true,
+          json: async () => pages[kind][Math.min(index, pages[kind].length - 1)],
+        });
+      });
+    }
+
+    it("loops on has_more/starting_after and syncs every page", async () => {
+      stubOrgId = ORG_A;
+      const builders = mockScopeAndCustomer();
+      mockStripePages({
+        invoices: [invoicePage("in_1", true), invoicePage("in_2", false)],
+        subscriptions: [{ data: [], has_more: false }],
+        payment_intents: [{ data: [], has_more: false }],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({});
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.counts.invoices).toBe(2);
+
+      const invoiceUrls = (httpClients.stripe.get as jest.Mock).mock.calls
+        .map((call) => call[0] as string)
+        .filter((url) => url.includes("/invoices"));
+      expect(invoiceUrls).toHaveLength(2);
+      expect(invoiceUrls[1]).toContain("starting_after=in_1");
+
+      const upsertedIds = (builders.invoices ?? []).map(
+        (builder) => builder.upsert.mock.calls[0]?.[0]?.stripe_invoice_id,
+      );
+      expect(upsertedIds).toEqual(["in_1", "in_2"]);
+    });
+
+    it("reports page-cap truncation as a failed sync", async () => {
+      stubOrgId = ORG_A;
+      mockScopeAndCustomer();
+      mockStripePages({
+        invoices: Array.from({ length: 12 }, (_, i) => invoicePage(`in_${i}`, true)),
+        subscriptions: [{ data: [], has_more: false }],
+        payment_intents: [{ data: [], has_more: false }],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({});
+
+      expect(res.status).toBe(502);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe("STRIPE_SYNC_INCOMPLETE");
+      expect(res.body.error.details.errors.join(" ")).toContain("page cap");
+    });
+
+    it("reports a failed Stripe call as a failed sync instead of skipping it", async () => {
+      stubOrgId = ORG_A;
+      mockScopeAndCustomer();
+      (httpClients.stripe.get as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes("/invoices")) {
+          return Promise.resolve({ ok: false, status: 500, text: async () => "upstream boom" });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({ data: [], has_more: false }) });
+      });
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({});
+
+      expect(res.status).toBe(502);
+      expect(res.body.error.code).toBe("STRIPE_SYNC_INCOMPLETE");
+      expect(res.body.error.details.errors[0]).toContain("invoices");
+      expect(res.body.error.details.errors[0]).toContain("500");
     });
   });
 });

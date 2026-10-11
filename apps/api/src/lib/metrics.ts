@@ -249,6 +249,24 @@ export function recordNotificationDedup(channel: "in_app" | "email") {
   notificationDedupTotal.inc({ channel });
 }
 
+/**
+ * BILL-P2-004: dunning notices emitted for failed/overdue payments, by
+ * outcome. A sustained `no_recipients` rate means orgs are failing payments
+ * with no resolvable billing contact — worth alerting on.
+ */
+export const billingDunningNotificationsTotal = new Counter({
+  name: "portal_billing_dunning_notifications_total",
+  help: "Billing dunning notifications emitted for failed payments, by outcome",
+  labelNames: ["outcome"],
+  registers: [register],
+});
+
+export function recordBillingDunningNotification(
+  outcome: "notified" | "no_recipients" | "error",
+) {
+  billingDunningNotificationsTotal.inc({ outcome });
+}
+
 /** Record a cross-tenant/impersonation access event (ADMIN-P1-002). */
 export function recordImpersonationEvent(actorRoleKey: string, source: string) {
   impersonationEventsTotal.inc({ actor_role_key: actorRoleKey, source });
