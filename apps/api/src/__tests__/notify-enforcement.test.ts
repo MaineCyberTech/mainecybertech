@@ -27,6 +27,7 @@ import { logger } from "../lib/logger";
 import { sendEmail } from "../lib/email";
 import { enqueueTask } from "../lib/task-producer";
 import {
+  claimNotificationEmail,
   createNotification,
   notifyAndEmail,
   buildNotificationKey,
@@ -220,6 +221,82 @@ describe("notifyAndEmail preference enforcement (NOTIF-P1-001)", () => {
     expect(result.emailSent).toBe(false);
     expect(sendEmail).toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalled();
+  });
+});
+
+describe("notifyAndEmail email idempotency (NOTIF-P2-009)", () => {
+  it("sends the email once for the first notification", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    const result = await notifyAndEmail({ ...baseOpts, email: "user@example.com" });
+
+    expect(result.inserted).toBe(true);
+    expect(result.emailQueued).toBe(true);
+    expect(enqueueTask).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not enqueue a second email when the in-app notification was deduped", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    const first = await notifyAndEmail({ ...baseOpts, email: "user@example.com" });
+    const second = await notifyAndEmail({ ...baseOpts, email: "user@example.com" });
+
+    expect(first.inserted).toBe(true);
+    expect(first.emailQueued).toBe(true);
+    expect(second.deduped).toBe(true);
+    expect(second.emailQueued).toBe(false);
+    expect(second.emailSkipped).toBe(true);
+    expect(enqueueTask).toHaveBeenCalledTimes(1);
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("claims the email when in-app is suppressed so a repeat cannot double-send", async () => {
+    const supabase = fakeSupabase({
+      preferences: [{ channel: "in_app", enabled: false }],
+    });
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+    const opts = {
+      ...baseOpts,
+      email: "user@example.com",
+      notificationKey: "notif-p2-009-suppressed-repeat",
+    };
+
+    const first = await notifyAndEmail(opts);
+    const second = await notifyAndEmail(opts);
+
+    expect(first.suppressed).toBe(true);
+    expect(first.emailQueued).toBe(true);
+    expect(second.emailQueued).toBe(false);
+    expect(second.emailSkipped).toBe(true);
+    expect(enqueueTask).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("claimNotificationEmail (NOTIF-P2-009)", () => {
+  it("returns true when this call inserted the notification", async () => {
+    await expect(
+      claimNotificationEmail({ inserted: true, deduped: false, suppressed: false }, "k1"),
+    ).resolves.toBe(true);
+  });
+
+  it("returns false when the notification was deduped — an earlier call owns the send", async () => {
+    await expect(
+      claimNotificationEmail({ inserted: false, deduped: true, suppressed: false }, "k2"),
+    ).resolves.toBe(false);
+  });
+
+  it("falls back to the idempotency store when in-app is suppressed", async () => {
+    const key = "notif-p2-009-claim-fallback";
+    await expect(
+      claimNotificationEmail({ inserted: false, deduped: false, suppressed: true }, key),
+    ).resolves.toBe(true);
+    await expect(
+      claimNotificationEmail({ inserted: false, deduped: false, suppressed: true }, key),
+    ).resolves.toBe(false);
   });
 });
 

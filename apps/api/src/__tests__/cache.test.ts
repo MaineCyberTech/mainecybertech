@@ -134,3 +134,119 @@ describe("responseCache", () => {
     expect(orgs2.headers["x-cache"]).toBe("HIT");
   });
 });
+
+/**
+ * MT-P1-004 / CHAIN-P1-006: a response computed under a broad tenant scope
+ * (all tenants) must never satisfy a request with a narrower resolved scope
+ * that happens to share the same active org.
+ */
+describe("responseCache tenant scope", () => {
+  const ORG = "00000000-0000-0000-0000-00000000000a";
+  type Scope = { allTenants: boolean; orgIds: string[] };
+
+  function createScopedApp(scopes: Record<string, Scope>) {
+    const app = express();
+    let callCount = 0;
+
+    app.get(
+      "/scoped",
+      (req, _res, next) => {
+        // Stand-in for requireAuth + requireOrgAccess: every caller is pinned
+        // to the same active org, but resolves a different tenant scope.
+        const userId = String(req.headers["x-test-user"] ?? "user");
+        (req as unknown as { authUser: { userId: string; email: string } }).authUser = {
+          userId,
+          email: "test@example.com",
+        };
+        (req as unknown as { orgId: string }).orgId = ORG;
+        next();
+      },
+      responseCache(60, {
+        scope: (req) => {
+          const userId = (req as unknown as { authUser: { userId: string } }).authUser.userId;
+          return scopes[userId] ?? { allTenants: false, orgIds: [] };
+        },
+      }),
+      (req, res) => {
+        callCount++;
+        const userId = (req as unknown as { authUser: { userId: string } }).authUser.userId;
+        res.json({
+          viewer: userId,
+          allTenants: scopes[userId]?.allTenants ?? false,
+          call: callCount,
+        });
+      },
+    );
+
+    return { app, getCallCount: () => callCount };
+  }
+
+  beforeEach(() => {
+    invalidateCache();
+  });
+
+  it("does not share an all-tenant entry with a narrower-scoped caller on the same org", async () => {
+    const { app, getCallCount } = createScopedApp({
+      "platform-admin": { allTenants: true, orgIds: [] },
+      "org-member": { allTenants: false, orgIds: [ORG] },
+    });
+
+    const platform = await request(app).get("/scoped").set("x-test-user", "platform-admin");
+    expect(platform.status).toBe(200);
+    expect(platform.body.allTenants).toBe(true);
+    expect(platform.headers["x-cache"]).toBe("MISS");
+
+    // Same active org, narrower membership set: must not reuse the all-tenant
+    // entry (the cross-tenant aggregate disclosure).
+    const member = await request(app).get("/scoped").set("x-test-user", "org-member");
+    expect(member.status).toBe(200);
+    expect(member.body.allTenants).toBe(false);
+    expect(member.headers["x-cache"]).toBe("MISS");
+    expect(getCallCount()).toBe(2);
+
+    // ...and the org-scoped entry is not served back to the platform admin.
+    const platformAgain = await request(app).get("/scoped").set("x-test-user", "platform-admin");
+    expect(platformAgain.body.allTenants).toBe(true);
+    expect(platformAgain.headers["x-cache"]).toBe("HIT");
+  });
+
+  it("still shares an entry between callers with the same resolved scope", async () => {
+    const { app, getCallCount } = createScopedApp({
+      "member-a": { allTenants: false, orgIds: [ORG] },
+      "member-b": { allTenants: false, orgIds: [ORG] },
+    });
+
+    await request(app).get("/scoped").set("x-test-user", "member-a");
+    const second = await request(app).get("/scoped").set("x-test-user", "member-b");
+    expect(second.headers["x-cache"]).toBe("HIT");
+    expect(getCallCount()).toBe(1);
+  });
+
+  it("bypasses the shared cache when the scope cannot be resolved", async () => {
+    const app = express();
+    let callCount = 0;
+
+    app.get(
+      "/failing-scope",
+      (req, _res, next) => {
+        (req as unknown as { authUser: { userId: string } }).authUser = { userId: "user-1" };
+        next();
+      },
+      responseCache(60, {
+        scope: () => {
+          throw new Error("scope lookup failed");
+        },
+      }),
+      (_req, res) => {
+        callCount++;
+        res.json({ call: callCount });
+      },
+    );
+
+    const first = await request(app).get("/failing-scope");
+    const second = await request(app).get("/failing-scope");
+    expect(first.headers["x-cache"]).toBe("BYPASS");
+    expect(second.headers["x-cache"]).toBe("BYPASS");
+    expect(callCount).toBe(2);
+  });
+});

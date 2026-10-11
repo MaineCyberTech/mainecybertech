@@ -114,18 +114,23 @@ what is not, and when the next update comes.
 | Database corruption/loss | Freeze writes, then restore | `backup_restore_drill_plan.md` |
 | Key/token leak | Revoke, then rotate consumers | `secret_rotation_runbook.md` |
 | Suspected tenant data exposure | Contain, then breach decision | `docs/DATA_BREACH_RESPONSE.md` |
-| Full monitoring loss | Verify from an off-box check | `docs/MONITORING_AND_ALERTING.md` §8 |
+| Full monitoring loss | Verify via the alert path / off-box heartbeat (external heartbeat not yet provisioned) | `docs/MONITORING_AND_ALERTING.md` §9 |
 | RLS/tenant isolation regression | Disable affected module writes, patch policy | `docs/audits/.../37_*`, ADR-008 notes |
 
 ## 8. On-call rota and current gaps
 
 - **Rota:** _to be filled by the Engineering lead — the plan is not operational
   until names and escalation contacts are recorded here._
-- **Known gap (audit `IR-P0-003`):** there is no independent dead-man's switch.
-  Alertmanager is referenced by `infra/digitalocean/prometheus.rules.yml` but
-  not deployed, and Sentry notifications live inside the monitored path. Until
-  that is fixed, a total monitoring failure is silent. Track the fix as a P1 in
-  the risk register.
+- **Known gap (audit `IR-P0-003`, partially fixed):** Alertmanager **is deployed**
+  and delivers `critical`/`default` Prometheus alerts to the org ntfy topic
+  (`https://ntfy.mainecybertech.us/portal-alerts`). The independent dead-man's
+  switch is wired in configuration, but its external heartbeat URL
+  (`ALERTMANAGER_WATCHDOG_WEBHOOK_URL`) is **still unset**, so a total loss of
+  this droplet is not yet detected off-box (prod deploys fail closed until the
+  URL is provisioned). Provision the external heartbeat and record the
+  documented stop-Alertmanager drill (`docs/MONITORING_AND_ALERTING.md` §9).
+  Sentry notifications still live inside the monitored path. Track the residual
+  as a P1 in the risk register.
 
 ## 9. Testing
 

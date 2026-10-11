@@ -109,8 +109,10 @@ router.get("/bootstrap", responseCacheNoRenew(30), async (req, res, next) => {
   }
 });
 
-// Admin: per-tenant module provisioning.
-router.get("/entitlements", requireAdmin, requireOrgAccess, async (req, res, next) => {
+// Admin: per-tenant module provisioning. requireOrgAccess runs first so the
+// org-pinned admin check in requireAdmin applies to the requested organization
+// (MT-P2-007) — same order as audit.ts / bulk.ts.
+router.get("/entitlements", requireOrgAccess, requireAdmin, async (req, res, next) => {
   try {
     const organizationId = req.query.organization_id as string;
     if (!organizationId) throw new AppError("VALIDATION", "organization_id required", 400);
@@ -134,7 +136,7 @@ const entitlementsSchema = z.object({
     .min(1),
 });
 
-router.put("/entitlements", requireAdmin, requireOrgAccess, async (req, res, next) => {
+router.put("/entitlements", requireOrgAccess, requireAdmin, async (req, res, next) => {
   try {
     const parsed = entitlementsSchema.parse(req.body);
     const supabase = getSupabaseAdmin();

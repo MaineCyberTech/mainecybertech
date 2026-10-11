@@ -150,7 +150,7 @@ router.post("/onboard", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
+router.get("/", responseCacheNoRenew(60, { scope: resolveAdminTenantScope }), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "organizations", "read");
 

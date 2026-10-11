@@ -25,7 +25,22 @@ export interface AdminTenantScope {
 /** Sentinel UUID predicate that matches no rows, so an empty scope fails closed. */
 export const NO_ORG_MATCH = "00000000-0000-0000-0000-000000000000";
 
-export async function resolveAdminTenantScope(req: Request): Promise<AdminTenantScope> {
+/**
+ * Per-request memo. The response cache resolves the scope before the handler
+ * runs (middleware/cache.ts) and the handler resolves it again; memoizing keeps
+ * that to a single pair of membership/profile lookups per request (MT-P1-004).
+ */
+const scopeByRequest = new WeakMap<Request, Promise<AdminTenantScope>>();
+
+export function resolveAdminTenantScope(req: Request): Promise<AdminTenantScope> {
+  const cached = scopeByRequest.get(req);
+  if (cached) return cached;
+  const resolved = computeAdminTenantScope(req);
+  scopeByRequest.set(req, resolved);
+  return resolved;
+}
+
+async function computeAdminTenantScope(req: Request): Promise<AdminTenantScope> {
   const userId = req.authUser?.userId;
   if (!userId) return { allTenants: false, orgIds: [] };
 

@@ -1,9 +1,12 @@
-# promtool unit tests for prometheus.rules.yml (IR-P1-006).
+# promtool unit tests for prometheus.rules.yml (IR-P1-006, IR-P2-002/003,
+# IR-P2-010, NOTIF-P1-003, OBS-P2-005/006/009/012, MT-P2-005, WH-P2-010).
 #
-# Run:  docker run --rm -v "$PWD:/cfg" --entrypoint /bin/promtool \
-#         prom/prometheus:v3.5.1 check rules /cfg/prometheus.rules.yml
-#       docker run --rm -v "$PWD:/cfg" --entrypoint /bin/promtool \
-#         prom/prometheus:v3.5.1 test rules /cfg/prometheus.rules.test.yml
+# Run from the repo root (CI does this in .github/actions/prometheus-rules):
+#   PROM_IMAGE=prom/prometheus:v3.5.1@sha256:4b05278adfb2e2781063781edd7ca88cc649ea5270cea1696618886a37eeb298
+#   docker run --rm -v "$PWD/infra/digitalocean:/cfg:ro" --entrypoint /bin/promtool \
+#     "$PROM_IMAGE" check rules /cfg/prometheus.rules.yml
+#   docker run --rm -v "$PWD/infra/digitalocean:/cfg:ro" --entrypoint /bin/promtool \
+#     "$PROM_IMAGE" test rules /cfg/prometheus.rules.test.yml
 #
 # These exist because `promtool check rules` only validates SYNTAX. The first
 # version of MCTTenantScopeRegression passed check rules and could never fire
@@ -91,4 +94,395 @@ tests:
     alert_rule_test:
       - eval_time: 29h
         alertname: MCTRlsEnforcedShareCollapsed
+        exp_alerts: []
+
+  # CASE 6: MCTHighRequestLatency (OBS-P2-009) - p95 in the (2s,5s] bucket
+  # MUST fire.
+  - interval: 1m
+    input_series:
+      - series: 'portal_http_request_duration_seconds_bucket{le="1"}'
+        values: '0+0x60'
+      - series: 'portal_http_request_duration_seconds_bucket{le="2"}'
+        values: '0+0x60'
+      - series: 'portal_http_request_duration_seconds_bucket{le="5"}'
+        values: '0+6000x60'
+      - series: 'portal_http_request_duration_seconds_bucket{le="+Inf"}'
+        values: '0+6000x60'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: MCTHighRequestLatency
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+            exp_annotations:
+              summary: "MCT API p95 latency above 2s"
+              description: "API p95 request latency has been above 2 seconds for 10 minutes (SLO #2). Check the dashboard and recent deploys."
+
+  # CASE 7: p95 under 2s MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'portal_http_request_duration_seconds_bucket{le="1"}'
+        values: '0+0x60'
+      - series: 'portal_http_request_duration_seconds_bucket{le="2"}'
+        values: '0+6000x60'
+      - series: 'portal_http_request_duration_seconds_bucket{le="5"}'
+        values: '0+6000x60'
+      - series: 'portal_http_request_duration_seconds_bucket{le="+Inf"}'
+        values: '0+6000x60'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: MCTHighRequestLatency
+        exp_alerts: []
+
+  # CASE 8: MCTCircuitBreakerOpen (OBS-P2-009) - status 2 (open) MUST fire.
+  - interval: 1m
+    input_series:
+      - series: 'portal_circuit_breaker_status{name="supabase"}'
+        values: '2+0x30'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: MCTCircuitBreakerOpen
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              team: platform
+              name: supabase
+            exp_annotations:
+              summary: "Circuit breaker supabase is open"
+              description: "Circuit breaker supabase has been open for 5 minutes: calls through it are failing fast. Check the dependency health and recent error logs."
+
+  # CASE 9: a half-open breaker MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'portal_circuit_breaker_status{name="supabase"}'
+        values: '1+0x30'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: MCTCircuitBreakerOpen
+        exp_alerts: []
+
+  # CASE 10: MCTAuthFailureRateHigh (OBS-P2-009) - sustained >50% failures
+  # with volume MUST fire.
+  - interval: 1m
+    input_series:
+      - series: 'portal_auth_attempts_total{result="success"}'
+        values: '0+1x120'
+      - series: 'portal_auth_attempts_total{result="failure"}'
+        values: '0+4x120'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: MCTAuthFailureRateHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+            exp_annotations:
+              summary: "MCT authentication failure ratio above 50%"
+              description: "More than half of authentication attempts have failed for 10 minutes (at least 3 failures/minute). This can be credential stuffing/brute force or a broken login path - review the auth logs."
+
+  # CASE 11: a low failure ratio MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'portal_auth_attempts_total{result="success"}'
+        values: '0+10x120'
+      - series: 'portal_auth_attempts_total{result="failure"}'
+        values: '0+1x120'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: MCTAuthFailureRateHigh
+        exp_alerts: []
+
+  # CASE 12: MCTImpersonationActivity (IR-P2-002 / OBS-P2-005 / MT-P2-005) -
+  # a single privileged event MUST fire (low-volume companion to the burst
+  # rule).
+  - interval: 1m
+    input_series:
+      - series: 'portal_impersonation_events_total{actor_role_key="admin",source="api"}'
+        values: '0+1x20'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: MCTImpersonationActivity
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              actor_role_key: admin
+              source: api
+            exp_annotations:
+              summary: "Cross-tenant (impersonation) access by admin from api"
+              description: "A cross-tenant access event was recorded in the last 15 minutes (role admin, source api). Review GET /api/v1/audit/impersonation and confirm the access was expected."
+
+  # CASE 13: no impersonation events MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'portal_impersonation_events_total{actor_role_key="admin",source="api"}'
+        values: '0+0x20'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: MCTImpersonationActivity
+        exp_alerts: []
+
+  # CASE 14: MCTWebhookDeadLettersAccumulating (IR-P2-003 / OBS-P2-006 /
+  # WH-P2-010) - an API dead letter MUST fire.
+  - interval: 1m
+    input_series:
+      - series: 'portal_webhook_dead_letters_total{event="ticket.created",job="mct-api"}'
+        values: '0+1x120'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTWebhookDeadLettersAccumulating
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              event: ticket.created
+              job: mct-api
+            exp_annotations:
+              summary: "Webhook deliveries moved to the dead-letter set (ticket.created)"
+              description: "One or more outbound webhook deliveries for event ticket.created exhausted their retries in the last hour. Check the dead-letter store and replay once the receiver is healthy."
+
+  # CASE 15: a worker dead letter MUST fire too (the `or` right branch).
+  - interval: 1m
+    input_series:
+      - series: 'worker_webhook_dead_letters_total{event="invoice.paid",job="mct-worker"}'
+        values: '0+1x120'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTWebhookDeadLettersAccumulating
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              event: invoice.paid
+              job: mct-worker
+            exp_annotations:
+              summary: "Webhook deliveries moved to the dead-letter set (invoice.paid)"
+              description: "One or more outbound webhook deliveries for event invoice.paid exhausted their retries in the last hour. Check the dead-letter store and replay once the receiver is healthy."
+
+  # CASE 16: zero dead letters MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'portal_webhook_dead_letters_total{event="ticket.created",job="mct-api"}'
+        values: '0+0x120'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTWebhookDeadLettersAccumulating
+        exp_alerts: []
+
+  # CASE 17: MCTWebhookDeliveryFailureRateHigh (WH-P2-010) - >50% failures
+  # MUST fire (critical).
+  - interval: 1m
+    input_series:
+      - series: 'portal_webhook_deliveries_total{status="success",event="ticket.created",job="mct-api"}'
+        values: '0+1x120'
+      - series: 'portal_webhook_deliveries_total{status="failed",event="ticket.created",job="mct-api"}'
+        values: '0+2x120'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: MCTWebhookDeliveryFailureRateHigh
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              team: platform
+              job: mct-api
+            exp_annotations:
+              summary: "Webhook delivery failure ratio above 50% (mct-api)"
+              description: "More than half of outbound webhook deliveries on mct-api have failed for 15 minutes. Consumers are missing events; check the delivery error logs and the receiver endpoints."
+
+  # CASE 18: the worker-side >50% ratio MUST fire too (the `or` right branch).
+  - interval: 1m
+    input_series:
+      - series: 'worker_webhook_deliveries_total{status="success",event="invoice.paid",job="mct-worker"}'
+        values: '0+1x120'
+      - series: 'worker_webhook_deliveries_total{status="failed",event="invoice.paid",job="mct-worker"}'
+        values: '0+2x120'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: MCTWebhookDeliveryFailureRateHigh
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              team: platform
+              job: mct-worker
+            exp_annotations:
+              summary: "Webhook delivery failure ratio above 50% (mct-worker)"
+              description: "More than half of outbound webhook deliveries on mct-worker have failed for 15 minutes. Consumers are missing events; check the delivery error logs and the receiver endpoints."
+
+  # CASE 19: a low failure ratio MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'portal_webhook_deliveries_total{status="success",event="ticket.created",job="mct-api"}'
+        values: '0+10x120'
+      - series: 'portal_webhook_deliveries_total{status="failed",event="ticket.created",job="mct-api"}'
+        values: '0+1x120'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: MCTWebhookDeliveryFailureRateHigh
+        exp_alerts: []
+
+  # CASE 20: MCTNotificationDeliveryFailureRateHigh (NOTIF-P1-003) - >5%
+  # email failures MUST fire.
+  - interval: 1m
+    input_series:
+      - series: 'worker_notification_delivery_total{channel="email",status="success",job="mct-worker"}'
+        values: '0+9x180'
+      - series: 'worker_notification_delivery_total{channel="email",status="failed",job="mct-worker"}'
+        values: '0+1x180'
+    alert_rule_test:
+      - eval_time: 45m
+        alertname: MCTNotificationDeliveryFailureRateHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              channel: email
+              job: mct-worker
+            exp_annotations:
+              summary: "Notification delivery failures above 5% (email)"
+              description: "More than 5% of email deliveries on mct-worker have failed for 30 minutes. Check SMTP/provider errors; recipients are not being notified."
+
+  # CASE 21: the API-side >5% ratio MUST fire too (the `or` right branch).
+  - interval: 1m
+    input_series:
+      - series: 'portal_notification_delivery_total{channel="in_app",status="success",job="mct-api"}'
+        values: '0+9x180'
+      - series: 'portal_notification_delivery_total{channel="in_app",status="failed",job="mct-api"}'
+        values: '0+1x180'
+    alert_rule_test:
+      - eval_time: 45m
+        alertname: MCTNotificationDeliveryFailureRateHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              channel: in_app
+              job: mct-api
+            exp_annotations:
+              summary: "Notification delivery failures above 5% (in_app)"
+              description: "More than 5% of in_app deliveries on mct-api have failed for 30 minutes. Check SMTP/provider errors; recipients are not being notified."
+
+  # CASE 22: failures below 5% MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'worker_notification_delivery_total{channel="email",status="success",job="mct-worker"}'
+        values: '0+100x180'
+      - series: 'worker_notification_delivery_total{channel="email",status="failed",job="mct-worker"}'
+        values: '0+1x180'
+    alert_rule_test:
+      - eval_time: 45m
+        alertname: MCTNotificationDeliveryFailureRateHigh
+        exp_alerts: []
+
+  # CASE 23: MCTNotificationEmailSkipped (NOTIF-P1-003) - a skipped email
+  # (SMTP unset) MUST fire.
+  - interval: 1m
+    input_series:
+      - series: 'portal_notification_delivery_total{channel="email",status="skipped",job="mct-api"}'
+        values: '0+1x120'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: MCTNotificationEmailSkipped
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              channel: email
+              status: skipped
+              job: mct-api
+            exp_annotations:
+              summary: "Notification emails are being skipped"
+              description: "At least one email delivery was skipped in the last hour because SMTP is not configured. Recipients are silently not receiving email notifications - check the SMTP_* environment."
+
+  # CASE 24: no skipped emails MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'portal_notification_delivery_total{channel="email",status="success",job="mct-api"}'
+        values: '0+10x120'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: MCTNotificationEmailSkipped
+        exp_alerts: []
+
+  # CASE 25: MCTWorkerTaskFailures (OBS-P2-009) - a failing task type MUST fire.
+  - interval: 1m
+    input_series:
+      - series: 'worker_task_executions_total{task_type="send-email",status="failure"}'
+        values: '0+1x60'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTWorkerTaskFailures
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              task_type: send-email
+            exp_annotations:
+              summary: "Worker task send-email is failing"
+              description: "Task type send-email has recorded failure/error/no_handler executions for 10 minutes. Check the worker logs for send-email."
+
+  # CASE 26: no_handler MUST fire as well (a task type this build cannot run).
+  - interval: 1m
+    input_series:
+      - series: 'worker_task_executions_total{task_type="unknown.task",status="no_handler"}'
+        values: '0+1x60'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTWorkerTaskFailures
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              task_type: unknown.task
+            exp_annotations:
+              summary: "Worker task unknown.task is failing"
+              description: "Task type unknown.task has recorded failure/error/no_handler executions for 10 minutes. Check the worker logs for unknown.task."
+
+  # CASE 27: successful executions MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'worker_task_executions_total{task_type="send-email",status="success"}'
+        values: '0+10x60'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTWorkerTaskFailures
+        exp_alerts: []
+
+  # CASE 28: MCTWorkerQueueBacklog (OBS-P2-009) - a sustained backlog MUST fire.
+  - interval: 1m
+    input_series:
+      - series: 'worker_task_queue_depth{queue="mct-tasks"}'
+        values: '80+0x120'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: MCTWorkerQueueBacklog
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              queue: mct-tasks
+            exp_annotations:
+              summary: "Worker task queue backlog above 50"
+              description: "More than 50 tasks have been waiting/active in the BullMQ queue for 15 minutes. Tasks are not draining - check worker health, Redis latency and the failing task types."
+
+  # CASE 29: a small queue MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'worker_task_queue_depth{queue="mct-tasks"}'
+        values: '5+0x120'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: MCTWorkerQueueBacklog
+        exp_alerts: []
+
+  # CASE 30: the queue="unavailable" series is deliberately NOT alertable (the
+  # worker sets the gauge to 0 and never clears it, and it is also set when the
+  # queue is disabled by config).
+  - interval: 1m
+    input_series:
+      - series: 'worker_task_queue_depth{queue="unavailable"}'
+        values: '0+0x120'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: MCTWorkerQueueBacklog
         exp_alerts: []

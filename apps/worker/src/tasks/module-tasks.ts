@@ -4,6 +4,7 @@ import { sendEmail } from "../email";
 import { getSupabaseAdmin } from "../services/supabase";
 import type { TablesInsert } from "@mct/sdk/database.types";
 import { assertSafeUrl } from "../lib/ssrf-guard";
+import { pinnedFetch, resolvePinnedAddress } from "../lib/pinned-fetch";
 import type { TaskHandler, TaskResult } from "../task-registry";
 import { insertNotification } from "../notification-store";
 import tls from "node:tls";
@@ -23,8 +24,14 @@ function escapeHtml(value: string): string {
 /**
  * Read the TLS peer certificate for an https URL and return its expiry.
  * Returns null for non-https URLs, connection failures, or bad certs.
+ *
+ * SEC-P2-001 / CHAIN-P2-010: the host is resolved and validated exactly once
+ * (resolvePinnedAddress) and the socket dials the validated address, keeping
+ * the original hostname as the SNI / certificate-verification name. A
+ * rebinding host can therefore not answer the guard with a public IP and the
+ * TLS handshake with a private one.
  */
-async function fetchSslExpiry(
+export async function fetchSslExpiry(
   url: string,
 ): Promise<{ expires: string; daysRemaining: number } | null> {
   let host: string;
@@ -38,29 +45,40 @@ async function fetchSslExpiry(
     return null;
   }
 
+  let pinned: { address: string; family: number };
+  try {
+    pinned = await resolvePinnedAddress(url);
+  } catch {
+    // Unresolvable or private/loopback target: fail closed, no socket.
+    return null;
+  }
+
   return new Promise((resolve) => {
-    const socket = tls.connect({ host, port, servername: host, timeout: 8000 }, () => {
-      try {
-        const cert = socket.getPeerCertificate();
-        if (!cert || !cert.valid_to) {
+    const socket = tls.connect(
+      { host: pinned.address, port, servername: host, timeout: 8000 },
+      () => {
+        try {
+          const cert = socket.getPeerCertificate();
+          if (!cert || !cert.valid_to) {
+            socket.destroy();
+            resolve(null);
+            return;
+          }
+          const expires = new Date(cert.valid_to);
+          if (Number.isNaN(expires.getTime())) {
+            socket.destroy();
+            resolve(null);
+            return;
+          }
+          const daysRemaining = Math.floor((expires.getTime() - Date.now()) / 86_400_000);
+          socket.destroy();
+          resolve({ expires: expires.toISOString(), daysRemaining });
+        } catch {
           socket.destroy();
           resolve(null);
-          return;
         }
-        const expires = new Date(cert.valid_to);
-        if (Number.isNaN(expires.getTime())) {
-          socket.destroy();
-          resolve(null);
-          return;
-        }
-        const daysRemaining = Math.floor((expires.getTime() - Date.now()) / 86_400_000);
-        socket.destroy();
-        resolve({ expires: expires.toISOString(), daysRemaining });
-      } catch {
-        socket.destroy();
-        resolve(null);
-      }
-    });
+      },
+    );
     socket.on("error", () => {
       socket.destroy();
       resolve(null);
@@ -542,16 +560,16 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
         errorMsg = `Blocked: ${blocked}`;
       } else {
         try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 10000);
+          // SEC-P2-001 / CHAIN-P2-010: pinnedFetch validates the DNS answers
+          // and pins the connection to the validated address, so a host that
+          // rebinds between the guard above and the connection is still
+          // blocked (the global fetch would have re-resolved the name).
           const start = performance.now();
-          const response = await fetch(check.url, {
-            signal: controller.signal,
-            redirect: "manual",
+          const response = await pinnedFetch(check.url, {
+            signal: AbortSignal.timeout(10_000),
           });
           responseTimeMs = Math.round(performance.now() - start);
           statusCode = response.status;
-          clearTimeout(timeout);
         } catch (err) {
           errorMsg = err instanceof Error ? err.message : String(err);
         }
@@ -596,12 +614,11 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
 
       if (!blocked) {
         try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 10000);
+          // SEC-P2-001 / CHAIN-P2-010: pinnedFetch pins the validated DNS
+          // answer to the connection (see websiteMonitorCheck above).
           const start = performance.now();
-          const response = await fetch(mon.url, {
-            signal: controller.signal,
-            redirect: "manual",
+          const response = await pinnedFetch(mon.url, {
+            signal: AbortSignal.timeout(10_000),
           });
           responseTimeMs = Math.round(performance.now() - start);
           statusCode = response.status;
@@ -610,7 +627,6 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
             pageBytes = html.length;
             audit = auditPage(html, responseTimeMs);
           }
-          clearTimeout(timeout);
         } catch {
           statusCode = 0;
         }

@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder, createOrgAccessStub } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -37,6 +37,17 @@ jest.mock("../services/supabase", () => ({
 }));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 
+const mockRequireOrgAccess = jest.fn();
+
+jest.mock("../middleware/org-access", () => ({
+  requireOrgAccess: (req: unknown, res: unknown, next: () => void) =>
+    mockRequireOrgAccess(req, res, next),
+  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+
 import { getSupabaseAdmin } from "../services/supabase";
 import notificationPreferencesRouter from "../routes/notification-preferences";
 
@@ -59,22 +70,20 @@ function mockAuth() {
 
 /*
  * Route-level suite: auth/permission/subscription middleware is stubbed so
- * mocks serve route queries only. Enforcement itself is covered by the
- * dedicated middleware-*.test.ts suites.
+ * mocks serve route queries only. The org-access stub (createOrgAccessStub)
+ * mirrors production by injecting req.orgId / req.query.organization_id, which
+ * the PUT handler defaults organization_id from (NOTIF-P1-004). Enforcement
+ * itself is covered by the dedicated middleware-*.test.ts suites.
  */
-jest.mock("../middleware/org-access", () => ({
-  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
-  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
-jest.mock("../middleware/permissions", () => ({
-  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
 const app = createTestApp();
 app.use("/api/v1/notification-preferences", notificationPreferencesRouter);
 app.use(errorHandler);
 
 describe("Notification Preferences API", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockRequireOrgAccess.mockImplementation(createOrgAccessStub(testOrgId).requireOrgAccess);
+  });
 
   it("returns empty preferences list", async () => {
     const supabase = mockAuth();
@@ -123,14 +132,13 @@ describe("Notification Preferences API", () => {
     expect(res.status).toBe(400);
   });
 
-  it("creates preferences via upsert", async () => {
+  it("creates preferences via upsert with the explicit organizationId", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(
-      createMockBuilder({
-        data: { id: "pref-1", module_key: "tickets", channel: "email", enabled: true },
-        error: null,
-      }),
-    );
+    const builder = createMockBuilder({
+      data: { id: "pref-1", module_key: "tickets", channel: "email", enabled: true },
+      error: null,
+    });
+    supabase.from.mockReturnValue(builder);
     const res = await request(app)
       .put("/api/v1/notification-preferences")
       .set("Authorization", authToken)
@@ -140,6 +148,62 @@ describe("Notification Preferences API", () => {
       });
     expect(res.status).toBe(200);
     expect(res.body.data.updated).toBe(1);
+    expect(builder.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organization_id: testOrgId,
+        user_id: "user-1",
+        module_key: "tickets",
+        channel: "email",
+        enabled: true,
+      }),
+      { onConflict: "organization_id,user_id,module_key,channel" },
+    );
+  });
+
+  it("defaults organization_id from the resolved org when the client omits it", async () => {
+    const supabase = mockAuth();
+    const builder = createMockBuilder({
+      data: { id: "pref-2", module_key: "billing", channel: "in_app", enabled: false },
+      error: null,
+    });
+    supabase.from.mockReturnValue(builder);
+    const res = await request(app)
+      .put("/api/v1/notification-preferences")
+      .set("Authorization", authToken)
+      .send({
+        preferences: [{ moduleKey: "billing", channel: "in_app", enabled: false }],
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.data.updated).toBe(1);
+    expect(builder.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organization_id: testOrgId,
+        user_id: "user-1",
+        module_key: "billing",
+        channel: "in_app",
+        enabled: false,
+      }),
+      { onConflict: "organization_id,user_id,module_key,channel" },
+    );
+  });
+
+  it("rejects the update when no organization can be resolved", async () => {
+    mockRequireOrgAccess.mockImplementation((req: any, _res: unknown, next: () => void) => {
+      req.orgScope = { orgId: null, explicit: false, platformAdmin: false, impersonation: false };
+      req.orgId = null;
+      next();
+    });
+    const supabase = mockAuth();
+    supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+    const res = await request(app)
+      .put("/api/v1/notification-preferences")
+      .set("Authorization", authToken)
+      .send({
+        preferences: [{ moduleKey: "tickets", channel: "email", enabled: true }],
+      });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION");
+    expect(supabase.from).not.toHaveBeenCalled();
   });
 
   it("validates empty preferences array", async () => {

@@ -9,7 +9,7 @@
 | **Worker** | 15 minutes | 0 (stateless) | Queue-based; in-flight tasks retry |
 | **Postgres (Supabase)** | 1 hour | 5 minutes (PITR) / ≤24 h (pg_dump) | RPO depends on the method: Supabase PITR (7-day retention) meets 5 min; the daily S3 dump can only meet ≤24 h. See Backup Strategy. |
 | **Storage (uploads)** | 1 hour | ≤24 h (daily mirror) | `documents` / `avatars` / `logos` mirrored to S3/Spaces by `storage-backup.yml` |
-| **Redis** | 30 minutes | 24 hours | AOF persistence; recreated from DB on loss |
+| **Redis** | 30 minutes | 24 hours | RDB snapshot only (default `dump.rdb` on the `redis-data` volume; no AOF); recreated from DB on loss, and in-flight queue work is re-driven by producers/retries |
 | **DNS (Cloudflare)** | 5 minutes | N/A | Managed DNS; instant failover via API |
 
 ## Recovery Procedures

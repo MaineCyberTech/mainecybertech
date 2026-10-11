@@ -114,6 +114,17 @@ describe("requireAuth — API key path (FEAT-P2-001)", () => {
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 401 }));
   });
 
+  it("401s a key with an unparsable expires_at (fail closed)", async () => {
+    mockKeyRow({ expires_at: "not-a-timestamp" });
+    const req = mockReq({ authorization: `Bearer ${TOKEN}` }) as Request;
+    const next = jest.fn() as NextFunction;
+
+    await requireAuth(req, mockRes() as Response, next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 401 }));
+    expect(req.authUser).toBeUndefined();
+  });
+
   it("401s when the hash does not match the stored key", async () => {
     mockKeyRow({ key_hash: hashApiKey("mct_" + "b".repeat(64)) });
     const req = mockReq({ authorization: `Bearer ${TOKEN}` }) as Request;
