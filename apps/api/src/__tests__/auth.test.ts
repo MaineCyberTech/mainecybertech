@@ -11,6 +11,7 @@ jest.mock("../config/env", () => ({
     SUPABASE_ANON_KEY: "test-anon-key",
     SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
     CORS_ORIGIN: "*",
+    APP_BASE_URL: "https://app.example.com",
     LOG_LEVEL: "silent",
     API_PORT: 4000,
   }),
@@ -230,6 +231,24 @@ describe("POST /sign-up", () => {
       }),
     });
   });
+
+  // USE-P1-002: the confirmation link used to be built from the API request
+  // host, so it 404'd on the API host instead of reaching the web callback.
+  it("builds emailRedirectTo from APP_BASE_URL, not the API host", async () => {
+    const supabase = mockSupabase();
+
+    const res = await request(app)
+      .post("/api/v1/auth/sign-up")
+      .set("Host", "api.example.com")
+      .send({ email: "new@b.com", password: "SecurePass123!" });
+
+    expect(res.status).toBe(200);
+    const options = supabase.auth.signUp.mock.calls[0][0].options as {
+      emailRedirectTo: string;
+    };
+    expect(options.emailRedirectTo).toBe("https://app.example.com/auth/callback");
+    expect(options.emailRedirectTo).not.toContain("api.example.com");
+  });
 });
 
 describe("forgot-password", () => {
@@ -254,6 +273,26 @@ describe("forgot-password", () => {
       "test@example.com",
       expect.any(Object),
     );
+  });
+
+  // USE-P1-001: the reset link must go through the web /auth/callback route
+  // (which exchanges the PKCE code and sets the session cookie) before the
+  // reset form; /password-reset alone ignored the token.
+  it("routes the reset link through /auth/callback with a next=/password-reset", async () => {
+    const supabase = mockSupabase();
+    supabase.auth.resetPasswordForEmail = jest.fn().mockResolvedValue({
+      data: {},
+      error: null,
+    });
+
+    const res = await request(app)
+      .post("/api/v1/auth/forgot-password")
+      .send({ email: "test@example.com" });
+
+    expect(res.status).toBe(200);
+    expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith("test@example.com", {
+      redirectTo: "https://app.example.com/auth/callback?next=/password-reset",
+    });
   });
 
   it("returns 400 for missing email", async () => {

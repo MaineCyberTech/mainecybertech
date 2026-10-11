@@ -93,10 +93,32 @@ export class ApiClient {
 
         clearTimeout(timer);
 
-        const json: ApiResponse<T> = await res.json();
+        // 204 (and other empty-body) responses are valid — e.g. every DELETE
+        // endpoint. `res.json()` rejects on an empty body, which used to turn a
+        // successful delete into a retried, then thrown, failure (USE-P1-004).
+        // The clone is taken BEFORE the body is read so a genuinely empty body
+        // can be told apart from malformed JSON, which must still error.
+        const clone = res.clone();
+        let json: ApiResponse<T> | null = null;
+        try {
+          json = (await res.json()) as ApiResponse<T>;
+        } catch (error) {
+          let bodyText: string | null = null;
+          try {
+            bodyText = await clone.text();
+          } catch {
+            bodyText = null;
+          }
 
-        if (!res.ok || !json.success) {
-          const err = json.error ?? {
+          if (bodyText !== null && bodyText.trim() === "") {
+            json = null;
+          } else {
+            throw error;
+          }
+        }
+
+        if (!res.ok || (json !== null && json.success !== true)) {
+          const err: NonNullable<ApiResponse<T>["error"]> = json?.error ?? {
             code: "UNKNOWN",
             message: `HTTP ${res.status}`,
             status: res.status,
@@ -113,7 +135,7 @@ export class ApiClient {
           throw new ApiError(err.code, err.message, err.status, err.details);
         }
 
-        return json.data as T;
+        return (json ? json.data : null) as T;
       } catch (error) {
         if (error instanceof ApiError) throw error;
 

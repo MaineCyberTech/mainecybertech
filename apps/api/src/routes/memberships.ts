@@ -126,13 +126,20 @@ router.patch("/:id", requirePermission("users", "manage"), async (req, res, next
     const supabase = getScopedClient(req, "memberships", "write");
     await loadOwned(req, supabase as any, "memberships", String(req.params.id));
 
+    // Only touch fields the caller actually sent so a status-only transition
+    // (approve/reject from the admin queue) cannot clear the role or the
+    // billing/security contact flags.
     const { data, error } = await supabase
       .from("memberships")
       .update({
-        role_id: parsed.roleId,
         status: parsed.status,
-        is_billing_contact: parsed.isBillingContact,
-        is_security_contact: parsed.isSecurityContact,
+        ...(parsed.roleId !== undefined ? { role_id: parsed.roleId } : {}),
+        ...(parsed.isBillingContact !== undefined
+          ? { is_billing_contact: parsed.isBillingContact }
+          : {}),
+        ...(parsed.isSecurityContact !== undefined
+          ? { is_security_contact: parsed.isSecurityContact }
+          : {}),
       })
       .eq("id", String(req.params.id))
       .select()
