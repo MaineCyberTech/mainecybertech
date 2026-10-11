@@ -13,7 +13,7 @@ router.use(requireAuth);
 router.use(requireOrgAccess);
 router.use(requireAdmin);
 
-router.get("/summary", responseCache(30), async (req, res, next) => {
+router.get("/summary", responseCache(30, { scope: resolveAdminTenantScope }), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     // Platform-wide counts are only visible to a genuine cross-tenant admin;

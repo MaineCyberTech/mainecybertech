@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { type Request, type Response, type NextFunction } from "express";
 import { createClient, type RedisClientType } from "redis";
 import { getEnv, resolveRedisUrl } from "../config/env";
@@ -151,29 +152,97 @@ export function shutdownCache(): void {
   cacheBackend.shutdown();
 }
 
-function buildCacheKey(req: Request): string {
+/**
+ * Tenant visibility a cached response was computed under.
+ *
+ * Structurally matches `AdminTenantScope` (lib/admin-scope.ts), so scope-aware
+ * routes can pass `resolveAdminTenantScope` directly as the resolver.
+ */
+export interface CacheScope {
+  /** True when the response covers every tenant. */
+  allTenants: boolean;
+  /** Organizations the response is restricted to when `allTenants` is false. */
+  orgIds: string[];
+}
+
+export type CacheScopeResolver = (req: Request) => CacheScope | Promise<CacheScope>;
+
+export interface ResponseCacheOptions {
+  /**
+   * Resolves the tenant scope the handler computes its response from.
+   *
+   * Scope-dependent routes (those calling `resolveAdminTenantScope`) MUST pass
+   * this: the key otherwise encodes only `req.orgId`, so an all-tenant response
+   * written for a platform admin would be served to a single-org member sharing
+   * that org (MT-P1-004 / CHAIN-P1-006).
+   */
+  scope?: CacheScopeResolver;
+}
+
+/**
+ * Fingerprint of the resolved tenant visibility, folded into the cache key so
+ * an all-tenant entry can never satisfy an org-scoped request (and vice versa).
+ * Hashed to keep Redis keys bounded for callers with many memberships.
+ */
+function scopeFingerprint(scope: CacheScope): string {
+  const payload = JSON.stringify({
+    allTenants: scope.allTenants,
+    orgIds: [...scope.orgIds].sort(),
+  });
+  return crypto.createHash("sha256").update(payload).digest("hex").slice(0, 16);
+}
+
+/**
+ * Build the cache key for a request, or `null` when the caller's tenant scope
+ * could not be resolved (the caller must then bypass the shared cache).
+ */
+async function buildCacheKey(
+  req: Request,
+  options: ResponseCacheOptions,
+): Promise<string | null> {
   // req.path is router-relative inside mounted routers (e.g. "/" for both
   // /api/v1/roles and /api/v1/organizations) — baseUrl + path yields the
   // full mount path so cache keys never collide across routers.
   const fullPath = `${req.baseUrl ?? ""}${req.path}`;
-  const baseKey = `${fullPath}:${JSON.stringify(req.query)}`;
+  let key = `${fullPath}:${JSON.stringify(req.query)}`;
   // Scope keys with a SUFFIX so invalidateCache(path) can match by prefix.
   // (Previously the scope was a prefix, so invalidateCache("/api/v1/x") never
   // matched an authenticated key and mutations never evicted cached lists.)
   const orgId = (req as Request & { orgId?: string | null }).orgId;
-  if (orgId) return `${baseKey}:org=${orgId}`;
-  const authUser = (req as Request & { authUser?: { userId: string } }).authUser;
-  if (authUser?.userId) return `${baseKey}:user=${authUser.userId}`;
-  return baseKey;
+  if (orgId) {
+    key += `:org=${orgId}`;
+  } else {
+    const authUser = (req as Request & { authUser?: { userId: string } }).authUser;
+    if (authUser?.userId) key += `:user=${authUser.userId}`;
+  }
+
+  if (options.scope) {
+    let fingerprint: string;
+    try {
+      fingerprint = scopeFingerprint(await options.scope(req));
+    } catch {
+      // Fail closed: without a resolved scope the entry cannot be proven safe
+      // to reuse, so the request bypasses the shared cache entirely.
+      return null;
+    }
+    key += `:scope=${fingerprint}`;
+  }
+
+  return key;
 }
 
-export function responseCache(ttlSeconds = 60) {
+export function responseCache(ttlSeconds = 60, options: ResponseCacheOptions = {}) {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (req.method !== "GET") {
       return next();
     }
 
-    const key = buildCacheKey(req);
+    const key = await buildCacheKey(req, options);
+    if (key === null) {
+      res.setHeader("X-Cache", "BYPASS");
+      return next();
+    }
+
     const entry = await cacheBackend.get(key);
 
     if (entry && entry.expires > Date.now()) {
@@ -193,13 +262,18 @@ export function responseCache(ttlSeconds = 60) {
   };
 }
 
-export function responseCacheNoRenew(ttlSeconds = 60) {
+export function responseCacheNoRenew(ttlSeconds = 60, options: ResponseCacheOptions = {}) {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (req.method !== "GET") {
       return next();
     }
 
-    const key = buildCacheKey(req);
+    const key = await buildCacheKey(req, options);
+    if (key === null) {
+      res.setHeader("X-Cache", "BYPASS");
+      return next();
+    }
+
     const entry = await cacheBackend.get(key);
 
     if (entry && entry.expires > Date.now()) {
