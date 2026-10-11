@@ -583,7 +583,7 @@ describe("OpenAPI contract — success response schemas", () => {
         createMockBuilder({ data: [TICKET_ROW], error: null, count: 1 }),
       );
       const res = await request(app)
-        .get("/api/v1/tickets")
+        .get(`/api/v1/tickets?organization_id=${TICKET_ROW.organization_id}`)
         .set("Authorization", "Bearer token-123");
       expectResponseMatchesSpec(res, "/tickets", "get");
     });
@@ -611,7 +611,7 @@ describe("OpenAPI contract — success response schemas", () => {
         }),
       );
       const res = await request(app)
-        .get(`/api/v1/tickets/${TICKET_ROW.id}`)
+        .get(`/api/v1/tickets/${TICKET_ROW.id}?organization_id=${TICKET_ROW.organization_id}`)
         .set("Authorization", "Bearer token-123");
       expectResponseMatchesSpec(res, "/tickets/{id}", "get");
     });

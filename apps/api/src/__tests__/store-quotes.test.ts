@@ -41,7 +41,16 @@ jest.mock("../middleware/org-access", () => ({
   assertOrgScopeMatches: jest.fn(),
 }));
 
+// MT-P2-008: the platform-wide intake lists are gated on
+// resolveAdminTenantScope().allTenants. Route tests run as a genuine
+// cross-tenant admin unless a test overrides the scope.
+jest.mock("../lib/admin-scope", () => ({
+  ...jest.requireActual("../lib/admin-scope"),
+  resolveAdminTenantScope: jest.fn().mockResolvedValue({ allTenants: true, orgIds: [] }),
+}));
+
 import { getSupabaseAdmin } from "../services/supabase";
+import { resolveAdminTenantScope } from "../lib/admin-scope";
 import storeRouter from "../routes/store";
 
 interface SetupOptions {
@@ -177,5 +186,17 @@ describe("store quote submission wiring", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data).toBeInstanceOf(Array);
+  });
+
+  it("denies a single-org admin the platform-wide intake list (MT-P2-008)", async () => {
+    setup();
+    (resolveAdminTenantScope as jest.Mock).mockResolvedValueOnce({
+      allTenants: false,
+      orgIds: ["00000000-0000-0000-0000-000000000001"],
+    });
+
+    const res = await request(app).get("/api/v1/store/quote-requests");
+
+    expect(res.status).toBe(403);
   });
 });

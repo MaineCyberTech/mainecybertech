@@ -42,7 +42,15 @@ jest.mock("../middleware/org-access", () => ({
   assertOrgScopeMatches: jest.fn(),
 }));
 
+// MT-P2-008: proposal drafts are a platform-wide intake surface gated on
+// resolveAdminTenantScope().allTenants; route tests run cross-tenant.
+jest.mock("../lib/admin-scope", () => ({
+  ...jest.requireActual("../lib/admin-scope"),
+  resolveAdminTenantScope: jest.fn().mockResolvedValue({ allTenants: true, orgIds: [] }),
+}));
+
 import { getSupabaseAdmin } from "../services/supabase";
+import { resolveAdminTenantScope } from "../lib/admin-scope";
 import storeRouter from "../routes/store";
 
 interface SetupOptions {
@@ -229,5 +237,24 @@ describe("store proposal draft wiring", () => {
     const res = await request(app).patch("/api/v1/store/proposal-drafts/pd-1").send({});
 
     expect(res.status).toBe(400);
+  });
+
+  it("denies a single-org admin the proposal-draft surface (MT-P2-008)", async () => {
+    setup({ rows: { store_proposal_drafts: [{ id: "pd-1" }] } });
+    (resolveAdminTenantScope as jest.Mock).mockResolvedValue({
+      allTenants: false,
+      orgIds: ["00000000-0000-0000-0000-000000000001"],
+    });
+
+    const list = await request(app).get("/api/v1/store/proposal-drafts");
+    expect(list.status).toBe(403);
+
+    const generate = await request(app)
+      .post("/api/v1/store/quote-requests/qr-1/proposal")
+      .send({});
+    expect(generate.status).toBe(403);
+
+    // Restore the cross-tenant default for any later test.
+    (resolveAdminTenantScope as jest.Mock).mockResolvedValue({ allTenants: true, orgIds: [] });
   });
 });

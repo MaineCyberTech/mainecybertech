@@ -217,16 +217,18 @@ describe("documents routes", () => {
   describe("GET /", () => {
     it("returns a paginated list of documents", async () => {
       const result: MockResult = { data: [DOCUMENT], error: null, count: 1 };
-      mockFrom(result);
+      const { builder } = mockFrom(result);
 
       const res = await request(app)
-        .get("/api/v1/documents")
+        .get(`/api/v1/documents?organization_id=${VISIBILITY_ORG}`)
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.items).toHaveLength(1);
       expect(res.body.data.total).toBe(1);
+      // MT-P2-002: the org predicate is mandatory, not conditional.
+      expect(builder.eq).toHaveBeenCalledWith("organization_id", VISIBILITY_ORG);
     });
 
     it("returns empty list when no documents", async () => {
@@ -234,11 +236,21 @@ describe("documents routes", () => {
       mockFrom(result);
 
       const res = await request(app)
-        .get("/api/v1/documents")
+        .get(`/api/v1/documents?organization_id=${VISIBILITY_ORG}`)
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
       expect(res.body.data.items).toEqual([]);
+    });
+
+    it("fails closed without a resolved or explicit org (MT-P2-002)", async () => {
+      mockFrom({ data: [DOCUMENT], error: null, count: 1 });
+
+      const res = await request(app)
+        .get("/api/v1/documents")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
     });
   });
 
@@ -248,7 +260,7 @@ describe("documents routes", () => {
       mockFrom(result);
 
       const res = await request(app)
-        .get("/api/v1/documents/00000000-0000-0000-0000-000000000040")
+        .get(`/api/v1/documents/00000000-0000-0000-0000-000000000040?organization_id=${VISIBILITY_ORG}`)
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -260,7 +272,34 @@ describe("documents routes", () => {
       mockFrom(result);
 
       const res = await request(app)
-        .get("/api/v1/documents/00000000-0000-0000-0000-000000000999")
+        .get(`/api/v1/documents/00000000-0000-0000-0000-000000000999?organization_id=${VISIBILITY_ORG}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
+
+    it("returns 404 for another org's document (MT-P2-002)", async () => {
+      const OTHER_ORG = "00000000-0000-0000-0000-000000000002";
+      const supabase = mockSupabase();
+      const builder = createMockBuilder({ data: null, error: null });
+      let orgFilter: string | null = null;
+      (builder as any).eq = jest.fn((column: string, value: unknown) => {
+        if (column === "organization_id") orgFilter = value as string;
+        return builder;
+      });
+      (builder as any).single = jest.fn(() =>
+        Promise.resolve({
+          data:
+            orgFilter === OTHER_ORG
+              ? { ...VISIBLE_DOCUMENT, organization_id: OTHER_ORG }
+              : null,
+          error: null,
+        }),
+      );
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .get(`/api/v1/documents/00000000-0000-0000-0000-000000000040?organization_id=${VISIBILITY_ORG}`)
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);

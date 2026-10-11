@@ -5,6 +5,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { AppError, success, failure } from "../types";
 import { ZodError } from "zod";
+import { resolveAdminTenantScope } from "../lib/admin-scope";
 import { logger } from "../lib/logger";
 import { toJson } from "../lib/db-types";
 
@@ -68,9 +69,17 @@ router.post("/track", async (req, res, next) => {
   }
 });
 
-// GET /api/v1/analytics - list analytics events (admin)
-router.get("/", requireAuth, requireAdmin, async (_req, res, next) => {
+// GET /api/v1/analytics - list analytics events (platform admin)
+router.get("/", requireAuth, requireAdmin, async (req, res, next) => {
   try {
+    // MT-P2-008: store_analytics_events is a platform-wide table (no
+    // organization_id), so a single-org admin must not receive every tenant's
+    // event stream.
+    const scope = await resolveAdminTenantScope(req);
+    if (!scope.allTenants) {
+      throw new AppError("FORBIDDEN", "Platform admin access required", 403);
+    }
+
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("store_analytics_events")
@@ -85,9 +94,14 @@ router.get("/", requireAuth, requireAdmin, async (_req, res, next) => {
   }
 });
 
-// GET /api/v1/analytics/summary - aggregate event counts (admin)
-router.get("/summary", requireAuth, requireAdmin, async (_req, res, next) => {
+// GET /api/v1/analytics/summary - aggregate event counts (platform admin)
+router.get("/summary", requireAuth, requireAdmin, async (req, res, next) => {
   try {
+    const scope = await resolveAdminTenantScope(req);
+    if (!scope.allTenants) {
+      throw new AppError("FORBIDDEN", "Platform admin access required", 403);
+    }
+
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase.rpc("get_analytics_summary");
 

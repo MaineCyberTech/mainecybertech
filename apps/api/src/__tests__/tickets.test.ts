@@ -87,7 +87,7 @@ describe("tickets routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/tickets")
+        .get("/api/v1/tickets?organization_id=00000000-0000-0000-0000-000000000001")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -117,7 +117,9 @@ describe("tickets routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/tickets/00000000-0000-0000-0000-000000000010")
+        .get(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=00000000-0000-0000-0000-000000000001",
+        )
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -131,7 +133,9 @@ describe("tickets routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/tickets/00000000-0000-0000-0000-000000000999")
+        .get(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000999?organization_id=00000000-0000-0000-0000-000000000001",
+        )
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
@@ -167,7 +171,9 @@ describe("tickets routes", () => {
       );
 
       const res = await request(app)
-        .patch("/api/v1/tickets/00000000-0000-0000-0000-000000000010")
+        .patch(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=00000000-0000-0000-0000-000000000001",
+        )
         .set("Authorization", "Bearer token-123")
         .send({ title: "Updated Title" });
 
@@ -183,7 +189,9 @@ describe("tickets routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments")
+        .get(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=00000000-0000-0000-0000-000000000001",
+        )
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -284,7 +292,7 @@ describe("tickets routes", () => {
       });
 
       const res = await request(app)
-        .patch("/api/v1/tickets/ticket-1/comments/comment-1")
+        .patch(`/api/v1/tickets/ticket-1/comments/comment-1?organization_id=${ORG}`)
         .set("Authorization", "Bearer token-123")
         .send({ body: "Edited comment" });
 
@@ -310,7 +318,7 @@ describe("tickets routes", () => {
       });
 
       const res = await request(app)
-        .patch("/api/v1/tickets/ticket-1/comments/comment-1")
+        .patch(`/api/v1/tickets/ticket-1/comments/comment-1?organization_id=${ORG}`)
         .set("Authorization", "Bearer token-123")
         .send({ body: "Edited comment" });
 
@@ -338,7 +346,7 @@ describe("tickets routes", () => {
       });
 
       const res = await request(app)
-        .patch("/api/v1/tickets/ticket-1/comments/comment-1")
+        .patch(`/api/v1/tickets/ticket-1/comments/comment-1?organization_id=${ORG}`)
         .set("Authorization", "Bearer token-123")
         .send({ body: "Edited by admin" });
 
@@ -375,17 +383,17 @@ describe("tickets routes", () => {
           data: {
             id: "comment-1",
             author_id: "user-1",
-            organization_id: OTHER_ORG,
+            organization_id: ORG,
             body: "Original",
             created_at: new Date().toISOString(),
           },
           error: null,
         },
-        tickets: { data: { id: "ticket-1", organization_id: ORG }, error: null },
+        tickets: { data: { id: "ticket-1", organization_id: OTHER_ORG }, error: null },
       });
 
       const res = await request(app)
-        .patch("/api/v1/tickets/ticket-1/comments/comment-1")
+        .patch(`/api/v1/tickets/ticket-1/comments/comment-1?organization_id=${ORG}`)
         .set("Authorization", "Bearer token-123")
         .send({ body: "Edited comment" });
 
@@ -443,6 +451,44 @@ describe("tickets routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
+    });
+
+    it("GET /:id returns 404 for a ticket in another org (MT-P2-002)", async () => {
+      const OTHER_ORG = "00000000-0000-0000-0000-000000000002";
+      const supabase = mockAuth();
+      const builder = createMockBuilder({ data: null, error: null });
+      let orgFilter: string | null = null;
+      (builder as any).eq = jest.fn((column: string, value: unknown) => {
+        if (column === "organization_id") orgFilter = value as string;
+        return builder;
+      });
+      (builder as any).single = jest.fn(() =>
+        Promise.resolve({
+          data:
+            orgFilter === OTHER_ORG
+              ? { id: "00000000-0000-0000-0000-000000000010", organization_id: OTHER_ORG }
+              : null,
+          error: null,
+        }),
+      );
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .get(`/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
+
+    it("fails closed without a resolved or explicit org (MT-P2-002)", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(createMockBuilder({ data: TICKET, error: null }));
+
+      const res = await request(app)
+        .get("/api/v1/tickets/00000000-0000-0000-0000-000000000010")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
     });
 
     it("DELETE /:id filters the fetch and delete by organization_id", async () => {

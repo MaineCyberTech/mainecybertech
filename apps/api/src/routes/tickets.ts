@@ -17,6 +17,7 @@ import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import {
   applyOrgScope,
   applyRequestedOrg,
+  applyResolvedOrg,
   NO_ORG_MATCH,
   resolveAdminTenantScope,
   type AdminTenantScope,
@@ -101,9 +102,9 @@ router.get("/", async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     let query = supabase.from("tickets").select("*", { count: "exact" });
-
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    // MT-P2-002: mandatory org predicate; fails closed without a resolved or
+    // explicit org instead of listing every tenant.
+    query = applyResolvedOrg(req, query);
 
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter as never);
@@ -131,13 +132,12 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "tickets", "read");
     let query = supabase
       .from("tickets")
       .select("*, ticket_comments(*)")
       .eq("id", String(req.params.id));
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = applyResolvedOrg(req, query);
     const { data, error } = await query.single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Ticket not found", 404);
@@ -235,10 +235,9 @@ router.patch(
     try {
       const parsed = updateTicketSchema.parse(req.body);
       const supabase = getScopedClient(req, "tickets", "write");
-      const orgId = req.query.organization_id as string | undefined;
 
       let currentQuery = supabase.from("tickets").select("version").eq("id", String(req.params.id));
-      if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
+      currentQuery = applyResolvedOrg(req, currentQuery);
       const { data: current, error: fetchError } = await currentQuery.single();
 
       if (fetchError || !current) {
@@ -266,7 +265,7 @@ router.patch(
         .update(updateData as never)
         .eq("id", String(req.params.id))
         .eq("version", current.version as number);
-      if (orgId) query = query.eq("organization_id", orgId);
+      query = applyResolvedOrg(req, query);
       const { data, error } = await query.select().single();
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -311,12 +310,12 @@ router.patch(
 router.get("/:id/comments", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "tickets", "read");
-    const orgId = req.query.organization_id as string | undefined;
 
-    // Verify the ticket exists and (when scoped) belongs to the caller's org
-    // before exposing its comments.
+    // Verify the ticket exists AND belongs to the caller's org before exposing
+    // its comments. The predicate is mandatory (MT-P2-002): no resolved or
+    // explicit org fails closed.
     let ticketQuery = supabase.from("tickets").select("id").eq("id", String(req.params.id));
-    if (orgId) ticketQuery = ticketQuery.eq("organization_id", orgId);
+    ticketQuery = applyResolvedOrg(req, ticketQuery);
     const { data: ticket, error: ticketError } = await ticketQuery.single();
     if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
 
@@ -337,16 +336,15 @@ router.post("/:id/comments", requirePermission("tickets", "edit"), async (req, r
   try {
     const parsed = addTicketCommentSchema.parse(req.body);
     const supabase = getScopedClient(req, "tickets", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
     // Verify the ticket exists AND belongs to the caller's org before
     // commenting — prevents cross-tenant comment injection and notification
-    // spam into the victim org.
+    // spam into the victim org. Mandatory predicate (MT-P2-002).
     let ticketQuery = supabase
       .from("tickets")
       .select("id, organization_id, title, created_by, assigned_to")
       .eq("id", String(req.params.id));
-    if (orgId) ticketQuery = ticketQuery.eq("organization_id", orgId);
+    ticketQuery = applyResolvedOrg(req, ticketQuery);
     const { data: ticket, error: ticketError } = await ticketQuery.single();
     if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
 
@@ -419,19 +417,24 @@ router.patch(
       const parsed = updateTicketCommentSchema.parse(req.body);
       const supabase = getScopedClient(req, "tickets", "write");
 
-      const { data: existing, error: fetchError } = await supabase
+      let commentQuery = supabase
         .from("ticket_comments")
         .select("id, author_id, organization_id, body, created_at")
         .eq("id", String(req.params.commentId))
-        .eq("ticket_id", String(req.params.id))
-        .single();
+        .eq("ticket_id", String(req.params.id));
+      // MT-P2-002: mandatory predicate; no resolved/explicit org fails closed.
+      commentQuery = applyResolvedOrg(req, commentQuery);
+      const { data: existing, error: fetchError } = await commentQuery.single();
 
       if (fetchError || !existing) throw new AppError("NOT_FOUND", "Comment not found", 404);
 
       // Tenant check: the comment's ticket must belong to the comment's org,
       // and (when the caller is scoped to an org) that org must match.
-      const orgId = req.query.organization_id as string | undefined;
-      if (orgId && orgId !== existing.organization_id) {
+      const scopeOrgId =
+        req.orgId ??
+        (req.query.organization_id as string | undefined) ??
+        (req.body?.organizationId as string | undefined);
+      if (scopeOrgId && scopeOrgId !== existing.organization_id) {
         throw new AppError("FORBIDDEN", "Not authorized for this comment", 403);
       }
 
@@ -501,19 +504,18 @@ router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, n
   try {
     assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "tickets", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
     let fetchQuery = supabase
       .from("tickets")
       .select("id, organization_id")
       .eq("id", String(req.params.id));
-    if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
+    fetchQuery = applyResolvedOrg(req, fetchQuery);
     const { data: ticket, error: fetchError } = await fetchQuery.single();
 
     if (fetchError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
 
     let deleteQuery = supabase.from("tickets").delete().eq("id", String(req.params.id));
-    if (orgId) deleteQuery = deleteQuery.eq("organization_id", orgId);
+    deleteQuery = applyResolvedOrg(req, deleteQuery);
     const { error } = await deleteQuery;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);

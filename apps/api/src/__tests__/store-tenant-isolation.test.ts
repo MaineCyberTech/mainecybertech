@@ -417,13 +417,30 @@ describe("store quotes tenant isolation (MT-P0-005)", () => {
     expect(queryCalls.filter((c) => c.table === "store_quotes" && c.method === "in")).toHaveLength(0);
   });
 
-  it("does not scope non-org tables such as store_leads and store_quote_requests", async () => {
+  it("denies a single-org admin the platform-wide intake lists (MT-P2-008)", async () => {
     const { queryCalls } = setup({ mode: "single" });
 
-    await request(app).get("/api/v1/store/leads");
-    await request(app).get("/api/v1/store/quote-requests");
+    for (const path of [
+      "/api/v1/store/leads",
+      "/api/v1/store/quote-requests",
+      "/api/v1/store/proposal-drafts",
+    ]) {
+      const res = await request(app).get(path);
+      expect(res.status).toBe(403);
+    }
 
+    // The global intake tables are never queried for a single-org admin.
     expect(queryCalls.filter((c) => c.table === "store_leads")).toHaveLength(0);
     expect(queryCalls.filter((c) => c.table === "store_quote_requests")).toHaveLength(0);
+    expect(queryCalls.filter((c) => c.table === "store_proposal_drafts")).toHaveLength(0);
+  });
+
+  it("lets a genuine cross-tenant admin read the platform-wide intake lists", async () => {
+    setup({ mode: "cross", profile: { is_super_admin: true } });
+
+    const res = await request(app).get("/api/v1/store/leads");
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toBeInstanceOf(Array);
   });
 });

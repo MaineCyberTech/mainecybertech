@@ -32,14 +32,17 @@ import {
 } from "./module-tasks";
 
 export function registerAllTasks(): void {
-  registerTask("stripe-reconcile", stripeReconcile);
+  // MT-P2-006: per-tenant tasks declare the tenant-scope payload keys they
+  // consume; the registry rejects any other scope-shaped key and validates the
+  // declared values as UUIDs. Global report/purge tasks declare none.
+  registerTask("stripe-reconcile", stripeReconcile, { tenantScopeKeys: ["organizationId"] });
   registerTask("jira-sync", jiraSync);
-  registerTask("jsm-sync", jsmSync);
-  registerTask("m365-calendar-sync", m365CalendarSync);
+  registerTask("jsm-sync", jsmSync, { tenantScopeKeys: ["organizationId"] });
+  registerTask("m365-calendar-sync", m365CalendarSync, { tenantScopeKeys: ["organizationId"] });
   registerTask("scheduled-notifications", scheduledNotifications);
   registerTask("notification-email", notificationEmail);
   registerTask("retention", retentionTask);
-  registerTask("webhook-dispatcher", webhookDispatcher);
+  registerTask("webhook-dispatcher", webhookDispatcher, { tenantScopeKeys: ["organizationId"] });
   registerTask("webhook-retry", webhookRetry);
   registerTask("orphan-cleanup", orphanCleanup);
   registerTask("public-interaction-retention", publicInteractionRetention);

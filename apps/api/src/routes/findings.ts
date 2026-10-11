@@ -10,7 +10,12 @@ import { requirePermission } from "../middleware/permissions";
 import { requireEntitlement } from "../middleware/entitlement";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
-import { applyOrgScope, applyRequestedOrg, resolveAdminTenantScope } from "../lib/admin-scope";
+import {
+  applyOrgScope,
+  applyRequestedOrg,
+  applyResolvedOrg,
+  resolveAdminTenantScope,
+} from "../lib/admin-scope";
 import {
   createFindingSchema,
   updateFindingSchema,
@@ -77,8 +82,9 @@ router.get("/", async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     let query = supabase.from("findings").select("*", { count: "exact" });
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    // MT-P2-002: the org predicate is mandatory — a request without a resolved
+    // (or explicit) org fails closed instead of listing every tenant.
+    query = applyResolvedOrg(req, query);
     const status = req.query.status as string | undefined;
     if (status) query = query.eq("status", status);
     const severity = req.query.severity as string | undefined;
@@ -105,8 +111,7 @@ router.get("/stats", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "findings", "read");
     let query = supabase.from("findings").select("severity, status");
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = applyResolvedOrg(req, query);
 
     const { data, error } = await query;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -129,13 +134,12 @@ router.get("/stats", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "findings", "read");
     let query = supabase
       .from("findings")
       .select("*")
       .eq("id", String(req.params.id) as string);
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = applyResolvedOrg(req, query);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Finding not found", 404);
 

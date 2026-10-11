@@ -85,10 +85,21 @@ describe("QBR API", () => {
 
   it("returns empty list", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
-    const res = await request(app).get("/api/v1/qbr").set("Authorization", authToken);
+    const builder = createMockBuilder({ data: [], error: null, count: 0 });
+    supabase.from.mockReturnValue(builder);
+    const res = await request(app)
+      .get(`/api/v1/qbr?organization_id=${testOrgId}`)
+      .set("Authorization", authToken);
     expect(res.status).toBe(200);
     expect(res.body.data.items).toEqual([]);
+    // MT-P2-002: the org predicate is mandatory, not conditional.
+    expect(builder.eq).toHaveBeenCalledWith("organization_id", testOrgId);
+  });
+
+  it("fails closed without a resolved or explicit org (MT-P2-002)", async () => {
+    mockAuth();
+    const res = await request(app).get("/api/v1/qbr").set("Authorization", authToken);
+    expect(res.status).toBe(403);
   });
 
   it("validates title and organizationId on generate", async () => {
@@ -108,7 +119,32 @@ describe("QBR API", () => {
   it("returns 404 for non-existent report", async () => {
     const supabase = mockAuth();
     supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
-    const res = await request(app).get("/api/v1/qbr/no-id").set("Authorization", authToken);
+    const res = await request(app)
+      .get(`/api/v1/qbr/no-id?organization_id=${testOrgId}`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 404 for another org's report (MT-P2-002)", async () => {
+    const OTHER_ORG = "00000000-0000-0000-0000-000000000002";
+    const supabase = mockAuth();
+    const builder = createMockBuilder({ data: null, error: null });
+    let orgFilter: string | null = null;
+    (builder as any).eq = jest.fn((column: string, value: unknown) => {
+      if (column === "organization_id") orgFilter = value as string;
+      return builder;
+    });
+    (builder as any).single = jest.fn(() =>
+      Promise.resolve({
+        data: orgFilter === OTHER_ORG ? { id: "r-1", organization_id: OTHER_ORG } : null,
+        error: null,
+      }),
+    );
+    supabase.from.mockReturnValue(builder);
+
+    const res = await request(app)
+      .get(`/api/v1/qbr/r-1?organization_id=${testOrgId}`)
+      .set("Authorization", authToken);
     expect(res.status).toBe(404);
   });
 });

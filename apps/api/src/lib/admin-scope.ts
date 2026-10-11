@@ -112,3 +112,35 @@ export function applyRequestedOrg<T>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (query as any).eq(column, requestedOrg) as T;
 }
+
+/**
+ * Mandatory org predicate for a tenant-scoped read (MT-P2-002).
+ *
+ * The legacy `if (orgId) query = query.eq(...)` idiom fails OPEN when the
+ * org-access gate did not run: the predicate is silently skipped and the query
+ * returns every tenant's rows. This helper only ever narrows:
+ *
+ * - a resolved org (`req.orgId`, set by `requireOrgAccess` for members, API
+ *   keys and explicit/active-org switches) always becomes a predicate;
+ * - otherwise an explicit `organization_id`/`organizationId` supplied by the
+ *   caller (already validated by the gate when it ran) becomes the predicate;
+ * - an org-agnostic platform admin (`req.orgScope.platformAdmin` with no org)
+ *   is intentionally cross-tenant and audited by the gate, so the query stays
+ *   unscoped;
+ * - anything else — no gate, no scope — fails closed with a 403 instead of
+ *   returning an unscoped result.
+ */
+export function applyResolvedOrg<T>(req: Request, query: T, column = "organization_id"): T {
+  const explicitQuery =
+    typeof req.query?.organization_id === "string" ? req.query.organization_id : undefined;
+  const explicitBody =
+    typeof req.body?.organizationId === "string" ? req.body.organizationId : undefined;
+  const orgId = req.orgId ?? explicitQuery ?? explicitBody;
+
+  if (orgId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (query as any).eq(column, orgId) as T;
+  }
+  if (req.orgScope?.platformAdmin) return query;
+  throw new AppError("FORBIDDEN", "No organization scope resolved for this request", 403);
+}

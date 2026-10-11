@@ -5,6 +5,18 @@ import { logger } from "./logger";
 export const TASK_QUEUE_NAME = "mct-tasks";
 export const TASK_JOB_NAME = "task";
 
+/**
+ * Destructive/global maintenance tasks are scheduled by the worker itself and
+ * are never triggered from an API request. Refusing them here keeps a future
+ * route from turning request input into a platform-wide purge (MT-P2-006).
+ */
+const SCHEDULED_ONLY_TASKS = new Set([
+  "retention",
+  "public-interaction-retention",
+  "orphan-cleanup",
+  "api-key-prune",
+]);
+
 let queue: Queue | null = null;
 let queueError: Error | null = null;
 let enabled: boolean | null = null;
@@ -78,6 +90,11 @@ export async function enqueueTask(
   payload: Record<string, unknown>,
 ): Promise<boolean> {
   try {
+    if (SCHEDULED_ONLY_TASKS.has(taskType)) {
+      logger.warn({ taskType }, "Refusing to enqueue a scheduled-only task from the API");
+      return false;
+    }
+
     if (!isTaskQueueEnabled()) {
       return false;
     }
