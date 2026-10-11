@@ -212,7 +212,6 @@ export const retentionTask: TaskHandler = async (
       outcomes,
       auditCutoff: auditCutoff.toISOString(),
       notificationCutoff: notificationCutoff.toISOString(),
-<<<<<<< HEAD
       windows: {
         auditLogs: {
           days: auditDays,
@@ -229,9 +228,7 @@ export const retentionTask: TaskHandler = async (
           matchingPolicies: notificationWindow.matchingPolicies,
         },
       },
-=======
       storeAnalyticsCutoff: storeAnalyticsCutoff.toISOString(),
->>>>>>> 73c604c4 (fix(analytics): drop visitor PII, wire storefront capture, retention + admin summary (AN-P2-002/003/004, FEAT-P2-003))
     },
     `[retention] ${summary}`,
   );
