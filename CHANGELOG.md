@@ -136,6 +136,43 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Fixed
 
+- **Remediation wave (2026-10-11, 23 PRs, audit rerun).**
+  - Role assignment is centralized (`assertCanAssignRole`): assigning a
+    cross-tenant role requires a platform super admin, nobody can change their
+    own role, and a DB trigger rejects user-writable `profiles.is_super_admin`
+    (migration `5302437`) (#171).
+  - Core auth workflows: password reset routes through `/auth/callback`, signup
+    confirmation uses the trusted app origin, status-only membership approvals
+    work, and the SDK treats empty 204 responses as success (#175).
+  - Response cache keys include the caller's tenant scope, so an all-tenant
+    response can no longer be served to a single-org member (#174).
+  - API keys enforce stored scopes, reject expired/unparsable `expires_at`, and
+    a daily prune task retires expired keys; `GET /api-keys` is gated (#181).
+  - Downloads and admin search enforce the `can_read_document` visibility
+    model; direct-to-storage writes are closed and the documents bucket has a
+    25 MiB limit (migration `5302439`) (#187, #189).
+  - Worker monitoring uses pinned fetch (SSRF rebinding), the worker exposes
+    `worker_queue_connected` and fails `/health` on queue loss, and webhook DLQ
+    retries are truthful and atomically claimed (#179, #182, #192).
+  - Alerting: 12 new Prometheus rules (impersonation, dead letters, delivery
+    failures, latency, circuit breaker, auth failures, worker failures/queue,
+    billing drift) with promtool check/test wired into required CI (#178,
+    #190); the deploy guard fails prod on an empty `METRICS_TOKEN` (#183).
+  - Billing: Stripe sync paginates and fails loudly on truncation; failed
+    payments notify billing contacts; reconciliation detects drift and alerts
+    (#186, #190).
+  - Admin abuse: approvals reject self-approval and terminal-state transitions,
+    the Stripe portal requires a billing contact, and previously un-audited
+    DELETE handlers log audit events (#185).
+  - Privacy: GA/Tawk.to load only after consent; visitor IP/geo is
+    consent-gated and recorded server-side (migration `5302438`) (#188).
+  - Mobile: service worker registered with an API-safe cache strategy, a 16px
+    control floor, dialog scroll fixes, and mobile Playwright projects (#184).
+  - Migrations: destructive replacements are transaction-wrapped with a CI
+    guard (#176); the restore-test baseline loader and backup dispatcher are
+    fixed (#170).
+  - Docs: monitoring/alerting, release gate, secret matrix, incident/breach and
+    RTO/RPO pages updated to the deployed state (#173).
 - Proposal creation lost the phase association for nested items — items declared
   inside a phase were written with `phase_id: null`. They now link to the phase
   they were declared under (`apps/api/src/routes/proposals.ts`).
