@@ -6,6 +6,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { requireOrgAccess } from "../middleware/org-access";
 import { logAuditEvent } from "../services/audit";
+import { filterReadableDocuments } from "../lib/document-visibility";
 import { sanitizeSearchTerm } from "../lib/search";
 import { queryInt } from "../lib/query";
 import { isCrossTenantKey, roleKeyOf } from "../lib/roles";
@@ -134,11 +135,20 @@ router.get("/", async (req, res, next) => {
       );
     }
 
+    // SEARCH-P2-008: the service-role client bypasses RLS, so the documents
+    // query must be filtered by the `can_read_document` visibility model in
+    // code. Unreadable rows are dropped after the query, so fetch a bounded
+    // window (5x the page, capped) and trim to the caller's page size once the
+    // readable subset is known.
+    const documentFetchLimit = Math.min(100, limit * 5);
+
     let documentQuery = supabase
       .from("documents")
-      .select("id, name, mime_type, visibility, organization_id", { count: "exact" })
+      .select("id, name, mime_type, visibility, organization_id, uploaded_by", {
+        count: "exact",
+      })
       .or(`name.ilike.${wildcardTerm},mime_type.ilike.${wildcardTerm}`)
-      .limit(limit);
+      .limit(documentFetchLimit);
     if (!allTenants) {
       documentQuery = documentQuery.in(
         "organization_id",
@@ -182,6 +192,18 @@ router.get("/", async (req, res, next) => {
     if (pErr) throw new AppError("DB_ERROR", pErr.message, 500);
     if (dErr) throw new AppError("DB_ERROR", dErr.message, 500);
 
+    // SEARCH-P2-008: drop private/internal documents the caller may not read
+    // (the service-role client bypasses RLS). Super admins short-circuit inside
+    // the helper — `is_super_admin()` makes every document readable, so their
+    // exact DB count stays meaningful; for everyone else the reported count is
+    // the readable subset of the fetched window, never the unfiltered total.
+    const readableDocuments = (
+      await filterReadableDocuments(req.authUser!.userId, documents ?? [], {
+        orgIds: allTenants ? undefined : scopedOrgIds,
+        isSuperAdmin: callerIsSuperAdmin,
+      })
+    ).slice(0, limit);
+
     // SEARCH-P2-001: never persist the raw search term. Operators may search
     // for customer emails/phones/keywords, and the audit redactor only matches
     // on key names, so a plaintext `query` would live in `audit_logs` for the
@@ -205,7 +227,7 @@ router.get("/", async (req, res, next) => {
           organizations: organizations?.length ?? 0,
           tickets: tickets?.length ?? 0,
           projects: projects?.length ?? 0,
-          documents: documents?.length ?? 0,
+          documents: readableDocuments.length,
         },
       },
     });
@@ -218,14 +240,18 @@ router.get("/", async (req, res, next) => {
         organizations: organizations ?? [],
         tickets: tickets ?? [],
         projects: projects ?? [],
-        documents: documents ?? [],
+        documents: readableDocuments,
         // SEARCH-P2-004: per-entity totals + the applied page size (additive).
+        // SEARCH-P2-008: the documents total reflects only rows the caller may
+        // read, so an admin cannot infer hidden private/internal documents.
         counts: {
           users: uCount ?? 0,
           organizations: oCount ?? 0,
           tickets: tCount ?? 0,
           projects: pCount ?? 0,
-          documents: dCount ?? 0,
+          documents: callerIsSuperAdmin
+            ? (dCount ?? readableDocuments.length)
+            : readableDocuments.length,
         },
         limit,
       }),

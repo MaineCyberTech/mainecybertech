@@ -73,6 +73,122 @@ function mockFrom(result: MockResult) {
   return { mock, builder };
 }
 
+/**
+ * Table-aware Supabase mock for the signed-URL routes.
+ *
+ * The visibility helper (lib/document-visibility.ts) resolves the caller's
+ * profile, memberships, effective `documents:edit` grants and
+ * `document_permissions` rows through getSupabaseAdmin(). A single shared
+ * builder (mockFrom) would feed the document row to every one of those
+ * lookups, so each table gets its own scripted result.
+ */
+const VISIBILITY_CALLER = "00000000-0000-0000-0000-000000000777";
+const VISIBILITY_ORG = "00000000-0000-0000-0000-000000000001";
+const VISIBILITY_DOC_ID = "00000000-0000-0000-0000-000000000040";
+
+/** A document the default membership (org member, no grants) may read. */
+const VISIBLE_DOCUMENT = {
+  id: VISIBILITY_DOC_ID,
+  organization_id: VISIBILITY_ORG,
+  visibility: "org",
+  uploaded_by: "another-user",
+  storage_bucket: "documents",
+  storage_path: "org-1/file.pdf",
+};
+
+type DocumentDownloadOptions = {
+  document: Record<string, unknown> | null;
+  version?: Record<string, unknown> | null;
+  /** The caller's approved membership; `null` models a caller with none. */
+  membership?: {
+    organization_id: string;
+    role_id?: string | null;
+    role_key?: string | null;
+  } | null;
+  superAdmin?: boolean;
+  /** Role ids whose catalog grants include `documents:edit`. */
+  editRoleIds?: string[];
+  /** `document_permissions` rows: direct user grants. */
+  directGrants?: Array<{ document_id: string }>;
+  /** `document_permissions` rows: role grants. */
+  roleGrants?: Array<{ document_id: string; role_id: string }>;
+  signedUrl?: { data: { signedUrl: string } | null; error: unknown };
+};
+
+function mockDocumentDownload(options: DocumentDownloadOptions) {
+  const membership =
+    options.membership === undefined
+      ? {
+          organization_id: (options.document?.organization_id as string) ?? VISIBILITY_ORG,
+          role_id: "role-client-user",
+          role_key: "client_user",
+        }
+      : options.membership;
+
+  const script: Record<string, Array<{ data: unknown }>> = {
+    documents: [{ data: options.document }],
+    profiles: [{ data: { is_super_admin: options.superAdmin ?? false } }],
+    memberships: [
+      {
+        data: membership
+          ? [
+              {
+                organization_id: membership.organization_id,
+                role_id: membership.role_id ?? null,
+                roles: membership.role_key ? [{ key: membership.role_key }] : [],
+              },
+            ]
+          : [],
+      },
+    ],
+    role_permissions: [
+      {
+        data: (options.editRoleIds ?? []).map((roleId) => ({
+          role_id: roleId,
+          permission_id: "perm-documents-edit",
+        })),
+      },
+    ],
+    permissions: [{ data: [{ id: "perm-documents-edit" }] }],
+    user_permission_overrides: [{ data: [] }],
+    document_permissions: [
+      { data: options.directGrants ?? [] },
+      { data: options.roleGrants ?? [] },
+    ],
+  };
+  if (options.version !== undefined) {
+    script.document_versions = [{ data: options.version }];
+  }
+
+  const calls: Record<string, number> = {};
+  const supabase = {
+    from: jest.fn((table: string) => {
+      const entries = script[table] ?? [{ data: [] }];
+      const index = Math.min(calls[table] ?? 0, entries.length - 1);
+      calls[table] = (calls[table] ?? 0) + 1;
+      return createMockBuilder({ data: entries[index].data, error: null } as MockResult);
+    }),
+    auth: {
+      getUser: jest.fn().mockResolvedValue({
+        data: { user: { id: VISIBILITY_CALLER, email: "test@example.com" } },
+        error: null,
+      }),
+    },
+    storage: {
+      from: jest.fn().mockReturnValue({
+        createSignedUrl: jest.fn().mockResolvedValue(
+          options.signedUrl ?? {
+            data: { signedUrl: "https://example.com/signed" },
+            error: null,
+          },
+        ),
+      }),
+    },
+  };
+  (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
+  return supabase;
+}
+
 const DOCUMENT = {
   id: "00000000-0000-0000-0000-000000000040",
   organization_id: "00000000-0000-0000-0000-000000000001",
@@ -378,24 +494,7 @@ describe("documents routes", () => {
 
   describe("POST /:id/signed-url", () => {
     it("returns a signed URL for a document with storage", async () => {
-      const supabase = mockSupabase();
-      supabase.from.mockReturnValue(
-        createMockBuilder({
-          data: {
-            storage_bucket: "documents",
-            storage_path: "org-1/file.pdf",
-          },
-          error: null,
-        } as MockResult),
-      );
-      supabase.storage = {
-        from: jest.fn().mockReturnValue({
-          createSignedUrl: jest.fn().mockResolvedValue({
-            data: { signedUrl: "https://example.com/signed" },
-            error: null,
-          }),
-        }),
-      };
+      mockDocumentDownload({ document: { ...VISIBLE_DOCUMENT } });
 
       const res = await request(app)
         .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
@@ -406,10 +505,9 @@ describe("documents routes", () => {
     });
 
     it("returns 400 when document has no storage reference", async () => {
-      mockFrom({
-        data: { storage_bucket: null, storage_path: null },
-        error: null,
-      } as MockResult);
+      mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT, storage_bucket: null, storage_path: null },
+      });
 
       const res = await request(app)
         .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
@@ -420,34 +518,17 @@ describe("documents routes", () => {
   });
 
   describe("GET /:id/versions/:versionId/signed-url", () => {
-    function mockVersionDownload() {
-      const supabase = mockSupabase();
-      supabase.from
-        .mockReturnValueOnce(
-          createMockBuilder({
-            data: { storage_bucket: "documents" },
-            error: null,
-          } as MockResult),
-        )
-        .mockReturnValueOnce(
-          createMockBuilder({
-            data: { storage_path: "org-1/1000-old.pdf" },
-            error: null,
-          } as MockResult),
-        );
-      supabase.storage = {
-        from: jest.fn().mockReturnValue({
-          createSignedUrl: jest.fn().mockResolvedValue({
-            data: { signedUrl: "https://example.com/version-signed" },
-            error: null,
-          }),
-        }),
-      };
-      return supabase;
-    }
+    const versionSignedUrl = {
+      data: { signedUrl: "https://example.com/version-signed" },
+      error: null,
+    };
 
     it("returns a signed URL for an authorised caller's past version", async () => {
-      mockVersionDownload();
+      mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT },
+        version: { storage_path: "org-1/1000-old.pdf" },
+        signedUrl: versionSignedUrl,
+      });
 
       const res = await request(app)
         .get("/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/signed-url")
@@ -458,29 +539,26 @@ describe("documents routes", () => {
     });
 
     it("derives the bucket from the parent document and signs the version path", async () => {
-      const supabase = mockVersionDownload();
+      const supabase = mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT },
+        version: { storage_path: "org-1/1000-old.pdf" },
+        signedUrl: versionSignedUrl,
+      });
 
       await request(app)
         .get("/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/signed-url")
         .set("Authorization", "Bearer token-123");
 
       // Bucket comes from documents.storage_bucket, not a caller-supplied value.
-      expect(supabase.storage!.from).toHaveBeenCalledWith("documents");
-      expect(supabase.storage!.from("documents").createSignedUrl).toHaveBeenCalledWith(
+      expect(supabase.storage.from).toHaveBeenCalledWith("documents");
+      expect(supabase.storage.from("documents").createSignedUrl).toHaveBeenCalledWith(
         "org-1/1000-old.pdf",
         3600,
       );
     });
 
     it("returns 404 and mints no URL when the parent document is in another org", async () => {
-      const supabase = mockSupabase();
-      supabase.from.mockReturnValue(
-        createMockBuilder({ data: null, error: new Error("not found") } as MockResult),
-      );
-      const createSignedUrl = jest.fn();
-      supabase.storage = {
-        from: jest.fn().mockReturnValue({ createSignedUrl }),
-      };
+      const supabase = mockDocumentDownload({ document: null });
 
       const res = await request(app)
         .get(
@@ -489,37 +567,29 @@ describe("documents routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
-      expect(createSignedUrl).not.toHaveBeenCalled();
+      expect(supabase.storage.from).not.toHaveBeenCalled();
     });
 
     it("scopes the parent document lookup to the caller's org", async () => {
       const ORG = "00000000-0000-0000-0000-000000000001";
-      const supabase = mockSupabase();
-      const docBuilder = createMockBuilder({
-        data: { storage_bucket: "documents" },
-        error: null,
-      } as MockResult);
-      const versionBuilder = createMockBuilder({
-        data: { storage_path: "org-1/1000-old.pdf" },
-        error: null,
-      } as MockResult);
-      supabase.from.mockReturnValueOnce(docBuilder).mockReturnValueOnce(versionBuilder);
-      supabase.storage = {
-        from: jest.fn().mockReturnValue({
-          createSignedUrl: jest.fn().mockResolvedValue({
-            data: { signedUrl: "https://example.com/version-signed" },
-            error: null,
-          }),
-        }),
-      };
+      const supabase = mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT },
+        version: { storage_path: "org-1/1000-old.pdf" },
+        signedUrl: versionSignedUrl,
+      });
 
       const res = await request(app)
         .get(`/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/signed-url?organization_id=${ORG}`)
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
+      const docBuilder = supabase.from.mock.results[0].value as { eq: jest.Mock };
       expect(docBuilder.eq).toHaveBeenCalledWith("organization_id", ORG);
       // The version lookup is pinned to the parent document id.
+      const versionCall = supabase.from.mock.calls.findIndex(
+        ([table]) => table === "document_versions",
+      );
+      const versionBuilder = supabase.from.mock.results[versionCall].value as { eq: jest.Mock };
       expect(versionBuilder.eq).toHaveBeenCalledWith(
         "document_id",
         "00000000-0000-0000-0000-000000000040",
@@ -527,57 +597,209 @@ describe("documents routes", () => {
     });
 
     it("returns 404 when the version id belongs to a different document", async () => {
-      const supabase = mockSupabase();
-      supabase.from
-        .mockReturnValueOnce(
-          createMockBuilder({
-            data: { storage_bucket: "documents" },
-            error: null,
-          } as MockResult),
-        )
-        .mockReturnValueOnce(
-          // `document_id` filter means a version from another document is absent.
-          createMockBuilder({ data: null, error: new Error("not found") } as MockResult),
-        );
-      const createSignedUrl = jest.fn();
-      supabase.storage = {
-        from: jest.fn().mockReturnValue({ createSignedUrl }),
-      };
+      const supabase = mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT },
+        // `document_id` filter means a version from another document is absent.
+        version: null,
+      });
 
       const res = await request(app)
         .get("/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/other-doc-version/signed-url")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
-      expect(createSignedUrl).not.toHaveBeenCalled();
+      expect(supabase.storage.from).not.toHaveBeenCalled();
     });
 
     it("returns 500 when storage signing fails", async () => {
-      const supabase = mockSupabase();
-      supabase.from
-        .mockReturnValueOnce(
-          createMockBuilder({ data: { storage_bucket: "documents" }, error: null } as MockResult),
-        )
-        .mockReturnValueOnce(
-          createMockBuilder({
-            data: { storage_path: "org-1/1000-old.pdf" },
-            error: null,
-          } as MockResult),
-        );
-      supabase.storage = {
-        from: jest.fn().mockReturnValue({
-          createSignedUrl: jest.fn().mockResolvedValue({
-            data: null,
-            error: { message: "Storage error" },
-          }),
-        }),
-      };
+      mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT },
+        version: { storage_path: "org-1/1000-old.pdf" },
+        signedUrl: { data: null, error: { message: "Storage error" } },
+      });
 
       const res = await request(app)
         .get("/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/signed-url")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(500);
+    });
+  });
+
+  describe("document download visibility (FILE-P2-007)", () => {
+    it("returns 404 and mints no URL for a private document the caller cannot read", async () => {
+      const supabase = mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT, visibility: "private" },
+      });
+
+      const res = await request(app)
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      // Same shape as the not-found path: never reveal that the document exists.
+      expect(res.status).toBe(404);
+      expect(supabase.storage.from).not.toHaveBeenCalled();
+    });
+
+    it("returns 404 for an internal document without documents:edit or an internal role", async () => {
+      const supabase = mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT, visibility: "internal" },
+      });
+
+      const res = await request(app)
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+      expect(supabase.storage.from).not.toHaveBeenCalled();
+    });
+
+    it("allows the uploader to download their own private document", async () => {
+      mockDocumentDownload({
+        document: {
+          ...VISIBLE_DOCUMENT,
+          visibility: "private",
+          uploaded_by: VISIBILITY_CALLER,
+        },
+      });
+
+      const res = await request(app)
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+    });
+
+    it("allows a caller with an explicit document_permissions grant", async () => {
+      mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT, visibility: "private" },
+        directGrants: [{ document_id: VISIBILITY_DOC_ID }],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+    });
+
+    it("allows a caller whose role holds a document_permissions grant", async () => {
+      mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT, visibility: "private" },
+        roleGrants: [{ document_id: VISIBILITY_DOC_ID, role_id: "role-client-user" }],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+    });
+
+    it("ignores a role grant held in a different organization", async () => {
+      mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT, visibility: "private" },
+        membership: {
+          organization_id: "00000000-0000-0000-0000-000000000002",
+          role_id: "role-other-org",
+          role_key: "client_user",
+        },
+        roleGrants: [{ document_id: VISIBILITY_DOC_ID, role_id: "role-client-user" }],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
+
+    it("allows a caller with documents:edit to download a private document", async () => {
+      mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT, visibility: "private" },
+        editRoleIds: ["role-client-user"],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+    });
+
+    it("allows an internal-role caller to download an internal document", async () => {
+      mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT, visibility: "internal" },
+        membership: {
+          organization_id: VISIBILITY_ORG,
+          role_id: "role-technician",
+          role_key: "technician",
+        },
+      });
+
+      const res = await request(app)
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+    });
+
+    it("returns 404 for an org document when the caller has no membership in that org", async () => {
+      const supabase = mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT },
+        membership: {
+          organization_id: "00000000-0000-0000-0000-000000000002",
+          role_id: "role-other-org",
+          role_key: "client_user",
+        },
+      });
+
+      const res = await request(app)
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+      expect(supabase.storage.from).not.toHaveBeenCalled();
+    });
+
+    it("allows anyone to download a public document", async () => {
+      mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT, visibility: "public" },
+        membership: null,
+      });
+
+      const res = await request(app)
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+    });
+
+    it("allows a super admin to download a private document without a grant", async () => {
+      mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT, visibility: "private" },
+        superAdmin: true,
+      });
+
+      const res = await request(app)
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+    });
+
+    it("enforces the parent visibility on the version signed-url path", async () => {
+      const supabase = mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT, visibility: "private" },
+        version: { storage_path: "org-1/1000-old.pdf" },
+      });
+
+      const res = await request(app)
+        .get("/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+      expect(supabase.storage.from).not.toHaveBeenCalled();
     });
   });
 
