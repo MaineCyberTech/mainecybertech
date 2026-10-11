@@ -1009,6 +1009,49 @@ describe("MCTClient", () => {
       expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
     });
 
+    it("previewBulkFolder sends dryRun and returns per-row diffs [ADMIN-P2-003]", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          dryRun: true,
+          requested: 2,
+          matched: 1,
+          skipped: 1,
+          rows: [
+            {
+              id: "1",
+              before: { folder_path: null },
+              after: { folder_path: "/docs" },
+              changes: ["folder_path"],
+            },
+          ],
+        }),
+      );
+
+      const result = await client.documents.previewBulkFolder({
+        documentIds: ["1", "2"],
+        folderPath: "/docs",
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.dryRun).toBe(true);
+      expect(result.matched).toBe(1);
+      expect(result.rows[0].changes).toEqual(["folder_path"]);
+    });
+
+    it("bulkMetadata forwards the explicit confirm for visibility applies [ADMIN-P2-003]", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ results: [], successful: 0, failed: 0 }));
+
+      await client.documents.bulkMetadata({
+        documentIds: ["1"],
+        visibility: "public",
+        confirm: true,
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.visibility).toBe("public");
+      expect(body.confirm).toBe(true);
+    });
+
     it("listVersions fetches document versions", async () => {
       const version = {
         id: "v1",

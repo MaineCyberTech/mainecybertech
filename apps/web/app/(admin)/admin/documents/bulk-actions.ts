@@ -70,6 +70,10 @@ export async function bulkMetadataAction(formData: FormData): Promise<BulkAction
       description,
       folderPath,
       visibility,
+      // ADMIN-P2-003: visibility changes are elevated on the API and require an
+      // explicit confirmation. The operator chose a visibility value in the
+      // modal and clicked apply, so echo that confirmation for the request.
+      ...(visibility ? { confirm: true } : {}),
     });
     const { succeeded, failed } = summarizeBulkUpdate(ids, result);
     revalidatePath("/admin/documents");

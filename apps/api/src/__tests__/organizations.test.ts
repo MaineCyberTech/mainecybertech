@@ -31,7 +31,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 function mockAuth() {
   const supabase = {
     from: jest.fn(),
-    auth: { getUser: jest.fn() },
+    auth: { getUser: jest.fn(), admin: { inviteUserByEmail: jest.fn() } },
     rpc: jest.fn().mockResolvedValue({ data: 0, error: null }),
     storage: { from: jest.fn() },
   };
@@ -289,6 +289,59 @@ describe("organizations routes", () => {
         .send({ name: "Test Org", slug: "test-org" });
 
       expect(res.status).toBe(201);
+    });
+  });
+
+  describe("POST /onboard", () => {
+    it("creates the first admin membership as pending, not approved (ADMIN-P2-004)", async () => {
+      const supabase = mockAuth();
+      const membershipBuilder = createMockBuilder({
+        data: { id: "mem-1", status: "pending" },
+        error: null,
+      });
+      supabase.from
+        // requireAdmin → memberships query
+        .mockReturnValueOnce(
+          createMockBuilder({ data: [{ roles: { id: "role-admin", key: "admin" } }], error: null }),
+        )
+        // organizations insert
+        .mockReturnValueOnce(createMockBuilder({ data: ORG, error: null }))
+        // roles lookup by key
+        .mockReturnValueOnce(createMockBuilder({ data: { id: "role-1" }, error: null }))
+        // assertCanAssignRole → profiles.is_super_admin
+        .mockReturnValueOnce(createMockBuilder({ data: { is_super_admin: true }, error: null }))
+        // existing profile lookup by email
+        .mockReturnValueOnce(createMockBuilder({ data: null, error: null }))
+        // profiles upsert for the invited admin
+        .mockReturnValueOnce(createMockBuilder({ data: null, error: null }))
+        // memberships insert
+        .mockReturnValueOnce(membershipBuilder);
+      supabase.auth.admin.inviteUserByEmail.mockResolvedValue({
+        data: { user: { id: "admin-1" } },
+        error: null,
+      });
+
+      const res = await request(app)
+        .post("/api/v1/organizations/onboard")
+        .set("Authorization", "Bearer token-123")
+        .send({
+          name: "New Org",
+          slug: "new-org",
+          adminEmail: "admin@new.example",
+          adminRoleKey: "admin",
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.approvalRequired).toBe(true);
+      expect(res.body.data.membership.status).toBe("pending");
+      expect(membershipBuilder.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organization_id: ORG.id,
+          user_id: "admin-1",
+          role_id: "role-1",
+          status: "pending",
+        }),
+      );
     });
   });
 

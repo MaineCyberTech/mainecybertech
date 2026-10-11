@@ -1212,6 +1212,172 @@ describe("documents routes", () => {
       );
     });
 
+    it("POST /bulk/metadata dry-run previews only owned rows and writes nothing [ADMIN-P2-003]", async () => {
+      const supabase = mockSupabase() as any;
+      supabase.rpc = jest.fn();
+      const builder = createMockBuilder({
+        data: [
+          {
+            id: "00000000-0000-0000-0000-000000000101",
+            description: "Old",
+            folder_path: "/old",
+            visibility: "org",
+          },
+        ],
+        error: null,
+      } as MockResult);
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .post(`/api/v1/documents/bulk/metadata?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({
+          documentIds: [
+            "00000000-0000-0000-0000-000000000101",
+            "00000000-0000-0000-0000-000000000102",
+          ],
+          description: "New",
+          visibility: "public",
+          dryRun: true,
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.dryRun).toBe(true);
+      expect(res.body.data.requested).toBe(2);
+      expect(res.body.data.matched).toBe(1);
+      expect(res.body.data.skipped).toBe(1);
+      expect(res.body.data.rows).toEqual([
+        {
+          id: "00000000-0000-0000-0000-000000000101",
+          before: { description: "Old", visibility: "org" },
+          after: { description: "New", visibility: "public" },
+          changes: ["description", "visibility"],
+        },
+      ]);
+      // Read-only preview: no bulk RPC, no audit event.
+      expect(supabase.rpc).not.toHaveBeenCalled();
+      expect(logAuditEvent).not.toHaveBeenCalled();
+      // The preview query applies the same org pre-filter as the apply path.
+      expect(builder.eq).toHaveBeenCalledWith("organization_id", ORG);
+    });
+
+    it("POST /bulk/folder dry-run previews folder diffs without applying [ADMIN-P2-003]", async () => {
+      const supabase = mockSupabase() as any;
+      supabase.rpc = jest.fn();
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: [
+            {
+              id: "00000000-0000-0000-0000-000000000101",
+              description: null,
+              folder_path: "/old",
+              visibility: "org",
+            },
+          ],
+          error: null,
+        } as MockResult),
+      );
+
+      const res = await request(app)
+        .post(`/api/v1/documents/bulk/folder?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({
+          documentIds: [
+            "00000000-0000-0000-0000-000000000101",
+            "00000000-0000-0000-0000-000000000102",
+          ],
+          folderPath: "/new",
+          dryRun: true,
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.matched).toBe(1);
+      expect(res.body.data.skipped).toBe(1);
+      expect(res.body.data.rows[0]).toEqual({
+        id: "00000000-0000-0000-0000-000000000101",
+        before: { folder_path: "/old" },
+        after: { folder_path: "/new" },
+        changes: ["folder_path"],
+      });
+      expect(supabase.rpc).not.toHaveBeenCalled();
+    });
+
+    it("POST /bulk/metadata rejects visibility changes without an explicit confirm [ADMIN-P2-003]", async () => {
+      const supabase = mockSupabase() as any;
+      supabase.rpc = jest.fn();
+
+      const res = await request(app)
+        .post(`/api/v1/documents/bulk/metadata?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({
+          documentIds: ["00000000-0000-0000-0000-000000000101"],
+          visibility: "public",
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("CONFIRMATION_REQUIRED");
+      expect(supabase.rpc).not.toHaveBeenCalled();
+    });
+
+    it("POST /bulk/metadata applies a visibility change when confirm is true [ADMIN-P2-003]", async () => {
+      const supabase = mockSupabase() as any;
+      supabase.rpc = jest.fn().mockResolvedValue({
+        data: [{ id: "00000000-0000-0000-0000-000000000101", success: true }],
+        error: null,
+      });
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: [{ id: "00000000-0000-0000-0000-000000000101" }],
+          error: null,
+        } as MockResult),
+      );
+
+      const res = await request(app)
+        .post(`/api/v1/documents/bulk/metadata?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({
+          documentIds: ["00000000-0000-0000-0000-000000000101"],
+          visibility: "public",
+          confirm: true,
+        });
+
+      expect(res.status).toBe(200);
+      expect(supabase.rpc).toHaveBeenCalledWith(
+        "bulk_update_with_version",
+        expect.objectContaining({
+          updates: [
+            { id: "00000000-0000-0000-0000-000000000101", data: { visibility: "public" } },
+          ],
+        }),
+      );
+    });
+
+    it("POST /bulk/metadata does not demand confirm for the null-visibility keep-current shape [ADMIN-P2-003]", async () => {
+      const supabase = mockSupabase() as any;
+      supabase.rpc = jest.fn().mockResolvedValue({
+        data: [{ id: "00000000-0000-0000-0000-000000000101", success: true }],
+        error: null,
+      });
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: [{ id: "00000000-0000-0000-0000-000000000101" }],
+          error: null,
+        } as MockResult),
+      );
+
+      const res = await request(app)
+        .post(`/api/v1/documents/bulk/metadata?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({
+          documentIds: ["00000000-0000-0000-0000-000000000101"],
+          description: "Updated",
+          visibility: null,
+        });
+
+      expect(res.status).toBe(200);
+      expect(supabase.rpc).toHaveBeenCalled();
+    });
+
     it("POST /upload with a cross-org documentId returns 404 and never removes the victim's storage object", async () => {
       const supabase = mockSupabase();
       supabase.from.mockReturnValue(

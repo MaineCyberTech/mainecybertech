@@ -4,6 +4,7 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { requireOrgAccess } from "../middleware/org-access";
+import { rateLimitAdminOps } from "../middleware/rate-limit";
 import { logAuditEvent } from "../services/audit";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { queryInt } from "../lib/query";
@@ -67,7 +68,9 @@ const auditExportColumns: CsvColumn[] = [
   { key: "created_at" },
 ];
 
-router.get("/export", async (req, res, next) => {
+// ADMIN-P2-005: a full-trail export (up to 10k rows) is an expensive admin
+// operation — cap it with the shared admin-ops limiter.
+router.get("/export", rateLimitAdminOps, async (req, res, next) => {
   try {
     const scope = await resolveAdminTenantScope(req);
 
@@ -165,7 +168,7 @@ const impersonationExportColumns: CsvColumn[] = [
   { key: "metadata" },
 ];
 
-router.get("/impersonation/export", async (req, res, next) => {
+router.get("/impersonation/export", rateLimitAdminOps, async (req, res, next) => {
   try {
     const scope = await resolveAdminTenantScope(req);
     if (!scope.allTenants) {

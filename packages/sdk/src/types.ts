@@ -79,6 +79,11 @@ export interface OrganizationOnboardResult {
   adminUser: { id: string; email: string };
   membership: Membership;
   invited: boolean;
+  /**
+   * ADMIN-P2-004: the first-admin membership starts `pending`; a platform
+   * super admin must approve it before the admin can act for the tenant.
+   */
+  approvalRequired?: boolean;
 }
 
 export interface Ticket {
@@ -341,4 +346,24 @@ export interface BulkUpdateResult {
   failed: number;
   /** Requested ids the caller may not touch (tickets bulk endpoint only). */
   skipped?: number;
+}
+
+/**
+ * Dry-run preview returned by the bulk document endpoints when `dryRun: true`
+ * (ADMIN-P2-003). `rows` lists only the documents the caller may touch, with
+ * the current and proposed value of every field the apply would change.
+ */
+export interface BulkPreviewRow {
+  id: string;
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+  changes: string[];
+}
+
+export interface BulkPreviewResult {
+  dryRun: true;
+  requested: number;
+  matched: number;
+  skipped: number;
+  rows: BulkPreviewRow[];
 }

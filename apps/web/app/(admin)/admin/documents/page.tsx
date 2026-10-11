@@ -426,7 +426,14 @@ export default async function AdminDocumentsPage() {
         return { ok: false, error: "Select a valid visibility value." };
       }
 
-      const result = await api.documents.bulkMetadata({ documentIds: ids, visibility });
+      // ADMIN-P2-003: the API treats a visibility flip as elevated and requires
+      // an explicit confirmation; the operator chose a visibility value and
+      // submitted the bulk visibility form, so echo that confirmation.
+      const result = await api.documents.bulkMetadata({
+        documentIds: ids,
+        visibility,
+        confirm: true,
+      });
       const { succeeded, failed } = summarizeBulkUpdate(ids, result);
 
       if (!succeeded.length && failed.length) {

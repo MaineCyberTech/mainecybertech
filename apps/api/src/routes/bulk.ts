@@ -6,6 +6,7 @@ import { success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
+import { rateLimitAdminOps } from "../middleware/rate-limit";
 import { assertCanAssignRole, resolveRoleKey } from "../lib/role-assignment";
 
 const router: ReturnType<typeof Router> = Router();
@@ -31,7 +32,7 @@ function parseCSVLine(line: string): string[] {
   return result;
 }
 
-router.post("/invite", async (req, res, next) => {
+router.post("/invite", rateLimitAdminOps, async (req, res, next) => {
   try {
     const { invites, csv, organizationId, roleId } = z
       .object({
@@ -85,6 +86,7 @@ router.post("/invite", async (req, res, next) => {
     }
 
     const results: Array<{ email: string; status: string; message: string }> = [];
+    let createdAccounts = 0;
 
     for (const entry of entries) {
       const email = entry.email;
@@ -108,28 +110,33 @@ router.post("/invite", async (req, res, next) => {
           .eq("email", email)
           .maybeSingle();
 
+        let createdAccount = false;
+
         if (existingProfile) {
           userId = existingProfile.id;
         } else {
-          const { data: signUpData, error: signUpError } = await supabase.auth.admin.createUser({
-            email,
-            password: Array.from(
-              { length: 16 },
-              () => "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)],
-            ).join(""),
-            email_confirm: true,
-            user_metadata: { full_name: fullName },
-          });
+          // ADMIN-P2-004: bulk invite must never mint pre-confirmed accounts.
+          // `inviteUserByEmail` creates the auth user unconfirmed and emails an
+          // invite link; the account only becomes usable once the invitee
+          // proves control of the mailbox and sets a password. The previous
+          // `createUser({ email_confirm: true })` path skipped both steps and
+          // handed every CSV row a silently usable account.
+          const { data: inviteData, error: inviteError } =
+            await supabase.auth.admin.inviteUserByEmail(email, {
+              data: { full_name: fullName },
+            });
 
-          if (signUpError || !signUpData.user) {
+          if (inviteError || !inviteData?.user) {
             results.push({
               email,
               status: "error",
-              message: signUpError?.message || "Failed to create user",
+              message: inviteError?.message || "Failed to invite user",
             });
             continue;
           }
-          userId = signUpData.user.id;
+          userId = inviteData.user.id;
+          createdAccount = true;
+          createdAccounts++;
         }
 
         const { data: existingMembership } = await supabase
@@ -161,7 +168,9 @@ router.post("/invite", async (req, res, next) => {
         results.push({
           email,
           status: "invited",
-          message: "Invited to organization",
+          message: createdAccount
+            ? "Invite email sent; account awaits email confirmation"
+            : "Invited to organization",
         });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Unknown error";
@@ -182,7 +191,7 @@ router.post("/invite", async (req, res, next) => {
         roleId,
         total: entries.length,
         invited: results.filter((r) => r.status === "invited").length,
-        created: results.filter((r) => r.status === "created").length,
+        created: createdAccounts,
         skipped: results.filter((r) => r.status === "skipped").length,
         errors: results.filter((r) => r.status === "error").length,
       },
