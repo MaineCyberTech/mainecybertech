@@ -40,6 +40,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      # IR-P2-010 / OBS-P2-012: promtool check rules + rule unit tests against
+      # the digest-pinned prom/prometheus image (fast, no credentials).
+      # Deliberately in the required `test` job so a broken/unreachable rule
+      # blocks the PR without needing a new required-check context.
+      - uses: ./.github/actions/prometheus-rules
+
   # Dependency audit — hard gate, no continue-on-error
   security-scan:
     timeout-minutes: 15
