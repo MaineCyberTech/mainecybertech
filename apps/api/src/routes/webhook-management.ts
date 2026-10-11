@@ -177,6 +177,21 @@ router.post(
         String(req.params.id),
       );
 
+      // WH-P2-011: only a dead letter that still carries the full payload can
+      // be truthfully retried. Inline-dispatched failures store a PII-safe
+      // summary ({ event, receivedAt }) with no `data`; recreating a delivery
+      // from it would no-op in `webhook-retry` (which dead-letters rows it
+      // cannot replay) while this route had already deleted the dead letter.
+      // Refuse and keep the row so the admin sees why.
+      const storedBody = deadLetter.request_body as Record<string, unknown> | null;
+      if (!storedBody || !("data" in storedBody)) {
+        throw new AppError(
+          "CONFLICT",
+          "Dead letter has no stored payload to replay (inline dispatch kept only a summary); it cannot be retried.",
+          409,
+        );
+      }
+
       // Replay through the path the worker actually consumes: the
       // `webhook-retry` task replays due rows from `webhook_deliveries`
       // (SSRF guard + HMAC signing + attempt counting). Recreate the delivery
