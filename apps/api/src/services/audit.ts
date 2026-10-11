@@ -91,7 +91,13 @@ async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function logAuditEvent(input: AuditEventInput) {
+/**
+ * Writes one audit row, retrying transient failures. Returns true when the
+ * row was persisted, false when every attempt failed (the failure is logged).
+ * Callers that must not silently drop work — e.g. the inbound webhook
+ * handlers (RES-P2-007) — check the result and fail the request instead.
+ */
+export async function logAuditEvent(input: AuditEventInput): Promise<boolean> {
   const supabase = getSupabaseAdmin();
   const data = {
     organization_id: input.organizationId ?? null,
@@ -108,7 +114,7 @@ export async function logAuditEvent(input: AuditEventInput) {
       .from("audit_logs")
       .insert({ ...data, metadata: toJson(data.metadata) });
 
-    if (!error) return;
+    if (!error) return true;
 
     if (attempt < MAX_RETRIES) {
       logger.warn(
@@ -123,4 +129,6 @@ export async function logAuditEvent(input: AuditEventInput) {
       );
     }
   }
+
+  return false;
 }
