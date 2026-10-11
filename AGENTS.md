@@ -106,7 +106,7 @@ what it can; the rest are review gates.
   - **Migration order resolved:** #30 shipped `5302430`–`5302432`; #32 ships `5302433`–`5302436`. The rebase kept both sets; no renumbering is needed.
   - **Deliberately NOT fixed:** SEC-P2-005 / ACM-P2-003 (RLS bypassed because `getScopedClient` defaults to the service role). That is the documented incremental rollout via `RLS_READS_ENABLED`/`RLS_WRITES_ENABLED`, not a defect; flipping it wholesale is a product decision and is left as an operator action.
   - **CI status (2026-10-03):** #32's first run was red on TypeCheck and E2E (a scope error — `updateMetadataAction` referenced an `organizationId` that only exists in the create action — which also broke the web build) and on the `review.md` mirror check. Both were fixed; the rebased head is expected green. Docs-only follow-ups (#33–#37) are separate PRs.
-  - Operator actions that still gate a real deploy (none block `develop`): `BACKUP_ENCRYPTION_KEY`, `SCHEDULE_DISPATCH_TOKEN`, `ADMIN_IP_RANGES`, `ALERTMANAGER_WATCHDOG_WEBHOOK_URL`, `prod-approval` reviewers, and applying migrations `5302430`–`5302436`.
+  - Operator actions that still gate a real deploy (none block `develop`): `BACKUP_ENCRYPTION_KEY`, `SCHEDULE_DISPATCH_TOKEN`, `ADMIN_IP_RANGES`, `ALERTMANAGER_WATCHDOG_WEBHOOK_URL`, `prod-approval` reviewers, and applying migrations `5302430`–`5302437`.
 
 ### Test patterns
 
@@ -146,7 +146,7 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 12    | 28 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319   | Admin 203, Portal 86, Public 29, `forbidden` 1                                                                                                                         |
 | Web components            | 102   | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 134   | `supabase/migrations/` (latest: 5302436 restore_platform_admin_rls_gates)                                                                                              |
+| SQL migrations            | 135   | `supabase/migrations/` (latest: 5302437 protect_is_super_admin)                                                                                              |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 20    | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 632   | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
