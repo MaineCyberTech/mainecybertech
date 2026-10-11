@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react";
 import { submitLead } from "../../app/(public)/contact/actions";
 import TrustBadgeList from "./TrustBadgeList";
-import { getClientEnv } from "../../lib/env";
-
-const API_BASE = getClientEnv().NEXT_PUBLIC_API_URL;
+import { fetchPublicInit } from "../../lib/public-init";
 
 interface IntakeField {
   id: string;
@@ -43,13 +41,10 @@ export default function IntakeFormRenderer({
   const [consent, setConsent] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/v1/public/init`)
-      .then((r) => r.json())
-      .then((d) => {
-        setTrackingId(d.data.trackingId);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    fetchPublicInit().then((id) => {
+      setTrackingId(id);
+      setLoading(false);
+    });
   }, []);
 
   function validate(): boolean {

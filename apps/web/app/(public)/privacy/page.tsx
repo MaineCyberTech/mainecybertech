@@ -25,9 +25,10 @@ export default function PrivacyPage() {
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
               When you fill out our contact form, we collect your name, email address, phone number,
-              company name, and any message you provide. We also automatically collect technical
-              information such as your IP address, browser type, operating system, referring page,
-              and the pages you visit on our site.
+              company name, and any message you provide. We also collect limited technical
+              information to operate the site, such as the referring page and your browser platform.
+              Your IP address, geolocation and browser details are collected only after you accept
+              analytics; before that, the visitor session used by our forms contains no IP address.
             </p>
           </section>
 
@@ -75,10 +76,56 @@ export default function PrivacyPage() {
               </li>
               <li>
                 <strong className="text-slate-200">ip-api.com</strong> &mdash; We use ip-api.com to
-                perform IP geolocation lookups on visitors for analytics and fraud prevention
-                purposes. No data is permanently stored by ip-api.com.
+                geolocate visitors who have accepted analytics. The lookup is only made after
+                consent and over HTTPS. No data is permanently stored by ip-api.com.
               </li>
             </ul>
+          </section>
+
+          <section>
+            <h2 className="cybergreen font-display text-xl font-bold uppercase tracking-wider">
+              Cookies, Analytics &amp; Your Choices
+            </h2>
+            <p className="cyber-text mt-3 leading-relaxed">
+              Non-essential third-party scripts are loaded only after you accept them in the
+              consent banner. Until then, no analytics or live-chat script is loaded and no IP
+              address or location is sent to third parties. You can change or withdraw your choice
+              at any time using the &ldquo;Cookie settings&rdquo; link in the footer; the change
+              takes effect immediately for scripts that have not yet loaded and on your next page
+              load for scripts already loaded.
+            </p>
+            <div className="mt-4 overflow-x-auto">
+              <table className="cyber-text w-full min-w-[640px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-slate-300">
+                    <th className="py-2 pr-4 font-semibold">Name</th>
+                    <th className="py-2 pr-4 font-semibold">Provider</th>
+                    <th className="py-2 pr-4 font-semibold">Purpose</th>
+                    <th className="py-2 font-semibold">Set / duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-white/5">
+                    <td className="py-2 pr-4 font-mono text-xs">mct-consent-v1</td>
+                    <td className="py-2 pr-4">Maine CyberTech (local storage)</td>
+                    <td className="py-2 pr-4">Remembers your analytics/chat consent choice</td>
+                    <td className="py-2">When you choose; kept until you clear site data</td>
+                  </tr>
+                  <tr className="border-b border-white/5">
+                    <td className="py-2 pr-4 font-mono text-xs">_ga, _ga_*</td>
+                    <td className="py-2 pr-4">Google Analytics</td>
+                    <td className="py-2 pr-4">Distinguishes visitors and measures site usage</td>
+                    <td className="py-2">Only after you accept; up to 24 months</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-4 font-mono text-xs">Tawk.to cookies</td>
+                    <td className="py-2 pr-4">Tawk.to</td>
+                    <td className="py-2 pr-4">Live-chat session and continuity</td>
+                    <td className="py-2">Only after you accept; session to 12 months</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </section>
 
           <section>

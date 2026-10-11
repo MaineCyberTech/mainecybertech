@@ -43,6 +43,11 @@ const envSchema = z.object({
   FIELD_ENCRYPTION_KEY: z.string().optional(),
   PUBLIC_TRAFFIC_WEBHOOK_URL: z.string().optional(),
   PUBLIC_LEAD_WEBHOOK_URL: z.string().optional(),
+  // PRIV-P2-001 / AN-P2-005: visitor IP geolocation endpoint. Defaults to the
+  // HTTPS ip-api endpoint in routes/public.ts; the lookup only runs after the
+  // visitor grants analytics consent. Set this to point at a self-hosted or
+  // licensed (HTTPS) provider.
+  GEO_LOOKUP_URL: z.string().url().optional(),
   JSM_DOMAIN: z.string().optional(),
   JSM_EMAIL: z.string().optional(),
   JSM_API_TOKEN: z.string().optional(),
