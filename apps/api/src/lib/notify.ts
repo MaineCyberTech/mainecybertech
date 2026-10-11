@@ -4,6 +4,7 @@ import { sendEmail } from "./email";
 import { enqueueTask } from "./task-producer";
 import { logger } from "./logger";
 import { getEnv } from "../config/env";
+import { claimIdempotencyKey } from "./idempotency";
 import { resolveChannels, type ResolvedChannels } from "./notification-channels";
 import {
   recordNotificationDelivery,
@@ -159,6 +160,27 @@ export async function createNotification(
   }
 }
 
+/**
+ * NOTIF-P2-009: decide whether THIS API call owns the email send.
+ *
+ * Mirrors the worker's `claimNotificationEmail`
+ * (apps/worker/src/notification-store.ts) so the API path has the same
+ * email-side idempotency as the worker queue. The `notification_key` upsert in
+ * `createNotification` is itself an atomic claim: only the first writer gets
+ * `inserted: true`, so a replayed request must not email again. When the in-app
+ * channel is disabled by preference no row is written, so fall back to the
+ * idempotency store (24h TTL) — a retry inside that window still cannot
+ * double-send.
+ */
+export async function claimNotificationEmail(
+  inApp: CreateNotificationResult,
+  notificationKey: string,
+): Promise<boolean> {
+  if (inApp.inserted) return true;
+  if (inApp.deduped) return false;
+  return claimIdempotencyKey(`notif-email-${notificationKey}`, "sent");
+}
+
 export async function notifyAndEmail(
   opts: NotifyOptions & { email?: string; emailHtml?: string },
 ): Promise<NotifyResult> {
@@ -170,7 +192,20 @@ export async function notifyAndEmail(
     module: opts.module,
   });
 
-  const inApp = await createNotification(opts, channels);
+  // Derive the dedup key once and share it with the email claim below so both
+  // channels are gated by the same `notification_key`.
+  const notificationKey =
+    opts.notificationKey ??
+    buildNotificationKey({
+      userId: opts.userId,
+      module: opts.module,
+      moduleId: opts.moduleId,
+      action: opts.action,
+      title: opts.title,
+      body: opts.body,
+    });
+
+  const inApp = await createNotification({ ...opts, notificationKey }, channels);
 
   const baseUrl = getEnv().APP_BASE_URL;
   // CodeQL js/xss (alert #6): the module id is user-provided route data (e.g.
@@ -198,6 +233,18 @@ export async function notifyAndEmail(
         "Email notification suppressed by user preference",
       );
     }
+    return { ...inApp, emailQueued: false, emailSent: false, emailSkipped: true };
+  }
+
+  // NOTIF-P2-009: the in-app insert (or, when in-app is disabled, the
+  // idempotency store) is the email claim. A deduped/replayed notification
+  // must not enqueue or send a second email.
+  if (!(await claimNotificationEmail(inApp, notificationKey))) {
+    recordNotificationDedup("email");
+    logger.info(
+      { userId: opts.userId, module: opts.module, action: opts.action },
+      "Email notification skipped — already claimed by an earlier delivery",
+    );
     return { ...inApp, emailQueued: false, emailSent: false, emailSkipped: true };
   }
 
