@@ -134,7 +134,7 @@ function looksLikeJson(buffer: Buffer): boolean {
 export function sniffFileType(buffer: Buffer): SniffedFileType | null {
   const image = sniffImageType(buffer);
   if (image) return image;
-  if (buffer.length >= 5 && buffer.toString("ascii", 0, 5) === "%pdf-") return "pdf";
+  if (buffer.length >= 5 && buffer.toString("ascii", 0, 5).toLowerCase() === "%pdf-") return "pdf";
   if (buffer.length >= 8 && buffer.toString("hex", 0, 8) === "d0cf11e0a1b11ae1") return "ole2";
   if (hasZipSignature(buffer)) return looksLikeOoxml(buffer) ? "ooxml" : "zip";
   if (buffer.length >= 2 && buffer[0] === 0x1f && buffer[1] === 0x8b) return "gzip";
