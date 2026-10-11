@@ -85,15 +85,20 @@ export default async function AdminTicketsPage() {
         ...(priority ? { priority } : {}),
       });
 
-      if (result.failed > 0) {
+      // The API pre-filters ids to the admin's tenant scope; "skipped" rows
+      // were not updated and must not be reported as success (USE-P2-001).
+      const skipped = result.skipped ?? 0;
+      if (result.failed > 0 || skipped > 0) {
         const failedItems = result.results
           .filter((r) => !r.success)
           .map((r) => `${r.id}: ${r.error ?? "Unknown error"}`)
           .join("; ");
-        return {
-          ok: false as const,
-          error: `Bulk update partially failed (${result.successful}/${result.results.length} succeeded): ${failedItems}`,
-        };
+        const parts = [
+          `Bulk update partially failed (${result.successful}/${ids.length} succeeded)`,
+        ];
+        if (failedItems) parts.push(failedItems);
+        if (skipped > 0) parts.push(`${skipped} ticket(s) not found or not accessible`);
+        return { ok: false as const, error: parts.join(": ") };
       }
 
       revalidatePath("/admin/tickets");

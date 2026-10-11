@@ -49,4 +49,15 @@ describe("PortalProfilePage", () => {
     render(<ProfileClient initialData={null} apiUrl={API_URL} />);
     expect(screen.queryByDisplayValue("Test User")).not.toBeInTheDocument();
   });
+
+  it("does not render the unused current-password field", async () => {
+    render(<ProfileClient initialData={initialData} />);
+    expect(screen.queryByLabelText(/current password/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^new password$/i)).toBeInTheDocument();
+  });
+
+  it("shows the password policy the API enforces", async () => {
+    render(<ProfileClient initialData={initialData} />);
+    expect(screen.getByTestId("password-policy-hint")).toHaveTextContent(/strong password/i);
+  });
 });

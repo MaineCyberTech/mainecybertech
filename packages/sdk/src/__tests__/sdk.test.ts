@@ -978,19 +978,31 @@ describe("MCTClient", () => {
       expect(mockFetch.mock.calls[0][1]?.body).toBeInstanceOf(FormData);
     });
 
-    it("bulkFolder posts to bulk/folder", async () => {
-      mockFetch.mockResolvedValue(mockResponse({ updated: 2 }));
+    it("bulkFolder returns per-item results", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          results: [
+            { id: "1", success: true },
+            { id: "2", success: false, error: "Version conflict" },
+          ],
+          successful: 1,
+          failed: 1,
+        }),
+      );
 
       const result = await client.documents.bulkFolder({
         documentIds: ["1", "2"],
         folderPath: "/docs",
       });
 
-      expect(result.updated).toBe(2);
+      expect(result.successful).toBe(1);
+      expect(result.failed).toBe(1);
+      expect(result.results).toHaveLength(2);
+      expect(result.results[1].error).toBe("Version conflict");
     });
 
     it("bulkMetadata posts to bulk/metadata", async () => {
-      mockFetch.mockResolvedValue(mockResponse({ updated: 1 }));
+      mockFetch.mockResolvedValue(mockResponse({ results: [], successful: 0, failed: 0 }));
 
       await client.documents.bulkMetadata({ documentIds: ["1"], folderPath: "/docs" });
 

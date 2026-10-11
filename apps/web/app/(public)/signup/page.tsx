@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signupAction } from "@/lib/auth/auth-actions";
 import { Button } from "@mct/ui/components/Button";
+import PasswordPolicyHint from "@/components/PasswordPolicyHint";
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("");
@@ -95,6 +96,7 @@ export default function SignupPage() {
                 placeholder="••••••••••"
                 required
               />
+              <PasswordPolicyHint className="mt-2 text-xs text-slate-400" />
             </div>
 
             {errorMsg ? (

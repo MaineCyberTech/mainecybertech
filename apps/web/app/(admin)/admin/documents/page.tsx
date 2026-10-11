@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminDocumentsCenterClient from "@/components/admin/AdminDocumentsCenterClient";
 import { bulkFolderAction, bulkMetadataAction } from "@/app/(admin)/admin/documents/bulk-actions";
+import { summarizeBulkUpdate } from "@/lib/bulk-results";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Documents - Admin - Maine CyberTech" };
@@ -425,9 +426,14 @@ export default async function AdminDocumentsPage() {
         return { ok: false, error: "Select a valid visibility value." };
       }
 
-      await api.documents.bulkMetadata({ documentIds: ids, visibility });
+      const result = await api.documents.bulkMetadata({ documentIds: ids, visibility });
+      const { succeeded, failed } = summarizeBulkUpdate(ids, result);
 
-      return { ok: true, kind: "bulk_visibility", ids, visibility };
+      if (!succeeded.length && failed.length) {
+        return { ok: false, error: failed[0].error, ids: [], failed };
+      }
+
+      return { ok: true, kind: "bulk_visibility", ids: succeeded, failed, visibility };
     } catch (error) {
       return {
         ok: false,

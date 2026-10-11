@@ -85,7 +85,7 @@ describe("AdminDocumentsBulkControls", () => {
   });
 
   it("calls bulkFolderAction on successful folder apply and shows a success toast", async () => {
-    mockBulkFolderAction.mockResolvedValue({ ok: true });
+    mockBulkFolderAction.mockResolvedValue({ ok: true, ids: ["doc-1", "doc-2"], failed: [] });
     renderBulk(<AdminDocumentsBulkControls {...defaultProps} />);
     fireEvent.click(screen.getByText("Bulk folder reassignment"));
     fireEvent.change(screen.getByPlaceholderText("Example: Client Uploads / Q2"), {
@@ -102,8 +102,27 @@ describe("AdminDocumentsBulkControls", () => {
     expect(screen.getByText("2 document(s) moved to New Folder.")).toBeInTheDocument();
   });
 
+  it("reports partial folder failures with the failed ids", async () => {
+    mockBulkFolderAction.mockResolvedValue({
+      ok: true,
+      ids: ["doc-1"],
+      failed: [{ id: "doc-2", error: "Version conflict" }],
+    });
+    renderBulk(<AdminDocumentsBulkControls {...defaultProps} />);
+    fireEvent.click(screen.getByText("Bulk folder reassignment"));
+    fireEvent.change(screen.getByPlaceholderText("Example: Client Uploads / Q2"), {
+      target: { value: "New Folder" },
+    });
+    fireEvent.click(screen.getByText("Apply Folder"));
+
+    expect(await screen.findByText("Folder reassigned with failures")).toBeInTheDocument();
+    expect(screen.getByText("1 succeeded, 1 failed (doc-2).")).toBeInTheDocument();
+    // Only the succeeded id is applied locally.
+    expect(mockOnApplyFolderLocal).toHaveBeenCalledWith("New Folder", ["doc-1"]);
+  });
+
   it("calls bulkMetadataAction on successful metadata apply", async () => {
-    mockBulkMetadataAction.mockResolvedValue({ ok: true });
+    mockBulkMetadataAction.mockResolvedValue({ ok: true, ids: ["doc-1", "doc-2"], failed: [] });
     renderBulk(<AdminDocumentsBulkControls {...defaultProps} />);
     fireEvent.click(screen.getByText("Bulk metadata edit"));
     const descriptionInput = screen.getByPlaceholderText(

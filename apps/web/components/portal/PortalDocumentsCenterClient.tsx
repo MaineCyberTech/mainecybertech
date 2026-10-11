@@ -136,8 +136,23 @@ export default function PortalDocumentsCenterClient({
       fd.set("documentIds", JSON.stringify(selectedIds));
       const res = await bulkFolderAction(fd);
       if (res.ok) {
-        pushToast("success", `${res.updated} documents updated`);
-        setSelectedIds([]);
+        const failed = res.failed ?? [];
+        if (failed.length) {
+          // Keep failed ids selected so the user can retry just those.
+          setSelectedIds(failed.map((f) => f.id));
+          const ids = failed
+            .slice(0, 3)
+            .map((f) => f.id)
+            .join(", ");
+          pushToast(
+            "warning",
+            `${res.successful ?? res.updated ?? 0} of ${(res.successful ?? 0) + failed.length} document(s) updated; ${failed.length} failed (${ids}${failed.length > 3 ? ", …" : ""}).`,
+            "Partially updated",
+          );
+        } else {
+          pushToast("success", `${res.updated} documents updated`);
+          setSelectedIds([]);
+        }
         setBulkFolderOpen(false);
       } else {
         pushToast("error", res.error ?? "Failed");
@@ -156,8 +171,23 @@ export default function PortalDocumentsCenterClient({
       fd.set("documentIds", JSON.stringify(selectedIds));
       const res = await bulkMetadataAction(fd);
       if (res.ok) {
-        pushToast("success", `${res.updated} documents updated`);
-        setSelectedIds([]);
+        const failed = res.failed ?? [];
+        if (failed.length) {
+          // Keep failed ids selected so the user can retry just those.
+          setSelectedIds(failed.map((f) => f.id));
+          const ids = failed
+            .slice(0, 3)
+            .map((f) => f.id)
+            .join(", ");
+          pushToast(
+            "warning",
+            `${res.successful ?? res.updated ?? 0} of ${(res.successful ?? 0) + failed.length} document(s) updated; ${failed.length} failed (${ids}${failed.length > 3 ? ", …" : ""}).`,
+            "Partially updated",
+          );
+        } else {
+          pushToast("success", `${res.updated} documents updated`);
+          setSelectedIds([]);
+        }
         setBulkMetaOpen(false);
       } else {
         pushToast("error", res.error ?? "Failed");
