@@ -20,6 +20,8 @@ export type ActionResult = {
 
 export type DocumentRecord = Record<string, any> & {
   id: string;
+  /** Optimistic-locking row version (USE-P3-004). */
+  version?: number;
   resolved_url?: string | null;
   display_name?: string;
   file_extension?: string | null;

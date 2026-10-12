@@ -5,6 +5,11 @@ import { signupAction } from "@/lib/auth/auth-actions";
 import { Button } from "@mct/ui/components/Button";
 import PasswordPolicyHint from "@/components/PasswordPolicyHint";
 
+function isNextRedirect(error: unknown): boolean {
+  const digest = (error as { digest?: unknown })?.digest;
+  return typeof digest === "string" && digest.startsWith("NEXT_REDIRECT");
+}
+
 export default function SignupPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -19,16 +24,27 @@ export default function SignupPage() {
     setMessage("");
     setErrorMsg("");
 
-    const result = await signupAction(email, password, fullName);
+    try {
+      const result = await signupAction(email, password, fullName);
 
-    setLoading(false);
+      if (result?.error) {
+        setErrorMsg(result.error);
+        return;
+      }
 
-    if (result?.error) {
-      setErrorMsg(result.error);
-      return;
+      setMessage("Check your email to confirm your account, then return to continue.");
+    } catch (error) {
+      // USE-P3-005: a thrown action (network drop, timeout, redirect) used to
+      // leave the button stuck on "Creating Account..." forever.
+      if (isNextRedirect(error)) throw error;
+      setErrorMsg(
+        error instanceof Error && error.message
+          ? error.message
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setLoading(false);
     }
-
-    setMessage("Check your email to confirm your account, then return to continue.");
   }
 
   return (

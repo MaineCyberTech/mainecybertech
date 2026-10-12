@@ -77,12 +77,12 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,411 tests, all passing. 493 suites.**
+**4,411 tests, all passing. 495 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
 | API     | 1,846         | 161   | Jest + supertest                  |
-| Web     | 1,969         | 298   | Jest + Testing Library            |
+| Web     | 1,969         | 300   | Jest + Testing Library            |
 | SDK     | 310           | 4   | Jest (mocked fetch)               |
 | Worker  | 286           | 30   | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
@@ -150,7 +150,7 @@ pnpm e2e                     # Playwright E2E
 | API SDK modules           | 62    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
 | Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319 | Admin 203, Portal 86, Public 29, `forbidden` 1 |
-| Web components            | 121 | `apps/web/components/`                                                                                                                                                 |
+| Web components            | 122 | `apps/web/components/`                                                                                                                                                 |
 | SQL migrations            | 154 | `supabase/migrations/` (latest: 5302456_project_tasks_m365_event_id                                                                                              |
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 27 | `.github/workflows/`                                                                                                                                                   |

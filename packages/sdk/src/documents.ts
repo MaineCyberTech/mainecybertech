@@ -1,4 +1,4 @@
-import { ApiClient } from "./client";
+import { ApiClient, type RequestOptions } from "./client";
 import type {
   Document,
   DocumentVersion,
@@ -68,9 +68,17 @@ export class DocumentsApi {
       fileSize?: number | null;
       currentVersion?: number | null;
       metadata?: Record<string, unknown> | null;
+      /**
+       * USE-P3-004: the row version last read. When set, the API compares it
+       * with the stored version and rejects a stale write with 409.
+       */
+      ifMatch?: number;
     },
   ) {
-    return this.client.patch<Document>(`/api/v1/documents/${id}`, data);
+    const { ifMatch, ...body } = data;
+    const options: RequestOptions | undefined =
+      ifMatch !== undefined ? { ifMatch } : undefined;
+    return this.client.patch<Document>(`/api/v1/documents/${id}`, body, undefined, options);
   }
 
   remove(id: string) {
@@ -158,6 +166,27 @@ export class DocumentsApi {
   getVersion(documentId: string, versionId: string) {
     return this.client.get<DocumentVersion>(
       `/api/v1/documents/${documentId}/versions/${versionId}`,
+    );
+  }
+
+  /**
+   * USE-P3-003: mint a short-lived download URL for a retained version so the
+   * portal can offer per-version downloads without a server-side re-upload.
+   */
+  createVersionSignedUrl(documentId: string, versionId: string) {
+    return this.client.post<{ signedUrl: string; expiresIn: number }>(
+      `/api/v1/documents/${documentId}/versions/${versionId}/signed-url`,
+    );
+  }
+
+  /**
+   * USE-P3-003: restore a retained version by copying its bytes forward into a
+   * NEW version row (history is never rewritten; the current bytes can still be
+   * downloaded afterwards).
+   */
+  restoreVersion(documentId: string, versionId: string) {
+    return this.client.post<Document>(
+      `/api/v1/documents/${documentId}/versions/${versionId}/restore`,
     );
   }
 

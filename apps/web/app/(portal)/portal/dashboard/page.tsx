@@ -118,7 +118,9 @@ export default async function PortalDashboardPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/portal/support" className="cyber-button">
+            {/* USE-P3-001: open the create form directly instead of landing
+                on the support list and making the user find "Submit Ticket". */}
+            <Link href="/portal/support?create=1" className="cyber-button">
               <svg
                 className="mr-1.5 h-4 w-4"
                 fill="none"

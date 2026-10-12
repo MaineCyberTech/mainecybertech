@@ -132,6 +132,11 @@ export function useAdminDocumentActions({
     formData.set("description", String(doc.description ?? ""));
     formData.set("category", String(doc.folder_path ?? ""));
     if (doc.storage_path) formData.set("storagePath", String(doc.storage_path));
+    // USE-P3-004: send the row version the operator was looking at so a
+    // concurrent edit is detected instead of overwritten.
+    if (doc.version !== undefined && doc.version !== null) {
+      formData.set("version", String(doc.version));
+    }
 
     await executeAction({
       busyKey: `rename:${doc.id}`,
@@ -159,6 +164,10 @@ export function useAdminDocumentActions({
     const formData = new FormData();
     formData.set("documentId", doc.id);
     formData.set("visibility", visibility);
+    // USE-P3-004: If-Match source for the server action.
+    if (doc.version !== undefined && doc.version !== null) {
+      formData.set("version", String(doc.version));
+    }
 
     await executeAction({
       busyKey: `visibility:${doc.id}`,
@@ -179,6 +188,10 @@ export function useAdminDocumentActions({
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     formData.set("documentId", doc.id);
+    // USE-P3-004: If-Match source for the server action.
+    if (doc.version !== undefined && doc.version !== null) {
+      formData.set("version", String(doc.version));
+    }
     const nextName = String(formData.get("name") ?? "").trim() || docName(doc);
     const nextDescription = String(formData.get("description") ?? "");
     const nextFolder = String(formData.get("category") ?? "").trim();

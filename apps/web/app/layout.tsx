@@ -6,6 +6,7 @@ import { colors } from "@mct/ui/tokens";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { RouteAnnouncer } from "@/components/RouteAnnouncer";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { VersionBadge } from "@/components/version-badge";
 
 const inter = Inter({
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <RouteAnnouncer />
             <ServiceWorkerRegistrar />
             <div>{children}</div>
+            <OfflineIndicator />
             <VersionBadge />
           </ToastProvider>
         </ThemeProvider>

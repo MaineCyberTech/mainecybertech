@@ -27,6 +27,10 @@ jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
 }));
 
+jest.mock("../../../../app/(portal)/portal/support/actions", () => ({
+  createPortalTicket: jest.fn(),
+}));
+
 jest.mock("next/navigation", () => ({
   redirect: jest.fn(),
   usePathname: () => "/portal/support",
@@ -40,8 +44,23 @@ jest.mock("@/components/portal/PortalSubnav", () => ({
 jest.mock("@/components/portal/SupportCenterClient", () => {
   return {
     __esModule: true,
-    default: ({ tickets, page, total }: { tickets: any[]; page?: number; total?: number }) => (
-      <div data-testid="support-center" data-page={page ?? 1} data-total={total ?? tickets.length}>
+    default: ({
+      tickets,
+      page,
+      total,
+      initialCreateOpen,
+    }: {
+      tickets: any[];
+      page?: number;
+      total?: number;
+      initialCreateOpen?: boolean;
+    }) => (
+      <div
+        data-testid="support-center"
+        data-page={page ?? 1}
+        data-total={total ?? tickets.length}
+        data-create-open={initialCreateOpen ? "1" : "0"}
+      >
         {tickets.length > 0 ? (
           tickets.map((t: any) => <div key={t.id}>{t.subject ?? t.title}</div>)
         ) : (
@@ -102,6 +121,18 @@ describe("PortalSupportPage", () => {
     const { redirect } = await import("next/navigation");
     await PortalSupportPage(defaultProps);
     expect(redirect).toHaveBeenCalledWith("/login");
+  });
+
+  it("deep-links the create form open from ?create=1 (USE-P3-001)", async () => {
+    mockTicketsList.mockResolvedValue({ items: [] });
+
+    const { default: PortalSupportPage } = await import("@/app/(portal)/portal/support/page");
+    const element = await PortalSupportPage({
+      searchParams: Promise.resolve({ create: "1" }),
+    });
+    render(element);
+
+    expect(screen.getByTestId("support-center")).toHaveAttribute("data-create-open", "1");
   });
 
   it("passes the requested page and API totals to the client (USE-P2-002)", async () => {

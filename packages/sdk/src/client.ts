@@ -17,6 +17,18 @@ export interface ClientOptions {
   retries?: Partial<RetryOptions>;
 }
 
+/**
+ * Per-call request options.
+ *
+ * `ifMatch` (USE-P3-004) sends an `If-Match` header carrying the row version
+ * the caller read, so the API's optimistic-locking middleware can reject a
+ * write that would overwrite a concurrent edit with 409 VERSION_CONFLICT
+ * instead of silently last-write-winning.
+ */
+export interface RequestOptions {
+  ifMatch?: number;
+}
+
 const DEFAULT_RETRY: RetryOptions = {
   maxRetries: 3,
   initialDelayMs: 200,
@@ -173,6 +185,7 @@ export class ApiClient {
     path: string,
     body?: unknown,
     params?: Record<string, string | number | undefined>,
+    options?: RequestOptions,
   ): Promise<T> {
     const [token, activeOrgId] = await Promise.all([this.getToken(), this.getActiveOrgId()]);
     const url = `${this.baseUrl}${path}${buildQuery(params)}`;
@@ -188,6 +201,9 @@ export class ApiClient {
     }
     if (activeOrgId) {
       headers["X-Active-Org"] = activeOrgId;
+    }
+    if (options?.ifMatch !== undefined) {
+      headers["If-Match"] = String(options.ifMatch);
     }
 
     // Unsafe methods get an idempotency key so a retry of the SAME logical
@@ -218,8 +234,9 @@ export class ApiClient {
     path: string,
     body?: unknown,
     params?: Record<string, string | number | undefined>,
+    options?: RequestOptions,
   ): Promise<T> {
-    return this.request<T>("PATCH", path, body, params);
+    return this.request<T>("PATCH", path, body, params, options);
   }
 
   put<T>(path: string, body?: unknown): Promise<T> {
