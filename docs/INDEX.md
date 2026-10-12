@@ -196,8 +196,7 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 - [risk-register](modules/risk-register.md) — risk register
 - [roles](modules/roles.md) — roles & permissions
 - [satisfaction-pulse](modules/satisfaction-pulse.md) — satisfaction surveys
-- [scoreboard-gamification](modules/scoreboard-gamification.md) — scoreboards & gamification
-- [scoreboards-gamification](modules/scoreboards-gamification.md) — scoreboards & gamification (variant)
+- [scoreboards-gamification](modules/scoreboards-gamification.md) — scoreboards & gamification (edu-automation scorecards)
 - [search](modules/search.md) — admin global search
 - [search-portal](modules/search-portal.md) — portal-scoped search
 - [security-ops](modules/security-ops.md) — security operations (4 sub-routes)

@@ -2,6 +2,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import AdminPreviewNote from "@/components/admin/AdminPreviewNote";
 import { getProposalData } from "@/lib/catalog/v5-loaders";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,7 @@ export default async function AdminStoreProposalsPage() {
         </button>
       }
     >
+      <AdminPreviewNote />
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-slate-200">
           Proposal Fields ({data.fields.length})

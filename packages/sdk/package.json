@@ -9,6 +9,8 @@
     ".": "./src/index.ts",
     "./database.types": "./src/database.types.ts",
     "./module-registry": "./src/module-registry.ts",
+    "./role-keys": "./src/role-keys.ts",
+    "./ticket-status": "./src/ticket-status.ts",
     "./webhook-events": "./src/webhook-events.ts",
     "./email-template": "./src/email-template.ts"
   },

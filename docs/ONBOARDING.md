@@ -48,7 +48,7 @@ mainecybertech-portal/
 │   └── terraform/
 │       └── digitalocean/  IaC (droplet, firewall, DNS)
 ├── supabase/
-│   ├── migrations/    157 SQL migration files
+│   ├── migrations/    158 SQL migration files
 │   └── seeds/         9 seed files
 ├── docs/              300+ documentation files
 ├── scripts/           PowerShell + bash utilities

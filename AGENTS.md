@@ -96,14 +96,14 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,584 tests, all passing. 517 suites.**
+**4,608 tests, all passing. 517 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,941         | 174   | Jest + supertest                  |
-| Web     | 2,018         | 306   | Jest + Testing Library            |
-| SDK     | 321           | 5   | Jest (mocked fetch)               |
-| Worker  | 304           | 32   | Jest (env schema + task handlers) |
+| API     | 1,954         | 174   | Jest + supertest                  |
+| Web     | 2,024         | 306   | Jest + Testing Library            |
+| SDK     | 325           | 5   | Jest (mocked fetch)               |
+| Worker  | 305           | 32   | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
 
 Suite counts and the E2E spec count are counted from the tree by
@@ -166,11 +166,11 @@ pnpm e2e                     # Playwright E2E
 | Category                  | Count | Notes                                                                                                                                                                  |
 | ------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | API route files           | 64    | `apps/api/src/routes/*.ts` (77 incl. `routes/final/` + `routes/store/`)                                                                                                |
-| API SDK modules           | 63    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
+| API SDK modules           | 65    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
 | Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319 | Admin 203, Portal 86, Public 29, `forbidden` 1 |
-| Web components            | 127 | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 157 | `supabase/migrations/` (latest: 5302459_dead_rls_permission_predicates                                                                                              |
+| Web components            | 128 | `apps/web/components/`                                                                                                                                                 |
+| SQL migrations            | 158 | `supabase/migrations/` (latest: 5302460_drop_portal_module_settings                                                                                              |
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 28 | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 625 | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |

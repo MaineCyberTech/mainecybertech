@@ -132,6 +132,12 @@ and the failure is logged at error level — so a billing-mirror outage cannot
 lock paying customers out of modules. Authentication, org-access, and RBAC
 still apply; only the plan boundary is relaxed.
 
+**Single source of module enablement:** per-org enablement lives in
+`client_portal_entitlements` plus the `deriveEnabledModules()` defaults — there
+is no separate per-org module-settings table. The unused
+`portal_module_settings` table from migration `5302058` was dropped in
+`5302460` (FEAT-P3-004).
+
 ## Payments
 
 `payments` is populated from `payment_intent.*` webhook events and from

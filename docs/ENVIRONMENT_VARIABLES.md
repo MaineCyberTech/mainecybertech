@@ -16,6 +16,7 @@
 | Variable                                | Required | Default                | Description                                                                                 |
 | --------------------------------------- | -------- | ---------------------- | ------------------------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_API_URL`                   | Yes      | —                      | URL of the API server (e.g. `http://localhost:4000`)                                        |
+| `API_INTERNAL_URL`                      | No       | —                      | Server-side SSR override for the API base URL (falls back to `NEXT_PUBLIC_API_URL`); ARCH-P3-003 |
 | `NODE_ENV`                              | No       | `development`          | Node environment                                                                            |
 | `NEXT_PUBLIC_GA_ID`                     | No       | —                      | Google Analytics measurement ID (e.g. `G-XXXXXXXXXX`)                                       |
 | `NEXT_PUBLIC_TAWKTO_ID`                 | No       | —                      | Tawk.to widget ID (e.g. `66898d27e1e4f70f24ee3260/1i24kuosn`)                               |

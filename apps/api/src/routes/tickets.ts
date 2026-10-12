@@ -14,6 +14,7 @@ import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-lock
 import { createNotification, notifyAndEmail } from "../lib/notify";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { isPlatformAdminKey, PLATFORM_ADMIN_KEYS, roleKeyOf } from "../lib/roles";
+import { isTicketTransitionAllowed } from "@mct/sdk/ticket-status";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import {
   applyOrgScope,
@@ -240,7 +241,10 @@ router.patch(
       const parsed = updateTicketSchema.parse(req.body);
       const supabase = getScopedClient(req, "tickets", "write");
 
-      let currentQuery = supabase.from("tickets").select("version").eq("id", String(req.params.id));
+      let currentQuery = supabase
+        .from("tickets")
+        .select("version, status")
+        .eq("id", String(req.params.id));
       currentQuery = applyResolvedOrg(req, currentQuery);
       const { data: current, error: fetchError } = await currentQuery.single();
 
@@ -249,6 +253,19 @@ router.patch(
       }
 
       checkVersionMatch(current.version, req.ifMatchVersion);
+
+      // FEAT-P3-006: status changes must follow the shared transition map.
+      // Invalid moves are a state conflict (409), not a validation error: the
+      // payload is well-formed, the ticket is in the wrong state for it.
+      const statusChanged =
+        parsed.status !== undefined && parsed.status !== (current.status as string | undefined);
+      if (statusChanged && !isTicketTransitionAllowed(current.status, parsed.status)) {
+        throw new AppError(
+          "INVALID_STATUS_TRANSITION",
+          `Ticket cannot move from "${current.status}" to "${parsed.status}".`,
+          409,
+        );
+      }
 
       const updateData: Record<string, unknown> = {};
       if (parsed.title !== undefined) updateData.title = parsed.title;
@@ -282,6 +299,18 @@ router.patch(
         entityId: data.id,
         metadata: { ...parsed, version: data.version },
       });
+
+      // FEAT-P3-006: transitions are also recorded as a distinct audit event so
+      // workflow reporting can separate state changes from field edits.
+      if (statusChanged) {
+        await logAuditEvent({
+          actorUserId: req.authUser!.userId,
+          action: "ticket.status_transition",
+          entityType: "ticket",
+          entityId: data.id,
+          metadata: { from: current.status, to: parsed.status, version: data.version },
+        });
+      }
 
       // EVOL-P2-002: catalogued outbound events for every mutation, not just create.
       dispatchWebhook("ticket.updated", data.organization_id, {
@@ -550,7 +579,8 @@ router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, n
 });
 
 /**
- * Resolve which of the given ticket ids belong to the caller's tenant scope.
+ * Resolve which of the given ticket ids belong to the caller's tenant scope,
+ * with their current status for transition validation (FEAT-P3-006).
  *
  * `bulk_update_with_version` skips its per-row `is_org_member` check when the
  * caller is service-role (`auth.uid()` is null) — which is exactly how this
@@ -561,20 +591,22 @@ router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, n
  * touch any tenant; everyone else is restricted to their own approved orgs and
  * ids outside that set are dropped before the RPC runs.
  */
-async function resolveOwnedTicketIds(
+async function resolveOwnedTicketRows(
   supabase: SupabaseClient,
   ticketIds: string[],
   scope: AdminTenantScope,
-): Promise<string[]> {
-  if (scope.allTenants) return ticketIds;
-  const orgIds = scope.orgIds.length > 0 ? scope.orgIds : [NO_ORG_MATCH];
-  const { data, error } = await supabase
-    .from("tickets")
-    .select("id")
-    .in("id", ticketIds)
-    .in("organization_id", orgIds);
+): Promise<{ id: string; status: string | null }[]> {
+  let query = supabase.from("tickets").select("id, status").in("id", ticketIds);
+  if (!scope.allTenants) {
+    const orgIds = scope.orgIds.length > 0 ? scope.orgIds : [NO_ORG_MATCH];
+    query = query.in("organization_id", orgIds);
+  }
+  const { data, error } = await query;
   if (error) throw new AppError("DB_ERROR", error.message, 500);
-  return (data ?? []).map((t: { id: string }) => t.id);
+  return (data ?? []).map((t: { id: string; status?: string | null }) => ({
+    id: t.id,
+    status: t.status ?? null,
+  }));
 }
 
 // ADMIN-P2-005: mass ticket state transitions are an expensive admin op.
@@ -588,10 +620,23 @@ router.post("/bulk", rateLimitAdminOps, requireAdmin, async (req, res, next) => 
     // can never update another tenant's tickets (cross-tenant write).
     const scope = await resolveAdminTenantScope(req);
     const supabase = getScopedClient(req, "tickets", "write");
-    const ownedIds = await resolveOwnedTicketIds(supabase, ids, scope);
-    const skipped = ids.length - ownedIds.length;
+    const ownedRows = await resolveOwnedTicketRows(supabase, ids, scope);
+    const skipped = ids.length - ownedRows.length;
 
-    const updates = ownedIds.map((id) => {
+    // FEAT-P3-006: a mass status change still has to obey the transition map.
+    // Rows whose current status cannot legally move to the requested status are
+    // dropped from the update set and counted as failed (with the pair recorded
+    // in the audit metadata); priority-only bulk edits are unaffected.
+    const invalidTransitions =
+      status !== undefined
+        ? ownedRows.filter((row) => !isTicketTransitionAllowed(row.status, status))
+        : [];
+    const updatableRows =
+      status !== undefined
+        ? ownedRows.filter((row) => isTicketTransitionAllowed(row.status, status))
+        : ownedRows;
+
+    const updates = updatableRows.map(({ id }) => {
       const data: Record<string, string> = {};
       if (status) data.status = status;
       if (priority) data.priority = priority;
@@ -616,16 +661,29 @@ router.post("/bulk", rateLimitAdminOps, requireAdmin, async (req, res, next) => 
 
     const resultRows = (results as unknown as { success: boolean }[] | null) ?? [];
     const successful = resultRows.filter((r) => r.success).length;
-    const failed = resultRows.filter((r) => !r.success);
+    const failed = resultRows.filter((r) => !r.success).length + invalidTransitions.length;
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
       action: "ticket.bulk_update",
       entityType: "ticket",
-      metadata: { ids, ownedIds, skipped, status, priority, successful, failed: failed.length },
+      metadata: {
+        ids,
+        ownedIds: updatableRows.map((row) => row.id),
+        skipped,
+        status,
+        priority,
+        successful,
+        failed,
+        invalidTransitions: invalidTransitions.map((row) => ({
+          id: row.id,
+          from: row.status,
+          to: status,
+        })),
+      },
     });
 
-    res.json(success({ results, successful, failed: failed.length, skipped }));
+    res.json(success({ results, successful, failed, skipped }));
   } catch (error) {
     next(error);
   }

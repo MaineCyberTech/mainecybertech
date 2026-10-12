@@ -160,10 +160,10 @@
 
 ## Search (`/api/v1/search`)
 
-| Method | Path      | Auth                               | Zod | Audit | Notes                                                        |
-| ------ | --------- | ---------------------------------- | --- | ----- | ------------------------------------------------------------ |
-| `GET`  | `/admin`  | `requireAuth` + `requireOrgAccess` | —   | —     | Admin global search (tickets + projects + users + documents) |
-| `GET`  | `/portal` | `requireAuth` + `requireOrgAccess` | —   | —     | Org-scoped portal search (tickets + projects + documents)    |
+| Method | Path      | Auth                                                  | Zod | Audit          | Notes                                                                  |
+| ------ | --------- | ----------------------------------------------------- | --- | -------------- | ---------------------------------------------------------------------- |
+| `GET`  | `/`       | `requireAuth` + `requireOrgAccess` + `requireAdmin`   | —   | `search.query` | Admin global search (users + orgs + tickets + projects + documents); `?limit` (default 5, max 25); response has per-entity `counts` |
+| `GET`  | `/portal` | `requireAuth`                                         | —   | —              | Org-scoped portal search (`search-portal.ts`; tickets + projects + documents), fixed page size 5 |
 
 ---
 
@@ -244,7 +244,7 @@
 | `audit.ts`                    | ✅ Read                | Paginated list with filters + export endpoint                                     |
 | `webhooks.ts`                 | ✅ Read                | List + create — single-file with minimal endpoints                                |
 | `roles.ts`                    | ✅ Verified            | CRUD + `with-permissions` + `GET/PUT /:id/permissions`                            |
-| `search.ts`                   | ✅ Verified            | `GET /admin` + `GET /portal`                                                      |
+| `search.ts`                   | ✅ Verified            | `GET /` (admin global search, `?limit`, counts)                                   |
 | `notifications.ts`            | ✅ Verified            | List, create, delete, mark-read, mark-all-read                                    |
 | `notification-preferences.ts` | ✅ Verified            | GET + PUT per-user prefs                                                          |
 | `billing.ts`                  | ✅ Inferred            | GET summary + invoices + subscriptions + payments + POST sync + POST webhook      |
