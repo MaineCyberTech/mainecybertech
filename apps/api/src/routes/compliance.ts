@@ -3,6 +3,7 @@ import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { loadOwned } from "../lib/tenant";
+import { LIST_HARD_CAP } from "../lib/pagination";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
@@ -28,7 +29,9 @@ router.get("/frameworks", async (req, res, next) => {
       .from("compliance_frameworks")
       .select("*")
       .eq("organization_id", orgId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      // PERF-P3-001: bounded read; the UI consumes a plain array.
+      .limit(LIST_HARD_CAP);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data ?? []));
@@ -84,7 +87,9 @@ router.get("/frameworks/:id/controls", async (req, res, next) => {
       .select("*")
       .eq("framework_id", String(req.params.id))
       .eq("organization_id", orgId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      // PERF-P3-001: bounded read; the UI consumes a plain array.
+      .limit(LIST_HARD_CAP);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data ?? []));

@@ -29,6 +29,7 @@ import { applyResolvedOrg } from "../lib/admin-scope";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { recordDocumentCreated } from "../lib/metrics";
+import { listCountMode } from "../lib/pagination";
 
 const createShareSchema = z.object({
   expiresAt: z
@@ -230,7 +231,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("documents").select("*", { count: "exact" });
+    let query = supabase.from("documents").select("*", { count: listCountMode(req.query) });
     // MT-P2-002: mandatory org predicate; fails closed without a resolved or
     // explicit org instead of listing every tenant.
     query = applyResolvedOrg(req, query);
@@ -919,7 +920,7 @@ router.get("/:id/versions", async (req, res, next) => {
     const { data, error, count } = await supabase
       .from("document_versions")
       .select("id, document_id, version_number, uploaded_by, checksum, created_at", {
-        count: "exact",
+        count: listCountMode(req.query),
       })
       .eq("document_id", String(req.params.id))
       .order("version_number", { ascending: false })

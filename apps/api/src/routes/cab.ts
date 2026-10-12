@@ -13,6 +13,7 @@ import {
   updateCabAgendaItemSchema,
 } from "../validators/cab";
 import { queryInt } from "../lib/query";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -28,7 +29,7 @@ router.get("/meetings", async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("cab_meetings").select("*", { count: "exact" });
+    let query = supabase.from("cab_meetings").select("*", { count: listCountMode(req.query) });
     if (orgId) query = query.eq("organization_id", orgId);
     if (status) query = query.eq("status", status);
 

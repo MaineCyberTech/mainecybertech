@@ -19,8 +19,28 @@ The nonce-based CSP (`apps/web/middleware.ts`) can block inline scripts if the n
 **Fix:** Confirm `x-nonce` is set by middleware and that external script hosts (Google Tag Manager, Tawk.to) are allowed; check the browser console for CSP violations and update the CSP header in `middleware.ts`.
 
 ### All API calls fail silently or go to the wrong host
-`NEXT_PUBLIC_API_URL` is inlined at build time. Client components use the public URL; server components use `http://api:4000` inside Docker.
-**Fix:** Pass `NEXT_PUBLIC_API_URL` as a build arg for Docker builds (see `apps/web/Dockerfile`) and set it in `.env.local` for local dev. `apps/web/lib/env.ts` now validates it and warns in dev when missing.
+`NEXT_PUBLIC_API_URL` is inlined at build time, so it cannot be changed on a
+running container. Client components always use that build-time public URL.
+Server components use `API_INTERNAL_URL` when set (read at runtime by
+`apps/web/lib/api.ts`; compose sets it to `http://api:4000`), and otherwise fall
+back to the inlined `NEXT_PUBLIC_API_URL`.
+**Fix:** Pass `NEXT_PUBLIC_API_URL` as a build arg for Docker builds (see
+`apps/web/Dockerfile`) and set it in `.env.local` for local dev. To point SSR
+traffic at an internal API address, set `API_INTERNAL_URL` in the web
+container's environment instead — no rebuild required. `apps/web/lib/env.ts`
+validates `NEXT_PUBLIC_API_URL` and warns in dev when missing.
+
+### Realtime notifications degrade or the bell stops updating
+The notification bell consumes `GET /api/v1/notifications/stream` (SSE). Server
+events: `connected`, `subscribed`, `notification`/`notification_update`, and
+`auth_expired`. `auth_expired` is terminal — the server revalidates the session
+every 5 minutes and ends the stream when the JWT is expired/revoked.
+**Fix:** The client (`components/NotificationBell.tsx`) reconnects with bounded
+exponential backoff (1s → 2s → … capped at 30s) and falls back to 30s polling
+while the stream is down; on `auth_expired` it stops reconnecting and redirects
+to `/login?reason=session_expired`. If the bell is stuck on stale data, check
+the browser console for SSE errors and confirm the API can reach Supabase
+Realtime (the stream shares one Realtime channel per user).
 
 ## Worker
 

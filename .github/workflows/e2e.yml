@@ -91,6 +91,11 @@ jobs:
       - name: Apply migrations and seeds
         run: supabase db reset
 
+      - name: Run RLS allow/deny matrix
+        # RLS-P3-002: behavioral tenant-isolation checks (approved/pending
+        # members, org admin, super admin, anon) against the migration chain.
+        run: scripts/ci/check-rls-matrix.sh
+
       - name: Sync Supabase env to API
         run: |
           API_ENV="apps/api/.env.local"
@@ -148,6 +153,11 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:4000
           NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Check web bundle budget
+        # PERF-P3-003: fails when the built client JS exceeds the committed
+        # budgets in scripts/bundle-budget.json. The analyzer stays opt-in.
+        run: node scripts/check-bundle-budget.mjs
 
       - name: Start web app
         run: |

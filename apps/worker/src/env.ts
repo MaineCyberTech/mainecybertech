@@ -59,6 +59,9 @@ export const envSchema = z
     APP_BASE_URL: z.string().url().optional(),
     ...sentryEnvShape,
     HEALTH_PORT: z.coerce.number().int().positive().max(65535).default(3001),
+    // ARCH-P3-005: shared bearer token for the worker /metrics endpoint (the
+    // API's METRICS_TOKEN, written by the deploy). Unset => /metrics 404s.
+    METRICS_TOKEN: z.string().optional(),
   })
   .superRefine((val, ctx) => {
     // Without Redis the BullMQ consumer warns and returns, and every timer is

@@ -14,6 +14,7 @@ import { validateUploadContent } from "../lib/upload-validation";
 import { scanUploadForMalware } from "../lib/malware-scan";
 import { signedUrlDisposition } from "../lib/preview-policy";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -303,7 +304,7 @@ router.get("/", async (req, res, next) => {
 
     let q = supabase
       .from("file_requests")
-      .select("*", { count: "exact" })
+      .select("*", { count: listCountMode(req.query) })
       .eq("organization_id", req.query.organization_id as string);
     const status = req.query.status as string | undefined;
     if (status) q = q.eq("status", status);

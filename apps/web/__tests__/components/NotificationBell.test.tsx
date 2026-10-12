@@ -45,6 +45,12 @@ class MockEventSource {
     this.listeners.set(type, list);
   }
 
+  emit(type: string, data: unknown = {}) {
+    for (const cb of this.listeners.get(type) ?? []) {
+      cb({ data: JSON.stringify(data) } as MessageEvent);
+    }
+  }
+
   close() {
     this.closed = true;
   }
@@ -105,6 +111,83 @@ describe("NotificationBell SSE fallback polling", () => {
       jest.advanceTimersByTime(120000);
     });
     expect(mockUnreadCount).toHaveBeenCalledTimes(3);
+  });
+
+  // API-P3-003: the stream must reconnect with bounded exponential backoff
+  // instead of degrading to polling forever.
+  it("reconnects with bounded backoff after SSE errors", async () => {
+    const { unmount } = render(<NotificationBell basePath="/portal" />);
+    await flushMicrotasks();
+    expect(MockEventSource.instances).toHaveLength(1);
+
+    act(() => {
+      MockEventSource.instances[0].onerror?.();
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(MockEventSource.instances).toHaveLength(2);
+
+    // A second failure backs off 2s, not 1s.
+    act(() => {
+      MockEventSource.instances[1].onerror?.();
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(MockEventSource.instances).toHaveLength(2);
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(MockEventSource.instances).toHaveLength(3);
+
+    // A successful connect resets the backoff to 1s.
+    act(() => {
+      MockEventSource.instances[2].emit("connected", { type: "connected" });
+      MockEventSource.instances[2].onerror?.();
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(MockEventSource.instances).toHaveLength(4);
+
+    unmount();
+  });
+
+  // API-P3-003: auth_expired is terminal — the server ended the stream because
+  // the session is expired/revoked, so the client must stop reconnecting and
+  // send the user to sign in again.
+  it("handles auth_expired by closing the stream and redirecting to login", async () => {
+    const assign = jest.fn();
+    const originalLocation = window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { pathname: "/portal/dashboard", assign },
+    });
+    try {
+      const { unmount } = render(<NotificationBell basePath="/portal" />);
+      await flushMicrotasks();
+      const es = MockEventSource.instances[0];
+
+      act(() => {
+        es.emit("auth_expired", { type: "auth_expired" });
+      });
+
+      expect(es.closed).toBe(true);
+      expect(assign).toHaveBeenCalledWith("/login?reason=session_expired");
+
+      await act(async () => {
+        jest.advanceTimersByTime(60000);
+      });
+      expect(MockEventSource.instances).toHaveLength(1);
+
+      unmount();
+    } finally {
+      Object.defineProperty(window, "location", {
+        configurable: true,
+        value: originalLocation,
+      });
+    }
   });
 
   it("shows an error instead of a false empty state when the recent list fails", async () => {

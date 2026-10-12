@@ -11,6 +11,7 @@ import { logAuditEvent } from "../services/audit";
 import { queryInt } from "../lib/query";
 import { setActiveOrganizations } from "../lib/metrics";
 import { enqueueTask } from "../lib/task-producer";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -37,7 +38,7 @@ router.get("/organizations", async (req, res, next) => {
     const query = supabase
       .from("organizations")
       .select("id, name, slug, status, primary_domain, support_plan, created_at", {
-        count: "exact",
+        count: listCountMode(req.query),
       })
       .order("name")
       .range(offset, offset + limit - 1);

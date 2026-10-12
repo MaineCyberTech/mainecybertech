@@ -14,6 +14,7 @@ import {
   reviewAiDraftSchema,
 } from "../validators/ai";
 import { queryInt } from "../lib/query";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -323,7 +324,7 @@ router.get("/triage", async (req, res, next) => {
     const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let q = supabase.from("ticket_triage_drafts").select("*", { count: "exact" });
+    let q = supabase.from("ticket_triage_drafts").select("*", { count: listCountMode(req.query) });
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) q = q.eq("organization_id", orgId);
 
@@ -540,7 +541,7 @@ router.get("/drafts", requirePermission("ai", "view"), async (req, res, next) =>
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let q = supabase.from("ai_draft_outputs").select("*", { count: "exact" });
+    let q = supabase.from("ai_draft_outputs").select("*", { count: listCountMode(req.query) });
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) q = q.eq("organization_id", orgId);
     if (req.query.status) q = q.eq("status", req.query.status as string);

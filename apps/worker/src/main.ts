@@ -63,7 +63,7 @@ async function runScheduledTask(
 
 // ============= Main =============
 if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test") {
-  startHealthServer(env.HEALTH_PORT);
+  startHealthServer(env.HEALTH_PORT, { metricsToken: env.METRICS_TOKEN });
 
   // stripe-reconcile is scheduled via scheduledScans (env-gated on
   // STRIPE_SECRET_KEY) so it does not log failures when Stripe is unset.

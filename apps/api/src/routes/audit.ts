@@ -8,6 +8,7 @@ import { rateLimitAdminOps } from "../middleware/rate-limit";
 import { logAuditEvent } from "../services/audit";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { queryInt } from "../lib/query";
+import { listCountMode } from "../lib/pagination";
 import {
   applyOrgScope,
   applyRequestedOrg,
@@ -31,7 +32,7 @@ router.get("/", async (req, res, next) => {
 
     const requestedOrg = req.query.organization_id as string | undefined;
 
-    let query = getSupabaseAdmin().from("audit_logs").select("*", { count: "exact" });
+    let query = getSupabaseAdmin().from("audit_logs").select("*", { count: listCountMode(req.query) });
     query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
     query = applyOrgScope(query, "organization_id", scope);
 
@@ -135,7 +136,7 @@ router.get("/impersonation", async (req, res, next) => {
 
     let query = getSupabaseAdmin()
       .from("impersonation_log")
-      .select("*", { count: "exact" });
+      .select("*", { count: listCountMode(req.query) });
 
     const requestedOrg = req.query.organization_id as string | undefined;
     if (requestedOrg) query = query.eq("organization_id", requestedOrg);

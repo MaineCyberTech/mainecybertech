@@ -9,6 +9,7 @@ import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
 import { rateLimitAdminOps } from "../middleware/rate-limit";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
+import { EXPORT_ROW_LIMIT } from "../lib/pagination";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { createNotification, notifyAndEmail } from "../lib/notify";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
@@ -31,6 +32,7 @@ import {
 } from "../validators/ticket";
 import { queryInt } from "../lib/query";
 import { recordTicketCreated } from "../lib/metrics";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -75,7 +77,9 @@ router.get("/export", async (req, res, next) => {
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter as never);
 
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(EXPORT_ROW_LIMIT);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -101,7 +105,7 @@ router.get("/", async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("tickets").select("*", { count: "exact" });
+    let query = supabase.from("tickets").select("*", { count: listCountMode(req.query) });
     // MT-P2-002: mandatory org predicate; fails closed without a resolved or
     // explicit org instead of listing every tenant.
     query = applyResolvedOrg(req, query);

@@ -53,6 +53,42 @@ const MIGRATIONS_DIR = path.join(__dirname, "..", "supabase", "migrations");
 
 const POLICY_DROP_BASELINE_VERSION = 5302427;
 
+// RLS-P3-006: role-gate drift baseline. 5302436 standardized the admin gates
+// on `public.user_has_role(...)` after four later migrations had re-declared
+// the gate with only ('admin','super_admin'). Policies created before this
+// migration carry the historical hardcoded subsets; at/after it, a hardcoded
+// proper subset of the platform role keys fails the scan.
+const ROLE_GATE_BASELINE_VERSION = 5302436;
+
+// Keep in sync with PLATFORM_ADMIN_KEYS in apps/api/src/lib/roles.ts.
+const PLATFORM_ROLE_KEYS = [
+  "super_admin",
+  "admin",
+  "engineer",
+  "dispatcher",
+  "security-analyst",
+  "project-manager",
+  "finance",
+  "onboarding-specialist",
+];
+
+// RLS-P3-005 debt: live policies reference these (module, action) pairs but no
+// migration inserts them into public.permissions, so the predicate can never
+// be satisfied by a non-bypass role. They are reported as warnings until that
+// finding lands; any NEW missing pair fails the scan (RLS-P3-006).
+const PERMISSION_CATALOG_BASELINE = new Set([
+  "appointments:manage",
+  "appointments:schedule",
+  "contracts:create",
+  "contracts:manage",
+  "documents:manage",
+  "documents:upload",
+  "onboarding:update",
+  "projects:manage",
+  "tickets:comment",
+  "tickets:manage",
+]);
+
 const HISTORICAL_NO_RLS_BASELINE = new Set([
   // Intentionally empty — see the header note.
 ]);
@@ -115,6 +151,136 @@ function lineNumberAt(raw, index) {
   return raw.slice(0, index).split("\n").length;
 }
 
+// Statement text from `start` up to the terminating semicolon at paren depth 0
+// (quoted strings are skipped). Policy bodies contain no top-level `;` except
+// the terminator, so this keeps multi-line `using (...)` clauses intact.
+function statementBody(sql, start) {
+  let depth = 0;
+  let inString = false;
+  for (let i = start; i < sql.length; i++) {
+    const ch = sql[i];
+    if (inString) {
+      if (ch === "'") {
+        if (sql[i + 1] === "'") i++;
+        else inString = false;
+      }
+      continue;
+    }
+    if (ch === "'") inString = true;
+    else if (ch === "(") depth++;
+    else if (ch === ")") depth = Math.max(0, depth - 1);
+    else if (ch === ";" && depth === 0) return sql.slice(start, i);
+  }
+  return sql.slice(start);
+}
+
+// Split a comma-separated tuple body at paren depth 0.
+function splitTopLevel(text) {
+  const parts = [];
+  let depth = 0;
+  let current = "";
+  for (const ch of text) {
+    if (ch === "(") depth++;
+    if (ch === ")") depth--;
+    if (ch === "," && depth === 0) {
+      parts.push(current.trim());
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  parts.push(current.trim());
+  return parts;
+}
+
+// Extract the parenthesized tuples from a `values (...), (...)` region.
+function extractTuples(region) {
+  const tuples = [];
+  let depth = 0;
+  let current = "";
+  for (const ch of region) {
+    if (ch === "(") {
+      depth++;
+      if (depth === 1) {
+        current = "";
+        continue;
+      }
+    }
+    if (ch === ")") {
+      depth--;
+      if (depth === 0) {
+        tuples.push(current);
+        continue;
+      }
+    }
+    if (depth >= 1) current += ch;
+  }
+  return tuples;
+}
+
+function unquote(value) {
+  const v = (value ?? "").trim();
+  if ((v.startsWith("'") && v.endsWith("'")) || (v.startsWith('"') && v.endsWith('"'))) {
+    return v.slice(1, -1).toLowerCase();
+  }
+  return v.toLowerCase();
+}
+
+// Parse `insert into public.permissions (...) values (...)` blocks into
+// `${module}:${action}` pairs. Only literal values inserts are parsed; none of
+// the catalog migrations use a `select` source.
+function collectPermissionCatalog(files, readFile) {
+  const pairs = new Set();
+  for (const file of files) {
+    const masked = maskComments(readFile(file));
+    for (const m of masked.matchAll(
+      /insert\s+into\s+public\.permissions\s*\(([^)]*)\)\s*values/gi,
+    )) {
+      const cols = m[1].split(",").map((c) => c.trim().replace(/"/g, "").toLowerCase());
+      const moduleIdx = cols.indexOf("module_key");
+      const actionIdx = cols.indexOf("action_key");
+      if (moduleIdx < 0 || actionIdx < 0) continue;
+      const rest = masked.slice(m.index + m[0].length);
+      const stop = rest.search(/\bon\s+conflict\b|;/i);
+      const region = stop >= 0 ? rest.slice(0, stop) : rest;
+      for (const tuple of extractTuples(region)) {
+        const parts = splitTopLevel(tuple);
+        if (parts.length <= Math.max(moduleIdx, actionIdx)) continue;
+        const moduleKey = unquote(parts[moduleIdx]);
+        const actionKey = unquote(parts[actionIdx]);
+        if (moduleKey && actionKey && moduleKey !== "null") {
+          pairs.add(`${moduleKey}:${actionKey}`);
+        }
+      }
+    }
+  }
+  return pairs;
+}
+
+// (module, action) pairs referenced by a policy body's user_has_permission()
+// calls. The last two quoted arguments are the pair (the first is the org
+// expression, which may itself contain no string literals).
+function permissionPairsIn(body) {
+  const pairs = new Set();
+  for (const call of body.matchAll(/user_has_permission\s*\(([^)]*)\)/gi)) {
+    const strings = [...call[1].matchAll(/'([^']*)'/g)].map((m) => m[1].toLowerCase());
+    if (strings.length >= 2) {
+      pairs.add(`${strings[strings.length - 2]}:${strings[strings.length - 1]}`);
+    }
+  }
+  return pairs;
+}
+
+// Hardcoded platform role keys in a policy body (excluding the sanctioned
+// `public.user_has_role(...)` helper).
+function hardcodedRoleKeysIn(body) {
+  const keys = new Set();
+  for (const m of body.matchAll(/'([a-z_-]+)'/g)) {
+    if (PLATFORM_ROLE_KEYS.includes(m[1])) keys.add(m[1]);
+  }
+  return keys;
+}
+
 // ---------------------------------------------------------------------------
 // Scan migrations
 // ---------------------------------------------------------------------------
@@ -140,8 +306,11 @@ export function collectRlsStats() {
     });
 
   const events = [];
-  const policies = []; // { file, prefix, line, pos, name, table }
+  const policies = []; // { file, prefix, line, pos, name, table, body }
   const policyTables = new Set(); // tables that ever receive a create policy
+  // RLS-P3-006: create/drop policy events in file order, used to compute the
+  // live policy set for the effective-state checks.
+  const policyEvents = [];
 
   for (const file of files) {
     const prefix = Number.parseInt(file.match(/^(\d+)/)?.[1] ?? "0", 10);
@@ -179,8 +348,34 @@ export function collectRlsStats() {
       // never match the table identifier, but guard the policy name too.
       if (!name || !table || name.includes("%") || table.includes("%")) continue;
       const line = lineNumberAt(raw, m.index);
-      policies.push({ file, prefix, line, pos: m.index, name, table });
+      const record = {
+        file,
+        prefix,
+        line,
+        pos: m.index,
+        name,
+        table,
+        // RLS-P3-006: keep the statement body so the effective-state checks
+        // below can read the permission predicates / role gates.
+        body: statementBody(masked, m.index),
+      };
+      policies.push(record);
+      policyEvents.push({ kind: "policy-create", prefix, pos: m.index, record });
       policyTables.add(table);
+    }
+
+    // RLS-P3-006: policy drops, used to compute which policies are live.
+    for (const m of masked.matchAll(DROP_POLICY_RE)) {
+      const name = ident(m[1], m[2], m[3]);
+      const table = ident(m[7], m[8], m[9]);
+      if (!name || !table || name.includes("%") || table.includes("%")) continue;
+      policyEvents.push({
+        kind: "policy-drop",
+        prefix,
+        pos: m.index,
+        table,
+        name,
+      });
     }
 
     fileEvents.sort((a, b) => a.pos - b.pos);
@@ -299,11 +494,90 @@ export function collectRlsStats() {
     }
   }
 
+  // Check 5/6 — RLS-P3-006 effective-state drift:
+  //   (a) role-gate drift: a hardcoded platform-role subset that omits keys
+  //       the API treats as admins (use public.user_has_role instead);
+  //   (b) policy↔permission-catalog drift: user_has_permission(...) pairs a
+  //       live policy references but no migration ever inserts.
+  // Only live policies count; dropped policies are ignored. Policies created
+  // before the respective baseline warn (historical debt) instead of failing.
+  // -------------------------------------------------------------------------
+
+  const livePolicies = new Map(); // "table::name" -> policy record
+  policyEvents.sort((a, b) => a.prefix - b.prefix || a.pos - b.pos);
+  for (const ev of policyEvents) {
+    if (ev.kind === "policy-create") {
+      livePolicies.set(`${ev.record.table}::${ev.record.name}`, ev.record);
+    } else {
+      livePolicies.delete(`${ev.table}::${ev.name}`);
+    }
+  }
+
+  const catalogPairs = collectPermissionCatalog(files, (file) =>
+    fs.readFileSync(path.join(MIGRATIONS_DIR, file), "utf-8").replace(/\r\n/g, "\n"),
+  );
+
+  const legacyRoleGate = [];
+  const legacyMissingPairs = new Set();
+  let catalogPairsChecked = 0;
+
+  for (const p of livePolicies.values()) {
+    // (a) role-gate drift
+    const hardcoded = hardcodedRoleKeysIn(p.body);
+    const usesRoleHelper = /user_has_role\s*\(/i.test(p.body);
+    const hasRoleList =
+      /array\s*\[/i.test(p.body) ||
+      /\.?\bkey\s+in\s*\(/i.test(p.body) ||
+      /\.?\bkey\s*=\s*'/i.test(p.body);
+    if (!usesRoleHelper && hasRoleList && hardcoded.size > 0) {
+      const missing = PLATFORM_ROLE_KEYS.filter((k) => !hardcoded.has(k));
+      if (missing.length > 0) {
+        const message =
+          `[role-gate] ${p.file}:${p.line} policy "${p.name}" on ${p.table} hardcodes ` +
+          `[${[...hardcoded].sort().join(", ")}] and omits ${missing.join(", ")} — ` +
+          `use public.user_has_role(...) with the full platform role set`;
+        if (p.prefix >= ROLE_GATE_BASELINE_VERSION) failures.push(message);
+        else legacyRoleGate.push(message);
+      }
+    }
+
+    // (b) policy↔permission-catalog drift
+    for (const pair of permissionPairsIn(p.body)) {
+      catalogPairsChecked += 1;
+      if (catalogPairs.has(pair)) continue;
+      if (PERMISSION_CATALOG_BASELINE.has(pair)) {
+        legacyMissingPairs.add(pair);
+        continue;
+      }
+      failures.push(
+        `[permission-catalog] ${p.file}:${p.line} policy "${p.name}" on ${p.table} ` +
+          `references permission "${pair}" which no migration inserts into public.permissions`,
+      );
+    }
+  }
+
+  if (legacyRoleGate.length > 0) {
+    warnings.push(
+      `[role-gate:baseline] ${legacyRoleGate.length} live policies created before ` +
+        `${ROLE_GATE_BASELINE_VERSION} hardcode a partial platform-role list (historical debt; ` +
+        `new policies must use public.user_has_role)`,
+    );
+  }
+  for (const pair of [...legacyMissingPairs].sort()) {
+    warnings.push(
+      `[permission-catalog:baseline] live policies reference "${pair}" which is absent from ` +
+        `the catalog (RLS-P3-005 debt; add the catalog row or rewrite the policy)`,
+    );
+  }
+
   const liveTables = [...tableState.values()].filter((s) => s.live).length;
   return {
     tables: liveTables,
     rlsEnabled: rlsEnabledCount,
     policies: policies.length,
+    livePolicies: livePolicies.size,
+    catalogPairs: catalogPairs.size,
+    catalogPairsChecked,
     failures,
     warnings,
   };
