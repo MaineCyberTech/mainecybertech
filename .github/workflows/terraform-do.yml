@@ -126,6 +126,11 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+          # The provider also needs Spaces credentials for
+          # digitalocean_spaces_bucket (state-bucket.tf, DR-P2-005); it reads
+          # SPACES_*, not the AWS_* names.
+          SPACES_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          SPACES_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: |
           set -o pipefail
           terraform plan \
@@ -231,6 +236,10 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+          # digitalocean_spaces_bucket import/refresh (state-bucket.tf,
+          # DR-P2-005) needs the provider's Spaces credentials.
+          SPACES_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          SPACES_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: |
           terraform apply -auto-approve -input=false tfplan
           echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
@@ -271,6 +280,10 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+          # digitalocean_spaces_bucket import/refresh (state-bucket.tf,
+          # DR-P2-005) needs the provider's Spaces credentials.
+          SPACES_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          SPACES_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: |
           terraform apply -auto-approve -input=false tfplan
           echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT

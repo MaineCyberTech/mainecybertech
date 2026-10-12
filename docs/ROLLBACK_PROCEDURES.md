@@ -242,14 +242,39 @@ terraform apply -var-file=dev.tfvars -target=digitalocean_droplet.mct_portal
 
 ### Restore previous Terraform state (emergency)
 
-```bash
-# If state is corrupted, restore from DO Spaces backups
-# State is stored in DO Spaces (S3-compatible):
-#   bucket: mct-portal-tfstate-<env>
-#   key: terraform/do/terraform.tfstate
+State is stored in DO Spaces (S3-compatible). The names come from
+`infra/terraform/digitalocean/env/backend.<env>.hcl`:
 
-# Restore from a prior version via DO Spaces UI or CLI
+| Environment | Bucket                               | Key                                  |
+| ----------- | ------------------------------------ | ------------------------------------ |
+| dev         | `portal-terraform-state-development` | `digitalocean/dev/terraform.tfstate` |
+| prod        | `portal-terraform-state-production`  | `digitalocean/prod/terraform.tfstate` |
+
+Versioning is enforced by Terraform (`digitalocean_spaces_bucket.terraform_state`
+in `state-bucket.tf`, DR-P2-005), so every state write keeps a previous object
+version — including the `terraform.tfstate.tflock` lock object (`use_lockfile`).
+
+```bash
+# 1. List the previous state versions (Spaces is S3-compatible)
+AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... \
+  aws s3api list-object-versions \
+  --bucket portal-terraform-state-development \
+  --prefix digitalocean/dev/terraform.tfstate \
+  --endpoint-url https://nyc3.digitaloceanspaces.com
+
+# 2. Copy the version you want back over the current object
+AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... \
+  aws s3api copy-object \
+  --bucket portal-terraform-state-development \
+  --key digitalocean/dev/terraform.tfstate \
+  --copy-source portal-terraform-state-development/digitalocean/dev/terraform.tfstate?versionId=<VERSION_ID> \
+  --endpoint-url https://nyc3.digitaloceanspaces.com
+
+# 3. Verify with a plan-only run before any apply
 ```
+
+> The state-restore drill itself is still an operator action (IR-P3-001):
+> record the run in the DR ledger when performed.
 
 ### Resources with `prevent_destroy`
 

@@ -83,6 +83,12 @@ Governance Lead / Compliance Sponsor
   `organizations`, so org deletion cannot cascade into it. The archive is
   readable by platform admins (`is_super_admin`); only `service_role` can
   execute the archive functions.
+- A database-level `BEFORE DELETE` trigger on `organizations`
+  (`archive_org_audit_logs_before_delete`, migration 5302451) archives the
+  org's audit rows and **fails the delete** if any row remains. That closes the
+  residual CHAIN-P2-004 gap: `audit_logs.organization_id` still cascades, but
+  the cascade can only run against an already-archived (empty) set — whichever
+  path deletes the organization (API, direct SQL, an admin tool).
 - **Retention/archive decision (2026-10-11):** keep a cold archive rather than
   changing the FK to `on delete set null`, because the compliance trail must
   survive both org teardown and the routine 365-day purge (DATA-P2-005).

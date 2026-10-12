@@ -8,7 +8,7 @@ import { jest } from "@jest/globals";
  * `{ ok: true }` even when a purge errored.
  *
  * DATA-P2-005: audit rows are now archived before deletion via the
- * `archive_audit_logs` DB function (5302440).
+ * `archive_audit_logs` DB function (5302442).
  *
  * DATA-P2-006: purge windows are resolved from the `retention_policies`
  * registry before falling back to the built-in defaults.

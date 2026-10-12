@@ -21,10 +21,28 @@
 
 ## Backup Strategy
 
-- **Database**: Daily `pg_dump` to S3 (30-day retention, STANDARD_IA, AES-256-CBC encrypted when `BACKUP_ENCRYPTION_KEY` is set, optional offsite copy via `S3_OFFSITE_BUCKET`). Supabase PITR (7-day).
+- **Database**: Daily `pg_dump` to S3 (30-day retention, STANDARD_IA, AES-256-CBC encrypted when `BACKUP_ENCRYPTION_KEY` is set, optional offsite copy via `S3_OFFSITE_BUCKET`). Supabase PITR (7-day). Scheduled runs target **dev** by default — see Production backup coverage below.
 - **Storage**: Daily mirror of `documents`/`avatars`/`logos` to S3/Spaces (`storage-backup.yml`, encrypted, same 30-day retention).
-- **Terraform state**: DO Spaces (S3-compatible) with versioning enabled.
+- **Terraform state**: DO Spaces (S3-compatible) with versioning enabled — now enforced in code by `digitalocean_spaces_bucket.terraform_state` (`versioning { enabled = true }` in `infra/terraform/digitalocean/state-bucket.tf`, DR-P2-005), not a manual bucket setting. The S3 native lock file (`use_lockfile`) lives in the same bucket (`terraform.tfstate.tflock`), so versioning covers the state and lock objects; this backend does not use DynamoDB locking.
 - **Docker images**: GHCR with SHA-tagged immutable images. Rollback by redeploying a previous SHA tag.
+
+### Production backup coverage (DATA-P2-010)
+
+`db-backup.yml` and `db-restore-test.yml` are prod-capable:
+
+- **Manual prod run**: dispatch `environment: prod` **from `main`**. The job attaches the approval-gated `prod-approval` environment (required reviewers must be configured in GitHub for the gate to be real).
+- **Scheduled prod run**: set the `PROD_BACKUP_ENABLED` repository variable to `true`. The daily backup / weekly restore test then attach `prod-backup` instead of `dev` (one schedule target at a time; dispatch `environment: dev` manually to keep the dev runs). Create `prod-backup` with the prod backup secrets and **no** required reviewers — an approval-gated environment would leave the unattended run waiting for a human.
+- **Operator dependency (cannot be set from the repo)**: `SUPABASE_DB_URL` (prod), `BACKUP_ENCRYPTION_KEY`, `AWS_*`/`DO_SPACES_*` and `S3_BUCKET`/`S3_PREFIX` must be provisioned in the environment the job attaches — see `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`. Until then, S3 dumps cover dev only and this section is the record of that gap.
+
+### Platform backup heartbeat (DR-P2-008)
+
+Each successful `db-backup` run upserts `public.platform_backup_heartbeats` via
+`scripts/record-backup-heartbeat.sh`. The worker `backup-dr-check` fails — and
+the `MCTWorkerTaskFailures` alert fires — when the heartbeat is missing or older
+than 30 hours. This is the platform's own signal; the `backup_status` module is
+client-facing product data and is deliberately separate.
+`backup-staleness-check.yml` independently watches the GitHub run history for
+all backup/restore workflows.
 
 > **Operator actions required to activate encryption/offsite (audit DR-P1-003):**
 > the code affordance is in place, but the following must be provisioned by an
@@ -42,7 +60,10 @@
 Targets are only meaningful when exercised. The weekly `db-restore-test.yml`
 asserts structural completeness **and freshness** (newest `audit_logs` row
 within `RESTORE_MAX_DATA_AGE_DAYS`), which is the machine check that the dump
-path is meeting its ≤24 h RPO. The 5-minute PITR RPO is **not** yet proven by an
+path is meeting its ≤24 h RPO. The worker `backup-dr-check` additionally fails
+when the latest successful `db-backup` heartbeat is older than 30 h (DR-P2-008),
+and `backup-staleness-check.yml` fails when any backup or restore-test workflow
+has no recent successful run. The 5-minute PITR RPO is **not** yet proven by an
 automated drill; a dated PITR exercise must be recorded before that target is
 claimed as achieved.
 

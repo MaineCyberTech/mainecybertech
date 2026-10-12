@@ -90,24 +90,31 @@ Use environment-scoped values wherever possible.
 
 ## Secrets required by the database backup / restore workflows
 
-`db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml`,
-`storage-restore-test.yml` and `backup-staleness-check.yml` all attach
-`environment: dev`, so the rows below are provisioned in the **`dev`**
-environment (none of them runs against prod; DR-P0-001):
+`db-backup.yml` and `db-restore-test.yml` attach `environment: dev` for
+scheduled runs. DATA-P2-010 adds prod targets: a dispatch with
+`environment: prod` (from `main` only) attaches the approval-gated
+`prod-approval` environment, and when the operator sets the
+`PROD_BACKUP_ENABLED` variable the schedule attaches `prod-backup` instead of
+`dev` (create it with the prod rows below and **no** required reviewers — an
+approval-gated environment would leave the unattended run waiting).
+`storage-backup.yml`, `storage-restore-test.yml` and
+`backup-staleness-check.yml` still attach `environment: dev`.
+
+`operator` in the Prod column means the secret must be provisioned by an
+operator in the environment the prod job attaches before prod backups can run.
 
 | Secret                    | Dev | Prod | Purpose                                               |
 | ------------------------- | --- | ---- | ----------------------------------------------------- |
-| `SUPABASE_DB_URL`         | yes | —    | Direct database connection string for `pg_dump`       |
-| `AWS_ACCESS_KEY_ID`       | yes | —    | S3/Spaces key for backup upload and restore download; falls back to `DO_SPACES_ACCESS_KEY_ID` |
-| `AWS_SECRET_ACCESS_KEY`   | yes | —    | S3/Spaces secret for backup upload and restore; falls back to `DO_SPACES_SECRET_ACCESS_KEY` |
-| `BACKUP_ENCRYPTION_KEY`   | yes | —    | openssl passphrase encrypting/decrypting backup objects (`db-backup.yml`, `db-restore-test.yml`, storage backup) |
+| `SUPABASE_DB_URL`         | yes | operator | Direct database connection string for `pg_dump`; also the write path for the DR-P2-008 platform heartbeat |
+| `AWS_ACCESS_KEY_ID`       | yes | operator | S3/Spaces key for backup upload and restore download; falls back to `DO_SPACES_ACCESS_KEY_ID` |
+| `AWS_SECRET_ACCESS_KEY`   | yes | operator | S3/Spaces secret for backup upload and restore; falls back to `DO_SPACES_SECRET_ACCESS_KEY` |
+| `BACKUP_ENCRYPTION_KEY`   | yes | operator | openssl passphrase encrypting/decrypting backup objects (`db-backup.yml`, `db-restore-test.yml`, storage backup) |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | —  | Supabase Storage REST access for `scripts/backup-storage.sh` |
-| `S3_BACKUP_BUCKET`        | yes | —    | **Legacy** full-URI/bucket name holding backups; prefer the `S3_BUCKET` variable. Accepted (normalised) by the restore paths for backwards compatibility |
-| `NTFY_ALERTS_URL`         | yes | —    | ntfy topic URL for backup/storage-backup/restore-test failure notifications (primary channel) |
-| `NTFY_ALERTS_USER`        | yes | —    | ntfy basic-auth user for the above (write-only relay user) |
-| `NTFY_ALERTS_PASS`        | yes | —    | ntfy basic-auth password for the above (secret)      |
-| `SLACK_WEBHOOK_URL`       | yes | —    | Slack webhook for backup/restore failure notifications (fallback; ntfy is primary) |
-| `SLACK_WEBHOOK_URL`       | yes | —    | Slack webhook for backup/restore failure notifications |
+| `S3_BACKUP_BUCKET`        | yes | operator | **Legacy** full-URI/bucket name holding backups; prefer the `S3_BUCKET` variable. Accepted (normalised) by the restore paths for backwards compatibility |
+| `NTFY_ALERTS_URL`         | yes | operator | ntfy topic URL for backup/storage-backup/restore-test failure notifications (primary channel) |
+| `NTFY_ALERTS_USER`        | yes | operator | ntfy basic-auth user for the above (write-only relay user) |
+| `NTFY_ALERTS_PASS`        | yes | operator | ntfy basic-auth password for the above (secret)      |
+| `SLACK_WEBHOOK_URL`       | yes | operator | Slack webhook for backup/restore failure notifications (fallback; ntfy is primary) |
 
 ### Backup location contract
 
@@ -155,6 +162,7 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 | `S3_PREFIX`                      | —   | yes  | Backup key prefix (default `database-backups`)                |
 | `S3_OFFSITE_BUCKET`              | opt | opt  | Second destination for an offsite/cross-region backup copy    |
 | `S3_OFFSITE_PREFIX`              | opt | opt  | Prefix on the offsite bucket (defaults to `S3_PREFIX`)        |
+| `PROD_BACKUP_ENABLED`            | —   | opt  | Set to `true` to point the scheduled `db-backup` / `db-restore-test` runs at production (attaches `prod-backup`; DATA-P2-010) |
 | `STORAGE_BUCKETS`                | yes | —    | Storage buckets to back up (default `documents avatars logos`) |
 
 ## GitHub Environment Configuration Steps
@@ -171,6 +179,12 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
      set from the repo**. None are configured yet, so prod deploys currently
      start without pausing. The production deploy secrets/variables below must
      be available to `prod-approval` (scoped to it or repo-wide).
+   - `prod-backup` — used by the scheduled prod `db-backup` /
+     `db-restore-test` runs when `PROD_BACKUP_ENABLED=true` (DATA-P2-010).
+     Add the prod backup secrets below and **no** required reviewers: an
+     unattended scheduled backup must not wait for a human. Dispatch-based prod
+     runs still attach `prod-approval`, so the approval gate remains for
+     manual runs.
 
 2. **Add secrets** to the appropriate environment scopes (or repo-wide):
    - `DO_API_TOKEN` — from DigitalOcean dashboard
@@ -178,8 +192,10 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
    - `DO_SPACES_ACCESS_KEY_ID` / `DO_SPACES_SECRET_ACCESS_KEY` — from DO Spaces
    - `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` — S3/Spaces credentials for backup and restore (the backup/restore workflows also accept the `dev` environment's `DO_SPACES_*` keys as fallback)
    - `SUPABASE_DB_URL`, `BACKUP_ENCRYPTION_KEY` — in the **`dev`** environment,
-     where `db-backup.yml` / `db-restore-test.yml` / `storage-backup.yml` run
-     (DR-P0-001)
+     where the scheduled `db-backup.yml` / `db-restore-test.yml` /
+     `storage-backup.yml` runs execute (DR-P0-001); also provision the prod
+     copies in `prod-backup` (and make them available to `prod-approval`) to
+     activate the prod backup target (DATA-P2-010)
    - `CLOUDFLARE_API_TOKEN` — from Cloudflare dashboard
    - `CLOUDFLARE_ZONE_ID` / `CLOUDFLARE_ZONE_ID_US` — from Cloudflare dashboard
    - `CI_SSH_PRIVATE_KEY` — private key (e.g. `cat ~/.ssh/id_rsa`) for droplet SSH access
