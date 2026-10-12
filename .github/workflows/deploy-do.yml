@@ -833,9 +833,13 @@ jobs:
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           fingerprint: ${{ secrets.DO_SSH_HOST_FINGERPRINT }}
           command_timeout: 45m
-          envs: CF_ORIGIN_CERT,CF_ORIGIN_KEY,GHCR_TOKEN,GHCR_ACTOR,API_DIGEST,WORKER_DIGEST,WEB_DIGEST
+          envs: CF_ORIGIN_CERT,CF_ORIGIN_KEY,GHCR_TOKEN,GHCR_ACTOR,API_DIGEST,WORKER_DIGEST,WEB_DIGEST,IMAGE_TAG
           script: |
             set -e
+            # The compose file's tag fallback (${IMAGE_TAG:?}) is interpolated
+            # even when MCT_*_IMAGE digest refs are set, so the remote shell
+            # must always have IMAGE_TAG (SBOM-P2-011 regression fix).
+            export IMAGE_TAG="${IMAGE_TAG:?IMAGE_TAG must be set}"
             printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
             mkdir -p /opt/mct-portal/certs
             printf '%s\n' "$CF_ORIGIN_CERT" > /opt/mct-portal/certs/fullchain.pem
