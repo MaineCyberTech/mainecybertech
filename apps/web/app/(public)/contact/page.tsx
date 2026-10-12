@@ -63,7 +63,7 @@ export default function ContactPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-emerald-600/30 bg-[rgba(18,30,45,0.75)] p-6 shadow-[0_0_30px_rgba(5,150,105,0.05)] backdrop-blur-md sm:p-8">
+          <div className="rounded-lg border border-emerald-600/30 bg-cyber-card p-6 shadow-[0_0_30px_rgba(5,150,105,0.05)] backdrop-blur-md sm:p-8">
             <ContactForm />
           </div>
         </div>

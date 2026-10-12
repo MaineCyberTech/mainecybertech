@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getApiClient } from "@/lib/api";
+import { colors } from "@mct/ui/tokens";
 import type { Membership, Organization } from "@mct/sdk";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import PortalHeaderActions from "@/components/portal/PortalHeaderActions";
@@ -146,7 +147,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const orgIds = new Set(allMemberships.map((m) => m.organization_id));
   const userOrgs = allOrgs.filter((o) => orgIds.has(o.id)).map((o) => ({ id: o.id, name: o.name }));
 
-  const brandColor = org?.brand_color ?? "#059669";
+  const brandColor = org?.brand_color ?? colors.cyber.accent;
   const logoUrl = org?.logo_url ?? null;
 
   return (

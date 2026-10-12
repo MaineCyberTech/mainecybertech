@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { colors } from "@mct/ui/tokens";
 
 export const runtime = "edge";
 
@@ -19,7 +20,7 @@ export default function Image() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #0A1118 0%, #121E2D 50%, #0A1118 100%)",
+        background: `linear-gradient(135deg, ${colors.cyber.base} 0%, #121E2D 50%, ${colors.cyber.base} 100%)`,
         fontFamily: "sans-serif",
         padding: "80px",
       }}
@@ -41,18 +42,18 @@ export default function Image() {
             fontSize: "72px",
             fontWeight: "bold",
             letterSpacing: "4px",
-            color: "#f8fafc",
+            color: colors.slate[50],
             textTransform: "uppercase",
             marginBottom: "16px",
           }}
         >
-          Maine <span style={{ color: "#059669" }}>Cyber</span>
+          Maine <span style={{ color: colors.cyber.accent }}>Cyber</span>
           Tech
         </div>
         <div
           style={{
             fontSize: "28px",
-            color: "#94a3b8",
+            color: colors.slate[400],
             letterSpacing: "2px",
             textTransform: "uppercase",
             marginBottom: "32px",
@@ -63,7 +64,7 @@ export default function Image() {
         <div
           style={{
             fontSize: "16px",
-            color: "#059669",
+            color: colors.cyber.accent,
             letterSpacing: "8px",
             textTransform: "uppercase",
           }}

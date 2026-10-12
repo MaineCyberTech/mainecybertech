@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { Chip } from "@mct/ui";
 import { Organization } from "@mct/sdk";
 import EmptyState from "@/components/EmptyState";
 
@@ -111,19 +112,7 @@ export default function AdminOrganizationsClient({
       {chips.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           {chips.map((chip, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300"
-            >
-              {chip.label}
-              <button
-                type="button"
-                onClick={chip.onRemove}
-                className="ml-0.5 text-emerald-400 hover:text-emerald-200"
-              >
-                &times;
-              </button>
-            </span>
+            <Chip key={i} label={chip.label} onRemove={chip.onRemove} />
           ))}
           <button
             type="button"

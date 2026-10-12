@@ -35,8 +35,14 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
   const [connectionError, setConnectionError] = useState(false);
   const [recentError, setRecentError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const fallbackPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const closePanel = useCallback((restoreFocus = true) => {
+    setOpen(false);
+    if (restoreFocus) toggleRef.current?.focus();
+  }, []);
 
   const fetchUnread = useCallback(async () => {
     try {
@@ -166,6 +172,18 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closePanel();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, closePanel]);
+
   async function handleMarkAllRead() {
     try {
       await getClientApi().notifications.markAllRead();
@@ -206,8 +224,10 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
   return (
     <div ref={dropdownRef} className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        ref={toggleRef}
+        onClick={() => (open ? closePanel() : setOpen(true))}
         className="relative rounded-lg border-2 border-emerald-600 bg-transparent p-2.5 text-emerald-500 transition-all hover:bg-emerald-600/10"
+        aria-expanded={open}
         aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ""}`}
       >
         <svg

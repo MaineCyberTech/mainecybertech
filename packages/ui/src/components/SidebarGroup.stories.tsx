@@ -59,7 +59,7 @@ export const WithBadges: Story = {
         <SidebarItem
           href="/tickets"
           badge={
-            <span className="bg-emerald-600 text-[#0A1118] text-xs px-1.5 py-0.5 rounded-full font-bold">
+            <span className="bg-emerald-600 text-cyber-base text-xs px-1.5 py-0.5 rounded-full font-bold">
               12
             </span>
           }

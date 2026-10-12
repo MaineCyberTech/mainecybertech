@@ -134,7 +134,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
         </Link>
       </div>
 
-      <section className="rounded-lg border border-white/5 bg-[rgba(18,30,45,0.75)] p-6 backdrop-blur-md">
+      <section className="rounded-lg border border-white/5 bg-cyber-card p-6 backdrop-blur-md">
         <h2 className="font-display text-lg uppercase tracking-[0.12em] text-slate-50">Filters</h2>
         <form action="/admin/audit" className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <select
@@ -209,7 +209,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
             return (
               <div
                 key={log.id}
-                className="rounded-lg border border-white/5 bg-[rgba(18,30,45,0.75)] p-6 backdrop-blur-md"
+                className="rounded-lg border border-white/5 bg-cyber-card p-6 backdrop-blur-md"
               >
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div className="space-y-1">
@@ -243,7 +243,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
             );
           })
         ) : (
-          <div className="rounded-lg border border-white/5 bg-[rgba(18,30,45,0.75)] p-6 text-slate-400 backdrop-blur-md">
+          <div className="rounded-lg border border-white/5 bg-cyber-card p-6 text-slate-400 backdrop-blur-md">
             No audit logs found for the selected filters.
           </div>
         )}

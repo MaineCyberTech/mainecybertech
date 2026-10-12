@@ -107,13 +107,13 @@ export default function HomePage() {
           </p>
           <Link
             href="/store"
-            className="mt-4 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="mt-4 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Browse Services
           </Link>
           <a
             href="/contact"
-            className="mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Get Support Now
           </a>
@@ -171,7 +171,7 @@ export default function HomePage() {
             ].map((audience) => (
               <div
                 key={audience.name}
-                className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm"
+                className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-6 backdrop-blur-sm"
               >
                 <h3 className="font-display text-lg font-bold text-slate-100">{audience.name}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{audience.desc}</p>
@@ -203,7 +203,7 @@ export default function HomePage() {
             ].map((reason) => (
               <div
                 key={reason.title}
-                className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm"
+                className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-6 backdrop-blur-sm"
               >
                 <h3 className="font-display text-lg font-bold text-emerald-400">{reason.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{reason.desc}</p>
@@ -247,7 +247,7 @@ export default function HomePage() {
             ].map((item) => (
               <div
                 key={item.issue}
-                className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm"
+                className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-6 backdrop-blur-sm"
               >
                 <h3 className="font-display text-base font-bold text-red-400">{item.issue}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{item.fix}</p>
@@ -307,7 +307,7 @@ export default function HomePage() {
               <Link
                 key={post.slug}
                 href={`/blog/${post.slug}`}
-                className="group rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-5 backdrop-blur-sm transition hover:border-emerald-600/30"
+                className="group rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-5 backdrop-blur-sm transition hover:border-emerald-600/30"
               >
                 <span className="rounded bg-emerald-600/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-emerald-400">
                   {post.category}
@@ -322,7 +322,7 @@ export default function HomePage() {
           <div className="mt-10 text-center">
             <Link
               href="/blog"
-              className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               View All Blog Posts
             </Link>
@@ -347,7 +347,7 @@ export default function HomePage() {
           </p>
           <a
             href="/contact"
-            className="mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Schedule a Consultation
           </a>
@@ -384,7 +384,7 @@ export default function HomePage() {
             ].map((faq) => (
               <div
                 key={faq.q}
-                className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm"
+                className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-6 backdrop-blur-sm"
               >
                 <h3 className="font-display text-lg font-bold text-slate-100">{faq.q}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{faq.a}</p>
@@ -394,7 +394,7 @@ export default function HomePage() {
           <div className="mt-12 text-center">
             <a
               href="/contact"
-              className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Contact Us Today
             </a>

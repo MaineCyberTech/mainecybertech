@@ -133,6 +133,21 @@ describe("AdminTicketCenterClient", () => {
     expect(screen.getByText("Software Update")).toBeInTheDocument();
   });
 
+  it("renders filter chips with a labelled 24x24 remove button", async () => {
+    const user = userEvent.setup();
+    render(
+      <AdminTicketCenterClient
+        tickets={tickets}
+        organizations={organizations}
+        createTicketAction={mockCreateTicketAction}
+      />,
+    );
+    await user.type(screen.getByPlaceholderText("Search tickets..."), "Network");
+
+    const remove = screen.getByRole("button", { name: 'Remove Search: "Network"' });
+    expect(remove).toHaveClass("h-6", "w-6");
+  });
+
   it("shows create ticket modal on button click", async () => {
     const user = userEvent.setup();
     render(

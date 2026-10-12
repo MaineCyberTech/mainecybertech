@@ -27,7 +27,7 @@ export default function FAQSection({ productId, categoryId }: FAQSectionProps) {
       {faqs.map((faq) => (
         <details
           key={faq.id}
-          className="group rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-4 backdrop-blur-sm"
+          className="group rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-4 backdrop-blur-sm"
         >
           <summary className="cursor-pointer font-display text-sm font-bold text-slate-100 transition group-open:text-emerald-400">
             {faq.question}

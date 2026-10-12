@@ -15,6 +15,9 @@ const config: Config = {
           ...colors.cyber,
           "card-deep": colors.cyber.cardDeep,
           "card-alt": colors.cyber.cardAlt,
+          "card-hover": colors.cyber.cardHover,
+          "card-subtle": colors.cyber.cardSubtle,
+          "card-overlay": colors.cyber.cardOverlay,
         },
         slate: {
           ...colors.slate,

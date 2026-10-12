@@ -137,7 +137,7 @@ export default async function ResourceDetailPage({
           </p>
         </div>
 
-        <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-8 backdrop-blur-sm">
+        <div className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-8 backdrop-blur-sm">
           <h2 className="mb-6 font-display text-xl font-bold uppercase tracking-wider text-emerald-400">
             Checklist Items
           </h2>
@@ -153,7 +153,7 @@ export default async function ResourceDetailPage({
           </ul>
         </div>
 
-        <div className="mt-12 rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-8 text-center backdrop-blur-sm">
+        <div className="mt-12 rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-8 text-center backdrop-blur-sm">
           <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-50">
             Want the Full Checklist?
           </h2>
@@ -163,7 +163,7 @@ export default async function ResourceDetailPage({
           <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
               href={`/contact?resource=${magnet.id}`}
-              className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Send Me the Download
             </Link>

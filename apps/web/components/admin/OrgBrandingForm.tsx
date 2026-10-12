@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { colors } from "@mct/ui/tokens";
 import { getClientApi } from "@/lib/client-api";
 
 type Props = {
@@ -19,8 +20,8 @@ export default function OrgBrandingForm({
   initialCustomDomain,
 }: Props) {
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl ?? "");
-  const [brandColor, setBrandColor] = useState(initialBrandColor ?? "#059669");
-  const [accentColor, setAccentColor] = useState(initialAccentColor ?? "#0D9488");
+  const [brandColor, setBrandColor] = useState(initialBrandColor ?? colors.cyber.accent);
+  const [accentColor, setAccentColor] = useState(initialAccentColor ?? colors.cyber.teal);
   const [customDomain, setCustomDomain] = useState(initialCustomDomain ?? "");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -138,7 +139,7 @@ export default function OrgBrandingForm({
                 onChange={(e) => setBrandColor(e.target.value)}
                 aria-label="Brand color hex value"
                 className="cyber-input font-mono text-xs"
-                placeholder="#059669"
+                placeholder={colors.cyber.accent}
               />
             </div>
           </div>
@@ -161,7 +162,7 @@ export default function OrgBrandingForm({
                 onChange={(e) => setAccentColor(e.target.value)}
                 aria-label="Accent color hex value"
                 className="cyber-input font-mono text-xs"
-                placeholder="#0D9488"
+                placeholder={colors.cyber.teal}
               />
             </div>
           </div>
@@ -184,8 +185,8 @@ export default function OrgBrandingForm({
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="h-8 w-16 rounded" style={{ backgroundColor: brandColor || "#059669" }} />
-          <div className="h-8 w-16 rounded" style={{ backgroundColor: accentColor || "#0D9488" }} />
+          <div className="h-8 w-16 rounded" style={{ backgroundColor: brandColor || colors.cyber.accent }} />
+          <div className="h-8 w-16 rounded" style={{ backgroundColor: accentColor || colors.cyber.teal }} />
           <span className="text-xs text-slate-400">Preview</span>
         </div>
 

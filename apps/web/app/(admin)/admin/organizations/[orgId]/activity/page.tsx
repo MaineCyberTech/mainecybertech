@@ -66,7 +66,7 @@ export default async function OrganizationActivityPage({ params }: OrgActivityPa
             return (
               <div
                 key={log.id}
-                className="rounded-lg border border-white/5 bg-[rgba(18,30,45,0.75)] p-6 backdrop-blur-md"
+                className="rounded-lg border border-white/5 bg-cyber-card p-6 backdrop-blur-md"
               >
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
@@ -94,7 +94,7 @@ export default async function OrganizationActivityPage({ params }: OrgActivityPa
             );
           })
         ) : (
-          <div className="rounded-lg border border-white/5 bg-[rgba(18,30,45,0.75)] p-6 text-slate-400 backdrop-blur-md">
+          <div className="rounded-lg border border-white/5 bg-cyber-card p-6 text-slate-400 backdrop-blur-md">
             No activity found for this organization.
           </div>
         )}

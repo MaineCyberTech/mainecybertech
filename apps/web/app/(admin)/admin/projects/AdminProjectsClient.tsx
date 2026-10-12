@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState, useTransition, useRef } from "react";
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 import { useFocusTrap } from "@/lib/use-focus-trap";
+import { Chip } from "@mct/ui";
 import { Project } from "@mct/sdk";
 
 type Org = { id: string; name: string; slug: string };
@@ -34,21 +35,6 @@ function priorityClass(priority: string) {
     default:
       return "cyber-pill";
   }
-}
-
-function Chip({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
-      {children}
-      <button
-        type="button"
-        onClick={onRemove}
-        className="ml-0.5 text-emerald-400 hover:text-emerald-200"
-      >
-        &times;
-      </button>
-    </span>
-  );
 }
 
 type Props = {
@@ -204,9 +190,7 @@ export default function AdminProjectsClient({
       {activeFilters.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2">
           {activeFilters.map((f, i) => (
-            <Chip key={i} onRemove={f.onRemove}>
-              {f.label}
-            </Chip>
+            <Chip key={i} label={f.label} onRemove={f.onRemove} />
           ))}
           <button
             type="button"

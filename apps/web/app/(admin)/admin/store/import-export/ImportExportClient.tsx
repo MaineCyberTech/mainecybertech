@@ -164,8 +164,8 @@ export default function ImportExportClient({
       description={`Backed by the live catalog — ${products.length} product(s), ${categories.length} category(ies).`}
     >
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5">
-          <h3 className="mb-1 font-semibold text-slate-50">Export as JSON</h3>
+        <section className="rounded-xl border border-white/10 bg-gradient-to-br from-cyber-base/80 to-[#0D1622]/80 p-5">
+          <h2 className="mb-1 font-semibold text-slate-50">Export as JSON</h2>
           <p className="mb-4 text-sm text-slate-400">
             Download the live product catalog as a JSON file.
           </p>
@@ -174,7 +174,7 @@ export default function ImportExportClient({
             onClick={() =>
               download("products.json", JSON.stringify(products, null, 2), "application/json")
             }
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-emerald-500"
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-emerald-500"
           >
             Download products.json
           </button>
@@ -189,8 +189,8 @@ export default function ImportExportClient({
           </button>
         </section>
 
-        <section className="rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5">
-          <h3 className="mb-1 font-semibold text-slate-50">Export as CSV</h3>
+        <section className="rounded-xl border border-white/10 bg-gradient-to-br from-cyber-base/80 to-[#0D1622]/80 p-5">
+          <h2 className="mb-1 font-semibold text-slate-50">Export as CSV</h2>
           <p className="mb-4 text-sm text-slate-400">
             Export the live catalog as CSV for spreadsheet analysis.
           </p>
@@ -216,8 +216,8 @@ export default function ImportExportClient({
           </button>
         </section>
 
-        <section className="rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5">
-          <h3 className="mb-1 font-semibold text-slate-50">Import products from JSON</h3>
+        <section className="rounded-xl border border-white/10 bg-gradient-to-br from-cyber-base/80 to-[#0D1622]/80 p-5">
+          <h2 className="mb-1 font-semibold text-slate-50">Import products from JSON</h2>
           <p className="mb-4 text-sm text-slate-400">
             Upload a JSON array of products. Existing ids are updated; new ids are created.
           </p>
@@ -235,8 +235,8 @@ export default function ImportExportClient({
           </form>
         </section>
 
-        <section className="rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5">
-          <h3 className="mb-1 font-semibold text-slate-50">Import products from CSV</h3>
+        <section className="rounded-xl border border-white/10 bg-gradient-to-br from-cyber-base/80 to-[#0D1622]/80 p-5">
+          <h2 className="mb-1 font-semibold text-slate-50">Import products from CSV</h2>
           <p className="mb-4 text-sm text-slate-400">
             Upload a CSV with at least <code className="text-emerald-400">id</code>,{" "}
             <code className="text-emerald-400">name</code>, and{" "}
@@ -255,8 +255,8 @@ export default function ImportExportClient({
           </form>
         </section>
 
-        <section className="rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5 lg:col-span-2">
-          <h3 className="mb-1 font-semibold text-slate-50">Import categories from JSON</h3>
+        <section className="rounded-xl border border-white/10 bg-gradient-to-br from-cyber-base/80 to-[#0D1622]/80 p-5 lg:col-span-2">
+          <h2 className="mb-1 font-semibold text-slate-50">Import categories from JSON</h2>
           <p className="mb-4 text-sm text-slate-400">
             Upload a JSON array of categories. Existing ids are updated; new ids are created.
           </p>

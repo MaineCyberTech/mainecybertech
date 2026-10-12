@@ -13,6 +13,7 @@
     "./components/Button": "./src/components/Button.tsx",
     "./components/Input": "./src/components/Input.tsx",
     "./components/Badge": "./src/components/Badge.tsx",
+    "./components/Chip": "./src/components/Chip.tsx",
     "./components/Avatar": "./src/components/Avatar.tsx",
     "./components/Dialog": "./src/components/Dialog.tsx",
     "./components/Skeleton": "./src/components/Skeleton.tsx",
