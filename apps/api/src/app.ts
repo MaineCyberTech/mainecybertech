@@ -7,6 +7,7 @@ import { getEnv, hasWildcardCorsOrigin } from "./config/env";
 import { errorHandler } from "./middleware/error";
 import { notFoundHandler } from "./middleware/not-found";
 import { requestId, requestLogger } from "./middleware/request-id";
+import { deprecationMiddleware } from "./middleware/deprecation";
 import { webhookBodyParser } from "./middleware/webhook-body";
 import { logger } from "./lib/logger";
 import { rateLimitByUser, rateLimitMetrics } from "./middleware/rate-limit";
@@ -137,6 +138,10 @@ export function createApp(): Express {
   app.use(rateLimitByUser);
   app.use(requestId);
   app.use(requestLogger);
+  // EVOL-P3-004: stamp Deprecation/Sunset/Link headers on every request to a
+  // path registered in DEPRECATIONS (middleware/deprecation.ts), including
+  // removed paths that now 404/410.
+  app.use(deprecationMiddleware());
   app.use(idempotencyMiddleware);
   app.use(csrfProtection);
   app.use(requestTimeout(30000));

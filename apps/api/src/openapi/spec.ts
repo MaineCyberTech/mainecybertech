@@ -1,4 +1,5 @@
 import { buildPaths, type RouteDef, pathParam, queryParam } from "./builder";
+import { API_CONTRACT_VERSION } from "../lib/api-version";
 
 /**
  * Standard success envelope (`{ success: true, data: <payload> }`). Only the
@@ -4832,7 +4833,7 @@ export function buildSpec() {
       title: "MCT Client Portal API",
       description:
         "Maine CyberTech Client Portal API. Bearer token authentication required unless noted as public.",
-      version: "1.0.0",
+      version: API_CONTRACT_VERSION,
       contact: { name: "MCT Support", email: "support@mainecybertech.com" },
     },
     servers: [

@@ -28,6 +28,8 @@
 | [adr/README.md](adr/README.md)                                                       | Architecture Decision Records (11 decisions)                       |
 | [MASTER_SYSTEM_ARCHITECTURE_REVIEW.md](MASTER_SYSTEM_ARCHITECTURE_REVIEW.md)         | 12-domain synthesis of the full system architecture                |
 | [arch/evaluation/db-package-evaluation.md](arch/evaluation/db-package-evaluation.md) | Shared DB package evaluation                                       |
+| [arch/package-extraction-plan.md](arch/package-extraction-plan.md)                   | Shared-package extraction plan (`@mct/config`, `@mct/db`, SDK build) |
+| [FEATURE_FLAGS.md](FEATURE_FLAGS.md)                                                 | Feature flag registry, targeting and change log                    |
 | [GAP_ANALYSIS.md](GAP_ANALYSIS.md)                                                   | Historical (2026-08-01, AWS-era) gap analysis — kept for reference only |
 | [ADMIN_FEATURES.md](ADMIN_FEATURES.md)                                               | Webhook management, role editor, audit export, bulk import, Sentry |
 | [ADMIN_BULK_OPERATIONS.md](ADMIN_BULK_OPERATIONS.md)                                 | Bulk admin runbook: dry-run previews, confirmations, rate limits   |
@@ -62,7 +64,9 @@
 
 | Document                                                       | Purpose                                                                                                                                                                             |
 | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [API_ENDPOINT_INVENTORY.md](API_ENDPOINT_INVENTORY.md)         | Complete API endpoint inventory                                                                                                                                                     |
+| [API_ENDPOINT_INVENTORY.md](API_ENDPOINT_INVENTORY.md)         | Historical API endpoint inventory (2026-06 snapshot; superseded by the generated spec)                                                                                               |
+| [PUBLIC_ROUTES.md](PUBLIC_ROUTES.md)                           | Public (unauthenticated) API surface — generated inventory                                                                                                                          |
+| [EVENTS.md](EVENTS.md)                                         | Outbound webhook event catalog, payloads and delivery semantics                                                                                                                     |
 | [openapi.yaml](openapi.yaml)                                   | OpenAPI 3.0 spec — **generated** from `apps/api/src/openapi/generate.ts` (calls `buildSpec()` in `spec.ts`); do not hand-edit, regenerate with `pnpm --filter=api generate:openapi` |
 | [API_ERROR_HANDLING.md](API_ERROR_HANDLING.md)                 | API error handling patterns and standards                                                                                                                                           |
 | [API_RATE_LIMITING.md](API_RATE_LIMITING.md)                   | Rate limit configuration and behavior (300/15min)                                                                                                                                   |
