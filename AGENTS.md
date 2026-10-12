@@ -166,11 +166,11 @@ pnpm e2e                     # Playwright E2E
 | Category                  | Count | Notes                                                                                                                                                                  |
 | ------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | API route files           | 64    | `apps/api/src/routes/*.ts` (77 incl. `routes/final/` + `routes/store/`)                                                                                                |
-| API SDK modules           | 63    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
+| API SDK modules           | 65    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
 | Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319 | Admin 203, Portal 86, Public 29, `forbidden` 1 |
-| Web components            | 127 | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 157 | `supabase/migrations/` (latest: 5302459_dead_rls_permission_predicates                                                                                              |
+| Web components            | 128 | `apps/web/components/`                                                                                                                                                 |
+| SQL migrations            | 158 | `supabase/migrations/` (latest: 5302460_drop_portal_module_settings                                                                                              |
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 28 | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 625 | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |

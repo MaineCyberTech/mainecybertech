@@ -835,13 +835,36 @@ describe("SDK modules — expanded coverage", () => {
           users: [],
           organizations: [],
           documents: [{ id: "d1", name: "Report" }],
+          counts: { users: 0, organizations: 0, tickets: 0, projects: 0, documents: 1 },
+          limit: 5,
         }),
       );
       const result = await client.search.admin("test");
       expect(result.projects).toHaveLength(0);
       // SEARCH-P2-003: the admin payload includes documents.
       expect(result.documents).toHaveLength(1);
+      // SEARCH-P3-003: counts and the applied page size are part of the contract.
+      expect(result.counts.documents).toBe(1);
+      expect(result.limit).toBe(5);
     });
+
+    it("sends the admin ?limit option", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          projects: [],
+          tickets: [],
+          users: [],
+          organizations: [],
+          documents: [],
+          counts: { users: 0, organizations: 0, tickets: 0, projects: 0, documents: 0 },
+          limit: 10,
+        }),
+      );
+      const result = await client.search.admin("test", { limit: 10 });
+      expect(result.limit).toBe(10);
+      expect(String(mockFetch.mock.calls[0][0])).toContain("limit=10");
+    });
+
     it("performs portal search", async () => {
       mockFetch.mockResolvedValue(mockResponse({ projects: [], tickets: [], documents: [] }));
       const result = await client.search.portal("test", "org-1");

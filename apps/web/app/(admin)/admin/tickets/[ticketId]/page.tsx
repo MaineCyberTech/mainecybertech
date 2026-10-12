@@ -10,6 +10,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import CommentBody from "@/components/CommentBody";
 import TicketCopilotPanel from "./TicketCopilotPanel";
 import type { Ticket, TicketComment, AuditLog } from "@mct/sdk";
+import { allowedTicketTransitions } from "@mct/sdk/ticket-status";
 import {
   InlineStatusDropdown,
   InlinePriorityDropdown,
@@ -324,11 +325,12 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
                   defaultValue={status}
                   className="cyber-input"
                 >
-                  <option value="new">new</option>
-                  <option value="triaged">triaged</option>
-                  <option value="pending">pending</option>
-                  <option value="resolved">resolved</option>
-                  <option value="closed">closed</option>
+                  {/* FEAT-P3-006: current status + only the transitions the API allows. */}
+                  {[...new Set([status, ...allowedTicketTransitions(status)])].map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

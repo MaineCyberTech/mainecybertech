@@ -2,6 +2,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import AdminPreviewNote from "@/components/admin/AdminPreviewNote";
 import { getEmailNurtureData } from "@/lib/catalog/v5-loaders";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,7 @@ export default async function AdminStoreNurturePage() {
         </button>
       }
     >
+      <AdminPreviewNote />
       <section className="mb-8 space-y-4">
         {data.sequences.map((seq) => (
           <div key={seq.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">

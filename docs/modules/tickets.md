@@ -17,6 +17,7 @@ Support ticket system with full CRUD, comment threads with a 5-minute edit windo
 - CSV/JSON export of ticket lists
 - Markdown rendering in comments
 - Filterable by status, priority, assignee, and organization
+- Status transitions follow a shared map (`@mct/sdk/ticket-status`); invalid moves are rejected with `409 INVALID_STATUS_TRANSITION` and recorded as a distinct `ticket.status_transition` audit event
 
 ## Endpoints
 
@@ -35,6 +36,24 @@ Support ticket system with full CRUD, comment threads with a 5-minute edit windo
 ## Data Model
 
 Key tables: `tickets` (subject, description, status, priority, assignee), `ticket_comments` (body, created_by, edited_at)
+
+## Status Workflow
+
+Statuses: `new`, `open`, `triaged`, `in_progress`, `waiting_on_client`, `resolved`, `closed`.
+
+The transition map lives in `packages/sdk/src/ticket-status.ts` and is shared by the
+API (PATCH validation, bulk filtering) and the admin UI (only allowed next states are
+offered). Same-status updates are no-ops; `closed → in_progress` is the reopen path.
+
+| From              | Allowed next                                             |
+| ----------------- | -------------------------------------------------------- |
+| new               | open, triaged, in_progress, closed                       |
+| open              | triaged, in_progress, waiting_on_client, resolved, closed |
+| triaged           | in_progress, waiting_on_client, resolved, closed         |
+| in_progress       | waiting_on_client, resolved, closed                      |
+| waiting_on_client | in_progress, resolved, closed                            |
+| resolved          | in_progress, closed                                      |
+| closed            | in_progress                                              |
 
 ## Access Control
 

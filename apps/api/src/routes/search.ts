@@ -29,14 +29,26 @@ router.use(requireAuth, requireOrgAccess, requireAdmin);
 router.get("/", async (req, res, next) => {
   try {
     const q = sanitizeSearchTerm(req.query.q);
+    // SEARCH-P2-004: page size is caller-tunable (default 5, hard cap 25).
+    const limit = Math.min(25, Math.max(1, queryInt(req.query.limit, 5)));
     if (!q || q.length < 2) {
-      res.json(success({ users: [], organizations: [], tickets: [], projects: [], documents: [] }));
+      // Same shape as a populated response (counts + limit) so the OpenAPI
+      // contract and SDK types hold for empty queries too.
+      res.json(
+        success({
+          users: [],
+          organizations: [],
+          tickets: [],
+          projects: [],
+          documents: [],
+          counts: { users: 0, organizations: 0, tickets: 0, projects: 0, documents: 0 },
+          limit,
+        }),
+      );
       return;
     }
 
     const supabase = getSupabaseAdmin();
-    // SEARCH-P2-004: page size is caller-tunable (default 5, hard cap 25).
-    const limit = Math.min(25, Math.max(1, queryInt(req.query.limit, 5)));
     const searchTerm = `${q}%`;
     const wildcardTerm = `%${q}%`;
     // SEARCH-P2-006: tickets/projects/documents carry a stored generated

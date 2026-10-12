@@ -1003,6 +1003,36 @@ const billingNotifications: RouteDef[] = [
   },
 ];
 
+/** Search projections (SEARCH-P3-003). */
+const searchDocumentSchema: Record<string, unknown> = {
+  type: "object",
+  required: ["id", "name", "organization_id"],
+  properties: {
+    id: { type: "string" },
+    name: { type: "string" },
+    organization_id: { type: "string" },
+    mime_type: { type: "string", nullable: true },
+    visibility: { type: "string", nullable: true },
+  },
+};
+
+const searchEntityArray: Record<string, unknown> = {
+  type: "array",
+  items: { type: "object", additionalProperties: true },
+};
+
+const searchCountsSchema: Record<string, unknown> = {
+  type: "object",
+  required: ["users", "organizations", "tickets", "projects", "documents"],
+  properties: {
+    users: { type: "number" },
+    organizations: { type: "number" },
+    tickets: { type: "number" },
+    projects: { type: "number" },
+    documents: { type: "number" },
+  },
+};
+
 const adminAudit: RouteDef[] = [
   {
     method: "get",
@@ -1047,7 +1077,20 @@ const adminAudit: RouteDef[] = [
     path: "/search",
     summary: "Admin global search",
     tag: "Search",
-    params: [queryParam("q")],
+    params: [queryParam("q"), queryParam("limit")],
+    responseSchema: envelope({
+      type: "object",
+      required: ["users", "organizations", "tickets", "projects", "documents", "counts", "limit"],
+      properties: {
+        users: searchEntityArray,
+        organizations: searchEntityArray,
+        tickets: searchEntityArray,
+        projects: searchEntityArray,
+        documents: { type: "array", items: searchDocumentSchema },
+        counts: searchCountsSchema,
+        limit: { type: "number" },
+      },
+    }),
   },
   {
     method: "get",
@@ -1055,6 +1098,15 @@ const adminAudit: RouteDef[] = [
     summary: "Portal-scoped search",
     tag: "Search",
     params: [queryParam("q")],
+    responseSchema: envelope({
+      type: "object",
+      required: ["tickets", "projects", "documents"],
+      properties: {
+        tickets: searchEntityArray,
+        projects: searchEntityArray,
+        documents: { type: "array", items: searchDocumentSchema },
+      },
+    }),
   },
   { method: "get", path: "/api-keys", summary: "List API keys", tag: "Admin" },
   { method: "post", path: "/api-keys", summary: "Create API key", tag: "Admin" },

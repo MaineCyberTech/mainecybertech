@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { TICKET_STATUSES } from "@mct/sdk/ticket-status";
+
+/** FEAT-P3-006: the status vocabulary is shared with the transition map. */
+const ticketStatusSchema = z.enum([...TICKET_STATUSES]);
 
 export const createTicketSchema = z.object({
   organizationId: z.string().uuid(),
@@ -15,9 +19,7 @@ export const createTicketSchema = z.object({
 export const updateTicketSchema = z.object({
   title: z.string().min(1).max(500).optional(),
   description: z.string().max(10000).optional().nullable(),
-  status: z
-    .enum(["new", "open", "triaged", "in_progress", "waiting_on_client", "resolved", "closed"])
-    .optional(),
+  status: ticketStatusSchema.optional(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
   category: z.string().max(100).optional().nullable(),
   assignedTo: z.string().optional().nullable(),
@@ -39,8 +41,6 @@ export const updateTicketCommentSchema = z.object({
 
 export const bulkTicketUpdateSchema = z.object({
   ids: z.array(z.string().uuid()).min(1, "At least one ticket ID required"),
-  status: z
-    .enum(["new", "open", "triaged", "in_progress", "waiting_on_client", "resolved", "closed"])
-    .optional(),
+  status: ticketStatusSchema.optional(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
 });
