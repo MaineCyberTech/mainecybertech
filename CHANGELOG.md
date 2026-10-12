@@ -136,6 +136,37 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Fixed
 
+- **Remediation wave, phase 4 (2026-10-12, 9 PRs, audit rerun).**
+  - Privacy: GA/Tawk.to gated on the recorded consent choice (policy version
+    stored server-side); consent required + recorded on public submit/quote
+    paths (`consent_at`/`consent_version`, migration `5302449`); geolocation
+    lookup HTTPS-only with a minimal field set (#227).
+  - Portal/admin UX: ticket lists paginate with server totals; permanent-delete
+    copy aligned and the unreachable Restore removed; onboarding redirect and
+    duplicate-submit fixes; checklist toggles; session/MFA expiry messaging +
+    step-up redirect; privileged-action confirmations and feedback (#229).
+  - Dialogs/UI kit: dialogs constrained to the viewport with internal scroll;
+    bounded `@mct/ui` adoption with the remaining plan documented (#230).
+  - Data/DR: prod backup/restore target behind `prod-approval` +
+    `PROD_BACKUP_ENABLED`; Terraform state bucket versioning; platform backup
+    heartbeats + worker staleness check; org-delete audit archive guard
+    (migrations `5302450`/`5302451`) (#231).
+  - Resilience: single `QUEUE_BACKEND` shared by API/worker with fail-closed
+    parity assertions; Redis degradation metrics + alerts + runbook; Stripe
+    sync page cap (#232).
+  - Webhooks/RLS: scoped `webhook_dead_letters` DELETE policy (migration
+    `5302452`) with corrected delete-client docs (#233).
+  - Secrets: rotation runbook of record + evidence/dry-run; no Terraform plan
+    artifacts leave the runner; JWT rotation rewritten around the Supabase
+    signing secret; correct environment targeting (#234).
+  - Notifications: full Web Push channel — subscriptions (migration `5302453`),
+    API, RFC 8291 worker sender, service-worker handlers, preferences UI
+    (VAPID operator-gated) (#235).
+  - Docs/records: operations docs reconciled with the pipeline; audit run
+    contract rewritten with an unindexed-run guard; release-gate verdict
+    rebound to the current register (#236).
+  - Deploy hotfix: `IMAGE_TAG` exported to the remote deploy shell so the
+    digest-pinned compose interpolation works again (#228).
 - **Remediation wave, phase 3 (2026-10-11, 13 PRs, audit rerun).**
   - Release/docs: breaking/behavior manifest (`docs/UPGRADE.md`, migrations
     `5302420`–`5302446`); rollback docs on the manual `terraform-do` flow;
