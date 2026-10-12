@@ -22,6 +22,10 @@ on:
         description: "Run the full accessibility breadth scan"
         type: boolean
         default: false
+      a11y_update_baseline:
+        description: "Regenerate apps/web/e2e/a11y-baseline.json from the full scan (requires a11y_full)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -175,6 +179,18 @@ jobs:
           E2E_ADMIN_EMAIL: superadmin.real@mainecybertech.local
           E2E_ADMIN_PASSWORD: 1
           A11Y_FULL: ${{ inputs.a11y_full && '1' || '0' }}
+          A11Y_UPDATE_BASELINE: ${{ inputs.a11y_update_baseline && '1' || '0' }}
+
+      - name: Upload regenerated a11y baseline
+        # Only present when the caller asked to regenerate the baseline; the
+        # spec writes the file in A11Y_UPDATE_BASELINE mode (afterAll still runs
+        # when a locator fails), so `always()` keeps it uploadable either way.
+        if: ${{ always() && inputs.a11y_update_baseline }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: a11y-baseline
+          path: apps/web/e2e/a11y-baseline.json
+          if-no-files-found: error
 
       - name: E2E flake summary
         # Always runs so retry/flake counts are recorded even when the suite
