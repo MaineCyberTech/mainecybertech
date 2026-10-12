@@ -12,9 +12,11 @@ type TicketRecord = Record<string, any> & { id: string };
 
 const PAGE_SIZE = 25;
 
-export default async function PortalSupportPage(
-  { searchParams }: { searchParams?: Promise<{ page?: string }> } = {},
-) {
+export default async function PortalSupportPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const api = getApiClient();
   const membership = await getApprovedMembership();
   if (!membership?.organization_id) throw new Error("No approved membership found.");
@@ -60,8 +62,8 @@ export default async function PortalSupportPage(
   // USE-P2-002: paginate the list instead of silently stopping at the API's
   // 25-row default, and derive the stat cards from API totals (limit=1 count
   // queries) rather than the fetched page.
-  const sp = (await searchParams) ?? {};
-  const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
+  const sp = await searchParams;
+  const page = Math.max(1, Number.parseInt(sp?.page ?? "1", 10) || 1);
   const organizationId = membership.organization_id;
 
   const [result, allCountResult, resolvedCountResult, closedCountResult] = await Promise.all([
