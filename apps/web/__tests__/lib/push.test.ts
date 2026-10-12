@@ -7,7 +7,8 @@ describe("urlBase64ToUint8Array", () => {
   });
 
   it("handles - and _ characters and missing padding", () => {
-    expect(Array.from(urlBase64ToUint8Array("_-8"))).toEqual([0xfb, 0xff]);
+    // "_-8" → base64 "/+8=" → bytes 0xff 0xef.
+    expect(Array.from(urlBase64ToUint8Array("_-8"))).toEqual([0xff, 0xef]);
   });
 });
 
