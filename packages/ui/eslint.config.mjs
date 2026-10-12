@@ -40,4 +40,13 @@ export default [
       react: { version: "detect" },
     },
   },
+  {
+    files: ["**/*.stories.tsx"],
+    rules: {
+      // Storybook `render` callbacks are not React components; hooks inside
+      // them are a supported pattern the rule cannot model (eslint-plugin-
+      // storybook documents the same exception).
+      "react-hooks/rules-of-hooks": "off",
+    },
+  },
 ];
