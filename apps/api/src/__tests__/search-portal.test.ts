@@ -95,6 +95,7 @@ describe("search portal routes", () => {
       const mockProjects = [
         { id: "p1", name: "Test Project", status: "active", priority: "medium" },
       ];
+      const orCalls: Record<string, string[]> = {};
 
       supabase.from.mockImplementation((table: string) => {
         if (table === "memberships") {
@@ -110,7 +111,10 @@ describe("search portal routes", () => {
           data: table === "tickets" ? mockTickets : mockProjects,
           error: null,
         });
-        (builder as any).or = jest.fn(() => builder);
+        (builder as any).or = jest.fn((filter: string) => {
+          (orCalls[table] ??= []).push(filter);
+          return builder;
+        });
         return builder;
       });
 
@@ -122,6 +126,11 @@ describe("search portal routes", () => {
       expect(res.body.data.tickets).toEqual(mockTickets);
       expect(res.body.data.projects).toEqual(mockProjects);
       expect(res.body.data.documents).toEqual([]);
+      // SEARCH-P2-006: both portal entities OR the generated full-text branch
+      // onto the ILIKE substring predicates.
+      for (const table of ["tickets", "projects"]) {
+        expect(orCalls[table]?.[0]).toContain("search_vector.wfts(english).test");
+      }
       // SEARCH-P2-005: the portal route now feeds the search counter.
       const { recordSearchQuery } = jest.requireMock("../lib/metrics") as {
         recordSearchQuery: jest.Mock;

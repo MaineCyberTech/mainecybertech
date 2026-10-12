@@ -1708,6 +1708,29 @@ const extendedRoutes: RouteDef[] = [
     tag: "AI",
     params: [pathParam("ticketId")],
   },
+  // FEAT-P2-004: documented ai_draft_outputs review gate.
+  { method: "post", path: "/ai/drafts", summary: "Persist an AI draft output", tag: "AI" },
+  {
+    method: "get",
+    path: "/ai/drafts",
+    summary: "List AI draft outputs",
+    tag: "AI",
+    params: [queryParam("page"), queryParam("limit")],
+  },
+  {
+    method: "get",
+    path: "/ai/drafts/{id}",
+    summary: "Get an AI draft output",
+    tag: "AI",
+    params: [pathParam("id")],
+  },
+  {
+    method: "post",
+    path: "/ai/drafts/{id}/review",
+    summary: "Approve or reject an AI draft output",
+    tag: "AI",
+    params: [pathParam("id")],
+  },
 
   // analytics - generated from apps/api/src/routes/analytics.ts
   { method: "get", path: "/analytics/summary", summary: "Get analytics summary", tag: "Analytics" },
@@ -4305,34 +4328,8 @@ const dynamicCrudCoverage: RouteDef[] = [
     tag: "Final",
     params: [pathParam("id")],
   },
-  { method: "get", path: "/final/satisfaction", summary: "List satisfaction pulses", tag: "Final" },
-  {
-    method: "get",
-    path: "/final/satisfaction/{id}",
-    summary: "Get satisfaction pulse",
-    tag: "Final",
-    params: [pathParam("id")],
-  },
-  {
-    method: "post",
-    path: "/final/satisfaction",
-    summary: "Create satisfaction pulse",
-    tag: "Final",
-  },
-  {
-    method: "patch",
-    path: "/final/satisfaction/{id}",
-    summary: "Update satisfaction pulse",
-    tag: "Final",
-    params: [pathParam("id")],
-  },
-  {
-    method: "delete",
-    path: "/final/satisfaction/{id}",
-    summary: "Delete satisfaction pulse",
-    tag: "Final",
-    params: [pathParam("id")],
-  },
+  // FEAT-P2-005: /final/satisfaction is hard-deprecated (410); the canonical
+  // satisfaction-pulse paths are listed above.
   { method: "get", path: "/final/time-entries", summary: "List time entries", tag: "Final" },
   {
     method: "get",
@@ -4450,29 +4447,8 @@ const dynamicCrudCoverage: RouteDef[] = [
   },
 
   // routes/edu-automation.ts — crud(): GET list, GET {id}, POST, PATCH {id}, DELETE {id}
-  { method: "get", path: "/edu-automation/sop", summary: "List SOPs", tag: "EduAutomation" },
-  {
-    method: "get",
-    path: "/edu-automation/sop/{id}",
-    summary: "Get SOP",
-    tag: "EduAutomation",
-    params: [pathParam("id")],
-  },
-  { method: "post", path: "/edu-automation/sop", summary: "Create SOP", tag: "EduAutomation" },
-  {
-    method: "patch",
-    path: "/edu-automation/sop/{id}",
-    summary: "Update SOP",
-    tag: "EduAutomation",
-    params: [pathParam("id")],
-  },
-  {
-    method: "delete",
-    path: "/edu-automation/sop/{id}",
-    summary: "Delete SOP",
-    tag: "EduAutomation",
-    params: [pathParam("id")],
-  },
+  // FEAT-P2-005: /edu-automation/sop is hard-deprecated (410); sop_library is
+  // canonically served by /governance/sop-library (listed above).
   {
     method: "get",
     path: "/edu-automation/compliance",
@@ -4506,39 +4482,8 @@ const dynamicCrudCoverage: RouteDef[] = [
     tag: "EduAutomation",
     params: [pathParam("id")],
   },
-  {
-    method: "get",
-    path: "/edu-automation/insurance",
-    summary: "List insurance evidence",
-    tag: "EduAutomation",
-  },
-  {
-    method: "get",
-    path: "/edu-automation/insurance/{id}",
-    summary: "Get insurance evidence",
-    tag: "EduAutomation",
-    params: [pathParam("id")],
-  },
-  {
-    method: "post",
-    path: "/edu-automation/insurance",
-    summary: "Create insurance evidence",
-    tag: "EduAutomation",
-  },
-  {
-    method: "patch",
-    path: "/edu-automation/insurance/{id}",
-    summary: "Update insurance evidence",
-    tag: "EduAutomation",
-    params: [pathParam("id")],
-  },
-  {
-    method: "delete",
-    path: "/edu-automation/insurance/{id}",
-    summary: "Delete insurance evidence",
-    tag: "EduAutomation",
-    params: [pathParam("id")],
-  },
+  // FEAT-P2-005: /edu-automation/insurance is hard-deprecated (410);
+  // insurance_evidence is canonically served by /insurance-binder.
   {
     method: "get",
     path: "/edu-automation/ai-policy",

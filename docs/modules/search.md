@@ -12,7 +12,8 @@ Global admin search across users, organizations, tickets, and projects. Performs
 
 - Minimum 2-character search requirement
 - Parallel queries across profiles, organizations, tickets, and projects
-- ILIKE-based text matching for partial matches
+- ILIKE-based substring matching, plus a full-text (`tsvector`) branch for tickets/projects/documents
+- Prefix columns (`profiles.full_name`, `organizations.name/slug`) are btree-indexed; wildcard columns use GIN trigram indexes
 - Results grouped by entity type
 - Fast response via concurrent database queries
 

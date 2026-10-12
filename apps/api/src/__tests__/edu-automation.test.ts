@@ -75,9 +75,7 @@ describe("Edu Automation API", () => {
   beforeEach(() => jest.clearAllMocks());
 
   const paths = [
-    "sop",
     "compliance",
-    "insurance",
     "ai-policy",
     "kb",
     "training",
@@ -106,47 +104,27 @@ describe("Edu Automation API", () => {
     });
   }
 
-  it("creates a sop item", async () => {
-    const s = ma();
-    s.from.mockReturnValue(
-      createMockBuilder({ data: { id: "sop-1", title: "Onboarding SOP" }, error: null }),
-    );
-    const r = await request(app)
-      .post("/api/v1/edu-automation/sop")
-      .set("Authorization", auth)
-      .send({ organizationId: org, title: "Onboarding SOP", content: "Step 1..." });
-    expect(r.status).toBe(201);
-  });
+  // FEAT-P2-005: sop_library and insurance_evidence were served by two
+  // divergent surfaces. The canonical owners are /governance/sop-library and
+  // /insurance-binder; the old paths are hard-deprecated (410 + successor link)
+  // instead of writing through a second validator.
+  describe("deprecated duplicate surfaces (FEAT-P2-005)", () => {
+    const deprecated = [
+      ["/api/v1/edu-automation/sop", "/api/v1/governance/sop-library"],
+      ["/api/v1/edu-automation/sop/sop-1", "/api/v1/governance/sop-library"],
+      ["/api/v1/edu-automation/insurance", "/api/v1/insurance-binder"],
+      ["/api/v1/edu-automation/insurance/ev-1", "/api/v1/insurance-binder"],
+    ] as const;
 
-  it("updates a sop item", async () => {
-    const s = ma();
-    s.from.mockReturnValue(
-      createMockBuilder({ data: { id: "sop-1", title: "Updated SOP" }, error: null }),
-    );
-    const r = await request(app)
-      .patch("/api/v1/edu-automation/sop/sop-1")
-      .set("Authorization", auth)
-      .send({ title: "Updated SOP" });
-    expect(r.status).toBe(200);
-  });
-
-  it("returns 404 when updating nonexistent sop", async () => {
-    const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
-    const r = await request(app)
-      .patch("/api/v1/edu-automation/sop/missing-id")
-      .set("Authorization", auth)
-      .send({ title: "Updated" });
-    expect(r.status).toBe(404);
-  });
-
-  it("deletes a sop item", async () => {
-    const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
-    const r = await request(app)
-      .delete("/api/v1/edu-automation/sop/sop-1")
-      .set("Authorization", auth).send({ confirm: true });
-    expect(r.status).toBe(204);
+    for (const [path, canonical] of deprecated) {
+      it(`returns 410 with a successor link for ${path}`, async () => {
+        ma();
+        const r = await request(app).get(path).set("Authorization", auth);
+        expect(r.status).toBe(410);
+        expect(r.headers.link).toContain(`<${canonical}>; rel="successor-version"`);
+        expect(r.headers.deprecation).toBe("true");
+      });
+    }
   });
 
   it("creates a training module", async () => {
@@ -164,14 +142,14 @@ describe("Edu Automation API", () => {
   it("validates request body on create", async () => {
     ma();
     const r = await request(app)
-      .post("/api/v1/edu-automation/sop")
+      .post("/api/v1/edu-automation/training")
       .set("Authorization", auth)
       .send({});
     expect(r.status).toBe(400);
   });
 
   it("returns 401 without auth token", async () => {
-    const r = await request(app).get("/api/v1/edu-automation/sop");
+    const r = await request(app).get("/api/v1/edu-automation/training");
     expect(r.status).toBe(401);
   });
 

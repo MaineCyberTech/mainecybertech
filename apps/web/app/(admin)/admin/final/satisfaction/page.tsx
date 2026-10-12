@@ -18,7 +18,8 @@ export default async function SatisfactionPage() {
   let items: Array<{ id: string; subject?: string }> = [];
   let loadFailed = false;
   try {
-    const r = await api.final.satisfaction.list({});
+    // FEAT-P2-005: satisfaction_pulses' canonical surface is satisfaction-pulse.
+    const r = await api.satisfactionPulse.list({ page: 1, limit: 25 });
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
     loadFailed = true;

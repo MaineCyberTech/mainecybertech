@@ -5,7 +5,9 @@
 **SDK:** `packages/sdk/src/edu-automation.ts`
 
 ## Overview
-Education automation module for managing SOP libraries, compliance readiness, insurance evidence, AI policies, knowledge base articles, training modules, phishing campaigns, cyber scorecards, automation workflows, PowerShell scripts, and KB article generation.
+Education automation module for managing compliance readiness, AI policies, knowledge base articles, training modules, phishing campaigns, cyber scorecards, automation workflows, PowerShell scripts, and KB article generation.
+
+**FEAT-P2-005:** `sop_library` and `insurance_evidence` are canonically served by `/api/v1/governance/sop-library` and `/api/v1/insurance-binder`. The legacy `/api/v1/edu-automation/sop` and `/api/v1/edu-automation/insurance` paths are hard-deprecated and return 410 Gone with a successor-version link.
 
 ## Key Features
 - SOP library with version tracking
@@ -23,18 +25,10 @@ Education automation module for managing SOP libraries, compliance readiness, in
 ## Endpoints (all sub-modules follow the same pattern)
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | /api/v1/edu-automation/sop | List SOP documents |
-| POST | /api/v1/edu-automation/sop | Create SOP |
-| PATCH | /api/v1/edu-automation/sop/:id | Update SOP |
-| DELETE | /api/v1/edu-automation/sop/:id | Delete SOP |
 | GET | /api/v1/edu-automation/compliance | List compliance assessments |
 | POST | /api/v1/edu-automation/compliance | Create assessment |
 | PATCH | /api/v1/edu-automation/compliance/:id | Update |
 | DELETE | /api/v1/edu-automation/compliance/:id | Delete |
-| GET | /api/v1/edu-automation/insurance | List insurance evidence |
-| POST | /api/v1/edu-automation/insurance | Create evidence |
-| PATCH | /api/v1/edu-automation/insurance/:id | Update |
-| DELETE | /api/v1/edu-automation/insurance/:id | Delete |
 | GET | /api/v1/edu-automation/ai-policy | List AI policies |
 | POST | /api/v1/edu-automation/ai-policy | Create policy |
 | PATCH | /api/v1/edu-automation/ai-policy/:id | Update |

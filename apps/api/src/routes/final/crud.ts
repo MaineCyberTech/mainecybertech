@@ -8,7 +8,6 @@ import {
   saas,
   quote,
   dns,
-  pulse,
   time,
   budget,
   runbook,
@@ -171,7 +170,9 @@ const schemas: Record<string, { schema: z.ZodTypeAny; table: string; module: str
   "saas-audit": { schema: saas, table: "saas_audits", module: "saas-audit" },
   procurement: { schema: quote, table: "procurement_quotes", module: "procurement" },
   "dns-changes": { schema: dns, table: "dns_change_requests", module: "dns-changes" },
-  satisfaction: { schema: pulse, table: "satisfaction_pulses", module: "satisfaction-pulse" },
+  // FEAT-P2-005: `satisfaction_pulses` is canonically served by
+  // `/api/v1/satisfaction-pulse`; `/final/satisfaction` is a hard-deprecated
+  // stub in routes/final.ts.
   "time-entries": { schema: time, table: "time_entries", module: "time-entries" },
   budgets: { schema: budget, table: "budget_roadmaps", module: "budgets" },
   runbooks: { schema: runbook, table: "client_runbooks", module: "runbooks" },

@@ -56,10 +56,7 @@ Aggregate module covering 11 sub-modules for operational needs: backups, budgets
 | POST | /api/v1/final/saas-audit | Create audit |
 | PATCH | /api/v1/final/saas-audit/:id | Update |
 | DELETE | /api/v1/final/saas-audit/:id | Delete |
-| GET | /api/v1/final/satisfaction | List satisfaction pulses |
-| POST | /api/v1/final/satisfaction | Create pulse |
-| PATCH | /api/v1/final/satisfaction/:id | Update |
-| DELETE | /api/v1/final/satisfaction/:id | Delete |
+| — | /api/v1/final/satisfaction | **Hard-deprecated (410)** — canonical surface is `/api/v1/satisfaction-pulse` |
 | GET | /api/v1/final/sharepoint | List SharePoint plans |
 | POST | /api/v1/final/sharepoint | Create plan |
 | PATCH | /api/v1/final/sharepoint/:id | Update |
