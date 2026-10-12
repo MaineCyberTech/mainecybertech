@@ -103,7 +103,7 @@ export default function OrgBrandingForm({
                 ref={fileRef}
                 id="org-logo-file"
                 type="file"
-                accept="image/png,image/jpeg,image/svg+xml"
+                accept="image/png,image/jpeg,image/webp,image/gif"
                 onChange={handleLogoUpload}
                 aria-labelledby="org-logo-label"
                 className="hidden"
@@ -115,7 +115,7 @@ export default function OrgBrandingForm({
               >
                 {uploading ? "Uploading..." : "Upload Logo"}
               </button>
-              <p className="mt-1 text-xs text-slate-600">PNG, JPG, or SVG. 5MB max.</p>
+              <p className="mt-1 text-xs text-slate-600">PNG, JPG, WebP, or GIF. 5MB max.</p>
             </div>
           </div>
         </div>

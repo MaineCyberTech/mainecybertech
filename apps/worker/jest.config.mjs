@@ -4,6 +4,12 @@ export default {
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  // NOTIF-P3-001 / NOTIF-P3-005: shared email template + unsubscribe-token
+  // helpers are imported via SDK subpath exports; map them to source so
+  // ts-jest compiles them regardless of package-exports support.
+  moduleNameMapper: {
+    '^@mct/sdk/(email-template)$': '<rootDir>/../../packages/sdk/src/$1',
+  },
   setupFiles: ['<rootDir>/jest.setup.ts'],
   globalTeardown: '<rootDir>/jest.teardown.ts',
   moduleNameMapper: {

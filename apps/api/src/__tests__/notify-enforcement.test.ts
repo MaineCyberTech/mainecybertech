@@ -5,7 +5,15 @@ jest.mock("../config/env", () => ({
     NODE_ENV: "test",
     APP_BASE_URL: "http://localhost:3000",
     LOG_LEVEL: "silent",
+    // NOTIF-P3-005: the unsubscribe link derives its HMAC key from this.
+    SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
   }),
+}));
+
+jest.mock("../lib/notification-throttle", () => ({
+  EMAIL_THROTTLE_WINDOW_SECONDS: 3600,
+  EMAIL_THROTTLE_MAX_PER_WINDOW: 30,
+  isEmailThrottled: jest.fn().mockResolvedValue(false),
 }));
 
 jest.mock("../services/supabase", () => ({
@@ -26,6 +34,8 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { logger } from "../lib/logger";
 import { sendEmail } from "../lib/email";
 import { enqueueTask } from "../lib/task-producer";
+import { isEmailThrottled } from "../lib/notification-throttle";
+import { verifyUnsubscribeToken } from "../lib/unsubscribe-token";
 import {
   claimNotificationEmail,
   createNotification,
@@ -316,6 +326,61 @@ describe("notification email link escaping (CodeQL js/xss)", () => {
     // The payload is percent-encoded, so it cannot terminate the href attribute.
     expect(payload.html).toContain("%22%3E%3Cscript%3E");
     expect(payload.html).not.toContain('"><script>');
+  });
+});
+
+describe("shared email template (NOTIF-P3-001/005)", () => {
+  it("renders the shared layout with preferences + signed unsubscribe footer links", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    await notifyAndEmail({ ...baseOpts, email: "user@example.com" });
+
+    const payload = (enqueueTask as jest.Mock).mock.calls[0][1] as {
+      subject: string;
+      text: string;
+      html: string;
+    };
+    expect(payload.subject).toBe("[Maine CyberTech] New Comment on Ticket");
+    expect(payload.html).toContain("Manage notification preferences");
+    expect(payload.html).toContain("Unsubscribe from these emails");
+
+    const match = payload.html.match(/unsubscribe\?token=([^"&]+)/);
+    expect(match).not.toBeNull();
+    const token = decodeURIComponent((match as RegExpMatchArray)[1]!);
+    expect(verifyUnsubscribeToken(token, "test-service-role-key")).toEqual({
+      userId: "user-1",
+      organizationId: "org-1",
+    });
+  });
+});
+
+describe("per-recipient email throttle (NOTIF-P3-007)", () => {
+  it("drops only the email (in-app row stays) when the recipient budget is exhausted", async () => {
+    (isEmailThrottled as jest.Mock).mockResolvedValueOnce(true);
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    const result = await notifyAndEmail({ ...baseOpts, email: "user@example.com" });
+
+    expect(result.emailThrottled).toBe(true);
+    expect(result.emailSkipped).toBe(true);
+    expect(result.emailQueued).toBe(false);
+    expect(result.inserted).toBe(true);
+    expect(enqueueTask).not.toHaveBeenCalled();
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("checks the throttle against the recipient address", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    await notifyAndEmail({ ...baseOpts, email: "recipient@example.com" });
+
+    expect(isEmailThrottled).toHaveBeenCalledWith("recipient@example.com");
   });
 });
 

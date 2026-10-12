@@ -63,7 +63,18 @@ echo "=== Supabase Storage Restore ==="
 
 if [ -n "${ARCHIVE_FILE}" ]; then
   echo "Using specified archive: ${ARCHIVE_FILE}"
-  aws s3 cp "${ARCHIVE_FILE}" /tmp/storage-restore.download
+  if [[ "${ARCHIVE_FILE}" == s3://* ]]; then
+    aws s3 cp "${ARCHIVE_FILE}" /tmp/storage-restore.download
+  else
+    # Local archive support (FILE-P3-004): the restore exercise feeds synthetic
+    # archives from a temp dir, so no AWS CLI/network is needed to prove the
+    # verification path.
+    if [ ! -f "${ARCHIVE_FILE}" ]; then
+      echo "ERROR: local archive not found: ${ARCHIVE_FILE}" >&2
+      exit 1
+    fi
+    cp "${ARCHIVE_FILE}" /tmp/storage-restore.download
+  fi
   DOWNLOAD_NAME="${ARCHIVE_FILE}"
 else
   echo "Finding latest storage backup in ${S3_URI}..."

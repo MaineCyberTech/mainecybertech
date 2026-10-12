@@ -35,6 +35,7 @@ import searchPortalRouter from "./routes/search-portal";
 import docsRouter from "./routes/docs";
 import publicRouter from "./routes/public";
 import notificationsRouter from "./routes/notifications";
+import notificationUnsubscribeRouter from "./routes/notification-unsubscribe";
 import notificationPreferencesRouter from "./routes/notification-preferences";
 import pushSubscriptionsRouter from "./routes/push-subscriptions";
 import billingRouter from "./routes/billing";
@@ -183,6 +184,7 @@ export function createApp(): Express {
   app.use("/api/v1/search", searchRouter);
   app.use("/api/v1/search/portal", searchPortalRouter);
   app.use("/api/v1/public", publicRouter);
+  app.use("/api/v1/notifications/unsubscribe", notificationUnsubscribeRouter);
   app.use("/api/v1/notifications", notificationsRouter);
   app.use("/api/v1/notification-preferences", notificationPreferencesRouter);
   app.use("/api/v1/push-subscriptions", pushSubscriptionsRouter);

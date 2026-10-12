@@ -189,3 +189,47 @@ export async function deleteIdempotencyKey(key: string): Promise<void> {
     // lock is released by the promise chain
   }
 }
+
+/**
+ * NOTIF-P3-007: atomically increment a counter key (Redis INCR + EXPIRE, or
+ * the in-memory fallback) and return the post-increment value. Used by the
+ * per-recipient email throttle; unlike `claimIdempotencyKey` it never rejects
+ * the call, the caller compares the returned count against its ceiling.
+ */
+export async function incrementIdempotencyCounter(
+  key: string,
+  ttlSeconds: number,
+): Promise<number> {
+  const redis = getRedisClient();
+  const prefixedKey = `idempotency:${key}`;
+
+  if (redis) {
+    try {
+      const count = await redis.incr(prefixedKey);
+      if (count === 1) await redis.expire(prefixedKey, ttlSeconds);
+      return count;
+    } catch (err: unknown) {
+      recordRedisFailure("idempotency", "incr");
+      logger.warn(
+        { error: String(err) },
+        "Redis incrementIdempotencyCounter failed, falling back to in-memory",
+      );
+    }
+  }
+
+  await acquireMemoryLock();
+  try {
+    const now = Date.now();
+    const entry = IN_MEMORY_FALLBACK.get(key);
+    if (!entry || entry.expiresAt <= now) {
+      evictInMemoryIfNeeded();
+      IN_MEMORY_FALLBACK.set(key, { value: "1", expiresAt: now + ttlSeconds * 1000 });
+      return 1;
+    }
+    const next = Number(entry.value) + 1;
+    entry.value = String(Number.isFinite(next) ? next : 1);
+    return Number(entry.value);
+  } finally {
+    // lock is released by the promise chain
+  }
+}

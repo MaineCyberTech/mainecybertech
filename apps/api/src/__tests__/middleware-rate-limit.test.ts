@@ -7,6 +7,8 @@ import {
   rateLimitAuth,
   rateLimitByUser,
   rateLimitSearch,
+  rateLimitShare,
+  shareRateLimitKey,
   userRateLimitKeyGenerator,
 } from "../middleware/rate-limit";
 
@@ -84,6 +86,42 @@ describe("rateLimitSearch", () => {
     }
     const otherUser = await request(app).get("/test").set("Authorization", "Bearer token-b");
     expect(otherUser.status).toBe(200);
+  }, 30000);
+});
+
+describe("rateLimitShare (FILE-P3-001)", () => {
+  function createShareApp() {
+    const app = express();
+    app.use(rateLimitShare);
+    app.get("/share/:token", (_req, res) => res.json({ ok: true }));
+    return app;
+  }
+
+  it("keys the bucket by sha256(token), not the raw token", () => {
+    const key = shareRateLimitKey("raw-share-token");
+    expect(key).toMatch(/^[0-9a-f]{32}$/);
+    expect(key).not.toContain("raw-share-token");
+    expect(shareRateLimitKey("raw-share-token")).toBe(key);
+    expect(shareRateLimitKey("other")).not.toBe(key);
+  });
+
+  it("caps a hot share token at 30 requests/minute", async () => {
+    const app = createShareApp();
+    let limited = 0;
+    for (let i = 0; i < 31; i++) {
+      const res = await request(app).get("/share/hot-token");
+      if (res.status === 429) limited++;
+    }
+    expect(limited).toBe(1);
+  }, 30000);
+
+  it("keeps a separate bucket per token", async () => {
+    const app = createShareApp();
+    for (let i = 0; i < 31; i++) {
+      await request(app).get("/share/busy-token");
+    }
+    const other = await request(app).get("/share/quiet-token");
+    expect(other.status).toBe(200);
   }, 30000);
 });
 

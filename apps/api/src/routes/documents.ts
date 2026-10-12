@@ -10,10 +10,11 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { getEnv } from "../config/env";
 import { responseCacheNoRenew } from "../middleware/cache";
-import { rateLimitAdminOps } from "../middleware/rate-limit";
+import { rateLimitAdminOps, rateLimitShare } from "../middleware/rate-limit";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { validateUploadContent } from "../lib/upload-validation";
+import { signedUrlDisposition } from "../lib/preview-policy";
 import { scanUploadForMalware } from "../lib/malware-scan";
 import {
   createDocumentSchema,
@@ -148,10 +149,21 @@ const DOCUMENTS_BUCKET = "documents";
 
 const router: ReturnType<typeof Router> = Router();
 
-router.get("/shares/:token", async (req, res, next) => {
+/**
+ * FILE-P3-005: signed share URLs are short-lived (5 min) so revoking a share
+ * bounds the residual exposure of an already-issued URL to that window
+ * instead of the previous 60 minutes. The public endpoint also forces a
+ * download disposition — a shared file is never rendered inline from the
+ * storage origin. The residual window is documented in docs/modules/documents.md.
+ */
+const SHARE_SIGNED_URL_TTL_SECONDS = 300;
+
+router.get("/shares/:token", rateLimitShare, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { token } = req.params;
+    // The extra limiter middleware widens Express' inferred params type; the
+    // token is always a single path segment.
+    const token = req.params.token as string;
 
     const { data: share, error: shareError } = await supabase
       .from("document_shares")
@@ -175,7 +187,7 @@ router.get("/shares/:token", async (req, res, next) => {
 
     const { data: signedUrl, error: urlError } = await supabase.storage
       .from(doc.storage_bucket)
-      .createSignedUrl(doc.storage_path, 3600);
+      .createSignedUrl(doc.storage_path, SHARE_SIGNED_URL_TTL_SECONDS, { download: true });
 
     if (urlError || !signedUrl)
       throw new AppError("STORAGE_ERROR", "Failed to generate download URL", 500);
@@ -200,7 +212,7 @@ router.get("/shares/:token", async (req, res, next) => {
         documentName: doc.name,
         mimeType: doc.mime_type,
         downloadUrl: signedUrl.signedUrl,
-        expiresIn: 3600,
+        expiresIn: SHARE_SIGNED_URL_TTL_SECONDS,
       }),
     );
   } catch (error) {
@@ -635,7 +647,9 @@ router.post("/:id/signed-url", requirePermission("documents", "create"), async (
     const supabase = getScopedClient(req, "documents", "write");
     let query = supabase
       .from("documents")
-      .select("id, organization_id, visibility, uploaded_by, storage_bucket, storage_path")
+      .select(
+        "id, organization_id, visibility, uploaded_by, storage_bucket, storage_path, mime_type, file_name",
+      )
       .eq("id", String(req.params.id));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data: doc, error: docError } = await query.single();
@@ -652,9 +666,12 @@ router.post("/:id/signed-url", requirePermission("documents", "create"), async (
     if (!doc.storage_bucket || !doc.storage_path)
       throw new AppError("BAD_REQUEST", "Document has no storage reference", 400);
 
+    // FILE-P3-008: types the portal never previews are signed with
+    // `Content-Disposition: attachment` so they cannot render inline from the
+    // storage origin even if content validation were bypassed.
     const { data: signedUrl, error: urlError } = await supabase.storage
       .from(doc.storage_bucket)
-      .createSignedUrl(doc.storage_path, 3600);
+      .createSignedUrl(doc.storage_path, 3600, signedUrlDisposition(doc.mime_type, doc.file_name));
 
     if (urlError || !signedUrl)
       throw new AppError("STORAGE_ERROR", "Failed to create signed URL", 500);
@@ -956,7 +973,7 @@ router.get(
       // a missing document.
       let docQuery = supabase
         .from("documents")
-        .select("id, organization_id, visibility, uploaded_by, storage_bucket")
+        .select("id, organization_id, visibility, uploaded_by, storage_bucket, mime_type, file_name")
         .eq("id", String(req.params.id));
       if (orgId) docQuery = docQuery.eq("organization_id", orgId);
       const { data: doc, error: docError } = await docQuery.single();
@@ -985,7 +1002,11 @@ router.get(
       // signed-url endpoint. Never trust a caller-supplied bucket (FILE-P2-001).
       const { data: signedUrl, error: urlError } = await supabase.storage
         .from(doc.storage_bucket)
-        .createSignedUrl(version.storage_path, 3600);
+        .createSignedUrl(
+          version.storage_path,
+          3600,
+          signedUrlDisposition(doc.mime_type, doc.file_name),
+        );
 
       if (urlError || !signedUrl)
         throw new AppError("STORAGE_ERROR", "Failed to create signed URL", 500);

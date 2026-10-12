@@ -7,10 +7,19 @@ import { getEnv } from "../config/env";
 import { claimIdempotencyKey } from "./idempotency";
 import { resolveChannels, type ResolvedChannels } from "./notification-channels";
 import { redactSensitiveContent } from "./notification-content";
+import { isEmailThrottled } from "./notification-throttle";
+import {
+  EMAIL_SUBJECT_PREFIX,
+  buildNotificationEmail,
+  notificationFooterLinks,
+  renderEmailLayout,
+} from "@mct/sdk/email-template";
+import { buildUnsubscribeUrl } from "./unsubscribe-token";
 import {
   recordNotificationDelivery,
   recordNotificationDedup,
   recordNotificationSuppressed,
+  recordNotificationThrottled,
 } from "./metrics";
 
 type NotificationModule = "tickets" | "projects" | "documents" | "billing" | "system";
@@ -47,18 +56,10 @@ export interface NotifyResult extends CreateNotificationResult {
   emailQueued: boolean;
   emailSent: boolean;
   emailSkipped: boolean;
+  /** True when the email was dropped by the per-recipient throttle (NOTIF-P3-007). */
+  emailThrottled?: boolean;
   pushQueued: boolean;
   pushSkipped: boolean;
-}
-
-/** Escape user-controlled content before interpolating it into email HTML. */
-export function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
 
 /** NOTIF-P2-005: apply the sensitivity filter to the stored/emailed fields. */
@@ -400,15 +401,70 @@ export async function notifyAndEmail(
     return { ...inApp, ...push, emailQueued: false, emailSent: false, emailSkipped: true };
   }
 
-  const emailPayload = {
-    to: emailTo,
-    subject: `[Maine CyberTech] ${safeOpts.title}`,
-    text: `${safeOpts.body}\n\nView: ${baseUrl}${modulePath}`,
-    html:
-      opts.emailHtml != null
-        ? redactSensitiveContent(opts.emailHtml)
-        : `<p>${escapeHtml(safeOpts.body).replace(/\n/g, "<br/>")}</p>${modulePath ? `<p><a href="${escapeHtml(`${baseUrl}${modulePath}`)}">View details</a></p>` : ""}`,
-  };
+  // NOTIF-P3-007: bound how many emails one recipient can receive per hour.
+  // The global limiter still allows hundreds of distinct comment emails; this
+  // recipient-scoped bucket drops only the email (the in-app row stays) and
+  // meters the drop separately from a preference opt-out.
+  if (await isEmailThrottled(emailTo)) {
+    recordNotificationThrottled("email");
+    logger.warn(
+      { userId: opts.userId, module: opts.module, action: opts.action },
+      "Email notification throttled per recipient",
+    );
+    return {
+      ...inApp,
+      ...push,
+      emailQueued: false,
+      emailSent: false,
+      emailSkipped: true,
+      emailThrottled: true,
+    };
+  }
+
+  // NOTIF-P3-001: one shared template builds subject/text/html (branding,
+  // footer) for every sender. NOTIF-P3-005: the footer carries the
+  // preferences link and a signed one-click unsubscribe link.
+  const actionUrl = modulePath ? `${baseUrl}${modulePath}` : undefined;
+  const preferencesUrl = `${baseUrl}/portal/notifications/preferences`;
+  const unsubscribeUrl = opts.organizationId
+    ? buildUnsubscribeUrl({
+        apiBaseUrl: baseUrl,
+        userId: safeOpts.userId,
+        organizationId: opts.organizationId,
+        serviceRoleKey: getEnv().SUPABASE_SERVICE_ROLE_KEY,
+      })
+    : undefined;
+  const footerLinks = notificationFooterLinks({ preferencesUrl, unsubscribeUrl });
+
+  const emailPayload =
+    opts.emailHtml != null
+      ? {
+          to: emailTo,
+          subject: `${EMAIL_SUBJECT_PREFIX} ${safeOpts.title}`,
+          text: [
+            safeOpts.body,
+            ...(actionUrl ? [`View: ${actionUrl}`] : []),
+            ...footerLinks.map((link) => `${link.label}: ${link.url}`),
+          ].join("\n\n"),
+          html: renderEmailLayout({
+            heading: safeOpts.title,
+            bodyHtml: redactSensitiveContent(opts.emailHtml),
+            actionUrl,
+            actionLabel: "View details",
+            footerLinks,
+          }),
+        }
+      : {
+          to: emailTo,
+          ...buildNotificationEmail({
+            title: safeOpts.title,
+            body: safeOpts.body,
+            actionUrl,
+            actionLabel: "View details",
+            preferencesUrl,
+            unsubscribeUrl,
+          }),
+        };
 
   // Route email through the worker queue when available (retries + backoff);
   // fall back to sending inline so the notification is never lost.

@@ -54,6 +54,7 @@ jobs:
         # prefix). Shared with test.yml's required test job.
         uses: ./.github/actions/shellcheck
 
+<<<<<<< HEAD
       - name: Lint Dockerfiles (hadolint)
         # CTR-P3-008: Dockerfile hygiene (explicit WORKDIR, exec-form
         # healthchecks) had no CI gate, so it could silently regress. Shared
@@ -65,6 +66,13 @@ jobs:
         # exercised against a stubbed aws CLI (listing, scratch copy, restore
         # guard). Shared with test.yml's required test job.
         uses: ./.github/actions/terraform-state-restore-test
+=======
+      - name: Exercise storage restore verification
+        # FILE-P3-004: drive scripts/restore-storage.sh --verify-only against
+        # synthetic archives (valid + corrupt + encrypted) so the restore path
+        # is exercised on every run without live Spaces secrets.
+        run: bash scripts/exercise-storage-restore.sh
+>>>>>>> 3d08153c (fix(files,notif,webhooks): P3 batch — share limiter/TTL, upload errors, email template + unsubscribe, event catalog)
 
   test:
     timeout-minutes: 30

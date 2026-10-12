@@ -554,6 +554,131 @@ describe("documents routes", () => {
 
       expect(res.status).toBe(400);
     });
+
+    it("signs previewable types inline but non-previewable types as attachments (FILE-P3-008)", async () => {
+      const previewable = mockDocumentDownload({
+        document: { ...VISIBLE_DOCUMENT, mime_type: "image/png", file_name: "logo.png" },
+      });
+      await request(app)
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
+        .set("Authorization", "Bearer token-123");
+      expect(previewable.storage.from("documents").createSignedUrl).toHaveBeenCalledWith(
+        "org-1/file.pdf",
+        3600,
+        undefined,
+      );
+
+      const attachment = mockDocumentDownload({
+        document: {
+          ...VISIBLE_DOCUMENT,
+          mime_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          file_name: "contract.docx",
+        },
+      });
+      await request(app)
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
+        .set("Authorization", "Bearer token-123");
+      expect(attachment.storage.from("documents").createSignedUrl).toHaveBeenCalledWith(
+        "org-1/file.pdf",
+        3600,
+        { download: true },
+      );
+    });
+  });
+
+  describe("GET /shares/:token (public share link, FILE-P3-005)", () => {
+    const SHARE_TOKEN = "f".repeat(64);
+
+    function mockShare(
+      share: Record<string, unknown> | null,
+      opts: { increment?: Record<string, unknown> | null } = {},
+    ) {
+      const shareBuilder = createMockBuilder({
+        data: share,
+        error: share ? null : { message: "not found" },
+      } as MockResult);
+      const incrementBuilder = createMockBuilder({
+        data: opts.increment === undefined ? { id: "share-1" } : opts.increment,
+        error: null,
+      } as MockResult);
+      let call = 0;
+      const createSignedUrl = jest
+        .fn()
+        .mockResolvedValue({ data: { signedUrl: "https://signed" }, error: null });
+      const supabase = {
+        from: jest.fn((table: string) => {
+          if (table !== "document_shares") {
+            return createMockBuilder({ data: null, error: null } as MockResult);
+          }
+          call += 1;
+          return call === 1 ? shareBuilder : incrementBuilder;
+        }),
+        storage: { from: jest.fn().mockReturnValue({ createSignedUrl }) },
+      };
+      (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
+      return { supabase, createSignedUrl };
+    }
+
+    function validShare(overrides: Record<string, unknown> = {}) {
+      return {
+        id: "share-1",
+        token: SHARE_TOKEN,
+        revoked_at: null,
+        expires_at: new Date(Date.now() + 3600_000).toISOString(),
+        access_count: 0,
+        max_access: null,
+        documents: {
+          id: "doc-1",
+          name: "Invoice.pdf",
+          storage_bucket: "documents",
+          storage_path: "org-1/invoice.pdf",
+          mime_type: "application/pdf",
+        },
+        ...overrides,
+      };
+    }
+
+    it("mints a short-lived attachment URL for an active share", async () => {
+      const { createSignedUrl } = mockShare(validShare());
+
+      const res = await request(app).get(`/api/v1/documents/shares/${SHARE_TOKEN}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.downloadUrl).toBe("https://signed");
+      expect(res.body.data.expiresIn).toBe(300);
+      expect(createSignedUrl).toHaveBeenCalledWith("org-1/invoice.pdf", 300, {
+        download: true,
+      });
+    });
+
+    it("refuses a revoked share without minting a URL", async () => {
+      const { createSignedUrl } = mockShare(
+        validShare({ revoked_at: new Date().toISOString() }),
+      );
+
+      const res = await request(app).get(`/api/v1/documents/shares/${SHARE_TOKEN}`);
+
+      expect(res.status).toBe(403);
+      expect(createSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it("refuses a share at max_access without minting a URL", async () => {
+      const { createSignedUrl } = mockShare(validShare({ access_count: 2, max_access: 2 }));
+
+      const res = await request(app).get(`/api/v1/documents/shares/${SHARE_TOKEN}`);
+
+      expect(res.status).toBe(403);
+      expect(createSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it("returns 404 for an unknown token", async () => {
+      const { createSignedUrl } = mockShare(null);
+
+      const res = await request(app).get(`/api/v1/documents/shares/${SHARE_TOKEN}`);
+
+      expect(res.status).toBe(404);
+      expect(createSignedUrl).not.toHaveBeenCalled();
+    });
   });
 
   describe("GET /:id/versions/:versionId/signed-url", () => {
@@ -590,9 +715,12 @@ describe("documents routes", () => {
 
       // Bucket comes from documents.storage_bucket, not a caller-supplied value.
       expect(supabase.storage.from).toHaveBeenCalledWith("documents");
+      // No MIME/name on the fixture → not previewable → attachment disposition
+      // (FILE-P3-008).
       expect(supabase.storage.from("documents").createSignedUrl).toHaveBeenCalledWith(
         "org-1/1000-old.pdf",
         3600,
+        { download: true },
       );
     });
 

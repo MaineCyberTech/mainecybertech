@@ -94,6 +94,47 @@ export const rateLimitAdminOps = rateLimit({
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
 
+/**
+ * FILE-P3-001: per-token limiter for the public document-share endpoint.
+ *
+ * The share token is a 32-byte capability, but a leaked token could be fetched
+ * at the global per-IP rate (300/15 min) and burn `max_access` or hammer the
+ * Storage signer. Key by sha256(token) — never the raw token — so one hot link
+ * cannot exhaust a shared IP bucket, and cap it well above human use (30/min)
+ * while staying far below the global budget.
+ */
+export function shareRateLimitKey(token: unknown): string {
+  return crypto.createHash("sha256").update(String(token ?? "")).digest("hex").slice(0, 32);
+}
+
+export const rateLimitShare = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: "Too many requests for this share link, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `share:${shareRateLimitKey(req.params.token)}`,
+  skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
+});
+
+/**
+ * NOTIF-P3-005: limiter for the public unsubscribe endpoint. The token is
+ * high-entropy and the write is idempotent, but an unauthenticated mutation
+ * still needs an IP ceiling to bound scripted abuse.
+ */
+export const rateLimitUnsubscribe = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: "Too many unsubscribe requests, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const token = (req.query as Record<string, unknown> | undefined)?.token;
+    return `unsubscribe:${typeof token === "string" ? shareRateLimitKey(token) : `ip:${req.ip}`}`;
+  },
+  skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
+});
+
 export const rateLimitAuth = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
