@@ -20,6 +20,8 @@ import {
 } from "../lib/webhook-schemas";
 import { recordWebhookDelivery } from "../lib/metrics";
 import { notifyBillingPaymentFailure } from "../lib/billing-dunning";
+import { invoicePaidAtIso, epochSecondsToIsoOrNow } from "../lib/billing-timestamps";
+import { encryptField } from "../lib/field-encryption";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { type Row } from "../lib/db-types";
 import { timingSafeCompare } from "../lib/timing-safe";
@@ -351,10 +353,9 @@ router.post("/stripe", async (req, res, next) => {
                 hosted_invoice_url: inv.hosted_invoice_url,
                 invoice_pdf_url: inv.invoice_pdf,
                 due_at: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
-                paid_at:
-                  inv.status === "paid"
-                    ? new Date(inv.status_transitions?.paid_at * 1000).toISOString()
-                    : null,
+                // BILL-P3-003: tolerate a missing `status_transitions`
+                // instead of throwing on `undefined * 1000`.
+                paid_at: inv.status === "paid" ? invoicePaidAtIso(inv) : null,
               },
               { onConflict: "stripe_invoice_id" },
             );
@@ -467,13 +468,17 @@ router.post("/stripe", async (req, res, next) => {
     if (event.type === "checkout.session.completed") {
       const session = event.data?.object;
       if (session?.customer && session?.client_reference_id) {
+        // BILL-P3-002: the billing contact email is PII and must not sit in
+        // the table in plaintext; store it through the field-encryption
+        // helper (legacy plaintext rows still decrypt to themselves).
+        const billingEmail = session.customer_details?.email;
         const { error: billingCustomerWriteError } = await supabase
           .from("billing_customers")
           .upsert(
             {
               organization_id: session.client_reference_id,
               stripe_customer_id: session.customer,
-              billing_email: session.customer_details?.email ?? null,
+              billing_email: billingEmail ? encryptField(billingEmail) : null,
             },
             { onConflict: "organization_id" },
           );
@@ -526,7 +531,7 @@ router.post("/stripe", async (req, res, next) => {
                 ),
                 currency: pi.currency,
                 status: mapPaymentIntentStatus(pi.status),
-                paid_at: succeeded ? new Date((pi.created ?? 0) * 1000).toISOString() : null,
+                paid_at: succeeded ? epochSecondsToIsoOrNow(pi.created) : null,
               },
               { onConflict: "stripe_payment_intent_id" },
             );

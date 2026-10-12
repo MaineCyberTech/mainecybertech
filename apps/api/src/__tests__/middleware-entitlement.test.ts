@@ -181,6 +181,28 @@ describe("requireEntitlement middleware", () => {
     expect(res.status).toBe(200);
   });
 
+  it("honors an all-disabled admin override instead of falling back to the subscription set (BILL-P3-005)", async () => {
+    mockSupabase([
+      NOT_SUPER,
+      { data: [membership("client_user")], error: null },
+      ...prefixed(
+        EMPTY,
+        { data: [{ status: "active", updated_at: "2026-01-01" }], error: null },
+        {
+          data: [
+            { module_key: "findings", enabled: false },
+            { module_key: "qbr", enabled: false },
+          ],
+          error: null,
+        },
+      ),
+    ]);
+
+    const res = await request(makeApp(requireEntitlement("findings"))).get("/api/v1/test/gated");
+    expect(res.status).toBe(402);
+    expect(res.body.error?.code).toBe("PAYMENT_REQUIRED");
+  });
+
   it("always allows default (non-gated) modules without an active subscription", async () => {
     mockSupabase([NOT_SUPER, { data: [membership("client_user")], error: null }, ...prefixed(EMPTY, EMPTY, EMPTY)]);
 

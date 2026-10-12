@@ -13,6 +13,8 @@ import { queryInt } from "../lib/query";
 import { resolveAdminTenantScope, applyOrgScope, applyRequestedOrg } from "../lib/admin-scope";
 import { resolveEffectivePermissions, ADMIN_BYPASS_KEYS } from "../lib/permissions";
 import { listCountMode } from "../lib/pagination";
+import { decryptField } from "../lib/field-encryption";
+import { invoicePaidAtIso, epochSecondsToIsoOrNow } from "../lib/billing-timestamps";
 
 type StripePrice = {
   nickname?: string | null;
@@ -33,6 +35,7 @@ type StripeInvoice = {
   hosted_invoice_url: string | null;
   invoice_pdf: string | null;
   due_date: number | null;
+  created?: number | null;
   status_transitions?: { paid_at?: number | null; voided_at?: number | null } | null;
 };
 
@@ -187,6 +190,37 @@ function latestRefundCreated(charge: StripeCharge): number | null {
   return latest > 0 ? latest : null;
 }
 
+/**
+ * BILL-P3-002: never return the raw Stripe payment-method id (`pm_...`) to
+ * users. Both billing UIs rendered it verbatim; the API now redacts it to a
+ * prefix + last four characters so the portal shows an opaque descriptor
+ * instead of a usable Stripe token.
+ */
+function maskPaymentMethodId(paymentMethodId: string | null | undefined): string | null {
+  if (!paymentMethodId) return null;
+  if (paymentMethodId.length <= 8) return "••••";
+  return `${paymentMethodId.slice(0, 3)}••••${paymentMethodId.slice(-4)}`;
+}
+
+/**
+ * BILL-P3-002: `billing_customers.billing_email` is stored encrypted (see
+ * webhooks.ts checkout.session.completed). Legacy plaintext rows (and the
+ * dev/test `plain:` fallback) decrypt to themselves; a malformed ciphertext
+ * must not 500 the read, so it degrades to null.
+ */
+function decryptBillingEmail(stored: string | null | undefined): string | null {
+  if (!stored) return null;
+  try {
+    return decryptField(stored);
+  } catch (error) {
+    logger.error(
+      { err: error instanceof Error ? error.message : String(error) },
+      "Failed to decrypt billing email",
+    );
+    return null;
+  }
+}
+
 router.get("/summary", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "billing", "read");
@@ -208,30 +242,25 @@ router.get("/summary", async (req, res, next) => {
       { count: totalInvoices },
       { data: recentInvoices },
     ] = await Promise.all([
-      supabase
-        .from("subscriptions")
-        .select("*", { count: "exact", head: true })
-        .then((q) => baseQuery(q))
-        .then((q) => q.eq("status", "active")),
-      supabase
-        .from("invoices")
-        .select("*", { count: "exact", head: true })
-        .then((q) => baseQuery(q))
-        .then((q) => q.eq("status", "overdue")),
-      supabase
-        .from("invoices")
-        .select("*", { count: "exact", head: true })
-        .then((q) => baseQuery(q))
-        .then((q) => q.eq("status", "paid")),
-      supabase
-        .from("invoices")
-        .select("*", { count: "exact", head: true })
-        .then((q) => baseQuery(q)),
-      supabase
-        .from("invoices")
-        .select("*")
-        .then((q) => baseQuery(q))
-        .then((q) => q.order("created_at", { ascending: false }).limit(5)),
+      // Apply the scope + filters to the builder *before* awaiting it: a
+      // supabase-js `.then()` resolves the PostgREST response, so chaining
+      // predicates onto the resolved value throws (the summary used to 500).
+      baseQuery(supabase.from("subscriptions").select("*", { count: "exact", head: true }))
+        // BILL-P3-006: mirror `isSubscriptionActive` — a trialing plan is an
+        // active plan for entitlement purposes, so it must not show as 0.
+        .in("status", ["active", "trialing"]),
+      baseQuery(supabase.from("invoices").select("*", { count: "exact", head: true })).eq(
+        "status",
+        "overdue",
+      ),
+      baseQuery(supabase.from("invoices").select("*", { count: "exact", head: true })).eq(
+        "status",
+        "paid",
+      ),
+      baseQuery(supabase.from("invoices").select("*", { count: "exact", head: true })),
+      baseQuery(supabase.from("invoices").select("*"))
+        .order("created_at", { ascending: false })
+        .limit(5),
     ]);
 
     res.json(
@@ -325,7 +354,10 @@ router.get("/payments", async (req, res, next) => {
 
     let query = supabase
       .from("payments")
-      .select("*, invoices!inner(invoice_number, status)", { count: listCountMode(req.query) });
+      // BILL-P3-004: left join (no `!inner`) so payments without a mirrored
+      // invoice (one-off PaymentIntents, invoice not yet synced) still list
+      // with a null invoice column instead of disappearing.
+      .select("*, invoices(invoice_number, status)", { count: listCountMode(req.query) });
     query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
     query = applyOrgScope(query, "organization_id", scope);
 
@@ -351,7 +383,19 @@ router.get("/billing-customer", async (req, res, next) => {
     query = applyOrgScope(query, "organization_id", scope);
     const { data, error } = await query.single();
     if (error && error.code !== "PGRST116") throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data ?? null));
+    if (!data) {
+      res.json(success(null));
+      return;
+    }
+    // BILL-P3-002: decrypt the stored billing contact email and redact the raw
+    // Stripe payment-method id before it reaches any user-facing response.
+    res.json(
+      success({
+        ...data,
+        billing_email: decryptBillingEmail(data.billing_email),
+        default_payment_method: maskPaymentMethodId(data.default_payment_method),
+      }),
+    );
   } catch (error) {
     next(error);
   }
@@ -481,10 +525,9 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
             hosted_invoice_url: inv.hosted_invoice_url,
             invoice_pdf_url: inv.invoice_pdf,
             due_at: inv.due_date ? new Date((inv.due_date ?? 0) * 1000).toISOString() : null,
-            paid_at:
-              inv.status === "paid"
-                ? new Date((inv.status_transitions?.paid_at ?? 0) * 1000).toISOString()
-                : null,
+            // BILL-P3-003: `status_transitions.paid_at` can be absent — never
+            // write 1970-01-01 for a paid invoice.
+            paid_at: inv.status === "paid" ? invoicePaidAtIso(inv) : null,
             // BILL-P2-005: timestamp the void transition. Undefined keeps any
             // previously recorded value when Stripe omits status_transitions.
             voided_at: inv.status_transitions?.voided_at
@@ -573,7 +616,7 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
                 : pi.status === "canceled" || pi.status === "requires_payment_method"
                   ? "failed"
                   : "pending",
-              paid_at: succeeded ? new Date((pi.created ?? 0) * 1000).toISOString() : null,
+              paid_at: succeeded ? epochSecondsToIsoOrNow(pi.created) : null,
             },
             { onConflict: "stripe_payment_intent_id" },
           );
