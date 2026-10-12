@@ -741,6 +741,7 @@ export async function createSatisfaction(formData: FormData) {
       question: String(formData.get("question") || ""),
       rating: Number(formData.get("rating") || 0),
       feedback: String(formData.get("feedback") || ""),
+      source: "ticket",
     });
     revalidatePath("/admin/final/satisfaction");
     return { ok: true };
