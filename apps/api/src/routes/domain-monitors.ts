@@ -226,7 +226,7 @@ router.patch(
       const supabase = getScopedClient(req, "domain-monitors", "write");
       const current = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "domain_monitors",
         String(req.params.id as string),
       );
@@ -284,7 +284,7 @@ router.delete("/:id", requirePermission("domain-monitors", "delete"), async (req
   try {
     assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "domain-monitors", "write");
-    await loadOwned(req, supabase as any, "domain_monitors", String(req.params.id as string));
+    await loadOwned(req, supabase, "domain_monitors", String(req.params.id as string));
     const { error } = await supabase
       .from("domain_monitors")
       .delete()

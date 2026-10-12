@@ -119,7 +119,7 @@ router.get(
       const supabase = getSupabaseAdmin();
       const record = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "client_onboarding_command_center_records",
         getParam(req, "id"),
         "id, organization_id",
@@ -157,7 +157,7 @@ router.patch(
     const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const record = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "client_onboarding_command_center_records",
       getParam(req, "id"),
       "id, organization_id",
@@ -181,7 +181,7 @@ router.delete(
     const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const record = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "client_onboarding_command_center_records",
       getParam(req, "id"),
       "id, organization_id",
@@ -207,7 +207,7 @@ router.post(
     const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const record = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "client_onboarding_command_center_records",
       getParam(req, "id"),
       "id, organization_id, phase",
@@ -250,7 +250,7 @@ router.patch(
     const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const item = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "client_onboarding_checklist_items",
       getParam(req, "itemId"),
       "id, organization_id",

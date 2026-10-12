@@ -116,7 +116,7 @@ router.patch("/:id", requirePermission("device-profiles", "edit"), async (req, r
   try {
     const parsed = updateDeviceProfileSchema.parse(req.body);
     const supabase = getScopedClient(req, "device-profiles", "write");
-    await loadOwned(req, supabase as any, "device_profiles", String(req.params.id as string));
+    await loadOwned(req, supabase, "device_profiles", String(req.params.id as string));
 
     const updateData: Record<string, unknown> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
@@ -153,7 +153,7 @@ router.delete("/:id", requirePermission("device-profiles", "delete"), async (req
   try {
     assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "device-profiles", "write");
-    await loadOwned(req, supabase as any, "device_profiles", String(req.params.id as string));
+    await loadOwned(req, supabase, "device_profiles", String(req.params.id as string));
     const { error } = await supabase
       .from("device_profiles")
       .delete()

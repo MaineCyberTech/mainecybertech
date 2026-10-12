@@ -297,7 +297,7 @@ router.patch(
 
       const current = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "proposals",
         String(req.params.id) as string,
         "id, version, organization_id",
@@ -347,7 +347,7 @@ router.delete("/:id", requirePermission("proposals", "delete"), async (req, res,
     const supabase = getScopedClient(req, "proposals", "write");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "proposals",
       String(req.params.id) as string,
       "id, organization_id",
@@ -377,7 +377,7 @@ router.post("/:id/phases", requirePermission("proposals", "create"), async (req,
     const supabase = getScopedClient(req, "proposals", "write");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "proposals",
       String(req.params.id) as string,
       "id, organization_id",
@@ -421,7 +421,7 @@ router.patch(
       const supabase = getScopedClient(req, "proposals", "write");
       await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "proposals",
         String(req.params.id) as string,
         "id, organization_id",
@@ -469,7 +469,7 @@ router.delete(
       const supabase = getScopedClient(req, "proposals", "write");
       await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "proposals",
         String(req.params.id) as string,
         "id, organization_id",
@@ -549,7 +549,7 @@ router.post("/:id/items", requirePermission("proposals", "create"), async (req, 
     const supabase = getScopedClient(req, "proposals", "write");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "proposals",
       String(req.params.id) as string,
       "id, organization_id",
@@ -605,7 +605,7 @@ router.patch(
       const supabase = getScopedClient(req, "proposals", "write");
       await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "proposals",
         String(req.params.id) as string,
         "id, organization_id",
@@ -663,7 +663,7 @@ router.delete(
       const supabase = getScopedClient(req, "proposals", "write");
       await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "proposals",
         String(req.params.id) as string,
         "id, organization_id",
@@ -703,7 +703,7 @@ router.post(
 
       const proposal = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "proposals",
         String(req.params.id) as string,
         "id, organization_id, title, description, status, grand_total, version",
@@ -779,7 +779,7 @@ router.post("/:id/publish", requirePermission("proposals", "edit"), async (req, 
 
     const current = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "proposals",
       String(req.params.id) as string,
       "id, organization_id, version, status",
@@ -840,7 +840,7 @@ router.get("/:id/comments", async (req, res, next) => {
     const supabase = getScopedClient(req, "proposals", "read");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "proposals",
       String(req.params.id) as string,
       "id, organization_id",
@@ -865,7 +865,7 @@ router.post("/:id/comments", requirePermission("proposals", "create"), async (re
     const supabase = getScopedClient(req, "proposals", "write");
     const proposal = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "proposals",
       String(req.params.id) as string,
       "id, organization_id",
@@ -909,7 +909,7 @@ router.get("/:id/timeline", async (req, res, next) => {
     const supabase = getScopedClient(req, "proposals", "read");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "proposals",
       String(req.params.id) as string,
       "id, organization_id",

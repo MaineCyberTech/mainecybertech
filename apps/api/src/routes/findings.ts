@@ -233,7 +233,7 @@ router.patch(
 
       const current = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "findings",
         String(req.params.id) as string,
         "id, version, organization_id",
@@ -299,7 +299,7 @@ router.delete("/:id", requirePermission("findings", "delete"), async (req, res, 
     const supabase = getScopedClient(req, "findings", "write");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "findings",
       String(req.params.id) as string,
       "id, organization_id",
@@ -330,7 +330,7 @@ router.post("/:id/verify", requirePermission("findings", "edit"), async (req, re
 
     const current = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "findings",
       String(req.params.id) as string,
       "id, organization_id, status, version",
@@ -386,7 +386,7 @@ router.post("/:id/resolve", requirePermission("findings", "edit"), async (req, r
 
     const current = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "findings",
       String(req.params.id) as string,
       "id, organization_id, status, version",
@@ -440,7 +440,7 @@ router.get("/:id/comments", async (req, res, next) => {
     const supabase = getScopedClient(req, "findings", "read");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "findings",
       String(req.params.id) as string,
       "id, organization_id",
@@ -464,7 +464,7 @@ router.post("/:id/comments", async (req, res, next) => {
     const supabase = getScopedClient(req, "findings", "write");
     const finding = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "findings",
       String(req.params.id) as string,
       "id, organization_id",
@@ -508,7 +508,7 @@ router.get("/:id/timeline", async (req, res, next) => {
     const supabase = getScopedClient(req, "findings", "read");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "findings",
       String(req.params.id) as string,
       "id, organization_id",

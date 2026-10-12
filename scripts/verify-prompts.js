@@ -50,7 +50,11 @@ function listFiles() {
   if (!fs.existsSync(PROMPTS_DIR)) return [];
   return walk(PROMPTS_DIR)
     .map((f) => path.relative(PROMPTS_DIR, f).split(path.sep).join("/"))
-    .filter((rel) => rel !== "manifest.json" && rel !== "PROVENANCE.md");
+    .filter((rel) => rel !== "manifest.json" && rel !== "PROVENANCE.md")
+    // Generated Python bytecode is not pinned corpus content; ignore it so a
+    // local `python3 -m compileall` cannot fail the provenance gate
+    // (HYGIENE-P3-005).
+    .filter((rel) => !rel.endsWith(".pyc") && !rel.split("/").includes("__pycache__"));
 }
 
 function fileHashes() {

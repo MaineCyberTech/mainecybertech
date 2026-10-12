@@ -101,3 +101,12 @@ runs:
       # makes the API fallback/seed serve different copy than the storefront.
       shell: bash
       run: node scripts/sync-product-catalog.mjs check
+
+    - name: Verify no circular imports (HYGIENE-P3-009)
+      # Fails when a static import/export/require edge closes a cycle across
+      # apps/* and packages/*. The guard self-tests against a synthetic cycle
+      # first so a broken detector cannot pass silently.
+      shell: bash
+      run: |
+        node scripts/check-circular-deps.mjs --self-test
+        node scripts/check-circular-deps.mjs

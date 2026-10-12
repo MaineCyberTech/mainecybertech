@@ -48,6 +48,13 @@ Rules:
   _prompts_, never results.
 - Reconciliation updates the registers' status columns and `findings.json`; the
   published reports and gate stay point-in-time snapshots.
+- **Bind every reconciliation.** A run whose registers or `findings.json` were
+  amended after publication carries a dated `RECONCILIATION_<YYYY-MM-DD>.md`
+  note in its run directory recording (a) the amendment date, (b) the
+  `develop` commit or PR range the statuses reflect, and (c) the fact that
+  `audit_manifest.json` still binds the audit-time commit. The note is
+  additive: never edit the published reports, gate or manifest to fake the
+  layout (INV-P3-005).
 - Findings verified as false positives stay in the report with the reason, so
   later runs do not re-raise them.
 

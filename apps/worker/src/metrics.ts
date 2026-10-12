@@ -3,6 +3,7 @@ import { getRegisteredTaskTypes } from "./task-registry";
 import { getTaskQueueStats } from "./producer";
 import { getWorkerQueueHealth, getWorkerQueueBackend } from "./queue-health";
 import { redisFailuresTotal } from "./redis-failures";
+import { taskExecutionsTotal, taskExecutionDuration } from "./task-metrics";
 
 const register = new promClient.Registry();
 
@@ -12,20 +13,12 @@ promClient.collectDefaultMetrics({ register });
 // so the fallback paths can meter without importing this registry).
 register.registerMetric(redisFailuresTotal);
 
-export const taskExecutionsTotal = new promClient.Counter({
-  name: "worker_task_executions_total",
-  help: "Total number of task executions",
-  labelNames: ["task_type", "status"] as const,
-  registers: [register],
-});
+// HYGIENE-P3-009: same pattern for the task counters, which task-registry.ts
+// increments without importing this module (that edge was the import cycle).
+register.registerMetric(taskExecutionsTotal);
+register.registerMetric(taskExecutionDuration);
 
-export const taskExecutionDuration = new promClient.Histogram({
-  name: "worker_task_execution_duration_seconds",
-  help: "Task execution duration in seconds",
-  labelNames: ["task_type"] as const,
-  buckets: [0.1, 0.5, 1, 2, 5, 10, 30, 60],
-  registers: [register],
-});
+export { taskExecutionsTotal, taskExecutionDuration } from "./task-metrics";
 
 export const taskQueueDepth = new promClient.Gauge({
   name: "worker_task_queue_depth",

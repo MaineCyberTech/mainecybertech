@@ -111,7 +111,7 @@ router.patch("/:id", requirePermission("network-port-maps", "edit"), async (req,
   try {
     const parsed = updateNetworkDiagramSchema.parse(req.body);
     const supabase = getScopedClient(req, "network-diagrams", "write");
-    await loadOwned(req, supabase as any, "network_diagrams", String(req.params.id as string));
+    await loadOwned(req, supabase, "network_diagrams", String(req.params.id as string));
 
     const updateData: Record<string, unknown> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
@@ -147,7 +147,7 @@ router.delete("/:id", requirePermission("network-port-maps", "delete"), async (r
   try {
     assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "network-diagrams", "write");
-    await loadOwned(req, supabase as any, "network_diagrams", String(req.params.id as string));
+    await loadOwned(req, supabase, "network_diagrams", String(req.params.id as string));
     const { error } = await supabase
       .from("network_diagrams")
       .delete()

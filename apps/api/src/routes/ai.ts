@@ -345,7 +345,7 @@ router.get("/copilot/:ticketId/summarize", async (req, res, next) => {
 
     const ticket = (await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "tickets",
       String(req.params.ticketId),
       "id, title, description, status, priority, category, created_at, organization_id",
@@ -417,7 +417,7 @@ router.post("/copilot/:ticketId/reply-draft", async (req, res, next) => {
     // another tenant's ticket.
     const ticket = (await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "tickets",
       String(req.params.ticketId),
       "id, title, description, status, priority, organization_id",

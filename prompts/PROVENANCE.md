@@ -7,7 +7,7 @@
 > Embedded outputs (findings, reports, engine JSON/py artifacts) are historical
 > snapshots, not current repo state. (AI-P2-002)
 
-The `prompts/` directory contains 630 pinned files across 6 packs — prompt templates
+The `prompts/` directory contains 623 pinned files across 6 packs — prompt templates
 for AI-assisted development AND generated audit outputs (JSON/CSV/py artifacts)
 produced by running those audits. Because these files are not executable in the
 application runtime, but ARE committed to the repo and could be tampered with,
@@ -42,7 +42,7 @@ development or decisions.
 5. **Size budget (HYGIENE-P2-001).** The corpus is deliberately bounded so
    historical prompt/audit material cannot grow into the repo unnoticed: CI
    (`node scripts/verify-prompts.js verify`) fails once the pinned tree exceeds
-   **640 files or 10 MiB** (currently 630 files / ~8.9 MiB). `generate` warns
+   **640 files or 10 MiB** (currently 623 files / ~8.9 MiB). `generate` warns
    when a regeneration crosses the budget. Raising it is a deliberate review
    decision recorded in the PR that adds the files — keep the pin, bound the
    bloat.
@@ -80,4 +80,4 @@ current specification.
 > `20260728…`–`20260806…`) were removed. Audit *outputs* belong under
 > `docs/audits/{name}/{run}/`, not inside the prompt pack; the pack retains only
 > the canonical templates and prompts. `prompts/manifest.json` is regenerated
-> accordingly (630 pinned files, down from 787).
+> accordingly (630 pinned files, down from 787; 623 after the HYGIENE-P3-005 bytecode removal).

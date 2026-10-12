@@ -151,7 +151,7 @@ router.patch(
 
       const control = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "compliance_controls",
         String(req.params.id) as string,
         "id, organization_id",
@@ -199,7 +199,7 @@ router.delete(
       const supabase = getScopedClient(req, "compliance", "write");
       const control = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "compliance_controls",
         String(req.params.id) as string,
         "id, organization_id",

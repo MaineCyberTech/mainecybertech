@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/node";
 import { env } from "./env";
 import { logger } from "./logger";
-import { taskExecutionsTotal, taskExecutionDuration } from "./metrics";
+import { taskExecutionsTotal, taskExecutionDuration } from "./task-metrics";
 
 export interface TaskMessage {
   type: string;
