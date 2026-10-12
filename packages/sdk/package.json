@@ -9,14 +9,10 @@
     ".": "./src/index.ts",
     "./database.types": "./src/database.types.ts",
     "./module-registry": "./src/module-registry.ts",
-<<<<<<< HEAD
-    "./webhook-events": "./src/webhook-events.ts",
-    "./email-template": "./src/email-template.ts"
-=======
     "./role-keys": "./src/role-keys.ts",
     "./ticket-status": "./src/ticket-status.ts",
-    "./webhook-events": "./src/webhook-events.ts"
->>>>>>> 790e6b80 (fix(features,admin,search): P3 batch — store previews, scorecard docs, orphan table, ticket transitions, admin-gate parity, search contracts)
+    "./webhook-events": "./src/webhook-events.ts",
+    "./email-template": "./src/email-template.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
