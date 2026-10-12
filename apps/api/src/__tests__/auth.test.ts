@@ -250,6 +250,25 @@ describe("POST /sign-up", () => {
     expect(options.emailRedirectTo).toBe("https://app.example.com/auth/callback");
     expect(options.emailRedirectTo).not.toContain("api.example.com");
   });
+
+  // SEC-P3-001: the caller also controls the Origin header, so a spoofed
+  // Origin must not leak the confirmation link to an attacker-controlled host.
+  it("ignores an attacker-controlled Origin header for emailRedirectTo", async () => {
+    const supabase = mockSupabase();
+
+    const res = await request(app)
+      .post("/api/v1/auth/sign-up")
+      .set("Host", "api.example.com")
+      .set("Origin", "https://evil.example.com")
+      .send({ email: "new@b.com", password: "SecurePass123!" });
+
+    expect(res.status).toBe(200);
+    const options = supabase.auth.signUp.mock.calls[0][0].options as {
+      emailRedirectTo: string;
+    };
+    expect(options.emailRedirectTo).toBe("https://app.example.com/auth/callback");
+    expect(options.emailRedirectTo).not.toContain("evil.example.com");
+  });
 });
 
 describe("forgot-password", () => {

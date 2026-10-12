@@ -40,6 +40,22 @@ export const rateLimitByUser = rateLimit({
 });
 
 /**
+ * Normalize an email for use in a rate-limit bucket key.
+ *
+ * SEC-P3-003: the raw string is case- and whitespace-sensitive, so
+ * `User@Example.com`, `user@example.com` and ` user@example.com ` would
+ * otherwise throttle in separate buckets and multiply the per-account ceiling.
+ * The normalized address is hashed so the limiter never holds a plaintext
+ * address as a key.
+ */
+export function emailRateLimitKey(email: unknown): string | undefined {
+  if (typeof email !== "string") return undefined;
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return undefined;
+  return crypto.createHash("sha256").update(normalized).digest("hex").slice(0, 32);
+}
+
+/**
  * SEARCH-P2-007: dedicated limiter for the typeahead-driven search routes.
  *
  * Both global search endpoints are called by a 300 ms-debounced typeahead, so a
@@ -85,7 +101,7 @@ export const rateLimitAuth = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
-    const email = (req.body as Record<string, unknown> | undefined)?.email;
+    const email = emailRateLimitKey((req.body as Record<string, unknown> | undefined)?.email);
     return email ? `email:${email}` : `ip:${req.ip}`;
   },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
@@ -98,8 +114,8 @@ export const rateLimitEmail = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
-    const email = (req.body as Record<string, unknown> | undefined)?.email as string | undefined;
-    return email ? `email-action:${email.toLowerCase()}` : `ip:${req.ip}`;
+    const email = emailRateLimitKey((req.body as Record<string, unknown> | undefined)?.email);
+    return email ? `email-action:${email}` : `ip:${req.ip}`;
   },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
