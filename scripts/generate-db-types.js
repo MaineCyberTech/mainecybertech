@@ -312,6 +312,21 @@ function parseEnums(sql) {
   }
 }
 
+// Later migrations widen an enum with ALTER TYPE ... ADD VALUE (e.g.
+// notification_channel + 'push', NOTIF-P2-001). Values are appended to the
+// union; the optional BEFORE/AFTER position is ignored because the TS union
+// has no ordering semantics.
+function parseEnumAdditions(sql) {
+  const re =
+    /alter\s+type\s+(?:public\.)?(\w+)\s+add\s+value\s+(?:if\s+not\s+exists\s+)?'([^']*)'/gi;
+  let m;
+  while ((m = re.exec(sql)) !== null) {
+    const name = m[1].toLowerCase();
+    const value = m[2];
+    if (ENUMS[name] && !ENUMS[name].includes(value)) ENUMS[name].push(value);
+  }
+}
+
 // Collect foreign-key relationships (needed by supabase-js embedded queries,
 // e.g. select("*, roles!inner(...)"))
 const RELS = {};
@@ -349,6 +364,7 @@ function parseConstraintFks(sql) {
 }
 for (const file of files) {
   parseEnums(fs.readFileSync(path.join(MIGRATIONS_DIR, file), "utf-8"));
+  parseEnumAdditions(fs.readFileSync(path.join(MIGRATIONS_DIR, file), "utf-8"));
 }
 console.log(`Found ${Object.keys(ENUMS).length} enum types: ${Object.keys(ENUMS).join(", ")}`);
 

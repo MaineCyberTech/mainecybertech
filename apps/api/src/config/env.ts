@@ -31,6 +31,11 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
+  // Web Push (NOTIF-P2-001): VAPID public key returned to browsers by
+  // GET /push-subscriptions/vapid-public-key. The worker holds the private key
+  // and subject; the API only needs the public half. Unset = the push channel
+  // is disabled (no-op) — the preference UI reports it as unavailable.
+  VAPID_PUBLIC_KEY: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
   // Optional Sentry trace sample rate (0–1). Defaults to 0.2 in production, 0
   // otherwise. See lib/sentry.ts.

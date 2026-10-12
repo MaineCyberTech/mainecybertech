@@ -24,7 +24,7 @@ jest.mock("../notification-store", () => ({
   insertNotification: jest
     .fn()
     .mockResolvedValue({ inserted: true, deduped: false, suppressed: false }),
-  resolveChannels: jest.fn().mockResolvedValue({ email: true, in_app: true }),
+  resolveChannels: jest.fn().mockResolvedValue({ email: true, in_app: true, push: true }),
   buildNotificationKey: jest.fn().mockReturnValue("key-1"),
   claimNotificationEmail: jest.fn().mockResolvedValue(true),
 }));

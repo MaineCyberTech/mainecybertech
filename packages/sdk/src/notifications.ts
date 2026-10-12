@@ -16,6 +16,17 @@ export interface NotificationPreferencesResponse {
   channels: string[];
 }
 
+/** VAPID public key state; `enabled: false` when the server has no keys. */
+export interface VapidPublicKeyResponse {
+  enabled: boolean;
+  publicKey: string | null;
+}
+
+export interface PushSubscriptionKeys {
+  p256dh: string;
+  auth: string;
+}
+
 export class NotificationsApi {
   constructor(private client: ApiClient) {}
 
@@ -66,5 +77,24 @@ export class NotificationsApi {
     preferences: Array<{ moduleKey: string; channel: string; enabled: boolean }>;
   }) {
     return this.client.put<{ updated: number }>("/api/v1/notification-preferences", data);
+  }
+
+  /** VAPID public key for `pushManager.subscribe` (NOTIF-P2-001). */
+  getVapidPublicKey() {
+    return this.client.get<VapidPublicKeyResponse>("/api/v1/push-subscriptions/vapid-public-key");
+  }
+
+  /** Register a browser push subscription; the endpoint upserts per user. */
+  subscribePush(data: {
+    endpoint: string;
+    keys: PushSubscriptionKeys;
+    organizationId?: string;
+  }) {
+    return this.client.post<{ id: string; endpoint: string }>("/api/v1/push-subscriptions", data);
+  }
+
+  /** Soft-revoke a browser push subscription by endpoint. */
+  unsubscribePush(data: { endpoint: string }) {
+    return this.client.delete<{ revoked: number }>("/api/v1/push-subscriptions", data);
   }
 }

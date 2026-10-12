@@ -1,6 +1,7 @@
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import NotificationPreferencesClient from "./NotificationPreferencesClient";
+import PushNotificationSettings from "./PushNotificationSettings";
 
 export const metadata = { title: "Notification Preferences - Portal - Maine CyberTech" };
 
@@ -26,6 +27,7 @@ export default function PortalNotificationsPreferencesPage() {
       </div>
 
       <NotificationPreferencesClient />
+      <PushNotificationSettings />
     </div>
   );
 }

@@ -22,11 +22,12 @@ import { logger } from "./logger";
  * silence the notification system.
  */
 
-export type NotificationChannel = "email" | "in_app";
+export type NotificationChannel = "email" | "in_app" | "push";
 
 export interface ResolvedChannels {
   email: boolean;
   in_app: boolean;
+  push: boolean;
 }
 
 export interface ResolveChannelsInput {
@@ -37,11 +38,13 @@ export interface ResolveChannelsInput {
   supabase?: SupabaseClient<Database>;
 }
 
-const ENABLED_BY_DEFAULT: ResolvedChannels = { email: true, in_app: true };
+const ENABLED_BY_DEFAULT: ResolvedChannels = { email: true, in_app: true, push: true };
 
 /** Channels the product can actually deliver. `sms` exists in the schema/API
- * but has no sender, so it is intentionally excluded from enforcement. */
-const DELIVERABLE_CHANNELS: readonly NotificationChannel[] = ["email", "in_app"];
+ * but has no sender, so it is intentionally excluded from enforcement. `push`
+ * is deliverable only when VAPID is configured; the resolver still returns the
+ * user's preference and the sender no-ops when the channel is disabled. */
+const DELIVERABLE_CHANNELS: readonly NotificationChannel[] = ["email", "in_app", "push"];
 
 type PreferenceRow = { channel: string | null; enabled: boolean | null };
 
@@ -106,5 +109,5 @@ export async function resolveChannels(input: ResolveChannelsInput): Promise<Reso
 
 /** True when at least one deliverable channel is still enabled. */
 export function anyChannelEnabled(channels: ResolvedChannels): boolean {
-  return channels.email || channels.in_app;
+  return channels.email || channels.in_app || channels.push;
 }

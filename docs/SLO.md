@@ -21,8 +21,10 @@ from `apps/api/src/lib/metrics.ts` (API) and `apps/worker/src/metrics.ts`
 > enqueue as `portal_notification_delivery_total{status="queued"}` — a hand-off,
 > not a delivery — so objective 4 counts only the worker's terminal outcomes
 > (`worker_notification_delivery_total`). `skipped` outcomes (SMTP not
-> configured / channel disabled) are excluded from the ratio and are covered by
-> `MCTNotificationEmailSkipped` instead.
+> configured / channel disabled / a push subscription the push service reported
+> as gone) are excluded from the ratio and are covered by
+> `MCTNotificationEmailSkipped` (email) and
+> `worker_push_subscriptions_revoked_total` (push) instead.
 
 > Gap: worker job success and BullMQ queue depth are not exported as metrics
 > yet, so SLOs for them are not defined here. Adding a worker counter/gauge is a

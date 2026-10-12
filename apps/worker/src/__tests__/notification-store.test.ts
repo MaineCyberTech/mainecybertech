@@ -79,7 +79,7 @@ describe("worker resolveChannels (NOTIF-P1-001)", () => {
       organizationId: "org-1",
       module: "projects",
     });
-    expect(channels).toEqual({ email: true, in_app: false });
+    expect(channels).toEqual({ email: true, in_app: false, push: true });
   });
 
   it("defaults both channels to enabled when no row exists", async () => {
@@ -88,7 +88,7 @@ describe("worker resolveChannels (NOTIF-P1-001)", () => {
       userId: "user-1",
       module: "projects",
     });
-    expect(channels).toEqual({ email: true, in_app: true });
+    expect(channels).toEqual({ email: true, in_app: true, push: true });
   });
 
   it("is fail-safe when preferences cannot be read", async () => {
@@ -97,7 +97,7 @@ describe("worker resolveChannels (NOTIF-P1-001)", () => {
       userId: "user-1",
       module: "projects",
     });
-    expect(channels).toEqual({ email: true, in_app: true });
+    expect(channels).toEqual({ email: true, in_app: true, push: true });
   });
 
   it("ignores undeliverable channels such as sms", async () => {
@@ -108,7 +108,7 @@ describe("worker resolveChannels (NOTIF-P1-001)", () => {
       userId: "user-1",
       module: "projects",
     });
-    expect(channels).toEqual({ email: true, in_app: true });
+    expect(channels).toEqual({ email: true, in_app: true, push: true });
   });
 });
 

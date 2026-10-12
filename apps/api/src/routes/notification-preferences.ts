@@ -11,7 +11,7 @@ router.use(requireAuth);
 router.use(requireOrgAccess);
 
 const MODULES = ["tickets", "projects", "documents", "billing", "system"] as const;
-const CHANNELS = ["email", "sms", "in_app"] as const;
+const CHANNELS = ["email", "sms", "in_app", "push"] as const;
 
 router.get("/", async (req, res, next) => {
   try {

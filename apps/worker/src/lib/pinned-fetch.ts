@@ -11,7 +11,8 @@ export type PinnedResponse = {
 export type PinnedFetchInit = {
   method?: string;
   headers?: Record<string, string>;
-  body?: string;
+  /** String for text bodies (webhooks); Buffer for binary bodies (Web Push). */
+  body?: string | Buffer;
   signal?: AbortSignal;
 };
 
