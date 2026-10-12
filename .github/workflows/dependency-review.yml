@@ -15,16 +15,23 @@ jobs:
       - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48
         with:
           fail-on-severity: high
-          # License policy (SBOM-P1-001). The action only supports an allow OR a
-          # deny list (mutually exclusive); the full allowlist + documented
-          # exceptions are enforced on every run by `scripts/license-gate.mjs`
-          # (validate.yml / test.yml). Here we deny strong-copyleft /
-          # source-available licenses on the PR diff so a new one can never
-          # merge, and exempt the already-reviewed exception packages listed in
-          # security/license-policy.json.
+          # License policy (SBOM-P1-001, SBOM-P3-009). The action supports an
+          # allow OR a deny list (mutually exclusive) and `deny-licenses` is
+          # deprecated for removal, so the PR gate uses the allow-list form,
+          # mirroring security/license-policy.json's `allowedLicenses`: any
+          # other license on the PR diff fails the check. Unknown/unlicensed
+          # packages are only reported by this action — the full-tree
+          # `scripts/license-gate.mjs` (test.yml / validate.yml, runs on every
+          # PR) is the fail-closed backstop for UNKNOWN.
           license-check: true
-          deny-licenses: GPL-1.0-only, GPL-1.0-or-later, GPL-2.0-only, GPL-2.0-or-later, GPL-3.0-only, GPL-3.0-or-later, AGPL-1.0-only, AGPL-1.0-or-later, AGPL-3.0-only, AGPL-3.0-or-later, LGPL-2.1-only, LGPL-2.1-or-later, LGPL-3.0-only, LGPL-3.0-or-later, SSPL-1.0, BUSL-1.1, EUPL-1.1, EUPL-1.2, OSL-3.0, RPL-1.5
-          # Reviewed exceptions (see docs/LICENSE_POLICY.md):
-          #   @img/sharp-win32-x64 -> Apache-2.0 AND LGPL-3.0-or-later
-          #   axe-core, @axe-core/playwright -> MPL-2.0 (not denied, listed for clarity)
-          allow-dependencies-licenses: pkg:npm/%40img/sharp-win32-x64, pkg:npm/axe-core, pkg:npm/%40axe-core/playwright
+          allow-licenses: MIT, MIT-0, ISC, Apache-2.0, Apache-1.1, BSD-2-Clause, BSD-3-Clause, BSD-3-Clause-Clear, BSD-4-Clause, 0BSD, BlueOak-1.0.0, Unlicense, CC0-1.0, CC-BY-4.0, CC-BY-3.0, Python-2.0, Artistic-2.0, WTFPL, Zlib, BSL-1.0, PostgreSQL, OpenSSL, X11, NCSA, MS-PL, UPL-1.0
+          # Reviewed exceptions, excluded from the PR-diff license check. They
+          # mirror security/license-policy.json `exceptions` (SBOM-P3-007); the
+          # full-tree gate still matches each on (license, package) and fails
+          # once its `expires` date passes.
+          #   @img/sharp-libvips-linux-x64 -> LGPL-3.0-or-later (dev/build-only
+          #     via @storybook/nextjs; never present in a shipped image)
+          #   axe-core, @axe-core/playwright -> MPL-2.0 (test-only)
+          #   @sentry/cli* -> FSL-1.1-MIT (build/CI/observability tooling)
+          #   browser-assert -> UNKNOWN (dev-only Storybook dep, no license field)
+          allow-dependencies-licenses: pkg:npm/%40img/sharp-libvips-linux-x64, pkg:npm/axe-core, pkg:npm/%40axe-core/playwright, pkg:npm/%40sentry/cli, pkg:npm/%40sentry/cli-win32-x64, pkg:npm/%40sentry/cli-linux-x64, pkg:npm/browser-assert

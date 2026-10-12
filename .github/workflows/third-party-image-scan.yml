@@ -62,6 +62,9 @@ jobs:
       matrix:
         image: ${{ fromJSON(needs.resolve.outputs.images) }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
       - name: Scan ${{ matrix.image }} (CRITICAL/HIGH)
         # Same Trivy action as the app-image scans. `ignore-unfixed: true`
         # matches build-push.yml: fail on findings that have a fix (bump the
@@ -74,6 +77,34 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           format: table
+
+      - name: Generate ${{ matrix.image }} SBOM (CycloneDX)
+        # SBOM-P3-008: a digest-bound SBOM for each pinned third-party image,
+        # the same durable record class as the mct-* image SBOMs, resolved
+        # from the compose refs so a Dependabot bump is covered automatically.
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        with:
+          scan-type: image
+          image-ref: ${{ matrix.image }}
+          format: cyclonedx
+          output: third-party-sbom.cdx.json
+          scanners: vuln
+
+      - name: Validate the SBOM (floor + digest binding)
+        # The same validator the app-image SBOMs run; an empty/partial Trivy
+        # output must not become the durable record for the digest.
+        env:
+          IMAGE_REF: ${{ matrix.image }}
+        run: |
+          digest="sha256:${IMAGE_REF##*@sha256:}"
+          node scripts/validate-sbom.mjs --image --digest "$digest" third-party-sbom.cdx.json
+
+      - name: Upload the SBOM
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: third-party-image-sbom-${{ strategy.job-index }}
+          path: third-party-sbom.cdx.json
+          retention-days: 30
 
   notify:
     needs: [resolve, scan]

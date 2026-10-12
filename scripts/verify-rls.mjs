@@ -17,6 +17,10 @@
  *     going-forward baseline) when a `create policy NAME on TABLE` is not
  *     preceded in the same file by `drop policy if exists NAME on TABLE`.
  *     Earlier history has the known bare-policy debt and is exempt.
+ *  4. FAIL for migrations whose numeric prefix is >= 5302427 (DOC-P3-009)
+ *     whose filename is not `NNNNNNN_lower_snake_case.sql` — the 7-digit
+ *     sequential convention the repository actually uses. Earlier history is
+ *     exempt (the legacy bootstrap file is not conforming).
  *
  * Identifier quoting (`"name"`, `'name'`), `if not exists`, `public.`
  * prefixes and multi-line statements are normalized. Comments are masked
@@ -274,6 +278,24 @@ export function collectRlsStats() {
             `has no matching "drop policy if exists" earlier in the file`,
         );
       }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Check 4 — new migration filenames follow the 5302xxx naming convention
+  // (DOC-P3-009): 7-digit sequential prefix + lower_snake_case description.
+  // Only the going-forward baseline is enforced; earlier history is exempt.
+  // -------------------------------------------------------------------------
+
+  const MIGRATION_NAME_RE = /^\d{7}_[a-z0-9]+(?:_[a-z0-9]+)*\.sql$/;
+  for (const file of files) {
+    const prefix = Number.parseInt(file.match(/^(\d+)/)?.[1] ?? "0", 10);
+    if (prefix < POLICY_DROP_BASELINE_VERSION) continue;
+    if (!MIGRATION_NAME_RE.test(file)) {
+      failures.push(
+        `[naming] ${file}: expected NNNNNNN_lower_snake_case.sql ` +
+          `(see docs/migrations/naming-guide.md)`,
+      );
     }
   }
 

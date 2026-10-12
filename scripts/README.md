@@ -42,7 +42,7 @@
 | `backfill-profile-pii.mjs` | One-off idempotent backfill of `profiles.encrypted_pii` from the plaintext PII columns (SEC-P2-002); run once per environment. Root alias: `pnpm backfill:profile-pii`. |
 | `seed-store.ts` | Idempotent upsert of `apps/api/src/data/products.json` + `categories.json` into `store_products` / `store_categories` (needs service-role credentials; see migration 5302134). |
 | `generate-sbom.mjs` | Generate a CycloneDX 1.5 SBOM (licenses + dependency graph + commit binding) — see `docs/SBOM_PROCESS.md`. |
-| `validate-sbom.mjs` | Fail CI on a malformed / regressed SBOM (structure, refs, count floor). |
+| `validate-sbom.mjs` | Fail CI on a malformed / regressed SBOM (structure, refs, count floor); `--image [--digest sha256:…]` validates Trivy image SBOMs (floor + digest binding) before upload/attestation (SBOM-P3-005). |
 | `audit-gate.mjs` | Dependency vulnerability gate for all scopes — see `docs/DEPENDENCY_POLICY.md`. |
 | `license-gate.mjs` | License allow/deny gate with documented exceptions — see `docs/LICENSE_POLICY.md`. |
 | `collect-licenses.mjs` | Build the license inventory from the installed tree (`node_modules/.pnpm`). Replaces `pnpm licenses list --json`, which exits 1 on pnpm 10.34.x and writes an error document to stdout. Root alias: `pnpm sbom:licenses`. |
@@ -70,6 +70,7 @@ self-tests in `ci/` so a broken detector cannot pass silently.
 | `verify-prompts.js` | Prompt provenance: `generate` / `verify` (CI) / `tree` over the SHA-256 manifest; also enforces the documented size budget. |
 | `check-circular-deps.mjs` | Fail on a circular import across `apps/*` and `packages/*` (HYGIENE-P3-009); `--self-test` proves the detector fails on a synthetic cycle. |
 | `check-required-checks.mjs` | Fail when a required branch-protection context is not emitted by any workflow, or is emitted by a path-filtered `pull_request` workflow (BP-P2-004/BP-P2-005/CI-P2-009). |
+| `actions-inventory.mjs` | Emit the GitHub Actions dependency inventory (name, pinned SHA, version) consumed by `sbom.yml`; `--check` fails on an unpinned external `uses:` ref (SBOM-P3-008). |
 | `branch-protection-audit.mjs` | Drift detection (committed `.github/branch-protection/*.json` vs live settings, normalized) and bypass audit (merged PRs into `main`/`develop` whose head check-runs missed or failed a required context) — BP-P2-002/BP-P2-003. |
 | `e2e-flake-summary.mjs` | Summarise Playwright pass/flake/fail counts into the job summary (TEST-P2-003); informational, never fails the job. |
 | `exercise-alert-path.sh` | Exercise the Alertmanager → ntfy critical-alert path end-to-end (OBS-P2-014 / NOTIF-P2-011); runs on the droplet, piped over SSH by `alert-path-exercise.yml`. |

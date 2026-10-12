@@ -23,7 +23,9 @@ The document includes:
 
 - `components[]` — one per resolved lockfile package (`purl`, integrity hash
   converted to **hex**, and `licenses`).
-- `licenses` per component, sourced from `pnpm licenses list --json`
+- `licenses` per component, sourced from the installed tree by
+  `node scripts/collect-licenses.mjs` (`pnpm licenses list --json` is broken on
+  the pinned pnpm 10.34.x and must not be used)
   (`license.id` for SPDX ids, `license.expression` for SPDX expressions such as
   `Apache-2.0 AND LGPL-3.0-or-later`, and `license.name` for ids newer than the
   CycloneDX 1.5 SPDX enum, e.g. `FSL-1.1-MIT`).
@@ -90,14 +92,41 @@ The **image SBOM** covers the built image contents (OS packages + language
 packages present in the image). It does **not** cover the build environment, the
 registry, or the deploy host.
 
+### Third-party runtime images and Actions dependencies (SBOM-P3-008)
+
+The compose stack also runs four digest-pinned third-party images — `redis`,
+`prom/prometheus`, `prom/alertmanager` and `caddy` — plus the SHA-pinned GitHub
+Actions the workflows execute. Coverage status as of 2026-10-12:
+
+- **Third-party images:** `third-party-image-scan.yml` resolves the
+  digest-pinned refs straight from `infra/digitalocean/docker-compose.yml` on
+  the weekly schedule, scans them and emits a digest-bound CycloneDX image
+  SBOM per ref (validated with `--image --digest`, uploaded as a 30-day
+  artifact). This is artifact-only, not a gate (CTR-P3-007 / SBOM-P3-008).
+- **Actions dependencies:** `scripts/actions-inventory.mjs` emits a
+  machine-readable inventory (name, pinned SHA, version comment, source file),
+  uploaded as the `actions-inventory` artifact by `sbom.yml`; its `--check`
+  mode runs in the `dependency-audit` job so an unpinned external `uses:` fails
+  CI. The Actions are inventoried rather than SBOM'd (their transitive runtime
+  is the runner image, which is out of scope).
+- **Accepted residual:** the build environment, the registry and the deploy
+  host remain outside all SBOMs. This is a scope decision, not a defect; revisit
+  if an OS advisory requires host-level attribution.
+
 ## Validation
 
 `scripts/validate-sbom.mjs` runs in `sbom.yml` before upload and fails the job
 on a malformed **lockfile** SBOM: missing/invalid `bomFormat`/`specVersion`,
 duplicate `bom-ref`s, dangling `dependencies` edges, a component count below the
-sanity floor (parser-regression guard), or a missing version/commit binding. It
-targets the CycloneDX 1.5 lockfile document and is not run against the Trivy
-image SBOMs (which use Trivy's own schema and binding fields).
+sanity floor (parser-regression guard), or a missing version/commit binding.
+
+The same script validates every **image** SBOM with `--image` (SBOM-P3-005):
+`build-push.yml` and `deploy-do.yml` run it between generation and
+upload/attestation, asserting CycloneDX shape, a non-empty component set above
+a floor, and that the document is bound to the exact pushed digest
+(`--digest "${{ steps.build-<image>.outputs.digest }}"`). An empty or partial
+Trivy output can therefore never be attested as the durable record for a
+digest.
 
 ## Who consumes these
 
@@ -113,7 +142,7 @@ image SBOMs (which use Trivy's own schema and binding fields).
 ```bash
 # Local lockfile SBOM generation
 pnpm install --frozen-lockfile
-pnpm licenses list --json > licenses.json
+node scripts/collect-licenses.mjs --out licenses.json
 node scripts/generate-sbom.mjs sbom.cdx.json
 node scripts/validate-sbom.mjs sbom.cdx.json
 

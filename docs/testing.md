@@ -13,6 +13,7 @@ hand-maintained — the current totals live in [README.md](../README.md) and
 | Web     | Jest + ts-jest + Testing Library            | custom jsdom (`jest-custom-environment.js`) | `apps/web/jest.config.mjs`      | `pnpm --filter=web test`    |
 | SDK     | Jest + ts-jest (fetch mocked)               | `node`                                      | `packages/sdk/jest.config.mjs`  | `pnpm --filter=sdk test`    |
 | Worker  | Jest + ts-jest (env schema + task handlers) | `node`                                      | `apps/worker/jest.config.mjs`   | `pnpm --filter=worker test` |
+| UI      | Jest + ts-jest + Testing Library            | `jsdom`                                     | `packages/ui/jest.config.mjs`   | `pnpm --filter=@mct/ui test` |
 | E2E     | Playwright (chromium + Pixel 7/iPhone 13 mobile) + axe-core | real browsers against the running stack     | `apps/web/playwright.config.ts` | `pnpm e2e`                  |
 
 ## Running suites
@@ -44,6 +45,18 @@ The worker floor is intentionally the lowest of the four: its suite covers the
 scheduled task handlers, not the whole process surface. The branch floor was
 raised from 5 to 25 when the `module-tasks` suite landed (TEST-P2-002); raise
 the remaining worker thresholds as coverage grows.
+
+`packages/ui` ships a smoke suite (Button/Input/Badge/Avatar/Dialog render and
+interaction) but no `coverageThreshold` yet — the first CI run measures the
+floor, and the threshold is set just below that measurement in the follow-up
+(TEST-P3-005 ratchet note).
+
+**Ratchet plan (TEST-P3-003/004):** each floor is set a few points below the
+last *measured* value and is raised in the PR that lands new tests; it is never
+set to a number the suite has not already met. The shared `unit-tests` composite
+uploads every package's `coverage/` report plus `.jest-results.json` as the
+`coverage-reports` artifact on each PR and deploy run, so the measured values
+(and "are the floors met?") are observable from CI instead of inferred.
 
 ### What `pnpm test:coverage` does NOT cover
 

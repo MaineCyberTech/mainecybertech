@@ -15,7 +15,10 @@
  * Also fails when an audit run directory under `docs/audits/` (a directory
  * with `report.md` or `audit_manifest.json`) is not referenced by
  * `docs/audits/README.md` — a published run must be discoverable from the
- * index (ORCH-P2-001).
+ * index (ORCH-P2-001) — or lacks the `HISTORICAL.md` marker (DOC-P3-001).
+ * Also fails when a scanned primary doc contains a machine-local path
+ * (`C:\...` / `file:///C:...`) that cannot exist on another checkout
+ * (DOC-P3-001); the dated audit corpus is exempt.
  *
  * Prints every broken link as `file:line -> target`, exits 1 when any are
  * found; prints "docs links OK" and exits 0 when clean.
@@ -144,6 +147,48 @@ if (existsSync(AUDITS_INDEX)) {
 if (unindexed.length > 0) {
   console.error(`audit runs missing from docs/audits/README.md (${unindexed.length}):`);
   for (const entry of unindexed) console.error(`  ${entry}`);
+  process.exit(1);
+}
+
+// --- Historical markers + machine-local paths (DOC-P3-001) -----------------
+// Every run directory must carry the HISTORICAL.md marker documented in
+// docs/audits/README.md, so a dated run can never be mistaken for current
+// state. The dated corpus itself keeps its raw machine paths as historical
+// evidence and is exempt from the path scan below; a *current* primary doc
+// must not send a reader to a path that cannot exist on another checkout.
+const unmarked = [];
+for (const pack of readdirSync(AUDITS_ROOT, { withFileTypes: true })) {
+  if (!pack.isDirectory()) continue;
+  const packDir = join(AUDITS_ROOT, pack.name);
+  for (const run of readdirSync(packDir, { withFileTypes: true })) {
+    if (!run.isDirectory()) continue;
+    const runDir = join(packDir, run.name);
+    if (!existsSync(join(runDir, "report.md")) && !existsSync(join(runDir, "audit_manifest.json"))) continue;
+    if (!existsSync(join(runDir, "HISTORICAL.md"))) {
+      unmarked.push(`docs/audits/${pack.name}/${run.name}`);
+    }
+  }
+}
+if (unmarked.length > 0) {
+  console.error(`audit runs missing the HISTORICAL.md marker (${unmarked.length}):`);
+  for (const entry of unmarked) console.error(`  ${entry}`);
+  process.exit(1);
+}
+
+const MACHINE_PATH_RE = /(?:[A-Za-z]:\\|file:\/\/\/[A-Za-z]:)/;
+const machinePaths = [];
+for (const doc of PRIMARY_DOCS) {
+  const absPath = join(ROOT, doc);
+  if (!existsSync(absPath)) continue;
+  readFileSync(absPath, "utf8")
+    .split(/\r?\n/)
+    .forEach((line, index) => {
+      if (MACHINE_PATH_RE.test(line)) machinePaths.push(`${doc}:${index + 1}`);
+    });
+}
+if (machinePaths.length > 0) {
+  console.error(`machine-local paths in current docs (${machinePaths.length}):`);
+  for (const entry of machinePaths) console.error(`  ${entry}`);
   process.exit(1);
 }
 

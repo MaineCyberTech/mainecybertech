@@ -241,6 +241,13 @@ jobs:
           format: cyclonedx
           output: image-sbom-mct-api.cdx.json
           scanners: vuln
+      - name: Validate mct-api image SBOM (SBOM-P3-005)
+        # Floor + digest-binding check before attestation: an empty or partial
+        # Trivy output must never become the durable record for a digest.
+        run: |
+          node scripts/validate-sbom.mjs --image \
+            --digest "${{ steps.build-api.outputs.digest }}" \
+            image-sbom-mct-api.cdx.json
       - name: Attest mct-api SBOM (SUPPLY-P3-001)
         # Cryptographically binds the SBOM to the deployed image digest and pushes
         # it to the registry as an OCI referrer, so it is durable and not subject
@@ -305,6 +312,12 @@ jobs:
           format: cyclonedx
           output: image-sbom-mct-worker.cdx.json
           scanners: vuln
+      - name: Validate mct-worker image SBOM (SBOM-P3-005)
+        # Floor + digest-binding check before attestation (see build-api).
+        run: |
+          node scripts/validate-sbom.mjs --image \
+            --digest "${{ steps.build-worker.outputs.digest }}" \
+            image-sbom-mct-worker.cdx.json
       - name: Attest mct-worker SBOM (SUPPLY-P3-001)
         # Durable, digest-bound SBOM attestation (see build-api).
         uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
@@ -375,6 +388,12 @@ jobs:
           format: cyclonedx
           output: image-sbom-mct-web.cdx.json
           scanners: vuln
+      - name: Validate mct-web image SBOM (SBOM-P3-005)
+        # Floor + digest-binding check before attestation (see build-api).
+        run: |
+          node scripts/validate-sbom.mjs --image \
+            --digest "${{ steps.build-web.outputs.digest }}" \
+            image-sbom-mct-web.cdx.json
       - name: Attest mct-web SBOM (SUPPLY-P3-001)
         # Durable, digest-bound SBOM attestation (see build-api).
         uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
