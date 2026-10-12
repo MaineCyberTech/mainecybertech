@@ -184,7 +184,7 @@ router.post(
       // service-role client when security-ops is not in RLS_WRITES_ENABLED).
       const current = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "offboarding_checklists",
         String(req.params.id),
         "id, organization_id, completed_steps",

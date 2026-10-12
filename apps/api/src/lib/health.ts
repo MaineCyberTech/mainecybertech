@@ -1,4 +1,4 @@
-import { createClient } from "redis";
+import Redis from "ioredis";
 import { getEnv, resolveRedisUrl, type Env } from "../config/env";
 
 export interface DependencyCheck {
@@ -18,22 +18,19 @@ export async function checkRedisHealth(env?: Env): Promise<DependencyCheck> {
   }
 
   const start = Date.now();
-  let client;
+  let client: Redis | undefined;
   try {
     // resolveRedisUrl injects the password into the URL only when the URL
     // doesn't already carry credentials (mirrors middleware/cache.ts).
-    // Passing url AND password separately makes node-redis reject the
-    // connection when the URL already embeds credentials.
-    client = createClient({
-      url: resolveRedisUrl(e.REDIS_URL ?? "redis://redis:6379", e.REDIS_PASSWORD),
-      socket: {
-        connectTimeout: 3_000,
-        // One-shot connect: NO reconnect strategy, so an unreachable Redis
-        // fails the ping quickly instead of retrying forever and hanging the
-        // /health endpoint (which would fail the deploy gate and take the
-        // site down).
-        reconnectStrategy: false,
-      },
+    client = new Redis(resolveRedisUrl(e.REDIS_URL ?? "redis://redis:6379", e.REDIS_PASSWORD), {
+      connectTimeout: 3_000,
+      lazyConnect: true,
+      // One-shot connect: NO reconnect strategy, so an unreachable Redis
+      // fails the ping quickly instead of retrying forever and hanging the
+      // /health endpoint (which would fail the deploy gate and take the
+      // site down).
+      retryStrategy: () => null,
+      maxRetriesPerRequest: 0,
     });
     client.on("error", () => {}); // suppress default error logging during ping
     await client.connect();
@@ -46,8 +43,6 @@ export async function checkRedisHealth(env?: Env): Promise<DependencyCheck> {
       error: err instanceof Error ? err.message : String(err),
     };
   } finally {
-    if (client) {
-      client.quit().catch(() => {});
-    }
+    client?.disconnect();
   }
 }

@@ -1,4 +1,6 @@
 import type { Request } from "express";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@mct/sdk/database.types";
 import { AppError } from "../types";
 import { logImpersonation } from "../services/impersonation";
 
@@ -60,25 +62,35 @@ export function assertResourceOrg(
 }
 
 /**
+ * Structural row reader used internally by `loadOwned`. Kept private so the
+ * public parameter can be the real typed client (`SupabaseClient<Database>`):
+ * callers no longer need an `as any` cast at the boundary
+ * (HYGIENE-P3-010), and this is the single place that bridges the typed
+ * client to the loose `from(table).select().eq().maybeSingle()` chain.
+ */
+type SupabaseRowReader = {
+  from: (table: string) => {
+    select: (columns: string) => {
+      eq: (column: string, value: unknown) => {
+        maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
+      };
+    };
+  };
+};
+
+/**
  * Load a row by id, verify it belongs to the caller's tenant, and return it.
  * Throws 404 when the row is missing OR out of scope.
  */
 export async function loadOwned(
   req: Request,
-  supabase: {
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (column: string, value: unknown) => {
-          maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
-        };
-      };
-    };
-  },
+  supabase: SupabaseClient<Database>,
   table: string,
   id: string,
   select: string = "*",
 ): Promise<Record<string, unknown>> {
-  const { data, error } = await supabase
+  const reader = supabase as unknown as SupabaseRowReader;
+  const { data, error } = await reader
     .from(table)
     .select(select)
     .eq("id", id)

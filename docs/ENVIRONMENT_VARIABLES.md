@@ -32,6 +32,8 @@
 
 > **Note:** The web app no longer requires `NEXT_PUBLIC_SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Auth is proxied through the API via `POST /api/v1/auth/callback`.
 
+> **Note:** `apps/web/public/version.json` is a generated build artifact, not tracked. `pnpm --filter=web generate:version` (run by `dev`, `build` and `typecheck`) writes it from the `NEXT_PUBLIC_*` values above; without those values it records the local build time.
+
 ## API (`apps/api`)
 
 | Variable                     | Required | Default                      | Description                                                                                                                                                                                                         |

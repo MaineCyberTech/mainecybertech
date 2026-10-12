@@ -55,7 +55,7 @@ router.get("/:id", async (req, res, next) => {
     const supabase = getScopedClient(req, "knowledge-base", "read");
     const article = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "knowledge_base_articles",
       String(req.params.id) as string,
     );
@@ -107,7 +107,7 @@ router.patch("/:id", requirePermission("client-knowledge-base", "edit"), async (
     const supabase = getScopedClient(req, "knowledge-base", "write");
     const article = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "knowledge_base_articles",
       String(req.params.id) as string,
       "id, organization_id",
@@ -160,7 +160,7 @@ router.delete(
       const supabase = getScopedClient(req, "knowledge-base", "write");
       const article = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "knowledge_base_articles",
         String(req.params.id) as string,
         "id, organization_id",

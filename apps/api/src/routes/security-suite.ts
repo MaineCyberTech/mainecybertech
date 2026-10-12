@@ -66,7 +66,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.get(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "security-suite", "read");
-      const data = await loadOwned(req, sb as any, table, String(req.params.id));
+      const data = await loadOwned(req, sb, table, String(req.params.id));
       res.json(success(data));
     } catch (e) {
       next(e);
@@ -108,7 +108,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       const sb = getScopedClient(req, "security-suite", "write");
       const current = await loadOwned(
         req,
-        sb as any,
+        sb,
         table,
         String(req.params.id),
         "id, organization_id",
@@ -154,7 +154,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       const sb = getScopedClient(req, "security-suite", "write");
       const current = await loadOwned(
         req,
-        sb as any,
+        sb,
         table,
         String(req.params.id),
         "id, organization_id",
@@ -203,7 +203,7 @@ router.post(
         .object({ verificationPass: z.boolean(), notes: z.string().optional() })
         .parse(req.body);
       const supabase = getScopedClient(req, "security-suite", "write");
-      await loadOwned(req, supabase as any, "identity_verifications", String(req.params.id));
+      await loadOwned(req, supabase, "identity_verifications", String(req.params.id));
       const { data, error } = await supabase
         .from("identity_verifications")
         .update({
@@ -288,7 +288,7 @@ router.post(
   async (req, res, next) => {
     try {
       const supabase = getScopedClient(req, "security-suite", "write");
-      await loadOwned(req, supabase as any, "m365_hardening", String(req.params.id));
+      await loadOwned(req, supabase, "m365_hardening", String(req.params.id));
       const { data: current, error: fetchError } = await supabase
         .from("m365_hardening")
         .select("*")

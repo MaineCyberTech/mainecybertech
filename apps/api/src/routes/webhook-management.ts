@@ -325,7 +325,7 @@ router.delete(
 router.get("/:id", requirePermission("webhooks", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "webhook-management", "read");
-    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
+    await loadOwned(req, supabase, "webhook_endpoints", String(req.params.id));
     const orgId = req.query.organization_id as string | undefined;
     let query = supabase.from("webhook_endpoints").select("*").eq("id", String(req.params.id));
     if (orgId) query = query.eq("organization_id", orgId);
@@ -390,7 +390,7 @@ router.patch(
       const parsed = updateSchema.parse(req.body);
       const supabase = getScopedClient(req, "webhook-management", "write");
 
-      await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
+      await loadOwned(req, supabase, "webhook_endpoints", String(req.params.id));
 
       if (parsed.url !== undefined) {
         await assertSafeWebhookUrl(parsed.url);
@@ -459,7 +459,7 @@ router.delete("/:id", requirePermission("webhooks", "manage"), async (req, res, 
   try {
     assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "webhook-management", "write");
-    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
+    await loadOwned(req, supabase, "webhook_endpoints", String(req.params.id));
     const { data, error } = await supabase
       .from("webhook_endpoints")
       .delete()
@@ -516,7 +516,7 @@ router.get("/:id/deliveries", requirePermission("webhooks", "view"), async (req,
 router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "webhook-management", "write");
-    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
+    await loadOwned(req, supabase, "webhook_endpoints", String(req.params.id));
     const { data: webhook, error: fetchError } = await supabase
       .from("webhook_endpoints")
       .select("*")

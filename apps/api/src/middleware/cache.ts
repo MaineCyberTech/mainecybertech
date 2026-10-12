@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { type Request, type Response, type NextFunction } from "express";
-import { createClient, type RedisClientType } from "redis";
+import Redis from "ioredis";
 import { getEnv, resolveRedisUrl } from "../config/env";
 import { recordRedisFailure } from "../lib/metrics";
 
@@ -21,7 +21,7 @@ interface CacheEntry {
 const MAX_MEMORY_ENTRIES = 5_000;
 
 class CacheBackend {
-  private redis: RedisClientType | null = null;
+  private redis: Redis | null = null;
   private memoryCache = new Map<string, { data: unknown; expires: number }>();
   private useRedis = false;
   private cleanupTimer: ReturnType<typeof setInterval> | null = null;
@@ -30,10 +30,16 @@ class CacheBackend {
     const env = getEnv();
     if (env.REDIS_URL || env.REDIS_PASSWORD) {
       try {
-        this.redis = createClient({
-          url: resolveRedisUrl(env.REDIS_URL ?? "redis://redis:6379", env.REDIS_PASSWORD),
-        });
-        await this.redis.connect();
+        this.redis = new Redis(
+          resolveRedisUrl(env.REDIS_URL ?? "redis://redis:6379", env.REDIS_PASSWORD),
+          {
+            // Bounded reconnect: a few quick retries during startup, then fail
+            // fast into the in-memory fallback instead of hanging boot.
+            retryStrategy: (times) => (times > 3 ? null : Math.min(times * 200, 1_000)),
+          },
+        );
+        this.redis.on("error", () => {}); // errors surface via the metered fallback paths
+        await this.redis.ping();
         this.useRedis = true;
         const { logger } = await import("../lib/logger");
         logger.info("Redis cache connected");
@@ -43,6 +49,8 @@ class CacheBackend {
         // degradation the audit flagged; meter it.
         recordRedisFailure("cache", "connect");
         logger.warn({ err }, "Failed to connect to Redis, falling back to in-memory cache");
+        this.redis?.disconnect();
+        this.redis = null;
       }
     }
     this.startCleanup();
@@ -93,7 +101,7 @@ class CacheBackend {
 
     if (this.useRedis && this.redis) {
       try {
-        await this.redis.setEx(key, ttlSeconds, JSON.stringify({ data, expires }));
+        await this.redis.setex(key, ttlSeconds, JSON.stringify({ data, expires }));
         return;
       } catch {
         // Fall through to memory cache on Redis error (ARCH-P2-005: metered).
@@ -107,7 +115,7 @@ class CacheBackend {
     if (!pattern) {
       this.memoryCache.clear();
       if (this.useRedis && this.redis) {
-        this.redis.flushDb().catch(() => {
+        this.redis.flushdb().catch(() => {
           recordRedisFailure("cache", "flush");
         });
       }
@@ -124,18 +132,11 @@ class CacheBackend {
       const redis = this.redis;
       void (async () => {
         try {
-          let batch: string[] = [];
-          for await (const key of redis.scanIterator({
-            MATCH: `${pattern}*`,
-            COUNT: 100,
-          })) {
-            batch.push(String(key));
-            if (batch.length >= 100) {
-              await redis.del(batch);
-              batch = [];
-            }
+          const stream = redis.scanStream({ match: `${pattern}*`, count: 100 });
+          for await (const keys of stream) {
+            const batch = (keys as string[]).map(String);
+            if (batch.length) await redis.del(...batch);
           }
-          if (batch.length) await redis.del(batch);
         } catch {
           // Best-effort invalidation; TTL will evict eventually.
           // ARCH-P2-005: meter the lost invalidation so stale entries are visible.

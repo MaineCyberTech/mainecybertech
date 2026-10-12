@@ -254,7 +254,7 @@ router.patch(
 
       const current = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "approval_requests",
         String(req.params.id) as string,
         "id, version, organization_id",
@@ -306,7 +306,7 @@ router.delete("/:id", requirePermission("approvals", "delete"), async (req, res,
     const supabase = getScopedClient(req, "approvals", "write");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",
@@ -337,7 +337,7 @@ router.post("/:id/approve", requirePermission("approvals", "edit"), async (req, 
     const supabase = getScopedClient(req, "approvals", "write");
     const approval = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",
@@ -372,7 +372,7 @@ router.post("/:id/reject", requirePermission("approvals", "edit"), async (req, r
     const supabase = getScopedClient(req, "approvals", "write");
     const approval = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",
@@ -407,7 +407,7 @@ router.post("/:id/cancel", requirePermission("approvals", "edit"), async (req, r
     const supabase = getScopedClient(req, "approvals", "write");
     const approval = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",
@@ -441,7 +441,7 @@ router.get("/:id/comments", async (req, res, next) => {
     const supabase = getScopedClient(req, "approvals", "read");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",
@@ -469,7 +469,7 @@ router.post("/:id/comments", requirePermission("approvals", "edit"), async (req,
 
     const approval = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",
@@ -510,7 +510,7 @@ router.get("/:id/timeline", async (req, res, next) => {
     const supabase = getScopedClient(req, "approvals", "read");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",

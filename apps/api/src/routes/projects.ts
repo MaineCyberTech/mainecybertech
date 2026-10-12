@@ -617,7 +617,7 @@ router.delete("/:id", requirePermission("projects", "delete"), async (req, res, 
     const supabase = getScopedClient(req, "projects", "write");
     const project = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "projects",
       String(req.params.id),
       "id, organization_id",

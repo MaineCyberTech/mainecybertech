@@ -141,7 +141,7 @@ router.patch("/:id", requirePermission("users", "manage"), async (req, res, next
   try {
     const parsed = updateMembershipSchema.parse(req.body);
     const supabase = getScopedClient(req, "memberships", "write");
-    const membership = await loadOwned(req, supabase as any, "memberships", String(req.params.id));
+    const membership = await loadOwned(req, supabase, "memberships", String(req.params.id));
 
     // SEC-P1-001 / ADMIN-P1-003: validate the new role and guard the
     // assignment; also require a super admin to touch a membership that
@@ -213,7 +213,7 @@ router.delete("/:id", requirePermission("users", "manage"), async (req, res, nex
   try {
     assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "memberships", "write");
-    const membership = await loadOwned(req, supabase as any, "memberships", String(req.params.id));
+    const membership = await loadOwned(req, supabase, "memberships", String(req.params.id));
     const { error } = await supabase.from("memberships").delete().eq("id", String(req.params.id));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);

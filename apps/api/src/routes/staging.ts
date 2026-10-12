@@ -107,7 +107,7 @@ router.patch("/:id", requirePermission("hardware-staging", "edit"), async (req, 
     const supabase = getScopedClient(req, "staging", "write");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "hardware_staging_checks",
       String(req.params.id as string),
     );
@@ -148,7 +148,7 @@ router.delete("/:id", requirePermission("hardware-staging", "delete"), async (re
     const supabase = getScopedClient(req, "staging", "write");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "hardware_staging_checks",
       String(req.params.id as string),
     );

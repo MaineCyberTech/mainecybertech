@@ -102,7 +102,7 @@ router.get("/meetings/:id", async (req, res, next) => {
     const supabase = getScopedClient(req, "cab", "read");
     const meeting = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "cab_meetings",
       String(req.params.id) as string,
     );
@@ -128,7 +128,7 @@ router.post(
       const supabase = getScopedClient(req, "cab", "write");
       const meeting = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "cab_meetings",
         String(req.params.id) as string,
         "id, organization_id",
@@ -169,7 +169,7 @@ router.patch("/agenda/:id", requirePermission("governance", "edit"), async (req,
 
     const item = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "cab_agenda_items",
       String(req.params.id) as string,
       "id, organization_id",
