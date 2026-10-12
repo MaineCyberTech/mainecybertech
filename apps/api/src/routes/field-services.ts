@@ -15,6 +15,7 @@ import {
 } from "../validators/field-services";
 import { queryInt } from "../lib/query";
 import { parsePartialUpdate } from "../lib/validators";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -139,6 +140,7 @@ function crudRoute(
 
   router.delete(`/${path}/:id`, deleteGuard, async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const sb = getScopedClient(req, "field-services", "write");
       const { error } = await sb
         .from(table)

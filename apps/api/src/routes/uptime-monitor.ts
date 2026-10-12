@@ -9,6 +9,7 @@ import { requirePermission } from "../middleware/permissions";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
 import type { Tables } from "@mct/sdk/database.types";
 import { queryInt } from "../lib/query";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -222,6 +223,7 @@ router.delete(
   requirePermission("uptime-monitor", "delete"),
   async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getScopedClient(req, "uptime-monitor", "write");
       const organizationId = req.query.organization_id as string;
       const { error } = await supabase

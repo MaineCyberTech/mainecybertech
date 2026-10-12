@@ -3,14 +3,22 @@ import { jest } from "@jest/globals";
 const mockOrganizationsUpdate = jest.fn();
 const mockOrganizationsAddDomain = jest.fn();
 const mockOrganizationsUpdateDomain = jest.fn();
+const mockOrganizationsRemove = jest.fn();
 const mockGetApiClient = jest.fn().mockReturnValue({
   organizations: {
     update: mockOrganizationsUpdate,
     addDomain: mockOrganizationsAddDomain,
     updateDomain: mockOrganizationsUpdateDomain,
+    remove: mockOrganizationsRemove,
   },
 });
 const mockRevalidatePath = jest.fn();
+
+jest.mock("next/navigation", () => ({ redirect: jest.fn() }));
+
+jest.mock("@/lib/auth/admin", () => ({
+  requireAdminAccess: jest.fn().mockResolvedValue(undefined),
+}));
 
 jest.mock("@/lib/api", () => ({
   getApiClient: mockGetApiClient,
@@ -199,5 +207,58 @@ describe("updateOrganizationDomain", () => {
     expect(mockOrganizationsUpdateDomain).toHaveBeenCalledWith("org-1", "dom-1", {
       autoApprove: false,
     });
+  });
+});
+
+describe("deleteOrganizationAction (ADMIN-P2-002)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("requires the typed slug to match before calling the API", async () => {
+    const { deleteOrganizationAction } = await import(
+      "@/app/(admin)/admin/organizations/[orgId]/actions"
+    );
+
+    const formData = new FormData();
+    formData.set("organizationSlug", "acme");
+    formData.set("confirmSlug", "not-acme");
+
+    const result = await deleteOrganizationAction("org-1", formData);
+
+    expect(result).toEqual(expect.objectContaining({ ok: false }));
+    expect(mockOrganizationsRemove).not.toHaveBeenCalled();
+  });
+
+  it("requires the typed slug to be present", async () => {
+    const { deleteOrganizationAction } = await import(
+      "@/app/(admin)/admin/organizations/[orgId]/actions"
+    );
+
+    const formData = new FormData();
+    formData.set("organizationSlug", "acme");
+
+    const result = await deleteOrganizationAction("org-1", formData);
+
+    expect(result).toEqual(expect.objectContaining({ ok: false }));
+    expect(mockOrganizationsRemove).not.toHaveBeenCalled();
+  });
+
+  it("sends the typed slug to the API and redirects on success", async () => {
+    mockOrganizationsRemove.mockResolvedValue(undefined);
+    const { redirect } = await import("next/navigation");
+    const { deleteOrganizationAction } = await import(
+      "@/app/(admin)/admin/organizations/[orgId]/actions"
+    );
+
+    const formData = new FormData();
+    formData.set("organizationSlug", "acme");
+    formData.set("confirmSlug", "acme");
+
+    await deleteOrganizationAction("org-1", formData);
+
+    expect(mockOrganizationsRemove).toHaveBeenCalledWith("org-1", "acme");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/admin/organizations");
+    expect(redirect).toHaveBeenCalledWith("/admin/organizations");
   });
 });

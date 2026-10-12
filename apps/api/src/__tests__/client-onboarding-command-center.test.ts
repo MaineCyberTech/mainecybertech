@@ -298,7 +298,7 @@ describe("client-onboarding-command-center routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/client-onboarding/00000000-0000-0000-0000-000000000120")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -441,7 +441,7 @@ describe("client-onboarding-command-center routes", () => {
       mockRecord(ORG_B);
       const res = await request(app)
         .delete(`/api/v1/client-onboarding/${RECORD_ID}`)
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
       expect(res.status).toBe(404);
     });
 

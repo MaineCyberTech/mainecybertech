@@ -8,6 +8,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { requireEntitlement } from "../middleware/entitlement";
 import { queryInt } from "../lib/query";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -189,6 +190,7 @@ router.delete(
   requirePermission("training-hub", "delete"),
   async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getScopedClient(req, "training-hub", "write");
       const { error } = await supabase
         .from("training_courses")
@@ -399,6 +401,7 @@ router.delete(
   requirePermission("training-hub", "delete"),
   async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getScopedClient(req, "training-hub", "write");
       const { data: scoped, error: scopeError } = await supabase
         .from("training_lessons")

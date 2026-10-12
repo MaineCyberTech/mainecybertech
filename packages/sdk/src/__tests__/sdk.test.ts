@@ -398,12 +398,13 @@ describe("MCTClient", () => {
       expect(result.name).toBe("Test");
     });
 
-    it("remove deletes organization", async () => {
+    it("remove deletes organization with the typed slug", async () => {
       mockFetch.mockResolvedValue(mockResponse(null));
 
-      await client.organizations.remove("1");
+      await client.organizations.remove("1", "test-org");
 
       expect(mockFetch.mock.calls[0][1]?.method).toBe("DELETE");
+      expect(mockFetch.mock.calls[0][1]?.body).toBe(JSON.stringify({ confirm: true, slug: "test-org" }));
     });
 
     it("listDomains fetches domains", async () => {

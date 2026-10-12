@@ -30,6 +30,7 @@ import {
 } from "../validators/project";
 import { queryInt } from "../lib/query";
 import { recordProjectCreated } from "../lib/metrics";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -335,6 +336,7 @@ function projectSubRoute(
     requirePermission("projects", "delete"),
     async (req, res, next) => {
       try {
+        assertDeleteConfirmed(req.body);
         const supabase = getScopedClient(req, "projects", "write");
         const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
@@ -611,6 +613,7 @@ router.patch(
 
 router.delete("/:id", requirePermission("projects", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "projects", "write");
     const project = await loadOwned(
       req,
@@ -791,6 +794,7 @@ router.delete(
   requirePermission("projects", "delete"),
   async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getScopedClient(req, "projects", "write");
       await assertProjectInOrg(
         String(req.params.id),

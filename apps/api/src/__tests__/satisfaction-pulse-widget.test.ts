@@ -307,7 +307,7 @@ describe("satisfaction-pulse-widget routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/satisfaction-pulse/pulse-1")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

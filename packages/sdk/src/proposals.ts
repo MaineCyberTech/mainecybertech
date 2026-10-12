@@ -136,7 +136,7 @@ export class ProposalsApi {
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/proposals/${id}`);
+    return this.client.delete<void>(`/api/v1/proposals/${id}`, undefined, { confirm: true });
   }
 
   addPhase(
@@ -170,7 +170,11 @@ export class ProposalsApi {
   }
 
   removePhase(proposalId: string, phaseId: string) {
-    return this.client.delete<void>(`/api/v1/proposals/${proposalId}/phases/${phaseId}`);
+    return this.client.delete<void>(
+      `/api/v1/proposals/${proposalId}/phases/${phaseId}`,
+      undefined,
+      { confirm: true },
+    );
   }
 
   addItem(
@@ -201,7 +205,11 @@ export class ProposalsApi {
   }
 
   removeItem(proposalId: string, itemId: string) {
-    return this.client.delete<void>(`/api/v1/proposals/${proposalId}/items/${itemId}`);
+    return this.client.delete<void>(
+      `/api/v1/proposals/${proposalId}/items/${itemId}`,
+      undefined,
+      { confirm: true },
+    );
   }
 
   submitForApproval(proposalId: string, data: { organizationId: string }) {

@@ -15,6 +15,7 @@ import {
 } from "../validators/domain-monitors";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -281,6 +282,7 @@ router.patch(
 
 router.delete("/:id", requirePermission("domain-monitors", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "domain-monitors", "write");
     await loadOwned(req, supabase as any, "domain_monitors", String(req.params.id as string));
     const { error } = await supabase

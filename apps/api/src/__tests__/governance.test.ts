@@ -245,7 +245,7 @@ describe("Governance API", () => {
     s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
     const r = await request(app)
       .delete("/api/v1/governance/change-requests/ch-1")
-      .set("Authorization", auth);
+      .set("Authorization", auth).send({ confirm: true });
     expect(r.status).toBe(204);
   });
 

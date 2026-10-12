@@ -16,7 +16,8 @@ export class StatusPageApi {
       this.client.post("/api/v1/status-page/components", data),
     update: (id: string, data: Record<string, unknown>) =>
       this.client.patch(`/api/v1/status-page/components/${id}`, data),
-    remove: (id: string) => this.client.delete(`/api/v1/status-page/components/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/status-page/components/${id}`, undefined, { confirm: true }),
   };
 
   incidents = {
@@ -32,7 +33,8 @@ export class StatusPageApi {
       this.client.post("/api/v1/status-page/incidents", data),
     update: (id: string, data: Record<string, unknown>) =>
       this.client.patch(`/api/v1/status-page/incidents/${id}`, data),
-    remove: (id: string) => this.client.delete(`/api/v1/status-page/incidents/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/status-page/incidents/${id}`, undefined, { confirm: true }),
   };
 
   maintenance = {
@@ -48,7 +50,8 @@ export class StatusPageApi {
       this.client.post("/api/v1/status-page/maintenance", data),
     update: (id: string, data: Record<string, unknown>) =>
       this.client.patch(`/api/v1/status-page/maintenance/${id}`, data),
-    remove: (id: string) => this.client.delete(`/api/v1/status-page/maintenance/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/status-page/maintenance/${id}`, undefined, { confirm: true }),
   };
 
   publicStatus = (orgId: string) => this.client.get(`/api/v1/status-page/public/${orgId}`);

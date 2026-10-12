@@ -11,6 +11,7 @@ import {
   submitDynamicFormSchema,
   exportDynamicFormsSchema,
 } from "../validators/dynamic-client-forms-builder";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import {
   listDynamicForms,
   getDynamicForm,
@@ -141,6 +142,7 @@ router.delete(
   requirePermission("dynamic-forms", "delete"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      assertDeleteConfirmed(req.body);
       const orgId = getOrgId(req);
       const userId = getUserId(req);
       const id = getParam(req, "id");

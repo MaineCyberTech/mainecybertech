@@ -266,7 +266,7 @@ describe("memberships routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/memberships/mem-1")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
@@ -282,7 +282,7 @@ describe("memberships routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/memberships/mem-1")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(404);
     });

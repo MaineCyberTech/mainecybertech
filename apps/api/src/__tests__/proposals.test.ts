@@ -235,7 +235,7 @@ describe("Proposal tenant isolation (QW-1)", () => {
     mockProposal(ORG_A);
     const res = await request(app)
       .delete(`/api/v1/proposals/${PROPOSAL_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 
@@ -243,7 +243,7 @@ describe("Proposal tenant isolation (QW-1)", () => {
     mockProposal(ORG_B);
     const res = await request(app)
       .delete(`/api/v1/proposals/${PROPOSAL_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(404);
   });
 
@@ -278,7 +278,7 @@ describe("Proposal tenant isolation (QW-1)", () => {
     mockProposal(ORG_B);
     const res = await request(app)
       .delete(`/api/v1/proposals/${PROPOSAL_ID}/phases/00000000-0000-0000-0000-0000000000p1`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(404);
   });
 
@@ -328,7 +328,7 @@ describe("Proposal tenant isolation (QW-1)", () => {
     mockProposal(ORG_B);
     const res = await request(app)
       .delete(`/api/v1/proposals/${PROPOSAL_ID}/items/00000000-0000-0000-0000-0000000000i1`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(404);
   });
 

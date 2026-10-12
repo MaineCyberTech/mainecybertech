@@ -63,6 +63,6 @@ export class DeviceProfilesApi {
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/device-profiles/${id}`);
+    return this.client.delete<void>(`/api/v1/device-profiles/${id}`, undefined, { confirm: true });
   }
 }

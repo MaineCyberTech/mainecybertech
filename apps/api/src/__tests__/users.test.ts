@@ -369,7 +369,7 @@ describe("users routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/users/user-2")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(204);
       expect(scrubBuilder.update).toHaveBeenCalledWith(
@@ -395,7 +395,7 @@ describe("users routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/users/user-2")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(403);
       expect(supabase.auth.admin.deleteUser).not.toHaveBeenCalled();
@@ -406,7 +406,7 @@ describe("users routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/users/user-1")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(400);
       expect(supabase.auth.admin.deleteUser).not.toHaveBeenCalled();
@@ -425,7 +425,7 @@ describe("users routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/users/missing")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(404);
       expect(supabase.auth.admin.deleteUser).not.toHaveBeenCalled();

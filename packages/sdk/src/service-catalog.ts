@@ -35,6 +35,6 @@ export class ServiceCatalogApi {
     return this.client.patch<ServiceCatalogItem>(`/api/v1/service-catalog/${id}`, data);
   }
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/service-catalog/${id}`);
+    return this.client.delete<void>(`/api/v1/service-catalog/${id}`, undefined, { confirm: true });
   }
 }

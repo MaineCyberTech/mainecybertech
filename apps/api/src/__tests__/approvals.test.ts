@@ -427,7 +427,7 @@ describe("Approval tenant isolation (QW-1)", () => {
     mockApproval(ORG_A);
     const res = await request(app)
       .delete(`/api/v1/approvals/${APPROVAL_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 
@@ -435,7 +435,7 @@ describe("Approval tenant isolation (QW-1)", () => {
     mockApproval(ORG_B);
     const res = await request(app)
       .delete(`/api/v1/approvals/${APPROVAL_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(404);
   });
 

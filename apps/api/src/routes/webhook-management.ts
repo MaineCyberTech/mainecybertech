@@ -272,6 +272,7 @@ router.delete(
   requirePermission("webhooks", "manage"),
   async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getScopedClient(req, "webhook-management", "write");
       const { deadLetter, endpoint } = await loadDeadLetterOwned(
         req,

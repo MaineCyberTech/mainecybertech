@@ -1,5 +1,5 @@
 import { jest } from "@jest/globals";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import React from "react";
 
 const mockPhasesList = jest.fn();
@@ -84,5 +84,24 @@ describe("ProjectTrackerPanels", () => {
     render(<ProjectTrackerPanels projectId="p1" />);
 
     expect(await screen.findByText(/failed to load project tracker/i)).toBeInTheDocument();
+  });
+
+  it("requires confirmation before removing a phase (ADMIN-P2-002)", async () => {
+    mockPhasesList.mockResolvedValue({
+      items: [
+        { id: "ph1", name: "Discovery", status: "planned", start_date: null, end_date: null },
+      ],
+    });
+    render(<ProjectTrackerPanels projectId="p1" />);
+
+    const rowRemove = await screen.findByRole("button", { name: /^remove$/i });
+    fireEvent.click(rowRemove);
+
+    // The row button opens a dialog instead of deleting immediately.
+    expect(mockPhasesRemove).not.toHaveBeenCalled();
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: /^remove$/i }));
+
+    await waitFor(() => expect(mockPhasesRemove).toHaveBeenCalledWith("ph1"));
   });
 });

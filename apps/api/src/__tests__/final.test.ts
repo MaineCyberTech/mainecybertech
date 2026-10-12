@@ -109,7 +109,7 @@ describe("Final API", () => {
   it("deletes a sharepoint plan", async () => {
     const s = ma();
     s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
-    const r = await request(app).delete("/api/v1/final/sharepoint/sp-1").set("Authorization", auth);
+    const r = await request(app).delete("/api/v1/final/sharepoint/sp-1").set("Authorization", auth).send({ confirm: true });
     expect(r.status).toBe(204);
   });
 

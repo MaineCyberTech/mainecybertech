@@ -57,7 +57,10 @@ export class VendorsApi {
       this.client.post<VendorContract>("/api/v1/vendors/vendor-contracts", data),
     update: (id: string, data: Record<string, unknown>) =>
       this.client.patch<VendorContract>(`/api/v1/vendors/vendor-contracts/${id}`, data),
-    remove: (id: string) => this.client.delete<void>(`/api/v1/vendors/vendor-contracts/${id}`),
+    remove: (id: string) =>
+      this.client.delete<void>(`/api/v1/vendors/vendor-contracts/${id}`, undefined, {
+        confirm: true,
+      }),
     renewals: (params?: { organizationId?: string }) => {
       const qp: Record<string, string | undefined> = {};
       if (params?.organizationId) qp.organization_id = params.organizationId;
@@ -87,6 +90,9 @@ export class VendorsApi {
       this.client.post<VendorContact>("/api/v1/vendors/vendor-contacts", data),
     update: (id: string, data: Record<string, unknown>) =>
       this.client.patch<VendorContact>(`/api/v1/vendors/vendor-contacts/${id}`, data),
-    remove: (id: string) => this.client.delete<void>(`/api/v1/vendors/vendor-contacts/${id}`),
+    remove: (id: string) =>
+      this.client.delete<void>(`/api/v1/vendors/vendor-contacts/${id}`, undefined, {
+        confirm: true,
+      }),
   };
 }

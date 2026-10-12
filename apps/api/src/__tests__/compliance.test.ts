@@ -238,7 +238,7 @@ describe("Compliance API", () => {
 
       const res = await request(app)
         .delete("/api/v1/compliance/controls/c1?organization_id=" + testOrgId)
-        .set("Authorization", authToken);
+        .set("Authorization", authToken).send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
@@ -273,7 +273,7 @@ describe("Compliance API", () => {
       mockControl(ORG_B);
       const res = await request(app)
         .delete(`/api/v1/compliance/controls/${CONTROL_ID}?organization_id=${ORG_A}`)
-        .set("Authorization", authToken);
+        .set("Authorization", authToken).send({ confirm: true });
       expect(res.status).toBe(404);
     });
 

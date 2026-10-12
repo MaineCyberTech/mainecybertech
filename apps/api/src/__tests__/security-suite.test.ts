@@ -222,7 +222,7 @@ describe("Security Suite API", () => {
       );
       const r = await request(app)
         .delete("/api/v1/security-suite/m365-hardening/mh-1")
-        .set("Authorization", auth);
+        .set("Authorization", auth).send({ confirm: true });
       expect(r.status).toBe(404);
     });
 
@@ -233,7 +233,7 @@ describe("Security Suite API", () => {
       );
       const r = await request(app)
         .delete("/api/v1/security-suite/m365-hardening/mh-1")
-        .set("Authorization", auth);
+        .set("Authorization", auth).send({ confirm: true });
       expect(r.status).toBe(204);
     });
   });

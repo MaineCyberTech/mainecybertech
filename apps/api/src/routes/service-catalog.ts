@@ -8,6 +8,7 @@ import { requirePermission } from "../middleware/permissions";
 import { requireEntitlement } from "../middleware/entitlement";
 import { createServiceSchema, updateServiceSchema } from "../validators/service-catalog";
 import { queryInt } from "../lib/query";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -138,6 +139,7 @@ router.patch("/:id", requirePermission("service-catalog", "edit"), async (req, r
 
 router.delete("/:id", requirePermission("service-catalog", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "service-catalog", "write");
     const { error } = await supabase
       .from("service_catalog")

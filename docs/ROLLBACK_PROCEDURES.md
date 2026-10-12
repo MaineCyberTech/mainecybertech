@@ -77,6 +77,35 @@ in-row tombstones. If soft delete is ever revisited it must be implemented
 end-to-end: writes set `deleted_at`/`deleted_by`, every read **and every RLS
 policy** filters `deleted_at is null`, and child rows are handled.
 
+### Recovering a deleted organization (ADMIN-P2-002)
+
+`DELETE /api/v1/organizations/:id` is a permanent, cascading hard delete. It
+requires the typed organization slug (`{ confirm: true, slug: "<slug>" }`) and
+fails closed if the org's `audit_logs` rows cannot first be copied to the
+append-only archive — but once it succeeds there is no in-console undo and no
+tombstone. Recovery is an operator procedure:
+
+1. Confirm the deletion time and blast radius. The `organization.delete` audit
+   event records `metadata.cascade` (memberships/domains/documents/tickets/projects);
+   the org's archived audit rows are in `audit_log_archive`.
+2. Choose the recovery path:
+   - **Within PITR retention (7 days):** follow Option B below to restore the
+     project to a point immediately before the delete, then copy the
+     organization row and its dependent rows forward. Do not point production
+     at the throwaway restore instance permanently.
+   - **Beyond PITR:** follow §3a to restore the latest daily dump into a
+     throwaway project, then copy the org's rows forward the same way.
+3. Re-link storage objects: file storage is not part of the database dump —
+   restore the affected prefixes with `scripts/restore-storage.sh` (see
+   `storage-restore-test.yml` for the pattern), then re-verify memberships and
+   domains for the org.
+4. Record the recovery: operator, restore point, and row counts in the incident
+   log (`docs/INCIDENT_RESPONSE.md`).
+
+Prevention: the admin console's Danger Zone requires typing the organization
+slug, and the API enforces the same typed-slug contract, so a single mistaken
+click can no longer delete a tenant.
+
 ### Option A: Reverse migration
 
 ```bash

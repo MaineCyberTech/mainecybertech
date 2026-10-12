@@ -12,6 +12,7 @@ import {
 } from "../validators/network-diagrams";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -144,6 +145,7 @@ router.patch("/:id", requirePermission("network-port-maps", "edit"), async (req,
 
 router.delete("/:id", requirePermission("network-port-maps", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "network-diagrams", "write");
     await loadOwned(req, supabase as any, "network_diagrams", String(req.params.id as string));
     const { error } = await supabase

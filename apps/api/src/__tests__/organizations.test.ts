@@ -27,6 +27,7 @@ jest.mock("../services/audit", () => ({
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";
+import { logAuditEvent } from "../services/audit";
 
 function mockAuth() {
   const supabase = {
@@ -360,26 +361,78 @@ describe("organizations routes", () => {
   });
 
   describe("DELETE /:id", () => {
-    it("deletes an organization (admin only)", async () => {
-      const supabase = mockAdmin();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+    it("deletes an organization with the typed slug confirmation", async () => {
+      const supabase = mockAuth();
+      const orgBuilder = createMockBuilder({ data: ORG, error: null });
+      const countBuilder = createMockBuilder({ data: null, error: null, count: 2 });
+      const deleteBuilder = createMockBuilder({ data: null, error: null });
+      supabase.from
+        .mockReturnValueOnce(orgBuilder)
+        .mockReturnValueOnce(countBuilder)
+        .mockReturnValueOnce(countBuilder)
+        .mockReturnValueOnce(countBuilder)
+        .mockReturnValueOnce(countBuilder)
+        .mockReturnValueOnce(countBuilder)
+        .mockReturnValue(deleteBuilder);
+
+      const res = await request(app)
+        .delete("/api/v1/organizations/org-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true, slug: ORG.slug });
+
+      expect(res.status).toBe(204);
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "organization.delete",
+          entityId: "org-1",
+          metadata: expect.objectContaining({
+            slug: ORG.slug,
+            // ADMIN-P2-002: the audit event records the pre-delete cascade size.
+            cascade: { memberships: 2, domains: 2, documents: 2, tickets: 2, projects: 2 },
+          }),
+        }),
+      );
+    });
+
+    it("requires an explicit confirmation body", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(createMockBuilder({ data: ORG, error: null }));
 
       const res = await request(app)
         .delete("/api/v1/organizations/org-1")
         .set("Authorization", "Bearer token-123");
 
-      expect(res.status).toBe(204);
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("CONFIRMATION_REQUIRED");
+    });
+
+    it("rejects a mismatched typed slug", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(createMockBuilder({ data: ORG, error: null }));
+
+      const res = await request(app)
+        .delete("/api/v1/organizations/org-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true, slug: "some-other-org" });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("CONFIRMATION_REQUIRED");
     });
 
     it("archives the org's audit history before deleting (DATA-P2-005)", async () => {
       const supabase = mockAuth();
+      const orgBuilder = createMockBuilder({ data: ORG, error: null });
       const auditBuilder = createMockBuilder({ data: null, error: null });
       const deleteBuilder = createMockBuilder({ data: null, error: null });
-      supabase.from.mockReturnValueOnce(auditBuilder).mockReturnValue(deleteBuilder);
+      supabase.from
+        .mockReturnValueOnce(orgBuilder)
+        .mockReturnValueOnce(auditBuilder)
+        .mockReturnValue(deleteBuilder);
 
       const res = await request(app)
         .delete("/api/v1/organizations/org-1")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true, slug: ORG.slug });
 
       expect(res.status).toBe(204);
       expect(supabase.rpc).toHaveBeenCalledWith("archive_org_audit_logs", {
@@ -393,8 +446,9 @@ describe("organizations routes", () => {
 
     it("fails closed when the audit archive fails", async () => {
       const supabase = mockAuth();
+      const orgBuilder = createMockBuilder({ data: ORG, error: null });
       const builder = createMockBuilder({ data: null, error: null });
-      supabase.from.mockReturnValue(builder);
+      supabase.from.mockReturnValueOnce(orgBuilder).mockReturnValue(builder);
       supabase.rpc.mockResolvedValueOnce({
         data: null,
         error: { message: "archive unavailable" },
@@ -402,7 +456,8 @@ describe("organizations routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/organizations/org-1")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true, slug: ORG.slug });
 
       expect(res.status).toBe(500);
       expect(builder.delete).not.toHaveBeenCalled();
@@ -410,12 +465,14 @@ describe("organizations routes", () => {
 
     it("fails closed when audit rows remain after archiving", async () => {
       const supabase = mockAuth();
+      const orgBuilder = createMockBuilder({ data: ORG, error: null });
       const builder = createMockBuilder({ data: null, error: null, count: 3 });
-      supabase.from.mockReturnValue(builder);
+      supabase.from.mockReturnValueOnce(orgBuilder).mockReturnValue(builder);
 
       const res = await request(app)
         .delete("/api/v1/organizations/org-1")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true, slug: ORG.slug });
 
       expect(res.status).toBe(409);
       expect(builder.delete).not.toHaveBeenCalled();
@@ -473,7 +530,7 @@ describe("organizations routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/organizations/org-1/domains/dom-1")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(204);
     });

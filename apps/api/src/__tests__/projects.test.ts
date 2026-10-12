@@ -254,7 +254,7 @@ describe("projects routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
@@ -270,7 +270,7 @@ describe("projects routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(404);
     });
@@ -285,7 +285,7 @@ describe("projects routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/projects/phases/phase-1")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(204);
       expect(logAuditEvent).toHaveBeenCalledWith(
@@ -381,7 +381,7 @@ describe("projects routes", () => {
         .delete(
           "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031",
         )
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
@@ -721,7 +721,7 @@ describe("projects routes", () => {
         .delete(
           `/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031?organization_id=${ORG}`,
         )
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(404);
     });

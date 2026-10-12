@@ -71,7 +71,7 @@ export class AssetsApi {
     return this.client.patch<Asset>(`/api/v1/assets/${id}`, data);
   }
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/assets/${id}`);
+    return this.client.delete<void>(`/api/v1/assets/${id}`, undefined, { confirm: true });
   }
 
   stats(params?: { organizationId?: string }) {

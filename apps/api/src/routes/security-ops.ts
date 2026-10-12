@@ -15,6 +15,7 @@ import {
   createPatchSchema,
 } from "../validators/security-ops";
 import { queryInt } from "../lib/query";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -139,6 +140,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
 
   router.delete(`/${path}/:id`, requirePermission(path, "delete"), async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const sb = getScopedClient(req, "security-ops", "write");
       const { error } = await sb
         .from(table)

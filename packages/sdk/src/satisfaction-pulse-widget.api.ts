@@ -59,7 +59,7 @@ export class SatisfactionPulseApi {
   async remove(id: string) {
     const response = await this.client.delete<{ deleted: boolean }>(
       `/api/v1/satisfaction-pulse/${id}`,
-    );
+    , undefined, { confirm: true });
     return response;
   }
 
@@ -145,7 +145,7 @@ export class SatisfactionPulseApi {
   async removeSchedule(id: string) {
     const response = await this.client.delete<{ deleted: boolean }>(
       `/api/v1/satisfaction-pulse/schedules/${id}`,
-    );
+    , undefined, { confirm: true });
     return response;
   }
 }

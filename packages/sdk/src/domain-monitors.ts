@@ -68,7 +68,7 @@ export class DomainMonitorsApi {
     return this.client.patch<DomainMonitor>(`/api/v1/domain-monitors/${id}`, data);
   }
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/domain-monitors/${id}`);
+    return this.client.delete<void>(`/api/v1/domain-monitors/${id}`, undefined, { confirm: true });
   }
 
   stats(params?: { organizationId?: string }) {

@@ -33,7 +33,7 @@
 | `GET`    | `/:id` | `requireAuth` + `requireOrgAccess` | —                 | —                          | —            | Single org with member count                         |
 | `POST`   | `/`    | `requireAuth`                      | `createOrgSchema` | Invalidate GET cache       | `org.create` | —                                                    |
 | `PATCH`  | `/:id` | `requireAuth` + `requireOrgAccess` | `updateOrgSchema` | Invalidate cache           | `org.update` | —                                                    |
-| `DELETE` | `/:id` | `requireAuth` + `requireOrgAccess` | —                 | Invalidate cache           | `org.delete` | Soft-delete via status change                        |
+| `DELETE` | `/:id` | `requireAuth` + `requireOrgAccess` | —                 | Invalidate cache           | `org.delete` | Hard delete; requires typed slug `{ confirm: true, slug }`; operator-only PITR recovery |
 
 ---
 

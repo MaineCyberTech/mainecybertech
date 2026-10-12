@@ -24,7 +24,7 @@ export class DmarcCoachApi {
   }
 
   remove(id: string) {
-    return this.client.delete(`/api/v1/dmarc-coach/${id}`);
+    return this.client.delete(`/api/v1/dmarc-coach/${id}`, undefined, { confirm: true });
   }
 
   analyze(data: Record<string, unknown>) {

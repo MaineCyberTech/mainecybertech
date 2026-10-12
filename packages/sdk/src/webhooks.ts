@@ -119,6 +119,10 @@ export class WebhooksApi {
   }
 
   deleteDeadLetter(id: string) {
-    return this.client.delete<{ ok: boolean }>(`/api/v1/webhook-endpoints/dead-letters/${id}`);
+    return this.client.delete<{ ok: boolean }>(
+      `/api/v1/webhook-endpoints/dead-letters/${id}`,
+      undefined,
+      { confirm: true },
+    );
   }
 }

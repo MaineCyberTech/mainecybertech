@@ -98,7 +98,7 @@ export class ApprovalsApi {
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/approvals/${id}`);
+    return this.client.delete<void>(`/api/v1/approvals/${id}`, undefined, { confirm: true });
   }
 
   approve(id: string, data: { organizationId: string; notes?: string | null }) {

@@ -305,7 +305,7 @@ describe("Status Page API", () => {
       );
       const res = await request(app)
         .delete(`/api/v1/status-page/components/c1?organization_id=${testOrgId}`)
-        .set("Authorization", authToken);
+        .set("Authorization", authToken).send({ confirm: true });
       expect(res.status).toBe(204);
       expect(logAuditEvent).toHaveBeenCalledWith(
         expect.objectContaining({
