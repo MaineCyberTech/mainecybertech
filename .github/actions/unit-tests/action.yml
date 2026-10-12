@@ -2,9 +2,9 @@ name: Unit tests and schema guards
 description: >
   The coverage suite plus every repo guard (OpenAPI, docs counts/links, DB
   types, RLS hygiene, membership-predicate lint, migration transaction lint,
-  required-check parity, review.md mirror). Shared by test.yml (PRs) and
-  validate.yml (push deploy gate) so the two definitions cannot drift apart
-  again.
+  required-check parity, branch-protection drift/bypass fixtures, review.md
+  mirror). Shared by test.yml (PRs) and validate.yml (push deploy gate) so the
+  two definitions cannot drift apart again.
 
 inputs:
   node-version:
@@ -82,6 +82,14 @@ runs:
       # silently. Shared by the PR gate and the deploy gate.
       shell: bash
       run: scripts/ci/check-required-checks.sh
+
+    - name: Verify the branch-protection drift/bypass detector (BP-P2-002/BP-P2-003)
+      # Fixture-driven self-test for scripts/branch-protection-audit.mjs: the
+      # scheduled audit must fail on a drifted or unprotected branch and on a
+      # merged PR that missed/failed a required check, and pass on matching
+      # fixtures, so a broken detector cannot pass silently.
+      shell: bash
+      run: scripts/ci/check-branch-protection-audit.sh
 
     - name: Verify review.md mirror is in sync
       shell: bash

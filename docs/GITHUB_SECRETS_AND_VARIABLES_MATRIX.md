@@ -151,6 +151,7 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 | `SUPABASE_ACCESS_TOKEN`   | yes | yes  | Supabase CLI auth for `supabase link` / `db push` (`supabase-migrations.yml`) |
 | `CHROMATIC_PROJECT_TOKEN` | yes | yes  | Chromatic visual-regression upload (`chromatic.yml`; the job fails on a broken Storybook build or a visual change once a baseline exists) |
 | `E2E_JWT_SECRET`          | opt | opt  | Optional E2E JWT secret; `e2e.yml` falls back to a built-in test value        |
+| `BRANCH_PROTECTION_READ_TOKEN` | yes | yes | Repo-wide fine-grained PAT with `Administration: read` (+ `Contents`/`Pull requests`/`Checks: read`) for `branch-protection-audit.yml` (BP-P2-002/003); the default `GITHUB_TOKEN` cannot read classic branch protection |
 
 > `SCHEDULE_DISPATCH_TOKEN` was retired with `backup-dispatch.yml`
 > (CI-P2-010): the backup workflows are scheduled on the default branch, so
@@ -215,6 +216,7 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
    - `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` — external dead-man's-switch heartbeat URL (not on the droplet); **required for prod** (deploys fail closed without it), dev warns
    - `ALERTMANAGER_CRITICAL_WEBHOOK_URL` / `ALERTMANAGER_DEFAULT_WEBHOOK_URL` / `ALERTMANAGER_WEBHOOK_USER` / `ALERTMANAGER_WEBHOOK_PASS` — Alertmanager → ntfy `portal-alerts` delivery (see `docs/MONITORING_AND_ALERTING.md` §9)
    - `NTFY_ALERTS_URL` / `NTFY_ALERTS_USER` / `NTFY_ALERTS_PASS` — ntfy notifications for the backup / storage-backup / restore-test / staleness-check workflows (Slack remains a fallback)
+   - `BRANCH_PROTECTION_READ_TOKEN` — repo-wide fine-grained PAT with **Administration: read** on this repository (plus `Contents: read`, `Pull requests: read`, `Checks: read`); used by `branch-protection-audit.yml` to compare the committed JSON with the live branch protection and to audit bypasses. The default `GITHUB_TOKEN` cannot read classic branch protection, so the drift/bypass jobs fail closed until this exists (BP-P2-002/003; see `docs/RUNBOOK_EMERGENCY_MERGE.md`)
    - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — from Stripe dashboard
    - `CHROMATIC_PROJECT_TOKEN` — from the Chromatic project (visual regression)
    - Integration secrets as needed (Jira, JSM, M365, SMTP, Sentry, Teams webhooks)

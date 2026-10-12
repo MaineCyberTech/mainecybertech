@@ -153,9 +153,9 @@ pnpm e2e                     # Playwright E2E
 | Web components            | 121 | `apps/web/components/`                                                                                                                                                 |
 | SQL migrations            | 151 | `supabase/migrations/` (latest: 5302453_push_subscriptions                                                                                              |
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
-| GitHub Actions workflows  | 24 | `.github/workflows/`                                                                                                                                                   |
+| GitHub Actions workflows  | 25 | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 632 | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
-| Build/dev/utility scripts | 100 | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
+| Build/dev/utility scripts | 115 | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
 
 ## Database Types (2026-09-21)
 

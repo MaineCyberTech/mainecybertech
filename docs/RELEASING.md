@@ -22,6 +22,11 @@ what to check first.
   (`cancel-in-progress: false`) — an in-flight prod deploy is never cancelled.
 - `main` → prod (`app.mainecybertech.com`), `develop` → dev
   (`app.mainecybertech.us`). Promoting means merging `develop` into `main`.
+- Branch protection is committed as code (`.github/branch-protection/*.json`).
+  A weekly audit compares it with the live settings and records bypasses; when
+  a required check is stuck, follow
+  [RUNBOOK_EMERGENCY_MERGE.md](RUNBOOK_EMERGENCY_MERGE.md) instead of bypassing
+  ad hoc.
 
 ## Quality gates
 

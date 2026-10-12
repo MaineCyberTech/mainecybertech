@@ -1,0 +1,209 @@
+name: Branch Protection Audit
+
+# BP-P2-002 / BP-P2-003: the payloads in .github/branch-protection/ are applied
+# to GitHub by hand, so they can silently drift from the live settings, and a
+# merge that bypasses a required check has no recorded audit trail. This
+# workflow runs two independent checks:
+#
+#   drift  - compares the committed payloads with the live branch protection
+#            (normalized to the committed shape), fails on any difference and
+#            uploads both sides as artifacts. Reading classic branch protection
+#            needs `administration: read`, which the default GITHUB_TOKEN does
+#            not have: set the repo secret BRANCH_PROTECTION_READ_TOKEN to a
+#            fine-grained PAT with `Administration: read` (+ `Contents: read`,
+#            `Pull requests: read`, `Checks: read`). Until that secret exists
+#            the job fails closed with instructions.
+#
+#   bypass - lists PRs merged into main/develop inside the lookback window and
+#            flags merges whose head-SHA check-runs did not satisfy the required
+#            contexts that were live on the branch. Every bypass gets a
+#            deduplicated `[break-glass]` record issue (issue template
+#            `.github/ISSUE_TEMPLATE/break_glass.yml`); the run fails while a
+#            bypass has no record. Process: docs/RUNBOOK_EMERGENCY_MERGE.md.
+#            The org audit-log API (protected_branch.policy_override events) is
+#            not available on the current GitHub plan, so the trail is
+#            reconstructed from PR + check-run evidence.
+#
+# Schedules only fire from the default branch; dispatch this from develop until
+# it is promoted to main. Operator follow-ups (cannot be set from the repo):
+# create BRANCH_PROTECTION_READ_TOKEN and reconcile the live settings with the
+# committed JSON — the first run reports the pre-existing divergence.
+
+on:
+  schedule:
+    - cron: "45 7 * * 1"   # weekly, Mondays 07:45 UTC
+  workflow_dispatch:
+    inputs:
+      lookback_days:
+        description: "Bypass audit: how many days of merged PRs to inspect"
+        required: false
+        default: "14"
+
+jobs:
+  drift:
+    # NTFY_ALERTS_* live in the `dev` environment (same as the backup checks).
+    environment: dev
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Compare the committed protection with the live settings
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_PROTECTION_TOKEN: ${{ secrets.BRANCH_PROTECTION_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          node scripts/branch-protection-audit.mjs --mode drift \
+            --repo "$GITHUB_REPOSITORY" \
+            --report-dir branch-protection-audit/drift
+
+      - name: Upload drift evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: branch-protection-drift
+          path: branch-protection-audit/drift
+          if-no-files-found: ignore
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          NTFY_URL: ${{ secrets.NTFY_ALERTS_URL }}
+          NTFY_USER: ${{ secrets.NTFY_ALERTS_USER }}
+          NTFY_PASS: ${{ secrets.NTFY_ALERTS_PASS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE="❌ Branch-protection drift check failed — the live settings no longer match .github/branch-protection/*.json (or the check could not run). Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ -n "$NTFY_URL" ]; then
+            curl -sf -u "$NTFY_USER:$NTFY_PASS" \
+              -H "Title: Branch-protection drift detected" -H "Priority: high" -H "Tags: rotating_light" \
+              -d "$MESSAGE" "$NTFY_URL"
+            echo "Notified via ntfy"
+          elif [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -sf -X POST -H "Content-Type: application/json" \
+              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL"
+            echo "Notified via Slack"
+          else
+            echo "::error::Drift alert could not be delivered: set NTFY_ALERTS_URL or SLACK_WEBHOOK_URL"
+            exit 1
+          fi
+
+  bypass:
+    # NTFY_ALERTS_* live in the `dev` environment (same as the backup checks).
+    environment: dev
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: read
+      issues: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Detect bypasses (merged PRs that skipped a required check)
+        id: detect
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_PROTECTION_TOKEN: ${{ secrets.BRANCH_PROTECTION_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p branch-protection-audit/bypass
+          set +e
+          node scripts/branch-protection-audit.mjs --mode bypass \
+            --repo "$GITHUB_REPOSITORY" \
+            --lookback-days "${{ inputs.lookback_days || '14' }}" \
+            --report-dir branch-protection-audit/bypass
+          rc=$?
+          set -e
+          case "$rc" in
+            0) echo "found=false" >> "$GITHUB_OUTPUT" ;;
+            1) echo "found=true" >> "$GITHUB_OUTPUT" ;;
+            *)
+              echo "::error::Bypass audit could not run (exit $rc) — see the job log."
+              exit "$rc"
+              ;;
+          esac
+
+      - name: Record each bypass with a deduplicated break-glass issue
+        if: steps.detect.outputs.found == 'true'
+        id: record
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh label create break-glass --repo "$GITHUB_REPOSITORY" \
+            --color B60205 --description "Branch-protection bypass record" 2>/dev/null || true
+          jq -c '.bypasses[]' branch-protection-audit/bypass/bypass.json > /tmp/bypasses.ndjson
+          new=0
+          recorded=0
+          while IFS= read -r bypass; do
+            n=$(jq -r '.number' <<<"$bypass")
+            branch=$(jq -r '.branch' <<<"$bypass")
+            title="[break-glass] PR #${n} merged into ${branch} without required checks"
+            existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state all --limit 500 \
+              --json title --jq "[.[] | select(.title | startswith(\"[break-glass] PR #${n} \"))] | length")
+            if [ "$existing" -gt 0 ]; then
+              recorded=$((recorded + 1))
+              continue
+            fi
+            body=$(jq -r --arg run "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" '
+              "The weekly branch-protection audit found that this PR merged into `" + .branch +
+              "` while these required checks were not satisfied:\n\n" +
+              (([.missing_contexts[]? | "- missing: `" + . + "`"] +
+                [.failing_checks[]? | "- `" + .context + "`: " + .conclusion]) | join("\n")) +
+              "\n\nFollow docs/RUNBOOK_EMERGENCY_MERGE.md: confirm the approver and time-box in this issue, paste the restoration evidence, and complete the post-incident review within 5 business days. Audit run: " + $run
+            ' <<<"$bypass")
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "$title" --label break-glass --body "$body"
+            new=$((new + 1))
+          done < /tmp/bypasses.ndjson
+          {
+            echo "### Branch-protection bypass audit"
+            echo ""
+            echo "- merged PRs inspected: $(jq -r '.prs_checked' branch-protection-audit/bypass/bypass.json)"
+            echo "- bypasses found: $(jq -r '.bypasses | length' branch-protection-audit/bypass/bypass.json)"
+            echo "- already recorded: $recorded"
+            echo "- new [break-glass] records opened: $new"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "new=$new" >> "$GITHUB_OUTPUT"
+
+      - name: Fail while a bypass has no break-glass record
+        if: steps.record.outputs.new != '' && steps.record.outputs.new != '0'
+        run: |
+          echo "::error::${{ steps.record.outputs.new }} newly detected branch-protection bypass(es) were recorded as [break-glass] issues. Complete the record (approver, time-box, restoration evidence) and the post-incident review — see docs/RUNBOOK_EMERGENCY_MERGE.md."
+          exit 1
+
+      - name: Upload bypass evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: branch-protection-bypass
+          path: branch-protection-audit/bypass
+          if-no-files-found: ignore
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          NTFY_URL: ${{ secrets.NTFY_ALERTS_URL }}
+          NTFY_USER: ${{ secrets.NTFY_ALERTS_USER }}
+          NTFY_PASS: ${{ secrets.NTFY_ALERTS_PASS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE="❌ Branch-protection bypass audit failed — a merge bypassed a required check and needs a [break-glass] record, or the check could not run. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ -n "$NTFY_URL" ]; then
+            curl -sf -u "$NTFY_USER:$NTFY_PASS" \
+              -H "Title: Branch-protection bypass detected" -H "Priority: high" -H "Tags: rotating_light" \
+              -d "$MESSAGE" "$NTFY_URL"
+            echo "Notified via ntfy"
+          elif [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -sf -X POST -H "Content-Type: application/json" \
+              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL"
+            echo "Notified via Slack"
+          else
+            echo "::error::Bypass alert could not be delivered: set NTFY_ALERTS_URL or SLACK_WEBHOOK_URL"
+            exit 1
+          fi

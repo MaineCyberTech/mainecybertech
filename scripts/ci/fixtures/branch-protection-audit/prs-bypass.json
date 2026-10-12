@@ -1,0 +1,26 @@
+[
+  {
+    "number": 902,
+    "title": "merge with a failing required check",
+    "html_url": "https://github.com/fixture/repo/pull/902",
+    "merged_at": "2026-01-06T12:00:00Z",
+    "base": { "ref": "main" },
+    "head": { "sha": "bypass-sha-0002" }
+  },
+  {
+    "number": 903,
+    "title": "clean develop merge",
+    "html_url": "https://github.com/fixture/repo/pull/903",
+    "merged_at": "2026-01-07T12:00:00Z",
+    "base": { "ref": "develop" },
+    "head": { "sha": "clean-sha-0003" }
+  },
+  {
+    "number": 904,
+    "title": "merge with a missing required check",
+    "html_url": "https://github.com/fixture/repo/pull/904",
+    "merged_at": "2026-01-08T12:00:00Z",
+    "base": { "ref": "main" },
+    "head": { "sha": "missing-sha-0004" }
+  }
+]
