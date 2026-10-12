@@ -28,14 +28,14 @@ disabled until the corresponding Store APIs exist:
 
 - **DB-backed (live `store_*` tables via the Store API):** products (+ detail),
   categories, promotions, campaigns, quotes, quote-requests, visuals,
-  import/export, audit.
+  import/export.
 - **Bundled-JSON previews (read-only; marked `Preview` in the UI):**
   case-studies, content-audit, dependencies, faqs, fulfillment, lead-magnets,
   lifecycle, nurture, profitability, proposals, seo-pages. They render starter
   data from `apps/web/lib/catalog/data/*.json` (`v5-loaders`); management
   actions are disabled.
 - **Bundled-JSON read-only views/calculators (no management claims):** store
-  dashboard, analytics, bundles, bundle-calculator, ladders, quiz,
+  dashboard, analytics, audit, bundles, bundle-calculator, ladders, quiz,
   recommendations, comparisons, testimonials, trust-badges, portal-services,
   leads, operations.
 
