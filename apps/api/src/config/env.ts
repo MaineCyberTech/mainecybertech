@@ -1,6 +1,16 @@
 import { z } from "zod";
 
 /**
+ * SEC-P3-006: the API always answers credentialed CORS requests (app.ts sets
+ * `credentials: true`), so a wildcard origin would let any site read
+ * authenticated responses. Allow-all is therefore not supported: CORS_ORIGIN
+ * must be an explicit comma-separated allowlist.
+ */
+export function hasWildcardCorsOrigin(corsOrigin: string): boolean {
+  return corsOrigin.split(",").some((origin) => origin.trim() === "*");
+}
+
+/**
  * True when `raw` is a 64-char hex or base64 value that decodes to exactly 32
  * bytes (an AES-256 key). Kept in sync with lib/field-encryption.getKey().
  */
@@ -22,7 +32,13 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  CORS_ORIGIN: z
+    .string()
+    .default("http://localhost:3000")
+    .refine((value) => !hasWildcardCorsOrigin(value), {
+      message:
+        'CORS_ORIGIN does not support "*": the API sends credentials on every CORS response, so allow-all would expose authenticated responses to any site (SEC-P3-006). Use an explicit comma-separated allowlist.',
+    }),
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),

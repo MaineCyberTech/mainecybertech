@@ -2,7 +2,9 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 import {
+  emailRateLimitKey,
   rateLimitAdminOps,
+  rateLimitAuth,
   rateLimitByUser,
   rateLimitSearch,
   userRateLimitKeyGenerator,
@@ -161,4 +163,53 @@ describe("userRateLimitKeyGenerator", () => {
     expect(userRateLimitKeyGenerator(undefined, "5.6.7.8")).toBe("ip:5.6.7.8");
     expect(userRateLimitKeyGenerator("Basic dXNlcjpwYXNz", "5.6.7.8")).toBe("ip:5.6.7.8");
   });
+});
+
+describe("emailRateLimitKey [SEC-P3-003]", () => {
+  it("normalizes case and whitespace to one hashed bucket", () => {
+    const a = emailRateLimitKey("User@Example.com");
+    const b = emailRateLimitKey("user@example.com");
+    const c = emailRateLimitKey("  USER@example.com ");
+    expect(a).toBe(b);
+    expect(b).toBe(c);
+    expect(a).toMatch(/^[0-9a-f]{32}$/);
+    // the limiter must not hold the plaintext address as a key
+    expect(a).not.toContain("user");
+  });
+
+  it("ignores missing or blank emails", () => {
+    expect(emailRateLimitKey(undefined)).toBeUndefined();
+    expect(emailRateLimitKey("   ")).toBeUndefined();
+    expect(emailRateLimitKey(42)).toBeUndefined();
+  });
+
+  it("keeps distinct addresses in distinct buckets", () => {
+    expect(emailRateLimitKey("a@example.com")).not.toBe(emailRateLimitKey("b@example.com"));
+  });
+});
+
+describe("rateLimitAuth email-key normalization [SEC-P3-003]", () => {
+  function createAuthApp() {
+    const app = express();
+    app.use(express.json());
+    app.use(rateLimitAuth);
+    app.post("/test", (_req, res) => res.json({ ok: true }));
+    return app;
+  }
+
+  it("shares one bucket across case/whitespace variants", async () => {
+    const app = createAuthApp();
+    let limited = 0;
+    // max = 10/15min. 6 + 5 requests across the variants are only capped at
+    // the 11th request when both normalize to the same bucket.
+    for (let i = 0; i < 6; i++) {
+      const res = await request(app).post("/test").send({ email: "Victim@Example.com" });
+      if (res.status === 429) limited++;
+    }
+    for (let i = 0; i < 5; i++) {
+      const res = await request(app).post("/test").send({ email: " victim@example.com " });
+      if (res.status === 429) limited++;
+    }
+    expect(limited).toBe(1);
+  }, 30000);
 });

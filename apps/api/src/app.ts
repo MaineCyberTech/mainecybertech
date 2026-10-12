@@ -3,7 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
-import { getEnv } from "./config/env";
+import { getEnv, hasWildcardCorsOrigin } from "./config/env";
 import { errorHandler } from "./middleware/error";
 import { notFoundHandler } from "./middleware/not-found";
 import { requestId, requestLogger } from "./middleware/request-id";
@@ -94,15 +94,14 @@ export function createApp(): Express {
     .filter(Boolean);
   app.use(
     cors({
-      // For credentialed requests the browser forbids the wildcard "*", so we
-      // reflect the request's Origin instead of echoing "*". When CORS_ORIGIN
-      // is "*" we reflect any origin (intended allow-all semantics, now
-      // functional with credentials); otherwise only the configured origins
-      // are reflected. Requests without an Origin (server-to-server,
-      // same-origin) are allowed as-is.
+      // SEC-P3-006: credentials are always enabled on this API, so only the
+      // configured allowlist is reflected — never "*". getEnv() rejects a
+      // wildcard at boot; if one still reaches here (mock/override), fail
+      // closed rather than reflect every origin. Requests without an Origin
+      // (server-to-server, same-origin) are allowed as-is.
       origin: (origin, cb) => {
         if (!origin) return cb(null, true);
-        if (env.CORS_ORIGIN === "*") return cb(null, true);
+        if (hasWildcardCorsOrigin(env.CORS_ORIGIN)) return cb(null, false);
         if (allowedOriginsList.includes(origin)) return cb(null, true);
         return cb(null, false);
       },
