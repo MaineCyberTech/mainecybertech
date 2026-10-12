@@ -64,6 +64,8 @@ self-tests in `ci/` so a broken detector cannot pass silently.
 | `verify-rls.mjs` | RLS/migration hygiene: helper functions, policy catalog, dead-policy scan. |
 | `generate-db-types.js` | Regenerate `packages/sdk` database types; `--check` (CI + root `db:types:check`) fails on drift. |
 | `openapi-audit.js` | Fail when a statically-resolvable Express route is missing from the generated OpenAPI spec. |
+| `check-permission-catalog.mjs` | Fail when a `requirePermission` literal, a live RLS `user_has_permission` predicate, or a `registerCrud` module key references a pair absent from the permission catalog (ACM-P3-002 / EVOL-P3-002). |
+| `public-route-inventory.mjs` | Generate `docs/PUBLIC_ROUTES.md` from the `auth: false` OpenAPI RouteDefs; `--check` (CI) fails when the inventory is stale (ACM-P3-003). |
 | `sync-review-md.mjs` | Regenerate `review.md` (the mirror of `AGENTS.md`); `--check` runs in CI. |
 | `verify-prompts.js` | Prompt provenance: `generate` / `verify` (CI) / `tree` over the SHA-256 manifest; also enforces the documented size budget. |
 | `check-circular-deps.mjs` | Fail on a circular import across `apps/*` and `packages/*` (HYGIENE-P3-009); `--self-test` proves the detector fails on a synthetic cycle. |
@@ -72,6 +74,7 @@ self-tests in `ci/` so a broken detector cannot pass silently.
 | `e2e-flake-summary.mjs` | Summarise Playwright pass/flake/fail counts into the job summary (TEST-P2-003); informational, never fails the job. |
 | `exercise-alert-path.sh` | Exercise the Alertmanager → ntfy critical-alert path end-to-end (OBS-P2-014 / NOTIF-P2-011); runs on the droplet, piped over SSH by `alert-path-exercise.yml`. |
 | `ci/check-migration-transactions.sh` | Self-test + lint for destructive migrations missing `begin;`/`commit;` (DATA-P2-002). |
+| `ci/check-permission-catalog.sh` | Self-test for `check-permission-catalog.mjs` (live tree + uncatalogued-key negative fixture). |
 | `ci/check-required-checks.sh` | Self-test for `check-required-checks.mjs` (live tree + path-filtered negative fixture). |
 | `ci/check-branch-protection-audit.sh` | Self-test for `branch-protection-audit.mjs` (matching/drifted/unprotected protection fixtures plus clean/bypass merged-PR fixtures). |
 | `ci/check-supply-chain-gates.mjs` | Fixture-driven self-test for `audit-gate.mjs` / `license-gate.mjs` (exception scoping, UNKNOWN fail-closed, `expires` enforcement) — SBOM-P2-009/010. |
