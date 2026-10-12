@@ -21,6 +21,7 @@ import {
 } from "../../lib/intake-handoff";
 import { dispatchWebhook } from "../../lib/webhook-dispatcher";
 import { logger } from "../../lib/logger";
+import { consentVersionFrom } from "../../lib/consent";
 
 /**
  * Platform-wide intake gate (MT-P2-008).
@@ -58,6 +59,10 @@ export function registerQuoteRoutes(router: Router) {
     needsOnsite: z.boolean().optional(),
     adminAccessAvailable: z.boolean().optional(),
     requestedConsult: z.boolean().optional(),
+    // PRIV-P2-002: the quote carries PII, so consent to the Privacy Policy is
+    // required and recorded server-side with the policy version.
+    consent: z.boolean().optional(),
+    consentVersion: z.string().min(1).max(64).optional(),
   });
 
   const updateProposalDraftSchema = z.object({
@@ -85,6 +90,14 @@ export function registerQuoteRoutes(router: Router) {
   router.post("/quotes", async (req, res, next) => {
     try {
       const parsed = createQuoteSchema.parse(req.body);
+
+      // PRIV-P2-002: require and record consent before storing the quote PII.
+      if (parsed.consent !== true) {
+        throw new AppError("CONSENT_REQUIRED", "Consent to the Privacy Policy is required.", 400);
+      }
+      const consentAt = new Date().toISOString();
+      const consentVersion = consentVersionFrom(parsed.consentVersion);
+
       const supabase = getSupabaseAdmin();
 
       const { data, error } = await supabase
@@ -95,6 +108,8 @@ export function registerQuoteRoutes(router: Router) {
           phone: parsed.phone || null,
           notes: parsed.notes,
           items: parsed.items,
+          consent_at: consentAt,
+          consent_version: consentVersion,
         })
         .select()
         .single();
@@ -119,6 +134,8 @@ export function registerQuoteRoutes(router: Router) {
             }),
             items: toJson(parsed.items),
             notes: parsed.notes,
+            consent_at: consentAt,
+            consent_version: consentVersion,
           })
           .select()
           .single();
@@ -162,7 +179,14 @@ export function registerQuoteRoutes(router: Router) {
         action: "store.quote.submit",
         entityType: "store_quote",
         entityId: data.id,
-        metadata: { name: parsed.name, email: parsed.email, leadScore, leadBand },
+        metadata: {
+          name: parsed.name,
+          email: parsed.email,
+          leadScore,
+          leadBand,
+          consentAt,
+          consentVersion,
+        },
       });
 
       res.status(201).json(success(data));

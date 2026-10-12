@@ -90,7 +90,12 @@ test.describe("quote builder", () => {
       timeout: 10000,
     });
     await page.getByRole("button", { name: /^add$/i }).first().click();
-    await page.getByRole("button", { name: /submit quote request/i }).click();
+    const submit = page.getByRole("button", { name: /submit quote request/i });
+    // PRIV-P2-002: the quote cannot be submitted until consent is checked.
+    await expect(submit).toBeDisabled();
+    await page.getByLabel(/I agree to the/i).check();
+    await expect(submit).toBeEnabled();
+    await submit.click();
     await expect(page.getByText(/name, email, and phone are required/i)).toBeVisible();
   });
 });

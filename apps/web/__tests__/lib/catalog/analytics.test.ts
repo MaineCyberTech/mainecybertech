@@ -1,4 +1,5 @@
 import { track, getEventLog, clearEventLog } from "@/lib/catalog/analytics";
+import { writeStoredConsent } from "@/lib/consent";
 
 beforeEach(() => {
   clearEventLog();
@@ -66,6 +67,8 @@ describe("track transport [AN-P2-003]", () => {
     fetchMock.mockReset();
     global.fetch = fetchMock as unknown as typeof fetch;
     document.cookie = "csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+    // PRIV-P2-002: transport only runs for opted-in visitors.
+    writeStoredConsent("granted");
   });
 
   afterAll(() => {
@@ -73,6 +76,16 @@ describe("track transport [AN-P2-003]", () => {
   });
 
   const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it("sends nothing before analytics consent [PRIV-P2-002]", async () => {
+    window.localStorage.clear();
+
+    track("store_view");
+    await flush();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(getEventLog().map((entry) => entry.event)).toContain("store_view");
+  });
 
   it("posts the event with the double-submit CSRF header", async () => {
     document.cookie = "csrf_token=abc123; path=/";

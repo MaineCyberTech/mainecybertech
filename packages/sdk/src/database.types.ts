@@ -4670,6 +4670,7 @@ export type Database = {
           client_phone: string | null;
           company_name: string | null;
           consent_at: string | null;
+          consent_version: string | null;
           created_at: string | null;
           employees: string | null;
           id: string;
@@ -4691,6 +4692,7 @@ export type Database = {
           client_phone?: string | null;
           company_name?: string | null;
           consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string | null;
           employees?: string | null;
           id?: string | null;
@@ -4712,6 +4714,7 @@ export type Database = {
           client_phone?: string | null;
           company_name?: string | null;
           consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string | null;
           employees?: string | null;
           id?: string | null;
@@ -6009,6 +6012,8 @@ export type Database = {
       };
       store_quote_requests: {
         Row: {
+          consent_at: string | null;
+          consent_version: string | null;
           created_at: string;
           customer: Json;
           id: string;
@@ -6020,6 +6025,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string | null;
           customer?: Json | null;
           id?: string | null;
@@ -6031,6 +6038,8 @@ export type Database = {
           updated_at?: string | null;
         };
         Update: {
+          consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string | null;
           customer?: Json | null;
           id?: string | null;
@@ -6046,6 +6055,8 @@ export type Database = {
       };
       store_quotes: {
         Row: {
+          consent_at: string | null;
+          consent_version: string | null;
           created_at: string | null;
           email: string;
           id: string;
@@ -6060,6 +6071,8 @@ export type Database = {
         Insert: {
           email: string;
           name: string;
+          consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string | null;
           id?: string | null;
           items?: Json | null;
@@ -6070,6 +6083,8 @@ export type Database = {
           updated_at?: string | null;
         };
         Update: {
+          consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string | null;
           email?: string | null;
           id?: string | null;

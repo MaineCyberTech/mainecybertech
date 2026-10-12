@@ -29,7 +29,7 @@ describe("fetchPublicInit [PRIV-P2-001 / AN-P2-005]", () => {
     fetchMock.mockResolvedValue({ json: async () => ({ data: { trackingId: "track-2" } }) });
 
     await expect(fetchPublicInit()).resolves.toBe("track-2");
-    expect(String(fetchMock.mock.calls[0][0])).toContain("?consent=granted");
+    expect(String(fetchMock.mock.calls[0][0])).toContain("?consent=granted&consentVersion=1");
   });
 
   it("does not signal consent after a denial", async () => {

@@ -129,10 +129,11 @@ export default function PrivacyPage() {
             <p className="cyber-text mt-3 leading-relaxed">
               Non-essential third-party scripts are loaded only after you accept them in the
               consent banner. Until then, no analytics or live-chat script is loaded and no IP
-              address or location is sent to third parties. You can change or withdraw your choice
-              at any time using the &ldquo;Cookie settings&rdquo; link in the footer; the change
-              takes effect immediately for scripts that have not yet loaded and on your next page
-              load for scripts already loaded.
+              address or location is sent to third parties. Your choice is stored in your browser
+              and recorded in our systems together with the version of this policy and a timestamp.
+              You can change or withdraw your choice at any time using the &ldquo;Cookie
+              settings&rdquo; link in the footer; the change takes effect immediately for scripts
+              that have not yet loaded and on your next page load for scripts already loaded.
             </p>
             <div className="mt-4 overflow-x-auto">
               <table className="cyber-text w-full min-w-[640px] border-collapse text-left text-sm">

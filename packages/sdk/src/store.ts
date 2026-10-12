@@ -124,6 +124,10 @@ export type SubmitStoreQuoteInput = {
   phone?: string;
   notes?: string;
   items?: Array<string | StoreQuoteItem>;
+  /** PRIV-P2-002: required by the API — the quote carries PII. */
+  consent: boolean;
+  /** Privacy-policy version the submitter was shown. */
+  consentVersion?: string;
   /** Optional lead-scoring signals. */
   userCount?: number;
   needsOnsite?: boolean;

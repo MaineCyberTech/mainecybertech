@@ -24,6 +24,19 @@ be filtered or purged.
 
 Real leads still work normally: `POST /api/v1/public/submit` fires the
 `PUBLIC_LEAD_WEBHOOK_URL` card and optional JSM ticket for submitted forms.
+Since PRIV-P2-002 the submit endpoint requires and records explicit consent
+(`consent` + `consentVersion`) before any lead PII is stored; the quote path
+(`POST /api/v1/store/quotes`) does the same.
+
+### Consent and data minimization
+
+`/init` is default-deny: IP address, user-agent and geolocation are only
+captured after the visitor accepts analytics in the consent banner (the web app
+appends `consent=granted&consentVersion=N`), and the Teams visitor alert is
+suppressed without consent. The geo lookup (PRIV-P2-006) refuses a non-HTTPS
+`GEO_LOOKUP_URL` and requests only `status,city,regionName,country` from the
+provider — the full ip-api record is never fetched. `public_interactions`
+records `consent_at`/`consent_version` for auditability (migration `5302449`).
 
 ### Tuning
 
