@@ -18,14 +18,17 @@ create index if not exists idx_client_portal_entitlements_org
 
 alter table client_portal_entitlements enable row level security;
 
+drop policy if exists "cpe_select_org" on client_portal_entitlements;
 create policy "cpe_select_org" on client_portal_entitlements
   for select using (
     organization_id in (select organization_id from memberships where user_id = auth.uid())
   );
+drop policy if exists "cpe_insert_org" on client_portal_entitlements;
 create policy "cpe_insert_org" on client_portal_entitlements
   for insert with check (
     organization_id in (select organization_id from memberships where user_id = auth.uid())
   );
+drop policy if exists "cpe_update_org" on client_portal_entitlements;
 create policy "cpe_update_org" on client_portal_entitlements
   for update using (
     organization_id in (select organization_id from memberships where user_id = auth.uid())

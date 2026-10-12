@@ -47,6 +47,7 @@ create index if not exists idx_assets_tag on assets(asset_tag);
 
 alter table assets enable row level security;
 
+drop policy if exists "assets_select_org" on assets;
 create policy "assets_select_org" on assets for select
   using (
     organization_id in (
@@ -54,6 +55,7 @@ create policy "assets_select_org" on assets for select
     )
   );
 
+drop policy if exists "assets_insert_auth" on assets;
 create policy "assets_insert_auth" on assets for insert
   with check (
     organization_id in (
@@ -61,6 +63,7 @@ create policy "assets_insert_auth" on assets for insert
     )
   );
 
+drop policy if exists "assets_update_org" on assets;
 create policy "assets_update_org" on assets for update
   using (
     organization_id in (
@@ -68,6 +71,7 @@ create policy "assets_update_org" on assets for update
     )
   );
 
+drop policy if exists "assets_delete_admin" on assets;
 create policy "assets_delete_admin" on assets for delete
   using (
     exists (

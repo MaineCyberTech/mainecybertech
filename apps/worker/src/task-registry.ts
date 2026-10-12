@@ -11,6 +11,13 @@ export interface TaskMessage {
 export interface TaskResult {
   ok: boolean;
   error?: string;
+  /**
+   * Purge tasks report what they removed so operators can see the backlog
+   * drain (PRIV-P3-003); other tasks leave these undefined.
+   */
+  deleted?: number;
+  batches?: number;
+  truncated?: boolean;
 }
 
 /**

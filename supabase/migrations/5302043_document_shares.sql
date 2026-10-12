@@ -20,6 +20,7 @@ create index if not exists idx_document_shares_expires on public.document_shares
 
 alter table public.document_shares enable row level security;
 
+drop policy if exists "document_shares_select_own_org" on public.document_shares;
 create policy "document_shares_select_own_org"
   on public.document_shares for select
   using (
@@ -29,6 +30,7 @@ create policy "document_shares_select_own_org"
     )
   );
 
+drop policy if exists "document_shares_insert_own_org" on public.document_shares;
 create policy "document_shares_insert_own_org"
   on public.document_shares for insert
   with check (
@@ -41,6 +43,7 @@ create policy "document_shares_insert_own_org"
     )
   );
 
+drop policy if exists "document_shares_update_own_org" on public.document_shares;
 create policy "document_shares_update_own_org"
   on public.document_shares for update
   using (
@@ -53,6 +56,7 @@ create policy "document_shares_update_own_org"
     )
   );
 
+drop policy if exists "document_shares_delete_own_org" on public.document_shares;
 create policy "document_shares_delete_own_org"
   on public.document_shares for delete
   using (

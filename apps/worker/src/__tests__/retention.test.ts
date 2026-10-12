@@ -285,6 +285,35 @@ describe("retentionTask (DATA-P1-002)", () => {
     expect(res.error).toMatch(/permission denied/);
   });
 
+  it("keeps rows exactly at the cutoff and deletes only older rows (strict .lt) [DATA-P3-003]", async () => {
+    const now = new Date("2026-10-12T12:00:00.000Z");
+    jest.useFakeTimers({ now });
+    try {
+      // Mirror the task's own date math for the 90-day notification default so
+      // the fixture lands exactly on the boundary in any timezone.
+      const cutoff = new Date(now);
+      cutoff.setDate(cutoff.getDate() - 90);
+      const state: TableState = {
+        audit_logs: [],
+        notifications: [
+          { id: "expired", created_at: new Date(cutoff.getTime() - 1).toISOString() },
+          { id: "boundary", created_at: cutoff.toISOString() },
+          { id: "fresh", created_at: new Date(cutoff.getTime() + 1).toISOString() },
+        ],
+      };
+      const supabase = makeSupabase(state);
+      (createClient as unknown as jest.Mock).mockReturnValue(supabase);
+
+      const res = await retentionTask({});
+
+      expect(res.ok).toBe(true);
+      // `.lt` is strict: a row stamped exactly at the cutoff survives.
+      expect(state.notifications.map((r) => r.id)).toEqual(["boundary", "fresh"]);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it("does not delete when there is nothing past the cutoff", async () => {
     const state: TableState = { audit_logs: [], notifications: [] };
     const supabase = makeSupabase(state);

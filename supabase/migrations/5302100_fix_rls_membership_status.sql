@@ -33,6 +33,7 @@ create policy "license_tracking_insert_auth" on public.license_tracking
   for insert with check (public.is_org_member(organization_id));
 create policy "license_tracking_update_org" on public.license_tracking
   for update using (public.is_org_member(organization_id));
+drop policy if exists "license_tracking_admin_delete" on public.license_tracking;
 create policy "license_tracking_admin_delete" on public.license_tracking
   for delete using (
     exists (
@@ -55,6 +56,7 @@ create policy "status_items_insert_auth" on public.status_items
   for insert with check (public.is_org_member(organization_id));
 create policy "status_items_update_org" on public.status_items
   for update using (public.is_org_member(organization_id));
+drop policy if exists "status_items_admin_delete" on public.status_items;
 create policy "status_items_admin_delete" on public.status_items
   for delete using (
     exists (
@@ -77,6 +79,7 @@ create policy "website_monitors_insert_auth" on public.website_monitors
   for insert with check (public.is_org_member(organization_id));
 create policy "website_monitors_update_org" on public.website_monitors
   for update using (public.is_org_member(organization_id));
+drop policy if exists "website_monitors_admin_delete" on public.website_monitors;
 create policy "website_monitors_admin_delete" on public.website_monitors
   for delete using (
     exists (
@@ -99,6 +102,7 @@ create policy "dmarc_assessments_insert_auth" on public.dmarc_assessments
   for insert with check (public.is_org_member(organization_id));
 create policy "dmarc_assessments_update_org" on public.dmarc_assessments
   for update using (public.is_org_member(organization_id));
+drop policy if exists "dmarc_assessments_admin_delete" on public.dmarc_assessments;
 create policy "dmarc_assessments_admin_delete" on public.dmarc_assessments
   for delete using (
     exists (
@@ -125,6 +129,7 @@ create policy "offboarding_insert_auth" on public.offboarding_checklists
   for insert with check (public.is_org_member(organization_id));
 create policy "offboarding_update_org" on public.offboarding_checklists
   for update using (public.is_org_member(organization_id));
+drop policy if exists "offboarding_admin_delete" on public.offboarding_checklists;
 create policy "offboarding_admin_delete" on public.offboarding_checklists
   for delete using (
     exists (
@@ -147,6 +152,7 @@ create policy "break_glass_insert_auth" on public.break_glass_accounts
   for insert with check (public.is_org_member(organization_id));
 create policy "break_glass_update_org" on public.break_glass_accounts
   for update using (public.is_org_member(organization_id));
+drop policy if exists "break_glass_admin_delete" on public.break_glass_accounts;
 create policy "break_glass_admin_delete" on public.break_glass_accounts
   for delete using (
     exists (
@@ -169,6 +175,7 @@ create policy "onboarding_insert_auth" on public.onboarding_clients
   for insert with check (public.is_org_member(organization_id));
 create policy "onboarding_update_org" on public.onboarding_clients
   for update using (public.is_org_member(organization_id));
+drop policy if exists "onboarding_admin_delete" on public.onboarding_clients;
 create policy "onboarding_admin_delete" on public.onboarding_clients
   for delete using (
     exists (
@@ -191,6 +198,7 @@ create policy "patch_insert_auth" on public.patch_compliance
   for insert with check (public.is_org_member(organization_id));
 create policy "patch_update_org" on public.patch_compliance
   for update using (public.is_org_member(organization_id));
+drop policy if exists "patch_admin_delete" on public.patch_compliance;
 create policy "patch_admin_delete" on public.patch_compliance
   for delete using (
     exists (
@@ -217,6 +225,7 @@ create policy "m365_insert_auth" on public.m365_hardening
   for insert with check (public.is_org_member(organization_id));
 create policy "m365_update_org" on public.m365_hardening
   for update using (public.is_org_member(organization_id));
+drop policy if exists "m365_admin_delete" on public.m365_hardening;
 create policy "m365_admin_delete" on public.m365_hardening
   for delete using (
     exists (
@@ -239,6 +248,7 @@ create policy "incident_insert_auth" on public.incident_responses
   for insert with check (public.is_org_member(organization_id));
 create policy "incident_update_org" on public.incident_responses
   for update using (public.is_org_member(organization_id));
+drop policy if exists "incident_admin_delete" on public.incident_responses;
 create policy "incident_admin_delete" on public.incident_responses
   for delete using (
     exists (
@@ -261,6 +271,7 @@ create policy "idverify_insert_auth" on public.identity_verifications
   for insert with check (public.is_org_member(organization_id));
 create policy "idverify_update_org" on public.identity_verifications
   for update using (public.is_org_member(organization_id));
+drop policy if exists "idverify_admin_delete" on public.identity_verifications;
 create policy "idverify_admin_delete" on public.identity_verifications
   for delete using (
     exists (
@@ -283,6 +294,7 @@ create policy "ep_insert_auth" on public.endpoint_security
   for insert with check (public.is_org_member(organization_id));
 create policy "ep_update_org" on public.endpoint_security
   for update using (public.is_org_member(organization_id));
+drop policy if exists "ep_admin_delete" on public.endpoint_security;
 create policy "ep_admin_delete" on public.endpoint_security
   for delete using (
     exists (
@@ -309,6 +321,7 @@ create policy "cr_insert_auth" on public.change_requests
   for insert with check (public.is_org_member(organization_id));
 create policy "cr_update_org" on public.change_requests
   for update using (public.is_org_member(organization_id));
+drop policy if exists "cr_admin_delete" on public.change_requests;
 create policy "cr_admin_delete" on public.change_requests
   for delete using (
     exists (
@@ -331,6 +344,7 @@ create policy "risk_insert_auth" on public.risk_register
   for insert with check (public.is_org_member(organization_id));
 create policy "risk_update_org" on public.risk_register
   for update using (public.is_org_member(organization_id));
+drop policy if exists "risk_admin_delete" on public.risk_register;
 create policy "risk_admin_delete" on public.risk_register
   for delete using (
     exists (
@@ -353,6 +367,7 @@ create policy "retention_insert_auth" on public.retention_policies
   for insert with check (public.is_org_member(organization_id));
 create policy "retention_update_org" on public.retention_policies
   for update using (public.is_org_member(organization_id));
+drop policy if exists "retention_admin_delete" on public.retention_policies;
 create policy "retention_admin_delete" on public.retention_policies
   for delete using (
     exists (
@@ -375,6 +390,7 @@ create policy "tt_insert_auth" on public.tabletop_exercises
   for insert with check (public.is_org_member(organization_id));
 create policy "tt_update_org" on public.tabletop_exercises
   for update using (public.is_org_member(organization_id));
+drop policy if exists "tt_admin_delete" on public.tabletop_exercises;
 create policy "tt_admin_delete" on public.tabletop_exercises
   for delete using (
     exists (
@@ -401,6 +417,7 @@ create policy "isp_insert_auth" on public.isp_assessments
   for insert with check (public.is_org_member(organization_id));
 create policy "isp_update_org" on public.isp_assessments
   for update using (public.is_org_member(organization_id));
+drop policy if exists "isp_admin_delete" on public.isp_assessments;
 create policy "isp_admin_delete" on public.isp_assessments
   for delete using (
     exists (
@@ -423,6 +440,7 @@ create policy "us_insert_auth" on public.unifi_surveys
   for insert with check (public.is_org_member(organization_id));
 create policy "us_update_org" on public.unifi_surveys
   for update using (public.is_org_member(organization_id));
+drop policy if exists "us_admin_delete" on public.unifi_surveys;
 create policy "us_admin_delete" on public.unifi_surveys
   for delete using (
     exists (
@@ -445,6 +463,7 @@ create policy "pm_insert_auth" on public.port_maps
   for insert with check (public.is_org_member(organization_id));
 create policy "pm_update_org" on public.port_maps
   for update using (public.is_org_member(organization_id));
+drop policy if exists "pm_admin_delete" on public.port_maps;
 create policy "pm_admin_delete" on public.port_maps
   for delete using (
     exists (
@@ -467,6 +486,7 @@ create policy "cc_insert_auth" on public.camera_calculations
   for insert with check (public.is_org_member(organization_id));
 create policy "cc_update_org" on public.camera_calculations
   for update using (public.is_org_member(organization_id));
+drop policy if exists "cc_admin_delete" on public.camera_calculations;
 create policy "cc_admin_delete" on public.camera_calculations
   for delete using (
     exists (
@@ -489,6 +509,7 @@ create policy "hs_insert_auth" on public.hardware_staging
   for insert with check (public.is_org_member(organization_id));
 create policy "hs_update_org" on public.hardware_staging
   for update using (public.is_org_member(organization_id));
+drop policy if exists "hs_admin_delete" on public.hardware_staging;
 create policy "hs_admin_delete" on public.hardware_staging
   for delete using (
     exists (
@@ -511,6 +532,7 @@ create policy "nd_insert_auth" on public.network_diagrams
   for insert with check (public.is_org_member(organization_id));
 create policy "nd_update_org" on public.network_diagrams
   for update using (public.is_org_member(organization_id));
+drop policy if exists "nd_admin_delete" on public.network_diagrams;
 create policy "nd_admin_delete" on public.network_diagrams
   for delete using (
     exists (
@@ -803,6 +825,7 @@ create policy "sp_org_i" on public.sharepoint_plans
   for insert with check (public.is_org_member(organization_id));
 create policy "sp_org_u" on public.sharepoint_plans
   for update using (public.is_org_member(organization_id));
+drop policy if exists "sp_admin_delete" on public.sharepoint_plans;
 create policy "sp_admin_delete" on public.sharepoint_plans
   for delete using (
     exists (
@@ -825,6 +848,7 @@ create policy "dp_org_i" on public.device_profiles
   for insert with check (public.is_org_member(organization_id));
 create policy "dp_org_u" on public.device_profiles
   for update using (public.is_org_member(organization_id));
+drop policy if exists "dp_admin_delete" on public.device_profiles;
 create policy "dp_admin_delete" on public.device_profiles
   for delete using (
     exists (
@@ -847,6 +871,7 @@ create policy "sa_org_i" on public.saas_audits
   for insert with check (public.is_org_member(organization_id));
 create policy "sa_org_u" on public.saas_audits
   for update using (public.is_org_member(organization_id));
+drop policy if exists "sa_admin_delete" on public.saas_audits;
 create policy "sa_admin_delete" on public.saas_audits
   for delete using (
     exists (
@@ -869,6 +894,7 @@ create policy "pq_org_i" on public.procurement_quotes
   for insert with check (public.is_org_member(organization_id));
 create policy "pq_org_u" on public.procurement_quotes
   for update using (public.is_org_member(organization_id));
+drop policy if exists "pq_admin_delete" on public.procurement_quotes;
 create policy "pq_admin_delete" on public.procurement_quotes
   for delete using (
     exists (
@@ -891,6 +917,7 @@ create policy "dns_org_i" on public.dns_change_requests
   for insert with check (public.is_org_member(organization_id));
 create policy "dns_org_u" on public.dns_change_requests
   for update using (public.is_org_member(organization_id));
+drop policy if exists "dns_admin_delete" on public.dns_change_requests;
 create policy "dns_admin_delete" on public.dns_change_requests
   for delete using (
     exists (
@@ -940,6 +967,7 @@ create policy "te_org_i" on public.time_entries
   for insert with check (public.is_org_member(organization_id));
 create policy "te_org_u" on public.time_entries
   for update using (public.is_org_member(organization_id));
+drop policy if exists "te_admin_delete" on public.time_entries;
 create policy "te_admin_delete" on public.time_entries
   for delete using (
     exists (
@@ -962,6 +990,7 @@ create policy "br_org_i" on public.budget_roadmaps
   for insert with check (public.is_org_member(organization_id));
 create policy "br_org_u" on public.budget_roadmaps
   for update using (public.is_org_member(organization_id));
+drop policy if exists "br_admin_delete" on public.budget_roadmaps;
 create policy "br_admin_delete" on public.budget_roadmaps
   for delete using (
     exists (
@@ -984,6 +1013,7 @@ create policy "crb_org_i" on public.client_runbooks
   for insert with check (public.is_org_member(organization_id));
 create policy "crb_org_u" on public.client_runbooks
   for update using (public.is_org_member(organization_id));
+drop policy if exists "crb_admin_delete" on public.client_runbooks;
 create policy "crb_admin_delete" on public.client_runbooks
   for delete using (
     exists (
@@ -1006,6 +1036,7 @@ create policy "cf_org_i" on public.custom_forms
   for insert with check (public.is_org_member(organization_id));
 create policy "cf_org_u" on public.custom_forms
   for update using (public.is_org_member(organization_id));
+drop policy if exists "cf_admin_delete" on public.custom_forms;
 create policy "cf_admin_delete" on public.custom_forms
   for delete using (
     exists (
@@ -1032,6 +1063,7 @@ create policy "backup_insert_auth" on public.backup_status
   for insert with check (public.is_org_member(organization_id));
 create policy "backup_update_org" on public.backup_status
   for update using (public.is_org_member(organization_id));
+drop policy if exists "backup_admin_delete" on public.backup_status;
 create policy "backup_admin_delete" on public.backup_status
   for delete using (
     exists (
@@ -1449,6 +1481,7 @@ create policy "uptime_results_org_insert" on public.uptime_results
         and public.is_org_member(uc.organization_id)
     )
   );
+drop policy if exists "uptime_results_org_update" on public.uptime_results;
 create policy "uptime_results_org_update" on public.uptime_results
   for update using (
     exists (
@@ -1457,6 +1490,7 @@ create policy "uptime_results_org_update" on public.uptime_results
         and public.is_org_member(uc.organization_id)
     )
   );
+drop policy if exists "uptime_results_admin_delete" on public.uptime_results;
 create policy "uptime_results_admin_delete" on public.uptime_results
   for delete using (
     exists (

@@ -12,8 +12,10 @@ CREATE TABLE store_quotes (
 
 ALTER TABLE store_quotes ENABLE ROW LEVEL SECURITY;
 
+drop policy if exists "Anyone can insert quotes" on store_quotes;
 CREATE POLICY "Anyone can insert quotes" ON store_quotes
   FOR INSERT WITH CHECK (true);
 
+drop policy if exists "Service role full access" on store_quotes;
 CREATE POLICY "Service role full access" ON store_quotes
   FOR ALL USING (true) WITH CHECK (true);

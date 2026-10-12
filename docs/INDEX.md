@@ -53,6 +53,7 @@
 | [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)                         | All env vars across all services                    |
 | [SUPABASE_MIGRATION_WORKFLOW.md](SUPABASE_MIGRATION_WORKFLOW.md)             | Migration workflow, schema vs seed, common mistakes |
 | [SUPABASE_MIGRATION_CHEATSHEET.md](SUPABASE_MIGRATION_CHEATSHEET.md)         | Quick reference for Supabase migrations             |
+| [migrations/README.md](migrations/README.md)                                 | Migration policies: baseline, no down-migrations, rollback notes |
 | [migrations/naming-guide.md](migrations/naming-guide.md)                     | Database migration naming conventions               |
 | [technical-writing/migration-guide.md](technical-writing/migration-guide.md) | Deployment and migration guide (points at the canonical workflow)   |
 | [VSCODE_GIT_QUICKSTART.md](VSCODE_GIT_QUICKSTART.md)                         | VS Code Git workflow guide                          |
