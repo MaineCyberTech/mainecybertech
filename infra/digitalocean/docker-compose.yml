@@ -104,6 +104,9 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       EMAIL_FROM: ${EMAIL_FROM:-noreply@mainecybertech.com}
+      # Web Push (NOTIF-P2-001): the API only needs the public key it hands to
+      # browsers; unset = the push channel is disabled.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       PUBLIC_TRAFFIC_WEBHOOK_URL: ${PUBLIC_TRAFFIC_WEBHOOK_URL:-}
       PUBLIC_LEAD_WEBHOOK_URL: ${PUBLIC_LEAD_WEBHOOK_URL:-}
       JSM_DOMAIN: ${JSM_DOMAIN:-}
@@ -170,6 +173,11 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       EMAIL_FROM: ${EMAIL_FROM:-noreply@mainecybertech.com}
+      # Web Push (NOTIF-P2-001): the worker holds the private key and subject
+      # and does the VAPID signing; unset (or partial) = push is a no-op.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
       API_BASE_URL: https://${API_DOMAIN:-api.mainecybertech.com}
     depends_on:
       redis:

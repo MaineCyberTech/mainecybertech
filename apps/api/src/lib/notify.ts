@@ -47,6 +47,8 @@ export interface NotifyResult extends CreateNotificationResult {
   emailQueued: boolean;
   emailSent: boolean;
   emailSkipped: boolean;
+  pushQueued: boolean;
+  pushSkipped: boolean;
 }
 
 /** Escape user-controlled content before interpolating it into email HTML. */
@@ -195,6 +197,109 @@ export async function claimNotificationEmail(
   return claimIdempotencyKey(`notif-email-${notificationKey}`, "sent");
 }
 
+/**
+ * NOTIF-P2-001: decide whether THIS API call owns the push send. Mirrors
+ * `claimNotificationEmail` with a channel-specific key so a replay cannot
+ * enqueue a second `notification-push` job while the email path stays
+ * independently claimable.
+ */
+export async function claimNotificationPush(
+  inApp: CreateNotificationResult,
+  notificationKey: string,
+): Promise<boolean> {
+  if (inApp.inserted) return true;
+  if (inApp.deduped) return false;
+  return claimIdempotencyKey(`notif-push-${notificationKey}`, "sent");
+}
+
+export interface PushDeliveryResult {
+  pushQueued: boolean;
+  pushSkipped: boolean;
+}
+
+/**
+ * NOTIF-P2-001: hand a notification to the worker's `notification-push` task.
+ *
+ * Operator-gated: without VAPID_PUBLIC_KEY the channel is disabled and the
+ * attempt is metered as `skipped` (a no-op, not a failure). With keys set, the
+ * user's active subscriptions are counted first so a user who never granted
+ * the browser permission does not generate queue noise. Delivery is queued
+ * (the worker holds the private key and does the encryption); a failed enqueue
+ * is recorded as a terminal `failed` because there is no inline fallback.
+ */
+export async function deliverPush(
+  opts: { userId: string; title: string; body: string; url?: string },
+  inApp: CreateNotificationResult,
+  notificationKey: string,
+  module: string,
+): Promise<PushDeliveryResult> {
+  if (!getEnv().VAPID_PUBLIC_KEY) {
+    recordNotificationDelivery("push", "skipped");
+    logger.info(
+      { userId: opts.userId, module },
+      "Push notification skipped — VAPID is not configured (channel disabled)",
+    );
+    return { pushQueued: false, pushSkipped: true };
+  }
+
+  // Same idempotency contract as email: the in-app upsert (or, when in-app is
+  // suppressed, the idempotency store) is the send claim.
+  if (!(await claimNotificationPush(inApp, notificationKey))) {
+    recordNotificationDedup("push");
+    logger.info(
+      { userId: opts.userId, module },
+      "Push notification skipped — already claimed by an earlier delivery",
+    );
+    return { pushQueued: false, pushSkipped: true };
+  }
+
+  try {
+    const supabase = getSupabaseAdmin();
+    const { count, error } = await supabase
+      .from("push_subscriptions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", opts.userId)
+      .is("revoked_at", null);
+
+    if (error) throw new Error(error.message);
+
+    if (!count) {
+      recordNotificationDelivery("push", "skipped");
+      return { pushQueued: false, pushSkipped: true };
+    }
+  } catch (error) {
+    logger.error(
+      {
+        error: error instanceof Error ? error.message : String(error),
+        userId: opts.userId,
+        module,
+      },
+      "Failed to read push subscriptions",
+    );
+    recordNotificationDelivery("push", "failed");
+    return { pushQueued: false, pushSkipped: false };
+  }
+
+  const enqueued = await enqueueTask("notification-push", {
+    userId: opts.userId,
+    title: opts.title,
+    body: opts.body,
+    url: opts.url,
+  });
+
+  if (!enqueued) {
+    logger.error(
+      { userId: opts.userId, module },
+      "Push notification could not be queued and has no inline fallback",
+    );
+    recordNotificationDelivery("push", "failed");
+    return { pushQueued: false, pushSkipped: false };
+  }
+
+  recordNotificationDelivery("push", "queued");
+  return { pushQueued: true, pushSkipped: false };
+}
+
 export async function notifyAndEmail(
   opts: NotifyOptions & { email?: string; emailHtml?: string },
 ): Promise<NotifyResult> {
@@ -247,6 +352,31 @@ export async function notifyAndEmail(
   const emailTo = opts.email;
   const emailSkipped = !channels.email || !emailTo;
 
+  // NOTIF-P2-001: resolve the push attempt up front (its result is part of
+  // every return path below). Preference-disabled push is recorded as
+  // suppressed; otherwise the worker queue owns the send.
+  let push: PushDeliveryResult;
+  if (!channels.push) {
+    recordNotificationSuppressed("push", opts.module);
+    logger.info(
+      { userId: opts.userId, module: opts.module, action: opts.action },
+      "Push notification suppressed by user preference",
+    );
+    push = { pushQueued: false, pushSkipped: true };
+  } else {
+    push = await deliverPush(
+      {
+        userId: safeOpts.userId,
+        title: safeOpts.title,
+        body: safeOpts.body,
+        url: modulePath ? `${baseUrl}${modulePath}` : undefined,
+      },
+      inApp,
+      notificationKey,
+      opts.module,
+    );
+  }
+
   if (emailSkipped) {
     if (!channels.email) {
       recordNotificationSuppressed("email", opts.module);
@@ -255,7 +385,7 @@ export async function notifyAndEmail(
         "Email notification suppressed by user preference",
       );
     }
-    return { ...inApp, emailQueued: false, emailSent: false, emailSkipped: true };
+    return { ...inApp, ...push, emailQueued: false, emailSent: false, emailSkipped: true };
   }
 
   // NOTIF-P2-009: the in-app insert (or, when in-app is disabled, the
@@ -267,7 +397,7 @@ export async function notifyAndEmail(
       { userId: opts.userId, module: opts.module, action: opts.action },
       "Email notification skipped — already claimed by an earlier delivery",
     );
-    return { ...inApp, emailQueued: false, emailSent: false, emailSkipped: true };
+    return { ...inApp, ...push, emailQueued: false, emailSent: false, emailSkipped: true };
   }
 
   const emailPayload = {
@@ -289,7 +419,7 @@ export async function notifyAndEmail(
     // the worker records the terminal outcome on its own counter, which the
     // delivery SLO (docs/SLO.md) is computed from.
     recordNotificationDelivery("email", "queued");
-    return { ...inApp, emailQueued: true, emailSent: false, emailSkipped: false };
+    return { ...inApp, ...push, emailQueued: true, emailSent: false, emailSkipped: false };
   }
 
   const sent = await sendEmail(emailPayload);
@@ -302,5 +432,5 @@ export async function notifyAndEmail(
   } else {
     recordNotificationDelivery("email", "success");
   }
-  return { ...inApp, emailQueued: false, emailSent: sent, emailSkipped: false };
+  return { ...inApp, ...push, emailQueued: false, emailSent: sent, emailSkipped: false };
 }

@@ -22,6 +22,7 @@ const MODULES = [
 const CHANNELS = [
   { key: "email", label: "Email" },
   { key: "in_app", label: "In-App" },
+  { key: "push", label: "Push" },
 ];
 
 function moduleIcon(moduleKey: string) {
@@ -214,7 +215,8 @@ export default function NotificationPreferencesClient() {
       <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-xs text-slate-400">
         Preferences control whether new notifications are sent to each channel. Changes take
         effect when you click Save Preferences. In-app notifications appear in the bell icon in the
-        header. Email notifications require SMTP to be configured on the server.
+        header. Email notifications require SMTP to be configured on the server. Push notifications
+        require enabling browser push below.
       </div>
     </div>
   );

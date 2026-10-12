@@ -17,15 +17,16 @@ import { claimIdempotencyKey } from "./lib/idempotency";
  * send is preferable to dropping a user-visible notification.
  */
 
-export type NotificationChannel = "email" | "in_app";
+export type NotificationChannel = "email" | "in_app" | "push";
 
 export interface ResolvedChannels {
   email: boolean;
   in_app: boolean;
+  push: boolean;
 }
 
-const ENABLED_BY_DEFAULT: ResolvedChannels = { email: true, in_app: true };
-const DELIVERABLE_CHANNELS: readonly NotificationChannel[] = ["email", "in_app"];
+const ENABLED_BY_DEFAULT: ResolvedChannels = { email: true, in_app: true, push: true };
+const DELIVERABLE_CHANNELS: readonly NotificationChannel[] = ["email", "in_app", "push"];
 
 type PreferenceRow = { channel: string | null; enabled: boolean | null };
 

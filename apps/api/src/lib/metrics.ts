@@ -237,19 +237,19 @@ export function recordIdempotencyKeyHit() {
  * (docs/SLO.md) counts only the worker's terminal outcomes.
  */
 export function recordNotificationDelivery(
-  channel: "in_app" | "email",
+  channel: "in_app" | "email" | "push",
   status: "success" | "failed" | "skipped" | "queued",
 ) {
   notificationDeliveryTotal.inc({ channel, status });
 }
 
 /** Record that a channel was suppressed by the recipient's preferences. */
-export function recordNotificationSuppressed(channel: "in_app" | "email", module: string) {
+export function recordNotificationSuppressed(channel: "in_app" | "email" | "push", module: string) {
   notificationSuppressedTotal.inc({ channel, module });
 }
 
 /** Record that an insert was skipped because its dedup key already existed. */
-export function recordNotificationDedup(channel: "in_app" | "email") {
+export function recordNotificationDedup(channel: "in_app" | "email" | "push") {
   notificationDedupTotal.inc({ channel });
 }
 

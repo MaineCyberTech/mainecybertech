@@ -52,6 +52,7 @@
 | `SMTP_USER`                  | No       | —                            | SMTP username                                                                                                                                                                                                       |
 | `SMTP_PASS`                  | No       | —                            | SMTP password                                                                                                                                                                                                       |
 | `EMAIL_FROM`                 | No       | `noreply@mainecybertech.com` | From address for outgoing emails                                                                                                                                                                                    |
+| `VAPID_PUBLIC_KEY`           | No       | —                            | Web Push (NOTIF-P2-001) base64url P-256 public key returned to browsers by `GET /push-subscriptions/vapid-public-key`. Unset = push channel disabled (no-op)                                                         |
 | `SENTRY_DSN`                 | No       | —                            | Sentry DSN for error tracking                                                                                                                                                                                       |
 | `SENTRY_TRACES_SAMPLE_RATE`  | No       | `0.2` prod / `0` otherwise   | Sentry trace sample rate (0–1)                                                                                                                                                                                      |
 | `SENTRY_RELEASE`             | No       | `GIT_SHA`                    | Sentry release identifier (defaults to `process.env.GIT_SHA`)                                                                                                                                                       |
@@ -110,6 +111,9 @@
 | `SMTP_USER`                 | No       | —                            | SMTP username                                                                   |
 | `SMTP_PASS`                 | No       | —                            | SMTP password                                                                   |
 | `EMAIL_FROM`                | No       | `noreply@mainecybertech.com` | From address for outgoing emails                                                |
+| `VAPID_PUBLIC_KEY`          | No       | —                            | Web Push base64url P-256 public key (NOTIF-P2-001); set together with the two below, unset = push disabled |
+| `VAPID_PRIVATE_KEY`         | No       | —                            | Web Push base64url P-256 private key; signs the VAPID JWT                        |
+| `VAPID_SUBJECT`             | No       | —                            | VAPID contact, e.g. `mailto:ops@mainecybertech.com`                              |
 | `API_BASE_URL`              | No       | —                            | Public API base URL for notification links                                      |
 | `HEALTH_PORT`               | No       | `3001`                       | Health check server port                                                        |
 | `REDIS_URL`                 | No       | —                            | Redis URL for BullMQ (`QUEUE_BACKEND=bullmq`)                                   |
@@ -198,6 +202,45 @@ Local Supabase provides these values at `http://127.0.0.1:54321`:
 | `read`            | Boolean      | Read status                                                                                                 |
 | `read_at`         | Timestamptz? | When the notification was read                                                                              |
 | `created_at`      | Timestamptz  | Creation timestamp                                                                                          |
+
+### Web Push (VAPID) — operator runbook (NOTIF-P2-001)
+
+Browser push is operator-gated. Until the VAPID variables are set the channel
+stays disabled and is metered as `skipped` (a no-op, not a failure): the API
+reports `enabled: false` from `GET /push-subscriptions/vapid-public-key`, the
+preferences UI shows "Push notifications are not configured on this server",
+and the worker's `notification-push` task returns without sending.
+
+1. Generate one VAPID key pair per environment:
+
+   ```sh
+   npx web-push generate-vapid-keys --json
+   ```
+
+2. Set the values as GitHub environment secrets (they are written to the
+   droplet `.env` by `deploy-do.yml` and read by `infra/digitalocean/docker-compose.yml`)
+   or in `.env.local` for local development:
+
+   | Variable             | Service    | Purpose                                                                       |
+   | -------------------- | ---------- | ----------------------------------------------------------------------------- |
+   | `VAPID_PUBLIC_KEY`   | API, worker | base64url uncompressed P-256 public key (65 bytes); handed to browsers         |
+   | `VAPID_PRIVATE_KEY`  | worker     | base64url P-256 private scalar (32 bytes); signs the VAPID JWT                 |
+   | `VAPID_SUBJECT`      | worker     | Contact for push services, e.g. `mailto:ops@mainecybertech.com`                |
+
+3. Redeploy or restart the API and worker. The worker warns at boot on a
+   *partial* VAPID configuration (some but not all three set) and refuses to
+   send on a public/private key mismatch — check the logs if pushes do not
+   arrive after enabling.
+
+Rotating the pair is a credential rotation: generate a new pair and update the
+worker. Existing browser subscriptions keep working (VAPID authorizes the
+sender; it is not tied to the subscription's own keys). No migration is
+needed. See [`SECRETS_ROTATION.md`](SECRETS_ROTATION.md).
+
+Delivery health: each subscription send is counted in
+`worker_notification_delivery_total{channel="push"}`; subscriptions the push
+service reports gone (HTTP 404/410) are soft-revoked and counted in
+`worker_push_subscriptions_revoked_total`.
 
 ## Jira / JSM Integration
 

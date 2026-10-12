@@ -35,6 +35,7 @@ import docsRouter from "./routes/docs";
 import publicRouter from "./routes/public";
 import notificationsRouter from "./routes/notifications";
 import notificationPreferencesRouter from "./routes/notification-preferences";
+import pushSubscriptionsRouter from "./routes/push-subscriptions";
 import billingRouter from "./routes/billing";
 import webhookManagementRouter from "./routes/webhook-management";
 import slaRouter from "./routes/sla";
@@ -180,6 +181,7 @@ export function createApp(): Express {
   app.use("/api/v1/public", publicRouter);
   app.use("/api/v1/notifications", notificationsRouter);
   app.use("/api/v1/notification-preferences", notificationPreferencesRouter);
+  app.use("/api/v1/push-subscriptions", pushSubscriptionsRouter);
   app.use("/api/v1/billing", billingRouter);
   app.use("/api/v1/webhook-endpoints", webhookManagementRouter);
   app.use("/api/v1/sla", slaRouter);

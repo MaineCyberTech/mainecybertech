@@ -119,6 +119,7 @@ The deploy workflow writes 25+ secrets to `.env` on the droplet via SSH heredoc.
 | STRIPE_WEBHOOK_SECRET               | Stripe webhook signing secret         |
 | SENTRY_DSN                          | Sentry error tracking                 |
 | SMTP_HOST/PASS                      | Email (password reset, notifications) |
+| VAPID_PUBLIC/PRIVATE_KEY + SUBJECT  | Web Push (browser notifications; unset = channel disabled). See `docs/ENVIRONMENT_VARIABLES.md` → Web Push runbook |
 | JIRA*\* / JSM*\*                    | Jira/JSM integration                  |
 | M365\_\*                            | Microsoft 365 integration             |
 | PUBLIC\_{TRAFFIC,LEAD}\_WEBHOOK_URL | Teams webhooks for leads              |

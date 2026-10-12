@@ -944,6 +944,45 @@ const billingNotifications: RouteDef[] = [
     summary: "Update notification preferences",
     tag: "Notifications",
   },
+  {
+    method: "get",
+    path: "/push-subscriptions/vapid-public-key",
+    summary: "Get the VAPID public key (enabled=false when push is not configured)",
+    tag: "Notifications",
+  },
+  {
+    method: "post",
+    path: "/push-subscriptions",
+    summary: "Register a browser push subscription",
+    tag: "Notifications",
+    body: {
+      type: "object",
+      required: ["endpoint", "keys"],
+      properties: {
+        endpoint: { type: "string" },
+        keys: {
+          type: "object",
+          required: ["p256dh", "auth"],
+          properties: {
+            p256dh: { type: "string" },
+            auth: { type: "string" },
+          },
+        },
+        organizationId: { type: "string" },
+      },
+    },
+  },
+  {
+    method: "delete",
+    path: "/push-subscriptions",
+    summary: "Revoke a browser push subscription",
+    tag: "Notifications",
+    body: {
+      type: "object",
+      required: ["endpoint"],
+      properties: { endpoint: { type: "string" } },
+    },
+  },
 ];
 
 const adminAudit: RouteDef[] = [

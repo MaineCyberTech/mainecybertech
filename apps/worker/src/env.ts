@@ -40,6 +40,13 @@ export const envSchema = z
     SMTP_USER: z.string().optional(),
     SMTP_PASS: z.string().optional(),
     EMAIL_FROM: z.string().optional(),
+    // Web Push (NOTIF-P2-001). Operator-gated: all three are required for the
+    // worker to send; when any is missing the `notification-push` task no-ops
+    // (records `skipped`). Keys are generated with `npx web-push
+    // generate-vapid-keys` — see docs/ENVIRONMENT_VARIABLES.md.
+    VAPID_PUBLIC_KEY: z.string().optional(),
+    VAPID_PRIVATE_KEY: z.string().optional(),
+    VAPID_SUBJECT: z.string().optional(),
     API_BASE_URL: z.string().url().optional(),
     APP_BASE_URL: z.string().url().optional(),
     SENTRY_DSN: z.string().optional(),
@@ -106,6 +113,15 @@ try {
   // boot (non-fatal so a deployment without SMTP still starts).
   if (env.NODE_ENV === "production" && !env.SMTP_HOST) {
     console.warn("SMTP_HOST is not configured — queued notification email will be skipped");
+  }
+  // NOTIF-P2-001: push is operator-gated. A partial VAPID set is almost always
+  // a mistake (e.g. the public key copied but not the private), and it silently
+  // disables the channel — surface it at boot.
+  const vapidValues = [env.VAPID_PUBLIC_KEY, env.VAPID_PRIVATE_KEY, env.VAPID_SUBJECT];
+  if (vapidValues.some(Boolean) && !vapidValues.every(Boolean)) {
+    console.warn(
+      "Partial VAPID configuration — push notifications stay disabled until VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT are all set",
+    );
   }
 } catch (error) {
   throw new Error(

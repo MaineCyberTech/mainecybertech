@@ -3315,7 +3315,7 @@ export type Database = {
       };
       notification_preferences: {
         Row: {
-          channel: "email" | "sms" | "in_app";
+          channel: "email" | "sms" | "in_app" | "push";
           created_at: string;
           enabled: boolean;
           id: string;
@@ -3325,7 +3325,7 @@ export type Database = {
           version: number;
         };
         Insert: {
-          channel: "email" | "sms" | "in_app";
+          channel: "email" | "sms" | "in_app" | "push";
           module_key: string;
           organization_id: string;
           user_id: string;
@@ -3335,7 +3335,7 @@ export type Database = {
           version?: number | null;
         };
         Update: {
-          channel?: "email" | "sms" | "in_app" | null;
+          channel?: "email" | "sms" | "in_app" | "push" | null;
           created_at?: string | null;
           enabled?: boolean | null;
           id?: string | null;
@@ -4755,6 +4755,47 @@ export type Database = {
           user_agent?: string | null;
         };
         Relationships: [
+        ];
+      };
+      push_subscriptions: {
+        Row: {
+          auth: string;
+          created_at: string;
+          endpoint: string;
+          id: string;
+          last_seen_at: string;
+          organization_id: string | null;
+          p256dh: string;
+          revoked_at: string | null;
+          user_agent: string | null;
+          user_id: string;
+        };
+        Insert: {
+          auth: string;
+          endpoint: string;
+          p256dh: string;
+          user_id: string;
+          created_at?: string | null;
+          id?: string | null;
+          last_seen_at?: string | null;
+          organization_id?: string | null;
+          revoked_at?: string | null;
+          user_agent?: string | null;
+        };
+        Update: {
+          auth?: string | null;
+          created_at?: string | null;
+          endpoint?: string | null;
+          id?: string | null;
+          last_seen_at?: string | null;
+          organization_id?: string | null;
+          p256dh?: string | null;
+          revoked_at?: string | null;
+          user_agent?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "push_subscriptions_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };
       qbr_reports: {
@@ -6444,7 +6485,7 @@ export type Database = {
           priority: "low" | "normal" | "high" | "urgent";
           resolution: string | null;
           source: string;
-          status: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed";
+          status: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | "open";
           title: string;
           updated_at: string;
           version: number;
@@ -6465,7 +6506,7 @@ export type Database = {
           priority?: "low" | "normal" | "high" | "urgent" | null;
           resolution?: string | null;
           source?: string | null;
-          status?: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | null;
+          status?: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | "open" | null;
           updated_at?: string | null;
           version?: number | null;
         };
@@ -6484,7 +6525,7 @@ export type Database = {
           priority?: "low" | "normal" | "high" | "urgent" | null;
           resolution?: string | null;
           source?: string | null;
-          status?: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | null;
+          status?: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | "open" | null;
           title?: string | null;
           updated_at?: string | null;
           version?: number | null;
@@ -7242,12 +7283,12 @@ export type Database = {
       document_visibility: "private" | "org" | "internal" | "public";
       invoice_status: "draft" | "open" | "paid" | "void" | "uncollectible" | "overdue";
       membership_status: "pending" | "approved" | "rejected" | "suspended";
-      notification_channel: "email" | "sms" | "in_app";
+      notification_channel: "email" | "sms" | "in_app" | "push";
       org_status: "pending" | "approved" | "rejected" | "suspended";
       project_status: "planned" | "active" | "blocked" | "client_review" | "completed" | "archived";
       task_status: "todo" | "in_progress" | "in_review" | "blocked" | "done";
       ticket_priority: "low" | "normal" | "high" | "urgent";
-      ticket_status: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed";
+      ticket_status: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | "open";
     };
     CompositeTypes: Record<string, never>;
   };

@@ -5,6 +5,7 @@ import { jsmSync } from "./jsm-sync";
 import { m365CalendarSync } from "./m365-calendar-sync";
 import { scheduledNotifications } from "./scheduled-notifications";
 import { notificationEmail } from "./notification-email";
+import { notificationPush } from "./notification-push";
 import { retentionTask } from "./retention";
 import { webhookDispatcher } from "./webhook-dispatcher";
 import { webhookRetry } from "./webhook-retry";
@@ -41,6 +42,7 @@ export function registerAllTasks(): void {
   registerTask("m365-calendar-sync", m365CalendarSync, { tenantScopeKeys: ["organizationId"] });
   registerTask("scheduled-notifications", scheduledNotifications);
   registerTask("notification-email", notificationEmail);
+  registerTask("notification-push", notificationPush);
   registerTask("retention", retentionTask);
   registerTask("webhook-dispatcher", webhookDispatcher, { tenantScopeKeys: ["organizationId"] });
   registerTask("webhook-retry", webhookRetry);

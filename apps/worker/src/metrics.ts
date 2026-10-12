@@ -103,14 +103,33 @@ export function recordTaskDeadLetter(taskType: string): void {
 }
 
 export function recordNotificationDelivery(
-  channel: "in_app" | "email",
+  channel: "in_app" | "email" | "push",
   status: "success" | "failed" | "skipped",
 ): void {
   notificationDeliveryTotal.inc({ channel, status });
 }
 
-export function recordNotificationSuppressed(channel: "in_app" | "email", module: string): void {
+export function recordNotificationSuppressed(
+  channel: "in_app" | "email" | "push",
+  module: string,
+): void {
   notificationSuppressedTotal.inc({ channel, module });
+}
+
+/**
+ * NOTIF-P2-001: push subscriptions the push service rejected as gone (HTTP
+ * 404/410) and the worker therefore revoked. A rising rate means clients are
+ * churning (browsers uninstalled, subscriptions expired) — normal at a low
+ * level, worth a look if it climbs with delivery failures.
+ */
+export const pushSubscriptionsRevokedTotal = new promClient.Counter({
+  name: "worker_push_subscriptions_revoked_total",
+  help: "Total push subscriptions revoked after the push service reported them gone (404/410)",
+  registers: [register],
+});
+
+export function recordPushSubscriptionRevoked(): void {
+  pushSubscriptionsRevokedTotal.inc();
 }
 
 export function updateMemoryMetrics(): void {

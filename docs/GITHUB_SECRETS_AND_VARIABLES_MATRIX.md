@@ -52,6 +52,9 @@ Use environment-scoped values wherever possible.
 | `TURNSTILE_SECRET_KEY`       | yes | yes  | Cloudflare Turnstile captcha secret (contact form)   |
 | `MALWARE_SCANNER_URL`        | opt | opt  | Upload malware-scan endpoint (FILE-P2-003); unset = no-op. Point at a ClamAV sidecar or a VirusTotal proxy |
 | `MALWARE_SCANNER_API_KEY`    | opt | opt  | Optional `x-apikey` header for `MALWARE_SCANNER_URL` (e.g. VirusTotal proxy) |
+| `VAPID_PUBLIC_KEY`           | opt | opt  | Web Push (NOTIF-P2-001) base64url P-256 public key; set all three VAPID values to enable push, unset = no-op |
+| `VAPID_PRIVATE_KEY`          | opt | opt  | Web Push base64url P-256 private key (worker); signs the VAPID JWT           |
+| `VAPID_SUBJECT`              | opt | opt  | Web Push VAPID contact, e.g. `mailto:ops@mainecybertech.com`                 |
 | `RLS_READS_ENABLED`          | yes | yes  | Module keys using the RLS (user-scoped) client reads |
 | `RLS_WRITES_ENABLED`         | yes | yes  | Module keys using the RLS client for writes          |
 | `SENTRY_DSN`                 | —   | yes  | Sentry DSN for error tracking                        |
