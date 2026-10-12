@@ -104,9 +104,16 @@ export const rateLimitEmail = rateLimit({
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
 
+/**
+ * OBS-P3-006: Prometheus scrapes /metrics every 15s (4 requests/min from the
+ * prometheus container's IP). The previous 5/min cap left almost no headroom:
+ * one manual debug or retried request in the same minute 429'd the next scrape,
+ * and repeated 429s can flap `up == 0` and false-fire MCTServiceDown. Allow
+ * 12/min (3x the scrape rate) so a scrape plus ad-hoc debugging still succeeds.
+ */
 export const rateLimitMetrics = rateLimit({
   windowMs: 60 * 1000,
-  max: 5,
+  max: 12,
   message: "Too many requests to metrics endpoint",
   standardHeaders: true,
   legacyHeaders: false,

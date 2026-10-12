@@ -629,6 +629,11 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          # OBS-P3-004: release marker for API/worker (and web server-side)
+          # Sentry events. Same expression as the workflow-level IMAGE_TAG, so
+          # the marker matches the image actually running (including a rollback
+          # dispatch, where it is the rolled-back commit).
+          SENTRY_RELEASE: ${{ github.event.inputs.rollback_sha || github.sha }}
           # OBS-P2-011: the web app reads NEXT_PUBLIC_SENTRY_DSN (the same DSN,
           # public by design), not SENTRY_DSN. Forward it for the web service
           # env; the build arg comes from the same expression in build-web.
@@ -702,7 +707,7 @@ jobs:
           # Secrets are forwarded as environment variables rather than being
           # interpolated into the remote script, so a value containing $,
           # backticks or quotes cannot execute on the droplet.
-          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,NEXT_PUBLIC_SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,VAPID_SUBJECT,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,M365_CLIENT_STATE,JIRA_WEBHOOK_SECRET,JSM_WEBHOOK_SECRET,METRICS_TOKEN,MFA_ENFORCEMENT_ENABLED,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,TURNSTILE_SECRET_KEY,MALWARE_SCANNER_URL,MALWARE_SCANNER_API_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,ALERTMANAGER_WATCHDOG_WEBHOOK_URL,ALERTMANAGER_CRITICAL_WEBHOOK_URL,ALERTMANAGER_DEFAULT_WEBHOOK_URL,ALERTMANAGER_SLACK_API_URL,ALERTMANAGER_SLACK_CHANNEL,ALERTMANAGER_WEBHOOK_USER,ALERTMANAGER_WEBHOOK_PASS,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
+          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SENTRY_RELEASE,NEXT_PUBLIC_SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,VAPID_SUBJECT,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,M365_CLIENT_STATE,JIRA_WEBHOOK_SECRET,JSM_WEBHOOK_SECRET,METRICS_TOKEN,MFA_ENFORCEMENT_ENABLED,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,TURNSTILE_SECRET_KEY,MALWARE_SCANNER_URL,MALWARE_SCANNER_API_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,ALERTMANAGER_WATCHDOG_WEBHOOK_URL,ALERTMANAGER_CRITICAL_WEBHOOK_URL,ALERTMANAGER_DEFAULT_WEBHOOK_URL,ALERTMANAGER_SLACK_API_URL,ALERTMANAGER_SLACK_CHANNEL,ALERTMANAGER_WEBHOOK_USER,ALERTMANAGER_WEBHOOK_PASS,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
           script: |
             set -e
             timeout 60 cloud-init status --wait 2>/dev/null || true
@@ -732,6 +737,7 @@ jobs:
               printf 'STRIPE_SECRET_KEY=%s\n' "$STRIPE_SECRET_KEY"
               printf 'STRIPE_WEBHOOK_SECRET=%s\n' "$STRIPE_WEBHOOK_SECRET"
               printf 'SENTRY_DSN=%s\n' "$SENTRY_DSN"
+              printf 'SENTRY_RELEASE=%s\n' "$SENTRY_RELEASE"
               printf 'NEXT_PUBLIC_SENTRY_DSN=%s\n' "$NEXT_PUBLIC_SENTRY_DSN"
               printf 'SMTP_HOST=%s\n' "$SMTP_HOST"
               printf 'SMTP_PORT=%s\n' "$SMTP_PORT"
@@ -906,6 +912,10 @@ jobs:
             # creates a directory at that path and the container fails to start
             # (or, worse, the alerting path is silently absent).
             cp /opt/mct-portal/repo/infra/digitalocean/alertmanager.tmpl.yml /opt/mct-portal/alertmanager.tmpl.yml
+            # OBS-P3-005: the renderer the alertmanager entrypoint runs is also
+            # a bind mount; it must exist or the container cannot render the
+            # template.
+            cp /opt/mct-portal/repo/infra/digitalocean/render-alertmanager.awk /opt/mct-portal/render-alertmanager.awk
             cd /opt/mct-portal
             # OBS-P2-015: replacing a container destroys its json-file logs, so
             # incident evidence vanished on every deploy. Snapshot the running

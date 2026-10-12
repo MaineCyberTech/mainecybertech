@@ -86,6 +86,10 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      # OBS-P3-004: tag API errors/transactions with the deployed commit. The
+      # deploy writes SENTRY_RELEASE (the image tag / commit SHA) to the droplet
+      # .env; without it release correlation falls back to nothing.
+      SENTRY_RELEASE: ${SENTRY_RELEASE:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       # PII field encryption (AES-256-GCM). Without this the dev `plain:`
@@ -160,6 +164,9 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      # OBS-P3-004: same release marker as the API, so worker task failures and
+      # API errors can be correlated to the same deploy.
+      SENTRY_RELEASE: ${SENTRY_RELEASE:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       JIRA_BASE_URL: ${JIRA_BASE_URL:-}
       JIRA_EMAIL: ${JIRA_EMAIL:-}
@@ -229,6 +236,9 @@ services:
       # runtime copy covers the standalone server. Both come from the deploy.
       NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      # OBS-P3-004: server-side Sentry release marker for the deployed commit
+      # (the client bundle keeps its build-time NEXT_PUBLIC_GIT_SHA).
+      SENTRY_RELEASE: ${SENTRY_RELEASE:-}
     depends_on:
       api:
         condition: service_started
@@ -313,26 +323,22 @@ services:
       # Mounted READ-ONLY as a template. Alertmanager has no shell-style variable
       # substitution of its own (a literal ${VAR} in a url: fails validation with
       # "first path segment in URL cannot contain colon"), and the image has no
-      # envsubst (alpine/busybox). The entrypoint renders the template with sed
-      # into a writable path, fails loudly if any placeholder survives, then
-      # hands off to alertmanager.
+      # envsubst (alpine/busybox). The entrypoint renders the template with the
+      # awk renderer below into a writable path, fails loudly if any placeholder
+      # survives, then hands off to alertmanager.
       - ./alertmanager.tmpl.yml:/etc/alertmanager/alertmanager.tmpl.yml:ro
+      # OBS-P3-005: renderer that substitutes the placeholders with index/substr
+      # (not gsub, whose replacement string treats "&" and "\" specially) and
+      # escapes each value for the double-quoted YAML scalar it lands in, so a
+      # secret containing "&", "\" or '"' cannot corrupt the rendered config.
+      - ./render-alertmanager.awk:/etc/alertmanager/render-alertmanager.awk:ro
       # Alertmanager keeps its notification/silence state here; a named volume
       # survives restarts so a deploy does not re-fire duplicate notifications.
       - alertmanager-data:/alertmanager
     entrypoint: ["/bin/sh", "-c"]
     command:
       - >
-        awk '{
-          gsub(/\$\{ALERTMANAGER_DEFAULT_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_DEFAULT_WEBHOOK_URL"]);
-          gsub(/\$\{ALERTMANAGER_CRITICAL_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_CRITICAL_WEBHOOK_URL"]);
-          gsub(/\$\{ALERTMANAGER_WEBHOOK_USER\}/, ENVIRON["ALERTMANAGER_WEBHOOK_USER"]);
-          gsub(/\$\{ALERTMANAGER_WEBHOOK_PASS\}/, ENVIRON["ALERTMANAGER_WEBHOOK_PASS"]);
-          gsub(/\$\{ALERTMANAGER_WATCHDOG_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_WATCHDOG_WEBHOOK_URL"]);
-          gsub(/\$\{ALERTMANAGER_SLACK_API_URL\}/, ENVIRON["ALERTMANAGER_SLACK_API_URL"]);
-          gsub(/\$\{ALERTMANAGER_SLACK_CHANNEL\}/, ENVIRON["ALERTMANAGER_SLACK_CHANNEL"]);
-          print
-        }' /etc/alertmanager/alertmanager.tmpl.yml > /tmp/alertmanager.yml
+        awk -f /etc/alertmanager/render-alertmanager.awk /etc/alertmanager/alertmanager.tmpl.yml > /tmp/alertmanager.yml
         && ! grep -E '\$\{ALERTMANAGER' /tmp/alertmanager.yml | grep -vE '^[[:space:]]*#' | grep -q .
         && exec /bin/alertmanager --config.file=/tmp/alertmanager.yml
         --storage.path=/alertmanager --log.level=info
