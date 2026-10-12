@@ -13,6 +13,7 @@ import {
 } from "../validators/device-profiles";
 import { toJson } from "../lib/db-types";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -27,7 +28,7 @@ router.get("/", async (req, res, next) => {
     const limit = parsed.limit;
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("device_profiles").select("*", { count: "exact" });
+    let query = supabase.from("device_profiles").select("*", { count: listCountMode(req.query) });
 
     const orgId = parsed.organizationId;
     if (orgId) query = query.eq("organization_id", orgId);

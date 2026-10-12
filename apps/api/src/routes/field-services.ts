@@ -16,6 +16,7 @@ import {
 import { queryInt } from "../lib/query";
 import { parsePartialUpdate } from "../lib/validators";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -45,7 +46,7 @@ function crudRoute(
       const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
       const q = sb
         .from(table)
-        .select("*", { count: "exact" })
+        .select("*", { count: listCountMode(req.query) })
         .eq("organization_id", req.query.organization_id as string);
       const { data, error, count } = await q
         .order("created_at", { ascending: false })

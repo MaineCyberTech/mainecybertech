@@ -33,6 +33,12 @@ scrape_configs:
 
   - job_name: mct-worker
     metrics_path: /metrics
+    # ARCH-P3-005: the worker /metrics endpoint is gated with the same
+    # METRICS_TOKEN as the API (404 without it), so the scrape must present the
+    # bearer token written by the deploy and mounted read-only.
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/metrics-token
     static_configs:
       - targets: ["worker:3001"]
         labels:

@@ -10,6 +10,7 @@ import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
 import type { Tables } from "@mct/sdk/database.types";
 import { queryInt } from "../lib/query";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -117,7 +118,7 @@ router.get("/checks", async (req, res, next) => {
 
     const { data, error, count } = await supabase
       .from("uptime_checks")
-      .select("*", { count: "exact" })
+      .select("*", { count: listCountMode(req.query) })
       .eq("organization_id", req.query.organization_id as string)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);

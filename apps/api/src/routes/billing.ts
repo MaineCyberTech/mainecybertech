@@ -12,6 +12,7 @@ import { logger } from "../lib/logger";
 import { queryInt } from "../lib/query";
 import { resolveAdminTenantScope, applyOrgScope, applyRequestedOrg } from "../lib/admin-scope";
 import { resolveEffectivePermissions, ADMIN_BYPASS_KEYS } from "../lib/permissions";
+import { listCountMode } from "../lib/pagination";
 
 type StripePrice = {
   nickname?: string | null;
@@ -258,7 +259,7 @@ router.get("/invoices", async (req, res, next) => {
       typeof req.query.organization_id === "string" ? req.query.organization_id : undefined;
     const statusFilter = req.query.status as string | undefined;
 
-    let query = supabase.from("invoices").select("*", { count: "exact" });
+    let query = supabase.from("invoices").select("*", { count: listCountMode(req.query) });
     query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
     query = applyOrgScope(query, "organization_id", scope);
     if (statusFilter) query = query.eq("status", statusFilter as never);
@@ -324,7 +325,7 @@ router.get("/payments", async (req, res, next) => {
 
     let query = supabase
       .from("payments")
-      .select("*, invoices!inner(invoice_number, status)", { count: "exact" });
+      .select("*, invoices!inner(invoice_number, status)", { count: listCountMode(req.query) });
     query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
     query = applyOrgScope(query, "organization_id", scope);
 

@@ -17,6 +17,7 @@ import { getEnv } from "../config/env";
 import { queryInt } from "../lib/query";
 import { applyResolvedOrg } from "../lib/admin-scope";
 import { buildNotificationKey, createNotification } from "../lib/notify";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -351,7 +352,7 @@ router.get("/", async (req, res, next) => {
 
     let query = supabase
       .from("notifications")
-      .select("*", { count: "exact" })
+      .select("*", { count: listCountMode(req.query) })
       .eq("user_id", req.authUser!.userId)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);

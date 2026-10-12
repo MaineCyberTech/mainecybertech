@@ -192,6 +192,9 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+      # ARCH-P3-005: worker /metrics is gated with the same token as the API;
+      # Prometheus sends it (see prometheus.yml). Unset => /metrics 404s.
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
       API_BASE_URL: https://${API_DOMAIN:-api.mainecybertech.com}
     depends_on:
       redis:
@@ -232,6 +235,11 @@ services:
     <<: *security
     environment:
       NODE_ENV: production
+      # ARCH-P3-003: server-side runtime API URL. NEXT_PUBLIC_* is inlined at
+      # build time, so the server cannot be redirected with the compose value
+      # below; API_INTERNAL_URL is read at request time by lib/api.ts and keeps
+      # SSR traffic on the docker network instead of the public edge.
+      API_INTERNAL_URL: http://api:4000
       NEXT_PUBLIC_API_URL: http://api:4000
       NEXT_TELEMETRY_DISABLED: 1
       # OBS-P2-011: the web Sentry configs read NEXT_PUBLIC_SENTRY_DSN, not

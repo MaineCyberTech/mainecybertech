@@ -11,6 +11,7 @@ import { applyResolvedOrg } from "../lib/admin-scope";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -26,7 +27,7 @@ router.get("/", async (req, res, next) => {
 
     // MT-P2-002: mandatory org predicate; fails closed without a resolved or
     // explicit org instead of querying across tenants.
-    let q = supabase.from("qbr_reports").select("*", { count: "exact" });
+    let q = supabase.from("qbr_reports").select("*", { count: listCountMode(req.query) });
     q = applyResolvedOrg(req, q);
 
     const { data, error, count } = await q

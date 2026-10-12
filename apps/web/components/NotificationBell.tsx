@@ -38,6 +38,8 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
   const toggleRef = useRef<HTMLButtonElement | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const fallbackPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const disposedRef = useRef(false);
 
   const closePanel = useCallback((restoreFocus = true) => {
     setOpen(false);
@@ -90,53 +92,106 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     }
   }, []);
 
+  const stopFallbackPolling = useCallback(() => {
+    if (fallbackPollRef.current !== null) {
+      clearInterval(fallbackPollRef.current);
+      fallbackPollRef.current = null;
+    }
+  }, []);
+
+  const startFallbackPolling = useCallback(() => {
+    if (fallbackPollRef.current === null) {
+      fallbackPollRef.current = setInterval(fetchUnread, 30000);
+    }
+  }, [fetchUnread]);
+
   useEffect(() => {
     fetchUnread();
+    disposedRef.current = false;
 
-    // Connect to SSE stream
-    const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
-    const url = `${baseUrl}/api/v1/notifications/stream`;
-    const es = new EventSource(url, { withCredentials: true });
-    eventSourceRef.current = es;
+    // API-P3-003: reconnect the SSE stream with bounded exponential backoff
+    // (1s → 2s → … capped at 30s) instead of degrading to polling forever.
+    // While a reconnect is pending, the 30s fallback poller keeps the badge
+    // fresh; a successful (re)connect stops it. `auth_expired` is terminal:
+    // the server has ended the stream because the session is expired/revoked,
+    // so we stop reconnecting and send the user to sign in again.
+    let attempt = 0;
 
-    es.addEventListener("notification", (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        // Server emits a single notification object; tolerate arrays too.
-        const hasItems =
-          (Array.isArray(data) && data.length > 0) ||
-          (data && !Array.isArray(data) && typeof data === "object");
-        if (hasItems) {
-          // Fetch fresh count from server instead of adding to local state
-          fetchUnread();
-          fetchRecent();
-          playNotificationChime();
+    const connect = () => {
+      if (disposedRef.current) return;
+      const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
+      const url = `${baseUrl}/api/v1/notifications/stream`;
+      const es = new EventSource(url, { withCredentials: true });
+      eventSourceRef.current = es;
+
+      const markConnected = () => {
+        attempt = 0;
+        stopFallbackPolling();
+      };
+      es.addEventListener("connected", markConnected);
+      es.addEventListener("subscribed", markConnected);
+
+      es.addEventListener("notification", (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          // Server emits a single notification object; tolerate arrays too.
+          const hasItems =
+            (Array.isArray(data) && data.length > 0) ||
+            (data && !Array.isArray(data) && typeof data === "object");
+          if (hasItems) {
+            // Fetch fresh count from server instead of adding to local state
+            fetchUnread();
+            fetchRecent();
+            playNotificationChime();
+          }
+        } catch {
+          // SSE data parse error — non-critical
         }
-      } catch {
-        // SSE data parse error — non-critical
-      }
-    });
+      });
 
-    es.onerror = () => {
-      // Fallback to polling if SSE fails. Keep the interval id in a ref so the
-      // effect cleanup can clear it: the previous version "returned" a cleanup
-      // from the onerror handler that was discarded, leaking one 30s poller per
-      // component instance (USE-P2-006).
-      es.close();
-      if (fallbackPollRef.current === null) {
-        fallbackPollRef.current = setInterval(fetchUnread, 30000);
-      }
+      es.addEventListener("auth_expired", () => {
+        // Stop all reconnect paths before navigating.
+        disposedRef.current = true;
+        es.close();
+        eventSourceRef.current = null;
+        stopFallbackPolling();
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+          window.location.assign("/login?reason=session_expired");
+        }
+      });
+
+      es.onerror = () => {
+        // Fallback to polling while the stream is down. Keep the interval id
+        // in a ref so the effect cleanup can clear it: the previous version
+        // "returned" a cleanup from the onerror handler that was discarded,
+        // leaking one 30s poller per component instance (USE-P2-006).
+        es.close();
+        eventSourceRef.current = null;
+        if (disposedRef.current) return;
+        startFallbackPolling();
+        if (reconnectTimerRef.current !== null) return;
+        const delay = Math.min(30_000, 1000 * 2 ** attempt);
+        attempt += 1;
+        reconnectTimerRef.current = setTimeout(() => {
+          reconnectTimerRef.current = null;
+          connect();
+        }, delay);
+      };
     };
+
+    connect();
 
     return () => {
-      es.close();
-      eventSourceRef.current = null;
-      if (fallbackPollRef.current !== null) {
-        clearInterval(fallbackPollRef.current);
-        fallbackPollRef.current = null;
+      disposedRef.current = true;
+      if (reconnectTimerRef.current !== null) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
       }
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
+      stopFallbackPolling();
     };
-  }, [fetchUnread, fetchRecent, playNotificationChime]);
+  }, [fetchUnread, fetchRecent, playNotificationChime, startFallbackPolling, stopFallbackPolling]);
 
   const fetchPrefs = useCallback(async () => {
     setLoadingPrefs(true);

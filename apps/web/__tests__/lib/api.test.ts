@@ -16,16 +16,21 @@ jest.mock("@mct/sdk", () => ({
 }));
 
 const ORIGINAL_API_URL = process.env.NEXT_PUBLIC_API_URL;
+const ORIGINAL_INTERNAL_URL = process.env.API_INTERNAL_URL;
 
 describe("getApiClient", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     delete process.env.NEXT_PUBLIC_API_URL;
+    delete process.env.API_INTERNAL_URL;
   });
 
   afterAll(() => {
     if (ORIGINAL_API_URL) {
       process.env.NEXT_PUBLIC_API_URL = ORIGINAL_API_URL;
+    }
+    if (ORIGINAL_INTERNAL_URL) {
+      process.env.API_INTERNAL_URL = ORIGINAL_INTERNAL_URL;
     }
   });
 
@@ -47,6 +52,21 @@ describe("getApiClient", () => {
 
     expect(mockCreate).toHaveBeenCalledWith({
       baseUrl: "https://api.example.com",
+      getToken: expect.any(Function),
+      getActiveOrgId: expect.any(Function),
+    });
+  });
+
+  // ARCH-P3-003: server-side code must honor the runtime API_INTERNAL_URL
+  // override (NEXT_PUBLIC_API_URL is inlined at build time and cannot be).
+  it("prefers API_INTERNAL_URL over NEXT_PUBLIC_API_URL", () => {
+    process.env.NEXT_PUBLIC_API_URL = "https://api.example.com";
+    process.env.API_INTERNAL_URL = "http://api:4000";
+    const { getApiClient } = require("@/lib/api");
+    getApiClient();
+
+    expect(mockCreate).toHaveBeenCalledWith({
+      baseUrl: "http://api:4000",
       getToken: expect.any(Function),
       getActiveOrgId: expect.any(Function),
     });

@@ -64,25 +64,48 @@ export class CircuitBreaker {
     return true;
   }
 
-  async execute<T>(operation: () => Promise<T>): Promise<T> {
+  /**
+   * Run `operation` under the breaker with a hard deadline.
+   *
+   * RES-P3-007: the timeout timer is cleared in `finally` (the previous
+   * version leaked one pending timer per call until it fired) and the
+   * operation receives an AbortSignal that fires with the timeout, so a
+   * timed-out call can cancel its underlying work instead of continuing in
+   * the background. Callers that pass no signal-accepting operation are
+   * unaffected — the signal is simply unused.
+   */
+  async execute<T>(operation: (signal: AbortSignal) => Promise<T>): Promise<T> {
     if (!this.isAvailable()) {
       throw new Error("Circuit breaker is OPEN");
     }
 
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      const op = operation();
+      const op = operation(controller.signal);
+      // The loser of the race below may still reject later; swallow it so it
+      // is not an unhandled rejection (the caller already saw the timeout).
       op.catch(() => {});
-      const result = await Promise.race([
-        op,
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Circuit breaker timeout")), this.config.timeout),
-        ),
-      ]);
+      const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          // Settle the race with the breaker error BEFORE aborting: the abort
+          // synchronously rejects the operation, and racing that rejection
+          // first would surface the operation's abort error to the caller
+          // instead of "Circuit breaker timeout".
+          reject(new Error("Circuit breaker timeout"));
+          controller.abort(new Error("Circuit breaker timeout"));
+        }, this.config.timeout);
+      });
+      const result = await Promise.race([op, timeout]);
       this.onSuccess();
       return result;
     } catch (error) {
       this.onFailure();
       throw error;
+    } finally {
+      // RES-P3-007: never leave the deadline timer pending after the call
+      // settles (it kept the event loop busy and fired against settled calls).
+      if (timer) clearTimeout(timer);
     }
   }
 

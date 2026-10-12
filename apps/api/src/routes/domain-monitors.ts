@@ -8,6 +8,7 @@ import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { loadOwned } from "../lib/tenant";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
+import { EXPORT_ROW_LIMIT } from "../lib/pagination";
 import { applyOrgScope, applyRequestedOrg, resolveAdminTenantScope } from "../lib/admin-scope";
 import {
   createDomainMonitorSchema,
@@ -16,6 +17,7 @@ import {
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -50,7 +52,7 @@ router.get("/export", async (req, res, next) => {
       scope,
     );
     q = applyOrgScope(q, "organization_id", scope);
-    const { data, error } = await q.order("domain", { ascending: true }).limit(10000);
+    const { data, error } = await q.order("domain", { ascending: true }).limit(EXPORT_ROW_LIMIT);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -70,7 +72,7 @@ router.get("/", async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let q = supabase.from("domain_monitors").select("*", { count: "exact" });
+    let q = supabase.from("domain_monitors").select("*", { count: listCountMode(req.query) });
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) q = q.eq("organization_id", orgId);
     const status = req.query.status as string | undefined;

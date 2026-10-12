@@ -18,6 +18,7 @@ import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { queryInt, queryString } from "../lib/query";
 import { enqueueTask } from "../lib/task-producer";
 import { claimIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -147,7 +148,7 @@ router.get("/dead-letters", requirePermission("webhooks", "view"), async (req, r
       }
     }
 
-    let query = supabase.from("webhook_dead_letters").select("*", { count: "exact" });
+    let query = supabase.from("webhook_dead_letters").select("*", { count: listCountMode(req.query) });
     if (orgWebhookIds) query = query.in("webhook_id", orgWebhookIds);
     if (webhookId) query = query.eq("webhook_id", webhookId);
     if (event) query = query.eq("event", event);
@@ -501,7 +502,7 @@ router.get("/:id/deliveries", requirePermission("webhooks", "view"), async (req,
 
     const { data, error, count } = await supabase
       .from("webhook_deliveries")
-      .select("*", { count: "exact" })
+      .select("*", { count: listCountMode(req.query) })
       .eq("webhook_id", String(req.params.id))
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);

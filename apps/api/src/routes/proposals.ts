@@ -9,6 +9,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
+import { EXPORT_ROW_LIMIT } from "../lib/pagination";
 import { applyOrgScope, applyRequestedOrg, resolveAdminTenantScope } from "../lib/admin-scope";
 import {
   createProposalSchema,
@@ -24,6 +25,7 @@ import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { moduleCommentSchema } from "../validators/comments";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -57,7 +59,9 @@ router.get("/export", async (req, res, next) => {
     query = applyOrgScope(query, "organization_id", scope);
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter as never);
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(EXPORT_ROW_LIMIT);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -77,7 +81,7 @@ router.get("/", async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("proposals").select("*", { count: "exact" });
+    let query = supabase.from("proposals").select("*", { count: listCountMode(req.query) });
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
     const statusFilter = req.query.status as string | undefined;
@@ -262,6 +266,7 @@ router.post("/", requirePermission("proposals", "create"), async (req, res, next
     });
 
     await addTimelineEvent(
+      req,
       parsed.organizationId,
       "proposals",
       "proposal",
@@ -756,6 +761,7 @@ router.post(
       });
 
       await addTimelineEvent(
+        req,
         proposal.organization_id as string,
         "proposals",
         "proposal",
@@ -820,6 +826,7 @@ router.post("/:id/publish", requirePermission("proposals", "edit"), async (req, 
     });
 
     await addTimelineEvent(
+      req,
       current.organization_id as string,
       "proposals",
       "proposal",

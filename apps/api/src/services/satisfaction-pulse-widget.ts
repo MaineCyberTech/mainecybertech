@@ -1,7 +1,15 @@
+import { type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@mct/sdk/database.types";
 import { getSupabaseAdmin } from "../services/supabase";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { toJson, asUpdate } from "../lib/db-types";
+
+/**
+ * RLS-P3-007: the scoped client (when the module is allow-listed) is threaded
+ * in by the route; without it the service keeps the service-role client.
+ */
+type RlsClient = SupabaseClient<Database>;
 
 export interface SatisfactionPulseRecord {
   id: string;
@@ -62,8 +70,9 @@ export async function listSatisfactionPulses(
     page: number;
     limit: number;
   },
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
   let query = supabase
     .from("satisfaction_pulses")
     .select("*", { count: "exact" })
@@ -89,8 +98,8 @@ export async function listSatisfactionPulses(
   });
 }
 
-export async function getSatisfactionPulse(organizationId: string, id: string) {
-  const supabase = getSupabaseAdmin();
+export async function getSatisfactionPulse(organizationId: string, id: string, client?: RlsClient) {
+  const supabase = client ?? getSupabaseAdmin();
   const { data, error } = await supabase
     .from("satisfaction_pulses")
     .select("*")
@@ -116,8 +125,9 @@ export async function createSatisfactionPulse(
     sendAt?: string | null;
     scheduledFor?: string | null;
   },
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
 
   const { data: record, error } = await supabase
     .from("satisfaction_pulses")
@@ -157,8 +167,9 @@ export async function updateSatisfactionPulse(
   userId: string,
   id: string,
   input: Partial<SatisfactionPulseRecord>,
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
 
   const { data: current, error: currentError } = await supabase
     .from("satisfaction_pulses")
@@ -201,8 +212,9 @@ export async function respondSatisfactionPulse(
   id: string,
   rating: number,
   feedback?: string | null,
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
 
   const { data: current, error: currentError } = await supabase
     .from("satisfaction_pulses")
@@ -240,8 +252,13 @@ export async function respondSatisfactionPulse(
   return success(data);
 }
 
-export async function deleteSatisfactionPulse(organizationId: string, userId: string, id: string) {
-  const supabase = getSupabaseAdmin();
+export async function deleteSatisfactionPulse(
+  organizationId: string,
+  userId: string,
+  id: string,
+  client?: RlsClient,
+) {
+  const supabase = client ?? getSupabaseAdmin();
 
   const { data: current, error: currentError } = await supabase
     .from("satisfaction_pulses")
@@ -279,8 +296,9 @@ export async function exportSatisfactionPulses(
     source?: string;
     format: "csv" | "json";
   },
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
 
   let query = supabase
     .from("satisfaction_pulses")
@@ -297,8 +315,8 @@ export async function exportSatisfactionPulses(
   return success(data ?? []);
 }
 
-export async function listTemplates(organizationId: string) {
-  const supabase = getSupabaseAdmin();
+export async function listTemplates(organizationId: string, client?: RlsClient) {
+  const supabase = client ?? getSupabaseAdmin();
   const { data, error } = await supabase
     .from("satisfaction_pulse_templates")
     .select("*")
@@ -309,8 +327,8 @@ export async function listTemplates(organizationId: string) {
   return success(data ?? []);
 }
 
-export async function getTemplate(organizationId: string, id: string) {
-  const supabase = getSupabaseAdmin();
+export async function getTemplate(organizationId: string, id: string, client?: RlsClient) {
+  const supabase = client ?? getSupabaseAdmin();
   const { data, error } = await supabase
     .from("satisfaction_pulse_templates")
     .select("*")
@@ -332,8 +350,9 @@ export async function createTemplate(
     defaultRating?: number;
     isActive?: boolean;
   },
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
 
   const { data: record, error } = await supabase
     .from("satisfaction_pulse_templates")
@@ -368,8 +387,9 @@ export async function updateTemplate(
   userId: string,
   id: string,
   input: Partial<SatisfactionPulseTemplate>,
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
 
   const { data, error } = await supabase
     .from("satisfaction_pulse_templates")
@@ -393,8 +413,13 @@ export async function updateTemplate(
   return success(data);
 }
 
-export async function deleteTemplate(organizationId: string, userId: string, id: string) {
-  const supabase = getSupabaseAdmin();
+export async function deleteTemplate(
+  organizationId: string,
+  userId: string,
+  id: string,
+  client?: RlsClient,
+) {
+  const supabase = client ?? getSupabaseAdmin();
   const { error } = await supabase
     .from("satisfaction_pulse_templates")
     .delete()
@@ -414,8 +439,8 @@ export async function deleteTemplate(organizationId: string, userId: string, id:
   return success({ deleted: true });
 }
 
-export async function listSchedules(organizationId: string) {
-  const supabase = getSupabaseAdmin();
+export async function listSchedules(organizationId: string, client?: RlsClient) {
+  const supabase = client ?? getSupabaseAdmin();
   const { data, error } = await supabase
     .from("satisfaction_pulse_schedules")
     .select("*")
@@ -438,8 +463,9 @@ export async function createSchedule(
     cronExpression?: string | null;
     isActive?: boolean;
   },
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
 
   const { data: record, error } = await supabase
     .from("satisfaction_pulse_schedules")
@@ -476,8 +502,9 @@ export async function updateSchedule(
   userId: string,
   id: string,
   input: Partial<SatisfactionPulseSchedule>,
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
 
   const { data, error } = await supabase
     .from("satisfaction_pulse_schedules")
@@ -501,8 +528,13 @@ export async function updateSchedule(
   return success(data);
 }
 
-export async function deleteSchedule(organizationId: string, userId: string, id: string) {
-  const supabase = getSupabaseAdmin();
+export async function deleteSchedule(
+  organizationId: string,
+  userId: string,
+  id: string,
+  client?: RlsClient,
+) {
+  const supabase = client ?? getSupabaseAdmin();
   const { error } = await supabase
     .from("satisfaction_pulse_schedules")
     .delete()

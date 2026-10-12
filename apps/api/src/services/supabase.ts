@@ -53,9 +53,13 @@ async function circuitBreakingFetch(...args: Parameters<typeof fetch>): Promise<
     return fetch(...args);
   }
   const started = Date.now();
-  const labels = restLabels(args[0], args[1]);
+  const [input, init] = args;
+  const labels = restLabels(input, init);
   try {
-    return await circuitBreaker.execute(() => fetch(...args));
+    // RES-P3-007: thread the breaker's deadline into the request so a
+    // timed-out Supabase call is actually cancelled (fetch aborts), not just
+    // abandoned while it keeps running in the background.
+    return await circuitBreaker.execute((signal) => fetch(input, { ...init, signal }));
   } finally {
     if (labels) dbQueryDuration.observe(labels, (Date.now() - started) / 1000);
   }

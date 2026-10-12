@@ -96,6 +96,60 @@ describe("CircuitBreaker", () => {
     expect(cb.getState().state).toBe("open");
   });
 
+  // RES-P3-007: the deadline timer used to stay pending after the call settled
+  // (one leaked timer per Supabase call) and the timed-out operation kept
+  // running. These tests pin both halves of the fix.
+  it("clears the deadline timer once the operation settles [RES-P3-007]", async () => {
+    jest.useFakeTimers();
+    try {
+      const cb = new CircuitBreaker({
+        failureThreshold: 1,
+        successThreshold: 1,
+        timeout: 30_000,
+      });
+      await expect(cb.execute(() => Promise.resolve("ok"))).resolves.toBe("ok");
+      expect(jest.getTimerCount()).toBe(0);
+
+      await expect(cb.execute(() => Promise.reject(new Error("fail")))).rejects.toThrow("fail");
+      expect(jest.getTimerCount()).toBe(0);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("aborts the timed-out operation's signal [RES-P3-007]", async () => {
+    const cb = new CircuitBreaker({
+      failureThreshold: 1,
+      successThreshold: 1,
+      timeout: 20,
+    });
+    let observed: AbortSignal | undefined;
+    const op = (signal: AbortSignal) =>
+      new Promise<string>((_, reject) => {
+        observed = signal;
+        signal.addEventListener("abort", () => reject(new Error("aborted")));
+      });
+
+    await expect(cb.execute(op)).rejects.toThrow("Circuit breaker timeout");
+    expect(observed?.aborted).toBe(true);
+  });
+
+  it("passes an unaborted signal to operations that settle in time [RES-P3-007]", async () => {
+    const cb = new CircuitBreaker({
+      failureThreshold: 1,
+      successThreshold: 1,
+      timeout: 1000,
+    });
+    let observed: AbortSignal | undefined;
+    const result = await cb.execute((signal) => {
+      observed = signal;
+      return Promise.resolve("ok");
+    });
+
+    expect(result).toBe("ok");
+    expect(observed?.aborted).toBe(false);
+  });
+
   it("tracks stats correctly", () => {
     const cb = new CircuitBreaker({
       failureThreshold: 3,
