@@ -12,12 +12,9 @@ import { logger } from "../lib/logger";
 import { queryInt } from "../lib/query";
 import { resolveAdminTenantScope, applyOrgScope, applyRequestedOrg } from "../lib/admin-scope";
 import { resolveEffectivePermissions, ADMIN_BYPASS_KEYS } from "../lib/permissions";
-<<<<<<< HEAD
 import { listCountMode } from "../lib/pagination";
-=======
 import { decryptField } from "../lib/field-encryption";
 import { invoicePaidAtIso, epochSecondsToIsoOrNow } from "../lib/billing-timestamps";
->>>>>>> f5ff33e1 (fix(billing): P3 batch — PM-id redaction, email encryption, paid_at guards, left-join payments, entitlement override, seats/trials, sync gating, doc sync [BILL-P3-002/003/004/005/006/007/008])
 
 type StripePrice = {
   nickname?: string | null;
@@ -357,14 +354,10 @@ router.get("/payments", async (req, res, next) => {
 
     let query = supabase
       .from("payments")
-<<<<<<< HEAD
-      .select("*, invoices!inner(invoice_number, status)", { count: listCountMode(req.query) });
-=======
       // BILL-P3-004: left join (no `!inner`) so payments without a mirrored
       // invoice (one-off PaymentIntents, invoice not yet synced) still list
       // with a null invoice column instead of disappearing.
-      .select("*, invoices(invoice_number, status)", { count: "exact" });
->>>>>>> f5ff33e1 (fix(billing): P3 batch — PM-id redaction, email encryption, paid_at guards, left-join payments, entitlement override, seats/trials, sync gating, doc sync [BILL-P3-002/003/004/005/006/007/008])
+      .select("*, invoices(invoice_number, status)", { count: listCountMode(req.query) });
     query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
     query = applyOrgScope(query, "organization_id", scope);
 
