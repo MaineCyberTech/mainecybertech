@@ -186,7 +186,7 @@ describe("AdminTicketDetailPage", () => {
     expect(screen.getByText("Confirm Delete")).toBeInTheDocument();
   });
 
-  it("shows restore button for deleted tickets", async () => {
+  it("does not render the removed soft-delete Restore affordance (USE-P2-003)", async () => {
     mockTicketsGet.mockResolvedValue({
       ...baseTicket,
       title: "[Deleted] Login Issue",
@@ -199,8 +199,9 @@ describe("AdminTicketDetailPage", () => {
         searchParams: Promise.resolve({}),
       }),
     );
-    expect(screen.getByText("Restore Ticket")).toBeInTheDocument();
-    expect(screen.queryByText("Delete Ticket")).not.toBeInTheDocument();
+    // The product decision is hard delete (migration 5302432 dropped the
+    // tombstone columns), so no unreachable Restore control is advertised.
+    expect(screen.queryByText("Restore Ticket")).not.toBeInTheDocument();
   });
 
   it("shows comments section with empty state", async () => {

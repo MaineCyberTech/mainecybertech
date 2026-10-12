@@ -9,6 +9,9 @@ export default function OnboardingCreateForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // USE-P2-007: block duplicate submissions while the create is in flight so
+    // a slow round-trip cannot produce two onboarding records.
+    if (pending) return;
     setError("");
     const fd = new FormData(e.currentTarget as HTMLFormElement);
     startTransition(async () => {

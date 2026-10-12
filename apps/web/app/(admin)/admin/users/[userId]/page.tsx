@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { requirePermission } from "@/lib/auth/permissions";
-import { updateUserProfileBasics, updateMembership } from "./actions";
+import { updateUserProfileBasics } from "./actions";
+import MembershipForm from "./MembershipForm";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -164,73 +165,16 @@ export default async function UserDetailPage({ params }: UserPageProps) {
                     </p>
                   </div>
 
-                  <form action={updateMembership}>
-                    <input type="hidden" name="membershipId" value={membership.id} />
-                    <input type="hidden" name="userId" value={profile?.id ?? ""} />
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <label className="cyber-label" htmlFor={`role-${membership.id}`}>
-                          Role
-                        </label>
-                        <select
-                          id={`role-${membership.id}`}
-                          name="roleId"
-                          defaultValue={membership.role_id}
-                          className="cyber-input"
-                        >
-                          {allRoles.map((r: Role) => (
-                            <option key={r.id} value={r.id}>
-                              {r.name} ({r.key})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="cyber-label" htmlFor={`status-${membership.id}`}>
-                          Status
-                        </label>
-                        <select
-                          id={`status-${membership.id}`}
-                          name="status"
-                          defaultValue={membership.status}
-                          className="cyber-input"
-                        >
-                          <option value="pending">pending</option>
-                          <option value="approved">approved</option>
-                          <option value="rejected">rejected</option>
-                          <option value="suspended">suspended</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-6">
-                      <label className="flex items-center gap-2 text-sm text-slate-300">
-                        <input
-                          type="checkbox"
-                          name="isBillingContact"
-                          defaultChecked={membership.is_billing_contact}
-                        />
-                        Billing Contact
-                      </label>
-
-                      <label className="flex items-center gap-2 text-sm text-slate-300">
-                        <input
-                          type="checkbox"
-                          name="isSecurityContact"
-                          defaultChecked={membership.is_security_contact}
-                        />
-                        Security Contact
-                      </label>
-                    </div>
-
-                    <div className="mt-6">
-                      <SubmitButton className="cyber-button-secondary" pendingText="Saving…">
-                        Save Membership
-                      </SubmitButton>
-                    </div>
-                  </form>
+                  <MembershipForm
+                    membershipId={membership.id}
+                    userId={profile?.id ?? ""}
+                    organizationName={org?.name ?? "this organization"}
+                    roleId={membership.role_id}
+                    status={membership.status}
+                    isBillingContact={membership.is_billing_contact}
+                    isSecurityContact={membership.is_security_contact}
+                    allRoles={allRoles}
+                  />
                 </div>
               );
             })

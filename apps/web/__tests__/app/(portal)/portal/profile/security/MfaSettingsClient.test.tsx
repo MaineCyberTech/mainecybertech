@@ -315,4 +315,41 @@ describe("MfaSettingsClient", () => {
     );
     expect(screen.getByText(/0 of 10 recovery codes remaining/i)).toBeInTheDocument();
   });
+
+  it("shows the ?mfa=required step-up banner and verifies (USE-P2-009)", async () => {
+    mockStepUp.mockResolvedValue({
+      ok: true,
+      data: { user: { id: "u1", email: "user@example.com" } },
+    });
+
+    renderClient({
+      mfaRequired: true,
+      initialFactors: [{ id: "f1", friendlyName: "Phone", status: "verified" }],
+    });
+
+    expect(screen.getByRole("heading", { name: /Second factor required/i })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/Authenticator code/i), {
+      target: { value: "123456" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Verify to continue/i }));
+
+    await waitFor(() => expect(mockStepUp).toHaveBeenCalledWith("f1", "123456"));
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: /Continue to dashboard/i })).toBeInTheDocument(),
+    );
+  });
+
+  it("explains when no verified factor exists for the required step-up", async () => {
+    renderClient({ mfaRequired: true });
+
+    fireEvent.change(screen.getByLabelText(/Authenticator code/i), {
+      target: { value: "123456" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Verify to continue/i }));
+
+    await waitFor(() =>
+      expect(screen.getByText(/No verified authenticator app was found/i)).toBeInTheDocument(),
+    );
+    expect(mockStepUp).not.toHaveBeenCalled();
+  });
 });

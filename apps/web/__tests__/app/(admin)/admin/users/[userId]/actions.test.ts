@@ -155,8 +155,27 @@ describe("updateMembership", () => {
     formData.set("roleId", "role-admin");
     formData.set("status", "approved");
 
-    await expect(updateMembership(formData)).resolves.toBeUndefined();
+    await expect(updateMembership(formData)).resolves.toEqual({ ok: true });
     expect(mockMembershipsUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns the API error instead of throwing (USE-P2-010)", async () => {
+    mockMembershipsUpdate.mockRejectedValue(new Error("Validation failed"));
+
+    const { updateMembership } = await import(
+      "@/app/(admin)/admin/users/[userId]/actions"
+    );
+
+    const formData = new FormData();
+    formData.set("membershipId", "mem-1");
+    formData.set("userId", "user-1");
+    formData.set("roleId", "role-admin");
+    formData.set("status", "suspended");
+
+    const result = await updateMembership(formData);
+
+    expect(result).toEqual({ ok: false, error: "Validation failed" });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 
   it("revalidates user paths", async () => {

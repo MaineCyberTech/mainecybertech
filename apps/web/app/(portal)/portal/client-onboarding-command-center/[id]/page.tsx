@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
 import { formatDate } from "@/lib/format";
+import ChecklistItemToggle from "./ChecklistItemToggle";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -50,13 +51,16 @@ function riskBadge(risk: string) {
 }
 
 function phaseCard({
+  recordId,
   title,
   status,
   items,
 }: {
+  recordId: string;
   title: string;
   status: string;
   items: Array<{
+    id: string;
     item_key: string;
     label: string;
     is_required: boolean;
@@ -92,32 +96,16 @@ function phaseCard({
       <div className="mt-4 space-y-2">
         {items.length > 0 ? (
           items.map((item) => (
-            <div
+            <ChecklistItemToggle
               key={item.item_key}
-              className="flex items-center gap-3 rounded-lg border border-white/5 bg-cyber-base/60 p-3"
-            >
-              <input
-                type="checkbox"
-                checked={item.is_completed}
-                disabled
-                aria-label={item.label ?? "Onboarding item"}
-                className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500"
-              />
-              <div className="min-w-0 flex-1">
-                <p
-                  className={`truncate font-medium ${item.is_completed ? "text-slate-400 line-through" : "text-slate-50"}`}
-                >
-                  {item.label}
-                  {item.is_required && (
-                    <span className="ml-2 text-[11px] text-red-400">(required)</span>
-                  )}
-                </p>
-                {item.notes && <p className="mt-1 text-xs text-slate-400">{item.notes}</p>}
-                {item.completed_at && (
-                  <p className="mt-1 text-xs text-slate-500">Completed {rel(item.completed_at)}</p>
-                )}
-              </div>
-            </div>
+              recordId={recordId}
+              itemId={item.id}
+              label={item.label}
+              isRequired={item.is_required}
+              notes={item.notes}
+              completedAt={item.completed_at}
+              initialCompleted={item.is_completed}
+            />
           ))
         ) : (
           <EmptyState
@@ -278,6 +266,7 @@ export default async function ClientOnboardingDetailPage({ params }: Props) {
           {phases.map((p) => {
             const items = checklistItems.filter((i) => i.phase === p.key);
             return phaseCard({
+              recordId: record.id,
               title: p.title,
               status: p.status,
               items,

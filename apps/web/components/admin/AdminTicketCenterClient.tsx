@@ -23,6 +23,8 @@ const STATUS_OPTIONS = [
 
 const PRIORITY_OPTIONS = ["low", "normal", "high", "urgent"] as const;
 
+type TicketCounts = { open: number; closed: number; all: number };
+
 type Props = {
   tickets: TicketRecord[];
   organizations: OrganizationRecord[];
@@ -32,6 +34,12 @@ type Props = {
     status: string,
   ) => Promise<{ ok: boolean; error?: string }>;
   bulkUpdateTicketsAction?: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
+  // USE-P2-002: server-side paging beyond the initial fetch + accurate totals.
+  loadMoreTicketsAction?: (
+    page: number,
+  ) => Promise<{ ok: boolean; items?: TicketRecord[]; total?: number; error?: string }>;
+  total?: number;
+  counts?: TicketCounts;
 };
 
 function ticketSubject(ticket: TicketRecord) {
@@ -272,6 +280,9 @@ export default function AdminTicketCenterClient({
   createTicketAction,
   updateTicketStatusAction,
   bulkUpdateTicketsAction,
+  loadMoreTicketsAction,
+  total,
+  counts,
 }: Props) {
   const [openModal, setOpenModal] = useState(false);
   const ticketModalRef = useRef<HTMLDivElement>(null);
@@ -284,6 +295,21 @@ export default function AdminTicketCenterClient({
   const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "updated">("updated");
   const [page, setPage] = useState(1);
+
+  // USE-P2-002: pages fetched from the server after the initial 100 rows. The
+  // prop array is reset whenever the server re-renders the page.
+  const [extraTickets, setExtraTickets] = useState<TicketRecord[]>([]);
+  const [serverPage, setServerPage] = useState(1);
+  const [serverExhausted, setServerExhausted] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setExtraTickets([]);
+    setServerPage(1);
+    setServerExhausted(false);
+    setLoadMoreError(null);
+  }, [tickets]);
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -321,14 +347,22 @@ export default function AdminTicketCenterClient({
     }
   };
 
+  const allTickets = useMemo(() => [...tickets, ...extraTickets], [tickets, extraTickets]);
   const visibleTickets = useMemo(
-    () => tickets.filter((ticket) => !isDeletedTicket(ticket)),
-    [tickets],
+    () => allTickets.filter((ticket) => !isDeletedTicket(ticket)),
+    [allTickets],
   );
   const orgMap = useMemo(
     () => new Map(organizations.map((org) => [org.id, org.name ?? org.id])),
     [organizations],
   );
+
+  const totalCount = total ?? allTickets.length;
+  const stats: TicketCounts = counts ?? {
+    open: visibleTickets.filter((t) => !isClosedStatus(ticketStatus(t))).length,
+    closed: visibleTickets.filter((t) => isClosedStatus(ticketStatus(t))).length,
+    all: visibleTickets.length,
+  };
 
   const filtered = useMemo(() => {
     let items = visibleTickets;
@@ -379,7 +413,38 @@ export default function AdminTicketCenterClient({
     return filtered.slice(start, end);
   }, [filtered, page]);
 
-  const hasMore = paginated.length < filtered.length;
+  const hasMoreLocal = paginated.length < filtered.length;
+  const hasMoreServer = !serverExhausted && allTickets.length < totalCount;
+  const hasMore = hasMoreLocal || hasMoreServer;
+  const remaining = hasMoreLocal
+    ? filtered.length - paginated.length
+    : Math.max(0, totalCount - allTickets.length);
+
+  const handleShowMore = async () => {
+    if (hasMoreLocal || !loadMoreTicketsAction) {
+      setPage((p) => p + 1);
+      return;
+    }
+    setLoadingMore(true);
+    setLoadMoreError(null);
+    try {
+      const nextPage = serverPage + 1;
+      const result = await loadMoreTicketsAction(nextPage);
+      if (!result.ok) {
+        setLoadMoreError(result.error ?? "Failed to load more tickets.");
+        return;
+      }
+      const items = result.items ?? [];
+      if (items.length === 0) setServerExhausted(true);
+      setExtraTickets((prev) => [...prev, ...items]);
+      setServerPage(nextPage);
+      setPage((p) => p + 1);
+    } catch {
+      setLoadMoreError("Failed to load more tickets.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const activeFilters: { label: string; onRemove: () => void }[] = [];
   if (search.trim())
@@ -441,15 +506,9 @@ export default function AdminTicketCenterClient({
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
-        <StatCard
-          label="Open Tickets"
-          value={visibleTickets.filter((t) => !isClosedStatus(ticketStatus(t))).length}
-        />
-        <StatCard
-          label="Closed Tickets"
-          value={visibleTickets.filter((t) => isClosedStatus(ticketStatus(t))).length}
-        />
-        <StatCard label="All Tickets" value={visibleTickets.length} />
+        <StatCard label="Open Tickets" value={stats.open} />
+        <StatCard label="Closed Tickets" value={stats.closed} />
+        <StatCard label="All Tickets" value={stats.all} />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -705,11 +764,17 @@ export default function AdminTicketCenterClient({
           <div className="mt-6 text-center">
             <button
               type="button"
-              className="cyber-button-secondary"
-              onClick={() => setPage((p) => p + 1)}
+              className="cyber-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={loadingMore}
+              onClick={() => void handleShowMore()}
             >
-              Show more ({filtered.length - paginated.length} remaining)
+              {loadingMore ? "Loading…" : `Show more (${remaining} remaining)`}
             </button>
+            {loadMoreError ? (
+              <p role="alert" className="mt-2 text-xs text-red-400">
+                {loadMoreError}
+              </p>
+            ) : null}
           </div>
         ) : null}
       </section>

@@ -98,4 +98,27 @@ describe("SupportCenterClient", () => {
     const link = screen.getByText("Network Issue").closest("a");
     expect(link).toHaveAttribute("href", "/portal/support/ticket-1");
   });
+
+  it("uses server totals for the stat cards and pages with links (USE-P2-002)", () => {
+    render(
+      <SupportCenterClient
+        tickets={tickets}
+        createTicketAction={mockCreateTicketAction}
+        page={1}
+        pageSize={25}
+        total={60}
+        counts={{ open: 30, closed: 30, all: 60 }}
+      />,
+    );
+
+    // All Tickets reflects the API total, not the two fetched rows.
+    expect(screen.getByText("60")).toBeInTheDocument();
+    expect(screen.getAllByText("30").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText(/Showing 1.2 of 60 tickets/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Next" })).toHaveAttribute(
+      "href",
+      "/portal/support?page=2",
+    );
+    expect(screen.queryByRole("link", { name: "Previous" })).not.toBeInTheDocument();
+  });
 });

@@ -87,13 +87,17 @@ export async function deleteTicketAction(ticketId: string, formData: FormData) {
       };
     }
 
+    // USE-P2-003: actually delete instead of quietly closing the ticket. The
+    // product decision (DATA-P1-003) is hard delete; the soft-delete columns
+    // were removed in migration 5302432, so the copy now says so honestly and
+    // the unreachable Restore UI is gone. The SDK remove() sends the
+    // { confirm: true } body the API requires (assertDeleteConfirmed).
     const api = getApiClient();
-    await api.tickets.update(ticketId, { status: "closed" });
+    await api.tickets.remove(ticketId);
 
-    revalidatePath(`/admin/tickets/${ticketId}`);
     revalidatePath("/admin/tickets");
     revalidatePath("/admin");
-    redirect(`/admin/tickets/${ticketId}`);
+    redirect("/admin/tickets");
   } catch (error) {
     if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
     return { ok: false as const, error: error instanceof Error ? error.message : "Unknown error" };
@@ -112,22 +116,6 @@ export async function inlineUpdateAction(ticketId: string, formData: FormData) {
     if (Object.keys(updates).length === 0) return { ok: true as const };
     await api.tickets.update(ticketId, updates);
     revalidatePath(`/admin/tickets/${ticketId}`);
-    redirect(`/admin/tickets/${ticketId}`);
-  } catch (error) {
-    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
-    return { ok: false as const, error: error instanceof Error ? error.message : "Unknown error" };
-  }
-}
-
-export async function restoreTicketAction(ticketId: string) {
-  try {
-    await requireAdminAccess();
-    const api = getApiClient();
-    await api.tickets.update(ticketId, { status: "new" });
-
-    revalidatePath(`/admin/tickets/${ticketId}`);
-    revalidatePath("/admin/tickets");
-    revalidatePath("/admin");
     redirect(`/admin/tickets/${ticketId}`);
   } catch (error) {
     if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;

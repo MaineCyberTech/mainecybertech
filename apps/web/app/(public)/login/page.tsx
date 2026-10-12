@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   loginAction,
@@ -29,6 +29,15 @@ export default function LoginPage() {
   const [recoveryCode, setRecoveryCode] = useState("");
   const [recoveryError, setRecoveryError] = useState("");
   const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  // USE-P2-009: the middleware appends ?reason=expired when it bounces a
+  // session that timed out mid-task. Read it client-side (the page is a client
+  // component) so the user gets an explanation instead of a bare login form.
+  useEffect(() => {
+    const reason = new URLSearchParams(window.location.search).get("reason");
+    if (reason === "expired") setSessionExpired(true);
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -123,6 +132,14 @@ export default function LoginPage() {
       <title>Login — Maine CyberTech</title>
       <div className="mx-auto flex min-h-screen max-w-md items-center px-6">
         <div className="w-full rounded-lg border border-white/5 bg-[rgba(18,30,45,0.75)] p-8 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur-md">
+          {sessionExpired ? (
+            <div
+              role="status"
+              className="mb-6 rounded-md border border-amber-500/25 bg-amber-500/10 p-3 text-sm text-amber-200"
+            >
+              Your session expired. Please sign in again to continue.
+            </div>
+          ) : null}
           {step === "password" ? (
             <>
               <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
