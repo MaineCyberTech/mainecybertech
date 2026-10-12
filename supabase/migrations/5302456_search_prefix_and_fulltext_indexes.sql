@@ -1,4 +1,4 @@
--- Migration 5302454: search prefix/trigram indexes + generated tsvector columns
+-- Migration 5302456: search prefix/trigram indexes + generated tsvector columns
 --
 -- SEARCH-P2-006: the global search routes build ILIKE predicates against
 -- organizations.slug, documents.name/mime_type and tickets/projects
