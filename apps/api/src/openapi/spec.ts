@@ -1658,6 +1658,32 @@ const extendedRoutes: RouteDef[] = [
     params: [queryParam("page"), queryParam("limit")],
   },
   { method: "post", path: "/admin/test-email", summary: "Send test email", tag: "Admin" },
+  {
+    method: "post",
+    path: "/admin/integration-syncs",
+    summary: "Enqueue a per-tenant Jira/JSM/M365 batch sync (super admin)",
+    tag: "Admin",
+    body: {
+      type: "object",
+      properties: {
+        task: { type: "string", enum: ["jira-sync", "jsm-sync", "m365-calendar-sync"] },
+        organizationId: { type: "string", format: "uuid" },
+        projectId: { type: "string", format: "uuid" },
+        projectKey: { type: "string" },
+        userPrincipalName: { type: "string" },
+        batchSize: { type: "integer" },
+        fullSync: { type: "boolean" },
+      },
+      required: ["task", "organizationId"],
+    },
+    responseSchema: {
+      type: "object",
+      properties: {
+        enqueued: { type: "boolean" },
+        task: { type: "string" },
+      },
+    },
+  },
 
   // ai - generated from apps/api/src/routes/ai.ts
   { method: "post", path: "/ai/triage/analyze", summary: "Analyze tickets with AI", tag: "AI" },

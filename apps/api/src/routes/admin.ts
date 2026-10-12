@@ -9,6 +9,7 @@ import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { queryInt } from "../lib/query";
 import { setActiveOrganizations } from "../lib/metrics";
+import { enqueueTask } from "../lib/task-producer";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -82,6 +83,90 @@ router.post("/test-email", rateLimitEmail, async (req, res, next) => {
     });
 
     res.json(success({ sent: true, to }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * API-P3-005: the batch Jira/JSM/M365 integration syncs are per-tenant tasks
+ * that cannot run unattended — each needs an explicit project/organization
+ * target — but nothing could enqueue them either. This super-admin endpoint is
+ * the documented dispatch path (see docs/JIRA_JSM_INTEGRATION.md).
+ */
+const INTEGRATION_SYNC_TASKS = ["jira-sync", "jsm-sync", "m365-calendar-sync"] as const;
+
+const integrationSyncSchema = z
+  .object({
+    task: z.enum(INTEGRATION_SYNC_TASKS),
+    organizationId: z.string().uuid(),
+    projectId: z.string().uuid().optional(),
+    projectKey: z.string().min(1).max(100).optional(),
+    userPrincipalName: z.string().min(3).max(320).optional(),
+    batchSize: z.number().int().positive().max(500).optional(),
+    fullSync: z.boolean().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.task === "m365-calendar-sync" && !value.projectId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["projectId"],
+        message: "projectId is required for m365-calendar-sync",
+      });
+    }
+    if (value.task === "m365-calendar-sync" && !value.userPrincipalName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["userPrincipalName"],
+        message:
+          "userPrincipalName is required for m365-calendar-sync (app-only tokens cannot use /me)",
+      });
+    }
+  });
+
+// POST /api/v1/admin/integration-syncs — enqueue a per-tenant batch sync
+router.post("/integration-syncs", async (req, res, next) => {
+  try {
+    // Same platform-admin gate as GET /organizations: a tenant admin must not
+    // be able to trigger integration work for another tenant.
+    const supabase = getSupabaseAdmin();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_super_admin")
+      .eq("id", req.authUser!.userId)
+      .maybeSingle();
+
+    if (!profile?.is_super_admin) {
+      throw new AppError("FORBIDDEN", "Super admin access required", 403);
+    }
+
+    const parsed = integrationSyncSchema.parse(req.body);
+    const payload: Record<string, unknown> = { organizationId: parsed.organizationId };
+    if (parsed.projectId) payload.projectId = parsed.projectId;
+    if (parsed.projectKey) payload.projectKey = parsed.projectKey;
+    if (parsed.userPrincipalName) payload.userPrincipalName = parsed.userPrincipalName;
+    if (parsed.batchSize) payload.batchSize = parsed.batchSize;
+    if (parsed.fullSync !== undefined) payload.fullSync = parsed.fullSync;
+
+    const enqueued = await enqueueTask(parsed.task, payload);
+    if (!enqueued) {
+      throw new AppError(
+        "QUEUE_UNAVAILABLE",
+        "Task queue is not available; the integration sync was not enqueued",
+        503,
+      );
+    }
+
+    await logAuditEvent({
+      organizationId: parsed.organizationId,
+      actorUserId: req.authUser!.userId,
+      action: "admin.integration_sync.enqueued",
+      entityType: "worker_task",
+      entityId: parsed.task,
+      metadata: payload,
+    });
+
+    res.json(success({ enqueued: true, task: parsed.task }));
   } catch (error) {
     next(error);
   }

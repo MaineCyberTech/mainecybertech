@@ -59,6 +59,20 @@ Residual: inbound webhook paths are still exempt from the global IP rate
 limiter (`app.ts`) because provider retries can burst; a dedicated per-provider
 rate limit remains a tracked follow-up.
 
+## Retention (WH-P3-009)
+
+The worker `retention` task purges both webhook tables daily in bounded
+batches (`apps/worker/src/tasks/retention.ts`):
+
+| Table | Default window | Notes |
+| ----- | -------------- | ----- |
+| `webhook_deliveries` | 90 days | delivery log/audit rows |
+| `webhook_dead_letters` | 180 days | kept longer so an operator can triage/replay |
+
+Windows are overridable through the `retention_policies` registry (longest
+matching policy wins) or a manual payload override; a purge error fails the
+task run. Indexes supporting the purge ship in migration `5302454`.
+
 ## Status Maps
 
 **Jira:** To Do→todo, In Progress→in_progress, Under Review/Code Review→in_review, Done→done, Blocked→blocked

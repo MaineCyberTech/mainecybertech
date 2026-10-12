@@ -85,7 +85,9 @@ export function createTestApp() {
   app.use(
     express.json({
       verify: (req: any, _res, buf) => {
-        req.rawBody = buf.toString();
+        // Mirror production (webhook-body.ts): the raw body is the received
+        // bytes, not a re-encoded string (WH-P3-004 / BILL-P3-001).
+        req.rawBody = buf;
       },
     }),
   );

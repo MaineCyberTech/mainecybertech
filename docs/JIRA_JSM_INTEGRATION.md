@@ -8,12 +8,12 @@
 Jira Cloud ──webhook──→ POST /api/v1/webhooks/jira ──→ project_tasks (real-time status sync)
      ↑                                                        │
      │                                                        │
-     └────── worker jira-sync (batch, periodic) ←─────────────┘
+     └────── worker jira-sync (batch, admin-triggered) ←──────┘
 
 JSM Cloud ──webhook──→ POST /api/v1/webhooks/jsm ──→ tickets (real-time status sync)
      ↑                                                   │
      │                                                   │
-     └────── worker jsm-sync (batch, periodic) ←─────────┘
+     └────── worker jsm-sync (batch, admin-triggered) ←──┘
 ```
 
 ## Database Schema
@@ -82,7 +82,42 @@ JSM Cloud ──webhook──→ POST /api/v1/webhooks/jsm ──→ tickets (re
 
 ## Worker Sync Tasks
 
-### `jira-sync` (batch, periodic)
+The batch syncs are **not scheduled unattended**: each one needs an explicit
+per-tenant target (`projectId` / `organizationId` / `userPrincipalName`), so
+running them without a payload would either do nothing or sync the wrong
+tenant. They are dispatched on demand through the admin endpoint below (the
+worker registers the handlers; see `apps/worker/src/schedule-config.ts` for the
+scans that *are* scheduled).
+
+### Triggering a batch sync (API-P3-005)
+
+`POST /api/v1/admin/integration-syncs` enqueues one sync onto the worker task
+queue. Super-admin only; returns `503 QUEUE_UNAVAILABLE` when the queue is not
+available (nothing is enqueued).
+
+| Field | Applies to | Required | Notes |
+|-------|------------|----------|-------|
+| `task` | all | yes | `jira-sync`, `jsm-sync` or `m365-calendar-sync` |
+| `organizationId` | all | yes | tenant scope (worker rejects payloads without it) |
+| `projectId` | `jira-sync`, `m365-calendar-sync` | for M365 | Jira: sync only this project; M365: project whose tasks are mirrored |
+| `projectKey` | `jsm-sync` | no | JSM project key (defaults to `MCT` in the handler) |
+| `userPrincipalName` | `m365-calendar-sync` | yes | mailbox that receives the events (app-only tokens cannot use `/me`) |
+| `batchSize` | `jira-sync` | no | tasks per run (default 50) |
+| `fullSync` | `jsm-sync` | no | 30-day instead of 7-day lookback |
+
+```bash
+curl -X POST https://api.mainecybertech.com/api/v1/admin/integration-syncs \
+  -H "Authorization: Bearer <super-admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"task":"jira-sync","organizationId":"<org-id>","projectId":"<project-id>"}'
+
+curl -X POST https://api.mainecybertech.com/api/v1/admin/integration-syncs \
+  -H "Authorization: Bearer <super-admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"task":"m365-calendar-sync","organizationId":"<org-id>","projectId":"<project-id>","userPrincipalName":"tasks@example.com"}'
+```
+
+### `jira-sync` (batch, on demand)
 
 **File:** `apps/worker/src/tasks/jira-sync.ts`
 
@@ -92,7 +127,7 @@ JSM Cloud ──webhook──→ POST /api/v1/webhooks/jsm ──→ tickets (re
 - Updates `jira_last_synced_at` on every sync
 - Configurable `batchSize` (default 50) and `projectId` filter
 
-### `jsm-sync` (batch, periodic)
+### `jsm-sync` (batch, on demand)
 
 **File:** `apps/worker/src/tasks/jsm-sync.ts`
 
@@ -212,7 +247,10 @@ interface Ticket {
 
 ## Troubleshooting
 
-- **Sync not running**: Verify `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN` are set in worker env
+- **Sync not running**: the batch syncs are on-demand — enqueue one with
+  `POST /api/v1/admin/integration-syncs` and verify `JIRA_BASE_URL`,
+  `JIRA_EMAIL`, `JIRA_API_TOKEN` (or the JSM/M365 equivalents) are set in
+  worker env
 - **Webhook not updating**: Check the issue key matches exactly (case-sensitive) between Jira and MCT
 - **Status not mapping**: Add missing status to `STATUS_MAP` in `worker/src/tasks/jira-sync.ts` (or `jsm-sync.ts`) and `webhooks.ts`
 - **Jira API rate limiting**: The sync has built-in retry with backoff on 429 responses

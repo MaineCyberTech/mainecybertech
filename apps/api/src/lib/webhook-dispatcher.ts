@@ -8,10 +8,34 @@ import { decryptSecretValue } from "./field-encryption";
 import { assertSafeWebhookUrl } from "./ssrf-guard";
 import { pinnedFetch } from "./pinned-fetch";
 import { recordWebhookDelivery, recordWebhookDeadLetter } from "./metrics";
+import type { Database } from "@mct/sdk/database.types";
 
 const MAX_ATTEMPTS = 3;
 const RETRY_BASE_MS = 200;
 const RETRY_FACTOR = 2;
+
+type DeliveryInsert = Database["public"]["Tables"]["webhook_deliveries"]["Insert"];
+
+/**
+ * WH-P3-006: delivery rows are keyed by their idempotency key. A re-dispatch
+ * of the same logical event after a released claim must update the existing
+ * row instead of failing the unique constraint and silently losing the
+ * successful attempt's record.
+ */
+async function persistDelivery(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  row: DeliveryInsert,
+): Promise<void> {
+  const { error } = row.idempotency_key
+    ? await supabase.from("webhook_deliveries").upsert(row, { onConflict: "idempotency_key" })
+    : await supabase.from("webhook_deliveries").insert(row);
+  if (error) {
+    logger.warn(
+      { err: error.message, webhookId: row.webhook_id, idempotencyKey: row.idempotency_key },
+      "Failed to persist webhook delivery",
+    );
+  }
+}
 
 /**
  * Stable idempotency key for one logical outbound event. Derived from the
@@ -196,7 +220,7 @@ export async function dispatchWebhook(
         const decrypted = decryptSecretValue(endpoint.secret);
         if (!decrypted.ok) {
           const error = "Signing secret could not be decrypted";
-          await supabase.from("webhook_deliveries").insert({
+          await persistDelivery(supabase, {
             webhook_id: endpoint.id,
             event,
             status: "failed",
@@ -236,7 +260,7 @@ export async function dispatchWebhook(
       // attempts and mark failed rows dead-lettered — the inline path already
       // exhausted its retries and enqueued a dead letter below, so the worker
       // retry task must not retry the same delivery (single retry owner).
-      await supabase.from("webhook_deliveries").insert({
+      await persistDelivery(supabase, {
         webhook_id: endpoint.id,
         event,
         status: failed ? "failed" : "success",

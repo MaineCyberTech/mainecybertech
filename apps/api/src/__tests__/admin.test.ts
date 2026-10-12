@@ -32,6 +32,8 @@ jest.mock("../middleware/admin", () => ({
 
 jest.mock("../lib/email", () => ({ sendEmail: jest.fn() }));
 
+jest.mock("../lib/task-producer", () => ({ enqueueTask: jest.fn() }));
+
 import { getSupabaseAdmin } from "../services/supabase";
 import { sendEmail } from "../lib/email";
 
@@ -125,6 +127,81 @@ describe("admin routes", () => {
 
       expect(res.status).toBe(403);
       expect(supabase.from).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("POST /integration-syncs [API-P3-005]", () => {
+    const ORG = "00000000-0000-0000-0000-000000000001";
+    const PROJECT = "11111111-1111-4111-8111-111111111111";
+
+    it("enqueues a per-tenant jira-sync for a super admin", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(
+        createMockBuilder({ data: { id: "u1", is_super_admin: true }, error: null }),
+      );
+      const { enqueueTask } = await import("../lib/task-producer");
+      (enqueueTask as jest.Mock).mockResolvedValue(true);
+
+      const res = await request(app)
+        .post("/api/v1/admin/integration-syncs")
+        .set("Authorization", "Bearer token-123")
+        .send({ task: "jira-sync", organizationId: ORG, projectId: PROJECT });
+
+      expect(res.status).toBe(200);
+      expect(enqueueTask).toHaveBeenCalledWith("jira-sync", {
+        organizationId: ORG,
+        projectId: PROJECT,
+      });
+    });
+
+    it("rejects a non-super-admin", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(
+        createMockBuilder({ data: { id: "u1", is_super_admin: false }, error: null }),
+      );
+      const { enqueueTask } = await import("../lib/task-producer");
+      (enqueueTask as jest.Mock).mockClear();
+
+      const res = await request(app)
+        .post("/api/v1/admin/integration-syncs")
+        .set("Authorization", "Bearer token-123")
+        .send({ task: "jsm-sync", organizationId: ORG });
+
+      expect(res.status).toBe(403);
+      expect(enqueueTask).not.toHaveBeenCalled();
+    });
+
+    it("requires projectId and userPrincipalName for the M365 sync", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(
+        createMockBuilder({ data: { id: "u1", is_super_admin: true }, error: null }),
+      );
+      const { enqueueTask } = await import("../lib/task-producer");
+      (enqueueTask as jest.Mock).mockClear();
+
+      const res = await request(app)
+        .post("/api/v1/admin/integration-syncs")
+        .set("Authorization", "Bearer token-123")
+        .send({ task: "m365-calendar-sync", organizationId: ORG });
+
+      expect(res.status).toBe(400);
+      expect(enqueueTask).not.toHaveBeenCalled();
+    });
+
+    it("returns 503 when the queue is unavailable", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(
+        createMockBuilder({ data: { id: "u1", is_super_admin: true }, error: null }),
+      );
+      const { enqueueTask } = await import("../lib/task-producer");
+      (enqueueTask as jest.Mock).mockResolvedValue(false);
+
+      const res = await request(app)
+        .post("/api/v1/admin/integration-syncs")
+        .set("Authorization", "Bearer token-123")
+        .send({ task: "jira-sync", organizationId: ORG });
+
+      expect(res.status).toBe(503);
     });
   });
 });
