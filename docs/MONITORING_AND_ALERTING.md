@@ -77,26 +77,62 @@ Forward logs to a central service (future):
 
 ### Exposed endpoints
 
-| Endpoint      | Service | Port | Expected response                         | Checks                                   |
-| ------------- | ------- | ---- | ----------------------------------------- | ---------------------------------------- |
-| `GET /health` | API     | 4000 | `200 {"status":"healthy","checks":{...}}` | DB connectivity, uptime                  |
-| `GET /health` | Worker  | 3001 | `200 {"status":"healthy","uptime":...}`   | Task registry loaded, shutting down flag |
-| `GET /`       | Web     | 3000 | `200` (any HTML)                          | Server is serving                        |
+| Endpoint             | Service | Port | Expected response                                                  | Checks                                                      |
+| -------------------- | ------- | ---- | ------------------------------------------------------------------ | ----------------------------------------------------------- |
+| `GET /health`        | API     | 4000 | `200 {"service":"api","status":"healthy","uptime":...}`            | DB connectivity (+ Stripe/JSM when configured)              |
+| `GET /health/detail` | API     | 4000 | `200` with `checks` + `degraded`; **404** without the bearer token | DB, Stripe, JSM, Redis (see semantics below)                |
+| `GET /health`        | Worker  | 3001 | `200 {"status":"healthy","uptime":...}`                            | Task registry loaded, shutting down flag, queue connection  |
+| `GET /`              | Web     | 3000 | `200` (any HTML)                                                   | Server is serving                                           |
 
 ### API health response
 
+The public probe (`/health`) is deliberately minimal — provider names,
+configuration presence (`not_configured`) and raw dependency errors are not
+disclosed to unauthenticated callers (SEC-P2-003):
+
+```json
+{ "service": "api", "status": "healthy", "uptime": 12345.6 }
+```
+
+The full dependency detail lives on `/health/detail`, gated by the same shared
+bearer token as `/metrics` (`METRICS_TOKEN`); without a configured/presented
+token the route returns **404**:
+
 ```json
 {
-  "status": "healthy",
   "service": "api",
-  "uptime": 12345.6,
+  "status": "healthy",
   "checks": {
-    "database": { "status": "healthy", "latencyMs": 3 }
-  }
+    "database": { "status": "healthy", "latencyMs": 3 },
+    "stripe": { "status": "not_configured" },
+    "jsm": { "status": "healthy", "latencyMs": 120 },
+    "redis": { "status": "healthy", "latencyMs": 1 }
+  },
+  "degraded": [],
+  "uptime": 12345.6
 }
 ```
 
-Returns **503** with `"degraded"` if any check fails.
+Both endpoints return **503** with `"status":"degraded"` when a health-gating
+check fails:
+
+- **database** — unhealthy → 503.
+- **stripe** / **jsm** — checked only when the matching credentials are
+  configured (`not_configured` never degrades); a configured provider that is
+  unreachable → 503. Results are cached for 30s so a public probe does not fan
+  out to the providers on every hit.
+- **redis** — **reported but never degrades** the response. It appears in
+  `checks` on `/health/detail` and in `degraded[]` when the probe fails, but
+  the API keeps serving on per-process fallbacks (memory cache, in-memory
+  idempotency; scan locks fail open), so a Redis outage must not make the API —
+  or the deploy gate — look down (ARCH-P2-005).
+
+**Redis severity:** Redis is an alertable *degradation*, not an API outage.
+`portal_redis_connected` and `portal_redis_failures_total` drive the
+warning-severity `MCTApiRedisDegraded` (probe failing 5m) and
+`MCTRedisOperationFailures` (any fallback in 15m) rules (§4/§7). The worker
+`/health` is different: it returns 503 when its BullMQ queue connection is
+lost, because a lost consumer is a real outage (RES-P2-008).
 
 ### Worker health response
 
@@ -153,13 +189,18 @@ the probe doing its job, not a false positive.
 
 ## 3. Docker Health Checks
 
-Applied in `docker-compose.yml` and Dockerfiles, checked by Docker daemon every 30s.
+Defined in `docker-compose.yml` (or the service Dockerfile when compose does not
+override it), each with its own interval:
 
-| Service   | Command                                  | Interval               | Retries |
-| --------- | ---------------------------------------- | ---------------------- | ------- |
-| **redis** | `redis-cli -a $REDIS_PASSWORD ping`      | 10s                    | 3       |
-| **api**   | `wget -qO- http://localhost:4000/health` | 30s                    | 3       |
-| **web**   | `wget --spider http://127.0.0.1:3000`    | 30s (40s start period) | 3       |
+| Service          | Command                                                                 | Interval               | Retries |
+| ---------------- | ----------------------------------------------------------------------- | ---------------------- | ------- |
+| **redis**        | `REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli ping` (password via env, not argv) | 10s              | 3       |
+| **api**          | `wget -qO- http://localhost:4000/health`                                | 30s (30s start period) | 3       |
+| **worker**       | `wget -qO- http://127.0.0.1:3001/health`                                | 30s (30s start period) | 3       |
+| **web**          | `wget --spider http://127.0.0.1:3000` (Dockerfile)                      | 30s (40s start period) | 3       |
+| **prometheus**   | `wget --spider -q http://localhost:9090/-/ready`                        | 30s (15s start period) | 3       |
+| **alertmanager** | `wget --spider -q http://localhost:9093/-/healthy`                      | 30s (10s start period) | 3       |
+| **caddy**        | `caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile`      | 30s (20s start period) | 3       |
 
 Unhealthy containers are automatically restarted via `restart: unless-stopped`.
 
@@ -186,6 +227,7 @@ API (`apps/api/src/lib/metrics.ts`, all prefixed `portal_`; default `process_*`/
 | `portal_search_queries_total`                                                | Counter   | —                                | live               |
 | `portal_active_organizations` / `portal_active_users`                        | Gauge     | —                                | live               |
 | `portal_idempotency_key_hits_total`                                          | Counter   | —                                | live               |
+| `portal_billing_dunning_notifications_total`                                 | Counter   | `outcome`                        | live               |
 | `portal_impersonation_events_total`                                          | Counter   | `actor_role_key`, `source`       | live               |
 | `portal_rls_bypass_total`                                                    | Counter   | `module`, `kind`, `org_resolved` | live               |
 | `portal_rls_enforced_total`                                                  | Counter   | `module`, `kind`                 | live               |
@@ -210,6 +252,9 @@ Worker (`apps/worker/src/metrics.ts`):
 | `worker_notification_suppressed_total`   | Counter   | `channel`, `module`   |
 | `worker_webhook_deliveries_total`        | Counter   | `status`, `event`     |
 | `worker_webhook_dead_letters_total`      | Counter   | `event`               |
+| `worker_task_dead_letters_total`         | Counter   | `task_type`           |
+| `worker_push_subscriptions_revoked_total` | Counter  | —                     |
+| `worker_stripe_reconcile_drift_total`    | Counter   | `kind`                |
 | `worker_redis_failures_total`            | Counter   | `component`, `operation` |
 | `worker_queue_backend_info`              | Gauge     | `backend`             |
 
@@ -227,13 +272,13 @@ and `skipped` is tracked separately by `MCTNotificationEmailSkipped`.
 
 `portal_queue_backend_info` (API producer) and `worker_queue_backend_info` (worker consumer) expose the shared `QUEUE_BACKEND` contract (ARCH-P2-004). Both processes fail closed in production on anything but `bullmq`, and a mismatch is visible by comparing the two series; the worker `/health` payload also carries `queueBackend`.
 
-The alert rules in `prometheus.rules.yml` query these metrics: `MCTHighRequestErrorRate` → `portal_http_requests_total{status_code=~"5.."}`; `MCTImpersonationBurst` → `portal_impersonation_events_total`; `MCTTenantScopeRegression` and `MCTRlsEnforcedShareCollapsed` → `portal_rls_bypass_total` / `portal_rls_enforced_total`.
+The alert rules in §7 are all queries over these series; for example `MCTHighRequestErrorRate` → `portal_http_requests_total{status_code=~"5.."}`, `MCTImpersonationBurst` → `portal_impersonation_events_total`, and `MCTTenantScopeRegression` / `MCTRlsEnforcedShareCollapsed` → `portal_rls_bypass_total` / `portal_rls_enforced_total`.
 
 The `route` label on the two HTTP metrics is the matched Express route template (`req.baseUrl + req.route.path`, e.g. `/api/v1/tickets/:id`), not the concrete request path; requests that never matched a route (404s, `/metrics`) collapse to `unmatched`. Resource ids therefore never become label values and Prometheus series stay bounded (OBS-P2-010 / PERF-P2-001).
 
 ### Scraping
 
-The compose `prometheus` service scrapes the API on the internal network; no public exposure.
+The compose `prometheus` service scrapes the API on the internal network; no public exposure. `prometheus.yml` uses a global `scrape_interval` of **15s** — 4 scrapes/min per target (`mct-api`, `mct-worker`, `prometheus`). The API's `/metrics` limiter allows **12 requests/min per source IP** (`apps/api/src/middleware/rate-limit.ts`), so a scrape plus ad-hoc debugging or a retry has headroom and the scrape cannot self-throttle (OBS-P3-006).
 
 ### Alert delivery
 
@@ -250,6 +295,8 @@ and a total loss of the droplet is not independently detected until an operator 
 ## 5. Sentry Error Tracking
 
 Initialized in all 3 services but **skipped when the DSN is unset** (safe in local dev). The API and worker read `SENTRY_DSN`; the web app reads `NEXT_PUBLIC_SENTRY_DSN` (the same DSN — Sentry DSNs are public by design). `deploy-do.yml` delivers it to the web image as a build arg (Next inlines `NEXT_PUBLIC_*` into the client bundle, which is required for browser error capture) and writes it to the droplet `.env` for the web service runtime env. When it is missing in a production web build, `apps/web/instrumentation.ts` logs a boot warning (OBS-P2-011).
+
+All three services tag events with a **release** (OBS-P3-004): `deploy-do.yml` writes `SENTRY_RELEASE` — the deployed commit/image tag, including the rolled-back SHA on a rollback dispatch — to the droplet `.env`, and compose passes it to the API, worker and web services. The API and worker read it directly (`apps/api/src/lib/sentry.ts`, `apps/worker/src/main.ts`); the web server-side configs use it too, while the browser bundle keeps its build-time `NEXT_PUBLIC_GIT_SHA`.
 
 | Service    | Init location                                     | Capture                                                                            |
 | ---------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
@@ -300,10 +347,41 @@ The workflow includes a `rollback-on-failure` step that reverts to the previous 
 | Droplet CPU > 80%            | Warning  | DO monitoring            | Check for memory leak, scale  |
 | Droplet disk > 85%           | Warning  | DO monitoring            | Prune Docker images, logs     |
 | Supabase connection pool     | Warning  | Supabase dashboard       | Check for connection leaks    |
-| Prometheus rules (`MCTServiceDown`, `MCTHighRequestErrorRate`, `MCTImpersonationBurst`, `MCTTenantScopeRegression`, `MCTApiRedisDegraded`, `MCTRedisOperationFailures`) | Critical/Warning | Alertmanager → ntfy `portal-alerts` | Investigate; delivery not yet exercised end-to-end |
+| Prometheus rules | Critical/Warning/None | Alertmanager → ntfy `portal-alerts` (critical/default) or the off-box dead-man's switch (`Watchdog`) | See the rule table below; delivery is wired but not yet exercised end-to-end (OBS-P2-014) |
 | `Watchdog` (always firing)   | None     | Alertmanager → off-box dead-man's switch (§9; URL still unset) | Alert path itself died → external service pages (once provisioned) |
 | Backup/restore staleness (no successful backup or restore test within its freshness window) | Critical | `Backup Staleness Check` workflow → ntfy/Slack (fail-closed); worker `backup-dr-check` on the `platform_backup_heartbeats` table (DR-P2-008, 30 h) → `MCTWorkerTaskFailures` | Check the backup workflow runs, Spaces credentials and `scripts/backup-*.sh` logs; both checks are independent of the backup jobs |
 | External uptime probe failure (public API/web endpoint down or over its latency budget) | Critical | `External uptime probe` workflow → ntfy/Slack (fail-closed) | Open the run's `uptime-report` artifact; if the whole platform is unreachable from outside, follow the platform failure runbooks |
+
+#### Prometheus alert rules (`prometheus.rules.yml`)
+
+Every rule below is delivered through Alertmanager (§9): `critical` → the critical
+receiver, everything else → the default receiver, and `Watchdog` → the external
+dead-man's switch.
+
+| Alert                                  | Severity | Fires when                                                                                 |
+| -------------------------------------- | -------- | ------------------------------------------------------------------------------------------ |
+| `MCTServiceDown`                       | critical | `up{job=~"mct-api\|mct-worker"} == 0` for 2m                                               |
+| `MCTHighRequestErrorRate`              | warning  | 5xx share of requests > 5% for 5m                                                          |
+| `MCTHighRequestLatency`                | warning  | p95 request latency > 2s for 10m (SLO #2)                                                  |
+| `MCTCircuitBreakerOpen`                | critical | `portal_circuit_breaker_status == 2` for 5m                                                |
+| `MCTAuthFailureRateHigh`               | warning  | auth failure ratio > 50% (≥3 failures/min) for 10m                                         |
+| `MCTImpersonationActivity`             | warning  | any cross-tenant/impersonation event in 15m                                                |
+| `MCTImpersonationBurst`                | warning  | > 0.5 impersonation events/s over 10m                                                      |
+| `MCTTenantScopeRegression`             | warning  | a module serves ≥50% of its RLS-bypassing selections with no org for 15m                   |
+| `MCTRlsEnforcedShareCollapsed`         | warning  | a module that used the RLS client produces none for 30m while still serving                |
+| `MCTWebhookDeadLettersAccumulating`    | warning  | any webhook dead letter (API or worker) in 1h                                              |
+| `MCTWebhookDeliveryFailureRateHigh`    | critical | webhook failure ratio > 50% for 15m                                                        |
+| `MCTNotificationDeliveryFailureRateHigh` | warning | notification failure ratio > 5% for 30m (SLO #4)                                          |
+| `MCTNotificationEmailSkipped`          | warning  | any email delivery skipped (SMTP not configured) in 1h                                     |
+| `MCTWorkerTaskFailures`                | warning  | failure/error/timeout/no_handler executions for 10m                                        |
+| `MCTWorkerTaskDeadLettered`            | warning  | any task exhausted its BullMQ retries in 15m                                               |
+| `MCTWorkerQueueBacklog`                | warning  | `worker_task_queue_depth{queue="mct-tasks"} > 50` for 15m                                  |
+| `MCTWorkerQueueBacklogGrowing`         | warning  | queue depth > 20 and grown by > 25 over 10m, sustained for 10m                             |
+| `MCTWorkerQueueDisconnected`           | critical | `worker_queue_connected == 0` for 5m                                                       |
+| `MCTStripeReconcileDrift`              | warning  | any Stripe reconciliation drift in 25h                                                     |
+| `MCTApiRedisDegraded`                  | warning  | `portal_redis_connected == 0` for 5m (Redis degradation; the API stays up, §2)             |
+| `MCTRedisOperationFailures`            | warning  | any Redis fallback operation (API or worker) in 15m                                        |
+| `Watchdog`                             | none     | always firing; heartbeat to the off-box dead-man's switch every 5m (§9)                    |
 
 ### Notification channels
 
@@ -341,7 +419,7 @@ Its external heartbeat URL is still unset, so this path is configured but not ye
 2. SSH into droplet: `ssh root@<droplet-ip>`
 3. Check running containers: `docker compose ps`
 4. Check logs: `docker compose logs --tail=50 <service>`
-5. Hit health endpoints manually: `curl localhost:4000/health`
+5. Hit health endpoints manually: `curl localhost:4000/health`; dependency detail (Stripe/JSM/Redis) requires the token: `curl -H "Authorization: Bearer $METRICS_TOKEN" localhost:4000/health/detail`
 
 ### Diagnosis (5-15 min)
 
@@ -377,7 +455,7 @@ operator action still outstanding: the external heartbeat URL is not provisioned
 | Component | Where | Purpose |
 | --------- | ----- | ------- |
 | `prometheus` (`prometheus.yml`) | compose, internal only | Evaluates `prometheus.rules.yml`; forwards firing alerts via `alerting: alertmanagers:` → `alertmanager:9093` |
-| `alertmanager` (`alertmanager.tmpl.yml`) | compose, internal only (port 9093, **not published**) | Routes alerts to receivers. Compose renders `${VAR}` placeholders from the container environment at start (Alertmanager has no variable substitution of its own) |
+| `alertmanager` (`alertmanager.tmpl.yml`) | compose, internal only (port 9093, **not published**) | Routes alerts to receivers. Compose renders `${VAR}` placeholders from the container environment at start (`render-alertmanager.awk`; values are escaped for the double-quoted YAML scalars, so `&`, `\` or `"` in a secret cannot corrupt the config — OBS-P3-005) |
 | ntfy receiver (**deployed**) | **off the droplet** (`https://ntfy.mainecybertech.us/portal-alerts`) | The live delivery path for `critical` and `default` alerts; basic auth with the write-only `portal-relay` user |
 | Off-box dead-man's switch (**not provisioned**) | **off the droplet** | A ping/heartbeat URL (healthchecks.io-style) that alerts *you* when the pings stop. `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` is **still unset**, so the watchdog heartbeat currently goes to the compose no-op URL instead of leaving the box |
 
@@ -473,6 +551,7 @@ docker compose exec alertmanager wget -qO- http://localhost:9093/api/v2/alerts #
 
 # Health
 curl http://localhost:4000/health        # API
+curl -H "Authorization: Bearer $METRICS_TOKEN" http://localhost:4000/health/detail  # API dependency detail
 curl http://localhost:3000/              # Web
 curl http://localhost:3001/health        # Worker
 

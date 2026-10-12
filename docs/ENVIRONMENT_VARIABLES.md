@@ -28,7 +28,7 @@
 | `SENTRY_ORG`                            | No       | —                      | Sentry org slug (for source maps)                                                           |
 | `SENTRY_PROJECT`                        | No       | —                      | Sentry project slug (for source maps)                                                       |
 | `SENTRY_TRACES_SAMPLE_RATE`             | No       | `0.2` prod / `0` other | Server-side Sentry trace sample rate (0–1)                                                  |
-| `SENTRY_RELEASE`                        | No       | `NEXT_PUBLIC_GIT_SHA`  | Server-side Sentry release identifier                                                       |
+| `SENTRY_RELEASE`                        | No       | `NEXT_PUBLIC_GIT_SHA`  | Server-side Sentry release identifier; `deploy-do.yml` writes the deployed commit/image tag to the droplet `.env` (OBS-P3-004) |
 
 > **Note:** The web app no longer requires `NEXT_PUBLIC_SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Auth is proxied through the API via `POST /api/v1/auth/callback`.
 
@@ -55,7 +55,7 @@
 | `VAPID_PUBLIC_KEY`           | No       | —                            | Web Push (NOTIF-P2-001) base64url P-256 public key returned to browsers by `GET /push-subscriptions/vapid-public-key`. Unset = push channel disabled (no-op)                                                         |
 | `SENTRY_DSN`                 | No       | —                            | Sentry DSN for error tracking                                                                                                                                                                                       |
 | `SENTRY_TRACES_SAMPLE_RATE`  | No       | `0.2` prod / `0` otherwise   | Sentry trace sample rate (0–1)                                                                                                                                                                                      |
-| `SENTRY_RELEASE`             | No       | `GIT_SHA`                    | Sentry release identifier (defaults to `process.env.GIT_SHA`)                                                                                                                                                       |
+| `SENTRY_RELEASE`             | No       | `GIT_SHA`                    | Sentry release identifier; `deploy-do.yml` writes the deployed commit/image tag to the droplet `.env` (OBS-P3-004). Falls back to `process.env.GIT_SHA` |
 | `PUBLIC_TRAFFIC_WEBHOOK_URL` | No       | —                            | Teams webhook URL for visitor notifications (marketing site)                                                                                                                                                        |
 | `PUBLIC_LEAD_WEBHOOK_URL`    | No       | —                            | Teams webhook URL for new lead notifications (marketing site)                                                                                                                                                       |
 | `GEO_LOOKUP_URL`             | No       | —                            | Visitor geolocation endpoint; default `https://ip-api.com/json/`. Must be HTTPS (plaintext is refused); only called after consent, and only the city/region/country fields are requested                              |
@@ -123,7 +123,7 @@
 | `TASK_QUEUE_ENABLED`        | No       | `false`                      | When `true`, API enqueues tasks instead of inline                               |
 | `SENTRY_DSN`                | No       | —                            | Sentry DSN for worker error tracking                                            |
 | `SENTRY_TRACES_SAMPLE_RATE` | No       | `0.2` prod / `0` otherwise   | Sentry trace sample rate (0–1)                                                  |
-| `SENTRY_RELEASE`            | No       | `GIT_SHA`                    | Sentry release identifier (defaults to `process.env.GIT_SHA`)                   |
+| `SENTRY_RELEASE`            | No       | `GIT_SHA`                    | Sentry release identifier; `deploy-do.yml` writes the deployed commit/image tag to the droplet `.env` (OBS-P3-004). Falls back to `process.env.GIT_SHA` |
 | `APP_BASE_URL`              | No       | —                            | Public app base URL for notification links                                      |
 
 ## E2E Tests (`apps/web/e2e`)
@@ -154,6 +154,37 @@ for the full deployment/terraform secret list.
 | `SUPABASE_URL`            | `storage-backup.yml`                   | Supabase project URL for the Storage REST API                            |
 | `SUPABASE_SERVICE_ROLE_KEY` | `storage-backup.yml`                 | Service-role key for Storage list/download/upload (already a deploy secret) |
 | `SLACK_WEBHOOK_URL`       | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | Slack fallback notification when a backup or restore test fails (ntfy is primary; see the secrets matrix) |
+
+## Alerting and notification variables
+
+These are not app `.env.local` variables. `ALERTMANAGER_*` are written to the
+droplet `.env` by `deploy-do.yml` (from GitHub environment secrets/variables)
+and substituted into `infra/digitalocean/alertmanager.tmpl.yml` by the
+`alertmanager` compose service at start; `NTFY_ALERTS_*` are GitHub environment
+secrets read by the CI workflows that notify on failures (backup/restore,
+staleness, external uptime probe, load test, secret-history scan,
+branch-protection audit). See
+[`MONITORING_AND_ALERTING.md`](MONITORING_AND_ALERTING.md) §9 and the
+[`GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`](GITHUB_SECRETS_AND_VARIABLES_MATRIX.md).
+
+| Variable                            | Required              | Source                          | Description                                                                                                                       |
+| ----------------------------------- | --------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` | Yes (prod)            | GitHub secret → droplet `.env`  | External **dead-man's-switch** heartbeat URL, not on the droplet (IR-P0-003); prod deploys fail closed when empty, dev warns       |
+| `ALERTMANAGER_CRITICAL_WEBHOOK_URL` | Yes (for real alerts) | GitHub secret → droplet `.env`  | Critical-alert webhook — ntfy `portal-alerts` in the deployed environment (IR-P0-003)                                              |
+| `ALERTMANAGER_DEFAULT_WEBHOOK_URL`  | No                    | GitHub secret → droplet `.env`  | Catch-all webhook for non-critical alerts — ntfy `portal-alerts` in the deployed environment                                       |
+| `ALERTMANAGER_SLACK_API_URL`        | No                    | GitHub secret → droplet `.env`  | Slack incoming-webhook URL used by the critical/default receivers                                                                  |
+| `ALERTMANAGER_SLACK_CHANNEL`        | No                    | GitHub variable → droplet `.env` | Slack channel name (e.g. `#alerts`); non-secret                                                                                   |
+| `ALERTMANAGER_WEBHOOK_USER`         | With a webhook URL    | GitHub secret → droplet `.env`  | Basic-auth username for the critical/default webhooks (ntfy relay user `portal-relay`)                                             |
+| `ALERTMANAGER_WEBHOOK_PASS`         | With a webhook URL    | GitHub secret → droplet `.env`  | Basic-auth password for the above (secret)                                                                                         |
+| `NTFY_ALERTS_URL`                   | Yes (CI alerts)       | GitHub secret (environment)     | ntfy topic URL for CI failure notifications (primary channel; `SLACK_WEBHOOK_URL` is the fallback)                                 |
+| `NTFY_ALERTS_USER`                  | Yes (CI alerts)       | GitHub secret (environment)     | ntfy basic-auth user for the above (write-only relay user)                                                                         |
+| `NTFY_ALERTS_PASS`                  | Yes (CI alerts)       | GitHub secret (environment)     | ntfy basic-auth password for the above (secret)                                                                                    |
+
+If an `ALERTMANAGER_*` variable is unset, compose substitutes a no-op localhost
+URL so the stack still starts — but the dead-man's switch is only real when
+`ALERTMANAGER_WATCHDOG_WEBHOOK_URL` points off-box. Secret values are rendered
+safely (a value containing `&`, `\` or `"` cannot corrupt the config;
+OBS-P3-005).
 
 ## CI / Docker
 

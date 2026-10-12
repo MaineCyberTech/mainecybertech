@@ -1,7 +1,10 @@
-# Basic alerting rules for the MCT portal stack.
-# NOTE: These rules are evaluated by Prometheus; for delivery (email/Slack/etc.)
-# an Alertmanager deployment is required. The Watchdog rule below is a common
-# liveness signal that fires once per day and is used to validate the alert path.
+# Alerting rules for the MCT portal stack.
+# Evaluated by Prometheus every 15s (prometheus.yml `evaluation_interval`) and
+# delivered by the deployed Alertmanager service (alertmanager.tmpl.yml →
+# ntfy/Slack/webhooks; see docs/MONITORING_AND_ALERTING.md §7/§9). The Watchdog
+# rule below is `expr: vector(1)`: it fires continuously and Alertmanager
+# re-sends it to the external dead-man's-switch receiver every 5 minutes
+# (watchdog route `repeat_interval`), not once per day.
 groups:
   - name: mct-service-availability
     rules:
@@ -95,7 +98,7 @@ groups:
       # ADMIN-P1-002: platform-admin cross-tenant access is recorded to
       # impersonation_log and surfaced as portal_impersonation_events_total.
       # A sustained burst of cross-tenant entries warrants review. Delivery
-      # requires Alertmanager (see the file header).
+      # goes through the deployed Alertmanager (see the file header).
       - alert: MCTImpersonationBurst
         expr: sum(rate(portal_impersonation_events_total[10m])) > 0.5
         for: 10m
@@ -372,7 +375,7 @@ groups:
   # also fails the compose healthcheck and the deploy gate. This complements
   # MCTWorkerQueueBacklog above: a disconnected queue freezes the depth gauge
   # (or moves it to queue="unavailable"), which the backlog rule cannot see.
-  # Delivery requires Alertmanager (see the file header).
+  # Delivery goes through the deployed Alertmanager (see the file header).
   - name: mct-worker-queue
     rules:
       - alert: MCTWorkerQueueDisconnected
