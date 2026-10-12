@@ -298,7 +298,7 @@ Key helper functions (defined in migration `5302026`):
 | Document                                       | What it covers                                                                              |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `AGENTS.md`                                    | Full architecture, test patterns, critical context                                          |
-| `docs/API_ENDPOINT_INVENTORY.md`               | Historical endpoint inventory (see `docs/openapi.yaml` for the authoritative 420-path spec) |
+| `docs/API_ENDPOINT_INVENTORY.md`               | Historical endpoint inventory (see `docs/openapi.yaml` for the authoritative 421-path spec) |
 | `docs/ENVIRONMENT_VARIABLES.md`                | All env vars across all services                                                            |
 | `docs/MEGA_AUDIT_2026-06-18.md`                | Comprehensive architecture & security audit                                                 |
 | `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` | Operator manual                                                                             |
