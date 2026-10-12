@@ -160,11 +160,11 @@ describe("worker /metrics auth", () => {
     }
   });
 
-  it("accepts ?token= for manual debugging", async () => {
+  it("rejects a URL query token (bearer header only)", async () => {
     const { server, port: p } = await startServer("metrics-secret");
     try {
       const res = await rawRequest(p, "/metrics?token=metrics-secret");
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(404);
     } finally {
       server.close();
     }

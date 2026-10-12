@@ -26,7 +26,8 @@ export interface HealthServerOptions {
 /**
  * Fail-closed, constant-time bearer gate for /metrics. Mirrors the API's
  * `authorizeInternalRequest` (routes/health.ts): 404 rather than 401 so the
- * endpoint is not advertised, and `?token=` is accepted for manual debugging.
+ * endpoint is not advertised. Only the `Authorization: Bearer` header is
+ * accepted — never a URL query parameter, which would leak into access logs.
  */
 export function authorizeMetricsRequest(
   req: http.IncomingMessage,
@@ -34,14 +35,7 @@ export function authorizeMetricsRequest(
 ): boolean {
   if (!token) return false;
   const header = req.headers.authorization;
-  let provided = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
-  if (!provided) {
-    try {
-      provided = new URL(req.url ?? "/", "http://localhost").searchParams.get("token") ?? undefined;
-    } catch {
-      provided = undefined;
-    }
-  }
+  const provided = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
   if (!provided) return false;
   const a = Buffer.from(provided);
   const b = Buffer.from(token);
