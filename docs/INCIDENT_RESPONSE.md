@@ -71,7 +71,10 @@ and commit the completed table into §8 before go-live. Until then the plan is
 - **Security**: revoke the affected credentials first (see
   [`SECRETS_ROTATION.md`](SECRETS_ROTATION.md) §Emergency Rotation), then
   isolate. Prefer revocation over
-  investigation-in-place — the audit trail survives revocation.
+  investigation-in-place — the audit trail survives revocation. Set the
+  replacement on the **consuming** environment (not `--env prod` by reflex) and
+  record the rotation per [`SECRETS_ROTATION.md`](SECRETS_ROTATION.md)
+  §Rotation Evidence.
 
 ### 4.3 Eradicate and recover
 
@@ -128,7 +131,7 @@ and Legal have made the notification decision
 |---|---|---|
 | Bad deploy | Rollback workflow | `docs/ROLLBACK_PROCEDURES.md` |
 | Database corruption/loss | Freeze writes, then restore | `docs/ROLLBACK_PROCEDURES.md` §3, `docs/RTO_RPO.md` |
-| Key/token leak | Revoke, then rotate consumers | `docs/SECRETS_ROTATION.md` §Emergency Rotation |
+| Key/token leak | Revoke, then rotate consumers | [`SECRETS_ROTATION.md`](SECRETS_ROTATION.md) §Emergency Rotation |
 | Suspected tenant data exposure | Contain, then breach decision | `docs/DATA_BREACH_RESPONSE.md` |
 | Full monitoring loss | Verify via the alert path / off-box heartbeat (external heartbeat not yet provisioned) | `docs/MONITORING_AND_ALERTING.md` §9, `docs/ALERT_PATH_EXERCISE.md` |
 | RLS/tenant isolation regression | Disable affected module writes, patch policy | `docs/RLS-rollout.md`, `docs/RLS-coverage-matrix.md` |

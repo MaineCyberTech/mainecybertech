@@ -43,6 +43,9 @@ const PRIMARY_DOCS = [
   "docs/PERFORMANCE.md",
   "docs/runbooks/README.md",
   "docs/features/README.md",
+  "docs/INCIDENT_RESPONSE.md",
+  "docs/SECRETS_ROTATION.md",
+  "docs/JWT_ROTATION.md",
   "CODE_OF_CONDUCT.md",
   ".github/PULL_REQUEST_TEMPLATE.md",
 ];

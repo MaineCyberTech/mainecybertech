@@ -77,8 +77,8 @@
 | [SECURITY.md](../SECURITY.md)                                                    | Security policy                                    |
 | [portal_admin_permissions_guide.md](portal_admin_permissions_guide.md)           | Permissions, access control, and security flow     |
 | [GITHUB_SECRETS_AND_VARIABLES_MATRIX.md](GITHUB_SECRETS_AND_VARIABLES_MATRIX.md) | Required GitHub secrets and variables              |
-| [SECRETS_ROTATION.md](SECRETS_ROTATION.md)                                       | Rotation schedule, procedures, emergency rotation  |
-| [JWT_ROTATION.md](JWT_ROTATION.md)                                               | JWT secret rotation policy and procedures          |
+| [SECRETS_ROTATION.md](SECRETS_ROTATION.md)                                       | Rotation runbook: per-class procedures, evidence log, emergency rotation |
+| [JWT_ROTATION.md](JWT_ROTATION.md)                                               | Supabase signing-secret rotation + API verification copy |
 | [LICENSE_POLICY.md](LICENSE_POLICY.md)                                           | Allowed/denied dependency licenses + exceptions    |
 | [DEPENDENCY_POLICY.md](DEPENDENCY_POLICY.md)                                     | Vulnerability gate, overrides, update governance   |
 | [SBOM_PROCESS.md](SBOM_PROCESS.md)                                               | SBOM generation, scope, validation, verification   |
