@@ -35,7 +35,7 @@ class MockEventSource {
   closed = false;
   private listeners = new Map<string, ((event: MessageEvent) => void)[]>();
 
-  constructor(public url: string) {
+  constructor(public url: string, _options?: EventSourceInit) {
     MockEventSource.instances.push(this);
   }
 

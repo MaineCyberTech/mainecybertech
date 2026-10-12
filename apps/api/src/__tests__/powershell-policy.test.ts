@@ -35,7 +35,6 @@ import { getSupabaseAdmin } from "../services/supabase";
 import router from "../routes/edu-automation";
 
 const auth = "Bearer test-token";
-const org = "00000000-0000-0000-0000-000000000001";
 const scriptId = "11111111-1111-1111-1111-111111111111";
 
 function ma() {

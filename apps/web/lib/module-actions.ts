@@ -941,7 +941,9 @@ export async function updateBreakGlass(id: string, formData: FormData) {
 export async function updateDmarc(id: string, formData: FormData) {
   try {
     const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
-    const res = await fetch(`${baseUrl}/api/v1/batch/dmarc/${id}`, {
+    // `encodeURIComponent` keeps the caller-supplied id inside a single path
+    // segment (no `../` traversal into other API endpoints).
+    const res = await fetch(`${baseUrl}/api/v1/batch/dmarc/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1078,7 +1080,7 @@ export async function updateIncident(id: string, formData: FormData) {
 export async function updateLicense(id: string, formData: FormData) {
   try {
     const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
-    const res = await fetch(`${baseUrl}/api/v1/batch/licenses/${id}`, {
+    const res = await fetch(`${baseUrl}/api/v1/batch/licenses/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1424,7 +1426,7 @@ export async function updateService(id: string, formData: FormData) {
 export async function updateStatusItem(id: string, formData: FormData) {
   try {
     const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
-    const res = await fetch(`${baseUrl}/api/v1/batch/status/${id}`, {
+    const res = await fetch(`${baseUrl}/api/v1/batch/status/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1487,7 +1489,7 @@ export async function updateVendorContact(id: string, formData: FormData) {
 export async function updateWebsiteMonitor(id: string, formData: FormData) {
   try {
     const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
-    const res = await fetch(`${baseUrl}/api/v1/batch/website-monitors/${id}`, {
+    const res = await fetch(`${baseUrl}/api/v1/batch/website-monitors/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

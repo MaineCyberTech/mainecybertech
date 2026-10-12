@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import billingRouter from "../routes/billing";
-import { createTestApp, createMockBuilder, tableAwareFrom, type MockResult } from "./helpers";
+import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({

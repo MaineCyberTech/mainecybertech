@@ -81,7 +81,11 @@ export class ApiClient {
   private unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
   constructor(opts: ClientOptions) {
-    this.baseUrl = opts.baseUrl.replace(/\/+$/, "");
+    // Strip trailing slashes without a regex: `/\/+$/` backtracks quadratically
+    // on a long run of slashes that is not at the end of the string.
+    let end = opts.baseUrl.length;
+    while (end > 0 && opts.baseUrl[end - 1] === "/") end--;
+    this.baseUrl = opts.baseUrl.slice(0, end);
     this.getToken = opts.getToken ?? (async () => null);
     this.getCsrfToken = opts.getCsrfToken ?? (() => undefined);
     this.getActiveOrgId = opts.getActiveOrgId ?? (() => null);

@@ -51,10 +51,6 @@ const TYPE_MAP = {
   timetz: "string",
   interval: "string",
   bytea: "string",
-  inet: "string",
-  cidr: "string",
-  tsvector: "string",
-  tsquery: "string",
   citext: "string",
   inet: "string",
   cidr: "string",
@@ -133,7 +129,7 @@ function parseCreateTable(sql) {
         continue;
 
       // Match column definition: column_name type [constraints]
-      const colMatch = trimmed.match(/^[""]?(\w+)[""]?\s+([\w\s().,\[\].]+?)(\s+.*)?$/i);
+      const colMatch = trimmed.match(/^["]?(\w+)["]?\s+([\w\s().,\[\]]+?)(\s+.*)?$/i);
       if (colMatch) {
         const colName = colMatch[1].toLowerCase();
         const colType = colMatch[2].trim();
@@ -204,7 +200,7 @@ function parseAlterTable(sql) {
 
       // Now parse: "if not exists col_name type [constraints]"
       const colMatch = clause.match(
-        /^(?:IF\s+NOT\s+EXISTS\s+)?["']?(\w+)["']?\s+([\w\s().,\[\].]+?)(?:\s+(?:NOT\s+NULL|NULL|DEFAULT|PRIMARY|UNIQUE|CHECK|FOREIGN|REFERENCES|CONSTRAINT|GENERATED|COLLATE)\b.*)?$/i,
+        /^(?:IF\s+NOT\s+EXISTS\s+)?["']?(\w+)["']?\s+([\w\s().,\[\]]+?)(?:\s+(?:NOT\s+NULL|NULL|DEFAULT|PRIMARY|UNIQUE|CHECK|FOREIGN|REFERENCES|CONSTRAINT|GENERATED|COLLATE)\b.*)?$/i,
       );
       if (!colMatch) continue;
 

@@ -302,7 +302,7 @@ describe("tickets routes", () => {
     });
 
     it("rejects a non-author, non-admin user with 403", async () => {
-      const supabase = mockFromSequence({
+      mockFromSequence({
         ticket_comments: {
           data: {
             id: "comment-1",
@@ -355,7 +355,7 @@ describe("tickets routes", () => {
     });
 
     it("rejects edits when the caller is scoped to a different org than the comment", async () => {
-      const supabase = mockFromSequence({
+      mockFromSequence({
         ticket_comments: {
           data: {
             id: "comment-1",

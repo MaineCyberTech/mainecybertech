@@ -21,8 +21,6 @@ const ROUTES_DIR = path.join(ROOT, "apps/api/src/routes");
 const SPEC = path.join(ROOT, "apps/api/src/openapi/spec.ts");
 const APP_TS = path.join(ROOT, "apps/api/src/app.ts");
 
-const METHODS = ["get", "post", "put", "patch", "delete"];
-
 // --- app.ts mounts: import xRouter from "./routes/x" + app.use("/prefix", xRouter)
 const appSrc = fs.readFileSync(APP_TS, "utf8");
 const varToBase = {};

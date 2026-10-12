@@ -137,8 +137,6 @@ for (const p of products) {
 for (const p of products) {
   if (details[p.name]) continue; // Already handled
 
-  const n = p.name, s = p.summary || '', c = p.category;
-  
   // Enhanced marketing copy
   if (!p.marketingCopy || p.marketingCopy.includes('is a practical service')) {
     p.marketingCopy = generateMarketingCopy(p);

@@ -4,7 +4,6 @@ import express from "express";
 import webhooksRouter from "../routes/webhooks";
 import { webhookBodyParser } from "../middleware/webhook-body";
 import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
-import { getEnv } from "../config/env";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("stripe", () => {

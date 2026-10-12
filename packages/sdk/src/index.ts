@@ -1,4 +1,4 @@
-import { ApiClient, type ClientOptions, type RetryOptions, ApiError } from "./client";
+import { ApiClient, type ClientOptions, type RetryOptions } from "./client";
 import type { OrganizationOnboardInput, OrganizationOnboardResult } from "./types";
 import { AuthApi, type SignInResult, type SignUpResult } from "./auth";
 import { OrganizationsApi } from "./organizations";

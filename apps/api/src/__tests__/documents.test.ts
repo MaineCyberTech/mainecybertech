@@ -520,7 +520,7 @@ describe("documents routes", () => {
     });
 
     it("returns 404 when document not found", async () => {
-      const { mock } = mockFrom({ data: null, error: new Error("Not found") } as MockResult);
+      mockFrom({ data: null, error: new Error("Not found") } as MockResult);
 
       const res = await request(app)
         .delete("/api/v1/documents/00000000-0000-0000-0000-000000000999")

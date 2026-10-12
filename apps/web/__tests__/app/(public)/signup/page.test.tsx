@@ -1,5 +1,5 @@
 import { jest } from "@jest/globals";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const mockSignupAction = jest.fn();
