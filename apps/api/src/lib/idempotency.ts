@@ -1,7 +1,7 @@
 import Redis from "ioredis";
 import { getEnv, resolveRedisUrl } from "../config/env";
 import { logger } from "./logger";
-import { recordIdempotencyKeyHit } from "./metrics";
+import { recordIdempotencyKeyHit, recordRedisFailure } from "./metrics";
 
 let redisClient: Redis | null = null;
 let memoryMutex: Promise<void> | null = null;
@@ -69,6 +69,9 @@ export async function checkIdempotencyKey(key: string): Promise<string | null> {
       const value = await redis.get(prefixedKey);
       if (value) return value;
     } catch (err: unknown) {
+      // ARCH-P2-005: meter the in-memory fallback so the degradation is
+      // alertable (portal_redis_failures_total), not just a warn log.
+      recordRedisFailure("idempotency", "get");
       logger.warn(
         { error: String(err) },
         "Redis checkIdempotencyKey failed, falling back to in-memory",
@@ -110,6 +113,7 @@ export async function claimIdempotencyKey(
       if (result !== "OK") recordIdempotencyKeyHit();
       return result === "OK";
     } catch (err: unknown) {
+      recordRedisFailure("idempotency", "claim");
       logger.warn(
         { error: String(err) },
         "Redis claimIdempotencyKey failed, falling back to in-memory",
@@ -144,6 +148,7 @@ export async function storeIdempotencyKey(key: string, value: string): Promise<v
       await redis.setex(prefixedKey, IDEMPOTENCY_TTL_SECONDS, value);
       return;
     } catch (err: unknown) {
+      recordRedisFailure("idempotency", "store");
       logger.warn(
         { error: String(err) },
         "Redis storeIdempotencyKey failed, falling back to in-memory",
@@ -172,6 +177,7 @@ export async function deleteIdempotencyKey(key: string): Promise<void> {
       await redis.del(prefixedKey);
       return;
     } catch (err: unknown) {
+      recordRedisFailure("idempotency", "delete");
       logger.warn({ error: String(err) }, "Redis deleteIdempotencyKey failed");
     }
   }

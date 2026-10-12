@@ -5,9 +5,14 @@ import { getEnv } from "./config/env";
 import { logger } from "./lib/logger";
 import { assertRlsStartupConfig } from "./lib/rls-startup-check";
 import { checkRedisHealth } from "./lib/health";
+import { setQueueBackendInfo, setRedisConnected } from "./lib/metrics";
 import { initializeCache, shutdownCache } from "./middleware/cache";
 
 const env = getEnv();
+
+// ARCH-P2-004: publish the producer half of the queue backend contract so the
+// worker's worker_queue_backend_info can be compared against it.
+setQueueBackendInfo(env.QUEUE_BACKEND);
 
 // ARCH-P2-002: refuse to start in production with an empty RLS read allow-list,
 // which would silently route every read through the service-role client.
@@ -44,6 +49,11 @@ if (env.REDIS_URL) {
         logger.info({ latencyMs: result.latencyMs }, "Redis health check passed");
       } else {
         logger.warn({ error: result.error }, "Redis health check failed");
+      }
+      // ARCH-P2-005: record the boot probe so a Redis outage is visible on
+      // /metrics (portal_redis_connected) before the next /health hit.
+      if (result.status !== "not_configured") {
+        setRedisConnected(result.status === "healthy");
       }
     })
     .catch((err) => {

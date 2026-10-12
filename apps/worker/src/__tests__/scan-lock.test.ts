@@ -40,6 +40,17 @@ const redisMock = {
 
 jest.mock("ioredis", () => jest.fn(() => redisMock));
 
+// ARCH-P2-005: the lock fallback must be metered, not just logged.
+jest.mock("../redis-failures", () => ({
+  recordRedisFailure: jest.fn(),
+}));
+
+import { recordRedisFailure } from "../redis-failures";
+
+const mockedRecordRedisFailure = recordRedisFailure as jest.MockedFunction<
+  typeof recordRedisFailure
+>;
+
 describe("withScanLock", () => {
   let withScanLock!: typeof import("../lib/scan-lock").withScanLock;
   let closeScanLock!: typeof import("../lib/scan-lock").closeScanLock;
@@ -103,6 +114,8 @@ describe("withScanLock", () => {
     await withScanLock("some-scan", 1000, fn);
 
     expect(fn).toHaveBeenCalledTimes(1);
+    // ARCH-P2-005: the lost dedup is metered for alerting.
+    expect(mockedRecordRedisFailure).toHaveBeenCalledWith("scan_lock", "claim");
   });
 
   it("releases the lock even when the callback throws", async () => {

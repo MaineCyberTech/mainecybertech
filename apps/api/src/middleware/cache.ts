@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { type Request, type Response, type NextFunction } from "express";
 import { createClient, type RedisClientType } from "redis";
 import { getEnv, resolveRedisUrl } from "../config/env";
+import { recordRedisFailure } from "../lib/metrics";
 
 /**
  * Redis-backed response cache with in-memory fallback.
@@ -38,6 +39,9 @@ class CacheBackend {
         logger.info("Redis cache connected");
       } catch (err) {
         const { logger } = await import("../lib/logger");
+        // ARCH-P2-005: a silent fallback to the in-memory cache is exactly the
+        // degradation the audit flagged; meter it.
+        recordRedisFailure("cache", "connect");
         logger.warn({ err }, "Failed to connect to Redis, falling back to in-memory cache");
       }
     }
@@ -69,7 +73,8 @@ class CacheBackend {
         }
         return null;
       } catch {
-        // Fall through to memory cache on Redis error
+        // Fall through to memory cache on Redis error (ARCH-P2-005: metered).
+        recordRedisFailure("cache", "get");
       }
     }
     const entry = this.memoryCache.get(key);
@@ -91,7 +96,8 @@ class CacheBackend {
         await this.redis.setEx(key, ttlSeconds, JSON.stringify({ data, expires }));
         return;
       } catch {
-        // Fall through to memory cache on Redis error
+        // Fall through to memory cache on Redis error (ARCH-P2-005: metered).
+        recordRedisFailure("cache", "set");
       }
     }
     this.memoryCache.set(key, entry);
@@ -101,7 +107,9 @@ class CacheBackend {
     if (!pattern) {
       this.memoryCache.clear();
       if (this.useRedis && this.redis) {
-        this.redis.flushDb().catch(() => {});
+        this.redis.flushDb().catch(() => {
+          recordRedisFailure("cache", "flush");
+        });
       }
       return;
     }
@@ -130,6 +138,8 @@ class CacheBackend {
           if (batch.length) await redis.del(batch);
         } catch {
           // Best-effort invalidation; TTL will evict eventually.
+          // ARCH-P2-005: meter the lost invalidation so stale entries are visible.
+          recordRedisFailure("cache", "invalidate");
         }
       })();
     }

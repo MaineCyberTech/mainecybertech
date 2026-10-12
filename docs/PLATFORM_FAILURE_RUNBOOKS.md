@@ -49,19 +49,44 @@ site and API are unreachable; SSH to the droplet fails or the droplet is gone.
 second API replica with an external rate-limit store, and take scheduled droplet
 snapshots. This is an infra/budget decision (open question in PATCH-013).
 
-## 1. Redis down / OOM
+## 1. Redis down / OOM (ARCH-P2-005)
 
-**Signal:** `MCTServiceDown` for the worker, or API 5xx after a Redis OOM; the
-`redis` container restarting; BullMQ jobs stalled.
+**Signal:** `MCTApiRedisDegraded` (API probe failing), `MCTRedisOperationFailures`
+(a cache/idempotency/scan-lock fallback), `MCTWorkerQueueDisconnected`, or
+`MCTServiceDown` for the worker; the `redis` container restarting; BullMQ jobs
+stalled.
+
+**Why it matters:** a single non-replicated Redis (48 MB cap, no replica or
+sentinel) backs four things at once — the BullMQ task queue, the response
+cache, idempotency keys and the worker scan locks. Its loss does not stop the
+API, because each consumer degrades on its own, which is exactly why the
+degradation is easy to miss. The fail-open/fail-closed behavior per consumer:
+
+- **Queue:** the worker `/health` returns 503 and `worker_queue_connected`
+  drops to 0 (critical alert). Scheduled scans run directly instead of via the
+  queue; request-time tasks enqueued by the API fall back to inline execution.
+- **Cache:** reads/writes fall back to a per-process in-memory map (fail-open;
+  entries are no longer shared or invalidated across processes).
+- **Idempotency:** keys fall back to per-process memory (fail-open; only safe
+  while single-replica — with more than one API/worker process, duplicate side
+  effects become possible).
+- **Scan locks:** scans run without the lock (fail-open; single-replica safe).
 
 **Actions:**
 1. `docker compose -f infra/digitalocean/docker-compose.yml ps` and
    `docker compose logs --tail=200 redis`.
-2. If OOM: raise the Redis memory cap or reduce worker concurrency, then
+2. Confirm the degradation from the metrics: `portal_redis_connected` (API
+   probe), `portal_redis_failures_total` / `worker_redis_failures_total`
+   (fallbacks), `worker_queue_connected` (queue).
+3. If OOM: raise the Redis memory cap or reduce worker concurrency, then
    `docker compose up -d redis`. Redis is a single non-replicated instance with a
-   48 MB cap (`ARCH-P2-001`), so treat repeated OOM as a capacity signal.
-3. Jobs that failed mid-flight are retried by BullMQ; check the dead-letter
+   48 MB cap (`ARCH-P2-005`), so treat repeated OOM as a capacity signal.
+4. Jobs that failed mid-flight are retried by BullMQ; check the dead-letter
    view and re-drive only after Redis is stable.
+
+**Prevention / next step:** split queue vs cache (or replicate Redis) and add
+the OOM/queue-depth alerting the audit recommended; that is an infra/budget
+decision, tracked as the residual of `ARCH-P2-005`.
 
 ## 2. Supabase unavailable
 

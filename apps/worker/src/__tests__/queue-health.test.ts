@@ -13,7 +13,7 @@ jest.mock("../queue-state", () => ({
 import { env } from "../env";
 import { getTaskQueueHealth } from "../producer";
 import { getConsumerConnection } from "../queue-state";
-import { getWorkerQueueHealth } from "../queue-health";
+import { getWorkerQueueHealth, getWorkerQueueBackend } from "../queue-health";
 
 const mockedProducer = getTaskQueueHealth as jest.MockedFunction<typeof getTaskQueueHealth>;
 const mockedConsumer = getConsumerConnection as jest.MockedFunction<typeof getConsumerConnection>;
@@ -54,5 +54,12 @@ describe("getWorkerQueueHealth (RES-P2-008)", () => {
     mockedConsumer.mockReturnValue({ connected: true });
 
     expect(getWorkerQueueHealth()).toEqual({ connected: true });
+  });
+
+  // ARCH-P2-004: the consumer half of the queue backend contract is exposed
+  // for /health and /metrics parity with the API.
+  it("reports the configured queue backend", () => {
+    env.QUEUE_BACKEND = "bullmq";
+    expect(getWorkerQueueBackend()).toBe("bullmq");
   });
 });

@@ -11,6 +11,8 @@ jest.mock("../logger", () => ({
 // compose healthcheck and the deploy gate can act on it.
 jest.mock("../queue-health", () => ({
   getWorkerQueueHealth: jest.fn(() => ({ connected: true })),
+  // ARCH-P2-004: the consumer half of the queue backend contract.
+  getWorkerQueueBackend: jest.fn(() => "bullmq"),
 }));
 
 const mockedQueueHealth = getWorkerQueueHealth as jest.MockedFunction<typeof getWorkerQueueHealth>;
@@ -69,6 +71,9 @@ describe("worker health server", () => {
     expect(res.status).toBe(200);
     expect(res.json).toMatchObject({ status: "healthy" });
     expect(typeof res.json.uptime).toBe("number");
+    // ARCH-P2-004: the configured backend is part of the payload so operators
+    // can compare it with the API's producer backend.
+    expect(res.json.queueBackend).toBe("bullmq");
     expect(res.json.queue).toEqual({ connected: true });
   });
 

@@ -1,11 +1,16 @@
 import promClient from "prom-client";
 import { getRegisteredTaskTypes } from "./task-registry";
 import { getTaskQueueStats } from "./producer";
-import { getWorkerQueueHealth } from "./queue-health";
+import { getWorkerQueueHealth, getWorkerQueueBackend } from "./queue-health";
+import { redisFailuresTotal } from "./redis-failures";
 
 const register = new promClient.Registry();
 
 promClient.collectDefaultMetrics({ register });
+
+// ARCH-P2-005: registered here (created dependency-free in redis-failures.ts
+// so the fallback paths can meter without importing this registry).
+register.registerMetric(redisFailuresTotal);
 
 export const taskExecutionsTotal = new promClient.Counter({
   name: "worker_task_executions_total",
@@ -34,6 +39,16 @@ export const taskQueueDepth = new promClient.Gauge({
 export const workerQueueConnected = new promClient.Gauge({
   name: "worker_queue_connected",
   help: "1 when the worker's BullMQ queue connections (producer and consumer) are ready, or BullMQ is not the active queue backend; 0 when a connection is lost",
+  registers: [register],
+});
+
+// ARCH-P2-004: the consumer half of the queue backend contract. The API
+// exports portal_queue_backend_info; a mismatch means enqueued work is never
+// consumed. Both processes derive from the shared QUEUE_BACKEND setting.
+export const workerQueueBackendInfo = new promClient.Gauge({
+  name: "worker_queue_backend_info",
+  help: "Configured worker queue backend (label backend) — must match the API's portal_queue_backend_info",
+  labelNames: ["backend"] as const,
   registers: [register],
 });
 
@@ -162,6 +177,10 @@ export async function getMetrics(): Promise<string> {
   // RES-P2-008: scrape-time connectivity read (producer's cached state plus
   // the consumer's connection lifecycle state).
   workerQueueConnected.set(getWorkerQueueHealth().connected ? 1 : 0);
+
+  // ARCH-P2-004: scrape-time backend read, for parity with the API's
+  // portal_queue_backend_info.
+  workerQueueBackendInfo.set({ backend: getWorkerQueueBackend() }, 1);
 
   return register.metrics();
 }
