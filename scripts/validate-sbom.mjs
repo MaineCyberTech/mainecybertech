@@ -11,7 +11,7 @@
  *   - the product version + commit binding are present
  *
  * Image mode (`--image`, SBOM-P3-005) checks the Trivy image SBOM:
- *   - bomFormat == "CycloneDX" (specVersion 1.5/1.6 accepted)
+ *   - bomFormat == "CycloneDX" (specVersion 1.5-1.7 accepted)
  *   - every component has a unique bom-ref/name/version
  *   - component count is above a floor (an empty/partial image SBOM must not
  *     be attested as the durable record for a digest)
@@ -67,12 +67,14 @@ function fail(message) {
 }
 
 if (imageMode) {
-  // Trivy emits CycloneDX 1.5 (some versions 1.6); anything else means the
+  // Trivy emits CycloneDX 1.5-1.7 depending on the release; accept any
+  // published spec in that range (the lockfile SBOM stays strict 1.5 below)
+  // rather than breaking the deploy whenever Trivy bumps the emitter.
   // generator changed shape and the validator must be revisited.
   const specVersion = String(bom.specVersion ?? "");
   check(
-    specVersion === "1.5" || specVersion === "1.6",
-    `image specVersion must be "1.5" or "1.6" (got ${bom.specVersion})`,
+    ["1.5", "1.6", "1.7"].includes(specVersion),
+    `image specVersion must be 1.5-1.7 (got ${bom.specVersion})`,
   );
 
   const rootComponent = bom.metadata?.component ?? {};
