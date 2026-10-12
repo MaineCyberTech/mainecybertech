@@ -66,6 +66,9 @@ jest.mock("../middleware/rate-limit", () => ({
   rateLimitAuth: (_req: unknown, _res: unknown, next: () => void) => next(),
   rateLimitEmail: (_req: unknown, _res: unknown, next: () => void) => next(),
   rateLimitAdminOps: (_req: unknown, _res: unknown, next: () => void) => next(),
+  // The search router is mounted in this suite; its limiter must be a function
+  // or express throws at mount time.
+  rateLimitSearch: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
 jest.mock("../lib/logger", () => ({

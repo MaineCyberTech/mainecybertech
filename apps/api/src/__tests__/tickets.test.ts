@@ -679,10 +679,13 @@ describe("tickets routes", () => {
         builders[table] = builder;
         return builder;
       });
-      supabase.rpc.mockResolvedValue({
-        data: (opts.ownedIds ?? []).map((id) => ({ id, success: true })),
-        error: null,
-      });
+      supabase.rpc.mockImplementation(
+        (_name: string, args: { updates: { id: string }[] }) =>
+          Promise.resolve({
+            data: args.updates.map((u) => ({ id: u.id, success: true })),
+            error: null,
+          }),
+      );
       return { supabase, builders };
     }
 
