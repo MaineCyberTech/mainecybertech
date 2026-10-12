@@ -477,7 +477,6 @@ export function collectRlsStats() {
   }
 
   // -------------------------------------------------------------------------
-<<<<<<< HEAD
   // Check 4 — new migration filenames follow the 5302xxx naming convention
   // (DOC-P3-009): 7-digit sequential prefix + lower_snake_case description.
   // Only the going-forward baseline is enforced; earlier history is exempt.
@@ -491,8 +490,11 @@ export function collectRlsStats() {
       failures.push(
         `[naming] ${file}: expected NNNNNNN_lower_snake_case.sql ` +
           `(see docs/migrations/naming-guide.md)`,
-=======
-  // Check 4/5 — RLS-P3-006 effective-state drift:
+      );
+    }
+  }
+
+  // Check 5/6 — RLS-P3-006 effective-state drift:
   //   (a) role-gate drift: a hardcoded platform-role subset that omits keys
   //       the API treats as admins (use public.user_has_role instead);
   //   (b) policy↔permission-catalog drift: user_has_permission(...) pairs a
@@ -550,13 +552,10 @@ export function collectRlsStats() {
       failures.push(
         `[permission-catalog] ${p.file}:${p.line} policy "${p.name}" on ${p.table} ` +
           `references permission "${pair}" which no migration inserts into public.permissions`,
->>>>>>> 0c6b8e34 (fix(resilience,arch,rls,api,perf): P3 remediation batch)
       );
     }
   }
 
-<<<<<<< HEAD
-=======
   if (legacyRoleGate.length > 0) {
     warnings.push(
       `[role-gate:baseline] ${legacyRoleGate.length} live policies created before ` +
@@ -571,7 +570,6 @@ export function collectRlsStats() {
     );
   }
 
->>>>>>> 0c6b8e34 (fix(resilience,arch,rls,api,perf): P3 remediation batch)
   const liveTables = [...tableState.values()].filter((s) => s.live).length;
   return {
     tables: liveTables,
