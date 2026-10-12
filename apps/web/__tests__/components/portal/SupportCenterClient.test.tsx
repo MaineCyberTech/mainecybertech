@@ -83,6 +83,11 @@ describe("SupportCenterClient", () => {
     render(<SupportCenterClient tickets={[]} createTicketAction={mockCreateTicketAction} />);
     await user.click(screen.getByText("Submit Ticket"));
     expect(screen.getByText("Create Support Ticket")).toBeInTheDocument();
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.className).toContain("max-h-[90vh]");
+    expect(dialog.className).toContain("overflow-y-auto");
+    expect(dialog.className).toContain("w-[calc(100vw-2rem)]");
   });
 
   it("closes modal on cancel", async () => {

@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { Button } from "@mct/ui/components/Button";
 import { useFocusTrap } from "@/lib/use-focus-trap";
 
 export default function ConfirmModal({
@@ -31,7 +32,7 @@ export default function ConfirmModal({
         onKeyDown={(e) => {
           if (e.key === "Escape") onClose();
         }}
-        className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
+        className="max-h-[90vh] w-[calc(100vw-2rem)] min-w-0 max-w-lg overflow-y-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
       >
         <h3
           id="confirm-modal-title"
@@ -41,20 +42,16 @@ export default function ConfirmModal({
         </h3>
         <p className="mt-3 text-sm text-slate-300">{body}</p>
         <div className="mt-6 flex justify-end gap-3">
-          <button type="button" className="cyber-button-secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className={
-              danger
-                ? "rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-red-300 transition hover:bg-red-500/20"
-                : "cyber-button"
-            }
+            variant={danger ? "danger" : "primary"}
             onClick={onConfirm}
           >
             {confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

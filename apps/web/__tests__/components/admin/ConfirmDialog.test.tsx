@@ -57,6 +57,15 @@ describe("ConfirmDialog", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("caps the panel height and scrolls internally for small viewports", () => {
+    renderDialog();
+
+    const dialog = screen.getByRole("dialog", { name: "Delete project" });
+    expect(dialog.className).toContain("max-h-[90vh]");
+    expect(dialog.className).toContain("overflow-y-auto");
+    expect(dialog.className).toContain("w-[calc(100vw-2rem)]");
+  });
+
   it("applies red danger styling to the confirm button", () => {
     renderDialog({ danger: true, confirmLabel: "Delete" });
 

@@ -167,4 +167,27 @@ test.describe("mobile viewport", () => {
     await submit.scrollIntoViewIfNeeded();
     await expect(submit).toBeInViewport();
   });
+
+  test("create-category dialog fits and scrolls within the viewport", async ({ page }) => {
+    await gotoApp(page, "/admin/store/categories");
+
+    const openButton = page.getByRole("button", { name: /create category/i });
+    await expect(openButton).toBeVisible({ timeout: 20_000 });
+    await openButton.click();
+
+    const dialog = page.getByRole("dialog", { name: /create category/i });
+    await expect(dialog).toBeVisible();
+
+    const viewport = page.viewportSize();
+    const box = await dialog.boundingBox();
+    expect(box, "dialog has no bounding box").not.toBeNull();
+    if (box && viewport) {
+      expect(box.height).toBeLessThanOrEqual(viewport.height * 0.9 + 1);
+      expect(box.width).toBeLessThanOrEqual(viewport.width + 1);
+    }
+
+    const submit = dialog.getByRole("button", { name: /^create$/i });
+    await submit.scrollIntoViewIfNeeded();
+    await expect(submit).toBeInViewport();
+  });
 });

@@ -113,7 +113,7 @@ export function Dialog({
       >
         <div
           className={cn(
-            "relative max-h-[90vh] w-full overflow-y-auto rounded-xl border border-white/10 bg-[#0A1118]/95 shadow-[0_25px_50px_rgba(0,0,0,0.5)] backdrop-blur-md",
+            "relative max-h-[90vh] w-[calc(100vw-2rem)] min-w-0 overflow-y-auto rounded-xl border border-white/10 bg-[#0A1118]/95 shadow-[0_25px_50px_rgba(0,0,0,0.5)] backdrop-blur-md",
             "animate-in slide-in-from-bottom-4 zoom-in-95 duration-200",
             sizeStyles[size],
           )}

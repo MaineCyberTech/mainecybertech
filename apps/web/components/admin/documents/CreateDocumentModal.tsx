@@ -1,4 +1,6 @@
 import { useRef, type FormEvent, type RefObject } from "react";
+import { Button } from "@mct/ui/components/Button";
+import { Input, Textarea } from "@mct/ui/components/Input";
 import { useFocusTrap } from "@/lib/use-focus-trap";
 import { VISIBILITY_OPTIONS, type OrganizationRecord } from "./types";
 
@@ -36,7 +38,7 @@ export default function CreateDocumentModal({
         onKeyDown={(e) => {
           if (e.key === "Escape") onClose();
         }}
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
+        className="max-h-[90vh] w-[calc(100vw-2rem)] min-w-0 max-w-3xl overflow-y-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
       >
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <div>
@@ -50,9 +52,9 @@ export default function CreateDocumentModal({
               Add a new document record or upload one or more files.
             </p>
           </div>
-          <button type="button" className="cyber-button-secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={onClose}>
             Close
-          </button>
+          </Button>
         </div>
         <form ref={formRef} onSubmit={onSubmit} className="space-y-5 px-6 py-6">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -75,41 +77,26 @@ export default function CreateDocumentModal({
                 ))}
               </select>
             </div>
-            <div>
-              <label className="cyber-label" htmlFor="doc-name-2">
-                Name
-              </label>
-              <input
-                id="doc-name-2"
-                name="name"
-                className="cyber-input"
-                placeholder="Optional for multi-file mode"
-              />
-            </div>
-            <div>
-              <label className="cyber-label" htmlFor="doc-storage-bucket">
-                Storage Bucket
-              </label>
-              <input
-                id="doc-storage-bucket"
-                name="bucket"
-                className="cyber-input"
-                defaultValue="documents"
-              />
-            </div>
+            <Input
+              id="doc-name-2"
+              name="name"
+              label="Name"
+              placeholder="Optional for multi-file mode"
+            />
+            <Input
+              id="doc-storage-bucket"
+              name="bucket"
+              label="Storage Bucket"
+              defaultValue="documents"
+            />
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <div>
-              <label className="cyber-label" htmlFor="doc-folder-path">
-                Folder Path
-              </label>
-              <input
-                id="doc-folder-path"
-                name="category"
-                className="cyber-input"
-                placeholder="Optional folder/category"
-              />
-            </div>
+            <Input
+              id="doc-folder-path"
+              name="category"
+              label="Folder Path"
+              placeholder="Optional folder/category"
+            />
             <div>
               <label className="cyber-label" htmlFor="doc-visibility-2">
                 Visibility
@@ -127,17 +114,12 @@ export default function CreateDocumentModal({
                 ))}
               </select>
             </div>
-            <div>
-              <label className="cyber-label" htmlFor="doc-existing-storage-path-optional">
-                Existing Storage Path (optional)
-              </label>
-              <input
-                id="doc-existing-storage-path-optional"
-                name="fileUrl"
-                className="cyber-input"
-                placeholder="<org-id>/file.ext"
-              />
-            </div>
+            <Input
+              id="doc-existing-storage-path-optional"
+              name="fileUrl"
+              label="Existing Storage Path (optional)"
+              placeholder="<org-id>/file.ext"
+            />
           </div>
           <div>
             <label className="cyber-label" htmlFor="doc-upload-files">
@@ -149,13 +131,13 @@ export default function CreateDocumentModal({
                 This consolidated pass preserves the working upload flow and keeps the admin
                 interactions aligned with 2.2.3.3.
               </p>
-              <input
+              <Input
                 ref={fileRef}
                 id="doc-upload-files"
                 type="file"
                 name="file"
                 multiple
-                className="cyber-input mt-4"
+                className="mt-4"
                 onChange={(e) => onFileSelectionChange(e.target.files)}
               />
               {droppedFileName ? (
@@ -164,18 +146,15 @@ export default function CreateDocumentModal({
             </div>
           </div>
           <div>
-            <label className="cyber-label" htmlFor="doc-description-2">
-              Description
-            </label>
-            <textarea id="doc-description-2" name="description" rows={4} className="cyber-input" />
+            <Textarea id="doc-description-2" name="description" label="Description" rows={4} />
           </div>
           <div className="flex items-center justify-end gap-3">
-            <button type="button" className="cyber-button-secondary" onClick={onClose}>
+            <Button type="button" variant="secondary" onClick={onClose}>
               Cancel
-            </button>
-            <button type="submit" className="cyber-button" disabled={busyId === "create"}>
+            </Button>
+            <Button type="submit" loading={busyId === "create"}>
               {busyId === "create" ? "Creating..." : "Create Document"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

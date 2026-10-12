@@ -34,6 +34,11 @@ describe("ProductForm", () => {
     fireEvent.click(screen.getByText("New Product"));
     expect(screen.getByText("Create Product")).toBeInTheDocument();
 
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.className).toContain("max-h-[90vh]");
+    expect(dialog.className).toContain("overflow-y-auto");
+    expect(dialog.className).toContain("w-[calc(100vw-2rem)]");
+
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Secure Email" } });
     fireEvent.change(screen.getByLabelText("Slug"), { target: { value: "secure-email" } });
 
