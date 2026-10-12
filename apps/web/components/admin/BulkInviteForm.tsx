@@ -121,6 +121,15 @@ export default function BulkInviteForm({ organizations, roles }: Props) {
         {submitting ? "Processing..." : "Import Users"}
       </button>
 
+      {requestError ? (
+        <div
+          role="alert"
+          className="rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300"
+        >
+          {requestError}
+        </div>
+      ) : null}
+
       {results ? (
         <div className="space-y-3">
           <div className="flex flex-wrap gap-4 text-sm">

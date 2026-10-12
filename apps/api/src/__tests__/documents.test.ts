@@ -821,8 +821,11 @@ describe("documents routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(500);
-      expect(builders.documents[1].update).not.toHaveBeenCalled();
-      expect(builders.document_versions[1].insert).not.toHaveBeenCalled();
+      // Only the parent-document read ran: no update, no new version row and
+      // no rollback delete (the copy never succeeded).
+      expect(builders.documents).toHaveLength(1);
+      expect(builders.document_versions).toHaveLength(1);
+      expect(supabase.storage.from("documents").remove).not.toHaveBeenCalled();
     });
   });
 

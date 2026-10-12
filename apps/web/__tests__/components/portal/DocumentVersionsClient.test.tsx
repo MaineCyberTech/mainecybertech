@@ -15,7 +15,7 @@ jest.mock("@/lib/client-api", () => ({
   }),
 }));
 
-jest.mock("../../../../app/(portal)/portal/documents/[documentId]/actions", () => ({
+jest.mock("@/app/(portal)/portal/documents/[documentId]/actions", () => ({
   restoreDocumentVersionAction: mockRestoreDocumentVersionAction,
 }));
 

@@ -27,7 +27,7 @@ jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
 }));
 
-jest.mock("../../../../app/(portal)/portal/support/actions", () => ({
+jest.mock("@/app/(portal)/portal/support/actions", () => ({
   createPortalTicket: jest.fn(),
 }));
 

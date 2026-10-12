@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const mockPush = jest.fn();
@@ -110,7 +110,9 @@ describe("SupportCenterClient", () => {
     await user.click(screen.getByText("Submit Ticket"));
     await user.type(screen.getByLabelText("Title"), "VPN is down");
     await user.type(screen.getByLabelText("Description"), "Cannot reach the office VPN.");
-    await user.click(screen.getByRole("button", { name: "Submit Ticket" }));
+    // The page's trigger button shares the label; submit inside the dialog.
+    const dialog = screen.getByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Submit Ticket" }));
 
     const status = await screen.findByRole("status");
     expect(status).toHaveTextContent("VPN is down");
