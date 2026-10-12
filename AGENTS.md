@@ -153,7 +153,7 @@ pnpm e2e                     # Playwright E2E
 | Web components            | 121 | `apps/web/components/`                                                                                                                                                 |
 | SQL migrations            | 151 | `supabase/migrations/` (latest: 5302453_push_subscriptions                                                                                              |
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
-| GitHub Actions workflows  | 23 | `.github/workflows/`                                                                                                                                                   |
+| GitHub Actions workflows  | 24 | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 632 | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
 | Build/dev/utility scripts | 100 | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
 
@@ -744,8 +744,10 @@ to console only; ~57 older migrations
 use bare `CREATE POLICY` (non-idempotent) and `5302406`/`5302407` drop tables
 unguarded (already applied); several form labels lack `htmlFor`/`id`.
 ~~E2E runs on both push and PR~~ (push trigger removed 2026-09-21);
-~~Chromatic/`terraform fmt` use `continue-on-error`~~ (Chromatic is an explicit
-best-effort _job_; `terraform fmt -check -recursive` is blocking);
+~~Chromatic/`terraform fmt` use `continue-on-error`~~ (Chromatic no longer masks
+failures at the job level and fails on a broken Storybook build or a visual
+change once a baseline exists — CI-P2-006; `terraform fmt -check -recursive` is
+blocking);
 ~~the deploy does not auto-redeploy the prior tag~~ (auto-rollback added,
 `3cf876d`); worker `ping` is registered but never enqueued.
 

@@ -149,7 +149,7 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 | Secret                    | Dev | Prod | Purpose                                                                       |
 | ------------------------- | --- | ---- | ----------------------------------------------------------------------------- |
 | `SUPABASE_ACCESS_TOKEN`   | yes | yes  | Supabase CLI auth for `supabase link` / `db push` (`supabase-migrations.yml`) |
-| `CHROMATIC_PROJECT_TOKEN` | yes | yes  | Chromatic visual-regression upload (`chromatic.yml`, best-effort job)         |
+| `CHROMATIC_PROJECT_TOKEN` | yes | yes  | Chromatic visual-regression upload (`chromatic.yml`; the job fails on a broken Storybook build or a visual change once a baseline exists) |
 | `E2E_JWT_SECRET`          | opt | opt  | Optional E2E JWT secret; `e2e.yml` falls back to a built-in test value        |
 
 > `SCHEDULE_DISPATCH_TOKEN` was retired with `backup-dispatch.yml`

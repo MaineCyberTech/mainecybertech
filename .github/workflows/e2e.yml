@@ -9,10 +9,11 @@ on:
         default: false
   # Push trigger removed: the PR run plus the prod deploy's `workflow_call`
   # gate already cover changes, and a push trigger ran E2E 2-3x per change.
-  # No `paths:` filter on `pull_request` (BP-P2-004 / CI-P2-009):
+  # No `paths:` filter on `pull_request` (BP-P2-004 / CI-P2-009 / TEST-P2-009):
   # `E2E / e2e (20.x)` is a required check on `main`, and a path-filtered
   # workflow never reports on PRs that miss the paths — leaving them blocked
-  # forever on a check that cannot run.
+  # forever on a check that cannot run. `scripts/check-required-checks.mjs`
+  # fails if this filter is ever reintroduced while the check is required.
   pull_request:
     branches: [main, develop]
   workflow_call:
