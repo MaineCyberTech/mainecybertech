@@ -4,12 +4,16 @@ export default {
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  setupFiles: ['<rootDir>/jest.setup.ts'],
-  globalTeardown: '<rootDir>/jest.teardown.ts',
+  // NOTIF-P3-001 / NOTIF-P3-005 / EVOL-P3-005: the shared email
+  // template/unsubscribe-token helpers and the shared env schema are imported
+  // via subpath exports; map them to source so ts-jest compiles them
+  // regardless of package-exports support.
   moduleNameMapper: {
-    // EVOL-P3-005: shared env schema source (ts-jest compiles it directly).
+    '^@mct/sdk/(email-template)$': '<rootDir>/../../packages/sdk/src/$1',
     '^@mct/config/env$': '<rootDir>/../../packages/config/src/env.ts',
   },
+  setupFiles: ['<rootDir>/jest.setup.ts'],
+  globalTeardown: '<rootDir>/jest.teardown.ts',
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',

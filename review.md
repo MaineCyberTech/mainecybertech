@@ -83,14 +83,14 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,500 tests, all passing. 503 suites.**
+**4,553 tests, all passing. 511 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,886         | 166   | Jest + supertest                  |
-| Web     | 2,004         | 302   | Jest + Testing Library            |
-| SDK     | 315           | 4   | Jest (mocked fetch)               |
-| Worker  | 295           | 31   | Jest (env schema + task handlers) |
+| API     | 1,922         | 171   | Jest + supertest                  |
+| Web     | 2,010         | 304   | Jest + Testing Library            |
+| SDK     | 321           | 5   | Jest (mocked fetch)               |
+| Worker  | 300           | 31   | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
 
 Suite counts and the E2E spec count are counted from the tree by
@@ -152,16 +152,16 @@ pnpm e2e                     # Playwright E2E
 
 | Category                  | Count | Notes                                                                                                                                                                  |
 | ------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API route files           | 63    | `apps/api/src/routes/*.ts` (76 incl. `routes/final/` + `routes/store/`)                                                                                                |
-| API SDK modules           | 62    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
+| API route files           | 64    | `apps/api/src/routes/*.ts` (77 incl. `routes/final/` + `routes/store/`)                                                                                                |
+| API SDK modules           | 63    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
 | Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319 | Admin 203, Portal 86, Public 29, `forbidden` 1 |
 | Web components            | 121 | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 156 | `supabase/migrations/` (latest: 5302458_project_tasks_m365_event_id                                                                                              |
+| SQL migrations            | 157 | `supabase/migrations/` (latest: 5302459_dead_rls_permission_predicates                                                                                              |
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 28 | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 625 | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
-| Build/dev/utility scripts | 98 | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
+| Build/dev/utility scripts | 99 | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
 
 ## Database Types (2026-09-21)
 

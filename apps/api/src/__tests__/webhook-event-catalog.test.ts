@@ -64,4 +64,15 @@ describe("webhook event catalog (EVOL-P2-002)", () => {
     // No free-form string event arrays may return.
     expect(source).not.toContain("z.array(z.string().min(1))");
   });
+
+  it("documents every catalogued event in docs/WEBHOOKS.md (WH-P3-002)", () => {
+    // The committed consumer catalog must not drift from the SDK catalog: the
+    // doc is the integration contract and this guard keeps it complete.
+    const doc = fs.readFileSync(
+      path.join(__dirname, "..", "..", "..", "..", "docs", "WEBHOOKS.md"),
+      "utf8",
+    );
+    const undocumented = WEBHOOK_EVENTS.filter((event) => !doc.includes(event));
+    expect(undocumented).toEqual([]);
+  });
 });

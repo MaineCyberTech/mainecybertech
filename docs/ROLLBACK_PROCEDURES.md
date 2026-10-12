@@ -223,7 +223,11 @@ together restore working `documents.storage_path` links. A DB-only restore
 leaves those rows pointing at missing objects — always pair the two.
 `.github/workflows/storage-restore-test.yml` exercises the verification weekly
 against the newest archive; a green run is the storage-restore exercise
-artifact. A restore INTO a scratch Supabase project remains an operator drill.
+artifact. `scripts/exercise-storage-restore.sh` (run by the validate workflow)
+additionally drives `--verify-only` against synthetic valid/corrupt/encrypted
+archives on every CI run, so the assertions themselves are exercised even when
+no live backup has landed yet (FILE-P3-004). A restore INTO a scratch Supabase
+project remains an operator drill.
 
 ## 4. Terraform Rollback
 

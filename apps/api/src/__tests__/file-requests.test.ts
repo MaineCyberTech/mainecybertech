@@ -359,4 +359,148 @@ describe("File Requests API", () => {
       expect(res.status).toBe(400);
     });
   });
+
+  describe("org-scoped upload listing and download (FILE-P3-007)", () => {
+    function mockUploadsFlow(opts: {
+      requestRow?: Record<string, unknown> | null;
+      uploadRow?: Record<string, unknown> | null;
+      /** Which builder the FIRST file_request_uploads query gets. */
+      firstUpload?: "list" | "row";
+    }) {
+      const requestBuilder = createMockBuilder({
+        data: opts.requestRow ?? null,
+        error: opts.requestRow ? null : { message: "not found" },
+      } as MockResult);
+      const uploadsListBuilder = createMockBuilder({
+        data: [
+          {
+            id: "upload-1",
+            file_name: "invoice.pdf",
+            mime_type: "application/pdf",
+            file_size: 10,
+            uploaded_at: "2026-01-01T00:00:00Z",
+          },
+        ],
+        error: null,
+      } as MockResult);
+      const uploadRowBuilder = createMockBuilder({
+        data: opts.uploadRow ?? null,
+        error: opts.uploadRow ? null : { message: "not found" },
+      } as MockResult);
+
+      const createSignedUrl = jest
+        .fn()
+        .mockResolvedValue({ data: { signedUrl: "https://signed" }, error: null });
+      const storage: StorageMock = {
+        from: jest.fn().mockReturnThis(),
+        upload: jest.fn(),
+        remove: jest.fn(),
+        createSignedUrl,
+      };
+      const supabase = mockSupabase({ storage });
+
+      // The list route reads file_request_uploads once (returns the list); the
+      // signed-url route reads it once too but expects a single row.
+      let uploadCalls = 0;
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "file_requests") return requestBuilder;
+        if (table === "file_request_uploads") {
+          uploadCalls += 1;
+          if (uploadCalls === 1 && opts.firstUpload !== "row") return uploadsListBuilder;
+          return uploadRowBuilder;
+        }
+        return createMockBuilder({ data: null, error: null } as MockResult);
+      });
+
+      return { supabase, createSignedUrl, uploadRowBuilder };
+    }
+
+    it("lists uploads for the owning org", async () => {
+      mockUploadsFlow({ requestRow: { id: "fr-1" } });
+
+      const res = await request(app)
+        .get(`/api/v1/file-requests/fr-1/uploads?organization_id=${orgA}`)
+        .set("Authorization", "Bearer test-token");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data[0].file_name).toBe("invoice.pdf");
+    });
+
+    it("returns 404 for a request in another org (cross-org denial)", async () => {
+      const { createSignedUrl } = mockUploadsFlow({ requestRow: null });
+
+      const res = await request(app)
+        .get(`/api/v1/file-requests/fr-1/uploads?organization_id=${orgB}`)
+        .set("Authorization", "Bearer test-token");
+
+      expect(res.status).toBe(404);
+      expect(createSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it("mints a signed URL for an upload in the caller's org", async () => {
+      const { createSignedUrl } = mockUploadsFlow({
+        requestRow: { id: "fr-1" },
+        firstUpload: "row",
+        uploadRow: {
+          storage_bucket: "documents",
+          storage_path: `${orgA}/requests/tok/invoice.pdf`,
+          mime_type: "application/pdf",
+          file_name: "invoice.pdf",
+        },
+      });
+
+      const res = await request(app)
+        .get(`/api/v1/file-requests/fr-1/uploads/upload-1/signed-url?organization_id=${orgA}`)
+        .set("Authorization", "Bearer test-token");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.signedUrl).toBe("https://signed");
+      // Previewable type → inline (no attachment option).
+      expect(createSignedUrl).toHaveBeenCalledWith(
+        `${orgA}/requests/tok/invoice.pdf`,
+        3600,
+        undefined,
+      );
+    });
+
+    it("forces an attachment disposition for non-previewable uploads (FILE-P3-008)", async () => {
+      const { createSignedUrl } = mockUploadsFlow({
+        requestRow: { id: "fr-1" },
+        firstUpload: "row",
+        uploadRow: {
+          storage_bucket: "documents",
+          storage_path: `${orgA}/requests/tok/contract.docx`,
+          mime_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          file_name: "contract.docx",
+        },
+      });
+
+      const res = await request(app)
+        .get(`/api/v1/file-requests/fr-1/uploads/upload-1/signed-url?organization_id=${orgA}`)
+        .set("Authorization", "Bearer test-token");
+
+      expect(res.status).toBe(200);
+      expect(createSignedUrl).toHaveBeenCalledWith(
+        `${orgA}/requests/tok/contract.docx`,
+        3600,
+        { download: true },
+      );
+    });
+
+    it("returns 404 for an upload row outside the caller's org", async () => {
+      const { createSignedUrl } = mockUploadsFlow({
+        requestRow: { id: "fr-1" },
+        firstUpload: "row",
+        uploadRow: null,
+      });
+
+      const res = await request(app)
+        .get(`/api/v1/file-requests/fr-1/uploads/upload-1/signed-url?organization_id=${orgB}`)
+        .set("Authorization", "Bearer test-token");
+
+      expect(res.status).toBe(404);
+      expect(createSignedUrl).not.toHaveBeenCalled();
+    });
+  });
 });

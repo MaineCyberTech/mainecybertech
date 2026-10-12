@@ -39,7 +39,9 @@ export async function resolveChannels(
       .from("notification_preferences")
       .select("channel, enabled")
       .eq("user_id", input.userId)
-      .eq("module_key", input.module);
+      // NOTIF-P3-005: `module_key = 'all'` is the global opt-out row written
+      // by the unsubscribe endpoint; honour it for every module.
+      .in("module_key", [input.module, "all"]);
 
     if (input.organizationId) {
       query = query.eq("organization_id", input.organizationId);

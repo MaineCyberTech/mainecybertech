@@ -10026,6 +10026,30 @@ paths:
           description: "Internal server error"
       security:
         - bearerAuth: []
+  "/notifications/unsubscribe":
+    get:
+      tags:
+        - "Notifications"
+      summary: "One-click unsubscribe (signed token, no session)"
+      responses:
+        200:
+          description: "Success"
+        400:
+          description: "Bad request"
+        401:
+          description: "Unauthorized"
+        403:
+          description: "Forbidden"
+        500:
+          description: "Internal server error"
+      security: []
+      parameters:
+        - name: "token"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+          description: undefined
   "/notifications/{id}":
     delete:
       tags:

@@ -909,6 +909,16 @@ const billingNotifications: RouteDef[] = [
     tag: "Notifications",
   },
   {
+    // NOTIF-P3-005: public one-click unsubscribe; the signed token in the
+    // email is the only credential, so this is documented as unauthenticated.
+    method: "get",
+    path: "/notifications/unsubscribe",
+    summary: "One-click unsubscribe (signed token, no session)",
+    tag: "Notifications",
+    auth: false,
+    params: [queryParam("token")],
+  },
+  {
     method: "get",
     path: "/notifications/stream",
     summary: "SSE stream for real-time notifications",

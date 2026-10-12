@@ -66,6 +66,12 @@ jobs:
         # guard). Shared with test.yml's required test job.
         uses: ./.github/actions/terraform-state-restore-test
 
+      - name: Exercise storage restore verification
+        # FILE-P3-004: drive scripts/restore-storage.sh --verify-only against
+        # synthetic archives (valid + corrupt + encrypted) so the restore path
+        # is exercised on every run without live Spaces secrets.
+        run: bash scripts/exercise-storage-restore.sh
+
   test:
     timeout-minutes: 30
     runs-on: ubuntu-latest

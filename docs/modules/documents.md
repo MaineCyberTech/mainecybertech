@@ -43,3 +43,23 @@ Key tables: `documents` (metadata + version counter), `document_versions` (per-u
 
 - Admin: full CRUD + share link management + bulk operations
 - Client: read-only + upload to own org documents (portal)
+
+## Share links and revocation (FILE-P3-005)
+
+`GET /api/v1/documents/shares/:token` (public, token-only) validates the share
+row (not revoked, not expired, under `max_access`), then mints a signed Storage
+URL. That URL's lifetime is **5 minutes** (`SHARE_SIGNED_URL_TTL_SECONDS` in
+`apps/api/src/routes/documents.ts`) and it is always served with a download
+disposition. Signed Storage URLs cannot be revoked once issued, so revoking or
+deleting a share bounds the residual exposure of an already-issued URL to the
+5-minute window (previously 60 minutes); `max_access` is still enforced
+atomically at mint time.
+
+## Download disposition (FILE-P3-008)
+
+Authenticated signed-URL endpoints inspect the document's MIME type/extension
+(`apps/api/src/lib/preview-policy.ts`): previewable types (images except SVG,
+PDF, video, audio, text) are signed inline for the portal preview; every other
+type is signed with `Content-Disposition: attachment` so it cannot render from
+the storage origin. The web preview additionally sandboxes its PDF/text iframes
+and never treats SVG as a previewable image.

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { renderEmailLayout } from "@mct/sdk/email-template";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { getSupabaseAdmin } from "../services/supabase";
@@ -60,15 +61,13 @@ router.post("/test-email", rateLimitEmail, async (req, res, next) => {
       to,
       subject: "MCT Portal — Test Email",
       text: "This is a test email from the Maine CyberTech Portal. If you received this, SMTP is configured correctly.",
-      html: `
-        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-          <h1 style="color: #059669; margin-bottom: 16px;">✅ Test Email</h1>
-          <p style="color: #374151; line-height: 1.6;">This is a test email from the <strong>Maine CyberTech Portal</strong>.</p>
-          <p style="color: #374151; line-height: 1.6;">If you received this, SMTP is configured correctly.</p>
-          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-          <p style="color: #9ca3af; font-size: 12px;">Sent from the MCT Portal admin panel</p>
-        </div>
-      `,
+      // NOTIF-P3-001: use the shared layout so the admin test exercises the
+      // same branding as real notification mail.
+      html: renderEmailLayout({
+        heading: "✅ Test Email",
+        bodyHtml:
+          "<p>This is a test email from the <strong>Maine CyberTech Portal</strong>.</p><p>If you received this, SMTP is configured correctly.</p>",
+      }),
     });
 
     if (!sent) {

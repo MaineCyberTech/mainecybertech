@@ -11,7 +11,14 @@ import {
   claimNotificationEmail,
 } from "../notification-store";
 import { redactSensitiveContent } from "../notification-content";
-import { recordNotificationDelivery, recordNotificationSuppressed } from "../metrics";
+import { isEmailThrottled } from "../lib/notification-throttle";
+import { buildNotificationEmail } from "@mct/sdk/email-template";
+import { buildUnsubscribeUrl } from "../lib/unsubscribe-token";
+import {
+  recordNotificationDelivery,
+  recordNotificationSuppressed,
+  recordNotificationThrottled,
+} from "../metrics";
 
 interface NotificationPayload {
   type?: "task-due" | "membership-approved" | "ticket-responded" | "custom";
@@ -22,14 +29,56 @@ interface NotificationPayload {
   metadata?: Record<string, unknown>;
 }
 
-/** Escape user-controlled content before interpolating it into email HTML. */
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+/** Base URL for portal deep links and footer links (same convention as the API). */
+function appBaseUrl(): string {
+  return (env.APP_BASE_URL ?? env.API_BASE_URL ?? "").replace(/\/$/, "");
+}
+
+/**
+ * NOTIF-P3-001 / NOTIF-P3-005 / NOTIF-P3-007: one send path for every worker
+ * email. Builds the shared template (footer with preferences + signed
+ * unsubscribe links), enforces the per-recipient throttle, and records the
+ * terminal delivery outcome exactly once.
+ */
+async function sendNotificationEmail(opts: {
+  to: string;
+  userId: string;
+  organizationId?: string | null;
+  title: string;
+  body: string;
+  actionUrl?: string;
+  actionLabel?: string;
+}): Promise<boolean> {
+  if (await isEmailThrottled(opts.to)) {
+    recordNotificationThrottled("email");
+    logger.warn(
+      { userId: opts.userId, title: opts.title },
+      "Notification email throttled per recipient",
+    );
+    return false;
+  }
+
+  const baseUrl = appBaseUrl();
+  const email = buildNotificationEmail({
+    title: opts.title,
+    body: opts.body,
+    actionUrl: opts.actionUrl,
+    actionLabel: opts.actionLabel,
+    preferencesUrl: baseUrl ? `${baseUrl}/portal/notifications/preferences` : undefined,
+    unsubscribeUrl:
+      opts.organizationId && env.SUPABASE_SERVICE_ROLE_KEY
+        ? buildUnsubscribeUrl({
+            apiBaseUrl: baseUrl,
+            userId: opts.userId,
+            organizationId: opts.organizationId,
+            serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
+          })
+        : undefined,
+  });
+
+  const sent = await sendEmail({ to: opts.to, ...email });
+  recordNotificationDelivery("email", sent ? "success" : "failed");
+  return sent;
 }
 
 /**
@@ -99,11 +148,12 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
 
     switch (p.type) {
       case "task-due": {
-        const appBaseUrl = env.APP_BASE_URL ?? env.API_BASE_URL ?? "";
         const dueBefore = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
         const { data: tasks } = await supabase
           .from("project_tasks")
-          .select("id, title, due_at, owner_id, project_id, projects(name)")
+          // NOTIF-P3-006: carry the task's organization so preference lookups
+          // are per-org (the worker used to read every org's rows for the user).
+          .select("id, title, due_at, owner_id, project_id, organization_id, projects(name)")
           .not("due_at", "is", null)
           .lte("due_at", dueBefore)
           .neq("status", "done")
@@ -161,7 +211,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           const body = redactSensitiveContent(
             `"${taskTitle}"${isOverdue ? " is overdue" : " is due within 24 hours"}${projName ? ` in project ${projName}` : ""}.`,
           );
-          const link = `${appBaseUrl}/portal/projects/${task.project_id}`;
+          const link = `${appBaseUrl()}/portal/projects/${task.project_id}`;
 
           // Dedupe: the scan runs daily and a task can stay overdue for days,
           // so do not re-notify/re-email the same task within a week.
@@ -170,8 +220,11 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           // Enforce the recipient's per-module channel preferences. A disabled
           // in_app channel suppresses the row; a disabled email channel
           // suppresses the send but not the in-app row (and vice versa).
+          // NOTIF-P3-006: scoped to the task's org so another org's opt-out
+          // cannot silence this one.
           const channels = await resolveChannels(supabase, {
             userId: task.owner_id,
+            organizationId: task.organization_id,
             module: "projects",
           });
 
@@ -191,6 +244,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
             supabase,
             {
               userId: task.owner_id,
+              organizationId: task.organization_id,
               title,
               body,
               module: "projects",
@@ -213,13 +267,15 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
               "Task-due email already claimed by another run — skipping",
             );
           } else {
-            const emailSent = await sendEmail({
+            const emailSent = await sendNotificationEmail({
               to: profile.email,
-              subject: `[Maine CyberTech] ${title}: ${taskTitle}`,
-              text: `Hello ${profile.full_name ?? "there"},\n\n${body}\n\nView your project: ${link}`,
-              html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(body)}</p><p><a href="${link}">View project</a></p>`,
+              userId: task.owner_id,
+              organizationId: task.organization_id,
+              title: `${title}: ${taskTitle}`,
+              body: `Hello ${profile.full_name ?? "there"},\n\n${body}`,
+              actionUrl: link,
+              actionLabel: "View project",
             });
-            recordNotificationDelivery("email", emailSent ? "success" : "failed");
             if (emailSent) emailed++;
           }
 
@@ -256,6 +312,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           "system",
           undefined,
           "created",
+          p.organizationId ?? null,
         );
 
         logger.info({ userId: p.targetUserId }, "Membership approved notification sent");
@@ -280,6 +337,9 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
 
         const channels = await resolveChannels(supabase, {
           userId: p.targetUserId,
+          // NOTIF-P3-006: scope the preference lookup to the notification's
+          // organization so another org's opt-out cannot silence this channel.
+          organizationId: p.organizationId,
           module: "tickets",
         });
 
@@ -300,6 +360,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           supabase,
           {
             userId: p.targetUserId,
+            organizationId: p.organizationId,
             title: ticketTitle,
             body: ticketBody,
             module: "tickets",
@@ -322,13 +383,20 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
             "Ticket-responded email already claimed by another run — skipping",
           );
         } else {
-          const emailSent = await sendEmail({
+          // NOTIF-P3-008: percent-encode the caller-controlled ticket id before
+          // it becomes a path segment, and let the shared template escape the
+          // final URL — the worker twin of the API's CodeQL js/xss fix.
+          const ticketIdSegment = ticketId ? encodeURIComponent(ticketId) : "";
+          const ticketLink = `${appBaseUrl()}/portal/tickets/${ticketIdSegment}`;
+          await sendNotificationEmail({
             to: profile.email,
-            subject: `[Maine CyberTech] ${ticketTitle}`,
-            text: `Hello ${profile.full_name ?? "there"},\n\n${ticketBody}\n\nView: ${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}`,
-            html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(ticketBody)}</p><p><a href="${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}">View ticket</a></p>`,
+            userId: p.targetUserId,
+            organizationId: p.organizationId,
+            title: ticketTitle,
+            body: `Hello ${profile.full_name ?? "there"},\n\n${ticketBody}`,
+            actionUrl: ticketLink,
+            actionLabel: "View ticket",
           });
-          recordNotificationDelivery("email", emailSent ? "success" : "failed");
         }
 
         logger.info(
@@ -356,6 +424,8 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
 
         const channels = await resolveChannels(supabase, {
           userId: p.targetUserId,
+          // NOTIF-P3-006: org-scoped preference lookup (was org-agnostic).
+          organizationId: p.organizationId,
           module: "system",
         });
 
@@ -375,6 +445,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           supabase,
           {
             userId: p.targetUserId,
+            organizationId: p.organizationId,
             title: customTitle,
             body: customBody,
             module: "system",
@@ -397,13 +468,13 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
             "Custom notification email already claimed by another run — skipping",
           );
         } else {
-          const emailSent = await sendEmail({
+          await sendNotificationEmail({
             to: profile.email,
-            subject: `[Maine CyberTech] ${customTitle}`,
-            text: `Hello ${profile.full_name ?? "there"},\n\n${customBody}`,
-            html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(customBody)}</p>`,
+            userId: p.targetUserId,
+            organizationId: p.organizationId,
+            title: customTitle,
+            body: `Hello ${profile.full_name ?? "there"},\n\n${customBody}`,
           });
-          recordNotificationDelivery("email", emailSent ? "success" : "failed");
         }
 
         logger.info({ userId: p.targetUserId, title: customTitle }, "Custom notification sent");

@@ -72,6 +72,14 @@ export const notificationSuppressedTotal = new promClient.Counter({
   registers: [register],
 });
 
+/** NOTIF-P3-007: sends dropped by the worker-side per-recipient email throttle. */
+export const notificationThrottledTotal = new promClient.Counter({
+  name: "worker_notification_throttled_total",
+  help: "Total number of worker notification emails dropped by the per-recipient throttle",
+  labelNames: ["channel"] as const,
+  registers: [register],
+});
+
 export const webhookDeliveriesTotal = new promClient.Counter({
   name: "worker_webhook_deliveries_total",
   help: "Total outbound webhook delivery attempts by outcome",
@@ -122,6 +130,11 @@ export function recordNotificationSuppressed(
   module: string,
 ): void {
   notificationSuppressedTotal.inc({ channel, module });
+}
+
+/** Record that a send was dropped by the per-recipient throttle (NOTIF-P3-007). */
+export function recordNotificationThrottled(channel: "in_app" | "email" | "push"): void {
+  notificationThrottledTotal.inc({ channel });
 }
 
 /**
