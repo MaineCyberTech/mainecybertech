@@ -48,12 +48,14 @@
 | `audit-gate.mjs` | Dependency vulnerability gate for all scopes — see `docs/DEPENDENCY_POLICY.md`. |
 | `license-gate.mjs` | License allow/deny gate with documented exceptions — see `docs/LICENSE_POLICY.md`. |
 | `check-required-checks.mjs` | Fail when a required branch-protection context is not emitted by any workflow, or is emitted by a path-filtered `pull_request` workflow (BP-P2-004/BP-P2-005/CI-P2-009). |
+| `branch-protection-audit.mjs` | Drift detection (committed `.github/branch-protection/*.json` vs live settings, normalized) and bypass audit (merged PRs into `main`/`develop` whose head check-runs missed or failed a required context) — BP-P2-002/BP-P2-003. |
 | `sync-product-catalog.mjs` | Keep `apps/api/src/data/products.json` byte-identical to the canonical `apps/web/lib/catalog/data/products.json` (HYGIENE-P2-002); `check` runs in the shared unit-tests action. |
 | `ci/check-required-checks.sh` | Self-test for `check-required-checks.mjs`: runs the guard on the live tree plus a path-filtered negative fixture. |
+| `ci/check-branch-protection-audit.sh` | Self-test for `branch-protection-audit.mjs`: matching/drifted/unprotected protection fixtures plus clean/bypass merged-PR fixtures. |
 
 ## Subdirectories
 
 | Directory | Purpose |
 | --------- | ------- |
-| `ci/` | CI helper scripts and guard self-tests (`generate_badges.py`, `history_logger.py`, `check-migration-transactions.sh`, `check-required-checks.sh`). |
+| `ci/` | CI helper scripts and guard self-tests (`generate_badges.py`, `history_logger.py`, `check-migration-transactions.sh`, `check-required-checks.sh`, `check-branch-protection-audit.sh`). |
 | `load-testing/` | Load-test scripts (smoke, auth, SSE, tickets) — see its `README.md`. |

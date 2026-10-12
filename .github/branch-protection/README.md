@@ -48,3 +48,26 @@ Notes:
   (BP-P2-004 / CI-P2-009) so the check always reports.
 - `strict: true` requires the branch to be up to date before merging.
 - `allow_force_pushes` / `allow_deletions` are disabled on both branches.
+
+## Drift detection and break-glass (BP-P2-002 / BP-P2-003)
+
+- `Branch Protection Audit` (`.github/workflows/branch-protection-audit.yml`,
+  Mondays 07:45 UTC + manual dispatch) compares these payloads with the live
+  settings, fails (ntfy alert) on any difference and uploads both sides as
+  artifacts. It also lists PRs merged into `main`/`develop` whose head-SHA
+  check-runs did not satisfy the required contexts that were live on the
+  branch, and opens a deduplicated `[break-glass]` issue per bypass.
+- The same checks run locally (the protection read needs `administration: read`;
+  the workflow uses the repo secret `BRANCH_PROTECTION_READ_TOKEN` for it):
+
+  ```bash
+  GH_TOKEN=<admin token> node scripts/branch-protection-audit.mjs --mode drift \
+    --repo MaineCyberTech/mainecybertech
+  GH_TOKEN=<admin token> node scripts/branch-protection-audit.mjs --mode bypass \
+    --repo MaineCyberTech/mainecybertech --lookback-days 14
+  ```
+
+- If a required check is stuck, do not bypass ad hoc: follow
+  [`docs/RUNBOOK_EMERGENCY_MERGE.md`](../../docs/RUNBOOK_EMERGENCY_MERGE.md)
+  (approval, time-box, record issue, restoration evidence, post-incident
+  review).

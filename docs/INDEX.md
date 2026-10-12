@@ -112,6 +112,7 @@
 | [UPGRADE.md](UPGRADE.md)                                                                       | Breaking changes and upgrade manifest for the current migration window |
 | [RELEASE_GATE.md](RELEASE_GATE.md)                                                             | Release-readiness gate: exit criteria, fail-closed decisions, go-live checklist |
 | [CI.md](CI.md)                                                                                 | GitHub Actions workflows: triggers, filters, gates, triage-only |
+| [RUNBOOK_EMERGENCY_MERGE.md](RUNBOOK_EMERGENCY_MERGE.md)                                       | Branch-protection break-glass: approval, time-box, record issue, post-incident review (BP-P2-002) |
 | [PERFORMANCE.md](PERFORMANCE.md)                                                               | Response caching, rate limits, DB indexes, web performance      |
 | [MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md)                                       | Monitoring strategy, alerting setup, dashboards                 |
 | [ALERT_PATH_EXERCISE.md](ALERT_PATH_EXERCISE.md)                                               | Alert-delivery / dead-man's-switch exercise + evidence (OBS-P2-014) |
