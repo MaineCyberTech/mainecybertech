@@ -57,6 +57,13 @@ everything else so the error boundary handles 5xx.
 dialog and restores focus on close. Every `role="dialog"` should use it, plus an
 `aria-labelledby`/`aria-label` and Escape-to-close.
 
+Every modal panel must cap its height and scroll internally so tall forms stay
+reachable on small viewports: `max-h-[90vh] overflow-y-auto` plus a
+viewport-pinned width (`w-[calc(100vw-2rem)] min-w-0 max-w-*`), as in
+`PromoForm.tsx`, `CategoryForm.tsx` and the shared `Dialog`. Overlay-level
+scroll (`fixed inset-0 ... overflow-y-auto` with a `my-8` panel) is also
+accepted for long content, e.g. `AdminProjectsClient`.
+
 `apps/web/components/admin/ConfirmDialog.tsx` is the standard confirmation
 dialog (focus-trapped, Escape-to-close, labelled). Use it instead of
 `window.confirm`; for submit buttons use `ConfirmIntentButton`, which opens the
@@ -80,6 +87,10 @@ dialog and re-submits the form with the button as submitter on confirm.
   `toLocaleDateString`/`toLocaleString`/`Intl.NumberFormat` in pages.
 - Toasts use `components/ui/ToastProvider` + `useToast().pushToast(tone, message, title?)`;
   do not add per-component toast state or renderers.
+- Shared controls come from `@mct/ui` (`Button`, `Input`/`Textarea`, `Dialog`,
+  `Badge`): do not hand-roll new `cyber-button*`/`cyber-input` controls. The
+  remaining call sites are being migrated in batches — see the adoption plan in
+  [ui-kit.md](ui-kit.md#adoption-plan).
 - The theme is dark-only; `ThemeProvider` is pinned (`defaultTheme="dark"`).
 
 ## Accessibility scanning

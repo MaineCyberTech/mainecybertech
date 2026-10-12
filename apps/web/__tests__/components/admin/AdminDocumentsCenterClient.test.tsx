@@ -373,6 +373,11 @@ describe("AdminDocumentsCenterClient", () => {
       await userEvent.click(screen.getByRole("button", { name: "New Document" }));
       expect(screen.getAllByText("Create Document").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByRole("button", { name: "Create Document" })).toBeInTheDocument();
+
+      const dialog = screen.getByRole("dialog");
+      expect(dialog.className).toContain("max-h-[90vh]");
+      expect(dialog.className).toContain("overflow-y-auto");
+      expect(dialog.className).toContain("w-[calc(100vw-2rem)]");
     });
 
     it("closes create modal when Close clicked", async () => {

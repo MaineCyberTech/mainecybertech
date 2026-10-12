@@ -265,3 +265,32 @@ existing `cyber-*` CSS utilities remain valid.
 Also exported from `@mct/ui`: `SidebarGroup`/`SidebarItem`, `ThemeProvider`
 (pinned dark in the web root layout), `cn()`, design tokens and the
 `useTheme` hook.
+
+### Adoption plan
+
+`@mct/ui` is the standard for new self-contained components; the `cyber-*`
+utilities remain supported while the backlog is migrated. Do not hand-roll new
+`Button`/`Input`/`Dialog` equivalents.
+
+- **Already on the primitives:** the public auth pages and
+  `DocumentShareClient`.
+- **Migrated in the dialogs/UI-kit batch:** `ConfirmDialog`,
+  `documents/ConfirmModal`, `AdminDocumentsBulkControls`,
+  `documents/CreateDocumentModal`, `CategoryForm`, `ProductForm`.
+
+Remaining, highest-traffic first — migrate when touching the file (counts as of
+this batch):
+
+| File | Hand-rolled controls |
+| --- | --- |
+| `apps/web/components/admin/documents/DocumentLibrary.tsx` | 20 `cyber-button*` (some on `<Link>`) |
+| `apps/web/components/admin/ProjectTaskListV5.tsx` | 8 buttons, 17 inputs |
+| `apps/web/components/admin/AdminTicketCenterClient.tsx` | 9 buttons, 12 inputs |
+| `apps/web/app/(admin)/admin/tickets/[ticketId]/page.tsx` | 9 buttons, 8 inputs |
+| `apps/web/app/(admin)/admin/projects/AdminProjectsClient.tsx` | 7 buttons, 11 inputs |
+| `apps/web/components/admin/documents/DocumentDrawer.tsx` | 10 buttons, 7 inputs |
+| `apps/web/components/portal/SupportCenterClient.tsx` | 5 buttons, 4 inputs |
+
+Also on the backlog: promote one shared `Chip` (four copies today, UX-P3-001)
+and `ConfirmDialog` into the package, and add test/lint scripts to
+`packages/ui`.

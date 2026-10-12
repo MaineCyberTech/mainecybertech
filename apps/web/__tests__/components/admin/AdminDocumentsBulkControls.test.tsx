@@ -60,6 +60,23 @@ describe("AdminDocumentsBulkControls", () => {
     expect(screen.getByPlaceholderText("Example: Client Uploads / Q2")).toBeInTheDocument();
   });
 
+  it("caps both modal panels and scrolls internally for small viewports", () => {
+    renderBulk(<AdminDocumentsBulkControls {...defaultProps} />);
+
+    fireEvent.click(screen.getByText("Bulk folder reassignment"));
+    const folderDialog = screen.getByRole("dialog");
+    expect(folderDialog.className).toContain("max-h-[90vh]");
+    expect(folderDialog.className).toContain("overflow-y-auto");
+    expect(folderDialog.className).toContain("w-[calc(100vw-2rem)]");
+    fireEvent.click(screen.getByText("Cancel"));
+
+    fireEvent.click(screen.getByText("Bulk metadata edit"));
+    const metadataDialog = screen.getByRole("dialog");
+    expect(metadataDialog.className).toContain("max-h-[90vh]");
+    expect(metadataDialog.className).toContain("overflow-y-auto");
+    expect(metadataDialog.className).toContain("w-[calc(100vw-2rem)]");
+  });
+
   it("opens metadata modal when bulk metadata button clicked", () => {
     renderBulk(<AdminDocumentsBulkControls {...defaultProps} />);
     fireEvent.click(screen.getByText("Bulk metadata edit"));
