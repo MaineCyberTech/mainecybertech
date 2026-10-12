@@ -121,7 +121,7 @@ export function Dialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="absolute top-3 right-3 z-10 flex-shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200"
+            className="absolute top-3 right-3 z-10 -m-1.5 flex-shrink-0 rounded-lg p-3 text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200"
             aria-label="Close dialog"
           >
             <X className="h-5 w-5" aria-hidden="true" />

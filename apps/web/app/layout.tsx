@@ -1,5 +1,5 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Orbitron } from "next/font/google";
 import { ThemeProvider } from "@mct/ui/providers/ThemeProvider";
 import { colors } from "@mct/ui/tokens";
@@ -24,9 +24,19 @@ export const metadata: Metadata = {
   description: "Secure MSP client and admin portal",
   applicationName: "MCT Portal",
   icons: {
-    icon: "/favicon.svg",
+    // MOB-P3-005: declare the real ICO plus the SVG, and the iOS touch icon.
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.webmanifest",
+};
+
+// MOB-P3-004: `themeColor` is ignored in `metadata` (Next.js 15 warns and never
+// emits the tag); it must live in the viewport export.
+export const viewport: Viewport = {
   themeColor: colors.cyber.accent,
 };
 

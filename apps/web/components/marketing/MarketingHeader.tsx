@@ -91,7 +91,7 @@ export default function MarketingHeader() {
 
         <button
           ref={hamburgerBtnRef}
-          className="flex flex-col gap-[5px] sm:hidden"
+          className="-m-3.5 flex flex-col gap-[5px] p-3.5 sm:hidden"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-expanded={menuOpen}
           aria-label="Toggle navigation menu"

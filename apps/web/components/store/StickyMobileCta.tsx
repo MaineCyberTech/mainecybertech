@@ -48,7 +48,7 @@ export default function StickyMobileCta({ href, label, revealAfter = 600 }: Stic
           type="button"
           onClick={() => setDismissed(true)}
           aria-label="Dismiss quick action"
-          className="rounded p-1 text-slate-400 transition hover:bg-white/5 hover:text-white"
+          className="-m-2.5 rounded p-3.5 text-slate-400 transition hover:bg-white/5 hover:text-white"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path

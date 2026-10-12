@@ -251,13 +251,19 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-white/10 bg-cyber-base shadow-2xl">
+        // MOB-P3-003: on phones the panel anchors to the viewport (the bell is
+        // inset by the header actions, so `absolute right-0` clipped off-screen);
+        // from `sm` up it returns to the usual bell-anchored dropdown.
+        <div
+          data-testid="notification-panel"
+          className="fixed right-2 top-16 z-50 w-[min(20rem,calc(100vw_-_2rem))] rounded-lg border border-white/10 bg-cyber-base shadow-2xl sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:w-80"
+        >
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <span className="text-sm font-semibold text-slate-200">Notifications</span>
             {notifications.length > 0 ? (
               <button
                 onClick={handleMarkAllRead}
-                className="text-xs text-emerald-400 hover:text-emerald-300"
+                className="-m-3.5 p-3.5 text-xs text-emerald-400 hover:text-emerald-300"
               >
                 Mark all read
               </button>
@@ -296,7 +302,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
                         e.stopPropagation();
                         handleMarkRead(n.id);
                       }}
-                      className="shrink-0 rounded p-1 text-slate-600 opacity-0 transition hover:text-slate-300 focus:opacity-100 group-hover:opacity-100"
+                      className="-m-3 shrink-0 rounded p-4 text-slate-600 opacity-0 transition hover:text-slate-300 focus:opacity-100 group-hover:opacity-100"
                       title="Dismiss"
                       aria-label="Dismiss notification"
                     >
