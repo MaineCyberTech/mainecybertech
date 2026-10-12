@@ -22,11 +22,8 @@ import { queryInt } from "../lib/query";
 import { applyOrgScope, resolveAdminTenantScope } from "../lib/admin-scope";
 import { parsePartialUpdate } from "../lib/validators";
 import { sanitizeSearchTerm } from "../lib/search";
-<<<<<<< HEAD
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
-=======
 import { goneRoute } from "../lib/deprecated-route";
->>>>>>> 46e005b5 (fix(search,features): FTS+prefix indexes, AI draft review gate, single canonical API surface per table)
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);

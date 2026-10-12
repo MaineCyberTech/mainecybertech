@@ -116,37 +116,6 @@ describe("Edu Automation API", () => {
       ["/api/v1/edu-automation/insurance/ev-1", "/api/v1/insurance-binder"],
     ] as const;
 
-<<<<<<< HEAD
-  it("updates a sop item", async () => {
-    const s = ma();
-    s.from.mockReturnValue(
-      createMockBuilder({ data: { id: "sop-1", title: "Updated SOP" }, error: null }),
-    );
-    const r = await request(app)
-      .patch("/api/v1/edu-automation/sop/sop-1")
-      .set("Authorization", auth)
-      .send({ title: "Updated SOP" });
-    expect(r.status).toBe(200);
-  });
-
-  it("returns 404 when updating nonexistent sop", async () => {
-    const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
-    const r = await request(app)
-      .patch("/api/v1/edu-automation/sop/missing-id")
-      .set("Authorization", auth)
-      .send({ title: "Updated" });
-    expect(r.status).toBe(404);
-  });
-
-  it("deletes a sop item", async () => {
-    const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
-    const r = await request(app)
-      .delete("/api/v1/edu-automation/sop/sop-1")
-      .set("Authorization", auth).send({ confirm: true });
-    expect(r.status).toBe(204);
-=======
     for (const [path, canonical] of deprecated) {
       it(`returns 410 with a successor link for ${path}`, async () => {
         ma();
@@ -156,7 +125,6 @@ describe("Edu Automation API", () => {
         expect(r.headers.deprecation).toBe("true");
       });
     }
->>>>>>> 46e005b5 (fix(search,features): FTS+prefix indexes, AI draft review gate, single canonical API surface per table)
   });
 
   it("creates a training module", async () => {
