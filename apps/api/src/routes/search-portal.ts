@@ -32,6 +32,9 @@ router.get("/", async (req, res, next) => {
     const user = req.authUser!;
     const supabase = getScopedClient(req, "search-portal", "read");
     const searchTerm = `%${q}%`;
+    // SEARCH-P2-006: same generated `search_vector` full-text branch as the
+    // admin search (wfts = websearch_to_tsquery; never raises on user text).
+    const ftsTerm = `search_vector.wfts(english).${q}`;
 
     const { data: memberships, error: mErr } = await supabase
       .from("memberships")
@@ -55,13 +58,13 @@ router.get("/", async (req, res, next) => {
         .from("tickets")
         .select("id, title, status, priority")
         .in("organization_id", orgIds)
-        .or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`)
+        .or(`title.ilike.${searchTerm},description.ilike.${searchTerm},${ftsTerm}`)
         .limit(RESULT_LIMIT),
       supabase
         .from("projects")
         .select("id, name, status, priority")
         .in("organization_id", orgIds)
-        .or(`name.ilike.${searchTerm},description.ilike.${searchTerm}`)
+        .or(`name.ilike.${searchTerm},description.ilike.${searchTerm},${ftsTerm}`)
         .limit(RESULT_LIMIT),
       // SEARCH-P2-002: documents are part of the portal search contract (the
       // SDK's PortalSearchResult and the module docs promise them) and were
@@ -72,7 +75,7 @@ router.get("/", async (req, res, next) => {
         .from("documents")
         .select("id, name, mime_type, visibility, organization_id, uploaded_by")
         .in("organization_id", orgIds)
-        .or(`name.ilike.${searchTerm},mime_type.ilike.${searchTerm}`)
+        .or(`name.ilike.${searchTerm},mime_type.ilike.${searchTerm},${ftsTerm}`)
         .limit(DOCUMENT_FETCH_LIMIT),
     ]);
 

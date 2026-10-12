@@ -6,7 +6,13 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { loadOwned } from "../lib/tenant";
-import { triageInputSchema, convertTriageSchema, copilotReplyDraftSchema } from "../validators/ai";
+import {
+  triageInputSchema,
+  convertTriageSchema,
+  copilotReplyDraftSchema,
+  createAiDraftSchema,
+  reviewAiDraftSchema,
+} from "../validators/ai";
 import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
@@ -169,6 +175,42 @@ function analyzeDescription(text: string) {
   };
 }
 
+// FEAT-P2-004: the feature docs promise that AI outputs are stored in
+// `ai_draft_outputs` with `status = 'draft'` and only applied after human
+// review. Every AI route that produces content persists a draft row here and
+// the review endpoint below is the only path that moves a row out of `draft`.
+async function persistAiDraft(
+  supabase: ReturnType<typeof getScopedClient>,
+  input: {
+    organizationId: string;
+    moduleKey: string;
+    promptKey?: string | null;
+    promptVersion?: string | null;
+    draftContent: Record<string, unknown>;
+    sourceEntityType?: string | null;
+    sourceEntityId?: string | null;
+    userId: string;
+  },
+) {
+  const { data, error } = await supabase
+    .from("ai_draft_outputs")
+    .insert({
+      organization_id: input.organizationId,
+      module_key: input.moduleKey,
+      prompt_key: input.promptKey ?? null,
+      prompt_version: input.promptVersion ?? null,
+      draft_content: input.draftContent,
+      status: "draft",
+      source_entity_type: input.sourceEntityType ?? null,
+      source_entity_id: input.sourceEntityId ?? null,
+      created_by: input.userId,
+    } as never)
+    .select()
+    .single();
+  if (error) throw new AppError("DB_ERROR", error.message, 500);
+  return data;
+}
+
 // Portal AI triage is gated on `ai:view` (matches the route map); without a
 // guard any approved org member — including client roles — could create drafts.
 router.post("/triage/analyze", requirePermission("ai", "view"), async (req, res, next) => {
@@ -193,6 +235,17 @@ router.post("/triage/analyze", requirePermission("ai", "view"), async (req, res,
       .single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    // FEAT-P2-004: record the AI output in the documented review-gate table.
+    await persistAiDraft(supabase, {
+      organizationId: parsed.organizationId,
+      moduleKey: "ticket-triage",
+      promptKey: "triage/analyze",
+      draftContent: analysis as unknown as Record<string, unknown>,
+      sourceEntityType: "ticket_triage_draft",
+      sourceEntityId: data.id,
+      userId: req.authUser!.userId,
+    });
 
     await logAuditEvent({
       organizationId: parsed.organizationId,
@@ -409,6 +462,17 @@ router.post("/copilot/:ticketId/reply-draft", async (req, res, next) => {
       "Maine CyberTech Support",
     ].join("\n");
 
+    // FEAT-P2-004: persist the draft for the documented human review gate.
+    await persistAiDraft(supabase, {
+      organizationId: parsed.organizationId,
+      moduleKey: "ai-copilot",
+      promptKey: "copilot/reply-draft",
+      draftContent: { draftReply, tone: parsed.tone },
+      sourceEntityType: "ticket",
+      sourceEntityId: String(req.params.ticketId),
+      userId: req.authUser!.userId,
+    });
+
     await logAuditEvent({
       organizationId: parsed.organizationId,
       actorUserId: req.authUser!.userId,
@@ -424,6 +488,133 @@ router.post("/copilot/:ticketId/reply-draft", async (req, res, next) => {
         tone: parsed.tone,
       }),
     );
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ── AI draft review gate (FEAT-P2-004) ─────────────────────────────
+//
+// `ai_draft_outputs` is the documented store for AI-generated content
+// (status 'draft') and the human review gate before it is applied. These
+// endpoints are the only write path: create persists a draft, review is the
+// only transition out of 'draft' and records reviewer identity + notes.
+
+router.post("/drafts", requirePermission("ai", "create"), async (req, res, next) => {
+  try {
+    const parsed = createAiDraftSchema.parse(req.body);
+    const supabase = getScopedClient(req, "ai", "write");
+    const draft = await persistAiDraft(supabase, {
+      ...parsed,
+      userId: req.authUser!.userId,
+    });
+    await logAuditEvent({
+      organizationId: parsed.organizationId,
+      actorUserId: req.authUser!.userId,
+      action: "ai_draft.created",
+      entityType: "ai_draft_output",
+      entityId: (draft as { id: string } | null)?.id,
+      metadata: { moduleKey: parsed.moduleKey, promptKey: parsed.promptKey ?? null },
+    });
+    res.status(201).json(success(draft));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/drafts", requirePermission("ai", "view"), async (req, res, next) => {
+  try {
+    const supabase = getScopedClient(req, "ai", "read");
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
+    const offset = (page - 1) * limit;
+
+    let q = supabase.from("ai_draft_outputs").select("*", { count: "exact" });
+    const orgId = req.query.organization_id as string | undefined;
+    if (orgId) q = q.eq("organization_id", orgId);
+    if (req.query.status) q = q.eq("status", req.query.status as string);
+    if (req.query.module_key) q = q.eq("module_key", req.query.module_key as string);
+
+    const { data, error, count } = await q
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(
+      success({ items: data ?? [], total: count ?? 0, page, limit } as PaginatedResult<unknown>),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/drafts/:id", requirePermission("ai", "view"), async (req, res, next) => {
+  try {
+    const supabase = getScopedClient(req, "ai", "read");
+    const { data, error } = await supabase
+      .from("ai_draft_outputs")
+      .select("*")
+      .eq("id", String(req.params.id))
+      .eq("organization_id", req.query.organization_id as string)
+      .single();
+    if (error || !data) throw new AppError("NOT_FOUND", "Draft not found", 404);
+    res.json(success(data));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/drafts/:id/review", requirePermission("ai", "edit"), async (req, res, next) => {
+  try {
+    const parsed = reviewAiDraftSchema.parse(req.body);
+    const supabase = getScopedClient(req, "ai", "write");
+    const orgId = req.query.organization_id as string;
+
+    const { data: current, error: fetchError } = await supabase
+      .from("ai_draft_outputs")
+      .select("*")
+      .eq("id", String(req.params.id))
+      .eq("organization_id", orgId)
+      .single();
+    if (fetchError || !current) throw new AppError("NOT_FOUND", "Draft not found", 404);
+
+    // The review gate is one-way: an output that has already been reviewed
+    // (approved/rejected) cannot be re-decided through this endpoint.
+    if ((current as { status: string }).status !== "draft") {
+      throw new AppError("CONFLICT", "Only draft outputs can be reviewed", 409);
+    }
+
+    const approvedContent =
+      parsed.decision === "approved"
+        ? (parsed.approvedContent ?? (current as { draft_content: unknown }).draft_content)
+        : null;
+
+    const { data, error } = await supabase
+      .from("ai_draft_outputs")
+      .update({
+        status: parsed.decision,
+        reviewed_by: req.authUser!.userId,
+        reviewed_at: new Date().toISOString(),
+        review_notes: parsed.reviewNotes ?? null,
+        approved_content: approvedContent,
+      } as never)
+      .eq("id", String(req.params.id))
+      .eq("organization_id", orgId)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    await logAuditEvent({
+      organizationId: orgId,
+      actorUserId: req.authUser!.userId,
+      action: "ai_draft.reviewed",
+      entityType: "ai_draft_output",
+      entityId: String(req.params.id),
+      metadata: {
+        decision: parsed.decision,
+        moduleKey: (current as { module_key: string }).module_key,
+      },
+    });
+    res.json(success(data));
   } catch (error) {
     next(error);
   }

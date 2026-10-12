@@ -48,15 +48,6 @@ export const dns = z.object({
   proposedValue: z.string().max(2000).optional().nullable(),
   currentValue: z.string().max(2000).optional().nullable(),
 });
-export const pulse = z.object({
-  organizationId: z.string().uuid(),
-  subject: z.string().min(1).max(500),
-  question: z.string().max(1000).optional().nullable(),
-  rating: z.number().int().min(0).max(10).default(5),
-  feedback: z.string().max(5000).optional().nullable(),
-  source: z.string().default("ticket"),
-  sourceEntityId: z.string().uuid().optional().nullable(),
-});
 export const time = z.object({
   organizationId: z.string().uuid(),
   description: z.string().min(1).max(5000),

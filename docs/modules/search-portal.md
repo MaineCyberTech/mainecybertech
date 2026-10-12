@@ -13,7 +13,7 @@ Org-scoped search for portal users. Performs parallel queries across tickets and
 - Minimum 2-character search requirement
 - Scoped to user's organization memberships
 - Parallel queries across tickets and projects
-- ILIKE-based text matching for partial matches
+- ILIKE-based substring matching, plus a full-text (`tsvector`) branch for tickets/projects/documents
 - Results grouped by entity type
 
 ## Endpoints
