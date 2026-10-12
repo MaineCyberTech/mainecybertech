@@ -1,4 +1,6 @@
 {
+  "historical": true,
+  "historical_note": "EXEC-P3-001: historical alignment-engine snapshot; APPROVED_FOR_PROD_DEPLOY is not a current release decision (the sibling release_decision.json records BLOCKED for a different commit). Do not cite as release evidence; see prompts/PROVENANCE.md.",
   "p0": 0,
   "p1": 0,
   "p2": 3,

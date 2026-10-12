@@ -90,6 +90,7 @@
 | [portal_admin_permissions_guide.md](portal_admin_permissions_guide.md)           | Permissions, access control, and security flow     |
 | [GITHUB_SECRETS_AND_VARIABLES_MATRIX.md](GITHUB_SECRETS_AND_VARIABLES_MATRIX.md) | Required GitHub secrets and variables              |
 | [SECRETS_ROTATION.md](SECRETS_ROTATION.md)                                       | Rotation runbook: per-class procedures, evidence log, emergency rotation |
+| [SECRET_ROTATION_RUNBOOK.md](SECRET_ROTATION_RUNBOOK.md)                         | IT break-glass access, per-credential revocation, escrow + drill record |
 | [JWT_ROTATION.md](JWT_ROTATION.md)                                               | Supabase signing-secret rotation + API verification copy |
 | [LICENSE_POLICY.md](LICENSE_POLICY.md)                                           | Allowed/denied dependency licenses + exceptions    |
 | [DEPENDENCY_POLICY.md](DEPENDENCY_POLICY.md)                                     | Vulnerability gate, overrides, update governance   |
@@ -97,6 +98,7 @@
 | [RTO_RPO.md](RTO_RPO.md)                                                         | Recovery time objective / recovery point objective |
 | [PRIVACY.md](PRIVACY.md)                                                         | Data classification, retention schedule, DSAR pointer |
 | [SUBPROCESSORS.md](SUBPROCESSORS.md)                                             | Vendor/purpose/data/region/DPA subprocessor list   |
+| [ANALYTICS_GOVERNANCE.md](ANALYTICS_GOVERNANCE.md)                               | Analytics consent model, event catalog, retention, vendors |
 
 ## Incident Response & Continuity
 
@@ -105,6 +107,8 @@
 | [INCIDENT_RESPONSE.md](INCIDENT_RESPONSE.md)                                                   | Platform incident response plan: severity, roles, phases, comms, postmortem |
 | [DATA_BREACH_RESPONSE.md](DATA_BREACH_RESPONSE.md)                                             | Data-breach response, assessment, Legal-gated notification decision |
 | [PLATFORM_FAILURE_RUNBOOKS.md](PLATFORM_FAILURE_RUNBOOKS.md)                                   | Operator runbooks for the top failure modes + drill record       |
+| [runbooks/backup-restore-drill-plan.md](runbooks/backup-restore-drill-plan.md)                 | D1–D7 backup/restore drill plan (relocated stable path, DR-P3-001) |
+| [runbooks/backup-restore-drill-ledger.md](runbooks/backup-restore-drill-ledger.md)             | Drill results ledger (planned/executed rows)                     |
 | [STATUS_AND_COMMUNICATION.md](STATUS_AND_COMMUNICATION.md)                                     | Platform status/communication surface (ntfy `portal-status`)     |
 | [INCIDENT_TABLETOP_SCENARIOS.md](INCIDENT_TABLETOP_SCENARIOS.md)                               | 12-scenario tabletop catalog + readiness inventory               |
 | [INCIDENT_TABLETOP_DRYRUN_2026-10-11.md](INCIDENT_TABLETOP_DRYRUN_2026-10-11.md)               | First recorded tabletop exercise (IR-011 desk dry-run)           |

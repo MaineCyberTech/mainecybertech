@@ -66,6 +66,8 @@ self-tests in `ci/` so a broken detector cannot pass silently.
 | `openapi-audit.js` | Fail when a statically-resolvable Express route is missing from the generated OpenAPI spec. |
 | `check-permission-catalog.mjs` | Fail when a `requirePermission` literal, a live RLS `user_has_permission` predicate, or a `registerCrud` module key references a pair absent from the permission catalog (ACM-P3-002 / EVOL-P3-002). |
 | `public-route-inventory.mjs` | Generate `docs/PUBLIC_ROUTES.md` from the `auth: false` OpenAPI RouteDefs; `--check` (CI) fails when the inventory is stale (ACM-P3-003). |
+| `check-env-parity.mjs` | Fail when a runtime env schema key is missing from its `.env.example`, an example key is neither in the schema nor the documented `EXTERNAL_KEYS` allowlist, or a key is absent from `docs/ENVIRONMENT_VARIABLES.md`; resolves the shared `@mct/config/env` shapes (SECRET-P3-005). `--self-test` proves the negative fixtures fail. |
+| `check-historical-gates.mjs` | Fail when a committed `prompts/` JSON carries a machine-readable release `decision` without `"historical": true`, so a stale APPROVED artifact cannot be cited as release evidence (EXEC-P3-001). `--self-test` proves the detector. |
 | `sync-review-md.mjs` | Regenerate `review.md` (the mirror of `AGENTS.md`); `--check` runs in CI. |
 | `verify-prompts.js` | Prompt provenance: `generate` / `verify` (CI) / `tree` over the SHA-256 manifest; also enforces the documented size budget. |
 | `check-circular-deps.mjs` | Fail on a circular import across `apps/*` and `packages/*` (HYGIENE-P3-009); `--self-test` proves the detector fails on a synthetic cycle. |

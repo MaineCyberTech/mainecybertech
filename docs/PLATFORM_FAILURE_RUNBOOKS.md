@@ -164,6 +164,12 @@ offline" banner (`apps/web/components/OfflineIndicator.tsx`).
   filled, every `_unassigned_` row is itself a gap (`IR-P2-008`).
 - At minimum exercise once before go-live: single-host restore (section 0) and
   the database restore (`db-restore-test.yml`).
+- The backup/restore drill program (D1–D7) lives at
+  [`runbooks/backup-restore-drill-plan.md`](runbooks/backup-restore-drill-plan.md)
+  with its results ledger at
+  [`runbooks/backup-restore-drill-ledger.md`](runbooks/backup-restore-drill-ledger.md)
+  (relocated from the dated audit folder, DR-P3-001). Record D1–D7 results
+  there, not in this table.
 
 | Date | Runbook | Operator | Variant | Result | Evidence |
 | ---- | ------- | -------- | ------- | ------ | -------- |

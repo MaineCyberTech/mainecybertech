@@ -65,6 +65,25 @@ runs:
       shell: bash
       run: node scripts/check-docs-links.mjs
 
+    - name: Check environment parity (SECRET-P3-005)
+      # Fails when a runtime env schema key is missing from its .env.example,
+      # an example key is neither in the schema nor the documented allowlist,
+      # or a key is absent from docs/ENVIRONMENT_VARIABLES.md. Self-tests its
+      # negative fixtures first so a broken detector cannot pass silently.
+      shell: bash
+      run: |
+        node scripts/check-env-parity.mjs --self-test
+        node scripts/check-env-parity.mjs
+
+    - name: Check historical gate markers (EXEC-P3-001)
+      # Fails when a committed prompts/ JSON carries a machine-readable release
+      # decision without the explicit historical: true marker, so a stale
+      # APPROVED artifact cannot be cited as current release evidence.
+      shell: bash
+      run: |
+        node scripts/check-historical-gates.mjs --self-test
+        node scripts/check-historical-gates.mjs
+
     - name: Verify database types are current
       shell: bash
       run: node scripts/generate-db-types.js --check

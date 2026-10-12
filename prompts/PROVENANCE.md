@@ -47,6 +47,15 @@ development or decisions.
    decision recorded in the PR that adds the files — keep the pin, bound the
    bloat.
 
+6. **Historical gate markers (EXEC-P3-001).** Generated gate artifacts under
+   `prompts/portal-alignment/` (the engine outputs, dashboard sample data and
+   run history) carry `"historical": true` plus a note; they are snapshots, not
+   current release decisions, and none of them binds a verifiable SHA.
+   `scripts/check-historical-gates.mjs` (wired into the shared unit-tests
+   action) fails CI when any committed `prompts/` JSON carries a machine
+   `decision` without that marker. A current release gate lives in `docs/` and
+   must bind a full commit SHA + run id.
+
 ## Usage
 
 ```bash

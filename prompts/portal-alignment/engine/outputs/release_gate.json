@@ -1,4 +1,6 @@
 {
+  "historical": true,
+  "historical_note": "EXEC-P3-001: historical alignment-engine snapshot (2026-08-06). Not current release evidence; the `commit` field is a git subject, not a verifiable SHA. Any re-run must record the full commit SHA and a run id. See prompts/PROVENANCE.md.",
   "decision": "APPROVED_FOR_PROD_DEPLOY",
   "readiness_score": 91,
   "blocked": false,

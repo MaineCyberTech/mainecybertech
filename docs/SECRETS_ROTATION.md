@@ -17,6 +17,10 @@ Terraform jobs read them directly from their environment.
 > environment the consuming job actually attaches (table below), then run the
 > [post-rotation verification](#post-rotation-verification).
 
+> **Emergency revocation / break-glass:** the IT-level runbook (revocation
+> points per credential, break-glass paths, escrow requirements and the drill
+> record) is [`SECRET_ROTATION_RUNBOOK.md`](SECRET_ROTATION_RUNBOOK.md).
+
 ### Consuming environments (source of truth)
 
 | Consuming job(s)                                                                          | Workflow                                                                                    | Prod environment | Dev environment |
@@ -360,7 +364,9 @@ and the alert-path exercise use the separate `NTFY_ALERTS_*` credentials. See
 
 ## Emergency Rotation
 
-If a secret is suspected compromised:
+If a secret is suspected compromised — break-glass access paths, per-credential
+revocation points and the drill record are in
+[`SECRET_ROTATION_RUNBOOK.md`](SECRET_ROTATION_RUNBOOK.md):
 
 1. **Revoke immediately** in the source system (Stripe Dashboard, Supabase
    Dashboard, ntfy relay, GitHub PATs, etc.) — revocation preserves the audit trail.
@@ -409,6 +415,21 @@ If a deploy fails after emergency rotation:
 The control is only delivered when a rotation leaves a record. `SECRET-P2-006`
 is exactly the "documented but never exercised" gap; treat a rotation without a
 log row (and its evidence) as a failed control.
+
+**Current evidence state (2026-10-12, recorded honestly — SECRET-P3-004):** no
+production secret has been rotated since initial deployment. The Rotation Log
+contains the initial-deployment row and one dated environment-mapping dry-run;
+there is no `gh secret list` timestamp or run URL showing a value change.
+Expectations from here on:
+
+- every real rotation adds a dated row with the fields below (run URL, operator
+  handle, verification result) **before** the quarterly reminder issue is
+  closed;
+- the first stronger exercise is a live rotation of a non-critical `dev` secret
+  (rotate → confirm the old value is rejected → record); a dry-run row alone
+  does not close `SECRET-P2-006`;
+- emergency revocations are recorded with `Incident? = Yes` and the incident
+  link, following [`SECRET_ROTATION_RUNBOOK.md`](SECRET_ROTATION_RUNBOOK.md).
 
 ### What a completed rotation records
 
