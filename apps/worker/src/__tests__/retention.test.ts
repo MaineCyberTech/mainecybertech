@@ -230,6 +230,37 @@ describe("retentionTask (DATA-P1-002)", () => {
     expect(state.store_analytics_events.map((row) => row.id)).toEqual(["recent-1"]);
   });
 
+  it("purges webhook deliveries and dead letters with the documented windows [WH-P3-009]", async () => {
+    const state: TableState = {
+      audit_logs: [],
+      notifications: [],
+      webhook_deliveries: [
+        { id: "wd-old", created_at: daysAgo(120) },
+        { id: "wd-recent", created_at: daysAgo(10) },
+      ],
+      webhook_dead_letters: [
+        { id: "dl-old", created_at: daysAgo(200) },
+        { id: "dl-recent", created_at: daysAgo(30) },
+      ],
+    };
+    const supabase = makeSupabase(state);
+    (createClient as unknown as jest.Mock).mockReturnValue(supabase);
+
+    const res = await retentionTask({});
+
+    expect(res.ok).toBe(true);
+    // Defaults: 90 days for deliveries, 180 days for dead letters.
+    expect(state.webhook_deliveries.map((row) => row.id)).toEqual(["wd-recent"]);
+    expect(state.webhook_dead_letters.map((row) => row.id)).toEqual(["dl-recent"]);
+  });
+
+  it("refuses a non-positive webhook retention window [WH-P3-009]", async () => {
+    const res = await retentionTask({ webhookDeliveryRetentionDays: 0 });
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/webhookDeliveryRetentionDays must be a positive number of days/);
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
   it("returns ok:false and keeps the rows when the audit archive fails", async () => {
     const state: TableState = { audit_logs: rows(100), notifications: [] };
     const supabase = makeSupabase(state, { failRpc: "archive_audit_logs" });

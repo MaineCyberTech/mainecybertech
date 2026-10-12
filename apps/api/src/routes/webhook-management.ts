@@ -17,6 +17,7 @@ import { assertResourceOrg, loadOwned } from "../lib/tenant";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { queryInt, queryString } from "../lib/query";
 import { enqueueTask } from "../lib/task-producer";
+import { claimIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -49,6 +50,22 @@ function readSecret(stored: string | null | undefined): string | null {
 
 /** Advisory rotation deadline for outbound signing secrets (90-day cadence). */
 const SECRET_ROTATION_DAYS = 90;
+
+/**
+ * WH-P3-001: deterministic idempotency key for a test ping, derived from the
+ * endpoint and the exact payload (including its generated timestamp). The key
+ * is stable for a given payload, so an exact replay claims the same key and is
+ * deduplicated — a random key could never collide and never exercised the
+ * claim/persist path.
+ */
+export function buildTestIdempotencyKey(webhookId: string, payload: unknown): string {
+  const digest = crypto
+    .createHash("sha256")
+    .update(JSON.stringify(payload))
+    .digest("hex")
+    .slice(0, 16);
+  return `test-${webhookId}-${digest}`;
+}
 
 function defaultSecretExpiry(from: Date): string {
   return new Date(from.getTime() + SECRET_ROTATION_DAYS * 24 * 60 * 60 * 1000).toISOString();
@@ -512,6 +529,16 @@ router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, re
       timestamp: new Date().toISOString(),
       data: { message: "Test from Maine CyberTech" },
     };
+    // WH-P3-001: deterministic key (endpoint + exact payload) and a claim
+    // before sending, mirroring the shared outbound dispatcher. An exact replay
+    // of the same payload is deduplicated instead of delivered twice.
+    const idempotencyKey = buildTestIdempotencyKey(webhook.id, payload);
+    const claimed = await claimIdempotencyKey(idempotencyKey, "processing");
+    if (!claimed) {
+      res.json(success({ ok: true, deduplicated: true, idempotency_key: idempotencyKey }));
+      return;
+    }
+
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -556,26 +583,38 @@ router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, re
 
     const duration = Date.now() - start;
 
-    // Generate idempotency key for this delivery attempt
-    const idempotencyKey = `test-${webhook.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-
-    await supabase.from("webhook_deliveries").insert({
-      webhook_id: webhook.id,
-      event: "ping",
-      status: error
-        ? "failed"
-        : responseStatus >= 200 && responseStatus < 300
-          ? "success"
-          : "failed",
-      request_body: payload,
-      response_status: responseStatus || null,
-      response_body: responseBody || null,
-      error,
-      duration_ms: duration,
-      idempotency_key: idempotencyKey,
-    });
+    // WH-P3-006: upsert on the idempotency key so a re-test after a released
+    // claim updates the existing row instead of silently failing the unique
+    // constraint and losing the successful attempt's record.
+    const { error: insertError } = await supabase.from("webhook_deliveries").upsert(
+      {
+        webhook_id: webhook.id,
+        event: "ping",
+        status: error
+          ? "failed"
+          : responseStatus >= 200 && responseStatus < 300
+            ? "success"
+            : "failed",
+        request_body: payload,
+        response_status: responseStatus || null,
+        response_body: responseBody || null,
+        error,
+        duration_ms: duration,
+        idempotency_key: idempotencyKey,
+      },
+      { onConflict: "idempotency_key" },
+    );
+    if (insertError) {
+      logger.warn(
+        { err: insertError.message, webhookId: webhook.id },
+        "Failed to record webhook test delivery",
+      );
+    }
 
     if (error || responseStatus >= 400) {
+      // Release the claim so the same payload can be retried; on success the
+      // claim stays as the dedup marker (mirrors the shared dispatcher).
+      await deleteIdempotencyKey(idempotencyKey).catch(() => undefined);
       await supabase
         .from("webhook_endpoints")
         .update({

@@ -27,6 +27,13 @@ jest.mock("../middleware/permissions", () => ({
       next(),
 }));
 
+jest.mock("../lib/idempotency", () => ({
+  claimIdempotencyKey: jest.fn().mockResolvedValue(true),
+  deleteIdempotencyKey: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock("../lib/pinned-fetch", () => ({ pinnedFetch: jest.fn() }));
+
 import { getSupabaseAdmin } from "../services/supabase";
 import { encryptField } from "../lib/field-encryption";
 
@@ -306,6 +313,86 @@ describe("webhook-management routes", () => {
       expect(updateArgs.secret).toMatch(/^v1:/);
       expect(updateArgs.secret_rotated_at).toEqual(expect.any(String));
       expect(updateArgs.secret_expires_at).toEqual(expect.any(String));
+    });
+  });
+
+  describe("test ping idempotency [WH-P3-001]", () => {
+    const ORG = "00000000-0000-0000-0000-000000000001";
+
+    function mockTestWebhook() {
+      const s = mockAuth();
+      const endpointsBuilder = createMockBuilder({
+        data: {
+          id: "wh1",
+          organization_id: ORG,
+          url: "https://93.184.216.34/hook",
+          secret: null,
+        },
+        error: null,
+      } as MockResult);
+      const deliveriesBuilder = createMockBuilder({ data: null, error: null } as MockResult);
+      s.from.mockImplementation((table: string) => {
+        if (table === "webhook_endpoints") return endpointsBuilder;
+        if (table === "webhook_deliveries") return deliveriesBuilder;
+        return createMockBuilder({ data: null, error: null } as MockResult);
+      });
+      return { deliveriesBuilder };
+    }
+
+    it("derives a deterministic key from the endpoint and payload", async () => {
+      const { buildTestIdempotencyKey } = await import("../routes/webhook-management");
+      const payload = {
+        event: "ping",
+        timestamp: "2026-01-01T00:00:00.000Z",
+        data: { message: "Test from Maine CyberTech" },
+      };
+      const key = buildTestIdempotencyKey("wh1", payload);
+      expect(key).toMatch(/^test-wh1-[0-9a-f]{16}$/);
+      expect(buildTestIdempotencyKey("wh1", payload)).toBe(key);
+      expect(buildTestIdempotencyKey("wh2", payload)).not.toBe(key);
+      expect(
+        buildTestIdempotencyKey("wh1", { ...payload, timestamp: "2026-01-01T00:00:01.000Z" }),
+      ).not.toBe(key);
+    });
+
+    it("claims the key before sending and records the delivery via upsert", async () => {
+      const { deliveriesBuilder } = mockTestWebhook();
+      const { claimIdempotencyKey } = await import("../lib/idempotency");
+      const { pinnedFetch } = await import("../lib/pinned-fetch");
+      (claimIdempotencyKey as jest.Mock).mockClear().mockResolvedValue(true);
+      (pinnedFetch as jest.Mock).mockReset().mockResolvedValue({
+        status: 200,
+        text: jest.fn().mockResolvedValue("ok"),
+      });
+
+      const res = await request(app)
+        .post("/api/v1/webhook-endpoints/wh1/test")
+        .set("Authorization", "Bearer token");
+
+      expect(res.status).toBe(200);
+      const key = (claimIdempotencyKey as jest.Mock).mock.calls[0][0] as string;
+      expect(key).toMatch(/^test-wh1-[0-9a-f]{16}$/);
+      expect((claimIdempotencyKey as jest.Mock).mock.calls[0][1]).toBe("processing");
+      expect(deliveriesBuilder.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ idempotency_key: key }),
+        { onConflict: "idempotency_key" },
+      );
+    });
+
+    it("deduplicates an exact replay instead of sending twice", async () => {
+      mockTestWebhook();
+      const { claimIdempotencyKey } = await import("../lib/idempotency");
+      const { pinnedFetch } = await import("../lib/pinned-fetch");
+      (claimIdempotencyKey as jest.Mock).mockClear().mockResolvedValueOnce(false);
+      (pinnedFetch as jest.Mock).mockReset();
+
+      const res = await request(app)
+        .post("/api/v1/webhook-endpoints/wh1/test")
+        .set("Authorization", "Bearer token");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.deduplicated).toBe(true);
+      expect(pinnedFetch).not.toHaveBeenCalled();
     });
   });
 

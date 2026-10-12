@@ -64,7 +64,7 @@ export const m365CalendarSync: TaskHandler = async (payload): Promise<TaskResult
 
     const { data: tasks, error: tasksError } = await supabase
       .from("project_tasks")
-      .select("id, title, due_at")
+      .select("id, title, due_at, m365_event_id")
       .eq("project_id", projectId)
       .not("due_at", "is", null)
       .limit(200);
@@ -75,6 +75,12 @@ export const m365CalendarSync: TaskHandler = async (payload): Promise<TaskResult
 
     let synced = 0;
     let errors = 0;
+
+    const eventsUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userPrincipalName)}/events`;
+    const graphHeaders = {
+      Authorization: `Bearer ${access_token}`,
+      "Content-Type": "application/json",
+    };
 
     for (const task of tasks ?? []) {
       if (!task.due_at) continue;
@@ -90,25 +96,60 @@ export const m365CalendarSync: TaskHandler = async (payload): Promise<TaskResult
         reminderMinutesBeforeStart: 30,
       };
 
-      const eventRes = await fetch(
-        `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userPrincipalName)}/events`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-            "Content-Type": "application/json",
-          },
+      // API-P3-006: update the event recorded by a previous run instead of
+      // creating a duplicate for every task on every run. Fall back to POST
+      // only when no id was stored or the mailbox event is gone (404).
+      let eventRes: Response;
+      if (task.m365_event_id) {
+        eventRes = await fetch(`${eventsUrl}/${encodeURIComponent(task.m365_event_id)}`, {
+          method: "PATCH",
+          headers: graphHeaders,
           body: JSON.stringify(event),
           signal: AbortSignal.timeout(15_000),
-        },
-      );
-
-      if (eventRes.ok) {
-        synced++;
+        });
+        if (eventRes.status === 404) {
+          eventRes = await fetch(eventsUrl, {
+            method: "POST",
+            headers: graphHeaders,
+            body: JSON.stringify(event),
+            signal: AbortSignal.timeout(15_000),
+          });
+        }
       } else {
-        errors++;
-        logger.warn({ status: eventRes.status, taskId: task.id }, "M365 event create failed");
+        eventRes = await fetch(eventsUrl, {
+          method: "POST",
+          headers: graphHeaders,
+          body: JSON.stringify(event),
+          signal: AbortSignal.timeout(15_000),
+        });
       }
+
+      if (!eventRes.ok) {
+        errors++;
+        logger.warn({ status: eventRes.status, taskId: task.id }, "M365 event sync failed");
+        continue;
+      }
+
+      // Persist the Graph event id so the next run updates this same event.
+      const graphEvent = (await eventRes.json().catch(() => null)) as { id?: string } | null;
+      const newEventId = graphEvent?.id ?? task.m365_event_id ?? null;
+      if (newEventId && newEventId !== task.m365_event_id) {
+        const { error: updateError } = await supabase
+          .from("project_tasks")
+          .update({ m365_event_id: newEventId })
+          .eq("id", task.id);
+        if (updateError) {
+          // The event exists but is untracked; a later run would duplicate it,
+          // so report the failure instead of a clean sync.
+          errors++;
+          logger.error(
+            { taskId: task.id, error: updateError.message },
+            "Failed to persist M365 event id",
+          );
+          continue;
+        }
+      }
+      synced++;
     }
 
     logger.info({ synced, errors, total: (tasks ?? []).length }, "M365 calendar sync complete");

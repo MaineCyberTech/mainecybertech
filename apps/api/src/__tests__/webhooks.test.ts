@@ -1097,6 +1097,77 @@ describe("webhooks routes", () => {
       // Third argument is the TTL in seconds: the enforced replay window.
       expect((claimIdempotencyKey as jest.Mock).mock.calls[0][2]).toBe(7 * 24 * 60 * 60);
     });
+
+    it("processes every notification in a batch, not just value[0] [WH-P3-008]", async () => {
+      const { claimIdempotencyKey } = await import("../lib/idempotency");
+      const { logAuditEvent } = await import("../services/audit");
+      (claimIdempotencyKey as jest.Mock).mockClear();
+      (logAuditEvent as jest.Mock).mockClear();
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [
+            {
+              resource: "users/batch-1",
+              changeType: "updated",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+              resourceData: { id: "batch-1" },
+            },
+            {
+              resource: "users/batch-2",
+              changeType: "created",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+              resourceData: { id: "batch-2" },
+            },
+          ],
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toMatchObject({ received: true, processed: 2, duplicates: 0 });
+      expect(claimIdempotencyKey).toHaveBeenCalledTimes(2);
+      const keys = (claimIdempotencyKey as jest.Mock).mock.calls.map(
+        (call) => call[0] as string,
+      );
+      // Per-notification keys: identical resources would collapse, distinct
+      // ones must not.
+      expect(keys[0]).not.toBe(keys[1]);
+      expect(logAuditEvent).toHaveBeenCalledTimes(2);
+    });
+
+    it("skips an already-claimed notification and reports the duplicate [WH-P3-008]", async () => {
+      const { claimIdempotencyKey } = await import("../lib/idempotency");
+      const { logAuditEvent } = await import("../services/audit");
+      (logAuditEvent as jest.Mock).mockClear();
+      (claimIdempotencyKey as jest.Mock)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(false);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [
+            {
+              resource: "users/dup-1",
+              changeType: "updated",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+            },
+            {
+              resource: "users/dup-2",
+              changeType: "updated",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+            },
+          ],
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toMatchObject({ received: true, processed: 1, duplicates: 1 });
+      expect(logAuditEvent).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("inbound payload caps and schemas [WH-P2-006]", () => {

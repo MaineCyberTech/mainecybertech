@@ -10,12 +10,18 @@ interface RetentionConfig {
   notificationRetentionDays: number;
   /** AN-P2-004: first-party storefront analytics rows (no PII). */
   storeAnalyticsRetentionDays: number;
+  /** WH-P3-009: outbound/inbound delivery audit rows. */
+  webhookDeliveryRetentionDays: number;
+  /** WH-P3-009: dead letters are kept longer so an operator can triage. */
+  webhookDeadLetterRetentionDays: number;
 }
 
 const DEFAULT_CONFIG: RetentionConfig = {
   auditLogRetentionDays: 365,
   notificationRetentionDays: 90,
   storeAnalyticsRetentionDays: 90,
+  webhookDeliveryRetentionDays: 90,
+  webhookDeadLetterRetentionDays: 180,
 };
 
 /**
@@ -145,6 +151,8 @@ export const retentionTask: TaskHandler = async (
     ["auditLogRetentionDays", config.auditLogRetentionDays],
     ["notificationRetentionDays", config.notificationRetentionDays],
     ["storeAnalyticsRetentionDays", config.storeAnalyticsRetentionDays],
+    ["webhookDeliveryRetentionDays", config.webhookDeliveryRetentionDays],
+    ["webhookDeadLetterRetentionDays", config.webhookDeadLetterRetentionDays],
   ] as const) {
     if (typeof days !== "number" || !Number.isFinite(days) || days <= 0) {
       const error = `refusing to purge: ${name} must be a positive number of days (got ${String(days)})`;
@@ -167,6 +175,17 @@ export const retentionTask: TaskHandler = async (
     config.notificationRetentionDays,
     policies,
   );
+  // WH-P3-009: webhook_deliveries and webhook_dead_letters had no purge path.
+  const webhookDeliveryWindow = resolveRetentionDays(
+    "webhook_deliveries",
+    config.webhookDeliveryRetentionDays,
+    policies,
+  );
+  const webhookDeadLetterWindow = resolveRetentionDays(
+    "webhook_dead_letters",
+    config.webhookDeadLetterRetentionDays,
+    policies,
+  );
 
   const auditDays =
     typeof overrides.auditLogRetentionDays === "number"
@@ -176,6 +195,14 @@ export const retentionTask: TaskHandler = async (
     typeof overrides.notificationRetentionDays === "number"
       ? overrides.notificationRetentionDays
       : notificationWindow.days;
+  const webhookDeliveryDays =
+    typeof overrides.webhookDeliveryRetentionDays === "number"
+      ? overrides.webhookDeliveryRetentionDays
+      : webhookDeliveryWindow.days;
+  const webhookDeadLetterDays =
+    typeof overrides.webhookDeadLetterRetentionDays === "number"
+      ? overrides.webhookDeadLetterRetentionDays
+      : webhookDeadLetterWindow.days;
 
   const auditCutoff = new Date();
   auditCutoff.setDate(auditCutoff.getDate() - auditDays);
@@ -186,6 +213,12 @@ export const retentionTask: TaskHandler = async (
   const storeAnalyticsCutoff = new Date();
   storeAnalyticsCutoff.setDate(storeAnalyticsCutoff.getDate() - config.storeAnalyticsRetentionDays);
 
+  const webhookDeliveryCutoff = new Date();
+  webhookDeliveryCutoff.setDate(webhookDeliveryCutoff.getDate() - webhookDeliveryDays);
+
+  const webhookDeadLetterCutoff = new Date();
+  webhookDeadLetterCutoff.setDate(webhookDeadLetterCutoff.getDate() - webhookDeadLetterDays);
+
   const outcomes: PurgeOutcome[] = [];
   outcomes.push(await archiveAuditLogs(supabase, auditCutoff.toISOString()));
   outcomes.push(
@@ -194,6 +227,13 @@ export const retentionTask: TaskHandler = async (
   // AN-P2-004: storefront events previously had no retention path.
   outcomes.push(
     await purgeInBatches(supabase, "store_analytics_events", storeAnalyticsCutoff.toISOString()),
+  );
+  // WH-P3-009: bounded purges for the webhook delivery log and DLQ.
+  outcomes.push(
+    await purgeInBatches(supabase, "webhook_deliveries", webhookDeliveryCutoff.toISOString()),
+  );
+  outcomes.push(
+    await purgeInBatches(supabase, "webhook_dead_letters", webhookDeadLetterCutoff.toISOString()),
   );
 
   const failures = outcomes.filter((o) => o.error);
@@ -229,6 +269,24 @@ export const retentionTask: TaskHandler = async (
         },
       },
       storeAnalyticsCutoff: storeAnalyticsCutoff.toISOString(),
+      webhookDeliveryCutoff: webhookDeliveryCutoff.toISOString(),
+      webhookDeadLetterCutoff: webhookDeadLetterCutoff.toISOString(),
+      webhookWindows: {
+        deliveries: {
+          days: webhookDeliveryDays,
+          source:
+            typeof overrides.webhookDeliveryRetentionDays === "number"
+              ? "payload"
+              : webhookDeliveryWindow.source,
+        },
+        deadLetters: {
+          days: webhookDeadLetterDays,
+          source:
+            typeof overrides.webhookDeadLetterRetentionDays === "number"
+              ? "payload"
+              : webhookDeadLetterWindow.source,
+        },
+      },
     },
     `[retention] ${summary}`,
   );

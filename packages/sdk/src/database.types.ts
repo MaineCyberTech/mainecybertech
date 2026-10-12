@@ -4311,6 +4311,7 @@ export type Database = {
           issue_type: string | null;
           jira_last_synced_at: string | null;
           labels: string[] | null;
+          m365_event_id: string | null;
           metadata: Json;
           organization_id: string;
           owner_id: string | null;
@@ -4346,6 +4347,7 @@ export type Database = {
           issue_type?: string | null;
           jira_last_synced_at?: string | null;
           labels?: string[] | null;
+          m365_event_id?: string | null;
           metadata?: Json | null;
           owner_id?: string | null;
           parent_task_id?: string | null;
@@ -4375,6 +4377,7 @@ export type Database = {
           issue_type?: string | null;
           jira_last_synced_at?: string | null;
           labels?: string[] | null;
+          m365_event_id?: string | null;
           metadata?: Json | null;
           organization_id?: string | null;
           owner_id?: string | null;
