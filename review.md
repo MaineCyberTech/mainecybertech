@@ -102,14 +102,14 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,584 tests, all passing. 514 suites.**
+**4,584 tests, all passing. 517 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,941         | 173   | Jest + supertest                  |
-| Web     | 2,018         | 305   | Jest + Testing Library            |
+| API     | 1,941         | 174   | Jest + supertest                  |
+| Web     | 2,018         | 306   | Jest + Testing Library            |
 | SDK     | 321           | 5   | Jest (mocked fetch)               |
-| Worker  | 304           | 31   | Jest (env schema + task handlers) |
+| Worker  | 304           | 32   | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
 
 Suite counts and the E2E spec count are counted from the tree by
@@ -180,7 +180,7 @@ pnpm e2e                     # Playwright E2E
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 28 | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 625 | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
-| Build/dev/utility scripts | 104 | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
+| Build/dev/utility scripts | 106 | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
 
 ## Database Types (2026-09-21)
 

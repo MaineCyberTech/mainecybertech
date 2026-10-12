@@ -304,6 +304,26 @@ All three services tag events with a **release** (OBS-P3-004): `deploy-do.yml` w
 | **Worker** | `apps/worker/src/main.ts`                         | All task failures via `Sentry.captureException` with task type metadata            |
 | **Web**    | `instrumentation.ts` + server/edge/client configs | Route errors, unhandled exceptions                                                 |
 
+### PII scrubbing and retention (AN-P3-004)
+
+Error telemetry is **scrubbed at the SDK boundary** before transport:
+
+- Every init sets `sendDefaultPii: false` and routes events through `beforeSend`
+  (`apps/api/src/lib/sentry-scrub.ts`, `apps/web/lib/sentry-scrub.ts`,
+  `apps/worker/src/lib/sentry-scrub.ts`). The hook redacts values held under PII
+  keys (names, email, phone, credentials, tokens, IP) recursively in
+  `extra`/`contexts`/breadcrumb data and request bodies, drops request cookies
+  outright, redacts sensitive request headers, and removes
+  `user.email`/`username`/`ip_address` (the opaque `user.id` is kept for
+  triage). Free-text exception/breadcrumb messages cannot be scrubbed by key
+  name — callers must not log personal data there (same rule as audit metadata).
+- **Retention** is controlled by the Sentry organization setting, not by this
+  repository. The operator keeps it at the shortest plan-supported window and
+  records the current value in the subprocessor review; SDK-side scrubbing is
+  the primary control because it also protects data in transit and at the
+  vendor. Vendor disclosure lives in `docs/SUBPROCESSORS.md` and the public
+  privacy page.
+
 ### Alert rules (set in Sentry)
 
 - **Any issue with >10 events in 5 min** → Notify #alerts

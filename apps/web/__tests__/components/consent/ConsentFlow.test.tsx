@@ -126,4 +126,49 @@ describe("consent-gated third-party scripts [PRIV-P2-001]", () => {
       ),
     );
   });
+
+  it("emits Consent Mode v2 default-deny before granting and configuring GA [AN-P3-001]", async () => {
+    writeStoredConsent("granted");
+    renderConsentTree();
+
+    const init = await waitFor(() => {
+      const el = document.querySelector('[data-id="ga-init"]');
+      expect(el).not.toBeNull();
+      return el as HTMLElement;
+    });
+    const script = init.textContent ?? "";
+
+    expect(script).toContain("gtag('consent', 'default', {ad_storage: 'denied'");
+    expect(script).toContain("analytics_storage: 'denied'");
+    expect(script).toContain("gtag('consent', 'update', {analytics_storage: 'granted'})");
+    expect(script.indexOf("'default'")).toBeLessThan(script.indexOf("'update'"));
+    expect(script.indexOf("'update'")).toBeLessThan(script.indexOf("gtag('config'"));
+  });
+
+  it("signals a Consent Mode withdrawal when a stored grant is rejected [AN-P3-001]", async () => {
+    writeStoredConsent("granted");
+    const gtag = jest.fn();
+    (window as unknown as { gtag?: unknown }).gtag = gtag;
+    const user = userEvent.setup();
+
+    renderConsentTree();
+    await waitFor(() =>
+      expect(scriptSources()).toEqual(
+        expect.arrayContaining([expect.stringContaining("googletagmanager.com")]),
+      ),
+    );
+
+    await user.click(screen.getByRole("button", { name: /cookie settings/i }));
+    await user.click(await screen.findByRole("button", { name: /reject analytics/i }));
+
+    await waitFor(() =>
+      expect(gtag).toHaveBeenCalledWith(
+        "consent",
+        "update",
+        expect.objectContaining({ analytics_storage: "denied" }),
+      ),
+    );
+
+    delete (window as unknown as { gtag?: unknown }).gtag;
+  });
 });

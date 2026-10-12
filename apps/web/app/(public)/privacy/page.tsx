@@ -94,7 +94,10 @@ export default function PrivacyPage() {
               </li>
               <li>
                 <strong className="text-slate-200">Sentry</strong> &mdash; Error monitoring used to
-                keep the portal reliable.
+                keep the portal reliable. Error reports are scrubbed of direct identifiers (names,
+                email addresses, phone numbers, credentials, cookies and IP addresses) before they
+                leave our servers, and are retained according to our Sentry organization&apos;s
+                retention setting.
               </li>
               <li>
                 <strong className="text-slate-200">Email delivery provider</strong> &mdash;
@@ -129,11 +132,14 @@ export default function PrivacyPage() {
             <p className="cyber-text mt-3 leading-relaxed">
               Non-essential third-party scripts are loaded only after you accept them in the
               consent banner. Until then, no analytics or live-chat script is loaded and no IP
-              address or location is sent to third parties. Your choice is stored in your browser
-              and recorded in our systems together with the version of this policy and a timestamp.
-              You can change or withdraw your choice at any time using the &ldquo;Cookie
-              settings&rdquo; link in the footer; the change takes effect immediately for scripts
-              that have not yet loaded and on your next page load for scripts already loaded.
+              address or location is sent to third parties. We also send Google&apos;s Consent Mode
+              v2 signals: all storage is denied by default, analytics storage is granted only after
+              you accept, and withdrawing your choice sends a denied update immediately. Your
+              choice is stored in your browser and recorded in our systems together with the
+              version of this policy and a timestamp. You can change or withdraw your choice at
+              any time using the &ldquo;Cookie settings&rdquo; link in the footer; the change takes
+              effect immediately for scripts that have not yet loaded and on your next page load
+              for scripts already loaded.
             </p>
             <div className="mt-4 overflow-x-auto">
               <table className="cyber-text w-full min-w-[640px] border-collapse text-left text-sm">
@@ -167,6 +173,26 @@ export default function PrivacyPage() {
                 </tbody>
               </table>
             </div>
+            <p className="cyber-text mt-4 leading-relaxed">
+              We also maintain two first-party tracking stores on our own servers, both covered by
+              the 90-day retention described below:
+            </p>
+            <ul className="cyber-text mt-2 list-disc space-y-2 pl-6">
+              <li>
+                <strong className="text-slate-200">Visitor sessions</strong> &mdash; the{" "}
+                <code className="font-mono text-xs">public_interactions</code> record created for
+                our contact and intake forms. It stores the referring page and browser platform
+                for every visitor; your IP address, approximate location and browser details are
+                added only after you accept analytics, together with the timestamp and version of
+                the policy you accepted.
+              </li>
+              <li>
+                <strong className="text-slate-200">Storefront analytics</strong> &mdash; anonymous{" "}
+                <code className="font-mono text-xs">store_analytics_events</code> rows (page,
+                product/category identifiers and a random visitor id) that never contain your IP
+                address, user-agent or any form content.
+              </li>
+            </ul>
           </section>
 
           <section>
@@ -175,12 +201,14 @@ export default function PrivacyPage() {
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
               We retain your personal information only as long as necessary to fulfill the purposes
-              described in this policy, or as required by law. Contact form submissions are purged
-              from our systems after 90 days. Copies forwarded to Microsoft Teams and Atlassian JSM
-              for lead tracking are retained under those providers&apos; retention settings and may
-              persist longer. Analytics data is retained in accordance with Google
-              Analytics&apos; data retention settings.
-              Analytics&apos; data retention settings. First-party store analytics events (event
+              described in this policy, or as required by law. Contact form submissions and visitor
+              session records are purged from our systems after 90 days. Copies forwarded to
+              Microsoft Teams and Atlassian JSM for lead tracking are retained under those
+              providers&apos; retention settings and may persist longer. First-party store analytics
+              events contain no personal information and are also purged after 90 days. Google
+              Analytics data is retained in accordance with our Google Analytics property&apos;s
+              data-retention setting, and error telemetry sent to Sentry is retained according to
+              our Sentry organization&apos;s retention setting.
             </p>
           </section>
 

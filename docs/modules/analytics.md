@@ -30,4 +30,6 @@ Store analytics tracking and admin dashboards. Public events are tracked anonymo
 
 - Tracking events contain no PII: the route stores page/category/product identifiers only. Visitor IP address and user-agent are never written, and migration `5302441` dropped the `ip_address`/`user_agent` columns (AN-P2-002).
 - `store_analytics_events` rows are purged after 90 days by the worker `retention` task (`storeAnalyticsRetentionDays`, AN-P2-004).
+- The client helper `track()` is consent-gated: without a stored grant the event stays in the local log and is never sent (PRIV-P2-002). GA/Tawk.to are gated by the consent banner and Google Consent Mode v2 signals (AN-P3-001).
+- Event catalog, retention, vendors and the consent record model: [`docs/ANALYTICS_GOVERNANCE.md`](../ANALYTICS_GOVERNANCE.md).
 - Admin endpoints are gated by `requireAuth` + `requireAdmin`.

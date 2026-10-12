@@ -1,4 +1,6 @@
 {
+  "historical": true,
+  "historical_note": "EXEC-P3-001: historical alignment-engine run history (2026-08-06). Not current release evidence; the commit field is a git subject, not a SHA. See prompts/PROVENANCE.md.",
   "last_run": "2026-08-06T21:22:14.204060+00:00",
   "commit": "75d3926 test-data: cover admin workflow-button states (phishing launch + CAB approve/reject)",
   "readiness_score": 91,

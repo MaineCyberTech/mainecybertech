@@ -33,10 +33,15 @@ Since PRIV-P2-002 the submit endpoint requires and records explicit consent
 `/init` is default-deny: IP address, user-agent and geolocation are only
 captured after the visitor accepts analytics in the consent banner (the web app
 appends `consent=granted&consentVersion=N`), and the Teams visitor alert is
-suppressed without consent. The geo lookup (PRIV-P2-006) refuses a non-HTTPS
-`GEO_LOOKUP_URL` and requests only `status,city,regionName,country` from the
-provider — the full ip-api record is never fetched. `public_interactions`
-records `consent_at`/`consent_version` for auditability (migration `5302449`).
+suppressed without consent. Google Analytics additionally receives Consent Mode
+v2 default-deny signals, with `analytics_storage` granted only after accept and
+a denied update pushed on withdrawal
+(`apps/web/components/consent/AnalyticsScripts.tsx`, AN-P3-001). The geo lookup
+(PRIV-P2-006) refuses a non-HTTPS `GEO_LOOKUP_URL` and requests only
+`status,city,regionName,country` from the provider — the full ip-api record is
+never fetched. `public_interactions` records `consent_at`/`consent_version` for
+auditability (migration `5302449`). See [`ANALYTICS_GOVERNANCE.md`](ANALYTICS_GOVERNANCE.md)
+for the event catalog, retention and vendor list.
 
 ### Tuning
 
