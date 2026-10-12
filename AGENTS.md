@@ -77,14 +77,14 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,448 tests, all passing. 499 suites.**
+**4,477 tests, all passing. 499 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,851         | 162   | Jest + supertest                  |
-| Web     | 1,993         | 302   | Jest + Testing Library            |
+| API     | 1,863         | 162   | Jest + supertest                  |
+| Web     | 2,004         | 302   | Jest + Testing Library            |
 | SDK     | 315           | 4   | Jest (mocked fetch)               |
-| Worker  | 289           | 31   | Jest (env schema + task handlers) |
+| Worker  | 295           | 31   | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
 
 Suite counts and the E2E spec count are counted from the tree by
@@ -151,7 +151,7 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319 | Admin 203, Portal 86, Public 29, `forbidden` 1 |
 | Web components            | 122 | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 154 | `supabase/migrations/` (latest: 5302456_project_tasks_m365_event_id                                                                                              |
+| SQL migrations            | 156 | `supabase/migrations/` (latest: 5302458_project_tasks_m365_event_id                                                                                              |
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 27 | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 632 | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
