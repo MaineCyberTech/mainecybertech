@@ -11,8 +11,10 @@ export async function createOnboardingAction(formData: FormData) {
   if (!membership?.organization_id) {
     return { ok: false as const, error: "No approved organization membership found." };
   }
+
+  let created: { id: string };
   try {
-    const created = await api.clientOnboarding.create({
+    created = await api.clientOnboarding.create({
       organizationId: membership.organization_id,
       clientName: String(formData.get("clientName") || ""),
       clientDomain: String(formData.get("clientDomain") || "") || null,
@@ -33,9 +35,14 @@ export async function createOnboardingAction(formData: FormData) {
       securityFindings: [],
       supportHandoffStatus: "not_started",
     });
-    revalidatePath("/portal/client-onboarding-command-center");
-    redirect(`/portal/client-onboarding-command-center/${created.id}`);
   } catch (e: unknown) {
     return { ok: false as const, error: e instanceof Error ? e.message : "Failed to create" };
   }
+
+  revalidatePath("/portal/client-onboarding-command-center");
+  // USE-P2-007: the redirect must run OUTSIDE the try/catch. `redirect()` throws
+  // a NEXT_REDIRECT control-flow error; catching it here turned a successful
+  // create into a cryptic "NEXT_REDIRECT" error and left the user on the form,
+  // inviting duplicate submissions.
+  redirect(`/portal/client-onboarding-command-center/${created.id}`);
 }

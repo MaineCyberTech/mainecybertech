@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const mockPush = jest.fn();
@@ -177,5 +177,41 @@ describe("AdminTicketCenterClient", () => {
     await user.click(checkbox);
     expect(checkbox).toBeChecked();
     expect(screen.getByText("1 ticket selected")).toBeInTheDocument();
+  });
+
+  it("loads further pages from the server beyond the initial fetch (USE-P2-002)", async () => {
+    const user = userEvent.setup();
+    const makeTicket = (i: number) => ({
+      id: `t${i}`,
+      subject: `Ticket ${i}`,
+      description: "Details",
+      status: "new",
+      priority: "normal",
+      organization_id: "org-1",
+      updated_at: new Date().toISOString(),
+    });
+    const initial = Array.from({ length: 30 }, (_, i) => makeTicket(i));
+    const more = Array.from({ length: 10 }, (_, i) => makeTicket(30 + i));
+    const loadMore = jest.fn().mockResolvedValue({ ok: true, items: more, total: 40 });
+
+    render(
+      <AdminTicketCenterClient
+        tickets={initial}
+        organizations={organizations}
+        createTicketAction={mockCreateTicketAction}
+        loadMoreTicketsAction={loadMore}
+        total={40}
+      />,
+    );
+
+    // First reveal the remaining locally fetched rows (30 loaded, 25 shown).
+    await user.click(screen.getByRole("button", { name: /Show more \(5 remaining\)/ }));
+    // Then fetch the next server page — the old client-only "Show more" could
+    // never exceed the fetched rows.
+    await user.click(screen.getByRole("button", { name: /Show more \(10 remaining\)/ }));
+
+    await waitFor(() => expect(loadMore).toHaveBeenCalledWith(2));
+    await waitFor(() => expect(screen.getByText("Ticket 39")).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /Show more/ })).not.toBeInTheDocument();
   });
 });

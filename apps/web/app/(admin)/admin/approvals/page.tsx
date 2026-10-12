@@ -1,12 +1,11 @@
 import { getApiClient } from "@/lib/api";
-import SubmitButton from "@/components/SubmitButton";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import type { Organization, Profile } from "@mct/sdk";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import { approveOrganization, rejectOrganization } from "./actions";
 import MembershipApprovalActions from "./MembershipApprovalActions";
+import OrgApprovalActions from "./OrgApprovalActions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Approvals - Admin - Maine CyberTech" };
@@ -63,17 +62,7 @@ export default async function ApprovalQueuePage() {
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <form action={approveOrganization}>
-                      <input type="hidden" name="organizationId" value={org.id} />
-                      <SubmitButton className="cyber-button">Approve Org</SubmitButton>
-                    </form>
-
-                    <form action={rejectOrganization}>
-                      <input type="hidden" name="organizationId" value={org.id} />
-                      <SubmitButton className="cyber-button-secondary">Reject Org</SubmitButton>
-                    </form>
-                  </div>
+                  <OrgApprovalActions organizationId={org.id} organizationName={org.name} />
                 </div>
               </div>
             ))

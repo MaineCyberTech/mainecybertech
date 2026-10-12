@@ -2,12 +2,14 @@ import { jest } from "@jest/globals";
 
 const mockTicketsUpdate = jest.fn();
 const mockTicketsAddComment = jest.fn();
+const mockTicketsRemove = jest.fn();
 const mockUsersMe = jest.fn().mockResolvedValue({ userId: "admin-1", email: "admin@test.com" });
 const mockGetApiClient = jest.fn().mockReturnValue({
   users: { me: mockUsersMe },
   tickets: {
     update: mockTicketsUpdate,
     addComment: mockTicketsAddComment,
+    remove: mockTicketsRemove,
   },
 });
 const mockRevalidatePath = jest.fn();
@@ -115,5 +117,33 @@ describe("deleteTicketAction", () => {
     const result = await deleteTicketAction(TICKET_ID, formData);
     expect(result.ok).toBe(false);
     expect(result.error).toContain("type DELETE");
+    expect(mockTicketsRemove).not.toHaveBeenCalled();
+  });
+
+  it("hard-deletes the ticket through the API and returns to the list (USE-P2-003)", async () => {
+    const { deleteTicketAction } = await import("@/app/(admin)/admin/tickets/[ticketId]/actions");
+    const { redirect } = await import("next/navigation");
+
+    const formData = new FormData();
+    formData.set("confirmation", "DELETE");
+
+    await deleteTicketAction(TICKET_ID, formData);
+
+    expect(mockTicketsRemove).toHaveBeenCalledWith(TICKET_ID);
+    // The previous implementation only closed the ticket.
+    expect(mockTicketsUpdate).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/admin/tickets");
+    expect(redirect).toHaveBeenCalledWith("/admin/tickets");
+  });
+
+  it("surfaces API failures instead of redirecting", async () => {
+    const { deleteTicketAction } = await import("@/app/(admin)/admin/tickets/[ticketId]/actions");
+    mockTicketsRemove.mockRejectedValueOnce(new Error("Forbidden"));
+
+    const formData = new FormData();
+    formData.set("confirmation", "DELETE");
+
+    const result = await deleteTicketAction(TICKET_ID, formData);
+    expect(result).toEqual({ ok: false, error: "Forbidden" });
   });
 });

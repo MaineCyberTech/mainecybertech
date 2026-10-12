@@ -29,8 +29,9 @@ describe("approveOrganization", () => {
     const formData = new FormData();
     formData.set("organizationId", "org-1");
 
-    await approveOrganization(formData);
+    const result = await approveOrganization(formData);
 
+    expect(result).toEqual({ ok: true });
     expect(mockOrganizationsUpdate).toHaveBeenCalledWith("org-1", {
       status: "approved",
     });
@@ -39,6 +40,22 @@ describe("approveOrganization", () => {
       "/admin/organizations/org-1",
     );
     expect(mockRevalidatePath).toHaveBeenCalledWith("/admin/audit");
+  });
+
+  it("returns the API error instead of throwing", async () => {
+    mockOrganizationsUpdate.mockRejectedValueOnce(new Error("Forbidden"));
+
+    const { approveOrganization } = await import(
+      "@/app/(admin)/admin/approvals/actions"
+    );
+
+    const formData = new FormData();
+    formData.set("organizationId", "org-1");
+
+    const result = await approveOrganization(formData);
+
+    expect(result).toEqual({ ok: false, error: "Forbidden" });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });
 
@@ -55,8 +72,9 @@ describe("rejectOrganization", () => {
     const formData = new FormData();
     formData.set("organizationId", "org-1");
 
-    await rejectOrganization(formData);
+    const result = await rejectOrganization(formData);
 
+    expect(result).toEqual({ ok: true });
     expect(mockOrganizationsUpdate).toHaveBeenCalledWith("org-1", {
       status: "rejected",
     });

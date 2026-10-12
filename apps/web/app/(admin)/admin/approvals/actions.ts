@@ -8,26 +8,34 @@ export type MembershipApprovalResult = {
   error?: string;
 };
 
-export async function approveOrganization(formData: FormData) {
-  const api = getApiClient();
+export async function approveOrganization(formData: FormData): Promise<MembershipApprovalResult> {
   const organizationId = String(formData.get("organizationId"));
 
-  await api.organizations.update(organizationId, { status: "approved" });
+  try {
+    await getApiClient().organizations.update(organizationId, { status: "approved" });
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Unexpected error." };
+  }
 
   revalidatePath("/admin/approvals");
   revalidatePath(`/admin/organizations/${organizationId}`);
   revalidatePath("/admin/audit");
+  return { ok: true };
 }
 
-export async function rejectOrganization(formData: FormData) {
-  const api = getApiClient();
+export async function rejectOrganization(formData: FormData): Promise<MembershipApprovalResult> {
   const organizationId = String(formData.get("organizationId"));
 
-  await api.organizations.update(organizationId, { status: "rejected" });
+  try {
+    await getApiClient().organizations.update(organizationId, { status: "rejected" });
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Unexpected error." };
+  }
 
   revalidatePath("/admin/approvals");
   revalidatePath(`/admin/organizations/${organizationId}`);
   revalidatePath("/admin/audit");
+  return { ok: true };
 }
 
 /**

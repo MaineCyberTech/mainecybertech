@@ -24,7 +24,9 @@ export async function updateUserProfileBasics(formData: FormData) {
   revalidatePath("/admin/audit");
 }
 
-export async function updateMembership(formData: FormData) {
+export type UpdateMembershipResult = { ok: true } | { ok: false; error: string };
+
+export async function updateMembership(formData: FormData): Promise<UpdateMembershipResult> {
   const api = getApiClient();
 
   const membershipId = String(formData.get("membershipId"));
@@ -34,12 +36,18 @@ export async function updateMembership(formData: FormData) {
   const isBillingContact = formData.get("isBillingContact") === "on";
   const isSecurityContact = formData.get("isSecurityContact") === "on";
 
-  await api.memberships.update(membershipId, {
-    roleId,
-    status,
-    isBillingContact,
-    isSecurityContact,
-  });
+  // USE-P2-010: return the failure instead of throwing into the route error
+  // boundary so the client can render it (and a success message) inline.
+  try {
+    await api.memberships.update(membershipId, {
+      roleId,
+      status,
+      isBillingContact,
+      isSecurityContact,
+    });
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Unexpected error." };
+  }
 
   revalidatePath(`/admin/users/${userId}`);
   revalidatePath(`/admin/users/${userId}/activity`);
@@ -56,4 +64,6 @@ export async function updateMembership(formData: FormData) {
   } catch {
     // revalidation of org pages is best-effort
   }
+
+  return { ok: true };
 }

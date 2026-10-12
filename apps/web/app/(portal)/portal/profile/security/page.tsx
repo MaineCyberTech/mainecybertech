@@ -9,12 +9,16 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Security - Portal - Maine CyberTech" };
 
 type SecurityPageProps = {
-  searchParams: Promise<{ recovered?: string }>;
+  searchParams: Promise<{ recovered?: string; mfa?: string }>;
 };
 
 export default async function SecurityPage({ searchParams }: SecurityPageProps) {
   const sp = await searchParams;
   const recovered = sp?.recovered === "1";
+  // USE-P2-009: the portal/admin layouts bounce MFA_REQUIRED sessions here
+  // with ?mfa=required; surface a visible step-up prompt instead of an
+  // unexplained settings page.
+  const mfaRequired = sp?.mfa === "required";
   let factors: MfaFactorView[] = [];
   let recovery: MfaRecoveryStatusView | null = null;
   let loadError = false;
@@ -65,6 +69,7 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
           initialFactors={factors}
           initialRecovery={recovery}
           recovered={recovered}
+          mfaRequired={mfaRequired}
         />
       )}
     </div>
