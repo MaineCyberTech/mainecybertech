@@ -3,10 +3,11 @@ name: Dependency Re-scan
 # SBOM-P2-012: advisories published while the dependency tree is unchanged are
 # invisible to the PR/deploy gates, because the audit only runs when a PR or a
 # deploy happens. This weekly re-scan runs the SAME policy gate in report-only
-# mode (`--report` never fails) plus a Trivy filesystem scan, and uploads both
-# reports as artifacts. It is deliberately non-blocking: it exists to surface
-# newly published advisories, not to gate merges or deploys. Triage follows
-# docs/DEPENDENCY_POLICY.md > Update governance.
+# mode (`--report` never fails) plus a Trivy filesystem scan and a
+# `pnpm dedupe --check` duplicate report (SC-P3-014), and uploads all reports
+# as artifacts. It is deliberately non-blocking: it exists to surface newly
+# published advisories and lockfile drift, not to gate merges or deploys.
+# Triage follows docs/DEPENDENCY_POLICY.md > Update governance.
 #
 # NOTE: schedules only fire from the default branch, so this file must be on
 # `main` for the cron to fire there.
@@ -52,6 +53,29 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Lockfile dedupe check (report-only, SC-P3-014)
+        # `pnpm dedupe --check` exits non-zero when the lockfile can still be
+        # deduped. Advisory by design: report and publish, never fail this
+        # scheduled run. Triage against the known-intentional list in
+        # docs/DEPENDENCY_POLICY.md > Duplicate versions.
+        shell: bash
+        run: |
+          set +e
+          pnpm dedupe --check > dedupe-check.txt 2>&1
+          status=$?
+          {
+            echo "## Lockfile dedupe check (report-only)"
+            echo
+            echo '```'
+            cat dedupe-check.txt
+            echo '```'
+            if [ "$status" -ne 0 ]; then
+              echo "pnpm dedupe --check reported pending dedupe (exit $status) — triage against docs/DEPENDENCY_POLICY.md > Duplicate versions."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat dedupe-check.txt
+          exit 0
+
       - name: Trivy filesystem scan (report-only)
         # Second opinion over the lockfile/manifests. exit-code 0 keeps the
         # run non-blocking; findings are reported in the SARIF artifact.
@@ -74,5 +98,6 @@ jobs:
           name: dependency-rescan
           path: |
             dependency-rescan.txt
+            dedupe-check.txt
             trivy-rescan.sarif
           retention-days: 30

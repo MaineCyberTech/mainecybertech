@@ -75,6 +75,13 @@ jobs:
           output: image-sbom-mct-api.cdx.json
           scanners: vuln
 
+      - name: Validate mct-api image SBOM (SBOM-P3-005)
+        # Floor + digest-binding check before upload (see validate-sbom.mjs).
+        run: |
+          node scripts/validate-sbom.mjs --image \
+            --digest "${{ steps.build-api.outputs.digest }}" \
+            image-sbom-mct-api.cdx.json
+
       - name: Upload mct-api image SBOM
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -144,6 +151,13 @@ jobs:
           format: cyclonedx
           output: image-sbom-mct-worker.cdx.json
           scanners: vuln
+
+      - name: Validate mct-worker image SBOM (SBOM-P3-005)
+        # Floor + digest-binding check before upload (see validate-sbom.mjs).
+        run: |
+          node scripts/validate-sbom.mjs --image \
+            --digest "${{ steps.build-worker.outputs.digest }}" \
+            image-sbom-mct-worker.cdx.json
 
       - name: Upload mct-worker image SBOM
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -226,6 +240,13 @@ jobs:
           format: cyclonedx
           output: image-sbom-mct-web.cdx.json
           scanners: vuln
+
+      - name: Validate mct-web image SBOM (SBOM-P3-005)
+        # Floor + digest-binding check before upload (see validate-sbom.mjs).
+        run: |
+          node scripts/validate-sbom.mjs --image \
+            --digest "${{ steps.build-web.outputs.digest }}" \
+            image-sbom-mct-web.cdx.json
 
       - name: Upload mct-web image SBOM
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

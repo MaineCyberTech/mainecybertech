@@ -24,6 +24,22 @@ runs:
       shell: bash
       run: pnpm test:coverage
 
+    - name: Upload coverage reports (TEST-P3-003)
+      # Publishes each package's coverage output + jest results so the measured
+      # percentages behind the ratcheted floors are observable from CI instead
+      # of inferred. Best-effort: a missing report never fails the job.
+      if: always()
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: coverage-reports
+        path: |
+          apps/*/coverage/
+          packages/*/coverage/
+          apps/*/.jest-results.json
+          packages/*/.jest-results.json
+        retention-days: 14
+        if-no-files-found: ignore
+
     - name: Validate OpenAPI spec
       shell: bash
       run: pnpm --filter=api exec tsx src/scripts/validate-openapi.ts
@@ -111,6 +127,13 @@ runs:
     - name: Verify review.md mirror is in sync
       shell: bash
       run: node scripts/sync-review-md.mjs --check
+
+    - name: Verify prompt pack provenance (AI-P3-006)
+      # Dependency-free. Runs in the shared PR/deploy test job so a change to
+      # prompts/ is caught before merge; validate.yml's prompt-provenance job
+      # keeps running it as defence in depth.
+      shell: bash
+      run: node scripts/verify-prompts.js verify
 
     - name: Verify store catalog copies are in sync (HYGIENE-P2-002)
       # apps/api/src/data/products.json is a generated mirror of the canonical

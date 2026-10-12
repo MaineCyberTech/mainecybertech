@@ -37,8 +37,15 @@
 
 ### Audits & Reviews
 
+> All documents in this section are **dated point-in-time snapshots** — they
+> describe the repo at the date in their filename and are not current state
+> (DOC-P3-001). Current state: [AGENTS.md](../AGENTS.md); the dated remediation
+> narrative lives in [HISTORY.md](HISTORY.md); committed audit runs are indexed
+> in [audits/README.md](audits/README.md).
+
 | Document                                                           | Purpose                                                         |
 | ------------------------------------------------------------------ | --------------------------------------------------------------- |
+| [HISTORY.md](HISTORY.md)                                           | Historical remediation record (moved from AGENTS.md, AI-P3-002) |
 | [FULL_SYSTEM_AUDIT_2026-06-09.md](FULL_SYSTEM_AUDIT_2026-06-09.md) | Full-system architecture review & repo health audit             |
 | [ARCHITECTURAL_ANALYSIS.md](ARCHITECTURAL_ANALYSIS.md)             | Deep-dive audit across 6 pillars with 23 critical observations  |
 | [ARCHITECTURAL_AUDIT_COMPLETE.md](ARCHITECTURAL_AUDIT_COMPLETE.md) | Full architectural & operational audit with remediation roadmap |

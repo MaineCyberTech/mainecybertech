@@ -34,7 +34,7 @@ This document establishes the standard naming convention for database migrations
 ### 1. Prefix
 
 - Use the **next number after the newest file** in `supabase/migrations/`
-  (they are sequential and monotonic; the workflow doc's `5302426` example
+  (they are sequential and monotonic; the workflow doc's `5302459` example
   demonstrates the pattern, not a fixed value).
 - Never renumber or edit an already-applied migration — add a new file.
 - Duplicate prefixes are not allowed; check with the validation command below.
@@ -61,6 +61,7 @@ This document establishes the standard naming convention for database migrations
 | Alter/Modify   | `alter_`               | `alter_column_type`           |
 | Update data    | `update_`              | `update_user_statuses`        |
 | Fix            | `fix_`                 | `fix_document_versions_update_predicate` |
+| Revert         | `revert_`              | `revert_alter_column_type`             |
 | Cleanup        | `cleanup_`             | `cleanup_unused_tables`       |
 
 ### 4. Special Cases
@@ -148,6 +149,10 @@ supabase db reset
 
 # Never use `supabase db push` locally — it targets the linked remote project.
 ```
+
+`scripts/verify-rls.mjs` (CI: the shared unit-tests action) fails any migration
+with prefix `>= 5302427` whose filename is not `NNNNNNN_lower_snake_case.sql`,
+so a non-conforming new file cannot merge (DOC-P3-009).
 
 ## Best Practices
 

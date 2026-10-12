@@ -48,11 +48,11 @@ mainecybertech-portal/
 │   └── terraform/
 │       └── digitalocean/  IaC (droplet, firewall, DNS)
 ├── supabase/
-│   ├── migrations/    127 SQL migration files
+│   ├── migrations/    157 SQL migration files
 │   └── seeds/         9 seed files
 ├── docs/              300+ documentation files
 ├── scripts/           PowerShell + bash utilities
-└── .github/           CI/CD workflows (16 total)
+└── .github/           CI/CD workflows (28 total)
 ```
 
 ### Key Design Principles
@@ -285,9 +285,9 @@ Key helper functions (defined in migration `5302026`):
 
 ### Debugging Tips
 
-- API logs: `docker logs mct-api -f` or `pnpm --filter=api dev`
-- Worker logs: `docker logs mct-worker -f`
-- Redis: `docker exec -it mct-redis redis-cli`
+- API logs: `docker logs mct-portal-api-1 -f` or `pnpm --filter=api dev`
+- Worker logs: `docker logs mct-portal-worker-1 -f`
+- Redis: `docker exec -it mct-portal-redis-1 redis-cli`
 - Database: `supabase db dump --linked` to inspect remote schema
 - Sentry: Check `sentry.io` for error tracking
 
@@ -298,7 +298,7 @@ Key helper functions (defined in migration `5302026`):
 | Document                                       | What it covers                                                                              |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `AGENTS.md`                                    | Full architecture, test patterns, critical context                                          |
-| `docs/API_ENDPOINT_INVENTORY.md`               | Historical endpoint inventory (see `docs/openapi.yaml` for the authoritative 412-path spec) |
+| `docs/API_ENDPOINT_INVENTORY.md`               | Historical endpoint inventory (see `docs/openapi.yaml` for the authoritative 420-path spec) |
 | `docs/ENVIRONMENT_VARIABLES.md`                | All env vars across all services                                                            |
 | `docs/MEGA_AUDIT_2026-06-18.md`                | Comprehensive architecture & security audit                                                 |
 | `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` | Operator manual                                                                             |

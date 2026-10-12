@@ -8,7 +8,9 @@
  *
  * Environment / flags:
  *   --licenses <path>  or  SBOM_LICENSES_JSON=<path>
- *       Optional `pnpm licenses list --json` output. When provided (or when the
+ *       Optional `node scripts/collect-licenses.mjs` output (the same JSON
+ *       shape as `pnpm licenses list --json`, which is broken on pnpm 10.34.x).
+ *       When provided (or when the
  *       default `licenses.json` exists), each component gets a `licenses`
  *       entry. Without it the SBOM still emits a dependency graph and commit
  *       binding; licenses are simply omitted.
@@ -255,7 +257,7 @@ function readJsonFile(path) {
   return JSON.parse(buffer.toString("utf8").replace(/^\uFEFF/, ""));
 }
 
-/** Map of package name -> SPDX expression from `pnpm licenses list --json`. */
+/** Map of package name -> SPDX expression from the collect-licenses output. */
 function loadLicenses() {
   if (!existsSync(LICENSES_FILE)) return new Map();
   const raw = readJsonFile(LICENSES_FILE);

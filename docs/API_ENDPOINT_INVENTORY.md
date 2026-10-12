@@ -2,7 +2,7 @@
 
 > **Historical snapshot (2026-06-18) — not exhaustive.** The authoritative,
 > current contract is the generated [`docs/openapi.yaml`](openapi.yaml)
-> (412 paths), regenerated with `pnpm --filter=api generate:openapi`.
+> (420 paths), regenerated with `pnpm --filter=api generate:openapi`.
 > Keep this file only for historical reference; do not rely on its counts.
 >
 > Original header: Complete inventory of all API v1 endpoints with methods, auth requirements, Zod validation, and response types.

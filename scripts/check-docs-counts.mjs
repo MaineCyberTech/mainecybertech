@@ -19,6 +19,8 @@
  *     task files, seed files, GitHub Actions workflows, AI prompt files and
  *     build/dev/utility scripts vs the filesystem
  *   - AGENTS.md SQL migrations total and "(latest: N)" vs supabase/migrations
+ *   - README.md / docs/ONBOARDING.md / docs/API_ENDPOINT_INVENTORY.md migration,
+ *     workflow and OpenAPI-path prose counts vs the tree (DOC-P3-003)
  *   - docs/WEB_UI_CONVENTIONS.md admin/portal nav entry counts vs the
  *     `key:` occurrences in the nav catalogs
  *   - a11y route counts in AGENTS.md, docs/CI.md, docs/testing.md and
@@ -429,6 +431,65 @@ if (declaredLatest !== null && migrations.length > 0) {
     `AGENTS.md latest migration vs newest file (${migrations[0].name})`,
     declaredLatest,
     migrations[0].version,
+  );
+}
+
+// --- DOC-P3-003: prose counts in README/ONBOARDING/inventory --------------
+// These files stated migration/workflow/OpenAPI counts the guard did not
+// read, so they drifted silently. Guard them the same way as AGENTS.md.
+const onboarding = read("docs/ONBOARDING.md");
+const openapiPathCount = (read("docs/openapi.yaml").match(/^ {2}"\//gm) ?? []).length;
+
+const readmeMigrations = parse(
+  "README.md migration count",
+  readme,
+  /database \/ RLS foundation \(([\d,]+) migrations\)/,
+);
+if (readmeMigrations !== null) {
+  check("README.md migration count vs supabase/migrations/*.sql", readmeMigrations, migrationFiles.length);
+}
+const onboardingMigrations = parse(
+  "docs/ONBOARDING.md migration count",
+  onboarding,
+  /migrations\/\s+([\d,]+) SQL migration files/,
+);
+if (onboardingMigrations !== null) {
+  check(
+    "docs/ONBOARDING.md migration count vs supabase/migrations/*.sql",
+    onboardingMigrations,
+    migrationFiles.length,
+  );
+}
+const onboardingWorkflows = parse(
+  "docs/ONBOARDING.md workflow count",
+  onboarding,
+  /CI\/CD workflows \(([\d,]+) total\)/,
+);
+if (onboardingWorkflows !== null) {
+  check(
+    "docs/ONBOARDING.md workflow count vs .github/workflows/*.yml",
+    onboardingWorkflows,
+    workflowCount,
+  );
+}
+const onboardingOpenapiPaths = parse(
+  "docs/ONBOARDING.md openapi paths",
+  onboarding,
+  /authoritative ([\d,]+)-path spec/,
+);
+if (onboardingOpenapiPaths !== null) {
+  check("docs/ONBOARDING.md openapi paths vs docs/openapi.yaml", onboardingOpenapiPaths, openapiPathCount);
+}
+const inventoryOpenapiPaths = parse(
+  "docs/API_ENDPOINT_INVENTORY.md openapi paths",
+  read("docs/API_ENDPOINT_INVENTORY.md"),
+  /\(([\d,]+) paths\)/,
+);
+if (inventoryOpenapiPaths !== null) {
+  check(
+    "docs/API_ENDPOINT_INVENTORY.md openapi paths vs docs/openapi.yaml",
+    inventoryOpenapiPaths,
+    openapiPathCount,
   );
 }
 
