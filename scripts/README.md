@@ -31,6 +31,7 @@
 | `backup-database.ps1` / `.sh` | Back up the Supabase/database data. |
 | `restore-database.sh` | Restore a database backup (Linux/macOS). |
 | `backup-storage.sh` | Mirror Supabase Storage buckets (`documents`/`avatars`/`logos`) to S3/Spaces. |
+| `record-backup-heartbeat.sh` | Record the platform backup heartbeat (`platform_backup_heartbeats`) after a successful backup run (DR-P2-008). |
 | `restore-storage.sh` | Restore uploaded files from a storage backup archive (Linux/macOS). |
 | `dev-setup.sh` | One-shot developer environment setup (Linux/macOS). |
 | `preflight-check.sh` | Pre-deploy sanity checks (env files, tool versions). |

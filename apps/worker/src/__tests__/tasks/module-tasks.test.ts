@@ -161,13 +161,6 @@ function defineScanTaskSuite(config: {
 }
 
 defineScanTaskSuite({
-  name: "backupDrCheck",
-  handler: backupDrCheck,
-  table: "backup_status",
-  fetchError: "Failed to fetch backup_status records",
-});
-
-defineScanTaskSuite({
   name: "dmarcCoachCheck",
   handler: dmarcCoachCheck,
   table: "dmarc_analyses",
@@ -212,9 +205,63 @@ defineScanTaskSuite({
 describe("backupDrCheck", () => {
   beforeEach(resetState);
 
-  it("flags stale and missing backups as warning/critical", async () => {
+  it("returns { ok: true } when the platform heartbeats are fresh", async () => {
     const now = Date.now();
     const hoursAgo = (h: number) => new Date(now - h * 60 * 60 * 1000).toISOString();
+    tableResults.platform_backup_heartbeats = {
+      data: [{ workflow: "db-backup", last_success_at: hoursAgo(2) }],
+    };
+    tableResults.backup_status = { data: [] };
+
+    expect(await backupDrCheck({})).toEqual({ ok: true });
+    expect(updates).toHaveLength(0);
+  });
+
+  it("returns { ok: false } when a platform heartbeat is missing or stale", async () => {
+    const now = Date.now();
+    const hoursAgo = (h: number) => new Date(now - h * 60 * 60 * 1000).toISOString();
+
+    // db-backup has never recorded a heartbeat.
+    tableResults.platform_backup_heartbeats = { data: [] };
+    tableResults.backup_status = { data: [] };
+
+    const missing = await backupDrCheck({});
+    expect(missing.ok).toBe(false);
+    expect(missing.error).toContain("db-backup (no successful run recorded)");
+
+    // ...or the recorded run is older than the 30h window.
+    tableResults.platform_backup_heartbeats = {
+      data: [{ workflow: "db-backup", last_success_at: hoursAgo(40) }],
+    };
+    const stale = await backupDrCheck({});
+    expect(stale.ok).toBe(false);
+    expect(stale.error).toContain("db-backup (40h old; limit 30h)");
+
+    // A failed heartbeat fetch fails the task (never silently pass).
+    tableResults.platform_backup_heartbeats = {
+      data: null,
+      error: { message: "Fetch failed" },
+    };
+    const failed = await backupDrCheck({});
+    expect(failed.ok).toBe(false);
+    expect(failed.error).toBe("Failed to fetch platform_backup_heartbeats: Fetch failed");
+
+    // Same for a failed client-row fetch once the heartbeat is readable.
+    tableResults.platform_backup_heartbeats = {
+      data: [{ workflow: "db-backup", last_success_at: hoursAgo(2) }],
+    };
+    tableResults.backup_status = { data: null, error: { message: "Fetch failed" } };
+    const clientFailed = await backupDrCheck({});
+    expect(clientFailed.ok).toBe(false);
+    expect(clientFailed.error).toBe("Failed to fetch backup_status records: Fetch failed");
+  });
+
+  it("flags stale and missing client backup_status rows as warning/critical", async () => {
+    const now = Date.now();
+    const hoursAgo = (h: number) => new Date(now - h * 60 * 60 * 1000).toISOString();
+    tableResults.platform_backup_heartbeats = {
+      data: [{ workflow: "db-backup", last_success_at: hoursAgo(2) }],
+    };
     tableResults.backup_status = {
       data: [
         { id: "fresh", last_backup_at: hoursAgo(1) },

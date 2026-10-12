@@ -4,6 +4,13 @@
 **API Routes:** `apps/api/src/routes/final/backups.ts` + `apps/api/src/routes/final/crud.ts`
 **SDK:** `packages/sdk/src/final.ts`
 
+> **Not the platform's own backup signal (DR-P2-008).** This module tracks
+> *client* backup/DR records per organization; its `backup_status` rows are
+> product data. The platform's backup freshness is recorded in
+> `public.platform_backup_heartbeats` by `.github/workflows/db-backup.yml`
+> (`scripts/record-backup-heartbeat.sh`) and alerted on by the worker
+> `backup-dr-check` plus `backup-staleness-check.yml` — see `docs/RTO_RPO.md`.
+
 ## Overview
 
 Centralized backup and disaster recovery review platform. Tracks backup solutions (Veeam, Datto, Acronis, Azure Backup, etc.), recovery point objectives (RPO), recovery time objectives (RTO), last successful backup status, and DR test results across all client environments.

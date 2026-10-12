@@ -3845,6 +3845,31 @@ export type Database = {
           { foreignKeyName: "phishing_targets_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };
+      platform_backup_heartbeats: {
+        Row: {
+          last_success_at: string;
+          recorded_at: string;
+          run_id: string | null;
+          run_url: string | null;
+          workflow: string;
+        };
+        Insert: {
+          last_success_at: string;
+          workflow: string;
+          recorded_at?: string | null;
+          run_id?: string | null;
+          run_url?: string | null;
+        };
+        Update: {
+          last_success_at?: string | null;
+          recorded_at?: string | null;
+          run_id?: string | null;
+          run_url?: string | null;
+          workflow?: string | null;
+        };
+        Relationships: [
+        ];
+      };
       port_maps: {
         Row: {
           connected_device: string | null;

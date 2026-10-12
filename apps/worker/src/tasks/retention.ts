@@ -94,7 +94,7 @@ async function purgeInBatches(
 
 /**
  * Archive audit rows older than `cutoff` and delete them, via the DB function
- * added in 5302440 (DATA-P2-005). The copy and the delete happen in one
+ * added in 5302442 (DATA-P2-005). The copy and the delete happen in one
  * transaction, so a failed archive can never destroy a row. The function caps
  * itself at BATCH_SIZE * MAX_BATCHES; hitting the cap means the backlog
  * remains for the next run.

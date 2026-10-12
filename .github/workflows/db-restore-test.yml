@@ -1,21 +1,62 @@
 name: Database Restore Test
+
+# Weekly restore of the newest backup into a throwaway Postgres, with
+# integrity assertions (see docs/RTO_RPO.md).
+#
+# Scheduled runs verify the dev backups. DATA-P2-010: production long-term
+# backup is a supported target:
+#   * workflow_dispatch `environment: prod` runs from `main` and attaches the
+#     approval-gated `prod-approval` environment (required reviewers must be
+#     configured in GitHub for the gate to be real).
+#   * the schedule targets prod automatically once the operator sets the
+#     `PROD_BACKUP_ENABLED` repository variable to `true`; that run attaches
+#     `prod-backup` instead of `dev` (one schedule target at a time; dispatch
+#     `environment: dev` manually to keep verifying the dev backups). Use the
+#     same environment the prod backup writes with — no required reviewers, so
+#     the unattended verification actually runs.
+# Operator dependency: the prod backup secrets must be provisioned in the
+# environment the job attaches (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md).
+#
+# The "a backup ran" heartbeat is recorded by db-backup.yml; this workflow
+# proves the backup is restorable and is covered by
+# backup-staleness-check.yml's independent GitHub-API check.
+
 on:
   schedule:
     - cron: "0 6 * * 1"  # Every Monday at 6 AM UTC
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (prod dispatch requires main + the prod-approval gate)"
+        type: choice
+        options:
+          - dev
+          - prod
+        default: dev
 
 permissions:
   contents: read
 
 jobs:
   restore-test:
-    # Backups target the dev database/buckets; the dev environment holds
-    # the SUPABASE_*/Spaces secrets these jobs resolve.
-    environment: dev
+    # Dispatch: the selected environment (prod -> the approval-gated
+    # prod-approval). Schedule: dev normally; prod-backup once the operator has
+    # enabled the scheduled prod target.
+    environment: ${{ (github.event.inputs.environment == 'prod') && 'prod-approval' || (github.event_name == 'schedule' && vars.PROD_BACKUP_ENABLED == 'true') && 'prod-backup' || 'dev' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Restrict prod dispatch to the main branch
+        # A prod restore test must run the workflow definition that is on main,
+        # not an arbitrary feature branch.
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::environment=prod can only be dispatched from the main branch (got ${GITHUB_REF}). Promote develop -> main first."
+            exit 1
+          fi
 
       - name: Load restore-test baseline
         id: baseline
