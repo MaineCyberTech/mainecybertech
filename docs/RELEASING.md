@@ -131,8 +131,8 @@ re-deploys the previously running tag before exiting non-zero.
   image stays tied to its SBOM after the artifact expires (SUPPLY-P3-001);
   `build-push.yml` emits the same image SBOM as an artifact. See
   [docs/SBOM_PROCESS.md](SBOM_PROCESS.md) for retrieval and verification.
-- Backups: `db-backup.yml` runs daily at 04:00 UTC to Spaces and notifies Slack
-  on failure.
+- Backups: `db-backup.yml` runs daily at 04:00 UTC to Spaces and notifies ntfy
+  on failure (Slack is the fallback channel).
 - Monitoring: [docs/MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md).
 
 ## Before promoting to prod

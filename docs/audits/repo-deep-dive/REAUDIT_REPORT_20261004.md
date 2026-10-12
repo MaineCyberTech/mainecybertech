@@ -6,9 +6,11 @@ MaineCyberTech repositories, plus the deterministic (LLM-free) sweep.
 
 - **Method:** read-only verification per repo at the merged `origin` HEAD, then a
   machine deep sweep (`tools/deterministic_checks.py <repo> --deep`). No secrets printed.
-- **Per-repo verification records:** `C:\temp\reaudit\<repo>\VERIFY.md` + `verify.json`.
-- **Machine rollup:** `C:\Users\admin\AppData\Local\Temp\opencode\reaudit-sweep\ORG_SUMMARY.md`
-  (generated 2026-10-04T17:17:06Z).
+- **Per-repo verification records:** the sweep's `VERIFY.md` + `verify.json` working
+  files were machine-local and are **not committed**; the reconciled verdicts are
+  recorded in each run's `follow_up_register.md` (see §7).
+- **Machine rollup:** generated locally by the sweep (not committed; the baseline and
+  post-fix counts are reproduced in §6).
 - **Reconciled runs:** each original `20261003-0018` run's `follow_up_register.md`,
   `risk_register.md` and `findings.json` now carry the re-audit verdict; all seven
   still pass `tools/check_run.sh`.
@@ -17,13 +19,13 @@ MaineCyberTech repositories, plus the deterministic (LLM-free) sweep.
 
 | Repo | Orig P0 | Orig P1 | P0/P1 closed | still-open | owner-accepted | regressed | VERIFY |
 |---|---:|---:|---:|---:|---:|---:|---|
-| buddy | 0 | 11 | 8 | 3 | 0 | 0 | `file:///C:/temp/reaudit/buddy/VERIFY.md` |
-| chat | 1 | 25 | 26 | 0 | 0 | 0 | `file:///C:/temp/reaudit/chat/VERIFY.md` |
-| falcon | 4 | 20 | 17 | 6 | 1 | 0 | `file:///C:/temp/reaudit/falcon/VERIFY.md` |
-| falcon-edge | 0 | 3 | 3 | 0 | 0 | 0 | `file:///C:/temp/reaudit/falcon-edge/VERIFY.md` |
-| mainecybertech | 1 | 3 | 3 | 1 | 0 | 0 | `file:///C:/temp/reaudit/mainecybertech/VERIFY.md` |
-| repo-deep-dive | 0 | 9 | 9 | 0 | 0 | 0 | `file:///C:/temp/reaudit/repo-deep-dive/VERIFY.md` |
-| snowride | 0 | 6 | 5 | 1 | 0 | 0 | `file:///C:/temp/reaudit/snowride/VERIFY.md` |
+| buddy | 0 | 11 | 8 | 3 | 0 | 0 | not committed |
+| chat | 1 | 25 | 26 | 0 | 0 | 0 | not committed |
+| falcon | 4 | 20 | 17 | 6 | 1 | 0 | not committed |
+| falcon-edge | 0 | 3 | 3 | 0 | 0 | 0 | not committed |
+| mainecybertech | 1 | 3 | 3 | 1 | 0 | 0 | not committed |
+| repo-deep-dive | 0 | 9 | 9 | 0 | 0 | 0 | not committed |
+| snowride | 0 | 6 | 5 | 1 | 0 | 0 | not committed |
 | **Total** | **6** | **77** | **71** | **11** | **1** | **0** | |
 
 `closed`/`still-open`/`regressed` above are the **post-fix** state: the four actionable
@@ -44,40 +46,40 @@ Still-open: `CI-P1-002` (branch protection unverifiable from a clone), `EXEC-P1-
 (derivative gate — an unconditional GO is still unjustified), `SUPPLY-P1-001` (`LICENSE`
 is the placeholder `LICENSE - PENDING`). Five new P2/P3 observations (docs drift, red CI
 audit job, transitive CVEs, missing `.gitattributes`, SBOM inequality) — no P0/P1.
-Evidence: `file:///C:/temp/reaudit/buddy/VERIFY.md`.
+Evidence: re-audit sweep record (local, not committed).
 
 ### chat — 1 P0 / 25 P1
 Re-audit verdict: **P0 1/1 closed, P1 24/25 closed, 1 still-open, 0 regressed**; P2/P3
 spot-checks 15/17 closed. The single still-open P1 was `OBS-P1-001` (alerting config
 checked in but not wired/deployed) — **fixed by #95** (section 4). Spot-check residuals:
 `OBS-P2-004` (no distributed tracing) and `HYG-P3-003` (TODO) — the latter was also
-removed by #95. Evidence: `file:///C:/temp/reaudit/chat/VERIFY.md`.
+removed by #95. Evidence: re-audit sweep record (local, not committed).
 
 ### falcon — 4 P0 / 20 P1
 Re-audit verdict: **P0 3/4 closed, 1 still-open (`OBS-P0-001`); P1 14/20 closed, 6
 still-open, 0 regressed**. Closed P0s (`FINAL-P0-001`, `HYG-P0-001`, `HYG-P0-002`) are the
 release-integrity/publication-equality chain; the 7 not-closed P0/P1 are owner-side
-residuals (section 5). Evidence: `file:///C:/temp/reaudit/falcon/VERIFY.md`.
+residuals (section 5). Evidence: re-audit sweep record (local, not committed).
 
 ### falcon-edge — 0 P0 / 3 P1
 Re-audit verdict: **P1 3/3 closed** (all three are one root cause: non-terminal
 revocation on the enrollment path, fixed by PS-001 / #17); **P2/P3 30/39 closed, 9
 still-open, 0 regressed**. Note: in the verification clone `origin/main` was `6573de5`
 (PR #32); the `#33`–`#41` remediation fixes were content-verified on their branch tips
-with merge commits cited. Evidence: `file:///C:/temp/reaudit/falcon-edge/VERIFY.md`.
+with merge commits cited. Evidence: re-audit sweep record (local, not committed).
 
 ### mainecybertech — 1 P0 / 3 P1
 Re-audit verdict (pre-fix): **P0 1/1 closed; P1 1/4 closed, 3 still-open, 0 regressed**;
 P2/P3 spot-check 3/14 closed. During this cycle `SEC-P1-001` and `CI-P1-001` were fixed
 (section 4), leaving `FINAL-P1-001` (aggregate) still-open pending a clean production
 deploy. `SEC-P2-002` (webhook SSRF) was completed for the worker by #84. Evidence:
-`file:///C:/temp/reaudit/mainecybertech/VERIFY.md`.
+re-audit sweep record (local, not committed).
 
 ### repo-deep-dive — 0 P0 / 9 P1
 Re-audit verdict: **P1 8/9 closed, 1 regressed, 0 still-open**. The regression
 `SUPPLY-P1-001` (unpinned GitHub Actions) is fixed by #39 (section 3); all nine P1s are
 now `verified-fixed`. Newer-run P1 (`CI-P1-001`, inert secret gate) is closed. Evidence:
-`file:///C:/temp/reaudit/repo-deep-dive/VERIFY.md`.
+re-audit sweep record (local, not committed).
 
 ### snowride — 0 P0 / 6 P1
 Re-audit verdict (pre-fix): **P1 3/6 closed, 2 still-open, 1 regressed, 0 P0**. The
@@ -86,7 +88,7 @@ still-open `OBS-P1-001` (schedule only on the host) were fixed by #38 (sections 
 `FINAL-P1-001` remains still-open: its signature half was already closed and #38
 re-attested the stale identity (commit + migration head, with a drift guard), but a
 signature-tamper release check in CI is still absent. Evidence:
-`file:///C:/temp/reaudit/snowride/VERIFY.md`.
+re-audit sweep record (local, not committed).
 
 ## 3. Regressions found and fixed
 
@@ -205,7 +207,7 @@ partial; they were not blanket-promoted. All seven runs pass `tools/check_run.sh
 ## 8. Verification performed
 
 - Per-repo LLM verification at the merged HEAD; evidence is `path:line` / merge PR in
-  `C:\temp\reaudit\<repo>\VERIFY.md` and `verify.json`.
+  the sweep's local `VERIFY.md` and `verify.json` records (machine-local, not committed).
 - Fix PRs confirmed merged via the GitHub API; merge/head commits and the
   `prod`/`prod-approval` environment protection rules read live (not printed).
 - Machine sweep re-run across all seven repos; compared to the archived baseline.

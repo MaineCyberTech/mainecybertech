@@ -153,11 +153,11 @@ for the full deployment/terraform secret list.
 | `BACKUP_ENCRYPTION_KEY`   | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | openssl passphrase encrypting backups; secret, never printed |
 | `SUPABASE_URL`            | `storage-backup.yml`                   | Supabase project URL for the Storage REST API                            |
 | `SUPABASE_SERVICE_ROLE_KEY` | `storage-backup.yml`                 | Service-role key for Storage list/download/upload (already a deploy secret) |
-| `SLACK_WEBHOOK_URL`       | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | Slack notification when a backup or restore test fails |
+| `SLACK_WEBHOOK_URL`       | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | Slack fallback notification when a backup or restore test fails (ntfy is primary; see the secrets matrix) |
 
 ## CI / Docker
 
-The deploy workflow (`deploy-do.yml`) writes the runtime env to `/opt/mct-portal/.env` on the DO droplet via SSH heredoc. `infra/digitalocean/docker-compose.yml` interpolates that file for the values it references in each service's `environment:` block.
+The deploy workflow (`deploy-do.yml`) writes the runtime env to `/opt/mct-portal/.env` on the DO droplet with `printf '%s'` (values are written literally and never re-expanded by the shell). `infra/digitalocean/docker-compose.yml` interpolates that file for the values it references in each service's `environment:` block.
 
 Web `NEXT_PUBLIC_*` vars are passed as Docker build args for client-side inlining, and set as runtime env vars for server-side use.
 
