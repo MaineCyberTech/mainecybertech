@@ -53,6 +53,7 @@ export const EXTERNAL_KEYS = {
     SENTRY_TRACES_SAMPLE_RATE: "read by the server Sentry configs from process.env",
     SENTRY_RELEASE: "read by the server Sentry configs from process.env",
     NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED: "read directly by lib/test-accounts.ts",
+    API_INTERNAL_URL: "server-side SSR runtime override for lib/api.ts (ARCH-P3-003)",
   },
 };
 
