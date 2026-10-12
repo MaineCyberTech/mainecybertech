@@ -6,6 +6,7 @@ import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import {
   createFrameworkSchema,
   createControlSchema,
@@ -194,6 +195,7 @@ router.delete(
   requirePermission("compliance-readiness", "delete"),
   async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getScopedClient(req, "compliance", "write");
       const control = await loadOwned(
         req,

@@ -24,7 +24,7 @@ export class UptimeMonitorApi {
   }
 
   removeCheck(id: string) {
-    return this.client.delete(`/api/v1/uptime-monitor/checks/${id}`);
+    return this.client.delete(`/api/v1/uptime-monitor/checks/${id}`, undefined, { confirm: true });
   }
 
   getResults(id: string) {

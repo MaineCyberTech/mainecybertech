@@ -14,6 +14,7 @@ import { createAssetSchema, updateAssetSchema } from "../validators/assets";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { moduleCommentSchema } from "../validators/comments";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -307,6 +308,7 @@ router.patch(
 
 router.delete("/:id", requirePermission("assets", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "assets", "write");
     const { data: asset, error: fetchError } = await supabase
       .from("assets")

@@ -12,6 +12,7 @@ import {
   updateVendorContactSchema,
 } from "../validators/vendors";
 import { queryInt } from "../lib/query";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -138,6 +139,7 @@ function crudEndpoints(
     requirePermission(resource, "delete"),
     async (req, res, next) => {
       try {
+        assertDeleteConfirmed(req.body);
         const supabase = getScopedClient(req, "vendors", "write");
         const { error } = await supabase
           .from(table)

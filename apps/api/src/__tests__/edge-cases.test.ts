@@ -155,7 +155,7 @@ describe("API edge cases", () => {
 
       const res = await request(app)
         .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect([403, 500]).toContain(res.status);
     });

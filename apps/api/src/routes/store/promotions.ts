@@ -9,6 +9,7 @@ import { logAuditEvent } from "../../services/audit";
 import { type UpdateRow } from "../../lib/db-types";
 import { LIST_HARD_CAP } from "../../lib/pagination";
 import { applyOrgScope, resolveAdminTenantScope } from "../../lib/admin-scope";
+import { assertDeleteConfirmed } from "../../lib/delete-confirm";
 
 /** Store promotions (public reads + admin CRUD). Extracted from `routes/store.ts` (same pattern as `routes/final/`). */
 export function registerPromotionRoutes(router: Router) {
@@ -218,6 +219,7 @@ export function registerPromotionRoutes(router: Router) {
     requireAdmin,
     async (req, res, next) => {
       try {
+        assertDeleteConfirmed(req.body);
         const supabase = getSupabaseAdmin();
         const scope = await resolveAdminTenantScope(req);
         const { data: existing } = await supabase

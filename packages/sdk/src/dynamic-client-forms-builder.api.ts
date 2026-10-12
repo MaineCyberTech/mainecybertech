@@ -46,7 +46,11 @@ export class DynamicFormsApi {
   }
 
   async remove(id: string) {
-    const response = await this.client.delete<{ deleted: boolean }>(`/api/v1/dynamic-forms/${id}`);
+    const response = await this.client.delete<{ deleted: boolean }>(
+      `/api/v1/dynamic-forms/${id}`,
+      undefined,
+      { confirm: true },
+    );
     return response;
   }
 

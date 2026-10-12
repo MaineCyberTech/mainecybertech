@@ -9,6 +9,7 @@ import { loadOwned } from "../lib/tenant";
 import { createStagingSchema, updateStagingSchema } from "../validators/staging";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -143,6 +144,7 @@ router.patch("/:id", requirePermission("hardware-staging", "edit"), async (req, 
 
 router.delete("/:id", requirePermission("hardware-staging", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "staging", "write");
     await loadOwned(
       req,

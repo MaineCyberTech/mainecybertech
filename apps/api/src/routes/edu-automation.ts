@@ -24,6 +24,7 @@ import { queryInt } from "../lib/query";
 import { applyOrgScope, resolveAdminTenantScope } from "../lib/admin-scope";
 import { parsePartialUpdate } from "../lib/validators";
 import { sanitizeSearchTerm } from "../lib/search";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -145,6 +146,7 @@ function crud(
     requirePermission(permissionModule, "delete"),
     async (req, res, next) => {
       try {
+        assertDeleteConfirmed(req.body);
         const sb = getScopedClient(req, "edu-automation", "write");
         const { error } = await sb
           .from(table)
@@ -600,6 +602,7 @@ router.delete(
   requirePermission("phishing-simulations", "delete"),
   async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getScopedClient(req, "edu-automation", "write");
       const organizationId = req.query.organization_id as string;
       const { error } = await supabase

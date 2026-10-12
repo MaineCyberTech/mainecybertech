@@ -213,7 +213,7 @@ describe("Finding tenant isolation (QW-1)", () => {
     mockFinding(ORG_A);
     const res = await request(app)
       .delete(`/api/v1/findings/${FINDING_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 
@@ -221,7 +221,7 @@ describe("Finding tenant isolation (QW-1)", () => {
     mockFinding(ORG_B);
     const res = await request(app)
       .delete(`/api/v1/findings/${FINDING_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(404);
   });
 

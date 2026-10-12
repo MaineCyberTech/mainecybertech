@@ -58,7 +58,10 @@ export class SecuritySuiteApi {
       this.client.post<M365HardeningRecord>("/api/v1/security-suite/m365-hardening", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<M365HardeningRecord>(`/api/v1/security-suite/m365-hardening/${id}`, d),
-    remove: (id: string) => this.client.delete(`/api/v1/security-suite/m365-hardening/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/security-suite/m365-hardening/${id}`, undefined, {
+        confirm: true,
+      }),
     scan: (id: string) =>
       this.client.post<M365HardeningRecord>(`/api/v1/security-suite/m365-hardening/${id}/scan`, {}),
   };
@@ -71,7 +74,8 @@ export class SecuritySuiteApi {
       this.client.post<IncidentRecord>("/api/v1/security-suite/incidents", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<IncidentRecord>(`/api/v1/security-suite/incidents/${id}`, d),
-    remove: (id: string) => this.client.delete(`/api/v1/security-suite/incidents/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/security-suite/incidents/${id}`, undefined, { confirm: true }),
   };
 
   idVerify = {
@@ -90,7 +94,9 @@ export class SecuritySuiteApi {
         d,
       ),
     remove: (id: string) =>
-      this.client.delete(`/api/v1/security-suite/identity-verification/${id}`),
+      this.client.delete(`/api/v1/security-suite/identity-verification/${id}`, undefined, {
+        confirm: true,
+      }),
   };
 
   endpoints = {
@@ -105,7 +111,10 @@ export class SecuritySuiteApi {
       this.client.post<EndpointSecurity>("/api/v1/security-suite/endpoint-security", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<EndpointSecurity>(`/api/v1/security-suite/endpoint-security/${id}`, d),
-    remove: (id: string) => this.client.delete(`/api/v1/security-suite/endpoint-security/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/security-suite/endpoint-security/${id}`, undefined, {
+        confirm: true,
+      }),
     coverage: (p?: Record<string, string | number | undefined>) =>
       this.client.get<Record<string, unknown>>(
         "/api/v1/security-suite/endpoint-security/coverage",

@@ -148,7 +148,7 @@ describe("Network Diagrams API", () => {
     );
     const res = await request(app)
       .delete("/api/v1/network-diagrams/nd-1")
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 });
@@ -192,7 +192,7 @@ describe("Network Diagrams tenant isolation", () => {
     mockDiagram(ORG_A);
     const res = await request(app)
       .delete(`/api/v1/network-diagrams/${DIAGRAM_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 
@@ -200,7 +200,7 @@ describe("Network Diagrams tenant isolation", () => {
     mockDiagram(ORG_B);
     const res = await request(app)
       .delete(`/api/v1/network-diagrams/${DIAGRAM_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(404);
   });
 });

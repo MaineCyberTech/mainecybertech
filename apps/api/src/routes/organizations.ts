@@ -22,6 +22,7 @@ import {
 import { queryInt } from "../lib/query";
 import { recordOrganizationCreated } from "../lib/metrics";
 import { assertCanAssignRole } from "../lib/role-assignment";
+import { assertDeleteConfirmed, assertOrgDeleteConfirmed } from "../lib/delete-confirm";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -437,6 +438,35 @@ router.delete(
       const admin = getSupabaseAdmin();
       const orgId = String(req.params.id);
 
+      const { data: org, error: orgError } = await supabase
+        .from("organizations")
+        .select("id, name, slug")
+        .eq("id", orgId)
+        .single();
+      if (orgError || !org) throw new AppError("NOT_FOUND", "Organization not found", 404);
+
+      // ADMIN-P2-002: a bare { confirm: true } is not enough for a cascading
+      // tenant wipe; the caller must echo the organization slug. Recovery is
+      // operator-only (PITR / backup restore, docs/ROLLBACK_PROCEDURES.md §3).
+      assertOrgDeleteConfirmed(req.body, org);
+
+      // ADMIN-P2-002: record what the cascade is about to destroy so the audit
+      // event shows the blast radius, not just the org id.
+      const countOrgRows = async (table: string): Promise<number> => {
+        const { count } = await admin
+          .from(table)
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", orgId);
+        return count ?? 0;
+      };
+      const [memberships, domains, documents, tickets, projects] = await Promise.all([
+        countOrgRows("memberships"),
+        countOrgRows("organization_domains"),
+        countOrgRows("documents"),
+        countOrgRows("tickets"),
+        countOrgRows("projects"),
+      ]);
+
       // DATA-P2-005: audit_logs.organization_id is `on delete cascade`, so the
       // delete below would destroy the org's compliance history. Copy it to
       // the append-only archive first and fail closed: if the archive step
@@ -473,6 +503,12 @@ router.delete(
         action: "organization.delete",
         entityType: "organization",
         entityId: orgId,
+        metadata: {
+          name: org.name,
+          slug: org.slug,
+          // ADMIN-P2-002: pre-delete cascade summary.
+          cascade: { memberships, domains, documents, tickets, projects },
+        },
       });
 
       res.status(204).send();
@@ -566,6 +602,7 @@ router.patch("/:id/domains/:domainId", requireOrgAccessByParam, requireAdmin, as
 
 router.delete("/:id/domains/:domainId", requireOrgAccessByParam, requireAdmin, async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getSupabaseAdmin();
     const { data: deleted, error } = await supabase
       .from("organization_domains")

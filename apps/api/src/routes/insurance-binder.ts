@@ -7,6 +7,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { queryInt } from "../lib/query";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -221,6 +222,7 @@ router.patch("/:id", requirePermission("insurance-binder", "edit"), async (req, 
 
 router.delete("/:id", requirePermission("insurance-binder", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "insurance-binder", "write");
     const { error } = await supabase
       .from("insurance_evidence")

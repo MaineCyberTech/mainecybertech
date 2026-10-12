@@ -271,7 +271,9 @@ describe("store catalog tenant isolation (MT-P0-003)", () => {
   it("rejects a single-org admin deleting another org's product", async () => {
     setup({ mode: "single", existingOrgId: ORG_B });
 
-    const res = await request(app).delete("/api/v1/store/products/p-1");
+    const res = await request(app)
+      .delete("/api/v1/store/products/p-1")
+      .send({ confirm: true });
 
     expect(res.status).toBe(403);
   });
@@ -311,7 +313,9 @@ describe("store catalog tenant isolation (MT-P0-003)", () => {
   it("rejects a single-org admin deleting a global (null-org) category", async () => {
     setup({ mode: "single", existingOrgId: null });
 
-    const res = await request(app).delete("/api/v1/store/categories/c-1");
+    const res = await request(app)
+      .delete("/api/v1/store/categories/c-1")
+      .send({ confirm: true });
 
     expect(res.status).toBe(403);
   });
@@ -376,7 +380,9 @@ describe("store promotions tenant isolation (MT-P0-004)", () => {
   it("rejects a single-org admin deleting another org's promotion", async () => {
     setup({ mode: "single", existingOrgId: ORG_B });
 
-    const res = await request(app).delete("/api/v1/store/promotions/prom-1");
+    const res = await request(app)
+      .delete("/api/v1/store/promotions/prom-1")
+      .send({ confirm: true });
 
     expect(res.status).toBe(403);
   });

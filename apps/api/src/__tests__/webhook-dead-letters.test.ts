@@ -299,7 +299,7 @@ describe("webhook dead-letter routes", () => {
     it("dismisses the dead letter and audits it", async () => {
       const res = await request(app)
         .delete("/api/v1/webhook-endpoints/dead-letters/dl1")
-        .set("Authorization", "Bearer token");
+        .set("Authorization", "Bearer token").send({ confirm: true });
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual({ ok: true });
@@ -328,7 +328,7 @@ describe("webhook dead-letter routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/webhook-endpoints/dead-letters/dl1")
-        .set("Authorization", "Bearer token");
+        .set("Authorization", "Bearer token").send({ confirm: true });
 
       expect(res.status).toBe(404);
       expect(deadLetterBuilder.delete).not.toHaveBeenCalled();
@@ -344,7 +344,7 @@ describe("webhook dead-letter routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/webhook-endpoints/dead-letters/missing")
-        .set("Authorization", "Bearer token");
+        .set("Authorization", "Bearer token").send({ confirm: true });
 
       expect(res.status).toBe(404);
       expect(logAuditEvent).not.toHaveBeenCalled();

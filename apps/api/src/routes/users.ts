@@ -16,6 +16,7 @@ import { roleKeyOf } from "../lib/roles";
 import { setActiveUsers } from "../lib/metrics";
 import { assertCanAssignRole, resolveRoleKey } from "../lib/role-assignment";
 import { clearPermissionCache } from "../lib/permissions";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -655,6 +656,7 @@ router.put("/:id/permissions", requirePermission("users", "manage"), async (req,
 // cannot leave personal data behind. See docs/runbooks/dsar.md.
 router.delete("/:id", requirePermission("users", "manage"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const targetUserId = String(req.params.id);
 
     if (targetUserId === req.authUser!.userId) {

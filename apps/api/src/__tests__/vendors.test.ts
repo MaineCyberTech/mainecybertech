@@ -211,7 +211,7 @@ describe("Vendors API", () => {
     supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ error: null })));
     const res = await request(app)
       .delete("/api/v1/vendors/vendor-contracts/vc-1?organization_id=" + testOrgId)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 

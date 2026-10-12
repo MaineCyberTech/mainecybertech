@@ -8,6 +8,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { queryInt } from "../lib/query";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -194,6 +195,7 @@ router.patch("/:id", requirePermission("license-optimizer", "edit"), async (req,
 // Delete
 router.delete("/:id", requirePermission("license-optimizer", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "license-optimizer", "write");
     const organizationId = req.query.organization_id as string;
     const { error } = await supabase

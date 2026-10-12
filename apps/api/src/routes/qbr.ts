@@ -10,6 +10,7 @@ import { createQbrReportSchema, updateQbrReportSchema } from "../validators/qbr"
 import { applyResolvedOrg } from "../lib/admin-scope";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -234,6 +235,7 @@ router.patch("/:id", requirePermission("qbr", "edit"), async (req, res, next) =>
 
 router.delete("/:id", requirePermission("qbr", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "qbr", "write");
     let deleteQuery = supabase.from("qbr_reports").delete().eq("id", String(req.params.id));
     deleteQuery = applyResolvedOrg(req, deleteQuery);

@@ -151,7 +151,7 @@ describe("DMARC Coach API", () => {
     supabase.from.mockReturnValue(createMockBuilder({ error: null }));
     const res = await request(app)
       .delete("/api/v1/dmarc-coach/00000000-0000-0000-0000-000000000110")
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 

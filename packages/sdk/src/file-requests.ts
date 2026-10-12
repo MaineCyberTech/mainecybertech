@@ -64,7 +64,7 @@ export class FileRequestsApi {
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/file-requests/${id}`);
+    return this.client.delete<void>(`/api/v1/file-requests/${id}`, undefined, { confirm: true });
   }
 
   getPublic(token: string) {

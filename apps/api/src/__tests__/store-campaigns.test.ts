@@ -409,7 +409,7 @@ describe("store campaign routes", () => {
   it("deletes a campaign", async () => {
     setup({ mode: "cross", profile: { is_super_admin: true } });
 
-    const res = await request(app).delete("/api/v1/store/campaigns/c-1");
+    const res = await request(app).delete("/api/v1/store/campaigns/c-1").send({ confirm: true });
 
     expect(res.status).toBe(204);
   });
@@ -495,7 +495,9 @@ describe("store campaign tenant isolation (MT-P0-001)", () => {
   it("rejects a single-org admin deleting another org's campaign", async () => {
     setup({ existingOrgId: ORG_B });
 
-    const res = await request(app).delete("/api/v1/store/campaigns/c-1");
+    const res = await request(app)
+      .delete("/api/v1/store/campaigns/c-1")
+      .send({ confirm: true });
 
     expect(res.status).toBe(403);
   });

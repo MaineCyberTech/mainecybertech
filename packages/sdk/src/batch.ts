@@ -59,7 +59,8 @@ export class BatchApi {
       this.client.post<LicenseRecord>("/api/v1/batch/licenses", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<LicenseRecord>(`/api/v1/batch/licenses/${id}`, d),
-    remove: (id: string) => this.client.delete(`/api/v1/batch/licenses/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/batch/licenses/${id}`, undefined, { confirm: true }),
     savings: (params?: Record<string, string | undefined>) =>
       this.client.get<{
         totalLicenses: number;
@@ -76,7 +77,8 @@ export class BatchApi {
     create: (d: Record<string, unknown>) => this.client.post<StatusItem>("/api/v1/batch/status", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<StatusItem>(`/api/v1/batch/status/${id}`, d),
-    remove: (id: string) => this.client.delete(`/api/v1/batch/status/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/batch/status/${id}`, undefined, { confirm: true }),
     public: () => this.client.get<StatusItem[]>("/api/v1/batch/status/public"),
   };
 
@@ -91,7 +93,8 @@ export class BatchApi {
       this.client.post<WebsiteMonitor>("/api/v1/batch/website-monitors", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<WebsiteMonitor>(`/api/v1/batch/website-monitors/${id}`, d),
-    remove: (id: string) => this.client.delete(`/api/v1/batch/website-monitors/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/batch/website-monitors/${id}`, undefined, { confirm: true }),
   };
 
   dmarc = {
@@ -102,6 +105,7 @@ export class BatchApi {
       this.client.post<DmarcAssessment>("/api/v1/batch/dmarc", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<DmarcAssessment>(`/api/v1/batch/dmarc/${id}`, d),
-    remove: (id: string) => this.client.delete(`/api/v1/batch/dmarc/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/batch/dmarc/${id}`, undefined, { confirm: true }),
   };
 }

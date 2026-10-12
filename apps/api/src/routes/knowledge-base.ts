@@ -13,6 +13,7 @@ import {
 } from "../validators/knowledge-base";
 import { queryInt } from "../lib/query";
 import { sanitizeSearchTerm } from "../lib/search";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -155,6 +156,7 @@ router.delete(
   requirePermission("client-knowledge-base", "delete"),
   async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getScopedClient(req, "knowledge-base", "write");
       const article = await loadOwned(
         req,

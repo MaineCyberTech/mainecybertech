@@ -34,6 +34,7 @@ import {
 } from "../services/satisfaction-pulse-widget";
 import { logAuditEvent } from "../services/audit";
 import { escapeCsvValue } from "../lib/csv";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: Router = Router();
 
@@ -213,6 +214,7 @@ router.delete(
   requirePermission("satisfaction-pulse", "delete"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      assertDeleteConfirmed(req.body);
       const orgId = getOrgId(req);
       const userId = getUserId(req);
       const result = await deleteSatisfactionPulse(orgId, userId, getParam(req, "id"));
@@ -320,6 +322,7 @@ router.delete(
   requirePermission("satisfaction-pulse", "delete"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      assertDeleteConfirmed(req.body);
       const orgId = getOrgId(req);
       const userId = getUserId(req);
       const result = await deleteTemplate(orgId, userId, getParam(req, "id"));
@@ -413,6 +416,7 @@ router.delete(
   requirePermission("satisfaction-pulse", "delete"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      assertDeleteConfirmed(req.body);
       const orgId = getOrgId(req);
       const userId = getUserId(req);
       const result = await deleteSchedule(orgId, userId, getParam(req, "id"));

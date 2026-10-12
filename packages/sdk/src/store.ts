@@ -340,7 +340,7 @@ export class StoreApi {
   }
 
   deleteProduct(id: string): Promise<void> {
-    return this.client.delete(`/api/v1/store/products/${id}`);
+    return this.client.delete(`/api/v1/store/products/${id}`, undefined, { confirm: true });
   }
 
   // --- Categories (public read / admin write) ---
@@ -354,7 +354,7 @@ export class StoreApi {
   }
 
   deleteCategory(id: string): Promise<void> {
-    return this.client.delete(`/api/v1/store/categories/${id}`);
+    return this.client.delete(`/api/v1/store/categories/${id}`, undefined, { confirm: true });
   }
 
   // --- Promotions (public read / admin write) ---
@@ -376,7 +376,7 @@ export class StoreApi {
   }
 
   deletePromotion(id: string): Promise<void> {
-    return this.client.delete(`/api/v1/store/promotions/${id}`);
+    return this.client.delete(`/api/v1/store/promotions/${id}`, undefined, { confirm: true });
   }
 
   // --- Quotes (public submit / admin list) ---
@@ -443,7 +443,7 @@ export class StoreApi {
   }
 
   deleteVisualAsset(id: string): Promise<void> {
-    return this.client.delete(`/api/v1/store/visual-assets/${id}`);
+    return this.client.delete(`/api/v1/store/visual-assets/${id}`, undefined, { confirm: true });
   }
 
   // --- Intake -> project handoff (admin) ---
@@ -477,6 +477,6 @@ export class StoreApi {
   }
 
   deleteCampaign(id: string): Promise<void> {
-    return this.client.delete(`/api/v1/store/campaigns/${id}`);
+    return this.client.delete(`/api/v1/store/campaigns/${id}`, undefined, { confirm: true });
   }
 }

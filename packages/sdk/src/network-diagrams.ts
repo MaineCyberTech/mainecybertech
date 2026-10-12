@@ -69,6 +69,6 @@ export class NetworkDiagramsApi {
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/network-diagrams/${id}`);
+    return this.client.delete<void>(`/api/v1/network-diagrams/${id}`, undefined, { confirm: true });
   }
 }

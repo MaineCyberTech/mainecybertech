@@ -161,7 +161,7 @@ describe("project tracker routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/projects/phases/00000000-0000-0000-0000-000000000050")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
@@ -283,7 +283,7 @@ describe("project tracker routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/projects/milestones/00000000-0000-0000-0000-000000000051")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
@@ -378,7 +378,7 @@ describe("project tracker routes", () => {
 
       const res = await request(app)
         .delete(`/api/v1/projects/phases/phase-b?organization_id=${ORG}`)
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(404);
     });
@@ -396,7 +396,7 @@ describe("project tracker routes", () => {
 
       const res = await request(app)
         .delete(`/api/v1/projects/milestones/ms-b?organization_id=${OTHER_ORG}`)
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(404);
     });

@@ -17,6 +17,7 @@ import {
 } from "../../validators/final";
 import { queryInt } from "../../lib/query";
 import { requirePermission } from "../../middleware/permissions";
+import { assertDeleteConfirmed } from "../../lib/delete-confirm";
 
 export function snake(s: string) {
   return s.replace(/[A-Z]/g, (l) => `_${l.toLowerCase()}`);
@@ -142,6 +143,7 @@ export function registerCrud(
     requirePermission(permissionModule, "delete"),
     async (req, res, next) => {
       try {
+        assertDeleteConfirmed(req.body);
         const sb = getSupabaseAdmin();
         const { error } = await sb
           .from(table)

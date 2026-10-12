@@ -16,7 +16,8 @@ export class TrainingHubApi {
       this.client.post("/api/v1/training-hub/courses", data),
     update: (id: string, data: Record<string, unknown>) =>
       this.client.patch(`/api/v1/training-hub/courses/${id}`, data),
-    remove: (id: string) => this.client.delete(`/api/v1/training-hub/courses/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/training-hub/courses/${id}`, undefined, { confirm: true }),
     enroll: (id: string) => this.client.post(`/api/v1/training-hub/courses/${id}/enroll`, {}),
     progress: (id: string, progress: number) =>
       this.client.post(`/api/v1/training-hub/courses/${id}/progress`, { progress }),
@@ -30,7 +31,8 @@ export class TrainingHubApi {
       this.client.post("/api/v1/training-hub/lessons", data),
     update: (id: string, data: Record<string, unknown>) =>
       this.client.patch(`/api/v1/training-hub/lessons/${id}`, data),
-    remove: (id: string) => this.client.delete(`/api/v1/training-hub/lessons/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/training-hub/lessons/${id}`, undefined, { confirm: true }),
   };
 
   myCourses = () => this.client.get("/api/v1/training-hub/my-courses");

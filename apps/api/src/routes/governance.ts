@@ -19,6 +19,7 @@ import {
 } from "../validators/governance";
 import { queryInt } from "../lib/query";
 import { parsePartialUpdate } from "../lib/validators";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 type SopFrameworkRow = {
   compliance_framework: string | null;
@@ -155,6 +156,7 @@ function crudRoute(
     requirePermission(permissionModule, "delete"),
     async (req, res, next) => {
       try {
+        assertDeleteConfirmed(req.body);
         const sb = getScopedClient(req, "governance", "write");
         const { error } = await sb
           .from(table)

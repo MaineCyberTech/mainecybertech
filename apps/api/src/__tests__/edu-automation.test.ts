@@ -145,7 +145,7 @@ describe("Edu Automation API", () => {
     s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
     const r = await request(app)
       .delete("/api/v1/edu-automation/sop/sop-1")
-      .set("Authorization", auth);
+      .set("Authorization", auth).send({ confirm: true });
     expect(r.status).toBe(204);
   });
 
@@ -269,7 +269,7 @@ describe("Edu Automation API", () => {
     s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
     const r = await request(app)
       .delete(`/api/v1/edu-automation/phishing/c-1/targets/t-1?organization_id=${org}`)
-      .set("Authorization", auth);
+      .set("Authorization", auth).send({ confirm: true });
     expect(r.status).toBe(204);
     expect(logAuditEvent).toHaveBeenCalledWith(
       expect.objectContaining({

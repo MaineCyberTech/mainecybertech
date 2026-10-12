@@ -160,7 +160,7 @@ describe("Training Hub API", () => {
     const res = await request(app)
       .delete("/api/v1/training-hub/courses/c-1")
       .query({ organization_id: testOrgId })
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 

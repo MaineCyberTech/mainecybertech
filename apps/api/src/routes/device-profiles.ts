@@ -12,6 +12,7 @@ import {
   listDeviceProfilesQuerySchema,
 } from "../validators/device-profiles";
 import { toJson } from "../lib/db-types";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -150,6 +151,7 @@ router.patch("/:id", requirePermission("device-profiles", "edit"), async (req, r
 
 router.delete("/:id", requirePermission("device-profiles", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "device-profiles", "write");
     await loadOwned(req, supabase as any, "device_profiles", String(req.params.id as string));
     const { error } = await supabase

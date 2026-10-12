@@ -23,6 +23,7 @@ import {
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { moduleCommentSchema } from "../validators/comments";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -342,6 +343,7 @@ router.patch(
 
 router.delete("/:id", requirePermission("proposals", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "proposals", "write");
     await loadOwned(
       req,
@@ -463,6 +465,7 @@ router.delete(
   requirePermission("proposals", "delete"),
   async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getScopedClient(req, "proposals", "write");
       await loadOwned(
         req,
@@ -656,6 +659,7 @@ router.delete(
   requirePermission("proposals", "delete"),
   async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getScopedClient(req, "proposals", "write");
       await loadOwned(
         req,

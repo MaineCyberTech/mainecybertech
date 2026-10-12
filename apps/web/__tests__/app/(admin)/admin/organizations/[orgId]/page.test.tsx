@@ -64,6 +64,7 @@ jest.mock("@/app/(admin)/admin/organizations/[orgId]/actions", () => ({
   updateOrganizationBasics: jest.fn(),
   createOrganizationDomain: jest.fn(),
   updateOrganizationDomain: jest.fn(),
+  deleteOrganizationAction: jest.fn(),
 }));
 
 const baseOrg = {
@@ -95,21 +96,21 @@ describe("OrganizationDetailPage", () => {
   it("calls notFound for a missing org", async () => {
     mockOrgsGetDetail.mockRejectedValue(Object.assign(new Error("not found"), { status: 404 }));
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    await expect(Page({ params: Promise.resolve({ orgId: "bad" }) })).rejects.toThrow(
-      "NEXT_NOT_FOUND",
-    );
+    await expect(
+      Page({ params: Promise.resolve({ orgId: "bad" }), searchParams: Promise.resolve({}) }),
+    ).rejects.toThrow("NEXT_NOT_FOUND");
   });
 
   it("renders breadcrumbs and subnav", async () => {
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByTestId("breadcrumbs")).toHaveTextContent("Acme Corp");
     expect(screen.getByTestId("subnav")).toHaveTextContent("organizations");
   });
 
   it("renders page shell with title and description", async () => {
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByTestId("page-title")).toHaveTextContent("Acme Corp");
     expect(screen.getByTestId("page-desc")).toHaveTextContent(
       "Manage org metadata, domains, and memberships.",
@@ -118,7 +119,7 @@ describe("OrganizationDetailPage", () => {
 
   it("renders org basics form with fields", async () => {
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByText("Organization Basics")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Acme Corp")).toBeInTheDocument();
     expect(screen.getByDisplayValue("acme")).toBeInTheDocument();
@@ -128,19 +129,19 @@ describe("OrganizationDetailPage", () => {
 
   it("renders back button", async () => {
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByText("Back to Organizations")).toBeInTheDocument();
   });
 
   it("shows save org button", async () => {
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByText("Save Organization")).toBeInTheDocument();
   });
 
   it("renders domains section with empty state", async () => {
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByText("Domains")).toBeInTheDocument();
     expect(screen.getByText("No domains configured.")).toBeInTheDocument();
   });
@@ -155,21 +156,21 @@ describe("OrganizationDetailPage", () => {
       ),
     );
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByText("example.com")).toBeInTheDocument();
     expect(screen.getByText("Auto-approve: Enabled")).toBeInTheDocument();
   });
 
   it("shows Add Domain form", async () => {
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByPlaceholderText("example.com")).toBeInTheDocument();
     expect(screen.getByText("Add Domain")).toBeInTheDocument();
   });
 
   it("renders memberships section with empty state", async () => {
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByText("Memberships")).toBeInTheDocument();
     expect(screen.getByText("No memberships found.")).toBeInTheDocument();
   });
@@ -196,7 +197,7 @@ describe("OrganizationDetailPage", () => {
       ),
     );
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByText("Bob Jones")).toBeInTheDocument();
     expect(screen.getByText("Billing Contact")).toBeInTheDocument();
   });
@@ -223,7 +224,7 @@ describe("OrganizationDetailPage", () => {
       ),
     );
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     const link = screen.getByText("Bob Jones").closest("a");
     expect(link).toHaveAttribute("href", "/admin/users/u1");
   });
@@ -248,7 +249,7 @@ describe("OrganizationDetailPage", () => {
       ),
     );
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByText("Unknown User")).toBeInTheDocument();
   });
 
@@ -274,7 +275,7 @@ describe("OrganizationDetailPage", () => {
       ),
     );
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByText("Security Contact")).toBeInTheDocument();
   });
 
@@ -288,7 +289,31 @@ describe("OrganizationDetailPage", () => {
       ),
     );
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
-    render(await Page({ params: Promise.resolve({ orgId: "o1" }) }));
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByText("Auto-approve: Disabled")).toBeInTheDocument();
+  });
+
+  it("renders the danger zone with the delete entry point (ADMIN-P2-002)", async () => {
+    const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
+    render(await Page({ params: Promise.resolve({ orgId: "o1" }), searchParams: Promise.resolve({}) }));
+
+    expect(screen.getByText("Danger Zone")).toBeInTheDocument();
+    const deleteLink = screen.getByText("Delete Organization").closest("a");
+    expect(deleteLink).toHaveAttribute("href", "/admin/organizations/o1?confirmDelete=1");
+  });
+
+  it("requires the typed slug before the delete can be submitted", async () => {
+    const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
+    render(
+      await Page({
+        params: Promise.resolve({ orgId: "o1" }),
+        searchParams: Promise.resolve({ confirmDelete: "1" }),
+      }),
+    );
+
+    expect(screen.getByLabelText(/Type acme to confirm/i)).toBeInTheDocument();
+    expect(screen.getByText("Delete Organization Permanently")).toBeInTheDocument();
+    // Recovery is operator-only; the UI says so.
+    expect(screen.getByText(/Point-in-Time Recovery/i)).toBeInTheDocument();
   });
 });

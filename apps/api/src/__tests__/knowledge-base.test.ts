@@ -221,7 +221,7 @@ describe("Knowledge Base API", () => {
 
       const res = await request(app)
         .delete("/api/v1/knowledge-base/00000000-0000-0000-0000-000000000010")
-        .set("Authorization", authToken);
+        .set("Authorization", authToken).send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
@@ -264,7 +264,7 @@ describe("Knowledge Base API", () => {
       mockArticle(ORG_B);
       const res = await request(app)
         .delete(`/api/v1/knowledge-base/${ARTICLE_ID}`)
-        .set("Authorization", authToken);
+        .set("Authorization", authToken).send({ confirm: true });
       expect(res.status).toBe(404);
     });
 

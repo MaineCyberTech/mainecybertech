@@ -12,6 +12,7 @@ import { createNotification } from "../lib/notify";
 import { queryInt } from "../lib/query";
 import { validateUploadContent } from "../lib/upload-validation";
 import { scanUploadForMalware } from "../lib/malware-scan";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -492,6 +493,7 @@ router.patch("/:id", requirePermission("file-requests", "edit"), async (req, res
 
 router.delete("/:id", requirePermission("file-requests", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "file-requests", "write");
     const { error } = await supabase
       .from("file_requests")

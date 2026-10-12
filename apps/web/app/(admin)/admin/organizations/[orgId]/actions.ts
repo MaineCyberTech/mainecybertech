@@ -1,7 +1,9 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getApiClient } from "@/lib/api";
+import { requireAdminAccess } from "@/lib/auth/admin";
 
 export async function updateOrganizationBasics(formData: FormData) {
   const api = getApiClient();
@@ -77,4 +79,35 @@ export async function uploadOrgDocument(formData: FormData): Promise<{ ok: boole
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Upload failed." };
   }
+}
+
+/**
+ * ADMIN-P2-002: organization deletion is permanent and cascades across the
+ * tenant schema. The operator must type the organization slug; the API enforces
+ * the same typed-slug contract (`assertOrgDeleteConfirmed`), so a stray call
+ * that skips this form still cannot delete without the slug. Recovery is
+ * operator-only (PITR / S3 backup restore, docs/ROLLBACK_PROCEDURES.md §3).
+ */
+export async function deleteOrganizationAction(
+  organizationId: string,
+  formData: FormData,
+): Promise<{ ok: false; error: string } | void> {
+  await requireAdminAccess();
+
+  const expectedSlug = String(formData.get("organizationSlug") ?? "").trim();
+  const typedSlug = String(formData.get("confirmSlug") ?? "").trim();
+
+  if (!typedSlug || typedSlug.toLowerCase() !== expectedSlug.toLowerCase()) {
+    return {
+      ok: false,
+      error: `Type the organization slug (${expectedSlug}) exactly to confirm permanent deletion.`,
+    };
+  }
+
+  const api = getApiClient();
+  await api.organizations.remove(organizationId, expectedSlug);
+
+  revalidatePath("/admin/organizations");
+  revalidatePath("/admin/audit");
+  redirect("/admin/organizations");
 }

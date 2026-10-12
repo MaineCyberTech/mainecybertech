@@ -10,6 +10,7 @@ import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 import { clearPermissionCache } from "../lib/permissions";
 import { assertCanManageRoleCatalog } from "../lib/role-assignment";
 import type { UpdateRow } from "../lib/db-types";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -191,6 +192,7 @@ router.patch("/:id", requirePermission("roles", "manage"), async (req, res, next
 // DELETE /api/v1/roles/:id - delete a custom role (platform super admin only)
 router.delete("/:id", requirePermission("roles", "manage"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getSupabaseAdmin();
     await assertCanManageRoleCatalog(supabase, req.authUser!.userId);
 

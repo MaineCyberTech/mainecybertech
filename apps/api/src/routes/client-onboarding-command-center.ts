@@ -25,6 +25,7 @@ import {
   exportOnboardingRecords,
 } from "../services/client-onboarding-command-center";
 import { escapeCsvValue } from "../lib/csv";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: Router = Router();
 
@@ -176,6 +177,7 @@ router.delete(
   requirePermission("client-onboarding-command-center", "delete"),
   async (req: Request, res: Response, next: NextFunction) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const record = await loadOwned(
       req,

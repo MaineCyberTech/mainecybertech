@@ -71,7 +71,7 @@ export class ProjectsApi {
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/projects/${id}`);
+    return this.client.delete<void>(`/api/v1/projects/${id}`, undefined, { confirm: true });
   }
 
   listTasks(projectId: string) {
@@ -130,7 +130,11 @@ export class ProjectsApi {
   }
 
   removeTask(projectId: string, taskId: string) {
-    return this.client.delete<void>(`/api/v1/projects/${projectId}/tasks/${taskId}`);
+    return this.client.delete<void>(
+      `/api/v1/projects/${projectId}/tasks/${taskId}`,
+      undefined,
+      { confirm: true },
+    );
   }
 
   addTaskComment(projectId: string, taskId: string, data: { body: string; isInternal?: boolean }) {
@@ -260,7 +264,8 @@ export class ProjectsApi {
     create: (data: Record<string, unknown>) => this.client.post("/api/v1/projects/phases", data),
     update: (id: string, data: Record<string, unknown>) =>
       this.client.patch(`/api/v1/projects/phases/${id}`, data),
-    remove: (id: string) => this.client.delete(`/api/v1/projects/phases/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/projects/phases/${id}`, undefined, { confirm: true }),
   };
 
   milestones = {
@@ -271,7 +276,8 @@ export class ProjectsApi {
       this.client.post("/api/v1/projects/milestones", data),
     update: (id: string, data: Record<string, unknown>) =>
       this.client.patch(`/api/v1/projects/milestones/${id}`, data),
-    remove: (id: string) => this.client.delete(`/api/v1/projects/milestones/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/projects/milestones/${id}`, undefined, { confirm: true }),
   };
 
   dependencies = {
@@ -282,6 +288,7 @@ export class ProjectsApi {
       this.client.post("/api/v1/projects/dependencies", data),
     update: (id: string, data: Record<string, unknown>) =>
       this.client.patch(`/api/v1/projects/dependencies/${id}`, data),
-    remove: (id: string) => this.client.delete(`/api/v1/projects/dependencies/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/projects/dependencies/${id}`, undefined, { confirm: true }),
   };
 }

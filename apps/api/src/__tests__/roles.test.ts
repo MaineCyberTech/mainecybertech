@@ -309,7 +309,7 @@ describe("roles routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/roles/role-1")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(403);
     });

@@ -208,7 +208,7 @@ describe("Uptime Monitor API", () => {
       mockAuth();
       const res = await request(app)
         .delete("/api/v1/uptime-monitor/checks/c1")
-        .set("Authorization", authToken);
+        .set("Authorization", authToken).send({ confirm: true });
       expect(res.status).toBe(204);
       expect(logAuditEvent).toHaveBeenCalledWith(
         expect.objectContaining({

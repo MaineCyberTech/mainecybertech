@@ -143,7 +143,7 @@ describe("Hardware Staging API", () => {
     );
     const res = await request(app)
       .delete("/api/v1/staging/sc-1")
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 });
@@ -187,7 +187,7 @@ describe("Hardware Staging tenant isolation", () => {
     mockCheck(ORG_A);
     const res = await request(app)
       .delete(`/api/v1/staging/${CHECK_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 
@@ -195,7 +195,7 @@ describe("Hardware Staging tenant isolation", () => {
     mockCheck(ORG_B);
     const res = await request(app)
       .delete(`/api/v1/staging/${CHECK_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(404);
   });
 });

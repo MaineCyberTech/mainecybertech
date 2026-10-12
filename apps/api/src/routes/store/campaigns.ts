@@ -9,6 +9,7 @@ import { logAuditEvent } from "../../services/audit";
 import { type UpdateRow } from "../../lib/db-types";
 import { LIST_HARD_CAP } from "../../lib/pagination";
 import { isCampaignActive, rowToCampaign, type CampaignRow } from "../../lib/store-campaigns";
+import { assertDeleteConfirmed } from "../../lib/delete-confirm";
 import {
   applyOrgScope,
   applyRequestedOrg,
@@ -322,6 +323,7 @@ export function registerCampaignRoutes(router: Router) {
     requireAdmin,
     async (req, res, next) => {
       try {
+        assertDeleteConfirmed(req.body);
         const supabase = getSupabaseAdmin();
         const scope = await resolveAdminTenantScope(req);
         const { data: existing } = await supabase

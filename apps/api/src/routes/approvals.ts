@@ -25,6 +25,7 @@ import {
 } from "../validators/approvals";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -301,6 +302,7 @@ router.patch(
 
 router.delete("/:id", requirePermission("approvals", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "approvals", "write");
     await loadOwned(
       req,

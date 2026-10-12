@@ -11,6 +11,7 @@ import { updateMembershipSchema } from "../validators/membership";
 import { assertCanAssignRole, resolveRoleKey } from "../lib/role-assignment";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { clearPermissionCache } from "../lib/permissions";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -210,6 +211,7 @@ router.patch("/:id", requirePermission("users", "manage"), async (req, res, next
 
 router.delete("/:id", requirePermission("users", "manage"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "memberships", "write");
     const membership = await loadOwned(req, supabase as any, "memberships", String(req.params.id));
     const { error } = await supabase.from("memberships").delete().eq("id", String(req.params.id));

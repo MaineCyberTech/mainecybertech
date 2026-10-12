@@ -218,7 +218,7 @@ describe("Dynamic Client Forms Builder API", () => {
       const res = await request(app)
         .delete("/api/v1/dynamic-forms/form-1")
         .set("Authorization", "Bearer test-token")
-        .query({ organizationId: "00000000-0000-0000-0000-000000000001" });
+        .query({ organizationId: "00000000-0000-0000-0000-000000000001" }).send({ confirm: true });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(logAuditEvent).toHaveBeenCalled();

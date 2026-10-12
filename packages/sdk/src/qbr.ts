@@ -47,6 +47,6 @@ export class QbrApi {
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/qbr/${id}`);
+    return this.client.delete<void>(`/api/v1/qbr/${id}`, undefined, { confirm: true });
   }
 }
