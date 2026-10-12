@@ -84,7 +84,7 @@ Governance Lead / Compliance Sponsor
   readable by platform admins (`is_super_admin`); only `service_role` can
   execute the archive functions.
 - A database-level `BEFORE DELETE` trigger on `organizations`
-  (`archive_org_audit_logs_before_delete`, migration 5302450) archives the
+  (`archive_org_audit_logs_before_delete`, migration 5302451) archives the
   org's audit rows and **fails the delete** if any row remains. That closes the
   residual CHAIN-P2-004 gap: `audit_logs.organization_id` still cascades, but
   the cascade can only run against an already-archived (empty) set — whichever

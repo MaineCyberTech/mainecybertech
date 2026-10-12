@@ -1,5 +1,5 @@
 -- =========================================================
--- 5302449: platform backup heartbeat table
+-- 5302450: platform backup heartbeat table
 --
 -- DR-P2-008: the `backup_status` module is client-facing product data
 -- (seeded per-organization rows). Nothing in the platform ever wrote it, so

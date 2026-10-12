@@ -1,5 +1,5 @@
 -- =========================================================
--- 5302450: DB-level guard so an organization delete can never destroy audit rows
+-- 5302451: DB-level guard so an organization delete can never destroy audit rows
 --
 -- CHAIN-P2-004: 5302442 (DATA-P2-005) added the append-only
 -- audit_log_archive plus archive_audit_logs / archive_org_audit_logs, and the
