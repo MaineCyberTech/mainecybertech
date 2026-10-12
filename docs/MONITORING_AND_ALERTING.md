@@ -120,6 +120,35 @@ Returns **503** with `"degraded"` if any check fails.
 
 Returns **503** with `"status": "degraded"` when the BullMQ queue connection (producer Queue or consumer Worker) is lost, so the compose healthcheck and the deploy health gate fail on a queue outage (RES-P2-008). `queueBackend` is the worker's configured consumer backend (ARCH-P2-004); the API exposes its producer backend as `portal_queue_backend_info` so a mismatch (enqueued work never consumed) is visible.
 
+### External uptime probe (OBS-P2-016)
+
+The health checks above run on the droplet, so a DNS, Cloudflare, edge-proxy or
+droplet-network failure leaves every internal scrape green while users are
+down. [`external-uptime-probe.yml`](../.github/workflows/external-uptime-probe.yml)
+closes that gap: an hourly GitHub Actions job curls the public endpoints from
+**outside** the droplet and asserts the status codes and latency budgets
+committed in [`scripts/uptime/probe-targets.json`](../scripts/uptime/probe-targets.json):
+
+| Target | Expects | Latency budget |
+| ------ | ------- | -------------- |
+| `https://api.mainecybertech.com/health` | 200 | 2000 ms |
+| `https://app.mainecybertech.com/login` | 200/301/302/307 | 3000 ms |
+| `https://api.mainecybertech.us/health` | 200 | 2000 ms |
+| `https://app.mainecybertech.us/login` | 200/301/302/307 | 3000 ms |
+
+Each target gets up to 3 attempts (5 s apart) so a single cold TCP/TLS
+handshake does not page anyone; a target that fails every attempt fails the run
+and notifies through the same ntfy/Slack pattern as the backup workflows
+(fail-loud when no channel is configured). Override the list per run (dispatch
+input `targets`) or for all runs with the `UPTIME_PROBE_TARGETS` repository
+variable; set `UPTIME_PROBE_ENABLED=false` to pause the schedule during a known
+outage. Reports are uploaded as the `uptime-report` artifact.
+
+Known state at introduction: `api.mainecybertech.com` is still served by the
+legacy AWS ALB/ECS deployment and returns 404 for `/health`, so the probe
+reports that target red until the prod deploy path (CI-P1-003) lands. That is
+the probe doing its job, not a false positive.
+
 ---
 
 ## 3. Docker Health Checks
@@ -274,6 +303,7 @@ The workflow includes a `rollback-on-failure` step that reverts to the previous 
 | Prometheus rules (`MCTServiceDown`, `MCTHighRequestErrorRate`, `MCTImpersonationBurst`, `MCTTenantScopeRegression`, `MCTApiRedisDegraded`, `MCTRedisOperationFailures`) | Critical/Warning | Alertmanager → ntfy `portal-alerts` | Investigate; delivery not yet exercised end-to-end |
 | `Watchdog` (always firing)   | None     | Alertmanager → off-box dead-man's switch (§9; URL still unset) | Alert path itself died → external service pages (once provisioned) |
 | Backup/restore staleness (no successful backup or restore test within its freshness window) | Critical | `Backup Staleness Check` workflow → ntfy/Slack (fail-closed); worker `backup-dr-check` on the `platform_backup_heartbeats` table (DR-P2-008, 30 h) → `MCTWorkerTaskFailures` | Check the backup workflow runs, Spaces credentials and `scripts/backup-*.sh` logs; both checks are independent of the backup jobs |
+| External uptime probe failure (public API/web endpoint down or over its latency budget) | Critical | `External uptime probe` workflow → ntfy/Slack (fail-closed) | Open the run's `uptime-report` artifact; if the whole platform is unreachable from outside, follow the platform failure runbooks |
 
 ### Notification channels
 

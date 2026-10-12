@@ -51,7 +51,10 @@ the remaining worker thresholds as coverage grows.
 
 - E2E flows (`pnpm e2e` — separate `e2e.yml` job; prod-only on deploy);
 - accessibility scans (`a11y.spec.ts`, 25-route gate);
-- visual regression (Chromatic is non-blocking) or load tests (k6 is manual);
+- visual regression (Chromatic is non-blocking); load tests run on a weekly
+  schedule and manual dispatch via `load-test.yml`, with committed budgets
+  (p95/p99/error-rate) in `scripts/load-testing/budgets.js` and a
+  failure-injection control — see `scripts/load-testing/README.md`;
 - migration apply/drift, backup/restore, RLS runtime checks or a prod smoke
   probe (those are separate workflows, or absent — see `docs/CI.md`).
 
