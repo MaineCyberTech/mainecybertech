@@ -90,10 +90,11 @@ describe("rateLimitSearch", () => {
 });
 
 describe("rateLimitShare (FILE-P3-001)", () => {
+  // Mount the limiter on the route (like the real router does) so req.params
+  // is populated when the key generator runs.
   function createShareApp() {
     const app = express();
-    app.use(rateLimitShare);
-    app.get("/share/:token", (_req, res) => res.json({ ok: true }));
+    app.get("/share/:token", rateLimitShare, (_req, res) => res.json({ ok: true }));
     return app;
   }
 

@@ -426,14 +426,18 @@ export async function notifyAndEmail(
   // preferences link and a signed one-click unsubscribe link.
   const actionUrl = modulePath ? `${baseUrl}${modulePath}` : undefined;
   const preferencesUrl = `${baseUrl}/portal/notifications/preferences`;
-  const unsubscribeUrl = opts.organizationId
-    ? buildUnsubscribeUrl({
-        apiBaseUrl: baseUrl,
-        userId: safeOpts.userId,
-        organizationId: opts.organizationId,
-        serviceRoleKey: getEnv().SUPABASE_SERVICE_ROLE_KEY,
-      })
-    : undefined;
+  // The env schema requires the service-role key at boot; guard anyway so a
+  // partial env (tests, degraded boot) cannot crash the send path.
+  const serviceRoleKey = getEnv().SUPABASE_SERVICE_ROLE_KEY;
+  const unsubscribeUrl =
+    opts.organizationId && serviceRoleKey
+      ? buildUnsubscribeUrl({
+          apiBaseUrl: baseUrl,
+          userId: safeOpts.userId,
+          organizationId: opts.organizationId,
+          serviceRoleKey,
+        })
+      : undefined;
   const footerLinks = notificationFooterLinks({ preferencesUrl, unsubscribeUrl });
 
   const emailPayload =
