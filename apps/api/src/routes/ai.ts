@@ -339,159 +339,170 @@ router.get("/triage", async (req, res, next) => {
   }
 });
 
-router.get("/copilot/:ticketId/summarize", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "ai", "read");
+// ACM-P3-007: copilot output is an AI-tool action, so it is gated like the
+// other /ai routes (summarize reads, reply-draft creates a persisted draft)
+// instead of being open to every org member.
+router.get(
+  "/copilot/:ticketId/summarize",
+  requirePermission("ai", "view"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "ai", "read");
 
-    const ticket = (await loadOwned(
-      req,
-      supabase,
-      "tickets",
-      String(req.params.ticketId),
-      "id, title, description, status, priority, category, created_at, organization_id",
-    )) as {
-      id: string;
-      title: string;
-      description: string;
-      status: string;
-      priority: string;
-      category: string;
-      created_at: string;
-      organization_id: string;
-    };
+      const ticket = (await loadOwned(
+        req,
+        supabase,
+        "tickets",
+        String(req.params.ticketId),
+        "id, title, description, status, priority, category, created_at, organization_id",
+      )) as {
+        id: string;
+        title: string;
+        description: string;
+        status: string;
+        priority: string;
+        category: string;
+        created_at: string;
+        organization_id: string;
+      };
 
-    const { data: comments } = await supabase
-      .from("ticket_comments")
-      .select("body, author_id, created_at")
-      .eq("ticket_id", String(req.params.ticketId))
-      .eq("organization_id", ticket.organization_id)
-      .order("created_at", { ascending: true });
-    const commentList = comments ?? [];
+      const { data: comments } = await supabase
+        .from("ticket_comments")
+        .select("body, author_id, created_at")
+        .eq("ticket_id", String(req.params.ticketId))
+        .eq("organization_id", ticket.organization_id)
+        .order("created_at", { ascending: true });
+      const commentList = comments ?? [];
 
-    const summary = {
-      ticketId: ticket.id,
-      subject: ticket.title,
-      status: ticket.status,
-      priority: ticket.priority,
-      category: ticket.category,
-      created: ticket.created_at,
-      commentCount: commentList.length,
-      lastActivity:
-        commentList.length > 0
-          ? (commentList[commentList.length - 1] as { created_at: string }).created_at
-          : ticket.created_at,
-      keyPoints: [
-        `Priority: ${ticket.priority}`,
-        `Status: ${ticket.status}`,
-        `Category: ${ticket.category}`,
-        `${commentList.length} comments in thread`,
-      ],
-      suggestedNextAction:
-        ticket.status === "resolved"
-          ? "Review resolution and close or reopen"
-          : commentList.length === 0
-            ? "No responses yet — craft initial reply"
-            : `${commentList.length} responses — review latest and follow up`,
-    };
+      const summary = {
+        ticketId: ticket.id,
+        subject: ticket.title,
+        status: ticket.status,
+        priority: ticket.priority,
+        category: ticket.category,
+        created: ticket.created_at,
+        commentCount: commentList.length,
+        lastActivity:
+          commentList.length > 0
+            ? (commentList[commentList.length - 1] as { created_at: string }).created_at
+            : ticket.created_at,
+        keyPoints: [
+          `Priority: ${ticket.priority}`,
+          `Status: ${ticket.status}`,
+          `Category: ${ticket.category}`,
+          `${commentList.length} comments in thread`,
+        ],
+        suggestedNextAction:
+          ticket.status === "resolved"
+            ? "Review resolution and close or reopen"
+            : commentList.length === 0
+              ? "No responses yet — craft initial reply"
+              : `${commentList.length} responses — review latest and follow up`,
+      };
 
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "copilot.summarized",
-      entityType: "ticket",
-      entityId: String(req.params.ticketId),
-    });
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "copilot.summarized",
+        entityType: "ticket",
+        entityId: String(req.params.ticketId),
+      });
 
-    res.json(success(summary));
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(success(summary));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.post("/copilot/:ticketId/reply-draft", async (req, res, next) => {
-  try {
-    const parsed = copilotReplyDraftSchema.parse(req.body);
-    const supabase = getScopedClient(req, "ai", "write");
+router.post(
+  "/copilot/:ticketId/reply-draft",
+  requirePermission("ai", "create"),
+  async (req, res, next) => {
+    try {
+      const parsed = copilotReplyDraftSchema.parse(req.body);
+      const supabase = getScopedClient(req, "ai", "write");
 
-    // Scope to the caller's org (summarize uses loadOwned too). Without this,
-    // when `ai` is not in RLS_WRITES_ENABLED the service-role client could read
-    // another tenant's ticket.
-    const ticket = (await loadOwned(
-      req,
-      supabase,
-      "tickets",
-      String(req.params.ticketId),
-      "id, title, description, status, priority, organization_id",
-    )) as {
-      id: string;
-      title: string;
-      description: string;
-      status: string;
-      priority: string;
-      organization_id: string;
-    };
+      // Scope to the caller's org (summarize uses loadOwned too). Without this,
+      // when `ai` is not in RLS_WRITES_ENABLED the service-role client could read
+      // another tenant's ticket.
+      const ticket = (await loadOwned(
+        req,
+        supabase,
+        "tickets",
+        String(req.params.ticketId),
+        "id, title, description, status, priority, organization_id",
+      )) as {
+        id: string;
+        title: string;
+        description: string;
+        status: string;
+        priority: string;
+        organization_id: string;
+      };
 
-    const { data: comments } = await supabase
-      .from("ticket_comments")
-      .select("body")
-      .eq("ticket_id", String(req.params.ticketId))
-      .eq("organization_id", ticket.organization_id)
-      .order("created_at", { ascending: false })
-      .limit(3);
+      const { data: comments } = await supabase
+        .from("ticket_comments")
+        .select("body")
+        .eq("ticket_id", String(req.params.ticketId))
+        .eq("organization_id", ticket.organization_id)
+        .order("created_at", { ascending: false })
+        .limit(3);
 
-    const lastComment =
-      (comments ?? []).length > 0 ? (comments as Array<{ body: string }>)[0].body : null;
+      const lastComment =
+        (comments ?? []).length > 0 ? (comments as Array<{ body: string }>)[0].body : null;
 
-    const tones: Record<string, string> = {
-      formal: "Thank you for contacting us regarding this issue.",
-      friendly: "Hi there! Thanks for reaching out — we're on it.",
-      technical:
-        "Acknowledged. We are investigating this issue and will provide technical analysis shortly.",
-      concise: "Got it. Working on this now.",
-    };
+      const tones: Record<string, string> = {
+        formal: "Thank you for contacting us regarding this issue.",
+        friendly: "Hi there! Thanks for reaching out — we're on it.",
+        technical:
+          "Acknowledged. We are investigating this issue and will provide technical analysis shortly.",
+        concise: "Got it. Working on this now.",
+      };
 
-    const draftReply = [
-      tones[parsed.tone],
-      "",
-      lastComment
-        ? `Regarding your latest update: "${lastComment.slice(0, 200)}${lastComment.length > 200 ? "..." : ""}"`
-        : `Regarding: ${(ticket as { title: string }).title}`,
-      "",
-      "We are reviewing this and will follow up shortly.",
-      "",
-      "Best regards,",
-      "Maine CyberTech Support",
-    ].join("\n");
+      const draftReply = [
+        tones[parsed.tone],
+        "",
+        lastComment
+          ? `Regarding your latest update: "${lastComment.slice(0, 200)}${lastComment.length > 200 ? "..." : ""}"`
+          : `Regarding: ${(ticket as { title: string }).title}`,
+        "",
+        "We are reviewing this and will follow up shortly.",
+        "",
+        "Best regards,",
+        "Maine CyberTech Support",
+      ].join("\n");
 
-    // FEAT-P2-004: persist the draft for the documented human review gate.
-    await persistAiDraft(supabase, {
-      organizationId: parsed.organizationId,
-      moduleKey: "ai-copilot",
-      promptKey: "copilot/reply-draft",
-      draftContent: { draftReply, tone: parsed.tone },
-      sourceEntityType: "ticket",
-      sourceEntityId: String(req.params.ticketId),
-      userId: req.authUser!.userId,
-    });
+      // FEAT-P2-004: persist the draft for the documented human review gate.
+      await persistAiDraft(supabase, {
+        organizationId: parsed.organizationId,
+        moduleKey: "ai-copilot",
+        promptKey: "copilot/reply-draft",
+        draftContent: { draftReply, tone: parsed.tone },
+        sourceEntityType: "ticket",
+        sourceEntityId: String(req.params.ticketId),
+        userId: req.authUser!.userId,
+      });
 
-    await logAuditEvent({
-      organizationId: parsed.organizationId,
-      actorUserId: req.authUser!.userId,
-      action: "copilot.reply_drafted",
-      entityType: "ticket",
-      entityId: String(req.params.ticketId),
-    });
+      await logAuditEvent({
+        organizationId: parsed.organizationId,
+        actorUserId: req.authUser!.userId,
+        action: "copilot.reply_drafted",
+        entityType: "ticket",
+        entityId: String(req.params.ticketId),
+      });
 
-    res.json(
-      success({
-        draftReply,
-        ticketSubject: (ticket as { title: string }).title,
-        tone: parsed.tone,
-      }),
-    );
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(
+        success({
+          draftReply,
+          ticketSubject: (ticket as { title: string }).title,
+          tone: parsed.tone,
+        }),
+      );
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 // ── AI draft review gate (FEAT-P2-004) ─────────────────────────────
 //

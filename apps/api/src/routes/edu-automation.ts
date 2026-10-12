@@ -1133,7 +1133,7 @@ for (const [path, { schema: s, table, module }] of Object.entries(schemas)) {
 // by `/api/v1/governance/sop-library` and `insurance_evidence` by
 // `/api/v1/insurance-binder`; both old paths fail closed with 410 + a
 // successor-version link instead of writing through a second validator.
-router.use("/sop", goneRoute("/api/v1/governance/sop-library"));
-router.use("/insurance", goneRoute("/api/v1/insurance-binder"));
+router.use("/sop", goneRoute("edu-automation/sop"));
+router.use("/insurance", goneRoute("edu-automation/insurance"));
 
 export default router;

@@ -2,9 +2,10 @@ name: Unit tests and schema guards
 description: >
   The coverage suite plus every repo guard (OpenAPI, docs counts/links, DB
   types, RLS hygiene, membership-predicate lint, migration transaction lint,
-  required-check parity, branch-protection drift/bypass fixtures, review.md
-  mirror). Shared by test.yml (PRs) and validate.yml (push deploy gate) so the
-  two definitions cannot drift apart again.
+  permission-catalog lint, public-route inventory, required-check parity,
+  branch-protection drift/bypass fixtures, review.md mirror). Shared by
+  test.yml (PRs) and validate.yml (push deploy gate) so the two definitions
+  cannot drift apart again.
 
 inputs:
   node-version:
@@ -55,6 +56,22 @@ runs:
     - name: Verify RLS/migration hygiene
       shell: bash
       run: node scripts/verify-rls.mjs
+
+    - name: Verify permission references resolve against the catalog (ACM-P3-002)
+      # Fails when a requirePermission literal, a live RLS
+      # user_has_permission predicate, or a registerCrud module key references
+      # a pair absent from the permissions catalog (migrations). The wrapper
+      # also runs a negative fixture, so a broken detector cannot pass silently.
+      shell: bash
+      run: scripts/ci/check-permission-catalog.sh
+
+    - name: Verify the public route inventory is current (ACM-P3-003)
+      # docs/PUBLIC_ROUTES.md is generated from the auth:false OpenAPI RouteDefs
+      # in apps/api/src/openapi/spec.ts; fails when the committed inventory is
+      # stale. scripts/openapi-audit.js keeps the spec itself in sync with the
+      # Express route tree.
+      shell: bash
+      run: node scripts/public-route-inventory.mjs --check
 
     - name: Verify no raw unfiltered membership predicate (DATA-P1-001)
       # Fails when a migration newer than the baseline reintroduces the

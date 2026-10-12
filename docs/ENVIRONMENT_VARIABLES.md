@@ -5,6 +5,11 @@
 > See `apps/api/.env.example`, `apps/web/.env.example`, `apps/worker/.env.example` for minimal starter configs.
 >
 > All three apps load **`.env.local`** for local development (API/Worker via explicit `dotenv.config()`, Web via Next.js convention). Docker Compose also references `.env.local` via `env_file`. Run `pwsh scripts/sync_supabase_env.auto.v2.ps1` to populate local Supabase connection values.
+>
+> EVOL-P3-005: shared field definitions (`NODE_ENV`, `LOG_LEVEL`, `SUPABASE_*`,
+> `REDIS_*`, `SMTP_*`, `SENTRY_*`, the queue-backend enum) live in
+> `packages/config/src/env.ts` (`@mct/config/env`) and are composed by each
+> app's schema. The per-app tables below remain the operator-facing reference.
 
 ## Web (`apps/web`)
 

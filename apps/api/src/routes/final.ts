@@ -26,6 +26,6 @@ registerCrudRoutes(router);
 // served by `/api/v1/satisfaction-pulse` (templates, schedules, respond/export
 // included); the generic `/final/satisfaction` path now fails closed with 410
 // instead of writing through a second validator.
-router.use("/satisfaction", goneRoute("/api/v1/satisfaction-pulse"));
+router.use("/satisfaction", goneRoute("final/satisfaction"));
 
 export default router;

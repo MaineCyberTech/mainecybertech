@@ -6,6 +6,10 @@ export default {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   setupFiles: ['<rootDir>/jest.setup.ts'],
   globalTeardown: '<rootDir>/jest.teardown.ts',
+  moduleNameMapper: {
+    // EVOL-P3-005: shared env schema source (ts-jest compiles it directly).
+    '^@mct/config/env$': '<rootDir>/../../packages/config/src/env.ts',
+  },
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',

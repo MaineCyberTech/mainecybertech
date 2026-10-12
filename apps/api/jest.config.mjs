@@ -29,5 +29,7 @@ export default {
     // imported via subpath exports; map them to source so ts-jest compiles
     // them regardless of package-exports support.
     "^@mct/sdk/(module-registry|webhook-events)$": "<rootDir>/../../packages/sdk/src/$1",
+    // EVOL-P3-005: shared env schema source (ts-jest compiles it directly).
+    "^@mct/config/env$": "<rootDir>/../../packages/config/src/env.ts",
   },
 };
