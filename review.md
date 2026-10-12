@@ -83,14 +83,14 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,266 tests, all passing. 487 suites.**
+**4,369 tests, all passing. 487 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,792         | 158   | Jest + supertest                  |
-| Web     | 1,914         | 296   | Jest + Testing Library            |
+| API     | 1,819         | 158   | Jest + supertest                  |
+| Web     | 1,963         | 296   | Jest + Testing Library            |
 | SDK     | 310           | 4   | Jest (mocked fetch)               |
-| Worker  | 250           | 29   | Jest (env schema + task handlers) |
+| Worker  | 277           | 29   | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
 
 Suite counts and the E2E spec count are counted from the tree by
@@ -152,12 +152,12 @@ pnpm e2e                     # Playwright E2E
 
 | Category                  | Count | Notes                                                                                                                                                                  |
 | ------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API route files           | 62    | `apps/api/src/routes/*.ts` (75 incl. `routes/final/` + `routes/store/`)                                                                                                |
+| API route files           | 63    | `apps/api/src/routes/*.ts` (76 incl. `routes/final/` + `routes/store/`)                                                                                                |
 | API SDK modules           | 62    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
-| Worker task files         | 13    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
+| Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319 | Admin 203, Portal 86, Public 29, `forbidden` 1 |
 | Web components            | 121 | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 147 | `supabase/migrations/` (latest: 5302449_consent_recording                                                                                              |
+| SQL migrations            | 151 | `supabase/migrations/` (latest: 5302453_push_subscriptions                                                                                              |
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 23 | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 632 | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
@@ -600,7 +600,7 @@ pipefail`); `docs/module-matrix-mapping.md` maps all 60 prompt-pack modules to
   validates live responses (412 paths, 0 missing). Generating the SDK from the
   spec remains a follow-up.
 - **CI schema guards**: `scripts/generate-db-types.js --check` and
-  `scripts/verify-rls.mjs` (137 tables, all RLS-enabled, 1025 policies) wired
+  `scripts/verify-rls.mjs` (137 tables, all RLS-enabled, 1031 policies) wired
   into `test.yml` + `validate.yml`; `docs/RLS-coverage-matrix.md` is now a
   snapshot with the script as the live source.
 - **CSP reporting + SAST**: unauthenticated `POST /api/v1/public/csp-report`

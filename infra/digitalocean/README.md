@@ -6,14 +6,15 @@ Production stack for the Maine CyberTech Portal on a single DigitalOcean droplet
 
 `docker-compose.yml` defines the services deployed to the droplet:
 
-| Service      | Image                                                           | Notes                                     |
-| ------------ | --------------------------------------------------------------- | ----------------------------------------- |
-| `api`        | `ghcr.io/mainecybertech/mainecybertech/mct-api:${IMAGE_TAG}`    | Express API, port 4000                    |
-| `web`        | `ghcr.io/mainecybertech/mainecybertech/mct-web:${IMAGE_TAG}`    | Next.js standalone, port 3000             |
-| `worker`     | `ghcr.io/mainecybertech/mainecybertech/mct-worker:${IMAGE_TAG}` | BullMQ consumer, health on 3001           |
-| `redis`      | `redis:7-alpine` (digest-pinned)                                | BullMQ backend; `REDIS_PASSWORD` required |
-| `caddy`      | `caddy:2-alpine` (digest-pinned)                                | TLS reverse proxy on ports 80/443         |
-| `prometheus` | `prom/prometheus:v3.5.1` (digest-pinned)                        | Internal-only metrics scraping (no ports) |
+| Service        | Image                                                           | Notes                                                                |
+| -------------- | --------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `api`          | `ghcr.io/mainecybertech/mainecybertech/mct-api:${IMAGE_TAG}`    | Express API, port 4000                                               |
+| `web`          | `ghcr.io/mainecybertech/mainecybertech/mct-web:${IMAGE_TAG}`    | Next.js standalone, port 3000                                        |
+| `worker`       | `ghcr.io/mainecybertech/mainecybertech/mct-worker:${IMAGE_TAG}` | BullMQ consumer, health on 3001                                      |
+| `redis`        | `redis:7-alpine` (digest-pinned)                                | BullMQ backend; `REDIS_PASSWORD` required                            |
+| `caddy`        | `caddy:2-alpine` (digest-pinned)                                | TLS reverse proxy on ports 80/443                                    |
+| `prometheus`   | `prom/prometheus:v3.5.1` (digest-pinned)                        | Internal-only metrics scraping (no ports)                            |
+| `alertmanager` | `prom/alertmanager:v0.28.1` (digest-pinned)                     | Internal-only alert delivery + dead-man's-switch receiver (no ports) |
 
 `GHCR_IMAGE_PREFIX` overrides the image prefix (default
 `ghcr.io/mainecybertech/mainecybertech`).
@@ -48,6 +49,10 @@ Supporting files:
   `Caddyfile.dev` / `Caddyfile.prod` are the environment variants the deploy
   workflow copies to `/opt/mct-portal/Caddyfile` (falling back to `Caddyfile`).
 - `prometheus.yml` + `prometheus.rules.yml` — scrape config and alert rules.
+- `alertmanager.tmpl.yml` — Alertmanager config template (ntfy/webhook
+  receivers + the external watchdog heartbeat), rendered at container start.
+- `metrics-token` — not committed: written `0400` by `deploy-do.yml` and
+  mounted read-only for the authenticated `mct-api` scrape.
 - `.env.example` — template for the droplet `/opt/mct-portal/.env`.
 
 ## Required environment

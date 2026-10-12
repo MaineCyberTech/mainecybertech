@@ -12,12 +12,17 @@
  * stripped before resolution, `decodeURIComponent` is applied, and the
  * target is resolved relative to the source file's directory.
  *
+ * Also fails when an audit run directory under `docs/audits/` (a directory
+ * with `report.md` or `audit_manifest.json`) is not referenced by
+ * `docs/audits/README.md` — a published run must be discoverable from the
+ * index (ORCH-P2-001).
+ *
  * Prints every broken link as `file:line -> target`, exits 1 when any are
  * found; prints "docs links OK" and exits 0 when clean.
  *
  * Usage: node scripts/check-docs-links.mjs
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -112,4 +117,34 @@ if (broken.length > 0) {
   for (const entry of broken) console.error(`  ${entry}`);
   process.exit(1);
 }
+
+// --- Audit run index coverage (ORCH-P2-001) --------------------------------
+// Every run directory under docs/audits/ must be referenced by the index, so a
+// published run cannot be invisible to readers or agents. A run directory is
+// one that contains a report.md (manual packs) or an audit_manifest.json
+// (repo-deep-dive runs).
+const AUDITS_ROOT = join(ROOT, "docs/audits");
+const AUDITS_INDEX = join(AUDITS_ROOT, "README.md");
+const unindexed = [];
+if (existsSync(AUDITS_INDEX)) {
+  const indexText = readFileSync(AUDITS_INDEX, "utf8");
+  for (const pack of readdirSync(AUDITS_ROOT, { withFileTypes: true })) {
+    if (!pack.isDirectory()) continue;
+    const packDir = join(AUDITS_ROOT, pack.name);
+    for (const run of readdirSync(packDir, { withFileTypes: true })) {
+      if (!run.isDirectory()) continue;
+      const runDir = join(packDir, run.name);
+      if (!existsSync(join(runDir, "report.md")) && !existsSync(join(runDir, "audit_manifest.json"))) continue;
+      if (!indexText.includes(`${pack.name}/${run.name}`)) {
+        unindexed.push(`docs/audits/${pack.name}/${run.name}`);
+      }
+    }
+  }
+}
+if (unindexed.length > 0) {
+  console.error(`audit runs missing from docs/audits/README.md (${unindexed.length}):`);
+  for (const entry of unindexed) console.error(`  ${entry}`);
+  process.exit(1);
+}
+
 console.log("docs links OK");

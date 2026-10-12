@@ -35,7 +35,7 @@ Pipeline:
 2. **Resolve IP** — Query DO API to get the droplet's public IPv4
 3. **Build 3 images** (parallel) — Build and push API, worker, and web images to GHCR with SHA tag (`ghcr.io/mainecybertech/mainecybertech/mct-{api,worker,web}:<sha>`)
 4. **Deploy** — SSH into droplet, write `.env` from GitHub secrets, pull images from GHCR, copy compose file and per-environment Caddyfile, set up Cloudflare Origin CA certs, then **rolling-recreate** the app services (`docker compose up -d --no-deps api|worker|web`, waiting for each to become healthy) and refresh Caddy last. The rest of the stack (redis, prometheus, alertmanager) is only recreated when its compose config changed.
-5. **Health check** — Poll `https://api.<domain>/health` (200/526) and `https://app.<domain>/login` (non-000)
+5. **Health check** — Poll `https://api.<domain>/health` until HTTP 200, the worker `/health` over SSH, and `https://app.<domain>/login` until 200/301/302/307. Then a container health gate asserts every healthchecked service (redis, api, worker, web, alertmanager, prometheus, caddy); any failure fails the deploy and rolls back to the previously running images.
 
 ### Deploy Gates
 
@@ -45,17 +45,17 @@ Before any deployment proceeds, the following gates must pass:
 | -------------- | ------------------------- | ------------------------------------------------ | ----------------- |
 | **Validate**   | `validate.yml`            | Runs test + lint + typecheck in parallel         | All builds        |
 | **E2E**        | `e2e.yml`                 | Runs Playwright E2E tests against local Supabase | Production deploy |
-| **Migrations** | `supabase-migrations.yml` | Applies pending DB migrations                    | All deploys       |
+| **Migrations** | `supabase-migrations.yml` | Applies pending DB migrations                    | Production deploy |
 
-The build jobs (`build-api`, `build-worker`, `build-web`) depend on `validate`. The deploy job depends on all three builds + `e2e` + `migrations`. If any gate fails, the deployment is blocked.
+The build jobs (`build-api`, `build-worker`, `build-web`) depend on `validate`. The deploy job depends on all three builds + `e2e` + `migrations`; the `e2e` and `migrations` gates are required for production deploys only (they are skipped on dev). If any gate fails, the deployment is blocked.
 
 ### Concurrency
 
-The deploy workflow uses `concurrency: deploy-do-${{ github.ref }}` with `cancel-in-progress: true`. This ensures only one deploy runs per branch at a time. If a second push happens while a deploy is in progress, the first deploy is cancelled.
+The deploy workflow uses `concurrency: deploy-do-${{ github.ref }}` with `cancel-in-progress: false`. Only one deploy runs per branch at a time; a second push while a deploy is in progress is **queued**, and an in-flight deploy is never cancelled (prod deploys must not be aborted mid-flight).
 
 ### Speed optimization
 
-Images are **not** piped over SSH anymore. The deploy step pulls directly from GHCR on the droplet. Builder cache pruning is deferred to post-deploy to avoid SSH timeouts. Old MCT images are cleaned up via `docker image prune -af`.
+Images are **not** piped over SSH anymore. The deploy step pulls directly from GHCR on the droplet. Builder cache pruning is deferred to post-deploy to avoid SSH timeouts. Old MCT images are pruned only after the health gate passes: the running image IDs are kept and every other `mct-*` image is removed (`docker rmi -f`), followed by `docker image prune -f`.
 
 ## Manual Operations
 
@@ -95,19 +95,19 @@ docker compose -p mct-portal up -d --remove-orphans
 - `https://api.mainecybertech.com/health` — API health (includes Supabase connectivity)
 - `https://api.mainecybertech.us/health` — Dev API health
 - Worker health: `curl http://localhost:3001/health` (internal, on droplet)
-- Redis health: `redis-cli -a <password> ping` (internal, on droplet)
+- Redis health: `REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli ping` (internal, on droplet; the password stays out of the process arguments)
 
 ## Secrets Management
 
 ### Required GitHub Environments
 
 - `dev` — dev/develop deploys (no approval)
-- `prod` — prod Supabase migrations, plus read-only plan/resolve jobs (no protection rules)
+- `prod` — prod Supabase migrations, plus read-only plan/resolve jobs. Required reviewers (1+) must be configured in GitHub because `supabase-migrations.yml` mutates production (CI-004); that setting is not in repo code.
 - `prod-approval` — prod app deploy (`deploy-do.yml` `deploy` job) and prod Terraform apply (`terraform-do.yml` `terraform-apply-prod`). Required reviewers (1+) must be configured in GitHub (Settings → Environments → `prod-approval`); that setting is **not** in repo code and is **not yet configured**, so the approval gate is not currently in force.
 
 ### GitHub Environment Secrets (written to `/opt/mct-portal/.env`)
 
-The deploy workflow writes 25+ secrets to `.env` on the droplet via SSH heredoc. Key secrets:
+The deploy workflow writes the environment's secrets to `.env` on the droplet with `printf '%s'` (values are written literally and are never re-expanded by the shell), plus a `metrics-token` file (0400) for the authenticated Prometheus scrape. Key secrets:
 
 | Secret                              | Purpose                               |
 | ----------------------------------- | ------------------------------------- |
@@ -139,16 +139,20 @@ Terraform lives at `infra/terraform/digitalocean/`. It manages:
 | File             | Purpose                                                               |
 | ---------------- | --------------------------------------------------------------------- |
 | `providers.tf`   | DigitalOcean + Cloudflare providers                                   |
-| `variables.tf`   | 12 variables (DO token, region, size, SSH key, Cloudflare zones, env) |
+| `variables.tf`   | 13 variables (DO token, region, size, SSH key, Cloudflare zones, env) |
 | `droplet.tf`     | Droplet resource with cloud-init, `prevent_destroy` lifecycle         |
-| `firewall.tf`    | DO Cloud Firewall: ports 22/80/443/2376, full egress                  |
+| `firewall.tf`    | DO Cloud Firewall: SSH 22 (admin ranges only) and HTTP/HTTPS 80/443 (Cloudflare ranges only); full egress. No port 2376 |
 | `dns.tf`         | A records per domain (dev→.us, prod→.com), proxied via Cloudflare     |
 | `outputs.tf`     | Droplet IP, ID, URN                                                   |
 | `cloud-init.yml` | Docker install, docker compose, data directories                      |
 
 ### Terraform workflow
 
-Triggered on push to main/develop when `infra/terraform/digitalocean/**` changes. Apply is gated: dev applies directly, prod requires validate + e2e + supabase-migrations + prod-approval.
+`terraform-do.yml` is **manual-dispatch only** — there are no push/PR triggers
+(by design; a weekly plan-only drift check stays dormant until the operator sets
+`TF_DRIFT_PLAN_ENABLED=true`). A run plans by default; apply only happens when
+the `apply` input is set. Prod applies run from `main` under `prod-approval` and
+wait on the e2e/migration gates; dev applies run from `develop` under `dev`.
 
 ```bash
 # Manual Terraform apply (dev)
@@ -212,11 +216,14 @@ Error tracking is configured for both API and Web. Sentry DSN is optional — sk
 ### Health checks
 
 - Each deploy runs health checks against API, Web **and Worker**; the deploy
-  step fails (and rolls back to the previous tag) if any of the three is
-  unhealthy.
-- All containers have Docker HEALTHCHECK directives (redis ping, API wget
-  `/health`, web wget `/login`, Caddy checks its own process, worker wget
-  `/health` on port 3001).
+  step fails (and rolls back to the previously running images) if any is
+  unhealthy. A final container health gate asserts every healthchecked service
+  (redis, api, worker, web, alertmanager, prometheus, caddy) before old images
+  are pruned.
+- All app images define Docker HEALTHCHECK directives (redis ping, API wget
+  `/health`, web wget `/` on port 3000, Caddy validates its Caddyfile, worker
+  wget `/health` on port 3001; prometheus probes `/-/ready` and alertmanager
+  probes `/-/healthy`).
 - Worker exposes `/health` on port 3001 (internal only); the deploy checks it
   over SSH.
 
@@ -238,7 +245,7 @@ docker compose -p mct-portal logs <service>
 
 Common issues:
 
-- **Web OOM**: If web exits with code 137, increase `mem_limit` in docker-compose.yml (current: 256MB)
+- **Web OOM**: If web exits with code 137, increase `mem_limit` in docker-compose.yml (current: 512MB)
 - **API can't connect to Supabase**: Verify `SUPABASE_URL` and keys in `/opt/mct-portal/.env`
 - **Worker can't connect to Redis**: Verify `REDIS_PASSWORD` matches between `.env` and docker-compose
 - **Caddy TLS errors**: Check `fullchain.pem` and `privkey.pem` in `/opt/mct-portal/certs/`. If empty, the deploy falls back to `tls internal` (dev) or will fail (prod)

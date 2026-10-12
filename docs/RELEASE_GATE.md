@@ -14,9 +14,9 @@ register records a residual (e.g. `EXEC-P1-001`).
 
 **Status source:** the run's reconciled register
 ([`audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/risk_register.md`](audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/risk_register.md),
-reconciled at `fb9f16ce`, 2026-10-11). Where this document and the register
-disagree, the register wins — re-read this file after each reconciliation so a
-stale status cannot outlive it.
+kept current by the `docs(audits): reconcile …` commits in this repository).
+Where this document and the register disagree, the register wins — re-read this
+file after each reconciliation so a stale status cannot outlive it.
 
 **Gate owner:** release owner (ops/release). **Review by:** before the first
 `main` → prod deploy, and after every audit re-run.
@@ -37,7 +37,9 @@ deploy. See [`RELEASING.md`](RELEASING.md) for the branch model and deploy path.
 The 2026-10-11 run records **NO-GO** (advisory): P0 ×8, P1 ×89, with
 `DR-P0-001` partially fixed (the repo-side dispatcher is fixed; the operator
 backup secrets are still unprovisioned) and `IR-P0-003` (dead-man's switch
-configured but not exercised) partially fixed.
+configured but not exercised) partially fixed. Against the reconciled register,
+18 of the P0/P1 rows remain unresolved (2 P0, 16 P1); the gate stays **NO-GO**
+until each is `verified-fixed` or owner-accepted.
 
 > Status is deliberately recorded as *decision / owner / evidence required*,
 > not as "fixed". A finding may only be treated as closed with an artifact
