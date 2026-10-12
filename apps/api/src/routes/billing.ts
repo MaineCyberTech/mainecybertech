@@ -245,32 +245,25 @@ router.get("/summary", async (req, res, next) => {
       { count: totalInvoices },
       { data: recentInvoices },
     ] = await Promise.all([
-      supabase
-        .from("subscriptions")
-        .select("*", { count: "exact", head: true })
-        .then((q) => baseQuery(q))
+      // Apply the scope + filters to the builder *before* awaiting it: a
+      // supabase-js `.then()` resolves the PostgREST response, so chaining
+      // predicates onto the resolved value throws (the summary used to 500).
+      baseQuery(supabase.from("subscriptions").select("*", { count: "exact", head: true }))
         // BILL-P3-006: mirror `isSubscriptionActive` — a trialing plan is an
         // active plan for entitlement purposes, so it must not show as 0.
-        .then((q) => q.in("status", ["active", "trialing"])),
-      supabase
-        .from("invoices")
-        .select("*", { count: "exact", head: true })
-        .then((q) => baseQuery(q))
-        .then((q) => q.eq("status", "overdue")),
-      supabase
-        .from("invoices")
-        .select("*", { count: "exact", head: true })
-        .then((q) => baseQuery(q))
-        .then((q) => q.eq("status", "paid")),
-      supabase
-        .from("invoices")
-        .select("*", { count: "exact", head: true })
-        .then((q) => baseQuery(q)),
-      supabase
-        .from("invoices")
-        .select("*")
-        .then((q) => baseQuery(q))
-        .then((q) => q.order("created_at", { ascending: false }).limit(5)),
+        .in("status", ["active", "trialing"]),
+      baseQuery(supabase.from("invoices").select("*", { count: "exact", head: true })).eq(
+        "status",
+        "overdue",
+      ),
+      baseQuery(supabase.from("invoices").select("*", { count: "exact", head: true })).eq(
+        "status",
+        "paid",
+      ),
+      baseQuery(supabase.from("invoices").select("*", { count: "exact", head: true })),
+      baseQuery(supabase.from("invoices").select("*"))
+        .order("created_at", { ascending: false })
+        .limit(5),
     ]);
 
     res.json(
