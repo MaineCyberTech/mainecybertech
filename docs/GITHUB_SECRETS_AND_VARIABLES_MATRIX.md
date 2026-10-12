@@ -151,13 +151,10 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 | `SUPABASE_ACCESS_TOKEN`   | yes | yes  | Supabase CLI auth for `supabase link` / `db push` (`supabase-migrations.yml`) |
 | `CHROMATIC_PROJECT_TOKEN` | yes | yes  | Chromatic visual-regression upload (`chromatic.yml`; the job fails on a broken Storybook build or a visual change once a baseline exists) |
 | `E2E_JWT_SECRET`          | opt | opt  | Optional E2E JWT secret; `e2e.yml` falls back to a built-in test value        |
-<<<<<<< HEAD
 | `BRANCH_PROTECTION_READ_TOKEN` | yes | yes | Repo-wide fine-grained PAT with `Administration: read` (+ `Contents`/`Pull requests`/`Checks: read`) for `branch-protection-audit.yml` (BP-P2-002/003); the default `GITHUB_TOKEN` cannot read classic branch protection |
-=======
 | `LOAD_TEST_AUTH_TOKEN`    | opt | opt  | JWT for the authenticated k6 scenarios (`tickets`/`sse` in `load-test.yml`); required when dispatching those scenarios |
 | `LOAD_TEST_TEST_EMAIL`    | opt | opt  | Test-account email for the `auth` k6 scenario (`load-test.yml`)               |
 | `LOAD_TEST_TEST_PASSWORD` | opt | opt  | Test-account password for the `auth` k6 scenario (`load-test.yml`)            |
->>>>>>> 91e28b55 (fix(ci): enforce load-test budgets with failure injection; add external uptime probe)
 
 > `SCHEDULE_DISPATCH_TOKEN` was retired with `backup-dispatch.yml`
 > (CI-P2-010): the backup workflows are scheduled on the default branch, so
