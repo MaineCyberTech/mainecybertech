@@ -14,8 +14,9 @@
  * same catalog the admin entitlement form and MODULE_LABELS use.
  *
  * Precedence (matches the bootstrap payload):
- *   1. Admin-provisioned `client_portal_entitlements` rows for the org
- *      (when at least one enabled row exists) win outright.
+ *   1. Admin-provisioned `client_portal_entitlements` rows for the org. The
+ *      mere existence of rows is an explicit override — including an
+ *      all-disabled set, which revokes every module (BILL-P3-005).
  *   2. Otherwise the subscription-derived set: an active/trialing
  *      subscription unlocks the premium modules, anything else falls back to
  *      the default set.
@@ -100,7 +101,11 @@ export async function resolveOrgEntitlements(organizationId: string): Promise<Or
     .filter((e) => e.enabled)
     .map((e) => e.module_key);
 
-  if (provisioned.length > 0) {
+  // BILL-P3-005: any provisioned row — enabled or not — is an explicit admin
+  // override. Falling back when every row is disabled made an all-disabled
+  // override impossible: the subscription set silently re-enabled the gated
+  // modules the admin had just revoked.
+  if ((entitlements ?? []).length > 0) {
     return { enabledModules: provisioned, subscriptionActive, source: "provisioned" };
   }
 

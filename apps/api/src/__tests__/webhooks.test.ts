@@ -183,6 +183,73 @@ describe("webhooks routes", () => {
       expect(upsertArgs.total_cents).toBe(550);
     });
 
+    it("records a paid invoice without status_transitions instead of throwing (BILL-P3-003)", async () => {
+      mockStripeEvent({
+        type: "invoice.paid",
+        id: "evt_inv_no_transitions",
+        data: {
+          object: {
+            customer: "cus_1",
+            id: "in_no_transitions",
+            number: "INV-1002",
+            status: "paid",
+            subtotal: 100,
+            tax: 0,
+            total: 100,
+            currency: "usd",
+            hosted_invoice_url: null,
+            invoice_pdf: null,
+            due_date: null,
+            created: 1700000100,
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "invoice.paid", id: "evt_inv_no_transitions" });
+
+      expect(res.status).toBe(200);
+      const upsertArgs = builders["invoices"].upsert.mock.calls[0][0];
+      expect(upsertArgs.status).toBe("paid");
+      expect(upsertArgs.paid_at).toBe(new Date(1700000100 * 1000).toISOString());
+    });
+
+    it("stores the checkout billing email encrypted at rest (BILL-P3-002)", async () => {
+      mockStripeEvent({
+        type: "checkout.session.completed",
+        id: "evt_checkout_1",
+        data: {
+          object: {
+            customer: "cus_1",
+            client_reference_id: "org-1",
+            customer_details: { email: "billing@acme.test" },
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({});
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "checkout.session.completed", id: "evt_checkout_1" });
+
+      expect(res.status).toBe(200);
+      const upsertArgs = builders["billing_customers"].upsert.mock.calls[0][0];
+      expect(upsertArgs.billing_email).not.toBe("billing@acme.test");
+      expect(upsertArgs.billing_email).toMatch(/^(plain:|v1:)/);
+    });
+
     function mockStripeEvent(event: unknown) {
       const StripeMock = (jest.requireMock("stripe") as unknown as jest.Mock);
       const constructEvent = jest.fn().mockReturnValue(event);
