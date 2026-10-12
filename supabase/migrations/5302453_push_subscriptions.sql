@@ -1,5 +1,5 @@
 -- =========================================================
--- 5302452: Web Push subscriptions (NOTIF-P2-001)
+-- 5302453: Web Push subscriptions (NOTIF-P2-001)
 --
 -- The Web Push channel was entirely absent: no subscription storage, no
 -- VAPID config, no service-worker push handler. This migration adds the
