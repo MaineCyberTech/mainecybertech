@@ -398,7 +398,7 @@ router.post(
         // caller in org A could replace (and delete the storage object of) a
         // document belonging to org B.
         if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
-        const { data: current, error: fetchError } = await currentQuery.single();
+        const { error: fetchError } = await currentQuery.single();
 
         if (fetchError) {
           await storage.from(bucket).remove([storagePath]);

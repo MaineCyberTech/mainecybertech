@@ -34,28 +34,6 @@ function mockResponse<T>(data: T, ok = true): Promise<Response> {
   } as Response);
 }
 
-function mockStatusResponse(status: number, body: ApiResponse<unknown>): Promise<Response> {
-  return Promise.resolve({
-    ok: status >= 200 && status < 300,
-    status,
-    json: () => Promise.resolve(body),
-    headers: new Headers(),
-    redirected: false,
-    statusText: status === 502 ? "Bad Gateway" : "OK",
-    type: "basic" as ResponseType,
-    url: "",
-    clone: function () {
-      return this;
-    },
-    body: null,
-    bodyUsed: false,
-    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-    blob: () => Promise.resolve(new Blob()),
-    formData: () => Promise.resolve(new FormData()),
-    text: () => Promise.resolve(""),
-  } as Response);
-}
-
 function createClient(opts?: Partial<ClientOptions>) {
   const options: ClientOptions = {
     baseUrl: BASE_URL,

@@ -32,7 +32,10 @@ const store = storeIdempotencyKey as jest.Mock;
 const del = deleteIdempotencyKey as jest.Mock;
 
 // Keys are scoped by caller (bearer token or IP) + method + route + header.
-const scopedSuffix = (name: string) => new RegExp(`:POST:/test:${name}$`.replace(/[/]/g, "\\/"));
+// Escape backslashes first, then slashes, so the interpolation cannot inject
+// regex syntax.
+const scopedSuffix = (name: string) =>
+  new RegExp(`:POST:/test:${name}$`.replace(/\\/g, "\\\\").replace(/[/]/g, "\\/"));
 
 function createApp() {
   const app = express();

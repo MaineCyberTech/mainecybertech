@@ -93,6 +93,8 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", (event) => {
+  // Only this origin's pages may ask the worker to purge its caches.
+  if (event.origin !== self.location.origin) return;
   if (!event.data || event.data.type !== "PURGE_CACHES") return;
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key)))),

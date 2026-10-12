@@ -1,5 +1,3 @@
-import { jest } from "@jest/globals";
-
 describe("summarizeBulkUpdate", () => {
   it("splits per-item successes and failures", async () => {
     const { summarizeBulkUpdate } = await import("@/lib/bulk-results");

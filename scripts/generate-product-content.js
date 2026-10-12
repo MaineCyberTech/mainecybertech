@@ -7,7 +7,6 @@ const products = JSON.parse(fs.readFileSync("apps/web/lib/catalog/data/products.
 // ============================================================
 function generateMarketingCopy(p) {
   const name = p.name;
-  const summary = p.summary || "";
   const cat = p.category;
 
   // Detailed descriptions per product
@@ -89,8 +88,6 @@ function generateMarketingCopy(p) {
       "We handle your ongoing Microsoft 365 administration — user adds, changes, removes, license management, security checks, and help desk support. You get professional M365 management without hiring full-time staff.",
     "Microsoft 365 Security Baseline":
       "We configure your Microsoft 365 tenant to Microsoft's security best practices — Conditional Access, MFA, threat protection, and Secure Score improvements. You get a hardened security posture that meets insurance requirements.",
-    "Microsoft 365 Backup Setup":
-      "We configure automated backup for your Exchange Online, SharePoint, and OneDrive data. You get point-in-time recovery capability for your M365 data, protecting against accidental deletion, ransomware, and retention gaps.",
     "Microsoft 365 Migration Lite":
       "We migrate your email, contacts, and calendars from your previous platform to Microsoft 365. You get a guided migration with minimal disruption and basic configuration ready for daily use.",
     "Microsoft 365 Migration Full":
@@ -197,8 +194,6 @@ function generateMarketingCopy(p) {
       "We install UniFi access points, configure Wi-Fi with optimization, and integrate with the UniFi Controller. You get professional Wi-Fi with centralized management and guest network support.",
     "UniFi Network Cleanup":
       "We audit your UniFi configuration — device inventory, SSIDs, networks, and settings — and standardize everything. You get a cleaned-up UniFi environment with consistent naming and documented configuration.",
-    "UniFi Monthly Management":
-      "We perform monthly UniFi health checks, firmware updates, and performance monitoring. You get a professionally managed UniFi environment with proactive issue detection.",
     "UniFi Site Documentation":
       "We document your complete UniFi deployment — device inventory, network topology, SSID configuration, and warranty information. You get comprehensive site documentation for all your UniFi locations.",
     "Small Office Wi-Fi Bundle":
@@ -225,8 +220,6 @@ function generateMarketingCopy(p) {
       "We configure secure remote access to your cameras through VPN or secure proxy, and set up mobile app access. You get the ability to view your cameras from anywhere without exposing them to the internet.",
     "Camera Signage Package":
       "We provide and install professional security camera signs and required notices. You get visible deterrence for potential intruders with compliance-required notices posted.",
-    "Camera Maintenance Plan":
-      "We perform quarterly camera checks — lens cleaning, recording verification, remote access testing, and storage review. You get proactive camera maintenance that extends system life and prevents issues.",
     "Camera Starter Bundle":
       "We provide a complete entry-level camera system with 2-4 cameras, NVR, installation, and remote access setup. You get an affordable, reliable camera system that covers your essential areas.",
     "Camera Business Bundle":
@@ -251,8 +244,6 @@ function generateMarketingCopy(p) {
       "We configure cloud backup for your critical business data with automated scheduling and retention. You get off-site protection against local disasters like fire, theft, or hardware failure.",
     "Backup Restore Test":
       "We perform a test restore of selected files or systems to verify your backup actually works. You get documented restore procedures and confidence that your data can be recovered when needed.",
-    "Backup Monitoring Plan":
-      "We configure automated backup monitoring with failure alerts and monthly status reviews. You get peace of mind that your backups are running successfully with proactive failure notification.",
     "Disaster Recovery Plan Starter":
       "We help you create a documented disaster recovery plan covering recovery procedures, priorities, and timeframes. You get a practical DR plan that reduces downtime when a disaster occurs.",
     "Backup Starter Bundle":
@@ -289,8 +280,6 @@ function generateMarketingCopy(p) {
       "We scan your website for vulnerabilities, check SSL/TLS configuration, and verify malware status. You get a security assessment with identified risks and recommended fixes.",
     "Website Backup Setup":
       "We configure automated website backups with off-site storage and restore capability. You get protected website content with point-in-time restore capability.",
-    "Monthly Website Care Plan":
-      "We perform monthly updates, security scans, backup monitoring, and performance checks for your website. You get proactive website maintenance that prevents issues before they affect your visitors.",
     "Landing Page Build":
       "We design and build a focused landing page for your campaign or service with clear calls-to-action. You get a professional, mobile-responsive page optimized for conversions.",
     "Local SEO Page Build":
@@ -311,8 +300,6 @@ function generateMarketingCopy(p) {
       "We set up a blog on your website with SEO-optimized structure, content strategy, and starter posts. You get a foundation for content marketing and improved search rankings.",
     "Technical SEO Fix Pack":
       "We audit and fix technical SEO issues — crawl errors, broken links, slow pages, and schema markup problems. You get a technically optimized website that search engines can properly index.",
-    "Monthly Local SEO Plan":
-      "We manage your local SEO monthly — GBP optimization, citation building, review monitoring, and performance reporting. You get ongoing local search improvements and active reputation management.",
     "Review Request System Setup":
       "We configure an automated system that requests customer reviews after service. You get more reviews on Google and other platforms with monitoring and response management.",
     "Schema Markup Setup":
@@ -660,7 +647,7 @@ for (const p of products) {
 const dups = Object.entries(copies).filter(([, names]) => names.length > 1);
 console.log("marketingCopy unique:", dups.length === 0 ? "YES" : "NO - " + dups.length + " dupes");
 if (dups.length > 0) {
-  for (const [copy, names] of dups) {
+  for (const [, names] of dups) {
     console.log("  DUPE:", names.join(", "));
   }
 }

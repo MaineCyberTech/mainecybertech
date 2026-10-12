@@ -143,6 +143,25 @@ visible; it never applies (`CI-P2-002`).
   gate rather than widening the prod gate with known failures.
 - **build-push** — manual dispatch only; regular builds happen in `deploy-do`.
 
+## Code scanning (CodeQL)
+
+`codeql.yml` runs `security-and-quality` for `javascript-typescript` on every PR
+to `main`/`develop` (plus pushes and a weekly schedule). **The PR check is
+blocking**: a PR that introduces new alerts fails until they are fixed or
+resolved on the alert itself.
+
+Dismissals are per-alert and must stand on their own:
+
+- Only dismiss a **confirmed false positive** (`dismissed_reason: "false
+  positive"`) with a concrete `dismissed_comment` that names the mitigating
+  code — e.g. a heuristic-sensitive variable name whose value is an opaque UUID,
+  or a guard that precedes (and cannot skip) a cryptographic verification.
+- Prefer a code fix; use "won't fix"/"used in tests" only with the same level
+  of justification. Never silence a class of alerts with a broad path filter
+  without documenting why in `.github/codeql/` and in the PR.
+- Record each dismissal (alert number + justification) in the PR body so the
+  audit trail stays reviewable.
+
 ## Repo-wide CI conventions
 
 - Every workflow installs pnpm with `corepack enable` +

@@ -383,36 +383,34 @@ router.post("/:id/comments", requirePermission("tickets", "edit"), async (req, r
       entityId: data.id,
     });
 
-    if (ticket) {
-      const notifyIds: string[] = [ticket.created_by, ticket.assigned_to]
-        .filter((id): id is string => typeof id === "string")
-        .filter((id) => id !== req.authUser!.userId);
-      const uniqueIds = [...new Set(notifyIds)];
-      if (uniqueIds.length) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, email")
-          .in("id", uniqueIds);
+    const notifyIds: string[] = [ticket.created_by, ticket.assigned_to]
+      .filter((id): id is string => typeof id === "string")
+      .filter((id) => id !== req.authUser!.userId);
+    const uniqueIds = [...new Set(notifyIds)];
+    if (uniqueIds.length) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .in("id", uniqueIds);
 
-        for (const profile of profiles ?? []) {
-          await notifyAndEmail({
-            userId: profile.id,
-            organizationId: ticket.organization_id,
-            title: "New Comment on Ticket",
-            // NOTIF-P2-005: the comment excerpt is deliberately NOT included.
-            // Raw comment text can carry credentials/PII; the notification is an
-            // abstract plus the deep link instead. The comment id is the natural
-            // idempotency key, so distinct comments still notify while a retry
-            // of the same comment dedupes. It is namespaced per recipient so
-            // several participants each get their own row.
-            body: `${req.authUser!.email} commented on "${ticket.title}".`,
-            module: "tickets",
-            moduleId: String(req.params.id),
-            action: "comment",
-            notificationKey: `ticket-comment-${String(data.id)}-${profile.id}`,
-            email: profile.email ?? undefined,
-          });
-        }
+      for (const profile of profiles ?? []) {
+        await notifyAndEmail({
+          userId: profile.id,
+          organizationId: ticket.organization_id,
+          title: "New Comment on Ticket",
+          // NOTIF-P2-005: the comment excerpt is deliberately NOT included.
+          // Raw comment text can carry credentials/PII; the notification is an
+          // abstract plus the deep link instead. The comment id is the natural
+          // idempotency key, so distinct comments still notify while a retry
+          // of the same comment dedupes. It is namespaced per recipient so
+          // several participants each get their own row.
+          body: `${req.authUser!.email} commented on "${ticket.title}".`,
+          module: "tickets",
+          moduleId: String(req.params.id),
+          action: "comment",
+          notificationKey: `ticket-comment-${String(data.id)}-${profile.id}`,
+          email: profile.email ?? undefined,
+        });
       }
     }
 

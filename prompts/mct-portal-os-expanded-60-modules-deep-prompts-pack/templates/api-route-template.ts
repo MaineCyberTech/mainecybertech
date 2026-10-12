@@ -1,10 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth";
-import { requireOrgAccess } from "../middleware/org-access";
-import { getSupabaseAdmin } from "../services/supabase";
-import { logAuditEvent } from "../services/audit";
-import { AppError, success } from "../types";
+import { success } from "../types";
 
 const router = Router();
 const createSchema = z.object({

@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import authRouter from "../routes/auth";
-import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
+import { createTestApp, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({

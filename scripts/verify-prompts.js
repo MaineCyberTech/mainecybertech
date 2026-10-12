@@ -80,7 +80,6 @@ function treeHash(packDir, entries) {
     .filter((k) => k.startsWith(packPrefix) || packDir === "__root")
     .map((k) => `${k}\0${entries[k]}`)
     .sort((a, b) => a.localeCompare(b));
-  const tree = entries["__tree__"] ?? null;
   if (parts.length === 0) return null;
   return sha256(parts.join("\n"));
 }
