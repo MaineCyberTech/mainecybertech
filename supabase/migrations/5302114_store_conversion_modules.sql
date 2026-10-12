@@ -34,8 +34,10 @@ create table if not exists store_visual_assets (
 alter table store_quote_requests enable row level security;
 alter table store_visual_assets enable row level security;
 
+drop policy if exists "Service role full access to quote requests" on store_quote_requests;
 create policy "Service role full access to quote requests" on store_quote_requests
   for all to service_role using (true) with check (true);
 
+drop policy if exists "Service role full access to visual assets" on store_visual_assets;
 create policy "Service role full access to visual assets" on store_visual_assets
   for all to service_role using (true) with check (true);

@@ -15,8 +15,10 @@ CREATE TABLE store_promotions (
 
 ALTER TABLE store_promotions ENABLE ROW LEVEL SECURITY;
 
+drop policy if exists "Anyone can view active promotions" on store_promotions;
 CREATE POLICY "Anyone can view active promotions" ON store_promotions
   FOR SELECT USING (status = 'active');
 
+drop policy if exists "Service role full access" on store_promotions;
 CREATE POLICY "Service role full access" ON store_promotions
   FOR ALL USING (true);

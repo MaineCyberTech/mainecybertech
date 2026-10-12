@@ -23,8 +23,11 @@ create table if not exists offboarding_checklists (
 );
 create index if not exists idx_offboarding_checklists_org on offboarding_checklists(organization_id);
 alter table offboarding_checklists enable row level security;
+drop policy if exists "offboarding_select_org" on offboarding_checklists;
 create policy "offboarding_select_org" on offboarding_checklists for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "offboarding_insert_auth" on offboarding_checklists;
 create policy "offboarding_insert_auth" on offboarding_checklists for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "offboarding_update_org" on offboarding_checklists;
 create policy "offboarding_update_org" on offboarding_checklists for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists break_glass_accounts (
@@ -46,8 +49,11 @@ create table if not exists break_glass_accounts (
 );
 create index if not exists idx_break_glass_org on break_glass_accounts(organization_id);
 alter table break_glass_accounts enable row level security;
+drop policy if exists "break_glass_select_org" on break_glass_accounts;
 create policy "break_glass_select_org" on break_glass_accounts for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "break_glass_insert_auth" on break_glass_accounts;
 create policy "break_glass_insert_auth" on break_glass_accounts for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "break_glass_update_org" on break_glass_accounts;
 create policy "break_glass_update_org" on break_glass_accounts for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists onboarding_clients (
@@ -71,8 +77,11 @@ create table if not exists onboarding_clients (
 );
 create index if not exists idx_onboarding_clients_org on onboarding_clients(organization_id);
 alter table onboarding_clients enable row level security;
+drop policy if exists "onboarding_select_org" on onboarding_clients;
 create policy "onboarding_select_org" on onboarding_clients for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "onboarding_insert_auth" on onboarding_clients;
 create policy "onboarding_insert_auth" on onboarding_clients for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "onboarding_update_org" on onboarding_clients;
 create policy "onboarding_update_org" on onboarding_clients for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists patch_compliance (
@@ -95,8 +104,11 @@ create table if not exists patch_compliance (
 );
 create index if not exists idx_patch_compliance_org on patch_compliance(organization_id);
 alter table patch_compliance enable row level security;
+drop policy if exists "patch_select_org" on patch_compliance;
 create policy "patch_select_org" on patch_compliance for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "patch_insert_auth" on patch_compliance;
 create policy "patch_insert_auth" on patch_compliance for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "patch_update_org" on patch_compliance;
 create policy "patch_update_org" on patch_compliance for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 commit;

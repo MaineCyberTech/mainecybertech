@@ -1,6 +1,7 @@
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
 import { loadActiveRetentionPolicies, resolveRetentionDays } from "../lib/retention-policy";
+import { purgeInBatches } from "../lib/purge";
 import type { TaskResult } from "../task-registry";
 
 const DEFAULT_RETENTION_DAYS = 90;
@@ -34,31 +35,48 @@ export async function publicInteractionRetention(
       Date.now() - retentionDays * 24 * 60 * 60 * 1000,
     ).toISOString();
 
-    const { data: deleted, error } = await supabase
-      .from("public_interactions")
-      .delete()
-      .lt("created_at", cutoff)
-      .select("id");
+    // PRIV-P3-003: the PII purge deletes in bounded batches (shared helper),
+    // not one unbounded statement, and reports the real count.
+    const outcome = await purgeInBatches(supabase, "public_interactions", cutoff);
 
-    if (error) {
+    if (outcome.error) {
       logger.error(
-        { error: error.message, retentionDays, cutoff },
+        { error: outcome.error, retentionDays, cutoff },
         "Public interaction retention purge failed",
       );
-      return { ok: false, error: error.message };
+      return {
+        ok: false,
+        error: outcome.error,
+        deleted: outcome.deleted,
+        batches: outcome.batches,
+      };
     }
 
-    const purged = deleted?.length ?? 0;
     logger.info(
       {
-        purged,
+        purged: outcome.deleted,
+        batches: outcome.batches,
+        truncated: outcome.truncated,
         retentionDays,
         cutoff,
         window: { source: window.source, matchingPolicies: window.matchingPolicies },
       },
       "Public interaction retention purge complete",
     );
-    return { ok: true };
+
+    if (outcome.truncated) {
+      logger.warn(
+        { purged: outcome.deleted, batches: outcome.batches },
+        "[public-interaction-retention] backlog remains; next run will continue",
+      );
+    }
+
+    return {
+      ok: true,
+      deleted: outcome.deleted,
+      batches: outcome.batches,
+      truncated: outcome.truncated,
+    };
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : String(error);
     logger.error({ error: errMsg }, "Public interaction retention task failed");

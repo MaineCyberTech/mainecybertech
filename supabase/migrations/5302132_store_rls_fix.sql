@@ -10,11 +10,13 @@
 DROP POLICY IF EXISTS "Service role full access" ON store_quotes;
 
 -- anon: INSERT only (public quote submission)
+drop policy if exists "anon_insert_quotes" on store_quotes;
 CREATE POLICY "anon_insert_quotes" ON store_quotes
   FOR INSERT TO anon
   WITH CHECK (true);
 
 -- service_role: full access (admin management)
+drop policy if exists "service_role_all_quotes" on store_quotes;
 CREATE POLICY "service_role_all_quotes" ON store_quotes
   FOR ALL TO service_role
   USING (true)
@@ -25,6 +27,7 @@ CREATE POLICY "service_role_all_quotes" ON store_quotes
 DROP POLICY IF EXISTS "Service role full access" ON store_promotions;
 
 -- service_role: full access (admin management)
+drop policy if exists "service_role_all_promotions" on store_promotions;
 CREATE POLICY "service_role_all_promotions" ON store_promotions
   FOR ALL TO service_role
   USING (true)

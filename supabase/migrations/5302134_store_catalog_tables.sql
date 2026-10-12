@@ -51,18 +51,22 @@ create index if not exists idx_store_products_status on public.store_products (s
 alter table public.store_categories enable row level security;
 alter table public.store_products enable row level security;
 
+drop policy if exists "store_categories_public_read" on public.store_categories;
 create policy "store_categories_public_read" on public.store_categories
   for select to anon, authenticated
   using (true);
 
+drop policy if exists "store_products_public_read" on public.store_products;
 create policy "store_products_public_read" on public.store_products
   for select to anon, authenticated
   using (display = true);
 
+drop policy if exists "store_categories_service_write" on public.store_categories;
 create policy "store_categories_service_write" on public.store_categories
   for all to service_role
   using (true) with check (true);
 
+drop policy if exists "store_products_service_write" on public.store_products;
 create policy "store_products_service_write" on public.store_products
   for all to service_role
   using (true) with check (true);

@@ -25,6 +25,7 @@ for each row execute procedure public.set_updated_at();
 
 alter table public.webhook_endpoints enable row level security;
 
+drop policy if exists "webhook_endpoints_select_same_org" on public.webhook_endpoints;
 create policy "webhook_endpoints_select_same_org"
 on public.webhook_endpoints for select
 using (
@@ -32,6 +33,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "webhook_endpoints_manage_admins" on public.webhook_endpoints;
 create policy "webhook_endpoints_manage_admins"
 on public.webhook_endpoints for all
 using (
@@ -62,6 +64,7 @@ create index if not exists idx_webhook_deliveries_webhook
 
 alter table public.webhook_deliveries enable row level security;
 
+drop policy if exists "webhook_deliveries_select_same_org" on public.webhook_deliveries;
 create policy "webhook_deliveries_select_same_org"
 on public.webhook_deliveries for select
 using (

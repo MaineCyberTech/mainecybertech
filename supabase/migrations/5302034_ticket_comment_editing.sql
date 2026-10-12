@@ -3,6 +3,7 @@
 alter table public.ticket_comments
   add column edited_at timestamptz;
 
+drop policy if exists "ticket_comments_update_own" on public.ticket_comments;
 create policy ticket_comments_update_own on public.ticket_comments
   for update using (
     author_id = auth.uid()

@@ -12,6 +12,11 @@
 -- Note: the original table FKs (document_id -> documents, user_id -> auth.users,
 -- role_id -> roles) all already had ON DELETE CASCADE; they are re-created
 -- identically so deleting a parent document/user/role removes child rows.
+--
+-- Rollback: re-drop the restored objects (document_permissions, its indexes,
+-- public.can_read_document() and the three policies). That is only meaningful
+-- when reverting the 5302055 cascade-drop incident as a pair; rolling this
+-- back on its own re-breaks document visibility (see docs/migrations/README.md).
 
 -- 1. Restore the document_permissions table (original shape from 5302026)
 create table if not exists public.document_permissions (

@@ -20,6 +20,7 @@ create index if not exists idx_portal_module_settings_org on portal_module_setti
 
 alter table portal_module_settings enable row level security;
 
+drop policy if exists "portal_module_settings_select_org" on portal_module_settings;
 create policy "portal_module_settings_select_org" on portal_module_settings for select
   using (
     organization_id in (
@@ -27,6 +28,7 @@ create policy "portal_module_settings_select_org" on portal_module_settings for 
     )
   );
 
+drop policy if exists "portal_module_settings_insert_admin" on portal_module_settings;
 create policy "portal_module_settings_insert_admin" on portal_module_settings for insert
   with check (
     exists (
@@ -38,6 +40,7 @@ create policy "portal_module_settings_insert_admin" on portal_module_settings fo
     )
   );
 
+drop policy if exists "portal_module_settings_update_admin" on portal_module_settings;
 create policy "portal_module_settings_update_admin" on portal_module_settings for update
   using (
     exists (
@@ -87,6 +90,7 @@ create index if not exists idx_approval_requests_due_at on approval_requests(due
 
 alter table approval_requests enable row level security;
 
+drop policy if exists "approval_requests_select_org" on approval_requests;
 create policy "approval_requests_select_org" on approval_requests for select
   using (
     organization_id in (
@@ -94,6 +98,7 @@ create policy "approval_requests_select_org" on approval_requests for select
     )
   );
 
+drop policy if exists "approval_requests_insert_auth" on approval_requests;
 create policy "approval_requests_insert_auth" on approval_requests for insert
   with check (
     organization_id in (
@@ -101,6 +106,7 @@ create policy "approval_requests_insert_auth" on approval_requests for insert
     )
   );
 
+drop policy if exists "approval_requests_update_org" on approval_requests;
 create policy "approval_requests_update_org" on approval_requests for update
   using (
     organization_id in (
@@ -108,6 +114,7 @@ create policy "approval_requests_update_org" on approval_requests for update
     )
   );
 
+drop policy if exists "approval_requests_delete_admin" on approval_requests;
 create policy "approval_requests_delete_admin" on approval_requests for delete
   using (
     exists (
@@ -147,6 +154,7 @@ create index if not exists idx_ai_draft_outputs_module on ai_draft_outputs(modul
 
 alter table ai_draft_outputs enable row level security;
 
+drop policy if exists "ai_draft_outputs_select_org" on ai_draft_outputs;
 create policy "ai_draft_outputs_select_org" on ai_draft_outputs for select
   using (
     organization_id in (
@@ -154,6 +162,7 @@ create policy "ai_draft_outputs_select_org" on ai_draft_outputs for select
     )
   );
 
+drop policy if exists "ai_draft_outputs_insert_auth" on ai_draft_outputs;
 create policy "ai_draft_outputs_insert_auth" on ai_draft_outputs for insert
   with check (
     organization_id in (
@@ -161,6 +170,7 @@ create policy "ai_draft_outputs_insert_auth" on ai_draft_outputs for insert
     )
   );
 
+drop policy if exists "ai_draft_outputs_update_org" on ai_draft_outputs;
 create policy "ai_draft_outputs_update_org" on ai_draft_outputs for update
   using (
     organization_id in (
@@ -193,6 +203,7 @@ create index if not exists idx_module_comments_module_entity on module_comments(
 
 alter table module_comments enable row level security;
 
+drop policy if exists "module_comments_select_org" on module_comments;
 create policy "module_comments_select_org" on module_comments for select
   using (
     organization_id in (
@@ -200,6 +211,7 @@ create policy "module_comments_select_org" on module_comments for select
     )
   );
 
+drop policy if exists "module_comments_insert_auth" on module_comments;
 create policy "module_comments_insert_auth" on module_comments for insert
   with check (
     organization_id in (
@@ -207,6 +219,7 @@ create policy "module_comments_insert_auth" on module_comments for insert
     )
   );
 
+drop policy if exists "module_comments_update_own" on module_comments;
 create policy "module_comments_update_own" on module_comments for update
   using (
     author_id = auth.uid()
@@ -215,6 +228,7 @@ create policy "module_comments_update_own" on module_comments for update
     )
   );
 
+drop policy if exists "module_comments_delete_admin" on module_comments;
 create policy "module_comments_delete_admin" on module_comments for delete
   using (
     exists (
@@ -248,6 +262,7 @@ create index if not exists idx_module_timeline_module_entity on module_timeline_
 
 alter table module_timeline_events enable row level security;
 
+drop policy if exists "module_timeline_events_select_org" on module_timeline_events;
 create policy "module_timeline_events_select_org" on module_timeline_events for select
   using (
     organization_id in (
@@ -255,6 +270,7 @@ create policy "module_timeline_events_select_org" on module_timeline_events for 
     )
   );
 
+drop policy if exists "module_timeline_events_insert_auth" on module_timeline_events;
 create policy "module_timeline_events_insert_auth" on module_timeline_events for insert
   with check (
     organization_id in (
@@ -286,6 +302,7 @@ create index if not exists idx_scheduled_check_checked_at on scheduled_check_res
 
 alter table scheduled_check_results enable row level security;
 
+drop policy if exists "scheduled_check_results_select_org" on scheduled_check_results;
 create policy "scheduled_check_results_select_org" on scheduled_check_results for select
   using (
     organization_id in (
@@ -293,6 +310,7 @@ create policy "scheduled_check_results_select_org" on scheduled_check_results fo
     )
   );
 
+drop policy if exists "scheduled_check_results_insert_admin" on scheduled_check_results;
 create policy "scheduled_check_results_insert_admin" on scheduled_check_results for insert
   with check (
     exists (

@@ -5,6 +5,7 @@
  */
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const MIGRATIONS_DIR = path.join(__dirname, "..", "supabase", "migrations");
 const OUTPUT_FILE = path.join(__dirname, "..", "packages", "sdk", "src", "database.types.ts");
@@ -298,6 +299,21 @@ const files = fs
   .filter((f) => f.endsWith(".sql"))
   .sort();
 
+// DATA-P3-006: bind the generated artifact to the exact migration corpus that
+// produced it. sha256 over `<file>\n<contents>\n` in sorted filename order
+// (CRLF normalized so a Windows checkout does not change the digest). The
+// digest is part of the output, so the existing `--check` gate asserts it.
+function computeMigrationsDigest() {
+  const hash = crypto.createHash("sha256");
+  for (const file of files) {
+    const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), "utf-8").replace(/\r\n/g, "\n");
+    hash.update(`${file}\n${sql}\n`);
+  }
+  return hash.digest("hex");
+}
+
+const MIGRATIONS_DIGEST = computeMigrationsDigest();
+
 console.log(`Processing ${files.length} migration files...`);
 
 // Pre-pass: collect custom enum types (CREATE TYPE x AS ENUM (...))
@@ -444,6 +460,7 @@ const SUPABASE_INTERNAL = new Set([
 const sortedTables = Object.keys(tables).sort();
 let output = `// Auto-generated from supabase/migrations/*.sql — DO NOT EDIT MANUALLY
 // Run: node scripts/generate-db-types.js to regenerate
+// Source migrations digest (sha256): ${MIGRATIONS_DIGEST}
 export type Json =
   | string
   | number
