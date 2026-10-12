@@ -135,6 +135,12 @@ describe("scheduledNotifications content sensitivity (NOTIF-P2-005)", () => {
 });
 
 describe("scheduledNotifications org scoping + link safety (NOTIF-P3-006/008)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (sendEmail as jest.Mock).mockResolvedValue(true);
+    (isEmailThrottled as jest.Mock).mockResolvedValue(false);
+  });
+
   function mockProfiles() {
     const client = (createClient as unknown as jest.Mock)() as { from: jest.Mock };
     client.from.mockImplementation((table: string) => {
