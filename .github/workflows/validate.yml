@@ -54,6 +54,18 @@ jobs:
         # prefix). Shared with test.yml's required test job.
         uses: ./.github/actions/shellcheck
 
+      - name: Lint Dockerfiles (hadolint)
+        # CTR-P3-008: Dockerfile hygiene (explicit WORKDIR, exec-form
+        # healthchecks) had no CI gate, so it could silently regress. Shared
+        # with test.yml's required test job.
+        uses: ./.github/actions/dockerfile-lint
+
+      - name: Test terraform state-restore procedure
+        # DR-P3-005 / IR-P3-001: the emergency state-restore script is
+        # exercised against a stubbed aws CLI (listing, scratch copy, restore
+        # guard). Shared with test.yml's required test job.
+        uses: ./.github/actions/terraform-state-restore-test
+
   test:
     timeout-minutes: 30
     runs-on: ubuntu-latest

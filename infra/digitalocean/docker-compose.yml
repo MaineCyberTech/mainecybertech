@@ -50,6 +50,9 @@ services:
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
     volumes:
+      # INFRA-P3-003: persistence is RDB-snapshot only (no AOF) — this is a
+      # deliberate decision recorded in docs/RTO_RPO.md (Redis RPO 24h);
+      # in-flight BullMQ work is re-driven by producers/retries after a loss.
       - redis-data:/data
       - ./redis-entrypoint.sh:/usr/local/bin/redis-entrypoint.sh:ro
     tmpfs:
@@ -368,7 +371,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      # CTR-P3-003: read-only config. Without `:ro` a process inside caddy
+      # could rewrite the host-side /opt/mct-portal/Caddyfile (TLS termination
+      # for every user) and the change would survive restarts/redeploys.
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./certs:/etc/caddy/certs:ro
       - caddy-data:/data
       - caddy-config:/config
@@ -386,6 +392,12 @@ services:
     restart: unless-stopped
     mem_limit: 64m
     pids_limit: 128
+    # CTR-P3-003: no writable rootfs. Caddy's state lives in the caddy-data /
+    # caddy-config volumes; /tmp is the only writable path a compromised
+    # process gets (matching api/web/prometheus/alertmanager).
+    read_only: true
+    tmpfs:
+      - /tmp
 
 volumes:
   redis-data:

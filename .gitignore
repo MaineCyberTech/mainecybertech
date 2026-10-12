@@ -56,6 +56,11 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 **/env/*.tfvars
+# INFRA-P3-007: the terraform-do workflow and ROLLBACK_PROCEDURES.md §4 also
+# write/reference tfvars at the module root (e.g.
+# infra/terraform/digitalocean/dev.tfvars), which the env/ rule above does not
+# cover. *.tfvars.example files remain tracked.
+infra/terraform/**/*.tfvars
 
 # Generated SBOM artifacts (see .github/workflows/sbom.yml)
 sbom.cdx.json

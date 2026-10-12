@@ -173,3 +173,4 @@ offline" banner (`apps/web/components/OfflineIndicator.tsx`).
 | _pending_ | 3. Failed deploy | _unassigned_ | rollback to previous tag | — | — |
 | _pending_ | 4. Webhook backlog | _unassigned_ | re-drive dead letters | — | — |
 | _pending_ | 5. Client offline | _unassigned_ | offline navigation + banner | — | — |
+| _pending_ | 6. Terraform state restore | _unassigned_ | `scripts/terraform-state-restore.sh` scratch copy + plan-only verify (`docs/ROLLBACK_PROCEDURES.md` §4) | — | — |

@@ -36,7 +36,8 @@
 | `dev-setup.sh` | One-shot developer environment setup (Linux/macOS). |
 | `preflight-check.sh` | Pre-deploy sanity checks (env files, tool versions). |
 | `rollback.sh` | Roll back the last deployment on the droplet (Linux/macOS). |
-| `validate-terraform-env.sh` | Validate Terraform env files before plan/apply. |
+| `terraform-state-restore.sh` | Emergency Terraform state restore from the versioned DO Spaces backend (`--list`/`--scratch`/`--restore`; DR-P3-005 / IR-P3-001). |
+| `validate-terraform-env.sh` | Validate Terraform env files before plan/apply (scans `env/` and the module root, INFRA-P3-007). |
 | `install-terraform.ps1` | Install Terraform on Windows. |
 | `backfill-profile-pii.mjs` | One-off idempotent backfill of `profiles.encrypted_pii` from the plaintext PII columns (SEC-P2-002); run once per environment. Root alias: `pnpm backfill:profile-pii`. |
 | `seed-store.ts` | Idempotent upsert of `apps/api/src/data/products.json` + `categories.json` into `store_products` / `store_categories` (needs service-role credentials; see migration 5302134). |
@@ -68,6 +69,7 @@ self-tests in `ci/` so a broken detector cannot pass silently.
 | `check-circular-deps.mjs` | Fail on a circular import across `apps/*` and `packages/*` (HYGIENE-P3-009); `--self-test` proves the detector fails on a synthetic cycle. |
 | `check-required-checks.mjs` | Fail when a required branch-protection context is not emitted by any workflow, or is emitted by a path-filtered `pull_request` workflow (BP-P2-004/BP-P2-005/CI-P2-009). |
 | `branch-protection-audit.mjs` | Drift detection (committed `.github/branch-protection/*.json` vs live settings, normalized) and bypass audit (merged PRs into `main`/`develop` whose head check-runs missed or failed a required context) — BP-P2-002/BP-P2-003. |
+<<<<<<< HEAD
 | `e2e-flake-summary.mjs` | Summarise Playwright pass/flake/fail counts into the job summary (TEST-P2-003); informational, never fails the job. |
 | `exercise-alert-path.sh` | Exercise the Alertmanager → ntfy critical-alert path end-to-end (OBS-P2-014 / NOTIF-P2-011); runs on the droplet, piped over SSH by `alert-path-exercise.yml`. |
 | `ci/check-migration-transactions.sh` | Self-test + lint for destructive migrations missing `begin;`/`commit;` (DATA-P2-002). |
@@ -76,6 +78,12 @@ self-tests in `ci/` so a broken detector cannot pass silently.
 | `ci/check-supply-chain-gates.mjs` | Fixture-driven self-test for `audit-gate.mjs` / `license-gate.mjs` (exception scoping, UNKNOWN fail-closed, `expires` enforcement) — SBOM-P2-009/010. |
 | `ci/verify-gitleaks-config.sh` | Verify `.gitleaks.toml`: tracked tree clean under the allowlists AND a synthetic key is still detected (`secret-history-scan.yml`). |
 | `uptime/probe.mjs` | External uptime probe run by `external-uptime-probe.yml` against `uptime/probe-targets.json`. |
+=======
+| `sync-product-catalog.mjs` | Keep `apps/api/src/data/products.json` byte-identical to the canonical `apps/web/lib/catalog/data/products.json` (HYGIENE-P2-002); `check` runs in the shared unit-tests action. |
+| `ci/check-required-checks.sh` | Self-test for `check-required-checks.mjs`: runs the guard on the live tree plus a path-filtered negative fixture. |
+| `ci/check-branch-protection-audit.sh` | Self-test for `branch-protection-audit.mjs`: matching/drifted/unprotected protection fixtures plus clean/bypass merged-PR fixtures. |
+| `ci/test-terraform-state-restore.sh` | Self-test for `terraform-state-restore.sh` against a stubbed aws CLI (list/scratch/restore guard, fail-closed credentials) — DR-P3-005 / IR-P3-001. |
+>>>>>>> f3a195d3 (fix(infra,ci,dr): P3 batch — container hardening, image scan + hadolint gates, env/doc sync, tested state restore [CTR-P3-002/003/005/006/007/008, INFRA-P3-006/007/008, DR-P3-003/004/005])
 
 ## Subdirectories
 

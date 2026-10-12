@@ -60,6 +60,15 @@ jobs:
             exit 1
           fi
 
+      - name: Record tool versions
+        # DR-P3-003: aws/jq and (when present) pg_dump come from the runner
+        # image; the fallback client container in scripts/backup-database.sh is
+        # digest-pinned. Record the versions so a backup result is triageable.
+        run: |
+          aws --version
+          jq --version
+          (pg_dump --version || echo "pg_dump not on runner — script uses the pinned postgres:16-alpine client container")
+
       - name: Run database backup script
         id: backup
         env:

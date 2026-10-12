@@ -21,4 +21,6 @@ runs:
           scripts/backup-database.sh \
           scripts/backup-storage.sh \
           scripts/restore-database.sh \
-          scripts/restore-storage.sh
+          scripts/restore-storage.sh \
+          scripts/terraform-state-restore.sh \
+          scripts/ci/test-terraform-state-restore.sh

@@ -1,0 +1,15 @@
+name: Terraform state-restore procedure test
+description: >
+  Exercises scripts/terraform-state-restore.sh against a stubbed aws CLI
+  (DR-P3-005 / IR-P3-001): version listing, the non-destructive scratch copy,
+  the destructive --restore guard, environment validation and fail-closed
+  credentials. The live DO Spaces drill remains an operator action recorded in
+  docs/PLATFORM_FAILURE_RUNBOOKS.md §6. Shared by test.yml (PRs) and
+  validate.yml (push deploy gate) so the two definitions cannot drift apart.
+
+runs:
+  using: composite
+  steps:
+    - name: Test terraform-state-restore procedure
+      shell: bash
+      run: scripts/ci/test-terraform-state-restore.sh
