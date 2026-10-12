@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { colors } from "@mct/ui/tokens";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -7,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Managed IT services and cybersecurity platform",
     start_url: "/",
     display: "standalone",
-    background_color: "#0A1118",
-    theme_color: "#059669",
+    background_color: colors.cyber.base,
+    theme_color: colors.cyber.accent,
     icons: [
       {
         src: "/favicon.svg",

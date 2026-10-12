@@ -15,6 +15,8 @@ export type { ThemeProviderProps } from "./providers/ThemeProvider";
 export { Button } from "./components/Button";
 export { Input, Textarea } from "./components/Input";
 export { Badge } from "./components/Badge";
+export { Chip } from "./components/Chip";
+export type { ChipProps } from "./components/Chip";
 export { Avatar } from "./components/Avatar";
 export { Dialog } from "./components/Dialog";
 export { Skeleton, SkeletonText, SkeletonCard, SkeletonTable } from "./components/Skeleton";

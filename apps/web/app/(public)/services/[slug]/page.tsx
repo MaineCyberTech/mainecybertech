@@ -143,12 +143,12 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
             ))}
             <Link
               href="/contact"
-              className="mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Get Support Now
             </Link>
           </div>
-          <div className="flex aspect-square items-center justify-center rounded-xl border border-emerald-600/20 bg-gradient-to-br from-emerald-600/10 to-[#0A1118]/50 text-8xl shadow-[inset_0_0_50px_rgba(0,0,0,0.5)]">
+          <div className="flex aspect-square items-center justify-center rounded-xl border border-emerald-600/20 bg-gradient-to-br from-emerald-600/10 to-cyber-base/50 text-8xl shadow-[inset_0_0_50px_rgba(0,0,0,0.5)]">
             {service.icon}
           </div>
         </div>

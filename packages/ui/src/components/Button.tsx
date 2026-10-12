@@ -29,7 +29,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantStyles = {
       primary:
-        "border-emerald-600 bg-emerald-600 text-[#0A1118] hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.35)] focus:ring-emerald-600",
+        "border-emerald-600 bg-emerald-600 text-cyber-base hover:bg-transparent hover:text-emerald-500 hover:shadow-glow-lg focus:ring-emerald-600",
       secondary:
         "border-emerald-600/40 bg-transparent text-emerald-400 hover:bg-emerald-600/10 hover:shadow-[0_0_15px_rgba(5,150,105,0.2)] focus:ring-emerald-600",
       danger: "border-red-500 bg-red-500 text-white hover:bg-red-600 focus:ring-red-500",

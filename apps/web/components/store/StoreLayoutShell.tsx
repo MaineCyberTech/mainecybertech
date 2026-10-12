@@ -33,6 +33,7 @@ export default function StoreLayoutShell({
           className="pointer-events-auto flex w-9 flex-col items-center gap-1 rounded-r-lg border border-l-0 border-white/10 bg-slate-900/80 px-1.5 py-3 text-xs font-bold uppercase tracking-widest text-emerald-400 shadow-lg backdrop-blur-sm transition hover:bg-slate-900"
           style={{ marginTop: "80px" }}
           aria-label="Browse categories"
+          aria-expanded={drawerOpen}
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path

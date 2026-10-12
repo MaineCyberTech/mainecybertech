@@ -121,4 +121,23 @@ describe("NotificationBell SSE fallback polling", () => {
 
     unmount();
   });
+
+  it("exposes aria-expanded on the toggle and closes on Escape with focus return", async () => {
+    jest.useRealTimers();
+    const { unmount } = render(<NotificationBell basePath="/portal" />);
+    await flushMicrotasks();
+
+    const toggle = screen.getByRole("button", { name: /notifications/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(document.activeElement).toBe(toggle);
+
+    unmount();
+  });
 });

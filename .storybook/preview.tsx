@@ -1,5 +1,6 @@
 import type { Preview } from "@storybook/react";
 import { ThemeProvider } from "@mct/ui/providers/ThemeProvider";
+import { colors } from "@mct/ui/tokens";
 import "@mct/ui/styles.css";
 
 const preview: Preview = {
@@ -12,10 +13,7 @@ const preview: Preview = {
     },
     backgrounds: {
       default: "dark",
-      values: [
-        { name: "dark", value: "#0A1118" },
-        { name: "light", value: "#f8fafc" },
-      ],
+      values: [{ name: "dark", value: colors.cyber.base }],
     },
     a11y: {
       config: {
@@ -25,25 +23,13 @@ const preview: Preview = {
   },
   decorators: [
     (Story) => (
-      <ThemeProvider defaultTheme="dark" storageKey="mct-storybook-theme">
+      <ThemeProvider>
         <div className="cyber-page-bg min-h-[200px] p-4">
           <Story />
         </div>
       </ThemeProvider>
     ),
   ],
-  globalTypes: {
-    theme: {
-      description: "Global theme for components",
-      defaultValue: "dark",
-      toolbar: {
-        title: "Theme",
-        icon: "circlehollow",
-        items: ["light", "dark", "system"],
-        dynamicTitle: true,
-      },
-    },
-  },
 };
 
 export default preview;

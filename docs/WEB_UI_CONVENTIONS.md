@@ -88,10 +88,16 @@ dialog and re-submits the form with the button as submitter on confirm.
 - Toasts use `components/ui/ToastProvider` + `useToast().pushToast(tone, message, title?)`;
   do not add per-component toast state or renderers.
 - Shared controls come from `@mct/ui` (`Button`, `Input`/`Textarea`, `Dialog`,
-  `Badge`): do not hand-roll new `cyber-button*`/`cyber-input` controls. The
-  remaining call sites are being migrated in batches — see the adoption plan in
-  [ui-kit.md](ui-kit.md#adoption-plan).
-- The theme is dark-only; `ThemeProvider` is pinned (`defaultTheme="dark"`).
+  `Badge`, `Chip`): do not hand-roll new `cyber-button*`/`cyber-input` controls
+  or filter chips. The remaining call sites are being migrated in batches — see
+  the adoption plan in [ui-kit.md](ui-kit.md#adoption-plan).
+- Colours come from the design tokens (`cyber-*`, `slate-*`, `emerald-*`,
+  `amber-*`, `red-*` utilities, and `@mct/ui/tokens` for JS/inline-style
+  values): do not add new hardcoded hex/rgba colours. Gradient stops and glow
+  shadows with no token equivalent are the only accepted literals.
+- The theme is dark-only: `ThemeProvider` exposes a fixed dark theme (no
+  light/system branch and no user-facing toggle). Do not add `dark:` variants
+  or a theme switcher.
 
 ## Accessibility scanning
 

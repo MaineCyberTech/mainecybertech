@@ -110,7 +110,7 @@ export default function ProposalEditForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-emerald-500 disabled:opacity-50"
+        className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-emerald-500 disabled:opacity-50"
       >
         {pending ? "Saving..." : "Save Changes"}
       </button>

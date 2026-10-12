@@ -35,7 +35,7 @@ export default function SignupPage() {
     <>
       <title>Sign Up — Maine CyberTech</title>
       <div className="mx-auto flex min-h-screen max-w-md items-center px-6">
-        <div className="w-full rounded-lg border border-white/5 bg-[rgba(18,30,45,0.75)] p-8 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur-md">
+        <div className="w-full rounded-lg border border-white/5 bg-cyber-card p-8 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur-md">
           <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
             Create Secure Account
           </h1>
@@ -58,6 +58,7 @@ export default function SignupPage() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Your full name"
+                autoComplete="name"
                 required
               />
             </div>
@@ -76,6 +77,7 @@ export default function SignupPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@clientdomain.com"
+                autoComplete="email"
                 required
               />
             </div>
@@ -94,6 +96,7 @@ export default function SignupPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••"
+                autoComplete="new-password"
                 required
               />
               <PasswordPolicyHint className="mt-2 text-xs text-slate-400" />

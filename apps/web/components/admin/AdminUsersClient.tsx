@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
+import { Chip } from "@mct/ui";
 import { Membership } from "@mct/sdk";
 
 const PAGE_SIZE = 25;
@@ -21,21 +22,6 @@ type Props = {
   orgMap: Record<string, Organization>;
   roleMap: Record<string, Role>;
 };
-
-function Chip({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
-      {children}
-      <button
-        type="button"
-        onClick={onRemove}
-        className="ml-0.5 text-emerald-400 hover:text-emerald-200"
-      >
-        &times;
-      </button>
-    </span>
-  );
-}
 
 export default function AdminUsersClient({ memberships, profileMap, orgMap, roleMap }: Props) {
   const [search, setSearch] = useState("");
@@ -195,9 +181,7 @@ export default function AdminUsersClient({ memberships, profileMap, orgMap, role
       {activeFilters.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2">
           {activeFilters.map((f, i) => (
-            <Chip key={i} onRemove={f.onRemove}>
-              {f.label}
-            </Chip>
+            <Chip key={i} label={f.label} onRemove={f.onRemove} />
           ))}
           <button
             type="button"
