@@ -16,6 +16,12 @@ const preview: Preview = {
       values: [{ name: "dark", value: colors.cyber.base }],
     },
     a11y: {
+      // UX-P3-009: the addon was configured but never asserted anything.
+      // `test: "error"` makes Chromatic run axe-core against every story and
+      // fail the build on violations (Chromatic reads this parameter; the
+      // addon alone only renders a local panel). Do not relax this to
+      // "todo" to paper over a violation — fix the story or the component.
+      test: "error",
       config: {
         rules: [{ id: "color-contrast", enabled: true }],
       },

@@ -1,0 +1,4 @@
+{
+  "note": "Known critical/serious axe violations tolerated by the A11Y_FULL breadth scan. Empty means zero-tolerance. Entries are {route, rule, target?}; drop an entry once fixed. Regenerate with A11Y_FULL=1 A11Y_UPDATE_BASELINE=1 (single worker).",
+  "violations": []
+}

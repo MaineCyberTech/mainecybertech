@@ -63,8 +63,10 @@ uploads every package's `coverage/` report plus `.jest-results.json` as the
 `pnpm test:coverage` is the Jest gate only. It does **not** run or prove:
 
 - E2E flows (`pnpm e2e` — separate `e2e.yml` job; prod-only on deploy);
-- accessibility scans (`a11y.spec.ts`, 25-route gate);
-- visual regression (Chromatic is non-blocking); load tests run on a weekly
+- accessibility scans (`a11y.spec.ts`, 25-route gate + interactive states);
+- visual regression (Chromatic fails on a broken Storybook build / visual
+  changes, but is not a required check and the Storybook build is currently
+  broken — see "Visual regression" below); load tests run on a weekly
   schedule and manual dispatch via `load-test.yml`, with committed budgets
   (p95/p99/error-rate) in `scripts/load-testing/budgets.js` and a
   failure-injection control — see `scripts/load-testing/README.md`;
@@ -107,8 +109,28 @@ failures upload `.playwright-report/` and `.playwright-results/`.
 
 Accessibility: `apps/web/e2e/a11y.spec.ts` scans 25 core routes against
 `critical`/`serious` axe rules (WCAG 2.0/2.1/2.2 A+AA, `wcag22aa` included).
-`A11Y_FULL=1` expands to 68 routes — the weekly, non-blocking
-`a11y-breadth.yml` triage run.
+The same spec scans a bounded set of interactive states on every run — the
+admin-tickets bulk bar and status-filter chip, the store categories drawer,
+and the create-promotion dialog (UX-P3-011) — so dialogs, drawers, filters
+and bulk bars are exercised, not just initial loads. `A11Y_FULL=1` expands to 68 routes;
+the weekly `a11y-breadth.yml` run fails on violations that are not
+recorded in `apps/web/e2e/a11y-baseline.json` (empty today, so
+zero-tolerance). Regenerate the baseline with
+`A11Y_FULL=1 A11Y_UPDATE_BASELINE=1 pnpm --filter=web e2e -- a11y.spec.ts`
+(single worker) and review the diff; the default gate ignores the baseline
+entirely (UX-P3-010).
+
+## Visual regression
+
+Chromatic (`chromatic.yml`) builds Storybook and fails on visual changes once
+a baseline exists; since UX-P3-009 the a11y addon is asserted per story
+(`parameters.a11y.test: "error"`), so it also runs axe. The job is **not** a
+required check and currently fails for a real reason: the Storybook webpack
+build breaks with `SB_BUILDER-WEBPACK5_0002` (webpack ≥ 5.101.3 vs Storybook
+8.6.x; upstream `storybookjs/storybook#32301`, fixed in Storybook ≥ 9 by
+`#32306`). Fix in a dedicated dependency PR — upgrade Storybook, or pin
+`webpack` to 5.101.2 via the root `pnpm.overrides` and regenerate the
+lockfile. Do not mask it with `continue-on-error`.
 
 ## Test patterns
 

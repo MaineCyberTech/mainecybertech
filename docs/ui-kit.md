@@ -267,6 +267,18 @@ Also exported from `@mct/ui`: `SidebarGroup`/`SidebarItem`, `ThemeProvider`
 (dark-only in the web root layout), `cn()`, design tokens and the
 `useTheme` hook.
 
+### Storybook
+
+Every primitive has a story under `packages/ui/src/components/*.stories.tsx`
+(`pnpm storybook` to browse, `pnpm storybook:build` for the static build), and
+a bounded set of shared app components — `Breadcrumbs`, `EmptyState`,
+`StatusPill`, `ConfirmDialog`, `DataErrorNote`, `ToastProvider` — has stories
+under `apps/web/components/**` (UX-P3-009). The a11y addon is asserted
+(`parameters.a11y.test: "error"` in `.storybook/preview.tsx`), so Chromatic
+runs axe against every story in CI. The Storybook webpack build is currently
+broken (`SB_BUILDER-WEBPACK5_0002` — see `docs/CI.md`), so the Chromatic job
+is red until that dependency fix lands.
+
 ### Adoption plan
 
 `@mct/ui` is the standard for new self-contained components; the `cyber-*`
