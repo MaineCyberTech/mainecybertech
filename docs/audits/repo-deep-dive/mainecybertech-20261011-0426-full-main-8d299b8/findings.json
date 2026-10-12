@@ -1242,7 +1242,7 @@
       "line": 371,
       "owner": "API platform / security",
       "target": "this month",
-      "status": "still-open",
+      "status": "partially-fixed",
       "note": ""
     },
     {
@@ -1253,7 +1253,7 @@
       "line": 372,
       "owner": "API platform / security",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -1264,7 +1264,7 @@
       "line": 373,
       "owner": "API platform / security",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2144,7 +2144,7 @@
       "line": 348,
       "owner": "release owner",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2166,7 +2166,7 @@
       "line": 350,
       "owner": "docs",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2177,7 +2177,7 @@
       "line": 351,
       "owner": "docs + platform engineering",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2276,7 +2276,7 @@
       "line": 503,
       "owner": "API principal engineer + web platform lead",
       "target": "this month",
-      "status": "open",
+      "status": "partially-fixed",
       "note": ""
     },
     {
@@ -2287,7 +2287,7 @@
       "line": 504,
       "owner": "API + integrations lead",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2408,7 +2408,7 @@
       "line": 582,
       "owner": "API/backend + infra",
       "target": "this month",
-      "status": "still-open",
+      "status": "partially-fixed",
       "note": ""
     },
     {
@@ -2430,7 +2430,7 @@
       "line": 584,
       "owner": "API/backend",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2529,7 +2529,7 @@
       "line": 287,
       "owner": "content owner + web/API principal engineers",
       "target": "this month",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2551,7 +2551,7 @@
       "line": 291,
       "owner": "web principal engineer",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2705,7 +2705,7 @@
       "line": 389,
       "owner": "platform lead",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2727,7 +2727,7 @@
       "line": 393,
       "owner": "platform lead / security reviewer",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2738,7 +2738,7 @@
       "line": 394,
       "owner": "platform lead",
       "target": "this month",
-      "status": "open",
+      "status": "partially-fixed",
       "note": ""
     },
     {
@@ -2749,7 +2749,7 @@
       "line": 395,
       "owner": "platform lead / security reviewer",
       "target": "this month",
-      "status": "open",
+      "status": "partially-fixed",
       "note": ""
     },
     {
@@ -2881,7 +2881,7 @@
       "line": 367,
       "owner": "Worker/queue owner",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2903,7 +2903,7 @@
       "line": 371,
       "owner": "API platform / product",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2958,7 +2958,7 @@
       "line": 409,
       "owner": "notifications/backend + privacy owner",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3013,7 +3013,7 @@
       "line": 419,
       "owner": "notifications/backend + platform",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3233,7 +3233,7 @@
       "line": 313,
       "owner": "@web + API principal engineer",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3244,7 +3244,7 @@
       "line": 314,
       "owner": "API principal engineer",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3255,7 +3255,7 @@
       "line": 315,
       "owner": "API principal engineer",
       "target": "this month",
-      "status": "open",
+      "status": "still-open",
       "note": ""
     },
     {
@@ -3266,7 +3266,7 @@
       "line": 316,
       "owner": "API principal engineer + @web",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3376,7 +3376,7 @@
       "line": 509,
       "owner": "platform engineering (release owner)",
       "target": "this month",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3398,7 +3398,7 @@
       "line": 511,
       "owner": "platform engineering (release owner)",
       "target": "this month",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3409,7 +3409,7 @@
       "line": 516,
       "owner": "platform engineering (release owner)",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3574,7 +3574,7 @@
       "line": 375,
       "owner": "backend/DB lead + platform",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3585,7 +3585,7 @@
       "line": 376,
       "owner": "API platform / backend",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3596,7 +3596,7 @@
       "line": 377,
       "owner": "API platform",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3695,7 +3695,7 @@
       "line": 395,
       "owner": "supply-chain owner",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3706,7 +3706,7 @@
       "line": 396,
       "owner": "supply-chain owner",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3717,7 +3717,7 @@
       "line": 397,
       "owner": "platform/infrastructure",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -3728,7 +3728,7 @@
       "line": 398,
       "owner": "supply-chain owner",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4267,7 +4267,7 @@
       "line": 427,
       "owner": "QA/release owner",
       "target": "this month",
-      "status": "still-open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4278,7 +4278,7 @@
       "line": 428,
       "owner": "QA/release owner",
       "target": "this month",
-      "status": "still-open",
+      "status": "partially-fixed",
       "note": ""
     },
     {
@@ -4322,7 +4322,7 @@
       "line": 436,
       "owner": "QA/release owner",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -4333,7 +4333,7 @@
       "line": 437,
       "owner": "QA/release owner",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {

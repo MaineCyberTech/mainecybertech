@@ -136,6 +136,42 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Fixed
 
+- **Remediation wave, phase 3 (2026-10-11, 13 PRs, audit rerun).**
+  - Release/docs: breaking/behavior manifest (`docs/UPGRADE.md`, migrations
+    `5302420`–`5302446`); rollback docs on the manual `terraform-do` flow;
+    main/develop claim corrected; `RELEASE_GATE.md` rebound; AWS-era gap
+    analysis marked historical; migration guide corrected (#213).
+  - IR readiness: ntfy `portal-status` subscriber surface + publish procedure;
+    IR/breach plans refreshed to the Alertmanager→ntfy path; on-call rota and
+    postmortem/comms templates; tabletop catalog refreshed + dry-run recorded
+    (#214).
+  - Uploads: content sniffer covers Office/archive/text/JSON + polyglot
+    mismatch rejection (plus latent magic-byte fixes); pluggable malware-scan
+    hook (fail-closed, operator-gated) (#215).
+  - Admin safeguards: bulk document dry-run/preview + confirm gate; invites no
+    longer pre-confirmed (`inviteUserByEmail`, pending onboarding admin);
+    destructive-op rate limiter (#216).
+  - RLS: `document_versions` UPDATE policy on the approved-aware predicate;
+    `store_quotes` INSERT scoped; auth admin calls via the service-role client
+    (#217).
+  - Performance: 60s storefront cache with admin-write eviction; 15s
+    permission cache with invalidation; SSE channel cap + per-user channel
+    sharing (#218).
+  - Hygiene: documents center split into components/hooks; product catalog
+    canonical copy + sync guard; prompt corpus pinned with a size budget
+    (#219).
+  - Notifications: sensitive-content redaction on stored/emailed bodies;
+    delivery SLO counts worker terminal outcomes (#220).
+  - Supply chain: scoped/expiring license exceptions; SBOM predicate
+    verification + digest-pinned deploys; weekly dependency rescan (#221).
+  - Testing: worker scan-task suite + raised floor; coverage thresholds and
+    suite/test totals machine-verified; flake reporter (#222).
+  - Tenancy: by-id reads fail closed; store intake/analytics platform-gated;
+    task-registry payload scope validation (#223).
+  - Evolvability: single webhook event catalog (all 11 dispatched) + parity
+    guard; SDK module registry with drift tests (#224).
+  - E2E: mobile dialog width pinned to the viewport; storefront overflow
+    fixmes documented; onboarding locator made deterministic (#225).
 - **Remediation wave, phase 2 (2026-10-11, 14 PRs, audit rerun).**
   - Core workflows: bulk operations return per-item results; notification deep
     links fixed; notification surfaces surface failures; SSE fallback interval
