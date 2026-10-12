@@ -665,6 +665,170 @@ describe("documents routes", () => {
     });
   });
 
+  describe("POST /:id/versions/:versionId/restore (USE-P3-003)", () => {
+    const RESTORE_DOC = {
+      id: "00000000-0000-0000-0000-000000000040",
+      organization_id: "00000000-0000-0000-0000-000000000001",
+      storage_bucket: "documents",
+      storage_path: "org-1/2000-current.pdf",
+      current_version: 2,
+      version: 2,
+    };
+
+    /**
+     * Script the per-table results for the restore flow: documents is read
+     * (current row) then written (updated row); document_versions is read
+     * (source version) then written (new version row).
+     */
+    function mockRestore(options: {
+      doc?: Record<string, unknown> | null;
+      version?: Record<string, unknown> | null;
+      updated?: Record<string, unknown> | null;
+      updateError?: { message: string; code?: string } | null;
+      copyError?: { message: string } | null;
+    }) {
+      const updated = options.updated ?? {
+        ...RESTORE_DOC,
+        storage_path: "org-1/3000-restored-v3.pdf",
+        current_version: 3,
+        version: 3,
+      };
+      const script: Record<string, Array<{ data: unknown; error: unknown }>> = {
+        documents: [
+          { data: options.doc === undefined ? RESTORE_DOC : options.doc, error: null },
+          { data: updated, error: options.updateError ?? null },
+        ],
+        document_versions: [
+          {
+            data:
+              options.version === undefined
+                ? { storage_path: "org-1/1000-old.pdf" }
+                : options.version,
+            error: null,
+          },
+          { data: null, error: null },
+        ],
+      };
+
+      const calls: Record<string, number> = {};
+      const builders: Record<string, ReturnType<typeof createMockBuilder>[]> = {};
+      const supabase = {
+        from: jest.fn((table: string) => {
+          const entries = script[table] ?? [{ data: null, error: null }];
+          const index = Math.min(calls[table] ?? 0, entries.length - 1);
+          calls[table] = (calls[table] ?? 0) + 1;
+          const builder = createMockBuilder(entries[index] as MockResult);
+          (builders[table] ??= []).push(builder);
+          return builder;
+        }),
+        auth: {
+          getUser: jest.fn().mockResolvedValue({
+            data: { user: { id: "00000000-0000-0000-0000-000000000777" } },
+            error: null,
+          }),
+        },
+        storage: {
+          from: jest.fn().mockReturnValue({
+            copy: jest
+              .fn()
+              .mockResolvedValue({ data: null, error: options.copyError ?? null }),
+            remove: jest.fn().mockResolvedValue({ data: null, error: null }),
+          }),
+        },
+      };
+      (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
+      return { supabase, builders };
+    }
+
+    it("copies the chosen version forward as current_version + 1", async () => {
+      const { supabase, builders } = mockRestore({});
+
+      const res = await request(app)
+        .post(
+          "/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/restore",
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.current_version).toBe(3);
+
+      // The source version's bytes are copied, never moved.
+      const copy = supabase.storage.from("documents").copy as jest.Mock;
+      expect(copy).toHaveBeenCalledTimes(1);
+      const [fromPath, toPath] = copy.mock.calls[0] as [string, string];
+      expect(fromPath).toBe("org-1/1000-old.pdf");
+      expect(toPath).toMatch(/^00000000-0000-0000-0000-000000000001\/\d+-restored-v3\.pdf$/);
+
+      // A NEW version row records the restore; history is not rewritten.
+      const versionInserts = builders.document_versions[1].insert as jest.Mock;
+      expect(versionInserts).toHaveBeenCalledWith(
+        expect.objectContaining({ version_number: 3, storage_path: toPath }),
+      );
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ action: "document.version_restore" }),
+      );
+    });
+
+    it("fails closed with 409 when another writer bumped the version", async () => {
+      const { supabase } = mockRestore({
+        updateError: { message: "no rows returned", code: "PGRST116" },
+      });
+
+      const res = await request(app)
+        .post(
+          "/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/restore",
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(409);
+      // The speculative copy is rolled back rather than orphaned.
+      expect(supabase.storage.from("documents").remove).toHaveBeenCalledTimes(1);
+    });
+
+    it("returns 404 when the parent document is outside the caller's org", async () => {
+      const { supabase } = mockRestore({ doc: null });
+
+      const res = await request(app)
+        .post(
+          "/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/restore?organization_id=00000000-0000-0000-0000-000000000002",
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+      expect(supabase.storage.from).not.toHaveBeenCalled();
+    });
+
+    it("returns 404 when the version belongs to another document", async () => {
+      const { supabase } = mockRestore({ version: null });
+
+      const res = await request(app)
+        .post(
+          "/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/other-version/restore",
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+      expect(supabase.storage.from).not.toHaveBeenCalled();
+    });
+
+    it("returns 500 and writes nothing when the storage copy fails", async () => {
+      const { supabase, builders } = mockRestore({ copyError: { message: "copy denied" } });
+
+      const res = await request(app)
+        .post(
+          "/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/restore",
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(500);
+      // Only the parent-document read ran: no update, no new version row and
+      // no rollback delete (the copy never succeeded).
+      expect(builders.documents).toHaveLength(1);
+      expect(builders.document_versions).toHaveLength(1);
+      expect(supabase.storage.from("documents").remove).not.toHaveBeenCalled();
+    });
+  });
+
   describe("document download visibility (FILE-P2-007)", () => {
     it("returns 404 and mints no URL for a private document the caller cannot read", async () => {
       const supabase = mockDocumentDownload({

@@ -218,7 +218,7 @@ import {
 export { ApiError } from "./client";
 export { AnalyticsApi } from "./analytics";
 export type { TrackAnalyticsEventInput, AnalyticsEvent, AnalyticsSummary } from "./analytics";
-export type { ClientOptions, RetryOptions } from "./client";
+export type { ClientOptions, RetryOptions, RequestOptions } from "./client";
 export type * from "./types";
 export type {
   SignInResult,

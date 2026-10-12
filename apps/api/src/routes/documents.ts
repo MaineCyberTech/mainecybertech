@@ -997,6 +997,118 @@ router.get(
   },
 );
 
+/**
+ * USE-P3-003: restore a retained version as a NEW version.
+ *
+ * The version row itself is never mutated and the previous current bytes are
+ * never deleted: the chosen version's object is copied forward and recorded as
+ * `current_version + 1`, so restoring is itself auditable and reversible.
+ */
+router.post(
+  "/:id/versions/:versionId/restore",
+  requirePermission("documents", "edit"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "documents", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+
+      // Parent document first: `document_versions` has no org column, so the
+      // tenant check can only run against `documents` (same reasoning as the
+      // per-version signed-url route above).
+      let docQuery = supabase
+        .from("documents")
+        .select("id, organization_id, storage_bucket, storage_path, mime_type, file_name, file_size, current_version")
+        .eq("id", String(req.params.id));
+      if (orgId) docQuery = docQuery.eq("organization_id", orgId);
+      const { data: doc, error: docError } = await docQuery.single();
+      if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
+
+      // The version must belong to THIS document (a foreign version id 404s).
+      const { data: version, error: versionError } = await supabase
+        .from("document_versions")
+        .select("storage_path")
+        .eq("id", String(req.params.versionId))
+        .eq("document_id", String(req.params.id))
+        .single();
+      if (versionError || !version) throw new AppError("NOT_FOUND", "Version not found", 404);
+
+      if (!doc.storage_bucket || !version.storage_path)
+        throw new AppError("STORAGE_ERROR", "Version has no storage reference", 500);
+
+      const nextVersion = Number(doc.current_version ?? 1) + 1;
+      // Keep the original extension so preview/download heuristics still work.
+      const sourceName = String(version.storage_path).split("/").pop() || "version";
+      const suffix = sourceName.includes(".") ? sourceName.slice(sourceName.lastIndexOf(".")) : "";
+      const storagePath = `${doc.organization_id}/${Date.now()}-restored-v${nextVersion}${suffix}`;
+
+      // Storage writes are service-role only (FILE-P2-008), matching /upload.
+      const storage = getSupabaseAdmin().storage;
+      const { error: copyError } = await storage
+        .from(doc.storage_bucket)
+        .copy(version.storage_path, storagePath);
+      if (copyError) {
+        throw new AppError("STORAGE_ERROR", `Version copy failed: ${copyError.message}`, 500);
+      }
+
+      let updateQuery = supabase
+        .from("documents")
+        .update({
+          storage_bucket: doc.storage_bucket,
+          storage_path: storagePath,
+          current_version: nextVersion,
+        })
+        .eq("id", String(req.params.id))
+        // Fail closed if another writer bumped the version since the read.
+        .eq("version", Number(doc.current_version ?? 1));
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error: updateError } = await updateQuery.select().single();
+
+      if (updateError) {
+        // A zero-row update surfaces as PGRST116: another writer bumped the
+        // version between our read and write. Roll back the copy so a lost
+        // race does not leave an orphan object behind.
+        await storage.from(doc.storage_bucket).remove([storagePath]);
+        if (updateError.code === "PGRST116") {
+          throw new AppError(
+            "VERSION_CONFLICT",
+            "Document was modified by another user while restoring",
+            409,
+          );
+        }
+        throw new AppError("DB_ERROR", updateError.message, 500);
+      }
+
+      const { error: versionInsertError } = await supabase.from("document_versions").insert({
+        document_id: data.id,
+        version_number: nextVersion,
+        storage_path: storagePath,
+        uploaded_by: req.authUser!.userId,
+      });
+      if (versionInsertError) {
+        throw new AppError("DB_ERROR", versionInsertError.message, 500);
+      }
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "document.version_restore",
+        entityType: "document",
+        entityId: data.id,
+        metadata: { restoredVersionId: String(req.params.versionId), newVersion: nextVersion },
+      });
+
+      dispatchWebhook("document.updated", data.organization_id, {
+        documentId: data.id,
+        name: data.name,
+        changed: ["restore_version"],
+      });
+
+      res.json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 router.post("/:id/shares", requirePermission("documents", "create"), async (req, res, next) => {
   try {
     const parsed = createShareSchema.parse(req.body);

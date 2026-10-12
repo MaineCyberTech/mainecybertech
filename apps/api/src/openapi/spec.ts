@@ -860,6 +860,13 @@ const ticketsProjects: RouteDef[] = [
     tag: "Documents",
     params: [pathParam("id"), pathParam("versionId")],
   },
+  {
+    method: "post",
+    path: "/documents/{id}/versions/{versionId}/restore",
+    summary: "Restore a document version as a new version",
+    tag: "Documents",
+    params: [pathParam("id"), pathParam("versionId")],
+  },
   { method: "post", path: "/documents/bulk/folder", summary: "Bulk folder move", tag: "Documents" },
   {
     method: "post",

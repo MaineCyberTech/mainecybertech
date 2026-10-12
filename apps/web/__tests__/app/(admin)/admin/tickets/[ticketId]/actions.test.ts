@@ -3,10 +3,12 @@ import { jest } from "@jest/globals";
 const mockTicketsUpdate = jest.fn();
 const mockTicketsAddComment = jest.fn();
 const mockTicketsRemove = jest.fn();
+const mockTicketsGet = jest.fn().mockResolvedValue({ id: "ticket-1", version: 4 });
 const mockUsersMe = jest.fn().mockResolvedValue({ userId: "admin-1", email: "admin@test.com" });
 const mockGetApiClient = jest.fn().mockReturnValue({
   users: { me: mockUsersMe },
   tickets: {
+    get: mockTicketsGet,
     update: mockTicketsUpdate,
     addComment: mockTicketsAddComment,
     remove: mockTicketsRemove,
@@ -48,12 +50,14 @@ describe("updateTicketAction", () => {
 
     await updateTicketAction(TICKET_ID, formData);
 
+    // USE-P3-004: the read version rides along as ifMatch.
     expect(mockTicketsUpdate).toHaveBeenCalledWith(TICKET_ID, {
       title: "Fixed title",
       description: "Updated desc",
       status: "in_progress",
       priority: "urgent",
       category: "billing",
+      ifMatch: 4,
     });
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/tickets/${TICKET_ID}`);
     expect(mockRevalidatePath).toHaveBeenCalledWith("/admin/tickets");
@@ -144,6 +148,8 @@ describe("deleteTicketAction", () => {
     formData.set("confirmation", "DELETE");
 
     const result = await deleteTicketAction(TICKET_ID, formData);
-    expect(result).toEqual({ ok: false, error: "Forbidden" });
+    // USE-P3-005: non-API errors map to a user-facing fallback rather than
+    // leaking the raw exception text.
+    expect(result).toEqual({ ok: false, error: "Something went wrong. Please try again." });
   });
 });
