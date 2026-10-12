@@ -56,7 +56,9 @@ export class ClientOnboardingApi {
   async remove(id: string) {
     const response = await this.client.delete<{ deleted: boolean }>(
       `/api/v1/client-onboarding/${id}`,
-    , undefined, { confirm: true });
+      undefined,
+      { confirm: true },
+    );
     return response;
   }
 
