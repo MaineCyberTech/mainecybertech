@@ -42,7 +42,7 @@ The platform is designed to support:
 
 - frontend / web app with complete test coverage (2,010 tests)
 - API / backend with security middleware and OpenAPI docs (1,922 tests)
-- database / RLS foundation (127 migrations)
+- database / RLS foundation (157 migrations)
 - SDK package with retry logic (321 tests)
 - worker framework with 28 registered task handlers (300 tests)
 - Docker images for all services (web, api, worker)
