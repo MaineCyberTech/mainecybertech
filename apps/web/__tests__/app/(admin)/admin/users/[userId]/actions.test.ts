@@ -160,7 +160,7 @@ describe("updateMembership", () => {
   });
 
   it("returns the API error instead of throwing (USE-P2-010)", async () => {
-    mockMembershipsUpdate.mockRejectedValue(new Error("Validation failed"));
+    mockMembershipsUpdate.mockRejectedValueOnce(new Error("Validation failed"));
 
     const { updateMembership } = await import(
       "@/app/(admin)/admin/users/[userId]/actions"

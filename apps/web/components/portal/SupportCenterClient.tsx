@@ -194,7 +194,9 @@ export default function SupportCenterClient({
   const effectiveTotal = total ?? visibleTickets.length;
   const totalPages = Math.max(1, Math.ceil(effectiveTotal / effectivePageSize));
   const rangeStart = effectiveTotal === 0 ? 0 : (page - 1) * effectivePageSize + 1;
-  const rangeEnd = Math.min(page * effectivePageSize, effectiveTotal);
+  // Base the window end on the rows actually rendered (the last page is
+  // usually short), not the nominal page window.
+  const rangeEnd = Math.min(rangeStart + visibleTickets.length - 1, effectiveTotal);
 
   return (
     <div className="space-y-6">
