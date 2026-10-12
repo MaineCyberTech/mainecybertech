@@ -25,20 +25,13 @@ export default {
   moduleNameMapper: {
     "^(\\.\\.?\\/.*)\\.js$": "$1",
     "^redis$": "<rootDir>/src/__mocks__/redis.ts",
-<<<<<<< HEAD
-    // EVOL-P2-001 / EVOL-P2-002: the dependency-free shared catalogs are
-    // imported via subpath exports; map them to source so ts-jest compiles
-    // them regardless of package-exports support.
-    "^@mct/sdk/(module-registry|webhook-events)$": "<rootDir>/../../packages/sdk/src/$1",
-    // EVOL-P3-005: shared env schema source (ts-jest compiles it directly).
-    "^@mct/config/env$": "<rootDir>/../../packages/config/src/env.ts",
-=======
     // EVOL-P2-001 / EVOL-P2-002 / NOTIF-P3-001 / NOTIF-P3-005: the
     // dependency-free shared catalogs and the email template/unsubscribe-token
     // helpers are imported via subpath exports; map them to source so ts-jest
     // compiles them regardless of package-exports support.
     "^@mct/sdk/(module-registry|webhook-events|email-template)$":
       "<rootDir>/../../packages/sdk/src/$1",
->>>>>>> 3d08153c (fix(files,notif,webhooks): P3 batch — share limiter/TTL, upload errors, email template + unsubscribe, event catalog)
+    // EVOL-P3-005: shared env schema source (ts-jest compiles it directly).
+    "^@mct/config/env$": "<rootDir>/../../packages/config/src/env.ts",
   },
 };

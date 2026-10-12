@@ -22,9 +22,6 @@ runs:
           scripts/backup-storage.sh \
           scripts/restore-database.sh \
           scripts/restore-storage.sh \
-<<<<<<< HEAD
           scripts/terraform-state-restore.sh \
-          scripts/ci/test-terraform-state-restore.sh
-=======
+          scripts/ci/test-terraform-state-restore.sh \
           scripts/exercise-storage-restore.sh
->>>>>>> 3d08153c (fix(files,notif,webhooks): P3 batch — share limiter/TTL, upload errors, email template + unsubscribe, event catalog)

@@ -12,14 +12,8 @@ Inbound webhook receivers for external service integrations. Each handler verifi
 - Stripe webhook processing (invoice paid/failed, subscription lifecycle, checkout session)
 - Jira webhook processing (issue status sync to `project_tasks`)
 - JSM webhook processing (issue status sync to `tickets`)
-<<<<<<< HEAD
-- M365 webhook change notifications (clientState-verified)
-- Signature verification via HMAC (Stripe, Jira, JSM) and shared-secret
-  clientState (M365)
-=======
 - M365 webhook logging
 - Signature verification via HMAC (Stripe, Jira, JSM); M365 is authenticated with `clientState` and sends no signature
->>>>>>> 3d08153c (fix(files,notif,webhooks): P3 batch — share limiter/TTL, upload errors, email template + unsubscribe, event catalog)
 - Idempotency deduplication via Redis
 - Webhook delivery logging to `webhook_deliveries` table
 - Audit logging on all events
@@ -46,13 +40,7 @@ Writes: `invoices`, `subscriptions`, `billing_customers`, `project_tasks`, `tick
 - No `requireAuth` — these are public endpoints secured by webhook signature/secret verification
 - Stripe: `stripe-signature` header verified against `STRIPE_WEBHOOK_SECRET`
 - Jira/JSM: `x-hub-signature` header verified against the respective `*_WEBHOOK_SECRET`
-<<<<<<< HEAD
-- M365: the notification payload's `clientState` is compared in constant time
-  against `M365_CLIENT_STATE` (the only M365 credential — Graph does not
-  HMAC-sign change notifications; see `routes/webhooks.ts`)
-=======
 - M365: no signature header; every notification's `clientState` must match `M365_CLIENT_STATE` (timing-safe), and the batch is replay-window checked
->>>>>>> 3d08153c (fix(files,notif,webhooks): P3 batch — share limiter/TTL, upload errors, email template + unsubscribe, event catalog)
 
 ## Ingress hardening (WH-P2-006)
 
