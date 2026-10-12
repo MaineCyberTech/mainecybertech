@@ -133,11 +133,15 @@ jobs:
           SPACES_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: |
           set -o pipefail
+          # SECRET-P2-008: the binary plan file is intentionally NOT written —
+          # it embeds the sensitive variable values (do_token,
+          # cloudflare_api_token). Only the sanitized CLI output (sensitive
+          # values render as "(sensitive value)") leaves this step, and the
+          # apply jobs re-plan inside their own job.
           terraform plan \
             -var-file="${{ steps.env.outputs.name }}.tfvars" \
             -no-color \
-            -input=false \
-            -out=tfplan 2>&1 | tee ${{ runner.temp }}/tfplan.txt
+            -input=false 2>&1 | tee ${{ runner.temp }}/tfplan.txt
         continue-on-error: false
 
       - name: Post plan to PR
@@ -156,11 +160,14 @@ jobs:
               body: header
             });
 
-      - name: Upload plan
+      - name: Upload plan summary
+        # SECRET-P2-008: only the sanitized text output is uploaded. The binary
+        # plan file embeds do_token / cloudflare_api_token and must never leave
+        # the runner; the apply jobs re-plan in their own job.
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: tfplan-${{ steps.env.outputs.name }}
-          path: infra/terraform/digitalocean/tfplan
+          name: tfplan-summary-${{ steps.env.outputs.name }}
+          path: ${{ runner.temp }}/tfplan.txt
           retention-days: 1
 
       - name: Fail scheduled run on infrastructure drift
@@ -172,7 +179,7 @@ jobs:
           if grep -q "No changes." "${{ runner.temp }}/tfplan.txt"; then
             echo "No infrastructure drift detected"
           else
-            echo "::error::Terraform plan is non-empty — infrastructure drift detected (see the tfplan artifact)."
+            echo "::error::Terraform plan is non-empty — infrastructure drift detected (see the plan output in this run's log / the tfplan-summary artifact)."
             exit 1
           fi
 
@@ -219,17 +226,37 @@ jobs:
         with:
           terraform_version: 1.15.9
 
-      - name: Download plan
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          name: tfplan-prod
-          path: infra/terraform/digitalocean
-
       - name: Terraform Init
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: terraform init -input=false -backend-config=env/backend.prod.hcl
+
+      # SECRET-P2-008: the plan is created and applied inside this protected
+      # job; the binary plan file never leaves the runner (no artifact upload).
+      # Variables come from TF_VAR_* env vars, so no tfvars file is written here.
+      - name: Terraform Plan (in-job)
+        env:
+          TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
+          TF_VAR_ssh_fingerprint: ${{ secrets.DO_SSH_FINGERPRINT }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_cloudflare_zone_id_us: ${{ secrets.CLOUDFLARE_ZONE_ID_US }}
+          TF_VAR_admin_ip_ranges: ${{ secrets.ADMIN_IP_RANGES }}
+          TF_VAR_droplet_size: s-2vcpu-2gb
+          TF_VAR_environment: prod
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+        run: |
+          if [[ -z "$TF_VAR_admin_ip_ranges" ]]; then
+            echo "::error::secrets.ADMIN_IP_RANGES is not set (or empty). SSH is fail-closed; set it to your office/VPN CIDRs."
+            exit 1
+          fi
+          if [[ "$TF_VAR_admin_ip_ranges" == *"0.0.0.0/0"* || "$TF_VAR_admin_ip_ranges" == *"::/0"* ]]; then
+            echo "::error::secrets.ADMIN_IP_RANGES contains a world-open CIDR (0.0.0.0/0 or ::/0). Restrict SSH before applying."
+            exit 1
+          fi
+          terraform plan -input=false -no-color -out=tfplan
 
       - name: Terraform Apply
         id: apply
@@ -263,17 +290,36 @@ jobs:
         with:
           terraform_version: 1.15.9
 
-      - name: Download plan
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          name: tfplan-dev
-          path: infra/terraform/digitalocean
-
       - name: Terraform Init
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: terraform init -input=false -backend-config=env/backend.dev.hcl
+
+      # SECRET-P2-008: the plan is created and applied inside this job; the
+      # binary plan file never leaves the runner (no artifact upload).
+      - name: Terraform Plan (in-job)
+        env:
+          TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
+          TF_VAR_ssh_fingerprint: ${{ secrets.DO_SSH_FINGERPRINT }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_cloudflare_zone_id_us: ${{ secrets.CLOUDFLARE_ZONE_ID_US }}
+          TF_VAR_admin_ip_ranges: ${{ secrets.ADMIN_IP_RANGES }}
+          TF_VAR_droplet_size: s-1vcpu-2gb
+          TF_VAR_environment: dev
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+        run: |
+          if [[ -z "$TF_VAR_admin_ip_ranges" ]]; then
+            echo "::error::secrets.ADMIN_IP_RANGES is not set (or empty). SSH is fail-closed; set it to your office/VPN CIDRs."
+            exit 1
+          fi
+          if [[ "$TF_VAR_admin_ip_ranges" == *"0.0.0.0/0"* || "$TF_VAR_admin_ip_ranges" == *"::/0"* ]]; then
+            echo "::error::secrets.ADMIN_IP_RANGES contains a world-open CIDR (0.0.0.0/0 or ::/0). Restrict SSH before applying."
+            exit 1
+          fi
+          terraform plan -input=false -no-color -out=tfplan
 
       - name: Terraform Apply
         id: apply

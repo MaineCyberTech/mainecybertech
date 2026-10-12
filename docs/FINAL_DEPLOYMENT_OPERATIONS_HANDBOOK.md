@@ -114,7 +114,7 @@ The deploy workflow writes 25+ secrets to `.env` on the droplet via SSH heredoc.
 | SUPABASE_URL                        | Hosted Supabase project URL           |
 | SUPABASE_ANON_KEY                   | Supabase anon key                     |
 | SUPABASE_SERVICE_ROLE_KEY           | Supabase service role key             |
-| JWT_SECRET                          | Local JWT signing/verification        |
+| JWT_SECRET                          | API JWT verification copy (Supabase signs) |
 | STRIPE_SECRET_KEY                   | Stripe API key                        |
 | STRIPE_WEBHOOK_SECRET               | Stripe webhook signing secret         |
 | SENTRY_DSN                          | Sentry error tracking                 |

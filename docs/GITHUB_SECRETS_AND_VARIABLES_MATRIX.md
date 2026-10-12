@@ -19,7 +19,11 @@
   Environments → `prod-approval`); none are configured yet, so the approval
   gate is not yet in force.
 
-Use environment-scoped values wherever possible.
+Use environment-scoped values wherever possible. Rotation and emergency
+procedures — including the environment each secret must be set on — are in
+[`SECRETS_ROTATION.md`](SECRETS_ROTATION.md); its consuming-environment table
+is the source of truth for `gh secret set --env`. A value set on an environment
+the consuming job does not attach is a silent no-op.
 
 ## Secrets required by Terraform workflows
 
@@ -44,7 +48,7 @@ Use environment-scoped values wherever possible.
 | `SUPABASE_URL`               | yes | yes  | Supabase project URL                                 |
 | `SUPABASE_ANON_KEY`          | yes | yes  | Supabase anon key                                    |
 | `SUPABASE_SERVICE_ROLE_KEY`  | yes | yes  | Supabase service role key                            |
-| `JWT_SECRET`                 | yes | yes  | JWT signing secret                                   |
+| `JWT_SECRET`                 | yes | yes  | API JWT verification secret list (Supabase signs sessions; see `docs/JWT_ROTATION.md`) |
 | `STRIPE_SECRET_KEY`          | yes | yes  | Stripe secret key for billing                        |
 | `STRIPE_WEBHOOK_SECRET`      | yes | yes  | Stripe webhook signing secret                        |
 | `REDIS_PASSWORD`             | yes | yes  | Redis/BullMQ password written to the droplet `.env`  |
