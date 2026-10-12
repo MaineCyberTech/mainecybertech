@@ -103,13 +103,21 @@ export default function ProjectCalendarView({ tasks, basePath = "/portal" }: Pro
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={prev} className="rounded p-1 text-slate-400 hover:text-slate-200">
+          <button
+            onClick={prev}
+            className="-m-2.5 min-h-11 min-w-11 rounded p-3.5 text-slate-400 hover:text-slate-200"
+            aria-label="Previous month"
+          >
             &larr;
           </button>
           <h3 className="text-lg font-semibold text-slate-200">
             {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
           </h3>
-          <button onClick={next} className="rounded p-1 text-slate-400 hover:text-slate-200">
+          <button
+            onClick={next}
+            className="-m-2.5 min-h-11 min-w-11 rounded p-3.5 text-slate-400 hover:text-slate-200"
+            aria-label="Next month"
+          >
             &rarr;
           </button>
           <button onClick={goToday} className="cyber-button-secondary text-xs">

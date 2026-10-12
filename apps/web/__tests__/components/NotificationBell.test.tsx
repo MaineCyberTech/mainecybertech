@@ -141,3 +141,49 @@ describe("NotificationBell SSE fallback polling", () => {
     unmount();
   });
 });
+
+describe("NotificationBell mobile panel and hit areas (MOB-P3-002, MOB-P3-003)", () => {
+  beforeEach(() => {
+    jest.useRealTimers();
+    jest.clearAllMocks();
+    MockEventSource.reset();
+    mockUnreadCount.mockResolvedValue({ count: 1 });
+    mockList.mockResolvedValue({
+      items: [
+        {
+          id: "n1",
+          title: "Ticket updated",
+          body: "Your ticket moved to in progress",
+          module: "tickets",
+          created_at: "2026-10-01T12:00:00.000Z",
+        },
+      ],
+      total: 1,
+    });
+    mockListPreferences.mockResolvedValue({ preferences: [] });
+  });
+
+  it("anchors the panel to the viewport on phones and enlarges the icon-button hit areas", async () => {
+    const { unmount } = render(<NotificationBell basePath="/portal" initialUnread={1} />);
+    await flushMicrotasks();
+
+    fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
+
+    const panel = await screen.findByTestId("notification-panel");
+    // Viewport-relative width on phones; bell-anchored dropdown from `sm` up.
+    expect(panel.className).toContain("w-[min(20rem,calc(100vw_-_2rem))]");
+    expect(panel.className).toContain("fixed");
+    expect(panel.className).toContain("sm:absolute");
+    expect(panel.className).toContain("sm:w-80");
+
+    // 44px hit areas: icon/text box + padding - negative margin = 44px border box.
+    const markAllRead = await screen.findByRole("button", { name: /mark all read/i });
+    expect(markAllRead.className).toContain("p-3.5");
+    expect(markAllRead.className).toContain("-m-3.5");
+    const dismiss = screen.getByRole("button", { name: /dismiss notification/i });
+    expect(dismiss.className).toContain("p-4");
+    expect(dismiss.className).toContain("-m-3");
+
+    unmount();
+  });
+});
