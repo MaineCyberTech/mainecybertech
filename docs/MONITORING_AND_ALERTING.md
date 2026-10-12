@@ -113,11 +113,12 @@ Returns **503** with `"degraded"` if any check fails.
     "scheduled-notifications"
   ],
   "shuttingDown": false,
+  "queueBackend": "bullmq",
   "queue": { "connected": true }
 }
 ```
 
-Returns **503** with `"status": "degraded"` when the BullMQ queue connection (producer Queue or consumer Worker) is lost, so the compose healthcheck and the deploy health gate fail on a queue outage (RES-P2-008).
+Returns **503** with `"status": "degraded"` when the BullMQ queue connection (producer Queue or consumer Worker) is lost, so the compose healthcheck and the deploy health gate fail on a queue outage (RES-P2-008). `queueBackend` is the worker's configured consumer backend (ARCH-P2-004); the API exposes its producer backend as `portal_queue_backend_info` so a mismatch (enqueued work never consumed) is visible.
 
 ---
 
@@ -162,6 +163,9 @@ API (`apps/api/src/lib/metrics.ts`, all prefixed `portal_`; default `process_*`/
 | `portal_notification_delivery_total`                                         | Counter   | `channel`, `status`              | live               |
 | `portal_notification_suppressed_total`                                       | Counter   | `channel`, `module`              | live               |
 | `portal_notification_dedup_total`                                            | Counter   | `channel`                        | live               |
+| `portal_redis_failures_total`                                                | Counter   | `component`, `operation`         | live               |
+| `portal_redis_connected`                                                     | Gauge     | —                                | live               |
+| `portal_queue_backend_info`                                                  | Gauge     | `backend`                        | live               |
 
 Worker (`apps/worker/src/metrics.ts`):
 
@@ -177,6 +181,8 @@ Worker (`apps/worker/src/metrics.ts`):
 | `worker_notification_suppressed_total`   | Counter   | `channel`, `module`   |
 | `worker_webhook_deliveries_total`        | Counter   | `status`, `event`     |
 | `worker_webhook_dead_letters_total`      | Counter   | `event`               |
+| `worker_redis_failures_total`            | Counter   | `component`, `operation` |
+| `worker_queue_backend_info`              | Gauge     | `backend`             |
 
 `portal_notification_delivery_total` records the API-side email enqueue as
 `status="queued"` — a hand-off, not a delivery (NOTIF-P2-010). The notification
@@ -187,6 +193,10 @@ alerts on the same ratio (its API branch still covers inline fallback sends),
 and `skipped` is tracked separately by `MCTNotificationEmailSkipped`.
 
 `worker_queue_connected` is 1 while the worker's BullMQ connections are ready and 0 when either is lost; `MCTWorkerQueueDisconnected` alerts on `== 0` for 5m, and `MCTWorkerQueueBacklogGrowing` alerts on a growing `worker_task_queue_depth` (RES-P2-008) alongside the absolute `MCTWorkerQueueBacklog` rule (OBS-P2-009).
+
+`portal_redis_connected`, `portal_redis_failures_total` and `worker_redis_failures_total` make Redis degradation visible (ARCH-P2-005). One non-replicated Redis backs the queue, cache, idempotency and scan locks; when it fails the API keeps serving on per-process fallbacks (memory cache, in-memory idempotency) and scan locks fail open, so `MCTApiRedisDegraded` (probe failing 5m) and `MCTRedisOperationFailures` (any fallback in 15m) are the alertable signals. See `docs/PLATFORM_FAILURE_RUNBOOKS.md` §1 for the per-consumer fail-open/fail-closed behavior.
+
+`portal_queue_backend_info` (API producer) and `worker_queue_backend_info` (worker consumer) expose the shared `QUEUE_BACKEND` contract (ARCH-P2-004). Both processes fail closed in production on anything but `bullmq`, and a mismatch is visible by comparing the two series; the worker `/health` payload also carries `queueBackend`.
 
 The alert rules in `prometheus.rules.yml` query these metrics: `MCTHighRequestErrorRate` → `portal_http_requests_total{status_code=~"5.."}`; `MCTImpersonationBurst` → `portal_impersonation_events_total`; `MCTTenantScopeRegression` and `MCTRlsEnforcedShareCollapsed` → `portal_rls_bypass_total` / `portal_rls_enforced_total`.
 
@@ -261,7 +271,7 @@ The workflow includes a `rollback-on-failure` step that reverts to the previous 
 | Droplet CPU > 80%            | Warning  | DO monitoring            | Check for memory leak, scale  |
 | Droplet disk > 85%           | Warning  | DO monitoring            | Prune Docker images, logs     |
 | Supabase connection pool     | Warning  | Supabase dashboard       | Check for connection leaks    |
-| Prometheus rules (`MCTServiceDown`, `MCTHighRequestErrorRate`, `MCTImpersonationBurst`, `MCTTenantScopeRegression`) | Critical/Warning | Alertmanager → ntfy `portal-alerts` | Investigate; delivery not yet exercised end-to-end |
+| Prometheus rules (`MCTServiceDown`, `MCTHighRequestErrorRate`, `MCTImpersonationBurst`, `MCTTenantScopeRegression`, `MCTApiRedisDegraded`, `MCTRedisOperationFailures`) | Critical/Warning | Alertmanager → ntfy `portal-alerts` | Investigate; delivery not yet exercised end-to-end |
 | `Watchdog` (always firing)   | None     | Alertmanager → off-box dead-man's switch (§9; URL still unset) | Alert path itself died → external service pages (once provisioned) |
 | Backup/restore staleness (no successful backup or restore test within its freshness window) | Critical | `Backup Staleness Check` workflow → ntfy/Slack (fail-closed); worker `backup-dr-check` on the `platform_backup_heartbeats` table (DR-P2-008, 30 h) → `MCTWorkerTaskFailures` | Check the backup workflow runs, Spaces credentials and `scripts/backup-*.sh` logs; both checks are independent of the backup jobs |
 

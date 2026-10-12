@@ -18,3 +18,12 @@ export function getWorkerQueueHealth(): { connected: boolean; error?: string } {
 
   return getConsumerConnection();
 }
+
+/**
+ * The worker's configured queue backend (ARCH-P2-004). Exposed on /health and
+ * /metrics so the consumer side of the enqueue/consume contract is visible and
+ * can be compared with the API's `portal_queue_backend_info`.
+ */
+export function getWorkerQueueBackend(): string {
+  return env.QUEUE_BACKEND;
+}

@@ -623,3 +623,84 @@ tests:
       - eval_time: 20m
         alertname: MCTWorkerTaskDeadLettered
         exp_alerts: []
+
+  # CASE 41: an API Redis probe failing for >5m MUST fire MCTApiRedisDegraded
+  # (ARCH-P2-005) - the API stays up on its in-memory fallback, so this gauge
+  # is the only alertable signal.
+  - interval: 1m
+    input_series:
+      - series: 'portal_redis_connected{job="mct-api"}'
+        values: '0+0x60'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTApiRedisDegraded
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              job: mct-api
+            exp_annotations:
+              summary: "MCT API Redis health probe is failing"
+              description: "The API's Redis probe has failed for 5 minutes. The response cache and idempotency dedup have degraded to per-process memory: duplicate side effects become possible and cache entries are no longer shared across processes. The API intentionally stays up (fail-open for availability) - check the redis container and follow docs/PLATFORM_FAILURE_RUNBOOKS.md section 1."
+
+  # CASE 42: a healthy API Redis probe MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'portal_redis_connected{job="mct-api"}'
+        values: '1+0x60'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTApiRedisDegraded
+        exp_alerts: []
+
+  # CASE 43: API Redis fallbacks MUST fire MCTRedisOperationFailures
+  # (ARCH-P2-005).
+  - interval: 1m
+    input_series:
+      - series: 'portal_redis_failures_total{component="cache",operation="get",job="mct-api"}'
+        values: '0+1x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTRedisOperationFailures
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              job: mct-api
+              component: cache
+              operation: get
+            exp_annotations:
+              summary: "Redis operations failing on mct-api (cache)"
+              description: "Redis get operations for cache on mct-api fell back to a degraded path in the last 15 minutes (in-memory idempotency, memory cache, or a scan running without its lock). Check the redis container and the fallback logs; duplicate side effects and lost scan dedup become possible."
+
+  # CASE 44: the worker-side fallback counter MUST fire the same rule (the `or`
+  # right branch).
+  - interval: 1m
+    input_series:
+      - series: 'worker_redis_failures_total{component="scan_lock",operation="claim",job="mct-worker"}'
+        values: '0+1x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTRedisOperationFailures
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              job: mct-worker
+              component: scan_lock
+              operation: claim
+            exp_annotations:
+              summary: "Redis operations failing on mct-worker (scan_lock)"
+              description: "Redis claim operations for scan_lock on mct-worker fell back to a degraded path in the last 15 minutes (in-memory idempotency, memory cache, or a scan running without its lock). Check the redis container and the fallback logs; duplicate side effects and lost scan dedup become possible."
+
+  # CASE 45: no Redis fallbacks MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'portal_redis_failures_total{component="cache",operation="get",job="mct-api"}'
+        values: '0+0x30'
+      - series: 'worker_redis_failures_total{component="scan_lock",operation="claim",job="mct-worker"}'
+        values: '0+0x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTRedisOperationFailures
+        exp_alerts: []

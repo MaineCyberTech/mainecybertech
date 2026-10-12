@@ -402,3 +402,33 @@ groups:
         annotations:
           summary: "MCT worker task queue backlog is growing"
           description: "worker_task_queue_depth for mct-tasks is above 20 and has grown by more than 25 jobs over 10 minutes, sustained for 10 minutes. Arrivals are outpacing the consumer - check the worker logs, Redis latency and worker concurrency."
+
+  # ARCH-P2-005: one non-replicated Redis backs the queue, cache, idempotency
+  # and scan locks. The API deliberately stays up when it fails (the response
+  # cache and idempotency keys fall back to per-process memory), and the
+  # worker's scan lock fails open, so without these rules the degradation is
+  # only visible in warn logs. See docs/PLATFORM_FAILURE_RUNBOOKS.md §1.
+  - name: mct-redis-degradation
+    rules:
+      - alert: MCTApiRedisDegraded
+        expr: portal_redis_connected == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "MCT API Redis health probe is failing"
+          description: "The API's Redis probe has failed for 5 minutes. The response cache and idempotency dedup have degraded to per-process memory: duplicate side effects become possible and cache entries are no longer shared across processes. The API intentionally stays up (fail-open for availability) - check the redis container and follow docs/PLATFORM_FAILURE_RUNBOOKS.md section 1."
+
+      - alert: MCTRedisOperationFailures
+        expr: |
+          increase(portal_redis_failures_total[15m]) > 0
+          or
+          increase(worker_redis_failures_total[15m]) > 0
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Redis operations failing on {{ $labels.job }} ({{ $labels.component }})"
+          description: "Redis {{ $labels.operation }} operations for {{ $labels.component }} on {{ $labels.job }} fell back to a degraded path in the last 15 minutes (in-memory idempotency, memory cache, or a scan running without its lock). Check the redis container and the fallback logs; duplicate side effects and lost scan dedup become possible."

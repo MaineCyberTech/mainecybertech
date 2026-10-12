@@ -38,6 +38,7 @@ jest.mock("../lib/http-client", () => ({
 import { getSupabaseAdmin } from "../services/supabase";
 import { httpClients } from "../lib/http-client";
 import { clearPermissionCache } from "../lib/permissions";
+import { getEnv } from "../config/env";
 
 function mockAuth() {
   const supabase: any = { from: jest.fn(), auth: { getUser: jest.fn() } };
@@ -704,6 +705,32 @@ describe("billing routes", () => {
       expect(res.body.error.code).toBe("STRIPE_SYNC_INCOMPLETE");
       expect(res.body.error.details.errors[0]).toContain("invoices");
       expect(res.body.error.details.errors[0]).toContain("500");
+    });
+
+    // PERF-P2-006: the page cap is operator-controlled so accounts with more
+    // than 1000 objects per list can complete without a code change.
+    it("honors a raised STRIPE_SYNC_MAX_PAGES for large accounts [PERF-P2-006]", async () => {
+      stubOrgId = ORG_A;
+      mockScopeAndCustomer();
+      mockStripePages({
+        invoices: Array.from({ length: 12 }, (_, i) => invoicePage(`in_${i}`, i < 11)),
+        subscriptions: [{ data: [], has_more: false }],
+        payment_intents: [{ data: [], has_more: false }],
+      });
+
+      const previousEnv = (getEnv as jest.Mock)() as Record<string, unknown>;
+      (getEnv as jest.Mock).mockReturnValue({ ...previousEnv, STRIPE_SYNC_MAX_PAGES: 12 });
+      try {
+        const res = await request(app)
+          .post("/api/v1/billing/sync")
+          .set("Authorization", "Bearer token")
+          .send({});
+
+        expect(res.status).toBe(200);
+        expect(res.body.data.counts.invoices).toBe(12);
+      } finally {
+        (getEnv as jest.Mock).mockReturnValue(previousEnv);
+      }
     });
 
     it("does not downgrade a refunded payment during sync (BILL-P2-007)", async () => {

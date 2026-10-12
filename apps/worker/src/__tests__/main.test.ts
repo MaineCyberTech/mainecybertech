@@ -76,6 +76,25 @@ describe("env schema", () => {
     ).toThrow(/QUEUE_BACKEND/);
   });
 
+  // ARCH-P2-004: the API only enqueues to BullMQ, so a production worker on
+  // sqs would never consume its tasks — fail closed.
+  it("rejects QUEUE_BACKEND=sqs in production [ARCH-P2-004]", () => {
+    expect(() =>
+      parseEnv({
+        ...REQUIRED,
+        NODE_ENV: "production",
+        SMTP_HOST: "smtp.test.local",
+        QUEUE_BACKEND: "sqs",
+        SQS_QUEUE_URL: "https://sqs.us-east-1.amazonaws.com/123/q",
+      }),
+    ).toThrow(/QUEUE_BACKEND/);
+  });
+
+  it("accepts QUEUE_BACKEND=sqs outside production [ARCH-P2-004]", () => {
+    const env = parseEnv({ ...REQUIRED, QUEUE_BACKEND: "sqs" });
+    expect(env.QUEUE_BACKEND).toBe("sqs");
+  });
+
   it("accepts QUEUE_BACKEND=bullmq in production [RES-P2-003]", () => {
     const env = parseEnv({
       ...REQUIRED,

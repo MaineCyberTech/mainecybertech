@@ -67,16 +67,17 @@ export const envSchema = z
         message: "REDIS_URL is required when QUEUE_BACKEND=bullmq",
       });
     }
-    // RES-P2-003: the `inline` backend makes the worker idle forever (tasks
-    // are only executed by callers falling back in-process), so production
-    // must never start with it — queued work would stall silently while
-    // health stays green.
-    if (val.NODE_ENV === "production" && val.QUEUE_BACKEND === "inline") {
+    // RES-P2-003 / ARCH-P2-004: the `inline` backend makes the worker idle
+    // forever (tasks are only executed by callers falling back in-process) and
+    // the API only ever enqueues to BullMQ, so production must be BullMQ.
+    // Anything else would leave queued work unconsumed while the API reports
+    // successful enqueues. `sqs`/`inline` remain available for local/dev runs.
+    if (val.NODE_ENV === "production" && val.QUEUE_BACKEND !== "bullmq") {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["QUEUE_BACKEND"],
         message:
-          "QUEUE_BACKEND=inline is not allowed when NODE_ENV=production (the worker would idle and stall queued work)",
+          "QUEUE_BACKEND must be bullmq in production: the API only enqueues to BullMQ, so any other backend leaves queued work unconsumed (queue backend parity contract)",
       });
     }
   });

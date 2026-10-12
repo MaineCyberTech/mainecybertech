@@ -283,3 +283,50 @@ export function setActiveOrganizations(count: number) {
 export function setActiveUsers(count: number) {
   activeUsers.set(count);
 }
+
+/**
+ * ARCH-P2-004: the producer half of the queue backend contract. Both the API
+ * and the worker read the same QUEUE_BACKEND setting; the worker exports
+ * worker_queue_backend_info. A mismatch means the API enqueues into a queue
+ * no worker consumes.
+ */
+export const queueBackendInfo = new Gauge({
+  name: "portal_queue_backend_info",
+  help: "Configured API enqueue backend (label backend) — must match the worker's worker_queue_backend_info",
+  labelNames: ["backend"],
+  registers: [register],
+});
+
+export function setQueueBackendInfo(backend: string) {
+  queueBackendInfo.set({ backend }, 1);
+}
+
+/**
+ * ARCH-P2-005: one non-replicated Redis backs the queue, cache, idempotency
+ * and scan locks. Each consumer degrades to a per-process fallback on Redis
+ * errors; these signals make that degradation alertable instead of log-only.
+ *
+ * `portal_redis_failures_total` counts every operation that fell back;
+ * `portal_redis_connected` is 1/0 based on the API's Redis health probe and is
+ * left unset when Redis is not configured.
+ */
+export const redisFailuresTotal = new Counter({
+  name: "portal_redis_failures_total",
+  help: "API Redis operation failures that degraded to a fallback path, by component and operation",
+  labelNames: ["component", "operation"],
+  registers: [register],
+});
+
+export function recordRedisFailure(component: "cache" | "idempotency", operation: string) {
+  redisFailuresTotal.inc({ component, operation });
+}
+
+export const redisConnected = new Gauge({
+  name: "portal_redis_connected",
+  help: "1 when the last Redis health probe succeeded, 0 when it failed (unset when Redis is not configured)",
+  registers: [register],
+});
+
+export function setRedisConnected(connected: boolean) {
+  redisConnected.set(connected ? 1 : 0);
+}

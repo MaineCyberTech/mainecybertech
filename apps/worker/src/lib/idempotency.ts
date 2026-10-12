@@ -1,6 +1,7 @@
 import IORedis from "ioredis";
 import { env, resolveRedisUrl } from "../env";
 import { logger } from "../logger";
+import { recordRedisFailure } from "../redis-failures";
 
 let client: IORedis | null = null;
 let memoryMutex: Promise<void> | null = null;
@@ -67,6 +68,8 @@ export async function claimIdempotencyKey(
       const result = await redis.set(prefixedKey, value, "EX", ttlSeconds, "NX");
       return result === "OK";
     } catch (error) {
+      // ARCH-P2-005: meter the fallback so a lost Redis dedup is alertable.
+      recordRedisFailure("idempotency", "claim");
       logger.warn(
         { error: error instanceof Error ? error.message : String(error) },
         "Redis claimIdempotencyKey failed, falling back to in-memory",
@@ -100,6 +103,7 @@ export async function deleteIdempotencyKey(key: string): Promise<void> {
       await redis.del(prefixedKey);
       return;
     } catch (error) {
+      recordRedisFailure("idempotency", "delete");
       logger.warn(
         { error: error instanceof Error ? error.message : String(error) },
         "Redis deleteIdempotencyKey failed",

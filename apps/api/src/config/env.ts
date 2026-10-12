@@ -69,6 +69,15 @@ const envSchema = z.object({
   REDIS_URL: z.string().url().optional(),
   TASK_QUEUE_ENABLED: z.enum(["true", "false"]).optional(),
   REDIS_PASSWORD: z.string().optional(),
+  // ARCH-P2-004: the API producer only speaks BullMQ (`lib/task-producer.ts`),
+  // while the worker's consumer backend is its own setting. Both processes
+  // read this one value (docker-compose x-app-env), and production fails
+  // closed on anything but bullmq so an enqueue/consume split cannot start.
+  QUEUE_BACKEND: z.enum(["bullmq", "sqs", "inline"]).default("bullmq"),
+  // PERF-P2-006: page cap for the Stripe sync (100 objects per page). The
+  // default bounds a sync at 1000 objects per list per customer; raise it for
+  // very large accounts instead of changing code.
+  STRIPE_SYNC_MAX_PAGES: z.coerce.number().int().positive().max(100).optional(),
   JIRA_WEBHOOK_SECRET: z.string().optional(),
   JSM_WEBHOOK_SECRET: z.string().optional(),
   // Shared clientState validated on inbound M365 change notifications. This is
@@ -121,6 +130,25 @@ export function assertProductionTurnstile(
 }
 
 /**
+ * ARCH-P2-004: fail closed at boot in production when the queue backend is not
+ * BullMQ. The API can only enqueue to BullMQ (`lib/task-producer.ts`), so a
+ * worker configured for `sqs`/`inline` would never consume API tasks — the API
+ * would keep reporting successful enqueues while webhooks, emails and scans
+ * are silently dropped. Both processes read the same QUEUE_BACKEND value
+ * (docker-compose x-app-env), so this assertion is the producer half of the
+ * parity check; the worker's env schema enforces the consumer half.
+ */
+export function assertQueueBackendParity(
+  env: Pick<Env, "NODE_ENV" | "QUEUE_BACKEND">,
+): void {
+  if (env.NODE_ENV === "production" && env.QUEUE_BACKEND !== "bullmq") {
+    throw new Error(
+      `QUEUE_BACKEND=${env.QUEUE_BACKEND} is not supported in production: the API only enqueues to BullMQ, so the worker backend must match (set QUEUE_BACKEND=bullmq)`,
+    );
+  }
+}
+
+/**
  * SEC-P1-001: fail closed at boot in production. A missing or malformed
  * FIELD_ENCRYPTION_KEY must refuse startup rather than let
  * lib/field-encryption silently store PII as reversible `plain:` values.
@@ -165,6 +193,7 @@ export function getEnv(): Env {
     }
     assertProductionTurnstile(result.data);
     assertProductionSecrets(result.data);
+    assertQueueBackendParity(result.data);
     _env = result.data;
   }
   return _env;

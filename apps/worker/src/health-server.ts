@@ -3,7 +3,7 @@ import { logger } from "./logger";
 import { getRegisteredTaskTypes } from "./task-registry";
 import { isShuttingDown } from "./shutdown";
 import { getMetrics, getMetricsContentType } from "./metrics";
-import { getWorkerQueueHealth } from "./queue-health";
+import { getWorkerQueueHealth, getWorkerQueueBackend } from "./queue-health";
 
 export function startHealthServer(port: number = 3001): http.Server {
   const server = http.createServer((req, res) => {
@@ -28,6 +28,9 @@ export function startHealthServer(port: number = 3001): http.Server {
           uptime: process.uptime(),
           registeredTasks: getRegisteredTaskTypes(),
           shuttingDown,
+          // ARCH-P2-004: the consumer half of the queue backend contract; the
+          // API exposes the producer half as portal_queue_backend_info.
+          queueBackend: getWorkerQueueBackend(),
           queue: queueHealth,
         }),
       );

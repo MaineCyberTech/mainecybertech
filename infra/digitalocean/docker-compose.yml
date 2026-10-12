@@ -14,6 +14,11 @@ x-app-env: &app-env
   JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
   CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
   APP_BASE_URL: https://${APP_DOMAIN:-app.mainecybertech.com}
+  # ARCH-P2-004: ONE queue backend contract for the API producer and the
+  # worker consumer. Both services read this value and both refuse to start in
+  # production on anything but bullmq, so the two sides cannot drift apart
+  # (the API can only enqueue to BullMQ).
+  QUEUE_BACKEND: ${QUEUE_BACKEND:-bullmq}
 
 # Bound container logs so the droplet's disk cannot fill up. Deploy-do also
 # snapshots the running stack's logs before `compose down` destroys them
@@ -152,7 +157,6 @@ services:
       <<: *app-env
       LOG_LEVEL: info
       HEALTH_PORT: 3001
-      QUEUE_BACKEND: bullmq
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       SENTRY_DSN: ${SENTRY_DSN:-}

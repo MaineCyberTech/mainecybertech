@@ -1,6 +1,7 @@
 import IORedis from "ioredis";
 import { env, resolveRedisUrl } from "../env";
 import { logger } from "../logger";
+import { recordRedisFailure } from "../redis-failures";
 
 let client: IORedis | null = null;
 
@@ -42,6 +43,8 @@ export async function withScanLock(
     acquired = await redis.set(key, token, "PX", ttlMs, "NX");
   } catch (error) {
     // If Redis is unavailable, fall through and run (single-replica assumed).
+    // ARCH-P2-005: metered so the silent loss of scan dedup is alertable.
+    recordRedisFailure("scan_lock", "claim");
     logger.warn(
       { error: error instanceof Error ? error.message : String(error), scan: name },
       "scan-lock unavailable - running without lock",
@@ -67,7 +70,9 @@ export async function withScanLock(
         token,
       );
     } catch {
-      // best-effort release
+      // best-effort release; ARCH-P2-005 meters the lost release so a
+      // flapping Redis connection is visible instead of only warn logs.
+      recordRedisFailure("scan_lock", "release");
     }
   }
 }

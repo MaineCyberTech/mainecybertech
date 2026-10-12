@@ -1,4 +1,4 @@
-import { assertProductionSecrets } from "../config/env";
+import { assertProductionSecrets, assertQueueBackendParity } from "../config/env";
 
 describe("env production boot assertions [SEC-P1-001]", () => {
   it("accepts a 64-char hex key in production", () => {
@@ -33,5 +33,36 @@ describe("env production boot assertions [SEC-P1-001]", () => {
     expect(() =>
       assertProductionSecrets({ NODE_ENV: "test", FIELD_ENCRYPTION_KEY: undefined }),
     ).not.toThrow();
+  });
+});
+
+describe("env queue backend parity assertion [ARCH-P2-004]", () => {
+  it("accepts bullmq in production", () => {
+    expect(() =>
+      assertQueueBackendParity({ NODE_ENV: "production", QUEUE_BACKEND: "bullmq" }),
+    ).not.toThrow();
+  });
+
+  it("throws at boot when production is on sqs", () => {
+    expect(() =>
+      assertQueueBackendParity({ NODE_ENV: "production", QUEUE_BACKEND: "sqs" }),
+    ).toThrow(/QUEUE_BACKEND/);
+  });
+
+  it("throws at boot when production is on inline", () => {
+    expect(() =>
+      assertQueueBackendParity({ NODE_ENV: "production", QUEUE_BACKEND: "inline" }),
+    ).toThrow(/QUEUE_BACKEND/);
+  });
+
+  it("allows the non-production alternatives outside production", () => {
+    for (const backend of ["sqs", "inline"] as const) {
+      expect(() =>
+        assertQueueBackendParity({ NODE_ENV: "development", QUEUE_BACKEND: backend }),
+      ).not.toThrow();
+      expect(() =>
+        assertQueueBackendParity({ NODE_ENV: "test", QUEUE_BACKEND: backend }),
+      ).not.toThrow();
+    }
   });
 });

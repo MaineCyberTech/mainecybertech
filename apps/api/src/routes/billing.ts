@@ -66,10 +66,13 @@ type StripePaymentIntent = {
   customer?: string | null;
 };
 
-// BILL-P2-002: page through Stripe list endpoints. Fixed page sizes
-// (20/10/20) silently dropped every object past the first page; hitting the
-// page cap is reported as a failed sync (mirrors the JSM sync pattern)
-// instead of a partial success.
+// BILL-P2-002 / PERF-P2-006: page through Stripe list endpoints. Fixed page
+// sizes (20/10/20) silently dropped every object past the first page; the sync
+// now follows `starting_after` until Stripe says there is no more, bounded by
+// a page cap. Hitting the cap is reported as a failed sync (mirrors the JSM
+// sync pattern) instead of a partial success. The cap defaults to
+// STRIPE_MAX_PAGES and can be raised per deployment with STRIPE_SYNC_MAX_PAGES
+// for accounts with more than 1000 objects per list.
 const STRIPE_PAGE_SIZE = 100;
 const STRIPE_MAX_PAGES = 10; // 1000 objects per list, per customer, per run
 
@@ -86,7 +89,7 @@ type StripePageResult<T> = {
 
 /**
  * Fetch every page of a Stripe list endpoint with `starting_after`, bounded by
- * STRIPE_MAX_PAGES. Never throws: a failed page is returned as `error` (with
+ * `maxPages`. Never throws: a failed page is returned as `error` (with
  * whatever was fetched so far) and a `has_more` left at the cap as
  * `truncated`, so the caller can fail the sync loudly instead of reporting
  * success for a partial mirror.
@@ -96,11 +99,12 @@ async function fetchStripePages<T extends { id: string }>(
   params: Record<string, string>,
   headers: Record<string, string>,
   label: string,
+  maxPages: number = STRIPE_MAX_PAGES,
 ): Promise<StripePageResult<T>> {
   const items: T[] = [];
   let startingAfter: string | null = null;
 
-  for (let page = 0; page < STRIPE_MAX_PAGES; page++) {
+  for (let page = 0; page < maxPages; page++) {
     const query = new URLSearchParams({ ...params, limit: String(STRIPE_PAGE_SIZE) });
     if (startingAfter) query.set("starting_after", startingAfter);
 
@@ -400,6 +404,8 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
     let synced = 0;
     const counts = { invoices: 0, subscriptions: 0, payments: 0, refunds: 0 };
     const errors: string[] = [];
+    // PERF-P2-006: operator-controlled page bound (default 10 pages of 100).
+    const maxPages = env.STRIPE_SYNC_MAX_PAGES ?? STRIPE_MAX_PAGES;
 
     for (const customer of customers) {
       if (!customer.stripe_customer_id) continue;
@@ -411,24 +417,28 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
           { customer: customerId },
           stripeHeaders,
           `invoices (${customerId})`,
+          maxPages,
         ),
         fetchStripePages<StripeSubscription>(
           "https://api.stripe.com/v1/subscriptions",
           { customer: customerId },
           stripeHeaders,
           `subscriptions (${customerId})`,
+          maxPages,
         ),
         fetchStripePages<StripePaymentIntent>(
           "https://api.stripe.com/v1/payment_intents",
           { customer: customerId },
           stripeHeaders,
           `payment_intents (${customerId})`,
+          maxPages,
         ),
         fetchStripePages<StripeCharge>(
           "https://api.stripe.com/v1/charges",
           { customer: customerId },
           stripeHeaders,
           `charges (${customerId})`,
+          maxPages,
         ),
       ]);
 
@@ -447,7 +457,7 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
         chargesPage.truncated
       ) {
         errors.push(
-          `page cap (${STRIPE_MAX_PAGES} pages of ${STRIPE_PAGE_SIZE}) reached for customer ${customerId}`,
+          `page cap (${maxPages} pages of ${STRIPE_PAGE_SIZE}) reached for customer ${customerId}`,
         );
       }
 
