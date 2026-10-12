@@ -36,7 +36,8 @@
 | `dev-setup.sh` | One-shot developer environment setup (Linux/macOS). |
 | `preflight-check.sh` | Pre-deploy sanity checks (env files, tool versions). |
 | `rollback.sh` | Roll back the last deployment on the droplet (Linux/macOS). |
-| `validate-terraform-env.sh` | Validate Terraform env files before plan/apply. |
+| `terraform-state-restore.sh` | Emergency Terraform state restore from the versioned DO Spaces backend (`--list`/`--scratch`/`--restore`; DR-P3-005 / IR-P3-001). |
+| `validate-terraform-env.sh` | Validate Terraform env files before plan/apply (scans `env/` and the module root, INFRA-P3-007). |
 | `install-terraform.ps1` | Install Terraform on Windows. |
 | `backfill-profile-pii.mjs` | One-off idempotent backfill of `profiles.encrypted_pii` from the plaintext PII columns (SEC-P2-002); run once per environment. Root alias: `pnpm backfill:profile-pii`. |
 | `seed-store.ts` | Idempotent upsert of `apps/api/src/data/products.json` + `categories.json` into `store_products` / `store_categories` (needs service-role credentials; see migration 5302134). |
@@ -76,6 +77,8 @@ self-tests in `ci/` so a broken detector cannot pass silently.
 | `ci/check-supply-chain-gates.mjs` | Fixture-driven self-test for `audit-gate.mjs` / `license-gate.mjs` (exception scoping, UNKNOWN fail-closed, `expires` enforcement) — SBOM-P2-009/010. |
 | `ci/verify-gitleaks-config.sh` | Verify `.gitleaks.toml`: tracked tree clean under the allowlists AND a synthetic key is still detected (`secret-history-scan.yml`). |
 | `uptime/probe.mjs` | External uptime probe run by `external-uptime-probe.yml` against `uptime/probe-targets.json`. |
+| `sync-product-catalog.mjs` | Keep `apps/api/src/data/products.json` byte-identical to the canonical `apps/web/lib/catalog/data/products.json` (HYGIENE-P2-002); `check` runs in the shared unit-tests action. |
+| `ci/test-terraform-state-restore.sh` | Self-test for `terraform-state-restore.sh` against a stubbed aws CLI (list/scratch/restore guard, fail-closed credentials) — DR-P3-005 / IR-P3-001. |
 
 ## Subdirectories
 

@@ -1,0 +1,23 @@
+name: Dockerfile lint (hadolint)
+description: >
+  Lint every app Dockerfile with the digest-pinned hadolint image (CTR-P3-008).
+  Info-level rules are reported but do not fail; warnings and errors fail the
+  gate (mirrors shellcheck --severity=warning). The earlier manual fixes
+  (explicit WORKDIR in apps/web, exec-form HEALTHCHECKs) were unguarded and
+  could regress silently. Shared by test.yml (PRs) and validate.yml (push
+  deploy gate) so the two definitions cannot drift apart.
+
+runs:
+  using: composite
+  steps:
+    - name: hadolint
+      shell: bash
+      run: |
+        set -e
+        # Digest-pinned image (matches the repo's third-party pinning practice).
+        # --failure-threshold warning keeps info/style notes visible without
+        # failing the build; add a .hadolint.yaml only if a rule needs waiving.
+        docker run --rm -v "$PWD:/workspace" -w /workspace \
+          hadolint/hadolint:v2.15.1@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d \
+          hadolint --failure-threshold warning \
+          apps/api/Dockerfile apps/worker/Dockerfile apps/web/Dockerfile

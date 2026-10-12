@@ -17,7 +17,7 @@
 - **Application rollback**: See `docs/ROLLBACK_PROCEDURES.md` — Docker rollback via `workflow_dispatch` (manual) or `deploy-do.yml` rollback input.
 - **Database recovery**: Supabase PITR (point-in-time recovery) for last 7 days. S3 pg_dump backups (encrypted, optionally offsite) retained for 30 days for long-term recovery; restore and verification steps in `docs/ROLLBACK_PROCEDURES.md` §3a.
 - **Storage recovery**: `scripts/restore-storage.sh` restores uploaded files from the storage archive; pair it with a database restore so document links resolve (`docs/ROLLBACK_PROCEDURES.md` §3b).
-- **Infrastructure recovery**: Terraform state stored in DO Spaces. `terraform apply` can recreate the droplet, firewall, and DNS records.
+- **Infrastructure recovery**: Terraform state stored in DO Spaces (versioned). `terraform apply` can recreate the droplet, firewall, and DNS records; restore a previous state version with `scripts/terraform-state-restore.sh` (`docs/ROLLBACK_PROCEDURES.md` §4). The live state-restore drill is recorded in `docs/PLATFORM_FAILURE_RUNBOOKS.md` §6.
 
 ## Backup Strategy
 

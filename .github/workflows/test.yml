@@ -50,6 +50,14 @@ jobs:
       # rollback). Shared with validate.yml's audit job.
       - uses: ./.github/actions/shellcheck
 
+      # CTR-P3-008: hadolint over the app Dockerfiles, against the digest-pinned
+      # image. Shared with validate.yml's audit job.
+      - uses: ./.github/actions/dockerfile-lint
+
+      # DR-P3-005 / IR-P3-001: exercise the terraform state-restore procedure
+      # against a stubbed aws CLI. Shared with validate.yml's audit job.
+      - uses: ./.github/actions/terraform-state-restore-test
+
   # Dependency audit — hard gate, no continue-on-error
   security-scan:
     timeout-minutes: 15
