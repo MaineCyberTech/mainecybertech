@@ -1,0 +1,71 @@
+name: Dependabot Triage Reminder
+
+# SBOM-P2-007 / SC-P2-005: the Dependabot queue had grown large and untriaged.
+# This weekly issue keeps the backlog visible and carries the triage policy from
+# docs/DEPENDENCY_POLICY.md > Update governance, so triage is calendar-driven
+# instead of memory-driven. Uses the runner's `gh` CLI (no new action to pin)
+# and skips when a reminder issue is already open.
+#
+# NOTE: schedules only fire from the default branch, so this file must be on
+# `main` for the cron to fire there.
+on:
+  schedule:
+    # Mondays 07:00 UTC — after the Monday Dependabot run and the 06:00
+    # dependency re-scan, before the weekly review.
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Create triage issue (deduplicated)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" \
+            --state open --search "Dependabot triage in:title" \
+            --json number --jq 'length')
+          if [ "$existing" -gt 0 ]; then
+            echo "A Dependabot triage issue is already open; nothing to do."
+            exit 0
+          fi
+          gh label create dependencies --repo "$GITHUB_REPOSITORY" \
+            --color 0366d6 --description "Dependency update triage" 2>/dev/null || true
+          backlog=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
+            --search "is:pr is:open author:app/dependabot" \
+            --json number,title,updatedAt \
+            --jq 'sort_by(.updatedAt) | .[] | "- [ ] #\(.number) — \(.title) (updated \(.updatedAt[0:10]))"')
+          if [ -z "$backlog" ]; then
+            backlog="_No open Dependabot PRs._"
+          fi
+          body=$(cat <<'EOF'
+          ## Weekly Dependabot triage
+
+          Policy: [docs/DEPENDENCY_POLICY.md](https://github.com/MaineCyberTech/mainecybertech/blob/HEAD/docs/DEPENDENCY_POLICY.md#update-governance) — security updates within 7 days, patch/minor within 30 days.
+
+          Open Dependabot PRs when this issue was opened:
+
+          EOF
+          )
+          body="$body
+          $backlog
+
+          Checklist:
+
+          - [ ] Close superseded updates (an update below a \`pnpm.overrides\` floor is not mergeable — e.g. the closed \`next-16.2.9\`).
+          - [ ] Merge patch/minor updates only after the branch is rebased onto current \`develop\` and every required check is green — never force-push a dependency branch or merge a red PR.
+          - [ ] Route majors (e.g. the \`node:25-alpine\` image bumps) to a dedicated upgrade issue instead of merging blind.
+          - [ ] Confirm security updates were triaged first.
+          - [ ] Close this issue once the backlog is triaged.
+          "
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Weekly Dependabot triage" \
+            --label dependencies \
+            --body "$body"

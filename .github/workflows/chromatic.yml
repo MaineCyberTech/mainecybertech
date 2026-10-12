@@ -20,12 +20,14 @@ concurrency:
 jobs:
   chromatic:
     runs-on: ubuntu-latest
-    # Best-effort: the Storybook webpack build currently fails with
-    # SB_BUILDER-WEBPACK5_0002 ("Cannot read properties of undefined (reading
-    # 'tap')") - a webpack-instance/plugin mismatch that needs a dedicated fix.
-    # Job-level continue-on-error keeps the pipeline green while the failure
-    # stays visible in the job status (previously it was hidden per-step).
-    continue-on-error: true
+    # Blocking (CI-P2-006): no job-level continue-on-error. A broken Storybook
+    # build fails this job instead of being masked green, and once a baseline
+    # exists a visual change fails it too. The Storybook webpack build still
+    # fails with SB_BUILDER-WEBPACK5_0002 ("Cannot read properties of undefined
+    # (reading 'tap')") - a webpack-instance/plugin mismatch that needs a
+    # dedicated fix; the red job is now the honest signal for that debt. The
+    # job is not a required check yet: promoting it in branch protection is a
+    # repo-admin action once the build failure is fixed.
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -59,5 +61,8 @@ jobs:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           storybookBuildDir: docs/storybook-static
           onlyChanged: true
-          exitZeroOnChanges: true
-          exitOnceUploaded: true
+          # Wait for the build result and fail on visual changes once a
+          # baseline exists (new stories never count as changes). This is the
+          # "blocking when a baseline exists" half of CI-P2-006; exitOnceUploaded
+          # would exit before the diff result is known.
+          exitZeroOnChanges: false

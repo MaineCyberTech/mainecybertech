@@ -1,6 +1,6 @@
 # Dependency Policy
 
-Policy owner: Platform Engineering. Last updated 2026-10-02.
+Policy owner: Platform Engineering. Last updated 2026-10-12.
 
 How dependency vulnerabilities, overrides, and updates are governed. The
 machine-enforced policy is
@@ -78,6 +78,28 @@ Governance:
   fix/Dependabot PR when a finding would block under the real gate.
 - `onlyBuiltDependencies` (root `package.json`) restricts postinstall scripts to
   an allowlist (`@sentry/cli`). Adding an entry requires review.
+
+### Backlog triage (SBOM-P2-007 / SC-P2-005)
+
+The queue is kept visible by `dependabot-triage-reminder.yml` (weekly, Mondays
+07:00 UTC): it opens one deduplicated `Weekly Dependabot triage` issue listing
+the open PRs and this policy. Close the issue once the queue is triaged.
+
+SLA: security updates within 7 days; patch/minor updates within 30 days; a
+major-version update gets a dedicated upgrade issue (and an explicit
+supported-version decision) instead of a blind merge.
+
+Merge rules:
+
+- Merge a Dependabot PR only after it is rebased onto current `develop` and
+  every required check is green. Never force-push a Dependabot branch, and
+  never merge a red PR to "unblock" it.
+- An update that cannot satisfy a `pnpm.overrides` floor is not mergeable. The
+  closed `next` 16.2.9 PR (#14) is the worked example: 16.2.9 sits below the
+  `>=16.3.6` half of the `next` override, so the resolved-tree audit rejects
+  it; it was superseded by the 16.3.8+ PR (#102).
+- Major runtime bumps (e.g. the open `node:25-alpine` image PRs) are held until
+  the Node support line is upgraded deliberately; they are not auto-merged.
 
 ## Local commands
 

@@ -144,7 +144,7 @@ for the full deployment/terraform secret list.
 | ------------------------- | -------------------------------------- | ------------------------------------------------------------------------ |
 | `E2E_JWT_SECRET`          | `e2e.yml`                              | Optional JWT secret for the E2E API; falls back to a built-in test value |
 | `SUPABASE_ACCESS_TOKEN`   | `supabase-migrations.yml`              | Supabase CLI auth for `supabase link` / `supabase db push`               |
-| `CHROMATIC_PROJECT_TOKEN` | `chromatic.yml`                        | Chromatic visual-regression upload (best-effort job)                     |
+| `CHROMATIC_PROJECT_TOKEN` | `chromatic.yml`                        | Chromatic visual-regression upload (job fails on a broken Storybook build or a visual change once a baseline exists) |
 | `AWS_ACCESS_KEY_ID`       | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | S3/Spaces key for backup upload and restore download |
 | `AWS_SECRET_ACCESS_KEY`   | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | S3/Spaces secret for backup upload and restore       |
 | `S3_BUCKET`               | backup/restore workflows and scripts   | Backup bucket **name** (contract: `docs/ROLLBACK_PROCEDURES.md` §3a)     |
