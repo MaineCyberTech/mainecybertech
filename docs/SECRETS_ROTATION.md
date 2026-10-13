@@ -15,7 +15,9 @@ Terraform jobs read them directly from their environment.
 > reverse) is a **silent no-op** — the job keeps reading the old value, which is
 > exactly what an emergency rotation must not do. Always set the value on the
 > environment the consuming job actually attaches (table below), then run the
-> [post-rotation verification](#post-rotation-verification).
+> [post-rotation verification](#post-rotation-verification). Since BP-P3-003
+> every prod mutation (deploy, Terraform apply, DB migrations) runs under
+> `prod-approval`; `prod` is read-only.
 
 > **Emergency revocation / break-glass:** the IT-level runbook (revocation
 > points per credential, break-glass paths, escrow requirements and the drill
@@ -29,7 +31,7 @@ Terraform jobs read them directly from their environment.
 | Droplet IP resolve (`resolve-ip`, read-only)                                              | `deploy-do.yml`                                                                             | `prod`           | `dev`           |
 | Terraform plan                                                                            | `terraform-do.yml`                                                                          | `prod`           | `dev`           |
 | Terraform apply                                                                           | `terraform-do.yml`                                                                          | `prod-approval`  | `dev`           |
-| Prod DB migrations                                                                        | `supabase-migrations.yml`                                                                   | `prod`           | `dev`           |
+| Prod DB migrations                                                                        | `supabase-migrations.yml`                                                                   | `prod-approval`  | `dev`           |
 | Backups / restore tests / staleness check                                                 | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml`, `storage-restore-test.yml`, `backup-staleness-check.yml` | — (dev only)     | `dev`           |
 | Alert-path exercise                                                                       | `alert-path-exercise.yml`                                                                   | `prod-approval`  | `dev`           |
 | Image build/publish                                                                       | `build-push.yml`                                                                            | repo scope       | repo scope      |
@@ -347,11 +349,11 @@ and the alert-path exercise use the separate `NTFY_ALERTS_*` credentials. See
    [consuming-environment table](#consuming-environments-source-of-truth), not a
    reflexive `--env prod`:
    ```
-   # prod app/integration secrets (deploy-do deploy job):
+   # prod app/integration/migration secrets (deploy, prod migrations, terraform apply):
    gh secret set SECRET_NAME --env prod-approval --body "NEW_VALUE"
    # dev app/integration secrets, backups, dev deploy:
    gh secret set SECRET_NAME --env dev --body "NEW_VALUE"
-   # Terraform plan / prod migrations (read the `prod` environment):
+   # Read-only prod jobs (Terraform plan / resolve-ip; no mutation):
    gh secret set SECRET_NAME --env prod --body "NEW_VALUE"
    ```
 3. **Trigger the consuming workflow** for the affected environment
@@ -373,9 +375,10 @@ revocation points and the drill record are in
 2. **Generate new secret** at the source.
 3. **Set it on the consuming environment** (see the
    [consuming-environment table](#consuming-environments-source-of-truth)) —
-   `--env prod-approval` for the prod deploy job, `--env prod` for
-   migrations/plan, `--env dev` for backups. A value set on an environment the
-   job does not attach is a silent no-op:
+   `--env prod-approval` for the prod deploy, prod migrations and Terraform
+   apply jobs, `--env prod` for the read-only plan/resolve jobs, `--env dev`
+   for backups. A value set on an environment the job does not attach is a
+   silent no-op:
    ```
    gh secret set SECRET_NAME --env prod-approval --body "NEW_VALUE"
    ```

@@ -185,6 +185,27 @@ legacy AWS ALB/ECS deployment and returns 404 for `/health`, so the probe
 reports that target red until the prod deploy path (CI-P1-003) lands. That is
 the probe doing its job, not a false positive.
 
+### Functional smoke check (TEST-P3-002)
+
+The uptime probe asserts status codes and latency; it does not prove a user can
+log in and read data. [`smoke-check.yml`](../.github/workflows/smoke-check.yml)
+runs every 30 minutes from outside the droplet and exercises the user path with
+[`scripts/uptime/smoke.mjs`](../scripts/uptime/smoke.mjs):
+
+1. `GET <api>/health` returns 200;
+2. `GET <web>/login` renders;
+3. an authenticated read succeeds — `POST /api/v1/auth/sign-in` with the smoke
+   account, then `GET /api/v1/auth/me` with the returned token.
+
+It targets **dev by default**. Prod is included once the operator sets the
+`SMOKE_PROD_ENABLED` repository variable to `true` (the prod environment must
+exist first); a manual dispatch can choose `dev`, `prod` or `both`. Until the
+`SMOKE_EMAIL` / `SMOKE_PASSWORD` secrets are provisioned (a dedicated read-only,
+non-MFA account — set them on `dev` or repo-wide), the authenticated read is
+reported as skipped and only health + login gate. Failures notify through the
+same ntfy/Slack path as the backup/uptime workflows (fail-loud when no channel
+is configured) and the run's `smoke-report` artifact lists each check.
+
 ---
 
 ## 3. Docker Health Checks
@@ -371,6 +392,7 @@ The workflow includes a `rollback-on-failure` step that reverts to the previous 
 | `Watchdog` (always firing)   | None     | Alertmanager → off-box dead-man's switch (§9; URL still unset) | Alert path itself died → external service pages (once provisioned) |
 | Backup/restore staleness (no successful backup or restore test within its freshness window) | Critical | `Backup Staleness Check` workflow → ntfy/Slack (fail-closed); worker `backup-dr-check` on the `platform_backup_heartbeats` table (DR-P2-008, 30 h) → `MCTWorkerTaskFailures` | Check the backup workflow runs, Spaces credentials and `scripts/backup-*.sh` logs; both checks are independent of the backup jobs |
 | External uptime probe failure (public API/web endpoint down or over its latency budget) | Critical | `External uptime probe` workflow → ntfy/Slack (fail-closed) | Open the run's `uptime-report` artifact; if the whole platform is unreachable from outside, follow the platform failure runbooks |
+| Smoke check failure (API health, web login or an authenticated read) | Critical | `Smoke check` workflow → ntfy/Slack (fail-loud) | Open the run's `smoke-report` artifact and the job summary; a failing auth read with a green login usually means an auth/session regression, not an outage |
 
 #### Prometheus alert rules (`prometheus.rules.yml`)
 

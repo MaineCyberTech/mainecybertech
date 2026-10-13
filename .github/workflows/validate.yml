@@ -9,6 +9,7 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
@@ -87,6 +88,9 @@ jobs:
       - uses: ./.github/actions/unit-tests
         with:
           node-version: ${{ matrix.node-version }}
+          # Optional: resolves CODEOWNERS team handles via the API (BP-P3-005).
+          # Without the secret the guard runs its syntax-only fallback.
+          codeowners-token: ${{ secrets.CODEOWNERS_READ_TOKEN }}
 
   # Secret scanning — same patterns as the pre-commit hook (scripts/scan-secrets.sh).
   # Runs as part of the deploy gate so a leaked credential cannot ship even if
@@ -105,6 +109,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -116,6 +121,7 @@ jobs:
 
   typecheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -127,6 +133,7 @@ jobs:
 
   prompt-provenance:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 

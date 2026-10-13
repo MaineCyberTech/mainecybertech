@@ -460,13 +460,15 @@ After deployment, verify:
 Workflows reference these GitHub Environments:
 
 - `dev` — dev deploy, Terraform dev apply, dev migrations.
-- `prod` — prod migrations, plus the read-only `resolve-ip`/`terraform-plan` jobs.
-- `prod-approval` — the production-mutating jobs: `deploy-do` prod `deploy`
-  and `terraform-do` `terraform-apply-prod`. Required reviewers (1+) must be
+- `prod` — read-only `resolve-ip`/`terraform-plan` jobs only; nothing mutates.
+- `prod-approval` — the production-mutating jobs (BP-P3-003): `deploy-do` prod
+  `deploy`, `terraform-do` `terraform-apply-prod`, and prod DB migrations
+  (`supabase-migrations.yml` on `main`). Required reviewers (1+) must be
   configured in GitHub (Settings → Environments → `prod-approval`); that
   setting **cannot live in the repo**. None are configured yet, so the
-  approval gate is not currently in force and a prod deploy will start without
-  pausing. The prod secrets/variables must be available to `prod-approval`.
+  approval gate is not currently in force and a prod deploy (or migration)
+  will start without pausing. The prod secrets/variables must be available to
+  `prod-approval`.
 
 The canonical, verified list of secrets and variables — which workflow uses
 each one and whether it is dev/prod scoped — is

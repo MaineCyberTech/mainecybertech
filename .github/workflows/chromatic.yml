@@ -24,6 +24,7 @@ concurrency:
 jobs:
   chromatic:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Blocking (CI-P2-006): no job-level continue-on-error. A broken Storybook
     # build fails this job instead of being masked green, and once a baseline
     # exists a visual change fails it too. The Storybook webpack build still

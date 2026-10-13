@@ -53,7 +53,9 @@ Schema belongs in migrations; demo/test rows belong in `supabase/seeds/`.
 [`.github/workflows/supabase-migrations.yml`](../../.github/workflows/supabase-migrations.yml)
 runs on pushes to `develop`/`main` that touch `supabase/**` (and on
 `workflow_call`), applying `supabase db push --include-all` against the hosted
-project, serialized per branch. The prod deploy (`deploy-do.yml`) has a
+project, serialized per branch. Prod runs attach the approval-gated
+`prod-approval` environment (BP-P3-003), so a production migration pauses for
+the same reviewers as the prod deploy. The prod deploy (`deploy-do.yml`) has a
 prod-only `migrate-gate` that depends on it. Applied migrations are tracked by
 Supabase; editing an already-applied file is never the fix — add a new one.
 
@@ -100,13 +102,16 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm e2e
 ## 3. Versioning and release notes
 
 - [`VERSION`](../../VERSION) at the repo root is the product version source of
-  truth; generated artifacts bind `<VERSION>+<commit SHA>`. The commit SHA is
-  authoritative — **there are no git tags and no automatic GitHub Releases**.
-- A release is the GHCR images tagged with the deploying SHA. Cut release notes
-  from
+  truth; generated artifacts bind `<VERSION>+<commit SHA>`. The commit SHA
+  stays authoritative for images and rollbacks.
+- Each promotion push to `main` makes
+  [`release.yml`](../../.github/workflows/release.yml) cut the
+  `v<VERSION>-<YYYYMMDD>-<short-sha>` tag and a GitHub Release with a generated
+  body (commits since the previous tag, migrations added, `UPGRADE.md` window)
+  plus the lockfile SBOM attached; fill the human sections from
   [`templates/RELEASE_NOTES_TEMPLATE.md`](../../templates/RELEASE_NOTES_TEMPLATE.md)
-  (fill Breaking Changes, Migrations, Operator Actions) and use the result as
-  the GitHub Release body.
+  (Breaking Changes, Migrations, Operator Actions). See
+  [`RELEASING.md`](../RELEASING.md) for the scheme.
 - [`UPGRADE.md`](../UPGRADE.md) is the running manifest of behavior-affecting
   changes; add an entry there when a migration wave lands.
 

@@ -29,6 +29,7 @@ concurrency:
 jobs:
   resolve:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       images: ${{ steps.resolve.outputs.images }}
     steps:
@@ -39,8 +40,21 @@ jobs:
         # Single source of truth: scan exactly the digest-pinned refs the
         # droplet stack runs. `$`-interpolated app images (built and scanned by
         # this repo) never carry an @sha256 here and are skipped.
+        #
+        # DET-P3-002 guard: every literal (non-`$`) image ref in the compose
+        # file must be digest-pinned. The mct-api/mct-worker/mct-web refs are
+        # the repo's own images — they are built, scanned and attested by CI
+        # and the deploy resolves them to digests before running — so they are
+        # the only refs allowed to carry a mutable tag.
         run: |
           set -euo pipefail
+          unpinned=$(grep -E '^[[:space:]]+image:[[:space:]]+' \
+            infra/digitalocean/docker-compose.yml | grep -v '\$' | grep -v '@sha256:' || true)
+          if [ -n "$unpinned" ]; then
+            echo "::error::third-party image refs must be digest-pinned (@sha256:):"
+            printf '%s\n' "$unpinned"
+            exit 1
+          fi
           images=$(grep -E '^[[:space:]]+image:[[:space:]]+[^$]+@sha256:' \
             infra/digitalocean/docker-compose.yml | awk '{print $2}' | sort -u)
           if [ -z "$images" ]; then
@@ -110,6 +124,7 @@ jobs:
     needs: [resolve, scan]
     if: failure()
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Notify on failure
         env:

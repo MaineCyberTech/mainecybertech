@@ -107,6 +107,21 @@ The JSON reporter writes `.playwright-results/results.json` and the E2E job
 prints a flake summary (retried/flaky tests — TEST-P2-003) to the job summary;
 failures upload `.playwright-report/` and `.playwright-results/`.
 
+**Flake triage (CI-P3-009).** The retry budget is 2; a test that passes only on
+retry is a *flake*, not a failure — it is listed in the job summary and warned
+about, and the required check stays green. Triage checklist:
+
+1. Reproduce locally (`pnpm --filter=web e2e -- <spec>`) or from the uploaded
+   trace; identify the non-deterministic wait (data seed, animation, network).
+2. Fix the wait: prefer `visibleWithin`/`gotoApp`/`expect.poll` over fixed
+   sleeps or bare `isVisible()` gates (`apps/web/e2e/fixtures.ts`).
+3. If it flakes twice in a rolling week and the fix is not obvious, quarantine
+   the single test with `test.fixme("reason — <issue link>")` (or
+   `test.describe.fixme`) so it stops burning the gate, and file the issue.
+   Quarantine is a reviewed change; never weaken the E2E required check.
+4. Un-quarantine when the fix lands. The full policy lives in
+   [`CI.md` §E2E flake policy](CI.md#e2e-flake-policy-ci-p3-009).
+
 Accessibility: `apps/web/e2e/a11y.spec.ts` scans 25 core routes against
 `critical`/`serious` axe rules (WCAG 2.0/2.1/2.2 A+AA, `wcag22aa` included).
 The same spec scans a bounded set of interactive states on every run — the

@@ -51,7 +51,7 @@ until each is `verified-fixed` or owner-accepted.
 | Final finding | Title | Status at `8d299b8` | Exit condition (all must hold) | Owner |
 | --- | --- | --- | --- | --- |
 | `FINAL-P1-001` | P0 data-loss path and unverified "fixed" claim block a clean release | `verified-fixed` (code); `EXEC-P1-001` `partially-fixed` (closure artifact) | Orphan cleanup lists per known prefix and reconciles full paths; any entry with a null `id` is treated as a folder and never passed to `storage.remove`; a pre-remove guard rejects any non-object key; a regression test models Supabase `list(path)` semantics and fails on the pre-fix code. Code + tests are present at `8d299b8` (`DATA-P0-001` verified-fixed); remaining: record the deployed-commit (or, until the first prod deploy exists, an equivalent staging/CI) regression artifact, or owner-accept the code-level tests (`EXEC-P1-001`). | worker/data + release |
-| `FINAL-P2-001` | Governance and observability gaps mean the platform cannot yet detect or control production failure | `partially-fixed` | `prod`/`prod-approval` provisioned with secrets/vars + required reviewers; one dry `main` deploy green; alert routing wired and a synthetic alert delivered; a dated green `db-restore-test` with row assertions; a documented single-host SPOF/backup plan. Routing is now wired (`OBS-P2-001` verified-fixed; Alertmanager → ntfy); still missing: reviewer configuration (`CI-P1-001`), a synthetic delivery and a missed-heartbeat drill (`OBS-P2-014`), and any successful restore run (`DR-P0-001`; the `DR-P1-001` baseline-loader bug is fixed). | ops/release |
+| `FINAL-P2-001` | Governance and observability gaps mean the platform cannot yet detect or control production failure | `partially-fixed` | `prod-approval` provisioned with secrets/vars + required reviewers (the single gate for the prod deploy, Terraform apply and DB migrations; `prod` is read-only); one dry `main` deploy green; alert routing wired and a synthetic alert delivered; a dated green `db-restore-test` with row assertions; a documented single-host SPOF/backup plan. Routing is now wired (`OBS-P2-001` verified-fixed; Alertmanager → ntfy); still missing: reviewer configuration (`CI-P1-001`), a synthetic delivery and a missed-heartbeat drill (`OBS-P2-014`), and any successful restore run (`DR-P0-001`; the `DR-P1-001` baseline-loader bug is fixed). | ops/release |
 | `FINAL-P2-002` | Residual authorization/secret defaults need explicit decisions | `partially-fixed` | Each fail-open default is either made to fail closed in production or explicitly owner-accepted with a recorded decision (see register below). All five controls are now fail-closed in code; the decision record itself is still stale (`EXEC-P2-001`) and `API-P2-001` remains open. | security/API |
 | `FINAL-P2-004` | Release-gate artifacts contradict the reconciled register | `open` | The run's published gate/summary/index carry the reconciled NO-GO verdict on `develop`, and this document is rebound to a resolvable commit (done here). Remaining: a guard asserting `manifest.releaseGate == gate verdict` and that the gate commit resolves from `main`. | audit owner + release |
 
@@ -64,7 +64,7 @@ A prod release is blocked until every row below is green or owner-accepted.
 | 1 | `DATA-P0-001` — orphan cleanup cannot delete folders/prefixes; regression test present. Closure artifact at the deployed commit (`EXEC-P1-001`). | code + tests `verified-fixed`; artifact missing → `partially-fixed` |
 | 2 | `SEC-P1-002` — production refuses to boot without a valid 32-byte `FIELD_ENCRYPTION_KEY`; no new `plain:` writes in prod. Residual: `SEC-P2-002` plaintext profile columns remain the source of truth and are still returned. | `verified-fixed` (fail-closed boot); coverage residual open |
 | 3 | `SEC-P2-013` — production requires `TURNSTILE_SECRET_KEY`; `/public/submit` fails closed without a verified token. | `verified-fixed` |
-| 4 | `CI-P1-001` / `CI-P1-003` — `prod` and `prod-approval` have the required secrets/vars and required reviewers; one dry `main` deploy is green. | `still-open` (operator action) |
+| 4 | `CI-P1-001` / `CI-P1-003` — `prod-approval` has the required secrets/vars and required reviewers (prod deploy, Terraform apply and DB migrations all attach it); one dry `main` deploy is green. | `still-open` (operator action) |
 | 5 | `OBS-P2-001` — Alertmanager is wired to a receiver and a synthetic alert is delivered. Residual: `IR-P0-003` external watchdog URL unset + no missed-heartbeat drill. | routing `verified-fixed` (ntfy); exercise/URL outstanding |
 | 6 | `OBS-P2-003` — a dated `db-restore-test` run is green with row assertions. `DR-P1-001` (baseline loader) is `verified-fixed`; still blocked by `DR-P0-001`'s operator residual (backup secrets unprovisioned) until a dated green run exists. | `partially-fixed` |
 | 7 | `BP-P1-002` / `CI-P1-002` — branch protection sets `enforce_admins: true` and requires CODEOWNERS review, with matching required checks. | `verified-fixed` in code; live application is a repo-admin action |
@@ -87,12 +87,14 @@ work is done; the *decision record* is the remaining artifact (`EXEC-P2-001`).
 These are GitHub/operator actions, not (only) code. Each needs a recorded
 artifact.
 
-- [ ] **Provision `prod`** environment secrets and variables (`SUPABASE_*`,
-      `JWT_SECRET`, `DROPLET_IP`, Stripe/SMTP/JSM/Redis, encryption key,
-      Turnstile, SSH). Evidence: `gh api repos/:owner/:repo/environments`.
-      Owner: ops.
-- [ ] **Required reviewers** on `prod` and `prod-approval` (1+ each). Evidence:
-      `gh api` or a settings capture. Gate does not work until set. Owner: ops.
+- [ ] **Provision `prod-approval`** environment secrets and variables
+      (`SUPABASE_*`, `JWT_SECRET`, `DROPLET_IP`, `SUPABASE_ACCESS_TOKEN` /
+      `SUPABASE_PROJECT_REF`, Stripe/SMTP/JSM/Redis, encryption key, Turnstile,
+      SSH). Evidence: `gh api repos/:owner/:repo/environments`. Owner: ops.
+- [ ] **Required reviewers** on `prod-approval` (1+). Every prod mutation
+      (app deploy, Terraform apply, DB migrations) attaches this environment;
+      `prod` is read-only (plan/resolve) and needs none. Evidence: `gh api` or
+      a settings capture. Gate does not work until set. Owner: ops.
 - [ ] **Dry `main` deploy** green (build → validate → SSH → health gate).
       Evidence: run URL. Owner: release.
 - [ ] **Alert routing**: Alertmanager → ntfy delivery is wired; record a

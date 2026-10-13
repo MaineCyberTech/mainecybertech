@@ -70,16 +70,25 @@ jobs:
           fi
       - name: Validate rollback SHA
         if: github.event.inputs.rollback_sha != ''
+        env:
+          # CI-P3-013: never interpolate dispatch inputs directly into a run
+          # script — pass them through env so shell metacharacters in the input
+          # cannot inject commands before validation.
+          ROLLBACK_SHA_INPUT: ${{ github.event.inputs.rollback_sha }}
         run: |
           # The value is used unquoted in a remote root shell; only allow hex.
-          if ! printf '%s' "${{ github.event.inputs.rollback_sha }}" | grep -Eq '^[0-9a-f]{7,40}$'; then
+          if ! printf '%s' "$ROLLBACK_SHA_INPUT" | grep -Eq '^[0-9a-f]{7,40}$'; then
             echo "::error::rollback_sha must be 7-40 lowercase hex characters"
             exit 1
           fi
       - name: Determine environment
         id: env
+        env:
+          # CI-P3-013: env indirection for dispatch inputs (see above).
+          REF_NAME_INPUT: ${{ github.ref_name }}
+          DEPLOY_TARGET_INPUT: ${{ github.event.inputs.deploy_target }}
         run: |
-          if [ "${{ github.ref_name }}" = "main" ] || [ "${{ github.event.inputs.deploy_target }}" = "prod" ]; then
+          if [ "$REF_NAME_INPUT" = "main" ] || [ "$DEPLOY_TARGET_INPUT" = "prod" ]; then
             APP_DOMAIN=app.mainecybertech.com
             API_DOMAIN=api.mainecybertech.com
             WWW_DOMAIN=www.mainecybertech.com
@@ -580,7 +589,9 @@ jobs:
             done
           fi
 
-  # validate: always runs (test + lint + typecheck) for every deploy
+  # validate: always runs (test + lint + typecheck) for every deploy.
+  # Reusable-workflow calls cannot declare timeout-minutes (GitHub limitation);
+  # the callee's jobs carry their own timeouts (validate.yml).
   validate:
     needs: [setup]
     uses: ./.github/workflows/validate.yml
