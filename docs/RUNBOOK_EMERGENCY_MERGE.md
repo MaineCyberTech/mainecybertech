@@ -7,6 +7,8 @@
 > (the record), [`.github/workflows/branch-protection-audit.yml`](../.github/workflows/branch-protection-audit.yml)
 > (drift + bypass audit), [`.github/branch-protection/README.md`](../.github/branch-protection/README.md)
 > (the as-code payloads). Related process docs: [RELEASING.md](RELEASING.md),
+> [RUNBOOK_HOTFIX.md](RUNBOOK_HOTFIX.md) (the normal hotfix path — try it
+> first; this runbook is only for when a gate is stuck),
 > [INCIDENT_RESPONSE.md](INCIDENT_RESPONSE.md), [templates/POSTMORTEM.md](templates/POSTMORTEM.md).
 
 ## What counts as a break-glass merge

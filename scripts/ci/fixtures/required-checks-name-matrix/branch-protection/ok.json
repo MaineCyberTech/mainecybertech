@@ -1,0 +1,7 @@
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["Matrix Fixture / Build (20.x)"]
+  },
+  "enforce_admins": true
+}

@@ -1,4 +1,14 @@
 # Maine CyberTech Portal Code Owners
+#
+# Branch protection requires a CODEOWNERS review (require_code_owner_reviews),
+# so every team handle here must resolve to a real org team — a typo silently
+# drops the owner for that path and the review requirement stops applying.
+# `scripts/check-codeowners.mjs` (run by the shared unit-tests gate with a
+# fixture self-test in `scripts/ci/check-codeowners.sh`) validates the syntax
+# and, when CODEOWNERS_READ_TOKEN is set (fine-grained PAT with Organization →
+# Members: read), resolves every team via the GitHub API. Each referenced team
+# must have at least one member with write access; see docs/CI.md
+# ("CODEOWNERS enforcement", BP-P3-005).
 
 # Repository root
 * @mainecybertech/leads

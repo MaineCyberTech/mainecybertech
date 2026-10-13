@@ -580,7 +580,9 @@ jobs:
             done
           fi
 
-  # validate: always runs (test + lint + typecheck) for every deploy
+  # validate: always runs (test + lint + typecheck) for every deploy.
+  # Reusable-workflow calls cannot declare timeout-minutes (GitHub limitation);
+  # the callee's jobs carry their own timeouts (validate.yml).
   validate:
     needs: [setup]
     uses: ./.github/workflows/validate.yml

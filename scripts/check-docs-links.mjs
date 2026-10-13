@@ -19,6 +19,9 @@
  * Also fails when a scanned primary doc contains a machine-local path
  * (`C:\...` / `file:///C:...`) that cannot exist on another checkout
  * (DOC-P3-001); the dated audit corpus is exempt.
+ * Also fails when the docs/CI.md workflow table and `.github/workflows/`
+ * disagree (CI-P3-011): every workflow file must be listed in the table's
+ * File column, and every file listed there must exist.
  *
  * Prints every broken link as `file:line -> target`, exits 1 when any are
  * found; prints "docs links OK" and exits 0 when clean.
@@ -190,6 +193,37 @@ if (machinePaths.length > 0) {
   console.error(`machine-local paths in current docs (${machinePaths.length}):`);
   for (const entry of machinePaths) console.error(`  ${entry}`);
   process.exit(1);
+}
+
+// --- Workflow inventory parity (CI-P3-011) ---------------------------------
+// docs/CI.md is the canonical workflow inventory. The File column of its table
+// must list every `.github/workflows/*.yml` file, and must not reference a
+// workflow that no longer exists — docs drift is how a removed workflow kept
+// being cited and a live one stayed undocumented.
+const WF_DIR = join(ROOT, ".github/workflows");
+const CI_DOC = join(ROOT, "docs/CI.md");
+if (existsSync(WF_DIR) && existsSync(CI_DOC)) {
+  const workflowFiles = readdirSync(WF_DIR).filter((f) => /\.ya?ml$/.test(f));
+  const listed = new Set();
+  for (const line of readFileSync(CI_DOC, "utf8").split(/\r?\n/)) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine.startsWith("|")) continue;
+    // cells: ["", " Workflow ", " File ", ...] — the File column is index 2.
+    const cells = trimmedLine.split("|");
+    const fileCell = cells[2]?.trim() ?? "";
+    const m = /^`([A-Za-z0-9._-]+\.ya?ml)`$/.exec(fileCell);
+    if (m) listed.add(m[1]);
+  }
+  const missingFromDoc = workflowFiles.filter((f) => !listed.has(f));
+  const missingFromTree = [...listed].filter((f) => !workflowFiles.includes(f));
+  if (missingFromDoc.length > 0 || missingFromTree.length > 0) {
+    console.error("workflow inventory drift (docs/CI.md vs .github/workflows/):");
+    for (const f of missingFromDoc) console.error(`  docs/CI.md is missing a row for: ${f}`);
+    for (const f of missingFromTree) {
+      console.error(`  docs/CI.md references a removed workflow: ${f}`);
+    }
+    process.exit(1);
+  }
 }
 
 console.log("docs links OK");

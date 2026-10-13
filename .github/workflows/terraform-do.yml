@@ -20,10 +20,12 @@ on:
         type: boolean
         default: false
 
+# CI-P3-006: no `pull-requests: write` — this workflow has no pull_request
+# trigger and the plan-comment step was unreachable (deleted). Restore both
+# together if push/PR triggers are re-enabled.
 permissions:
   contents: read
   id-token: write
-  pull-requests: write
 
 # Serialize terraform runs per branch: concurrent applies could corrupt the
 # shared DO Spaces state lock or race each other (e.g. a push and a manual apply).
@@ -37,6 +39,7 @@ jobs:
     # repository variable (after token rotation). Manual/push runs are unaffected.
     if: ${{ github.event_name != 'schedule' || vars.TF_DRIFT_PLAN_ENABLED == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: infra/terraform/digitalocean
@@ -144,22 +147,6 @@ jobs:
             -input=false 2>&1 | tee ${{ runner.temp }}/tfplan.txt
         continue-on-error: false
 
-      - name: Post plan to PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
-        with:
-          script: |
-            const fs = require('fs');
-            const planOutput = fs.readFileSync('${{ runner.temp }}/tfplan.txt', 'utf8');
-            const envName = '${{ steps.env.outputs.name }}';
-            const header = `## Terraform Plan (${envName})\n\n\`\`\`\n${planOutput.slice(0, 60000)}\n\`\`\``;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: header
-            });
-
       - name: Upload plan summary
         # SECRET-P2-008: only the sanitized text output is uploaded. The binary
         # plan file embeds do_token / cloudflare_api_token and must never leave
@@ -185,6 +172,8 @@ jobs:
 
   # ===== Deployment gates =====
   # validate always runs for every terraform run (test + lint + typecheck).
+  # Reusable-workflow calls cannot declare timeout-minutes (GitHub
+  # limitation); the callee's jobs carry their own timeouts.
   validate-gate:
     needs: terraform-plan
     uses: ./.github/workflows/validate.yml
@@ -211,6 +200,7 @@ jobs:
     needs: [terraform-plan, validate-gate, e2e-gate, migrate-gate]
     if: ${{ inputs.apply && github.ref_name == 'main' && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     environment: prod-approval
     defaults:
       run:
@@ -275,6 +265,7 @@ jobs:
     needs: [terraform-plan, validate-gate]
     if: ${{ inputs.apply && github.ref_name == 'develop' && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     environment: dev
     defaults:
       run:
