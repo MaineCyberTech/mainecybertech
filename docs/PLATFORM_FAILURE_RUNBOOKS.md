@@ -129,7 +129,33 @@ JSM / M365 delivery failures.
 3. If a provider is replaying, verify idempotency keys are intact before
    re-driving (`apps/api/src/lib/idempotency.ts`).
 
-## 5. Verification and drills
+## 5. Client offline / poor network (USE-P3-002)
+
+**Signal:** user reports "nothing loads", stale pages, or the amber "You are
+offline" banner (`apps/web/components/OfflineIndicator.tsx`).
+
+**How the client behaves:**
+- `apps/web/public/sw.js` is registered by
+  `apps/web/components/ServiceWorkerRegistrar.tsx` in production, scoped to
+  `/`. It caches only public static assets (script/style/font/image/manifest),
+  never `/api/` responses or authenticated page HTML.
+- Navigation requests are network-first; when the network is unavailable the
+  worker serves the precached `/offline` fallback page.
+- In-app, `OfflineIndicator` shows a banner while `navigator.onLine` is false
+  and offers Retry; forms surface a timeout message instead of hanging.
+- The storefront additionally falls back to the bundled catalog
+  (`apps/web/lib/catalog/catalog-source.ts`) when the API is degraded.
+
+**Actions:**
+1. Ask the user to confirm connectivity and press Retry (a reload re-checks the
+   network; the worker updates itself on the next navigation).
+2. If a stale asset is suspected, clear site data for the origin or send
+   `{ type: "PURGE_CACHES" }` to the worker; `activate` also deletes caches
+   whose name is not the current `CACHE_NAME`.
+3. Do not "fix" offline behavior by caching API responses — authenticated JSON
+   must stay network-only (MOB-P2-002).
+
+## 6. Verification and drills
 
 - **Runbooks are only real once exercised.** Record each drill below with date,
   operator, variant, and the observed pass/fail — an empty row is an unverified
@@ -138,6 +164,12 @@ JSM / M365 delivery failures.
   filled, every `_unassigned_` row is itself a gap (`IR-P2-008`).
 - At minimum exercise once before go-live: single-host restore (section 0) and
   the database restore (`db-restore-test.yml`).
+- The backup/restore drill program (D1–D7) lives at
+  [`runbooks/backup-restore-drill-plan.md`](runbooks/backup-restore-drill-plan.md)
+  with its results ledger at
+  [`runbooks/backup-restore-drill-ledger.md`](runbooks/backup-restore-drill-ledger.md)
+  (relocated from the dated audit folder, DR-P3-001). Record D1–D7 results
+  there, not in this table.
 
 | Date | Runbook | Operator | Variant | Result | Evidence |
 | ---- | ------- | -------- | ------- | ------ | -------- |
@@ -146,3 +178,5 @@ JSM / M365 delivery failures.
 | _pending_ | 2. Supabase unavailable | _unassigned_ | status-page + storefront fallback | — | — |
 | _pending_ | 3. Failed deploy | _unassigned_ | rollback to previous tag | — | — |
 | _pending_ | 4. Webhook backlog | _unassigned_ | re-drive dead letters | — | — |
+| _pending_ | 5. Client offline | _unassigned_ | offline navigation + banner | — | — |
+| _pending_ | 6. Terraform state restore | _unassigned_ | `scripts/terraform-state-restore.sh` scratch copy + plan-only verify (`docs/ROLLBACK_PROCEDURES.md` §4) | — | — |

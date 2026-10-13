@@ -59,6 +59,11 @@ function makeChain(terminal: "endpoints" | "deliveries" | "updates") {
     if (terminal === "deliveries") deliveryInserts.push(row);
     return Promise.resolve({ error: null });
   });
+  // WH-P3-006: keyed delivery rows are persisted with upsert-on-idempotency-key.
+  chain.upsert = jest.fn((row: Record<string, unknown>) => {
+    if (terminal === "deliveries") deliveryInserts.push(row);
+    return Promise.resolve({ error: null });
+  });
   chain.then = (
     onFulfilled: (v: unknown) => unknown,
     onRejected: (e: unknown) => unknown,

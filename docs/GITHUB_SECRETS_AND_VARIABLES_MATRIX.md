@@ -3,21 +3,17 @@
 ## Recommended GitHub Environments
 
 - `dev` — Dev deploys, Terraform dev apply, dev migrations (no protection rules)
-- `prod` — Prod Supabase migrations (`supabase-migrations.yml`); used by
-  `deploy-do`'s read-only `resolve-ip` job and `terraform-do`'s
-  `terraform-plan` job. **Required reviewers (1+) must also be configured
-  here** (CI-004): `supabase-migrations.yml` runs `supabase db push` against
-  production on push to `main`, which is a production mutation — branch
-  protection alone is not a second human gate. Once reviewers are set, the
-  `prod` environment prompts before prod migrations run. Alternatively,
-  migrate the migration job to `prod-approval` after confirming its
-  environment-scoped `SUPABASE_ACCESS_TOKEN` / `SUPABASE_PROJECT_REF` are
-  available there.
-- `prod-approval` — Attached by the production-mutating jobs: the `deploy-do`
-  `deploy` job (prod) and the `terraform-do` `terraform-apply-prod` job.
-  **Required reviewers (1+) must be configured in GitHub** (Settings →
-  Environments → `prod-approval`); none are configured yet, so the approval
-  gate is not yet in force.
+- `prod` — Read-only prod jobs only: `deploy-do`'s `resolve-ip` job and
+  `terraform-do`'s `terraform-plan` job. No required reviewers are needed here
+  because nothing under `prod` mutates.
+- `prod-approval` — **The single approval gate for every production mutation**
+  (BP-P3-003): the `deploy-do` `deploy` job (prod), the `terraform-do`
+  `terraform-apply-prod` job, and `supabase-migrations.yml` on `main`
+  (`supabase db push` against production). **Required reviewers (1+) must be
+  configured in GitHub** (Settings → Environments → `prod-approval`); none are
+  configured yet, so the approval gate is not yet in force. The migration
+  secrets/vars (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`) must be
+  available to `prod-approval` (scoped to it or repo-wide).
 
 Use environment-scoped values wherever possible. Rotation and emergency
 procedures — including the environment each secret must be set on — are in
@@ -152,6 +148,11 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 | `CHROMATIC_PROJECT_TOKEN` | yes | yes  | Chromatic visual-regression upload (`chromatic.yml`; the job fails on a broken Storybook build or a visual change once a baseline exists) |
 | `E2E_JWT_SECRET`          | opt | opt  | Optional E2E JWT secret; `e2e.yml` falls back to a built-in test value        |
 | `BRANCH_PROTECTION_READ_TOKEN` | yes | yes | Repo-wide fine-grained PAT with `Administration: read` (+ `Contents`/`Pull requests`/`Checks: read`) for `branch-protection-audit.yml` (BP-P2-002/003); the default `GITHUB_TOKEN` cannot read classic branch protection |
+| `LOAD_TEST_AUTH_TOKEN`    | opt | opt  | JWT for the authenticated k6 scenarios (`tickets`/`sse` in `load-test.yml`); required when dispatching those scenarios |
+| `LOAD_TEST_TEST_EMAIL`    | opt | opt  | Test-account email for the `auth` k6 scenario (`load-test.yml`)               |
+| `LOAD_TEST_TEST_PASSWORD` | opt | opt  | Test-account password for the `auth` k6 scenario (`load-test.yml`)            |
+| `CODEOWNERS_READ_TOKEN`   | opt | opt  | Optional fine-grained PAT with **Organization → Members: read**; lets `scripts/ci/check-codeowners.sh` resolve every `@org/team` handle in `.github/CODEOWNERS` via the API. Without it the guard runs the documented syntax-only fallback (BP-P3-005) |
+| `SMOKE_EMAIL` / `SMOKE_PASSWORD` | opt | opt | Dedicated read-only, non-MFA smoke account for `smoke-check.yml` (TEST-P3-002); until provisioned the authenticated read is reported skipped. Set on `dev` (the smoke job's environment) or repo-wide |
 
 > `SCHEDULE_DISPATCH_TOKEN` was retired with `backup-dispatch.yml`
 > (CI-P2-010): the backup workflows are scheduled on the default branch, so
@@ -172,21 +173,25 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 | `S3_OFFSITE_PREFIX`              | opt | opt  | Prefix on the offsite bucket (defaults to `S3_PREFIX`)        |
 | `PROD_BACKUP_ENABLED`            | —   | opt  | Set to `true` to point the scheduled `db-backup` / `db-restore-test` runs at production (attaches `prod-backup`; DATA-P2-010) |
 | `STORAGE_BUCKETS`                | yes | —    | Storage buckets to back up (default `documents avatars logos`) |
+| `LOAD_TEST_API_URL`              | opt | opt  | Override the load-test API base URL for all runs (defaults: dev `https://api.mainecybertech.us`, prod `https://api.mainecybertech.com`) |
+| `UPTIME_PROBE_TARGETS`           | opt | opt  | JSON target list overriding `scripts/uptime/probe-targets.json` for the external uptime probe |
+| `UPTIME_PROBE_ENABLED`           | opt | opt  | Set to `false` to pause the scheduled external uptime probe (manual dispatch still runs) |
+| `SMOKE_PROD_ENABLED`             | —   | opt  | Set to `true` to include prod in the scheduled `smoke-check.yml` run (once the prod environment exists); dispatch can always choose the target (TEST-P3-002) |
+| `SMOKE_DEV_API_BASE` / `SMOKE_DEV_WEB_BASE` / `SMOKE_PROD_API_BASE` / `SMOKE_PROD_WEB_BASE` | opt | opt | Optional base-URL overrides for the smoke check |
 
 ## GitHub Environment Configuration Steps
 
 1. **Create environments** in GitHub Settings → Environments:
    - `dev` — no protection rules
-   - `prod` — **add Required reviewers (1+)** because `supabase-migrations.yml`
-     runs production DB migrations under this environment on push to `main`
-     (CI-004); read-only plan/resolve jobs share it. This **must be configured
-     in GitHub and cannot be set from the repo**.
-   - `prod-approval` — **add Required reviewers (1+)** to actually gate prod
-     deploys and prod Terraform apply. This is the single gate for both app and
-     infra production changes; it **must be configured in GitHub and cannot be
-     set from the repo**. None are configured yet, so prod deploys currently
-     start without pausing. The production deploy secrets/variables below must
-     be available to `prod-approval` (scoped to it or repo-wide).
+   - `prod` — no protection rules; read-only `resolve-ip` / `terraform-plan`
+     jobs only. Nothing under `prod` mutates, so no required reviewers.
+   - `prod-approval` — **add Required reviewers (1+)** to gate every prod
+     mutation: app deploy, prod Terraform apply, and prod DB migrations
+     (`supabase-migrations.yml` on `main`, BP-P3-003). This is the single gate
+     for all production changes; it **must be configured in GitHub and cannot
+     be set from the repo**. None are configured yet, so prod jobs currently
+     start without pausing. The production deploy and migration secrets/vars
+     below must be available to `prod-approval` (scoped to it or repo-wide).
    - `prod-backup` — used by the scheduled prod `db-backup` /
      `db-restore-test` runs when `PROD_BACKUP_ENABLED=true` (DATA-P2-010).
      Add the prod backup secrets below and **no** required reviewers: an
@@ -209,7 +214,7 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
    - `CI_SSH_PRIVATE_KEY` — private key (e.g. `cat ~/.ssh/id_rsa`) for droplet SSH access
    - `CF_ORIGIN_CERT` / `CF_ORIGIN_KEY` — from Cloudflare Origin CA
    - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — from Supabase dashboard
-   - `SUPABASE_ACCESS_TOKEN` — from the Supabase dashboard (CLI migrations)
+   - `SUPABASE_ACCESS_TOKEN` — from the Supabase dashboard (CLI migrations); the prod copy must be available to `prod-approval`, where the `main` migration job runs (BP-P3-003)
    - `JWT_SECRET` — generate a secure random string
    - `REDIS_PASSWORD`, `FIELD_ENCRYPTION_KEY`, `TURNSTILE_SECRET_KEY`, `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` — deployment/runtime config forwarded by `deploy-do.yml`
    - `METRICS_TOKEN` — bearer token shared by the API `/metrics` gate and the Prometheus scrape; required wherever the compose stack runs (dev and `prod-approval`)
@@ -217,8 +222,11 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
    - `ALERTMANAGER_CRITICAL_WEBHOOK_URL` / `ALERTMANAGER_DEFAULT_WEBHOOK_URL` / `ALERTMANAGER_WEBHOOK_USER` / `ALERTMANAGER_WEBHOOK_PASS` — Alertmanager → ntfy `portal-alerts` delivery (see `docs/MONITORING_AND_ALERTING.md` §9)
    - `NTFY_ALERTS_URL` / `NTFY_ALERTS_USER` / `NTFY_ALERTS_PASS` — ntfy notifications for the backup / storage-backup / restore-test / staleness-check workflows (Slack remains a fallback)
    - `BRANCH_PROTECTION_READ_TOKEN` — repo-wide fine-grained PAT with **Administration: read** on this repository (plus `Contents: read`, `Pull requests: read`, `Checks: read`); used by `branch-protection-audit.yml` to compare the committed JSON with the live branch protection and to audit bypasses. The default `GITHUB_TOKEN` cannot read classic branch protection, so the drift/bypass jobs fail closed until this exists (BP-P2-002/003; see `docs/RUNBOOK_EMERGENCY_MERGE.md`)
+   - `CODEOWNERS_READ_TOKEN` — optional fine-grained PAT with **Organization → Members: read**; enables the CODEOWNERS team-handle resolution in the shared unit-tests guard (BP-P3-005). Without it the guard validates syntax only
+   - `SMOKE_EMAIL` / `SMOKE_PASSWORD` — optional read-only, non-MFA smoke account for `smoke-check.yml` (TEST-P3-002); set on `dev` or repo-wide
    - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — from Stripe dashboard
    - `CHROMATIC_PROJECT_TOKEN` — from the Chromatic project (visual regression)
+   - `LOAD_TEST_AUTH_TOKEN` / `LOAD_TEST_TEST_EMAIL` / `LOAD_TEST_TEST_PASSWORD` — optional; required only to dispatch the authenticated k6 scenarios in `load-test.yml`
    - Integration secrets as needed (Jira, JSM, M365, SMTP, Sentry, Teams webhooks)
 
 3. **Add variables** to the appropriate environment scopes (or repo-wide):
@@ -230,6 +238,9 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
      back to the repo-scoped `SENTRY_DSN` secret; if neither is visible to the
      `build-web` job the web build has no DSN and browser errors go unreported.
    - `DROPLET_IP` — optional droplet IPv4 fallback (dev has it set; add to `prod` when known)
+   - `LOAD_TEST_API_URL` — optional override of the k6 load-test base URL
+   - `UPTIME_PROBE_TARGETS` / `UPTIME_PROBE_ENABLED` — optional external-uptime-probe target override / schedule pause switch
+   - `SMOKE_PROD_ENABLED` / `SMOKE_DEV_API_BASE` / `SMOKE_DEV_WEB_BASE` / `SMOKE_PROD_API_BASE` / `SMOKE_PROD_WEB_BASE` — smoke-check target enablement and base-URL overrides (TEST-P3-002)
    - `S3_BUCKET`, `S3_PREFIX`, `STORAGE_BUCKETS` — in the **`dev`** environment,
      where the backup/restore workflows read them (see the backup location
      contract above)

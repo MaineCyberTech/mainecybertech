@@ -5,6 +5,7 @@ import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 import { useFocusTrap } from "@/lib/use-focus-trap";
 import { formatDateTime, formatRelativeTime } from "@/lib/format";
+import { Chip } from "@mct/ui";
 
 const PAGE_SIZE = 25;
 
@@ -256,21 +257,6 @@ function TicketCard({
         />
       ) : null}
     </div>
-  );
-}
-
-function Chip({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
-      {children}
-      <button
-        type="button"
-        onClick={onRemove}
-        className="ml-0.5 text-emerald-400 hover:text-emerald-200"
-      >
-        &times;
-      </button>
-    </span>
   );
 }
 
@@ -581,9 +567,7 @@ export default function AdminTicketCenterClient({
       {activeFilters.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2">
           {activeFilters.map((f, i) => (
-            <Chip key={i} onRemove={f.onRemove}>
-              {f.label}
-            </Chip>
+            <Chip key={i} label={f.label} onRemove={f.onRemove} />
           ))}
           <button
             type="button"
@@ -753,7 +737,7 @@ export default function AdminTicketCenterClient({
               <button
                 type="button"
                 onClick={() => setOpenModal(true)}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-emerald-500"
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-emerald-500"
               >
                 Create Ticket
               </button>

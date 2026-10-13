@@ -25,8 +25,11 @@ create table if not exists m365_hardening (
 );
 create index if not exists idx_m365_hardening_org on m365_hardening(organization_id);
 alter table m365_hardening enable row level security;
+drop policy if exists "m365_select_org" on m365_hardening;
 create policy "m365_select_org" on m365_hardening for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "m365_insert_auth" on m365_hardening;
 create policy "m365_insert_auth" on m365_hardening for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "m365_update_org" on m365_hardening;
 create policy "m365_update_org" on m365_hardening for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists incident_responses (
@@ -53,8 +56,11 @@ create table if not exists incident_responses (
 create index if not exists idx_incident_responses_org on incident_responses(organization_id);
 create index if not exists idx_incident_responses_status on incident_responses(status);
 alter table incident_responses enable row level security;
+drop policy if exists "incident_select_org" on incident_responses;
 create policy "incident_select_org" on incident_responses for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "incident_insert_auth" on incident_responses;
 create policy "incident_insert_auth" on incident_responses for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "incident_update_org" on incident_responses;
 create policy "incident_update_org" on incident_responses for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists identity_verifications (
@@ -75,8 +81,11 @@ create table if not exists identity_verifications (
 );
 create index if not exists idx_identity_verifications_org on identity_verifications(organization_id);
 alter table identity_verifications enable row level security;
+drop policy if exists "idverify_select_org" on identity_verifications;
 create policy "idverify_select_org" on identity_verifications for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "idverify_insert_auth" on identity_verifications;
 create policy "idverify_insert_auth" on identity_verifications for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "idverify_update_org" on identity_verifications;
 create policy "idverify_update_org" on identity_verifications for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists endpoint_security (
@@ -99,8 +108,11 @@ create table if not exists endpoint_security (
 );
 create index if not exists idx_endpoint_security_org on endpoint_security(organization_id);
 alter table endpoint_security enable row level security;
+drop policy if exists "ep_select_org" on endpoint_security;
 create policy "ep_select_org" on endpoint_security for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "ep_insert_auth" on endpoint_security;
 create policy "ep_insert_auth" on endpoint_security for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "ep_update_org" on endpoint_security;
 create policy "ep_update_org" on endpoint_security for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 commit;

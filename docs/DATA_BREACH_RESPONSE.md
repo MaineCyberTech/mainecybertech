@@ -117,8 +117,10 @@ attacker is involved. Grounded in this stack:
 ### 2.3 Availability
 
 - **Ransomware / deletion / accidental drop** affecting any table above.
-- **Backup loss** (the S3 objects are the only durable copy — see `IR-P0-003`
-  and the `DR-P0-001`/`DR-P0-002` findings on scheduled backups).
+- **Backup loss** (the S3 objects are the only durable copy — see the
+  `DR-P0-001`/`DR-P0-002` findings on scheduled backups and `IR-P1-004` on
+  restore verification; `IR-P0-003` covers the alerting-path residual, not
+  backup coverage).
 - **Extended loss of access** to personal data such that subjects' rights (e.g.
   access/erasure requests) cannot be met.
 - **Corrupted restore** that yields a backup missing recent rows (integrity +
@@ -131,7 +133,7 @@ plus human reports. The real sources for a *breach* are:
 
 | Source | What it reveals | Where |
 |---|---|---|
-| `audit_logs` table | Who did what to which entity, from which IP; rows written by `apps/api/src/services/audit.ts` (PII fields redacted). An "audit trail gap" is logged on insert failure — treat as a coverage loss. | `audit_logs`; service `apps/api/src/services/audit.ts` |
+| `audit_logs` table | Who did what to which entity: `actor_user_id` plus key-level-redacted `metadata`, written by `apps/api/src/services/audit.ts`. The `ip_address`/`user_agent` columns exist but the runtime writer does **not** populate them (PRIV-P3-002) — do not use them for source attribution; platform-admin IP/UA lives in `impersonation_log`. An "audit trail gap" is logged on insert failure — treat as a coverage loss. | `audit_logs`; service `apps/api/src/services/audit.ts` |
 | `impersonation_log` table | Platform-admin cross-tenant access (`actor_user_id`, `organization_id`, `reason`, `ip_address`). Unexpected volume or unexpected orgs = investigate as possible breach. | `impersonation_log` |
 | Sentry | Exceptions, e.g. DB errors on RLS-enabled modules, unexpected 403/empty-result spikes. | API/worker/web Sentry init |
 | Prometheus rules | `MCTServiceDown`, `MCTHighRequestErrorRate`, `MCTImpersonationBurst`, `MCTTenantScopeRegression`, and `Watchdog` (delivered via Alertmanager → ntfy). | `infra/digitalocean/prometheus.rules.yml` |
@@ -149,6 +151,9 @@ droplet is not yet detected by an off-box system (prod deploys fail closed until
 it is provisioned). This is the residual of audit `IR-P0-003`; until the
 external heartbeat is provisioned and drilled, a breach could be detected late
 or by the tenant first. Track the residual as a P1 in the risk register.
+Status of the audit row: **partially fixed — residual = external watchdog URL
+unset**; Alertmanager itself *is* deployed and delivering, so the original
+"Alertmanager not deployed" wording is superseded and must not be repeated.
 
 Additional low-visibility signals called out by the audit — audit-write failures,
 webhook dead-letter growth, worker health, and RLS regressions — currently have
@@ -250,15 +255,17 @@ data, how many data subjects, and what harm is foreseeable.*
 | Client / prospect contacts | `store_leads`, `vendor_contacts` (`contact_name`, `email`, `phone`), `identity_verifications` (`requestor_name`, `requestor_email`) |
 | Employee records (tenant's clients) | `phishing_targets` (`email`, `name`), `offboarding_checklists` (`employee_name`, `employee_email`), `onboarding_clients`, `break_glass_accounts` (custodian) |
 | Authentication / security | `auth.users` (Supabase-managed), `mfa_recovery_codes` (hashes only), `api_keys`, `break_glass_accounts` |
-| Activity / audit (contains actor identifiers and IP) | `audit_logs` (`ip_address`, `user_agent`, `actor_user_id`), `impersonation_log` (`ip_address`, `user_agent`, `reason`) |
+| Activity / audit (actor identifiers; IP/UA only in `impersonation_log`) | `audit_logs` (`actor_user_id`, redacted `metadata`; the `ip_address`/`user_agent` columns exist but are not written by the runtime — PRIV-P3-002), `impersonation_log` (`ip_address`, `user_agent`, `reason`) |
 | Content that may embed PII | `documents`, `document_versions`, `document_shares`, `chat_messages`, `tickets`, `ticket_comments`, `dynamic_form_submissions`, `satisfaction_pulses`, `training_enrollments` |
 
 > Note: `profiles` keeps plaintext `full_name`/`email`/`phone`/`title` as the
 > response source of truth and additionally stores an AES-256-GCM `encrypted_pii`
 > mirror (migration `5302135`). A database read therefore exposes plaintext PII.
 > `audit_logs.metadata` is PII-redacted at write time by
-> `apps/api/src/services/audit.ts`, but `ip_address`/`user_agent`/`actor_user_id`
-> are still personal data.
+> `apps/api/src/services/audit.ts`; `actor_user_id` is personal data.
+> `ip_address`/`user_agent` columns exist but the runtime writer does not
+> populate them (only seeded demo rows carry values) — treat the audit trail as
+> who/what/when and `impersonation_log` as the IP/UA source (PRIV-P3-002).
 
 ### 6.2 Counting data subjects
 

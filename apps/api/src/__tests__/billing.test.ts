@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import billingRouter from "../routes/billing";
-import { createTestApp, createMockBuilder, tableAwareFrom, type MockResult } from "./helpers";
+import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -160,6 +160,65 @@ describe("billing routes", () => {
       .get("/api/v1/billing/payments")
       .set("Authorization", "Bearer token");
     expect(res.status).toBe(200);
+  });
+
+  it("lists payments without a mirrored invoice (left join, BILL-P3-004)", async () => {
+    const builders = mockRead({
+      routeResults: {
+        payments: {
+          data: [{ id: "pay-unlinked", invoice_id: null, invoices: null }],
+          error: null,
+          count: 1,
+        },
+      },
+    });
+    const res = await request(app)
+      .get("/api/v1/billing/payments")
+      .set("Authorization", "Bearer token");
+    expect(res.status).toBe(200);
+    expect(res.body.data.items).toHaveLength(1);
+    expect(res.body.data.items[0].invoices).toBeNull();
+    const selectArg = builders.payments.select.mock.calls[0][0];
+    expect(selectArg).toContain("invoices(");
+    expect(selectArg).not.toContain("!inner");
+  });
+
+  it("counts trialing plans in the summary active count (BILL-P3-006)", async () => {
+    const builders = mockRead({
+      routeResults: {
+        subscriptions: { data: null, error: null, count: 1 },
+        invoices: { data: [], error: null, count: 0 },
+      },
+    });
+    const res = await request(app)
+      .get("/api/v1/billing/summary")
+      .set("Authorization", "Bearer token");
+    expect(res.status).toBe(200);
+    expect(res.body.data.activeSubscriptions).toBe(1);
+    expect(builders.subscriptions.in).toHaveBeenCalledWith("status", ["active", "trialing"]);
+  });
+
+  it("redacts the payment-method id and decrypts the billing email (BILL-P3-002)", async () => {
+    const { encryptField } = await import("../lib/field-encryption");
+    mockRead({
+      routeResults: {
+        billing_customers: {
+          data: {
+            id: "cust-1",
+            billing_email: encryptField("billing@acme.test"),
+            default_payment_method: "pm_1234567890abcdef",
+          },
+          error: null,
+        },
+      },
+    });
+    const res = await request(app)
+      .get("/api/v1/billing/billing-customer")
+      .set("Authorization", "Bearer token");
+    expect(res.status).toBe(200);
+    expect(res.body.data.billing_email).toBe("billing@acme.test");
+    expect(res.body.data.default_payment_method).not.toBe("pm_1234567890abcdef");
+    expect(res.body.data.default_payment_method).toBe("pm_••••cdef");
   });
 
   it("GET /billing-customer returns null when no org_id and no customer", async () => {
@@ -864,6 +923,118 @@ describe("billing routes", () => {
       const upsertArgs = (builders.invoices ?? [])[0].upsert.mock.calls[0][0];
       expect(upsertArgs.status).toBe("void");
       expect(upsertArgs.voided_at).toBe(new Date(1700000900 * 1000).toISOString());
+    });
+
+    it("records paid_at from status_transitions when Stripe provides it (BILL-P3-003)", async () => {
+      stubOrgId = ORG_A;
+      const builders = mockScopeAndCustomer();
+      mockStripePages({
+        invoices: [
+          {
+            data: [
+              {
+                id: "in_paid_ts",
+                number: "INV-P1",
+                status: "paid",
+                subtotal: 100,
+                tax: 0,
+                total: 100,
+                currency: "usd",
+                hosted_invoice_url: null,
+                invoice_pdf: null,
+                due_date: null,
+                created: 1699999000,
+                status_transitions: { paid_at: 1700000900 },
+              },
+            ],
+            has_more: false,
+          },
+        ],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({});
+
+      expect(res.status).toBe(200);
+      const upsertArgs = (builders.invoices ?? [])[0].upsert.mock.calls[0][0];
+      expect(upsertArgs.paid_at).toBe(new Date(1700000900 * 1000).toISOString());
+    });
+
+    it("falls back to the invoice created time when paid_at is missing (BILL-P3-003)", async () => {
+      stubOrgId = ORG_A;
+      const builders = mockScopeAndCustomer();
+      mockStripePages({
+        invoices: [
+          {
+            data: [
+              {
+                id: "in_paid_no_ts",
+                number: "INV-P2",
+                status: "paid",
+                subtotal: 100,
+                tax: 0,
+                total: 100,
+                currency: "usd",
+                hosted_invoice_url: null,
+                invoice_pdf: null,
+                due_date: null,
+                created: 1700000100,
+                status_transitions: {},
+              },
+            ],
+            has_more: false,
+          },
+        ],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({});
+
+      expect(res.status).toBe(200);
+      const upsertArgs = (builders.invoices ?? [])[0].upsert.mock.calls[0][0];
+      expect(upsertArgs.paid_at).toBe(new Date(1700000100 * 1000).toISOString());
+    });
+
+    it("never writes an epoch paid_at when Stripe omits both timestamps (BILL-P3-003)", async () => {
+      stubOrgId = ORG_A;
+      const builders = mockScopeAndCustomer();
+      mockStripePages({
+        invoices: [
+          {
+            data: [
+              {
+                id: "in_paid_bare",
+                number: "INV-P3",
+                status: "paid",
+                subtotal: 100,
+                tax: 0,
+                total: 100,
+                currency: "usd",
+                hosted_invoice_url: null,
+                invoice_pdf: null,
+                due_date: null,
+              },
+            ],
+            has_more: false,
+          },
+        ],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({});
+
+      expect(res.status).toBe(200);
+      const upsertArgs = (builders.invoices ?? [])[0].upsert.mock.calls[0][0];
+      expect(upsertArgs.paid_at).not.toContain("1970");
+      const parsed = Date.parse(upsertArgs.paid_at);
+      expect(Number.isNaN(parsed)).toBe(false);
+      expect(parsed).toBeGreaterThan(Date.now() - 60_000);
     });
 
     it("backfills refunded payments from Stripe charges, repairing the PI upsert", async () => {

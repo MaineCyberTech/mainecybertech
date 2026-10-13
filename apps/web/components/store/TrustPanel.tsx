@@ -48,7 +48,7 @@ export default function TrustPanel({ included, excluded, seed = "store" }: Trust
   return (
     <section
       aria-labelledby="trust-panel-heading"
-      className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm sm:p-8"
+      className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-6 backdrop-blur-sm sm:p-8"
     >
       <h2
         id="trust-panel-heading"

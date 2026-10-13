@@ -14,6 +14,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
+import { EXPORT_ROW_LIMIT } from "../lib/pagination";
 import { applyOrgScope, applyRequestedOrg, resolveAdminTenantScope } from "../lib/admin-scope";
 import {
   createApprovalSchema,
@@ -26,6 +27,7 @@ import {
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -70,7 +72,9 @@ router.get("/export", async (req, res, next) => {
     const typeFilter = req.query.request_type as string | undefined;
     if (typeFilter) query = query.eq("request_type", typeFilter);
 
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(EXPORT_ROW_LIMIT);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -120,7 +124,7 @@ router.get("/", async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("approval_requests").select("*", { count: "exact" });
+    let query = supabase.from("approval_requests").select("*", { count: listCountMode(req.query) });
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -228,6 +232,7 @@ router.post("/", requirePermission("approvals", "create"), async (req, res, next
     });
 
     await addTimelineEvent(
+      req,
       parsed.organizationId,
       "approvals",
       "approval_request",
@@ -254,7 +259,7 @@ router.patch(
 
       const current = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "approval_requests",
         String(req.params.id) as string,
         "id, version, organization_id",
@@ -306,7 +311,7 @@ router.delete("/:id", requirePermission("approvals", "delete"), async (req, res,
     const supabase = getScopedClient(req, "approvals", "write");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",
@@ -337,7 +342,7 @@ router.post("/:id/approve", requirePermission("approvals", "edit"), async (req, 
     const supabase = getScopedClient(req, "approvals", "write");
     const approval = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",
@@ -351,6 +356,7 @@ router.post("/:id/approve", requirePermission("approvals", "edit"), async (req, 
     );
 
     await addTimelineEvent(
+      req,
       approval.organization_id as string,
       "approvals",
       "approval_request",
@@ -372,7 +378,7 @@ router.post("/:id/reject", requirePermission("approvals", "edit"), async (req, r
     const supabase = getScopedClient(req, "approvals", "write");
     const approval = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",
@@ -386,6 +392,7 @@ router.post("/:id/reject", requirePermission("approvals", "edit"), async (req, r
     );
 
     await addTimelineEvent(
+      req,
       approval.organization_id as string,
       "approvals",
       "approval_request",
@@ -407,7 +414,7 @@ router.post("/:id/cancel", requirePermission("approvals", "edit"), async (req, r
     const supabase = getScopedClient(req, "approvals", "write");
     const approval = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",
@@ -421,6 +428,7 @@ router.post("/:id/cancel", requirePermission("approvals", "edit"), async (req, r
     );
 
     await addTimelineEvent(
+      req,
       approval.organization_id as string,
       "approvals",
       "approval_request",
@@ -441,7 +449,7 @@ router.get("/:id/comments", async (req, res, next) => {
     const supabase = getScopedClient(req, "approvals", "read");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",
@@ -469,7 +477,7 @@ router.post("/:id/comments", requirePermission("approvals", "edit"), async (req,
 
     const approval = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",
@@ -510,7 +518,7 @@ router.get("/:id/timeline", async (req, res, next) => {
     const supabase = getScopedClient(req, "approvals", "read");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "approval_requests",
       String(req.params.id) as string,
       "id, organization_id",

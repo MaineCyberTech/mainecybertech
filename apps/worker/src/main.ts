@@ -6,6 +6,7 @@ import { env } from "./env";
 import { runWorkerTasks } from "./consumer-sqs";
 import { startHealthServer } from "./health-server";
 import { executeTask } from "./task-registry";
+import { scrubSentryEvent } from "./lib/sentry-scrub";
 
 // ============= Sentry =============
 if (env.SENTRY_DSN) {
@@ -14,6 +15,10 @@ if (env.SENTRY_DSN) {
     environment: env.NODE_ENV,
     release: env.SENTRY_RELEASE ?? process.env.GIT_SHA,
     tracesSampleRate: env.SENTRY_TRACES_SAMPLE_RATE ?? (env.NODE_ENV === "production" ? 0.2 : 0.0),
+    // AN-P3-004: never attach default PII and scrub every event before
+    // transport — see lib/sentry-scrub.ts.
+    sendDefaultPii: false,
+    beforeSend: (event) => scrubSentryEvent(event),
   });
   logger.info("Sentry initialized");
 }
@@ -63,20 +68,10 @@ async function runScheduledTask(
 
 // ============= Main =============
 if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test") {
-  startHealthServer(env.HEALTH_PORT);
+  startHealthServer(env.HEALTH_PORT, { metricsToken: env.METRICS_TOKEN });
 
   // stripe-reconcile is scheduled via scheduledScans (env-gated on
   // STRIPE_SECRET_KEY) so it does not log failures when Stripe is unset.
-
-  // Schedule public-interaction-retention (90-day PII purge) to run daily
-  const PUBLIC_INTERACTION_RETENTION_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const publicInteractionRetentionInterval = setInterval(() => {
-    logger.info("Running scheduled public-interaction-retention");
-    runScheduledTask("public-interaction-retention").catch((error) => {
-      logger.error({ error }, "Scheduled public-interaction-retention failed");
-    });
-  }, PUBLIC_INTERACTION_RETENTION_INTERVAL_MS);
-  publicInteractionRetentionInterval.unref();
 
   // Schedule webhook-retry (with DLQ) to run every 5 minutes
   const WEBHOOK_RETRY_INTERVAL_MS = 5 * 60 * 1000;

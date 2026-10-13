@@ -77,7 +77,6 @@ describe("Final API", () => {
     "saas-audit",
     "procurement",
     "dns-changes",
-    "satisfaction",
     "time-entries",
     "budgets",
     "runbooks",
@@ -93,6 +92,21 @@ describe("Final API", () => {
       expect(r.status).toBe(200);
     });
   }
+
+  // FEAT-P2-005: satisfaction_pulses is canonically served by
+  // /api/v1/satisfaction-pulse; the old /final/satisfaction surface is
+  // hard-deprecated (410 + successor link) rather than a second validator.
+  it("hard-deprecates /final/satisfaction with a successor link", async () => {
+    ma();
+    const r = await request(app)
+      .get("/api/v1/final/satisfaction")
+      .set("Authorization", auth);
+    expect(r.status).toBe(410);
+    expect(r.headers.link).toContain(
+      '</api/v1/satisfaction-pulse>; rel="successor-version"',
+    );
+    expect(r.headers.deprecation).toBe("true");
+  });
 
   it("creates a sharepoint plan", async () => {
     const s = ma();

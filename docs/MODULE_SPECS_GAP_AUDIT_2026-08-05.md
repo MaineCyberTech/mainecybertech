@@ -1,5 +1,10 @@
 # MCT Portal — 60-Module Spec Gap-Analysis Audit
 
+> **HISTORICAL (superseded).** Snapshot of the codebase as of 2026-08-05. Many of the
+> gaps and "Next Steps" below were closed by later remediation runs (the SDK-wrapper,
+> org-param, `crudRoute` GET-by-id, worker-column and procurement-compare items, among
+> others). Kept for the audit trail; see `AGENTS.md` / `CHANGELOG.md` for current state.
+
 **Date:** 2026-08-05
 **Method:** Cross-referenced all 60 module specs in `prompts/mct-portal-os-expanded-60-modules-deep-prompts-pack/docs/module-specs/` against the live codebase (API routes, services, SDK, web admin/portal pages, worker tasks, migrations, seeds, tests) using 6 parallel audit workers (10 modules each).
 **Status key:** **Fully Usable** = spec's core purpose + business logic is real in code. **Partially Implemented** = CRUD/UI exist but the distinguishing logic is missing or stubbed. **Missing** = absent/stub.

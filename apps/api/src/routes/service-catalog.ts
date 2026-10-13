@@ -9,6 +9,7 @@ import { requireEntitlement } from "../middleware/entitlement";
 import { createServiceSchema, updateServiceSchema } from "../validators/service-catalog";
 import { queryInt } from "../lib/query";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -23,7 +24,7 @@ router.get("/", async (req, res, next) => {
     const offset = (page - 1) * limit;
     const q = supabase
       .from("service_catalog")
-      .select("*", { count: "exact" })
+      .select("*", { count: listCountMode(req.query) })
       .eq("organization_id", req.query.organization_id as string);
     const { data, error, count } = await q
       .order("category", { ascending: true })

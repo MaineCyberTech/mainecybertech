@@ -7,14 +7,20 @@ function qp(p?: Record<string, string | number | undefined>) {
 }
 export class EduAutomationApi {
   constructor(private c: ApiClient) {}
+  /**
+   * FEAT-P2-005: `sop_library` is canonically owned by the governance module.
+   * This client is kept for backward compatibility but now calls the canonical
+   * `/api/v1/governance/sop-library` surface (the old
+   * `/api/v1/edu-automation/sop` path returns 410).
+   */
   sop = {
     list: (p?: Record<string, string | number | undefined>) =>
-      this.c.get<PaginatedResult<unknown>>("/api/v1/edu-automation/sop", qp(p)),
-    get: (id: string) => this.c.get<unknown>(`/api/v1/edu-automation/sop/${id}`),
-    create: (d: Record<string, unknown>) => this.c.post("/api/v1/edu-automation/sop", d),
+      this.c.get<PaginatedResult<unknown>>("/api/v1/governance/sop-library", qp(p)),
+    get: (id: string) => this.c.get<unknown>(`/api/v1/governance/sop-library/${id}`),
+    create: (d: Record<string, unknown>) => this.c.post("/api/v1/governance/sop-library", d),
     update: (id: string, d: Record<string, unknown>) =>
-      this.c.patch(`/api/v1/edu-automation/sop/${id}`, d),
-    remove: (id: string) => this.c.delete(`/api/v1/edu-automation/sop/${id}`),
+      this.c.patch(`/api/v1/governance/sop-library/${id}`, d),
+    remove: (id: string) => this.c.delete(`/api/v1/governance/sop-library/${id}`),
   };
   compliance = {
     list: (p?: Record<string, string | number | undefined>) =>
@@ -27,14 +33,20 @@ export class EduAutomationApi {
     score: (d: Record<string, unknown>) =>
       this.c.post("/api/v1/edu-automation/compliance/score", d),
   };
+  /**
+   * FEAT-P2-005: `insurance_evidence` is canonically owned by the
+   * insurance-binder module; this client is kept for backward compatibility
+   * and now calls the canonical `/api/v1/insurance-binder` surface (the old
+   * `/api/v1/edu-automation/insurance` path returns 410).
+   */
   insurance = {
     list: (p?: Record<string, string | number | undefined>) =>
-      this.c.get<PaginatedResult<unknown>>("/api/v1/edu-automation/insurance", qp(p)),
-    get: (id: string) => this.c.get<unknown>(`/api/v1/edu-automation/insurance/${id}`),
-    create: (d: Record<string, unknown>) => this.c.post("/api/v1/edu-automation/insurance", d),
+      this.c.get<PaginatedResult<unknown>>("/api/v1/insurance-binder", qp(p)),
+    get: (id: string) => this.c.get<unknown>(`/api/v1/insurance-binder/${id}`),
+    create: (d: Record<string, unknown>) => this.c.post("/api/v1/insurance-binder", d),
     update: (id: string, d: Record<string, unknown>) =>
-      this.c.patch(`/api/v1/edu-automation/insurance/${id}`, d),
-    remove: (id: string) => this.c.delete(`/api/v1/edu-automation/insurance/${id}`),
+      this.c.patch(`/api/v1/insurance-binder/${id}`, d),
+    remove: (id: string) => this.c.delete(`/api/v1/insurance-binder/${id}`),
   };
   aiPolicy = {
     list: (p?: Record<string, string | number | undefined>) =>

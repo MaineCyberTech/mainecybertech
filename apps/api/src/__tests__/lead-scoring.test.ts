@@ -1,4 +1,3 @@
-import { jest } from "@jest/globals";
 import { scoreLead, bandForScore } from "../lib/lead-scoring";
 
 describe("scoreLead", () => {

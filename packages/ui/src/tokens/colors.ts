@@ -2,6 +2,8 @@ export const colors = {
   cyber: {
     base: "#0A1118",
     card: "rgba(18, 30, 45, 0.75)",
+    cardSubtle: "rgba(18, 30, 45, 0.5)",
+    cardOverlay: "rgba(18, 30, 45, 0.7)",
     cardHover: "rgba(25, 40, 60, 0.95)",
     cardDeep: "#071018",
     cardAlt: "#0F1923",

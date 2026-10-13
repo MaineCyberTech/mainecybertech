@@ -63,6 +63,14 @@ describe("AdminStoreFAQsPage", () => {
     const btn = screen.getByRole("button", { name: /manage faqs/i });
     expect(btn).toBeDisabled();
   });
+
+  it("marks the page as a bundled-JSON preview (FEAT-P3-002)", async () => {
+    const Page = (await import("@/app/(admin)/admin/store/faqs/page")).default;
+    render(await Page());
+    const note = screen.getByRole("status");
+    expect(note).toHaveTextContent(/preview/i);
+    expect(note).toHaveTextContent(/read-only/i);
+  });
 });
 
 describe("AdminStoreCaseStudiesPage", () => {

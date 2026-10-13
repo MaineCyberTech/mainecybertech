@@ -12,7 +12,11 @@ resource "digitalocean_firewall" "web" {
   # SSH is restricted to admin_ip_ranges, which is REQUIRED (no default) so it
   # can never be silently fail-open. Mitigations in depth: (1) droplet SSH is
   # key-only (ssh_keys = [var.ssh_fingerprint] in droplet.tf, no password auth),
-  # (2) UFW on the droplet mirrors this same allowlist via cloud-init.yml,
+  # (2) UFW on the droplet is seeded from the same allowlist by cloud-init.yml
+  # at first boot (INFRA-P3-008: create-time only — this cloud firewall is the
+  # authoritative allowlist and updates on apply, but narrowing admin_ip_ranges
+  # leaves the old host rules in place; refresh UFW with the procedure in
+  # infra/terraform/README.md > SSH allowlist changes),
   # (3) production terraform applies are gated by prod-approval +
   # validate/e2e/migrations gates in terraform-do.yml so a malicious PR cannot
   # silently change firewall rules, (4) terraform-do.yml fails the apply when the

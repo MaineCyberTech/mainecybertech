@@ -1,0 +1,158 @@
+name: Release
+
+# CI-P3-008: there was no release/tagging workflow — a release was only "the
+# GHCR images tagged with the deploying commit SHA", with no git tag and no
+# post-merge artifact. This workflow runs on every promotion push to `main` and
+# cuts an annotated tag + GitHub Release bound to VERSION + date + commit:
+#
+#   * tag scheme: v<VERSION>-<YYYYMMDD>-<short-sha> (see docs/RELEASING.md);
+#   * release body: commit list since the previous tag, the migration window
+#     from docs/UPGRADE.md, and the template/rollback pointers;
+#   * artifact: the lockfile CycloneDX SBOM (`scripts/generate-sbom.mjs`,
+#     dependency-free) attached to the release.
+#
+# Idempotent: if the tag already exists (a re-run of the same commit) the job
+# exits 0 without touching the release. A `workflow_dispatch` on a non-main ref
+# only builds the notes + SBOM and uploads them as artifacts — it never creates
+# a tag/release off main.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build the notes/SBOM but do not create the tag/release"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout (full history for the commit range)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
+        with:
+          node-version: 20
+
+      - name: Compute the release identity
+        id: identity
+        run: |
+          set -euo pipefail
+          version=$(cat VERSION)
+          date=$(date -u +%Y%m%d)
+          short=$(git rev-parse --short=7 HEAD)
+          sha=$(git rev-parse HEAD)
+          {
+            echo "version=$version"
+            echo "sha=$sha"
+            echo "tag=v${version}-${date}-${short}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check whether the tag already exists (idempotent re-runs)
+        id: tagcheck
+        run: |
+          set -euo pipefail
+          tag='${{ steps.identity.outputs.tag }}'
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag $tag already exists — nothing to release for this commit."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate the release notes body
+        env:
+          VERSION: ${{ steps.identity.outputs.version }}
+          SHA: ${{ steps.identity.outputs.sha }}
+          TAG: ${{ steps.identity.outputs.tag }}
+        run: |
+          set -euo pipefail
+          prev=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          {
+            echo "# Release ${TAG}"
+            echo
+            echo "**Product version:** \`${VERSION}\` · **Commit:** \`${SHA}\`"
+            echo
+            echo "**Images:** \`ghcr.io/mainecybertech/mainecybertech/mct-{api,worker,web}:${SHA}\`"
+            echo
+            echo "> Fill **Breaking Changes**, **Migrations** and **Operator Actions**"
+            echo "> from [templates/RELEASE_NOTES_TEMPLATE.md](https://github.com/${GITHUB_REPOSITORY}/blob/main/templates/RELEASE_NOTES_TEMPLATE.md)"
+            echo "> before announcing the release; the generated sections below are the raw inputs."
+            echo
+            echo "## Changes since ${prev:-the start of history}"
+            echo
+            # shellcheck disable=SC2016 # literal backticks for git's format string
+            fmt='- %s (`%h`)'
+            if [ -n "$prev" ]; then
+              git log --no-merges --pretty="$fmt" "${prev}..HEAD"
+            else
+              git log --no-merges --pretty="$fmt" HEAD | head -100
+            fi
+            echo
+            echo "## Migrations added in this release"
+            echo
+            if [ -n "$prev" ]; then range="${prev}..HEAD"; else range="HEAD"; fi
+            migs=$(git log --no-merges --diff-filter=A --name-only --pretty=format: "$range" -- supabase/migrations 2>/dev/null | sed '/^$/d' | sort -u | head -25)
+            if [ -n "$migs" ]; then
+              # shellcheck disable=SC2016 # literal backticks wrap each migration path
+              printf '%s\n' "$migs" | sed 's/^/- `/; s/$/`/'
+            else
+              echo "- none"
+            fi
+            echo
+            echo "## Upgrade manifest"
+            echo
+            sed -n '/^> Current window:/p' docs/UPGRADE.md
+            echo
+            echo "Rollback: no down-migrations; see [docs/ROLLBACK_PROCEDURES.md](https://github.com/${GITHUB_REPOSITORY}/blob/main/docs/ROLLBACK_PROCEDURES.md)."
+          } > release-notes.md
+          echo "--- release-notes.md ---"
+          cat release-notes.md
+
+      - name: Generate the release SBOM
+        run: node scripts/generate-sbom.mjs release-sbom.cdx.json
+
+      - name: Create the annotated tag and GitHub Release
+        if: >-
+          steps.tagcheck.outputs.exists == 'false'
+          && github.ref == 'refs/heads/main'
+          && (github.event_name == 'push' || inputs.dry_run != true)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.identity.outputs.tag }}
+          SHA: ${{ steps.identity.outputs.sha }}
+        run: |
+          set -euo pipefail
+          git tag -a "$TAG" -m "Release $TAG ($SHA)"
+          git push origin "refs/tags/$TAG"
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file release-notes.md
+          gh release upload "$TAG" release-sbom.cdx.json
+
+      - name: Upload the notes + SBOM (dispatch/dry-run evidence)
+        if: >-
+          inputs.dry_run == true
+          || github.ref != 'refs/heads/main'
+          || steps.tagcheck.outputs.exists == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-notes-and-sbom
+          path: |
+            release-notes.md
+            release-sbom.cdx.json
+          retention-days: 30

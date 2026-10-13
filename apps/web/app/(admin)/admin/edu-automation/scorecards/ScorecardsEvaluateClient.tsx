@@ -36,13 +36,14 @@ export default function ScorecardsEvaluateClient({ organizationId }: { organizat
           value={orgId}
           onChange={(e) => setOrgId(e.target.value)}
           placeholder="Org UUID (blank = all orgs)"
+          aria-label="Organization ID (optional)"
           className="w-72 rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50"
         />
         <button
           type="button"
           disabled={isPending}
           onClick={evaluate}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-[#0A1118] hover:bg-emerald-500 disabled:opacity-50"
+          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-cyber-base hover:bg-emerald-500 disabled:opacity-50"
         >
           {isPending ? "Evaluating…" : "Assign Badges & History"}
         </button>

@@ -10,8 +10,11 @@ create table if not exists isp_assessments (
 );
 create index if not exists idx_isp_assessments_org on isp_assessments(organization_id);
 alter table isp_assessments enable row level security;
+drop policy if exists "isp_select_org" on isp_assessments;
 create policy "isp_select_org" on isp_assessments for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "isp_insert_auth" on isp_assessments;
 create policy "isp_insert_auth" on isp_assessments for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "isp_update_org" on isp_assessments;
 create policy "isp_update_org" on isp_assessments for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists unifi_surveys (
@@ -24,8 +27,11 @@ create table if not exists unifi_surveys (
 );
 create index if not exists idx_unifi_surveys_org on unifi_surveys(organization_id);
 alter table unifi_surveys enable row level security;
+drop policy if exists "us_select_org" on unifi_surveys;
 create policy "us_select_org" on unifi_surveys for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "us_insert_auth" on unifi_surveys;
 create policy "us_insert_auth" on unifi_surveys for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "us_update_org" on unifi_surveys;
 create policy "us_update_org" on unifi_surveys for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists port_maps (
@@ -37,8 +43,11 @@ create table if not exists port_maps (
 );
 create index if not exists idx_port_maps_org on port_maps(organization_id);
 alter table port_maps enable row level security;
+drop policy if exists "pm_select_org" on port_maps;
 create policy "pm_select_org" on port_maps for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "pm_insert_auth" on port_maps;
 create policy "pm_insert_auth" on port_maps for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "pm_update_org" on port_maps;
 create policy "pm_update_org" on port_maps for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists camera_calculations (
@@ -50,8 +59,11 @@ create table if not exists camera_calculations (
 );
 create index if not exists idx_camera_calculations_org on camera_calculations(organization_id);
 alter table camera_calculations enable row level security;
+drop policy if exists "cc_select_org" on camera_calculations;
 create policy "cc_select_org" on camera_calculations for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "cc_insert_auth" on camera_calculations;
 create policy "cc_insert_auth" on camera_calculations for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "cc_update_org" on camera_calculations;
 create policy "cc_update_org" on camera_calculations for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists hardware_staging (
@@ -64,8 +76,11 @@ create table if not exists hardware_staging (
 );
 create index if not exists idx_hardware_staging_org on hardware_staging(organization_id);
 alter table hardware_staging enable row level security;
+drop policy if exists "hs_select_org" on hardware_staging;
 create policy "hs_select_org" on hardware_staging for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "hs_insert_auth" on hardware_staging;
 create policy "hs_insert_auth" on hardware_staging for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "hs_update_org" on hardware_staging;
 create policy "hs_update_org" on hardware_staging for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists network_diagrams (
@@ -77,8 +92,11 @@ create table if not exists network_diagrams (
 );
 create index if not exists idx_network_diagrams_org on network_diagrams(organization_id);
 alter table network_diagrams enable row level security;
+drop policy if exists "nd_select_org" on network_diagrams;
 create policy "nd_select_org" on network_diagrams for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "nd_insert_auth" on network_diagrams;
 create policy "nd_insert_auth" on network_diagrams for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "nd_update_org" on network_diagrams;
 create policy "nd_update_org" on network_diagrams for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 commit;

@@ -16,9 +16,11 @@ concurrency:
   group: sbom-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# This workflow emits the LOCKFILE (npm) SBOM only. Container IMAGE SBOMs
-# (Alpine OS + npm-in-image contents, bound to the pushed image digest) are
-# produced per image in build-push.yml. See docs/SBOM_PROCESS.md.
+# This workflow emits the LOCKFILE (npm) SBOM and the Actions dependency
+# inventory. The APP container IMAGE SBOMs (Alpine OS + npm-in-image contents,
+# bound to the pushed image digest) are produced per image in build-push.yml
+# and deploy-do.yml; the digest-pinned THIRD-PARTY runtime images get SBOMs in
+# third-party-image-scan.yml. See docs/SBOM_PROCESS.md.
 
 jobs:
   sbom:
@@ -58,3 +60,18 @@ jobs:
           name: sbom-cyclonedx
           path: sbom.cdx.json
           retention-days: 30
+
+      - name: Generate Actions dependency inventory (SBOM-P3-008)
+        # The lockfile/image SBOMs do not enumerate the workflow dependencies
+        # CI executes; this inventory records every `uses:` ref with its pinned
+        # SHA and version comment. The same script's --check mode runs in the
+        # dependency-audit job, so an unpinned action cannot merge.
+        run: node scripts/actions-inventory.mjs --out actions-inventory.json
+
+      - name: Upload Actions inventory
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: actions-inventory
+          path: actions-inventory.json
+          retention-days: 30
+

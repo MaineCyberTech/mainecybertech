@@ -5,10 +5,14 @@ on:
     branches: [develop, main]
     paths:
       - 'packages/ui/**'
+      - 'apps/web/components/**'
+      - '.storybook/**'
   pull_request:
     branches: [develop, main]
     paths:
       - 'packages/ui/**'
+      - 'apps/web/components/**'
+      - '.storybook/**'
 
 permissions:
   contents: read
@@ -20,6 +24,7 @@ concurrency:
 jobs:
   chromatic:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Blocking (CI-P2-006): no job-level continue-on-error. A broken Storybook
     # build fails this job instead of being masked green, and once a baseline
     # exists a visual change fails it too. The Storybook webpack build still
@@ -28,6 +33,15 @@ jobs:
     # dedicated fix; the red job is now the honest signal for that debt. The
     # job is not a required check yet: promoting it in branch protection is a
     # repo-admin action once the build failure is fixed.
+    #
+    # TEST-P3-001 root cause (webpack >= 5.101.3 + Storybook 8.6.x): the
+    # builder's standalone DefinePlugin taps parser hooks created by Next's
+    # vendored webpack (storybookjs/storybook#32301; fixed for Storybook >= 9
+    # by storybookjs/storybook#32306). Remediation, once the lockfile can be
+    # regenerated: upgrade Storybook past the fix, or pin webpack to 5.101.2
+    # via the root package.json `pnpm.overrides` (then `pnpm install`). Both
+    # are dependency changes, so they need a dedicated PR - do not hand-edit
+    # pnpm-lock.yaml. Details: docs/CI.md ("Chromatic").
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

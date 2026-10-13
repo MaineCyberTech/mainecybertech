@@ -26,6 +26,9 @@ create index if not exists idx_backup_status_org on backup_status(organization_i
 create index if not exists idx_backup_status_next on backup_status(next_scheduled_at);
 
 alter table backup_status enable row level security;
+drop policy if exists "backup_select_org" on backup_status;
 create policy "backup_select_org" on backup_status for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "backup_insert_auth" on backup_status;
 create policy "backup_insert_auth" on backup_status for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "backup_update_org" on backup_status;
 create policy "backup_update_org" on backup_status for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));

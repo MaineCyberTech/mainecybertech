@@ -26,12 +26,15 @@ create index if not exists idx_ticket_triage_drafts_status on ticket_triage_draf
 
 alter table ticket_triage_drafts enable row level security;
 
+drop policy if exists "triage_drafts_select_org" on ticket_triage_drafts;
 create policy "triage_drafts_select_org" on ticket_triage_drafts for select
   using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "triage_drafts_insert_auth" on ticket_triage_drafts;
 create policy "triage_drafts_insert_auth" on ticket_triage_drafts for insert
   with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "triage_drafts_update_org" on ticket_triage_drafts;
 create policy "triage_drafts_update_org" on ticket_triage_drafts for update
   using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 

@@ -17,7 +17,7 @@
 - **Application rollback**: See `docs/ROLLBACK_PROCEDURES.md` — Docker rollback via `workflow_dispatch` (manual) or `deploy-do.yml` rollback input.
 - **Database recovery**: Supabase PITR (point-in-time recovery) for last 7 days. S3 pg_dump backups (encrypted, optionally offsite) retained for 30 days for long-term recovery; restore and verification steps in `docs/ROLLBACK_PROCEDURES.md` §3a.
 - **Storage recovery**: `scripts/restore-storage.sh` restores uploaded files from the storage archive; pair it with a database restore so document links resolve (`docs/ROLLBACK_PROCEDURES.md` §3b).
-- **Infrastructure recovery**: Terraform state stored in DO Spaces. `terraform apply` can recreate the droplet, firewall, and DNS records.
+- **Infrastructure recovery**: Terraform state stored in DO Spaces (versioned). `terraform apply` can recreate the droplet, firewall, and DNS records; restore a previous state version with `scripts/terraform-state-restore.sh` (`docs/ROLLBACK_PROCEDURES.md` §4). The live state-restore drill is recorded in `docs/PLATFORM_FAILURE_RUNBOOKS.md` §6.
 
 ## Backup Strategy
 
@@ -63,9 +63,13 @@ within `RESTORE_MAX_DATA_AGE_DAYS`), which is the machine check that the dump
 path is meeting its ≤24 h RPO. The worker `backup-dr-check` additionally fails
 when the latest successful `db-backup` heartbeat is older than 30 h (DR-P2-008),
 and `backup-staleness-check.yml` fails when any backup or restore-test workflow
-has no recent successful run. The 5-minute PITR RPO is **not** yet proven by an
-automated drill; a dated PITR exercise must be recorded before that target is
-claimed as achieved.
+has no recent successful run. The storage restore path is exercised two ways:
+`storage-restore-test.yml` weekly against the newest real archive, and
+`scripts/exercise-storage-restore.sh` on every validate run against synthetic
+valid/corrupt/encrypted archives (FILE-P3-004), so the restore assertions run
+even when no backup has landed yet. The 5-minute PITR RPO is **not** yet proven
+by an automated drill; a dated PITR exercise must be recorded before that
+target is claimed as achieved.
 
 ## Incident Response
 

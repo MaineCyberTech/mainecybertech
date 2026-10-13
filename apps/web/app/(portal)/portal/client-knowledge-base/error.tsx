@@ -23,7 +23,7 @@ export default function KnowledgeBaseError({
         <button
           type="button"
           onClick={reset}
-          className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-[#0A1118] hover:bg-emerald-500"
+          className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-cyber-base hover:bg-emerald-500"
         >
           Try again
         </button>

@@ -1,4 +1,5 @@
 import {
+  formatBillingInterval,
   formatCurrency,
   formatDate,
   formatDateShort,
@@ -133,5 +134,21 @@ describe("formatCurrency", () => {
   it("returns an em dash for non-finite values", () => {
     expect(formatCurrency(Number.NaN)).toBe("—");
     expect(formatCurrency(undefined as unknown as number)).toBe("—");
+  });
+});
+
+describe("formatBillingInterval", () => {
+  it("maps Stripe intervals to billing-period suffixes", () => {
+    expect(formatBillingInterval("month")).toBe("/mo");
+    expect(formatBillingInterval("year")).toBe("/yr");
+    expect(formatBillingInterval("week")).toBe("/wk");
+    expect(formatBillingInterval("day")).toBe("/day");
+  });
+
+  it("is case-insensitive and defaults to /mo for missing/unknown values", () => {
+    expect(formatBillingInterval("MONTH")).toBe("/mo");
+    expect(formatBillingInterval(null)).toBe("/mo");
+    expect(formatBillingInterval(undefined)).toBe("/mo");
+    expect(formatBillingInterval("fortnight")).toBe("/mo");
   });
 });

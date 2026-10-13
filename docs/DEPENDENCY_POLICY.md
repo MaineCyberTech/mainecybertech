@@ -101,11 +101,34 @@ Merge rules:
 - Major runtime bumps (e.g. the open `node:25-alpine` image PRs) are held until
   the Node support line is upgraded deliberately; they are not auto-merged.
 
+## Duplicate versions (SC-P3-014)
+
+The lockfile carries multiple resolved versions of some packages — mostly
+transitive major-version splits that cannot be unified without upgrading their
+parents. There is no blocking duplicate/unused-dependency gate (a `depcheck`
+style unused scan needs a full install and a reviewed baseline, which remains a
+follow-up); instead the weekly `dependency-rescan.yml` runs
+`pnpm dedupe --check` **report-only** and publishes the output in the
+`dependency-rescan` artifact. Triage a reported duplicate against this table.
+
+Known intentional splits (reviewed 2026-10-12; update this list when they
+change):
+
+| Package               | Versions                    | Why it stays                                                                                        |
+| --------------------- | --------------------------- | --------------------------------------------------------------------------------------------------- |
+| `@supabase/realtime-js` | 2.106.2 / 2.117.2         | worker pins 2.106.2 (`apps/worker/package.json`) while the API resolves 2.117.2 — keep the pin until the worker realtime transport is upgraded |
+| `brace-expansion`     | 1.1.21 / 5.0.12             | scoped override: minimatch 3.x needs the 1.x line, everything else uses 5.x                          |
+| `@types/react-dom`    | 18.3.7 / 19.3.0             | React 18 types arrive transitively through an older Testing Library chain; app code is React 19      |
+| `ajv`                 | 6.15.0 / 8.20.0             | ESLint (ajv 6) vs schema tooling (ajv 8)                                                             |
+| `lucide-react`        | 0.453.0 / 0.468.0           | `packages/ui` and `apps/web` pin different minors — unify in a dedicated bump                        |
+| `dotenv`              | 16.6.1 / 17.4.2             | apps/api + worker on 16.x; a transitive consumer pulls 17.x                                          |
+| `react-is`            | 16.13.1 / 17.0.2 / 18.3.1   | transitive across React-versioned tooling                                                            |
+
 ## Local commands
 
 ```bash
 node scripts/audit-gate.mjs          # full policy gate (all scopes)
 node scripts/audit-gate.mjs --report # report only, never fail
 node scripts/license-gate.mjs        # license policy (needs licenses.json; see below)
-pnpm licenses list --json > licenses.json
+node scripts/collect-licenses.mjs --out licenses.json
 ```

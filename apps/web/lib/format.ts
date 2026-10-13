@@ -86,3 +86,17 @@ export function formatCurrency(value: number, currency = "USD"): string {
     currency,
   }).format(value);
 }
+
+/**
+ * Billing-period suffix for a Stripe recurring interval (`month` → `/mo`).
+ * Defaults to `/mo` for an unknown/legacy value so a plan never renders bare.
+ */
+export function formatBillingInterval(interval?: string | null): string {
+  const suffixes: Record<string, string> = {
+    day: "/day",
+    week: "/wk",
+    month: "/mo",
+    year: "/yr",
+  };
+  return suffixes[(interval ?? "").toLowerCase()] ?? "/mo";
+}

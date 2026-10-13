@@ -10,10 +10,11 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { getEnv } from "../config/env";
 import { responseCacheNoRenew } from "../middleware/cache";
-import { rateLimitAdminOps } from "../middleware/rate-limit";
+import { rateLimitAdminOps, rateLimitShare } from "../middleware/rate-limit";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { validateUploadContent } from "../lib/upload-validation";
+import { signedUrlDisposition } from "../lib/preview-policy";
 import { scanUploadForMalware } from "../lib/malware-scan";
 import {
   createDocumentSchema,
@@ -28,6 +29,7 @@ import { applyResolvedOrg } from "../lib/admin-scope";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { recordDocumentCreated } from "../lib/metrics";
+import { listCountMode } from "../lib/pagination";
 
 const createShareSchema = z.object({
   expiresAt: z
@@ -148,10 +150,21 @@ const DOCUMENTS_BUCKET = "documents";
 
 const router: ReturnType<typeof Router> = Router();
 
-router.get("/shares/:token", async (req, res, next) => {
+/**
+ * FILE-P3-005: signed share URLs are short-lived (5 min) so revoking a share
+ * bounds the residual exposure of an already-issued URL to that window
+ * instead of the previous 60 minutes. The public endpoint also forces a
+ * download disposition — a shared file is never rendered inline from the
+ * storage origin. The residual window is documented in docs/modules/documents.md.
+ */
+const SHARE_SIGNED_URL_TTL_SECONDS = 300;
+
+router.get("/shares/:token", rateLimitShare, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { token } = req.params;
+    // The extra limiter middleware widens Express' inferred params type; the
+    // token is always a single path segment.
+    const token = req.params.token as string;
 
     const { data: share, error: shareError } = await supabase
       .from("document_shares")
@@ -175,7 +188,7 @@ router.get("/shares/:token", async (req, res, next) => {
 
     const { data: signedUrl, error: urlError } = await supabase.storage
       .from(doc.storage_bucket)
-      .createSignedUrl(doc.storage_path, 3600);
+      .createSignedUrl(doc.storage_path, SHARE_SIGNED_URL_TTL_SECONDS, { download: true });
 
     if (urlError || !signedUrl)
       throw new AppError("STORAGE_ERROR", "Failed to generate download URL", 500);
@@ -200,7 +213,7 @@ router.get("/shares/:token", async (req, res, next) => {
         documentName: doc.name,
         mimeType: doc.mime_type,
         downloadUrl: signedUrl.signedUrl,
-        expiresIn: 3600,
+        expiresIn: SHARE_SIGNED_URL_TTL_SECONDS,
       }),
     );
   } catch (error) {
@@ -218,7 +231,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("documents").select("*", { count: "exact" });
+    let query = supabase.from("documents").select("*", { count: listCountMode(req.query) });
     // MT-P2-002: mandatory org predicate; fails closed without a resolved or
     // explicit org instead of listing every tenant.
     query = applyResolvedOrg(req, query);
@@ -398,7 +411,7 @@ router.post(
         // caller in org A could replace (and delete the storage object of) a
         // document belonging to org B.
         if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
-        const { data: current, error: fetchError } = await currentQuery.single();
+        const { error: fetchError } = await currentQuery.single();
 
         if (fetchError) {
           await storage.from(bucket).remove([storagePath]);
@@ -635,7 +648,9 @@ router.post("/:id/signed-url", requirePermission("documents", "create"), async (
     const supabase = getScopedClient(req, "documents", "write");
     let query = supabase
       .from("documents")
-      .select("id, organization_id, visibility, uploaded_by, storage_bucket, storage_path")
+      .select(
+        "id, organization_id, visibility, uploaded_by, storage_bucket, storage_path, mime_type, file_name",
+      )
       .eq("id", String(req.params.id));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data: doc, error: docError } = await query.single();
@@ -652,9 +667,12 @@ router.post("/:id/signed-url", requirePermission("documents", "create"), async (
     if (!doc.storage_bucket || !doc.storage_path)
       throw new AppError("BAD_REQUEST", "Document has no storage reference", 400);
 
+    // FILE-P3-008: types the portal never previews are signed with
+    // `Content-Disposition: attachment` so they cannot render inline from the
+    // storage origin even if content validation were bypassed.
     const { data: signedUrl, error: urlError } = await supabase.storage
       .from(doc.storage_bucket)
-      .createSignedUrl(doc.storage_path, 3600);
+      .createSignedUrl(doc.storage_path, 3600, signedUrlDisposition(doc.mime_type, doc.file_name));
 
     if (urlError || !signedUrl)
       throw new AppError("STORAGE_ERROR", "Failed to create signed URL", 500);
@@ -902,7 +920,7 @@ router.get("/:id/versions", async (req, res, next) => {
     const { data, error, count } = await supabase
       .from("document_versions")
       .select("id, document_id, version_number, uploaded_by, checksum, created_at", {
-        count: "exact",
+        count: listCountMode(req.query),
       })
       .eq("document_id", String(req.params.id))
       .order("version_number", { ascending: false })
@@ -956,7 +974,7 @@ router.get(
       // a missing document.
       let docQuery = supabase
         .from("documents")
-        .select("id, organization_id, visibility, uploaded_by, storage_bucket")
+        .select("id, organization_id, visibility, uploaded_by, storage_bucket, mime_type, file_name")
         .eq("id", String(req.params.id));
       if (orgId) docQuery = docQuery.eq("organization_id", orgId);
       const { data: doc, error: docError } = await docQuery.single();
@@ -985,12 +1003,128 @@ router.get(
       // signed-url endpoint. Never trust a caller-supplied bucket (FILE-P2-001).
       const { data: signedUrl, error: urlError } = await supabase.storage
         .from(doc.storage_bucket)
-        .createSignedUrl(version.storage_path, 3600);
+        .createSignedUrl(
+          version.storage_path,
+          3600,
+          signedUrlDisposition(doc.mime_type, doc.file_name),
+        );
 
       if (urlError || !signedUrl)
         throw new AppError("STORAGE_ERROR", "Failed to create signed URL", 500);
 
       res.json(success({ signedUrl: signedUrl.signedUrl, expiresIn: 3600 }));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+/**
+ * USE-P3-003: restore a retained version as a NEW version.
+ *
+ * The version row itself is never mutated and the previous current bytes are
+ * never deleted: the chosen version's object is copied forward and recorded as
+ * `current_version + 1`, so restoring is itself auditable and reversible.
+ */
+router.post(
+  "/:id/versions/:versionId/restore",
+  requirePermission("documents", "edit"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "documents", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+
+      // Parent document first: `document_versions` has no org column, so the
+      // tenant check can only run against `documents` (same reasoning as the
+      // per-version signed-url route above).
+      let docQuery = supabase
+        .from("documents")
+        .select("id, organization_id, storage_bucket, storage_path, mime_type, file_name, file_size, current_version")
+        .eq("id", String(req.params.id));
+      if (orgId) docQuery = docQuery.eq("organization_id", orgId);
+      const { data: doc, error: docError } = await docQuery.single();
+      if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
+
+      // The version must belong to THIS document (a foreign version id 404s).
+      const { data: version, error: versionError } = await supabase
+        .from("document_versions")
+        .select("storage_path")
+        .eq("id", String(req.params.versionId))
+        .eq("document_id", String(req.params.id))
+        .single();
+      if (versionError || !version) throw new AppError("NOT_FOUND", "Version not found", 404);
+
+      if (!doc.storage_bucket || !version.storage_path)
+        throw new AppError("STORAGE_ERROR", "Version has no storage reference", 500);
+
+      const nextVersion = Number(doc.current_version ?? 1) + 1;
+      // Keep the original extension so preview/download heuristics still work.
+      const sourceName = String(version.storage_path).split("/").pop() || "version";
+      const suffix = sourceName.includes(".") ? sourceName.slice(sourceName.lastIndexOf(".")) : "";
+      const storagePath = `${doc.organization_id}/${Date.now()}-restored-v${nextVersion}${suffix}`;
+
+      // Storage writes are service-role only (FILE-P2-008), matching /upload.
+      const storage = getSupabaseAdmin().storage;
+      const { error: copyError } = await storage
+        .from(doc.storage_bucket)
+        .copy(version.storage_path, storagePath);
+      if (copyError) {
+        throw new AppError("STORAGE_ERROR", `Version copy failed: ${copyError.message}`, 500);
+      }
+
+      let updateQuery = supabase
+        .from("documents")
+        .update({
+          storage_bucket: doc.storage_bucket,
+          storage_path: storagePath,
+          current_version: nextVersion,
+        })
+        .eq("id", String(req.params.id))
+        // Fail closed if another writer bumped the version since the read.
+        .eq("version", Number(doc.current_version ?? 1));
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error: updateError } = await updateQuery.select().single();
+
+      if (updateError) {
+        // A zero-row update surfaces as PGRST116: another writer bumped the
+        // version between our read and write. Roll back the copy so a lost
+        // race does not leave an orphan object behind.
+        await storage.from(doc.storage_bucket).remove([storagePath]);
+        if (updateError.code === "PGRST116") {
+          throw new AppError(
+            "VERSION_CONFLICT",
+            "Document was modified by another user while restoring",
+            409,
+          );
+        }
+        throw new AppError("DB_ERROR", updateError.message, 500);
+      }
+
+      const { error: versionInsertError } = await supabase.from("document_versions").insert({
+        document_id: data.id,
+        version_number: nextVersion,
+        storage_path: storagePath,
+        uploaded_by: req.authUser!.userId,
+      });
+      if (versionInsertError) {
+        throw new AppError("DB_ERROR", versionInsertError.message, 500);
+      }
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "document.version_restore",
+        entityType: "document",
+        entityId: data.id,
+        metadata: { restoredVersionId: String(req.params.versionId), newVersion: nextVersion },
+      });
+
+      dispatchWebhook("document.updated", data.organization_id, {
+        documentId: data.id,
+        name: data.name,
+        changed: ["restore_version"],
+      });
+
+      res.json(success(data));
     } catch (error) {
       next(error);
     }

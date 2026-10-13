@@ -88,17 +88,31 @@ dialog and re-submits the form with the button as submitter on confirm.
 - Toasts use `components/ui/ToastProvider` + `useToast().pushToast(tone, message, title?)`;
   do not add per-component toast state or renderers.
 - Shared controls come from `@mct/ui` (`Button`, `Input`/`Textarea`, `Dialog`,
-  `Badge`): do not hand-roll new `cyber-button*`/`cyber-input` controls. The
-  remaining call sites are being migrated in batches — see the adoption plan in
-  [ui-kit.md](ui-kit.md#adoption-plan).
-- The theme is dark-only; `ThemeProvider` is pinned (`defaultTheme="dark"`).
+  `Badge`, `Chip`): do not hand-roll new `cyber-button*`/`cyber-input` controls
+  or filter chips. The remaining call sites are being migrated in batches — see
+  the adoption plan in [ui-kit.md](ui-kit.md#adoption-plan).
+- Colours come from the design tokens (`cyber-*`, `slate-*`, `emerald-*`,
+  `amber-*`, `red-*` utilities, and `@mct/ui/tokens` for JS/inline-style
+  values): do not add new hardcoded hex/rgba colours. Gradient stops and glow
+  shadows with no token equivalent are the only accepted literals.
+- The theme is dark-only: `ThemeProvider` exposes a fixed dark theme (no
+  light/system branch and no user-facing toggle). Do not add `dark:` variants
+  or a theme switcher.
 
 ## Accessibility scanning
 
 - **Default gate:** `apps/web/e2e/a11y.spec.ts` scans 25 core routes and fails
   on `critical`/`serious` axe violations (WCAG 2.0/2.1/2.2 A+AA tags,
-  `wcag22aa` included).
-- **Breadth triage:** run with `A11Y_FULL=1` (or the weekly/manual, non-blocking
+  `wcag22aa` included). The same spec opens a bounded set of interactive
+  states on every run — the admin-tickets bulk bar and status-filter chip, the
+  store categories drawer, and the create-promotion dialog — so
+  dialogs/drawers/filters/bulk bars are scanned in their open state, not just
+  the initial load (UX-P3-011).
+- **Breadth gate:** run with `A11Y_FULL=1` (or the weekly/manual
   `a11y-breadth.yml`) to scan the remaining 43 routes (68 total) with the same
-  tag set. Fix findings there, then promote the route into `BASE_PAGES` once
-  clean — do not widen the prod gate with known failures.
+  tag set. The run fails on violations that are not recorded in
+  `apps/web/e2e/a11y-baseline.json` (empty today, so zero-tolerance) — record
+  accepted debt there instead of dropping routes (UX-P3-010). Fix findings,
+  then promote the route into `BASE_PAGES` once clean; do not widen the prod
+  gate with known failures. Promoting `a11y-breadth.yml` to a required check
+  is a repo-admin branch-protection action.

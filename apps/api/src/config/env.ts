@@ -1,4 +1,30 @@
 import { z } from "zod";
+import {
+  fieldEncryptionKeySchema,
+  logLevelSchema,
+  nodeEnvSchema,
+  queueBackendSchema,
+  redisEnvShape,
+  resolveRedisUrl,
+  sentryEnvShape,
+  smtpEnvShape,
+  stripeSecretKeySchema,
+  supabaseEnvShape,
+} from "@mct/config/env";
+
+// EVOL-P3-005: re-exported so existing call sites keep importing from
+// `../config/env` while the implementation lives in the shared package.
+export { resolveRedisUrl };
+
+/**
+ * SEC-P3-006: the API always answers credentialed CORS requests (app.ts sets
+ * `credentials: true`), so a wildcard origin would let any site read
+ * authenticated responses. Allow-all is therefore not supported: CORS_ORIGIN
+ * must be an explicit comma-separated allowlist.
+ */
+export function hasWildcardCorsOrigin(corsOrigin: string): boolean {
+  return corsOrigin.split(",").some((origin) => origin.trim() === "*");
+}
 
 /**
  * True when `raw` is a 64-char hex or base64 value that decodes to exactly 32
@@ -17,35 +43,30 @@ function isValidFieldEncryptionKey(raw?: string): boolean {
 }
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  NODE_ENV: nodeEnvSchema,
   API_PORT: z.coerce.number().default(4000),
-  SUPABASE_URL: z.string().url(),
-  SUPABASE_ANON_KEY: z.string().min(1),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  ...supabaseEnvShape,
+  CORS_ORIGIN: z
+    .string()
+    .default("http://localhost:3000")
+    .refine((value) => !hasWildcardCorsOrigin(value), {
+      message:
+        'CORS_ORIGIN does not support "*": the API sends credentials on every CORS response, so allow-all would expose authenticated responses to any site (SEC-P3-006). Use an explicit comma-separated allowlist.',
+    }),
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
-  LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
+  LOG_LEVEL: logLevelSchema,
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
-  SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.coerce.number().optional(),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASS: z.string().optional(),
-  EMAIL_FROM: z.string().optional(),
+  ...smtpEnvShape,
   // Web Push (NOTIF-P2-001): VAPID public key returned to browsers by
   // GET /push-subscriptions/vapid-public-key. The worker holds the private key
   // and subject; the API only needs the public half. Unset = the push channel
   // is disabled (no-op) — the preference UI reports it as unavailable.
   VAPID_PUBLIC_KEY: z.string().optional(),
-  SENTRY_DSN: z.string().optional(),
-  // Optional Sentry trace sample rate (0–1). Defaults to 0.2 in production, 0
-  // otherwise. See lib/sentry.ts.
-  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
-  // Optional Sentry release identifier. Defaults to process.env.GIT_SHA.
-  SENTRY_RELEASE: z.string().optional(),
-  STRIPE_SECRET_KEY: z.string().optional(),
+  ...sentryEnvShape,
+  STRIPE_SECRET_KEY: stripeSecretKeySchema,
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   // AES-256-GCM key for profile PII at rest (hex/base64, 32 bytes).
-  FIELD_ENCRYPTION_KEY: z.string().optional(),
+  FIELD_ENCRYPTION_KEY: fieldEncryptionKeySchema,
   PUBLIC_TRAFFIC_WEBHOOK_URL: z.string().optional(),
   PUBLIC_LEAD_WEBHOOK_URL: z.string().optional(),
   // PRIV-P2-002 / AN-P2-005: visitor IP geolocation endpoint. Defaults to the
@@ -66,14 +87,12 @@ const envSchema = z.object({
   JSM_API_TOKEN: z.string().optional(),
   JSM_SERVICEDESK_ID: z.string().optional(),
   JSM_REQUEST_TYPE_ID: z.string().optional(),
-  REDIS_URL: z.string().url().optional(),
-  TASK_QUEUE_ENABLED: z.enum(["true", "false"]).optional(),
-  REDIS_PASSWORD: z.string().optional(),
+  ...redisEnvShape,
   // ARCH-P2-004: the API producer only speaks BullMQ (`lib/task-producer.ts`),
   // while the worker's consumer backend is its own setting. Both processes
   // read this one value (docker-compose x-app-env), and production fails
   // closed on anything but bullmq so an enqueue/consume split cannot start.
-  QUEUE_BACKEND: z.enum(["bullmq", "sqs", "inline"]).default("bullmq"),
+  QUEUE_BACKEND: queueBackendSchema.default("bullmq"),
   // PERF-P2-006: page cap for the Stripe sync (100 objects per page). The
   // default bounds a sync at 1000 objects per list per customer; raise it for
   // very large accounts instead of changing code.
@@ -161,24 +180,6 @@ export function assertProductionSecrets(
       "FIELD_ENCRYPTION_KEY is required in production and must decode to exactly 32 bytes (64-char hex or base64)",
     );
   }
-}
-
-/**
- * Builds a Redis connection URL, injecting REDIS_PASSWORD when the URL
- * does not already carry credentials. Used by ioredis / node-redis clients.
- */
-export function resolveRedisUrl(url: string, password?: string): string {
-  if (!password) return url;
-  try {
-    const parsed = new URL(url);
-    if (!parsed.username && !parsed.password) {
-      parsed.password = password;
-      return parsed.toString();
-    }
-  } catch {
-    // Malformed URL — leave as-is, the client will surface the error.
-  }
-  return url;
 }
 
 let _env: Env | null = null;

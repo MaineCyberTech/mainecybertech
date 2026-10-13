@@ -1,0 +1,42 @@
+{
+  "comment": [
+    "External uptime probe targets (audit OBS-P2-016).",
+    "The probe runs from GitHub Actions runners — outside the droplet — so an edge/proxy/DNS",
+    "failure that leaves the in-stack Prometheus scrapes green is still detected.",
+    "expectStatus lists every status that counts as up (redirects are fine for the web app);",
+    "maxLatencyMs is the committed per-request latency budget.",
+    "Override the whole list per run (dispatch input `targets`) or for all runs with the",
+    "UPTIME_PROBE_TARGETS repository variable (same shape as `targets` below).",
+    "Set UPTIME_PROBE_ENABLED=false to pause the schedule during a known outage.",
+    "Note: api.mainecybertech.com is served by the legacy AWS ALB/ECS deployment",
+    "(docs/PRODUCTION_VS_TESTING_DOMAINS.md) and currently returns 404 for /health; the probe",
+    "reports it until the prod deploy path (CI-P1-003) lands. Do not remove the target — a",
+    "green run is the signal the prod API is finally healthy."
+  ],
+  "targets": [
+    {
+      "name": "prod-api-health",
+      "url": "https://api.mainecybertech.com/health",
+      "expectStatus": [200],
+      "maxLatencyMs": 2000
+    },
+    {
+      "name": "prod-web-login",
+      "url": "https://app.mainecybertech.com/login",
+      "expectStatus": [200, 301, 302, 307],
+      "maxLatencyMs": 3000
+    },
+    {
+      "name": "dev-api-health",
+      "url": "https://api.mainecybertech.us/health",
+      "expectStatus": [200],
+      "maxLatencyMs": 2000
+    },
+    {
+      "name": "dev-web-login",
+      "url": "https://app.mainecybertech.us/login",
+      "expectStatus": [200, 301, 302, 307],
+      "maxLatencyMs": 3000
+    }
+  ]
+}

@@ -37,10 +37,10 @@ export default function StickyMobileCta({ href, label, revealAfter = 600 }: Stic
       aria-label="Quick action"
       className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-4 lg:hidden"
     >
-      <div className="pointer-events-auto mx-auto flex max-w-md items-center gap-3 rounded-lg border border-emerald-600/30 bg-[#0A1118]/95 p-3 shadow-[0_-4px_24px_rgba(0,0,0,0.4)] backdrop-blur">
+      <div className="pointer-events-auto mx-auto flex max-w-md items-center gap-3 rounded-lg border border-emerald-600/30 bg-cyber-base/95 p-3 shadow-[0_-4px_24px_rgba(0,0,0,0.4)] backdrop-blur">
         <Link
           href={href}
-          className="flex-1 rounded border-2 border-emerald-600 bg-emerald-600 px-4 py-2.5 text-center font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500"
+          className="flex-1 rounded border-2 border-emerald-600 bg-emerald-600 px-4 py-2.5 text-center font-display text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500"
         >
           {label}
         </Link>
@@ -48,7 +48,7 @@ export default function StickyMobileCta({ href, label, revealAfter = 600 }: Stic
           type="button"
           onClick={() => setDismissed(true)}
           aria-label="Dismiss quick action"
-          className="rounded p-1 text-slate-400 transition hover:bg-white/5 hover:text-white"
+          className="-m-2.5 rounded p-3.5 text-slate-400 transition hover:bg-white/5 hover:text-white"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path

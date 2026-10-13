@@ -1,5 +1,5 @@
 import { jest } from "@jest/globals";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import ProfileClient from "@/app/(portal)/portal/profile/ProfileClient";
 
 jest.mock("next/navigation", () => ({

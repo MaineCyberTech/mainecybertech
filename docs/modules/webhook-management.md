@@ -47,3 +47,12 @@ are re-encrypted on the next write). Responses always mask the secret
 `secret_expires_at` to +90 days (override with `secretExpiresAt`); expiry is
 advisory and does not gate delivery. Rotation procedure:
 `docs/SECRETS_ROTATION.md` → "Outbound webhook signing secrets".
+
+## Test ping (WH-P3-001)
+
+`POST /:id/test` derives a deterministic idempotency key from the endpoint and
+the exact ping payload (including its timestamp) and claims it before sending —
+mirroring the shared dispatcher — so an exact replay is deduplicated. The claim
+is released when the delivery fails. Outbound responses (test and real
+deliveries) are read through `pinnedFetch`, which caps the buffered body at
+64 KiB (WH-P3-007).

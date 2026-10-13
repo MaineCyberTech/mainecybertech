@@ -1,11 +1,27 @@
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 import { z } from "zod";
+import {
+  fieldEncryptionKeySchema,
+  logLevelSchema,
+  nodeEnvSchema,
+  queueBackendSchema,
+  redisEnvShape,
+  resolveRedisUrl,
+  sentryEnvShape,
+  smtpEnvShape,
+  stripeSecretKeySchema,
+  supabaseEnvShape,
+} from "@mct/config/env";
+
+// EVOL-P3-005: re-exported so existing call sites keep importing from
+// `../env` while the implementation lives in the shared package.
+export { resolveRedisUrl };
 
 export const envSchema = z
   .object({
-    NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-    LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
+    NODE_ENV: nodeEnvSchema,
+    LOG_LEVEL: logLevelSchema,
     WORKER_CONCURRENCY: z.coerce.number().int().positive().default(10),
     WORKER_TIMEOUT: z.coerce.number().int().positive().default(30000),
     // RES-P2-002: the BullMQ lock duration above is not a handler deadline.
@@ -13,19 +29,15 @@ export const envSchema = z
     // AbortSignal and fails the task once it elapses. Default 10 minutes —
     // longer than the longest scan lock TTL, short enough to surface a hang.
     WORKER_TASK_TIMEOUT_MS: z.coerce.number().int().positive().default(600000),
-    QUEUE_BACKEND: z.enum(["bullmq", "sqs", "inline"]).default("inline"),
-    REDIS_URL: z.string().url().optional(),
-    TASK_QUEUE_ENABLED: z.enum(["true", "false"]).optional(),
-    REDIS_PASSWORD: z.string().optional(),
+    QUEUE_BACKEND: queueBackendSchema.default("inline"),
+    ...redisEnvShape,
     SQS_QUEUE_URL: z.string().optional(),
-    SUPABASE_URL: z.string().url(),
-    SUPABASE_ANON_KEY: z.string().min(1),
-    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+    ...supabaseEnvShape,
     // AES-256-GCM key (hex/base64, 32 bytes) used to decrypt outbound webhook
     // signing secrets at rest. Written by the deploy workflow; without it
     // encrypted secrets cannot be decrypted and deliveries fail closed.
-    FIELD_ENCRYPTION_KEY: z.string().optional(),
-    STRIPE_SECRET_KEY: z.string().optional(),
+    FIELD_ENCRYPTION_KEY: fieldEncryptionKeySchema,
+    STRIPE_SECRET_KEY: stripeSecretKeySchema,
     JIRA_BASE_URL: z.string().optional(),
     JIRA_EMAIL: z.string().optional(),
     JIRA_API_TOKEN: z.string().optional(),
@@ -35,11 +47,7 @@ export const envSchema = z
     M365_TENANT_ID: z.string().optional(),
     M365_CLIENT_ID: z.string().optional(),
     M365_CLIENT_SECRET: z.string().optional(),
-    SMTP_HOST: z.string().optional(),
-    SMTP_PORT: z.coerce.number().optional(),
-    SMTP_USER: z.string().optional(),
-    SMTP_PASS: z.string().optional(),
-    EMAIL_FROM: z.string().optional(),
+    ...smtpEnvShape,
     // Web Push (NOTIF-P2-001). Operator-gated: all three are required for the
     // worker to send; when any is missing the `notification-push` task no-ops
     // (records `skipped`). Keys are generated with `npx web-push
@@ -49,13 +57,11 @@ export const envSchema = z
     VAPID_SUBJECT: z.string().optional(),
     API_BASE_URL: z.string().url().optional(),
     APP_BASE_URL: z.string().url().optional(),
-    SENTRY_DSN: z.string().optional(),
-    // Optional Sentry trace sample rate (0–1). Defaults to 0.2 in production, 0
-    // otherwise. See main.ts.
-    SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
-    // Optional Sentry release identifier. Defaults to process.env.GIT_SHA.
-    SENTRY_RELEASE: z.string().optional(),
+    ...sentryEnvShape,
     HEALTH_PORT: z.coerce.number().int().positive().max(65535).default(3001),
+    // ARCH-P3-005: shared bearer token for the worker /metrics endpoint (the
+    // API's METRICS_TOKEN, written by the deploy). Unset => /metrics 404s.
+    METRICS_TOKEN: z.string().optional(),
   })
   .superRefine((val, ctx) => {
     // Without Redis the BullMQ consumer warns and returns, and every timer is
@@ -83,24 +89,6 @@ export const envSchema = z
   });
 
 export type Env = z.infer<typeof envSchema>;
-
-/**
- * Builds a Redis connection URL, injecting REDIS_PASSWORD when the URL
- * does not already carry credentials. Used by the BullMQ connection.
- */
-export function resolveRedisUrl(url: string, password?: string): string {
-  if (!password) return url;
-  try {
-    const parsed = new URL(url);
-    if (!parsed.username && !parsed.password) {
-      parsed.password = password;
-      return parsed.toString();
-    }
-  } catch {
-    // Malformed URL — leave as-is, the client will surface the error.
-  }
-  return url;
-}
 
 export function parseEnv(raw: Record<string, string | undefined>): Env {
   return envSchema.parse(raw);

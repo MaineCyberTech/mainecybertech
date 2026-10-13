@@ -40,6 +40,7 @@ create index if not exists idx_satisfaction_pulses_sent_at on satisfaction_pulse
 
 alter table satisfaction_pulses enable row level security;
 
+drop policy if exists "satisfaction_pulses_select_org" on satisfaction_pulses;
 create policy "satisfaction_pulses_select_org" on satisfaction_pulses for select
   using (
     organization_id in (
@@ -47,6 +48,7 @@ create policy "satisfaction_pulses_select_org" on satisfaction_pulses for select
     )
   );
 
+drop policy if exists "satisfaction_pulses_insert_auth" on satisfaction_pulses;
 create policy "satisfaction_pulses_insert_auth" on satisfaction_pulses for insert
   with check (
     organization_id in (
@@ -54,6 +56,7 @@ create policy "satisfaction_pulses_insert_auth" on satisfaction_pulses for inser
     )
   );
 
+drop policy if exists "satisfaction_pulses_update_org" on satisfaction_pulses;
 create policy "satisfaction_pulses_update_org" on satisfaction_pulses for update
   using (
     organization_id in (
@@ -61,6 +64,7 @@ create policy "satisfaction_pulses_update_org" on satisfaction_pulses for update
     )
   );
 
+drop policy if exists "satisfaction_pulses_delete_admin" on satisfaction_pulses;
 create policy "satisfaction_pulses_delete_admin" on satisfaction_pulses for delete
   using (
     exists (
@@ -93,6 +97,7 @@ create index if not exists idx_satisfaction_pulse_templates_active on satisfacti
 
 alter table satisfaction_pulse_templates enable row level security;
 
+drop policy if exists "satisfaction_pulse_templates_select_org" on satisfaction_pulse_templates;
 create policy "satisfaction_pulse_templates_select_org" on satisfaction_pulse_templates for select
   using (
     organization_id in (
@@ -100,6 +105,7 @@ create policy "satisfaction_pulse_templates_select_org" on satisfaction_pulse_te
     )
   );
 
+drop policy if exists "satisfaction_pulse_templates_insert_auth" on satisfaction_pulse_templates;
 create policy "satisfaction_pulse_templates_insert_auth" on satisfaction_pulse_templates for insert
   with check (
     organization_id in (
@@ -107,6 +113,7 @@ create policy "satisfaction_pulse_templates_insert_auth" on satisfaction_pulse_t
     )
   );
 
+drop policy if exists "satisfaction_pulse_templates_update_org" on satisfaction_pulse_templates;
 create policy "satisfaction_pulse_templates_update_org" on satisfaction_pulse_templates for update
   using (
     organization_id in (
@@ -114,6 +121,7 @@ create policy "satisfaction_pulse_templates_update_org" on satisfaction_pulse_te
     )
   );
 
+drop policy if exists "satisfaction_pulse_templates_delete_admin" on satisfaction_pulse_templates;
 create policy "satisfaction_pulse_templates_delete_admin" on satisfaction_pulse_templates for delete
   using (
     exists (
@@ -151,6 +159,7 @@ create index if not exists idx_satisfaction_pulse_schedules_next_run on satisfac
 
 alter table satisfaction_pulse_schedules enable row level security;
 
+drop policy if exists "satisfaction_pulse_schedules_select_org" on satisfaction_pulse_schedules;
 create policy "satisfaction_pulse_schedules_select_org" on satisfaction_pulse_schedules for select
   using (
     organization_id in (
@@ -158,6 +167,7 @@ create policy "satisfaction_pulse_schedules_select_org" on satisfaction_pulse_sc
     )
   );
 
+drop policy if exists "satisfaction_pulse_schedules_insert_auth" on satisfaction_pulse_schedules;
 create policy "satisfaction_pulse_schedules_insert_auth" on satisfaction_pulse_schedules for insert
   with check (
     organization_id in (
@@ -165,6 +175,7 @@ create policy "satisfaction_pulse_schedules_insert_auth" on satisfaction_pulse_s
     )
   );
 
+drop policy if exists "satisfaction_pulse_schedules_update_org" on satisfaction_pulse_schedules;
 create policy "satisfaction_pulse_schedules_update_org" on satisfaction_pulse_schedules for update
   using (
     organization_id in (
@@ -172,6 +183,7 @@ create policy "satisfaction_pulse_schedules_update_org" on satisfaction_pulse_sc
     )
   );
 
+drop policy if exists "satisfaction_pulse_schedules_delete_admin" on satisfaction_pulse_schedules;
 create policy "satisfaction_pulse_schedules_delete_admin" on satisfaction_pulse_schedules for delete
   using (
     exists (

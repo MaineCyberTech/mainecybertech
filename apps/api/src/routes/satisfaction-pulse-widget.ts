@@ -32,6 +32,7 @@ import {
   updateSchedule,
   deleteSchedule,
 } from "../services/satisfaction-pulse-widget";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { escapeCsvValue } from "../lib/csv";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
@@ -71,7 +72,11 @@ router.get(
       const orgId = getOrgId(req);
       const parsed = listSatisfactionPulseQuerySchema.parse(req.query);
 
-      const result = await listSatisfactionPulses(orgId, parsed);
+      const result = await listSatisfactionPulses(
+        orgId,
+        parsed,
+        getScopedClient(req, "satisfaction-pulse", "read"),
+      );
       res.json(result);
     } catch (error) {
       next(error);
@@ -84,7 +89,11 @@ router.get("/export", async (req: Request, res: Response, next: NextFunction) =>
     const orgId = getOrgId(req);
     const parsed = exportSatisfactionPulseSchema.parse(req.query);
 
-    const result = await exportSatisfactionPulses(orgId, parsed);
+    const result = await exportSatisfactionPulses(
+      orgId,
+      parsed,
+      getScopedClient(req, "satisfaction-pulse", "read"),
+    );
 
     if (parsed.format === "csv") {
       const items = result.data ?? [];
@@ -116,7 +125,11 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const orgId = getOrgId(req);
-      const result = await getSatisfactionPulse(orgId, getParam(req, "id"));
+      const result = await getSatisfactionPulse(
+        orgId,
+        getParam(req, "id"),
+        getScopedClient(req, "satisfaction-pulse", "read"),
+      );
       res.json(result);
     } catch (error) {
       next(error);
@@ -133,7 +146,12 @@ router.post(
       const userId = getUserId(req);
       const parsed = createSatisfactionPulseSchema.parse(req.body);
 
-      const result = await createSatisfactionPulse(orgId, userId, parsed);
+      const result = await createSatisfactionPulse(
+        orgId,
+        userId,
+        parsed,
+        getScopedClient(req, "satisfaction-pulse", "write"),
+      );
 
       await logAuditEvent({
         organizationId: orgId,
@@ -160,7 +178,13 @@ router.patch(
       const userId = getUserId(req);
       const parsed = updateSatisfactionPulseSchema.parse(req.body);
 
-      const result = await updateSatisfactionPulse(orgId, userId, getParam(req, "id"), parsed);
+      const result = await updateSatisfactionPulse(
+        orgId,
+        userId,
+        getParam(req, "id"),
+        parsed,
+        getScopedClient(req, "satisfaction-pulse", "write"),
+      );
 
       await logAuditEvent({
         organizationId: orgId,
@@ -191,6 +215,7 @@ router.post(
         getParam(req, "id"),
         parsed.rating,
         parsed.feedback,
+        getScopedClient(req, "satisfaction-pulse", "write"),
       );
 
       await logAuditEvent({
@@ -217,7 +242,12 @@ router.delete(
       assertDeleteConfirmed(req.body);
       const orgId = getOrgId(req);
       const userId = getUserId(req);
-      const result = await deleteSatisfactionPulse(orgId, userId, getParam(req, "id"));
+      const result = await deleteSatisfactionPulse(
+        orgId,
+        userId,
+        getParam(req, "id"),
+        getScopedClient(req, "satisfaction-pulse", "write"),
+      );
 
       await logAuditEvent({
         organizationId: orgId,
@@ -241,7 +271,7 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const orgId = getOrgId(req);
-      const result = await listTemplates(orgId);
+      const result = await listTemplates(orgId, getScopedClient(req, "satisfaction-pulse", "read"));
       res.json(result);
     } catch (error) {
       next(error);
@@ -255,7 +285,11 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const orgId = getOrgId(req);
-      const result = await getTemplate(orgId, getParam(req, "id"));
+      const result = await getTemplate(
+        orgId,
+        getParam(req, "id"),
+        getScopedClient(req, "satisfaction-pulse", "read"),
+      );
       res.json(result);
     } catch (error) {
       next(error);
@@ -272,7 +306,12 @@ router.post(
       const userId = getUserId(req);
       const parsed = templateSchema.parse(req.body);
 
-      const result = await createTemplate(orgId, userId, parsed);
+      const result = await createTemplate(
+        orgId,
+        userId,
+        parsed,
+        getScopedClient(req, "satisfaction-pulse", "write"),
+      );
 
       await logAuditEvent({
         organizationId: orgId,
@@ -299,7 +338,13 @@ router.patch(
       const userId = getUserId(req);
       const parsed = updateTemplateSchema.parse(req.body);
 
-      const result = await updateTemplate(orgId, userId, getParam(req, "id"), parsed);
+      const result = await updateTemplate(
+        orgId,
+        userId,
+        getParam(req, "id"),
+        parsed,
+        getScopedClient(req, "satisfaction-pulse", "write"),
+      );
 
       await logAuditEvent({
         organizationId: orgId,
@@ -325,7 +370,12 @@ router.delete(
       assertDeleteConfirmed(req.body);
       const orgId = getOrgId(req);
       const userId = getUserId(req);
-      const result = await deleteTemplate(orgId, userId, getParam(req, "id"));
+      const result = await deleteTemplate(
+        orgId,
+        userId,
+        getParam(req, "id"),
+        getScopedClient(req, "satisfaction-pulse", "write"),
+      );
 
       await logAuditEvent({
         organizationId: orgId,
@@ -349,7 +399,7 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const orgId = getOrgId(req);
-      const result = await listSchedules(orgId);
+      const result = await listSchedules(orgId, getScopedClient(req, "satisfaction-pulse", "read"));
       res.json(result);
     } catch (error) {
       next(error);
@@ -366,7 +416,12 @@ router.post(
       const userId = getUserId(req);
       const parsed = scheduleSchema.parse(req.body);
 
-      const result = await createSchedule(orgId, userId, parsed);
+      const result = await createSchedule(
+        orgId,
+        userId,
+        parsed,
+        getScopedClient(req, "satisfaction-pulse", "write"),
+      );
 
       await logAuditEvent({
         organizationId: orgId,
@@ -393,7 +448,13 @@ router.patch(
       const userId = getUserId(req);
       const parsed = updateScheduleSchema.parse(req.body);
 
-      const result = await updateSchedule(orgId, userId, getParam(req, "id"), parsed);
+      const result = await updateSchedule(
+        orgId,
+        userId,
+        getParam(req, "id"),
+        parsed,
+        getScopedClient(req, "satisfaction-pulse", "write"),
+      );
 
       await logAuditEvent({
         organizationId: orgId,
@@ -419,7 +480,12 @@ router.delete(
       assertDeleteConfirmed(req.body);
       const orgId = getOrgId(req);
       const userId = getUserId(req);
-      const result = await deleteSchedule(orgId, userId, getParam(req, "id"));
+      const result = await deleteSchedule(
+        orgId,
+        userId,
+        getParam(req, "id"),
+        getScopedClient(req, "satisfaction-pulse", "write"),
+      );
 
       await logAuditEvent({
         organizationId: orgId,

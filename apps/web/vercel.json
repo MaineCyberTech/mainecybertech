@@ -1,4 +1,0 @@
-{
-  "installCommand": "pnpm install --frozen-lockfile",
-  "framework": "nextjs"
-}

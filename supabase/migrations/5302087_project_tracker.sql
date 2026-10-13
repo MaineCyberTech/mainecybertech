@@ -13,6 +13,7 @@ create table if not exists public.project_phases (
 create index if not exists idx_project_phases_project on public.project_phases (project_id);
 alter table public.project_phases enable row level security;
 
+drop policy if exists "Project phases select by org membership" on public.project_phases;
 create policy "Project phases select by org membership"
   on public.project_phases for select
   using (
@@ -24,6 +25,7 @@ create policy "Project phases select by org membership"
     or (select auth.jwt() -> 'app_metadata' ->> 'is_super_admin') = 'true'
   );
 
+drop policy if exists "Project phases insert by org membership" on public.project_phases;
 create policy "Project phases insert by org membership"
   on public.project_phases for insert
   with check (
@@ -35,6 +37,7 @@ create policy "Project phases insert by org membership"
     or (select auth.jwt() -> 'app_metadata' ->> 'is_super_admin') = 'true'
   );
 
+drop policy if exists "Project phases update by org membership" on public.project_phases;
 create policy "Project phases update by org membership"
   on public.project_phases for update
   using (
@@ -46,6 +49,7 @@ create policy "Project phases update by org membership"
     or (select auth.jwt() -> 'app_metadata' ->> 'is_super_admin') = 'true'
   );
 
+drop policy if exists "Project phases delete by org membership" on public.project_phases;
 create policy "Project phases delete by org membership"
   on public.project_phases for delete
   using (
@@ -72,6 +76,7 @@ create table if not exists public.project_milestones (
 create index if not exists idx_project_milestones_project on public.project_milestones (project_id);
 alter table public.project_milestones enable row level security;
 
+drop policy if exists "Project milestones select by org membership" on public.project_milestones;
 create policy "Project milestones select by org membership"
   on public.project_milestones for select
   using (
@@ -83,6 +88,7 @@ create policy "Project milestones select by org membership"
     or (select auth.jwt() -> 'app_metadata' ->> 'is_super_admin') = 'true'
   );
 
+drop policy if exists "Project milestones insert by org membership" on public.project_milestones;
 create policy "Project milestones insert by org membership"
   on public.project_milestones for insert
   with check (
@@ -94,6 +100,7 @@ create policy "Project milestones insert by org membership"
     or (select auth.jwt() -> 'app_metadata' ->> 'is_super_admin') = 'true'
   );
 
+drop policy if exists "Project milestones update by org membership" on public.project_milestones;
 create policy "Project milestones update by org membership"
   on public.project_milestones for update
   using (
@@ -105,6 +112,7 @@ create policy "Project milestones update by org membership"
     or (select auth.jwt() -> 'app_metadata' ->> 'is_super_admin') = 'true'
   );
 
+drop policy if exists "Project milestones delete by org membership" on public.project_milestones;
 create policy "Project milestones delete by org membership"
   on public.project_milestones for delete
   using (
@@ -128,6 +136,7 @@ create table if not exists public.project_dependencies (
 create index if not exists idx_project_dependencies_project on public.project_dependencies (project_id);
 alter table public.project_dependencies enable row level security;
 
+drop policy if exists "Project dependencies select by org membership" on public.project_dependencies;
 create policy "Project dependencies select by org membership"
   on public.project_dependencies for select
   using (
@@ -139,6 +148,7 @@ create policy "Project dependencies select by org membership"
     or (select auth.jwt() -> 'app_metadata' ->> 'is_super_admin') = 'true'
   );
 
+drop policy if exists "Project dependencies insert by org membership" on public.project_dependencies;
 create policy "Project dependencies insert by org membership"
   on public.project_dependencies for insert
   with check (
@@ -150,6 +160,7 @@ create policy "Project dependencies insert by org membership"
     or (select auth.jwt() -> 'app_metadata' ->> 'is_super_admin') = 'true'
   );
 
+drop policy if exists "Project dependencies update by org membership" on public.project_dependencies;
 create policy "Project dependencies update by org membership"
   on public.project_dependencies for update
   using (
@@ -161,6 +172,7 @@ create policy "Project dependencies update by org membership"
     or (select auth.jwt() -> 'app_metadata' ->> 'is_super_admin') = 'true'
   );
 
+drop policy if exists "Project dependencies delete by org membership" on public.project_dependencies;
 create policy "Project dependencies delete by org membership"
   on public.project_dependencies for delete
   using (

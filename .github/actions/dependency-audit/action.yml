@@ -49,6 +49,12 @@ runs:
         fi
         echo "Generated artifacts are untracked (ok)"
 
+    - name: Verify Actions refs are SHA-pinned (SBOM-P3-008)
+      # Every external `uses:` must pin a full commit SHA. The same script
+      # emits the machine-readable inventory sbom.yml uploads as an artifact.
+      shell: bash
+      run: node scripts/actions-inventory.mjs --check
+
     - name: Run Trivy filesystem vulnerability scanner
       # Dependency vulnerabilities are gated by audit-gate.mjs above; Trivy
       # focuses on source/config findings and Go/Rust binaries.

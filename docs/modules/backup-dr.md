@@ -1,7 +1,7 @@
 # Backup/DR Review Dashboard
 
 **Category:** Infrastructure
-**API Routes:** `apps/api/src/routes/final/backups.ts` + `apps/api/src/routes/final/crud.ts`
+**API Routes:** `apps/api/src/routes/final/backups.ts` (stats/risk) + `apps/api/src/routes/final/crud.ts` (`backups` → `backup_status`)
 **SDK:** `packages/sdk/src/final.ts`
 
 > **Not the platform's own backup signal (DR-P2-008).** This module tracks
@@ -13,38 +13,56 @@
 
 ## Overview
 
-Centralized backup and disaster recovery review platform. Tracks backup solutions (Veeam, Datto, Acronis, Azure Backup, etc.), recovery point objectives (RPO), recovery time objectives (RTO), last successful backup status, and DR test results across all client environments.
+Centralized backup and disaster recovery review platform. Tracks backup status (system name, backup type, last result, RPO/RTO hours, retention, restore-test history, offsite/encryption flags) across all client environments, with an org-scoped stats + risk view.
 
 ## Key Features
 
-- Backup job inventory — solution type, frequency, retention policy, target (local/cloud/hybrid)
-- RPO/RTO tracking per workload with compliance status (green/yellow/red)
-- Last backup result monitoring — success, warning, failure with error details
-- DR test scheduling and result recording with pass/fail criteria
-- Recovery validation — test restore reports with verification status
-- Dashboard with aggregate health scores, overdue tests, and failing jobs per org
+- Backup status inventory — system name, backup type, last backup result, size
+- RPO/RTO tracking per system (`recovery_point_objective_hours` / `recovery_time_objective_hours`)
+- Last backup monitoring — success/warning/failure status and next scheduled run
+- Restore-test history — `restore_tested_at`, `restore_test_result`
+- Offsite replication and encryption flags per record
+- Stats + risk-analysis aggregates per organization (counts by status/type, overdue or untested systems)
 
 ## Endpoints
 
-| Method | Path                              | Description                                                     |
-| ------ | --------------------------------- | --------------------------------------------------------------- |
-| GET    | /api/v1/backup-dr/jobs            | List backup jobs (paginated, filterable by org/solution/status) |
-| POST   | /api/v1/backup-dr/jobs            | Create backup job record                                        |
-| PATCH  | /api/v1/backup-dr/jobs/:id        | Update backup job                                               |
-| DELETE | /api/v1/backup-dr/jobs/:id        | Soft-delete job                                                 |
-| POST   | /api/v1/backup-dr/jobs/:id/result | Log backup result                                               |
-| GET    | /api/v1/backup-dr/dr-tests        | List DR tests (filterable by org/result)                        |
-| POST   | /api/v1/backup-dr/dr-tests        | Record DR test                                                  |
-| GET    | /api/v1/backup-dr/dashboard       | Health dashboard per org                                        |
-| GET    | /api/v1/backup-dr/export          | Export backup/DR status as CSV                                  |
+All routes are mounted under `/api/v1/final` and require authentication plus
+`organization_id` org access (`requireAuth` + `requireOrgAccess`).
+
+| Method | Path                                | Description                                                          |
+| ------ | ----------------------------------- | -------------------------------------------------------------------- |
+| GET    | /api/v1/final/backups               | List backup records (paginated: `page`, `limit`, filter by `organization_id`) |
+| POST   | /api/v1/final/backups               | Create backup record (`backup-dr:create`)                            |
+| GET    | /api/v1/final/backups/:id           | Fetch one record                                                     |
+| PATCH  | /api/v1/final/backups/:id           | Update record (`backup-dr:edit`)                                     |
+| DELETE | /api/v1/final/backups/:id           | Delete record (`backup-dr:delete`, confirmation body required)       |
+| GET    | /api/v1/final/backups/stats         | Aggregate counts per org (status/type/overdue)                       |
+| GET    | /api/v1/final/backups/risk-analysis | Risk view per org (overdue tests, failing/untested systems)          |
+
+> **Export is not implemented (DR-P3-004).** Earlier docs listed
+> `/api/v1/backup-dr/*` routes (jobs, dr-tests, dashboard, export). Those routes
+> never existed; the real surface is the `/final/backups*` table above and
+> there is no CSV/export endpoint. A doc/route consistency check for module
+> docs is tracked separately.
 
 ## Data Model
 
-`backup_jobs` (organization_id, workload_name, solution, frequency_minutes, retention_days, target_type, status, rpo_minutes, rto_minutes, last_backup_at, last_result, created_by). `backup_results` (job_id, status (success/warning/failed), size_gb, duration_seconds, error_message, checked_at). `dr_tests` (organization_id, workload_name, test_type (file/VM/database/full), result (pass/fail/incomplete), restored_at, verified_by, notes).
+`backup_status` (one row per client system): `organization_id`, `system_name`,
+`backup_type` (default `full`), `last_backup_at`, `last_backup_status`
+(default `unknown`), `last_backup_size_gb`, `next_scheduled_at`,
+`recovery_point_objective_hours`, `recovery_time_objective_hours`,
+`retention_days` (default 30), `restore_tested_at`, `restore_test_result`,
+`offsite_replicated`, `encryption_enabled`, `notes`, `status` (default
+`monitored`), `created_by`, `created_at`, `updated_at`
+(`supabase/migrations/5302075_backup_dr.sql`).
 
 ## Access Control
 
-- Admin: full CRUD, result logging, DR test management, export
-- Client: read-only dashboard and job list for their org
-- requireOrgAccess on all endpoints; RLS via organization_id
-- Audit logging on job create/update/delete, result posts, DR test records
+- Router-level `requireAuth` + `requireOrgAccess`; every query is scoped by
+  `organization_id`.
+- Writes/deletes additionally require the `backup-dr` module permission
+  (`create` / `edit` / `delete`); deletes require an explicit confirmation body.
+- RLS on `backup_status`: select/insert/update scoped to the caller's
+  memberships (`backup_select_org`, `backup_insert_auth`, `backup_update_org`).
+- Audit logging on create/update/delete (`backups.created` / `.updated` /
+  `.deleted`).

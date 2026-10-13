@@ -27,7 +27,8 @@ targets the **linked remote** project.
 
 ## Adding a migration
 
-1. Create `supabase/migrations/5302426_short_description.sql` (next number).
+1. Create `supabase/migrations/5302459_short_description.sql` (next number — the
+   newest committed file is `5302458_close_analytics_anon_insert.sql`).
 2. Prefer idempotent DDL: `create table if not exists`,
    `drop policy if exists X; create policy X …`, `add column if not exists`,
    `insert … on conflict do nothing`.

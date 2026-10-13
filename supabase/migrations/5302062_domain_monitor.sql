@@ -38,15 +38,19 @@ create index if not exists idx_domain_monitors_next_check on domain_monitors(nex
 
 alter table domain_monitors enable row level security;
 
+drop policy if exists "domain_monitors_select_org" on domain_monitors;
 create policy "domain_monitors_select_org" on domain_monitors for select
   using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "domain_monitors_insert_auth" on domain_monitors;
 create policy "domain_monitors_insert_auth" on domain_monitors for insert
   with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "domain_monitors_update_org" on domain_monitors;
 create policy "domain_monitors_update_org" on domain_monitors for update
   using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "domain_monitors_delete_admin" on domain_monitors;
 create policy "domain_monitors_delete_admin" on domain_monitors for delete
   using (exists (select 1 from memberships m join roles r on m.role_id = r.id where m.user_id = auth.uid() and m.organization_id = domain_monitors.organization_id and r.key in ('super_admin', 'admin')));
 

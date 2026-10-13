@@ -127,4 +127,36 @@ describe("requireAdminAccess", () => {
 
     expect(mockRedirect).toHaveBeenCalledWith("/portal/dashboard");
   });
+
+  // ADMIN-P3-001: the web gate must accept exactly the API `requireAdmin` set
+  // (CROSS_TENANT_KEYS), not the wider MSP-staff union.
+  it("redirects elevated tenant roles (dispatcher/finance) away from /admin", async () => {
+    for (const key of [
+      "dispatcher",
+      "engineer",
+      "security-analyst",
+      "project-manager",
+      "finance",
+      "onboarding-specialist",
+    ]) {
+      jest.clearAllMocks();
+      mockMe.mockResolvedValue({ userId: "user-1", email: "u@test.com" });
+      mockMembershipsList.mockResolvedValue([{ roles: { key }, status: "approved" }]);
+
+      const { requireAdminAccess } = await import("@/lib/auth/admin");
+      await expect(requireAdminAccess()).rejects.toThrow("NEXT_REDIRECT");
+
+      expect(mockRedirect).toHaveBeenCalledWith("/portal/dashboard");
+    }
+  });
+
+  it("accepts super_admin (cross-tenant role)", async () => {
+    mockMe.mockResolvedValue({ userId: "user-1", email: "u@test.com" });
+    mockMembershipsList.mockResolvedValue([{ roles: { key: "super_admin" }, status: "approved" }]);
+
+    const { requireAdminAccess } = await import("@/lib/auth/admin");
+    const result = await requireAdminAccess();
+
+    expect(result).toEqual({ userId: "user-1", roleKey: "super_admin" });
+  });
 });

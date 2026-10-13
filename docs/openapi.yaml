@@ -3882,6 +3882,37 @@ paths:
           schema:
             type: "string"
           description: undefined
+  "/documents/{id}/versions/{versionId}/restore":
+    post:
+      tags:
+        - "Documents"
+      summary: "Restore a document version as a new version"
+      responses:
+        200:
+          description: "Success"
+        400:
+          description: "Bad request"
+        401:
+          description: "Unauthorized"
+        403:
+          description: "Forbidden"
+        500:
+          description: "Internal server error"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+          description: undefined
+        - name: "versionId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+          description: undefined
   "/domain-monitors":
     get:
       tags:
@@ -9995,6 +10026,30 @@ paths:
           description: "Internal server error"
       security:
         - bearerAuth: []
+  "/notifications/unsubscribe":
+    get:
+      tags:
+        - "Notifications"
+      summary: "One-click unsubscribe (signed token, no session)"
+      responses:
+        200:
+          description: "Success"
+        400:
+          description: "Bad request"
+        401:
+          description: "Unauthorized"
+        403:
+          description: "Forbidden"
+        500:
+          description: "Internal server error"
+      security: []
+      parameters:
+        - name: "token"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+          description: undefined
   "/notifications/{id}":
     delete:
       tags:
@@ -12519,6 +12574,89 @@ paths:
       responses:
         200:
           description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                required:
+                  - "success"
+                  - "data"
+                properties:
+                  success:
+                    type: "boolean"
+                  data:
+                    type: "object"
+                    required:
+                      - "users"
+                      - "organizations"
+                      - "tickets"
+                      - "projects"
+                      - "documents"
+                      - "counts"
+                      - "limit"
+                    properties:
+                      users:
+                        type: "array"
+                        items:
+                          type: "object"
+                          additionalProperties: true
+                      organizations:
+                        type: "array"
+                        items:
+                          type: "object"
+                          additionalProperties: true
+                      tickets:
+                        type: "array"
+                        items:
+                          type: "object"
+                          additionalProperties: true
+                      projects:
+                        type: "array"
+                        items:
+                          type: "object"
+                          additionalProperties: true
+                      documents:
+                        type: "array"
+                        items:
+                          type: "object"
+                          required:
+                            - "id"
+                            - "name"
+                            - "organization_id"
+                          properties:
+                            id:
+                              type: "string"
+                            name:
+                              type: "string"
+                            organization_id:
+                              type: "string"
+                            mime_type:
+                              type: "string"
+                              nullable: true
+                            visibility:
+                              type: "string"
+                              nullable: true
+                      counts:
+                        type: "object"
+                        required:
+                          - "users"
+                          - "organizations"
+                          - "tickets"
+                          - "projects"
+                          - "documents"
+                        properties:
+                          users:
+                            type: "number"
+                          organizations:
+                            type: "number"
+                          tickets:
+                            type: "number"
+                          projects:
+                            type: "number"
+                          documents:
+                            type: "number"
+                      limit:
+                        type: "number"
         400:
           description: "Bad request"
         401:
@@ -12536,6 +12674,12 @@ paths:
           schema:
             type: "string"
           description: undefined
+        - name: "limit"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+          description: undefined
   "/search/portal":
     get:
       tags:
@@ -12544,6 +12688,54 @@ paths:
       responses:
         200:
           description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                required:
+                  - "success"
+                  - "data"
+                properties:
+                  success:
+                    type: "boolean"
+                  data:
+                    type: "object"
+                    required:
+                      - "tickets"
+                      - "projects"
+                      - "documents"
+                    properties:
+                      tickets:
+                        type: "array"
+                        items:
+                          type: "object"
+                          additionalProperties: true
+                      projects:
+                        type: "array"
+                        items:
+                          type: "object"
+                          additionalProperties: true
+                      documents:
+                        type: "array"
+                        items:
+                          type: "object"
+                          required:
+                            - "id"
+                            - "name"
+                            - "organization_id"
+                          properties:
+                            id:
+                              type: "string"
+                            name:
+                              type: "string"
+                            organization_id:
+                              type: "string"
+                            mime_type:
+                              type: "string"
+                              nullable: true
+                            visibility:
+                              type: "string"
+                              nullable: true
         400:
           description: "Bad request"
         401:

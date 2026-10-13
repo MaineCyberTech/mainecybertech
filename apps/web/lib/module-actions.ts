@@ -451,13 +451,17 @@ export async function createNetworkDiagram(formData: FormData) {
 export async function createSop(formData: FormData) {
   const api = getApiClient();
   try {
-    await api.eduAutomation.sop.create({
+    // FEAT-P2-005: sop_library is owned by the governance surface; the form
+    // uses that schema's fields.
+    await api.governance.sopLibrary.create({
       organizationId: String(formData.get("organizationId") || ""),
       title: String(formData.get("title") || ""),
-      sopNumber: String(formData.get("sopNumber") || ""),
-      category: String(formData.get("category") || ""),
-      version: String(formData.get("version") || ""),
-      content: String(formData.get("content") || ""),
+      description: String(formData.get("description") || ""),
+      sopCategory: String(formData.get("sopCategory") || "general"),
+      complianceFramework: String(formData.get("complianceFramework") || ""),
+      status: String(formData.get("status") || "draft"),
+      reviewCycleDays: Number(formData.get("reviewCycleDays") || 90),
+      documentUrl: String(formData.get("documentUrl") || ""),
     });
     revalidatePath("/admin/edu-automation/sop");
     return { ok: true };
@@ -486,13 +490,18 @@ export async function createCompliance(formData: FormData) {
 export async function createInsurance(formData: FormData) {
   const api = getApiClient();
   try {
-    await api.eduAutomation.insurance.create({
+    // FEAT-P2-005: insurance_evidence is owned by the insurance-binder
+    // surface; the form uses that schema's fields.
+    await api.insuranceBinder.create({
       organizationId: String(formData.get("organizationId") || ""),
-      category: String(formData.get("category") || ""),
-      evidenceDescription: String(formData.get("evidenceDescription") || ""),
-      evidenceStatus: String(formData.get("evidenceStatus") || ""),
-      documentReference: String(formData.get("documentReference") || ""),
-      renewalDate: String(formData.get("renewalDate") || ""),
+      title: String(formData.get("title") || ""),
+      evidenceType: String(formData.get("evidenceType") || "document"),
+      description: String(formData.get("description") || ""),
+      coverageArea: String(formData.get("coverageArea") || ""),
+      insuranceProvider: String(formData.get("insuranceProvider") || ""),
+      policyNumber: String(formData.get("policyNumber") || ""),
+      expiryDate: String(formData.get("expiryDate") || ""),
+      status: String(formData.get("status") || "pending"),
     });
     revalidatePath("/admin/edu-automation/insurance");
     return { ok: true };
@@ -724,12 +733,15 @@ export async function createDnsChange(formData: FormData) {
 export async function createSatisfaction(formData: FormData) {
   const api = getApiClient();
   try {
-    await api.final.satisfaction.create({
+    // FEAT-P2-005: satisfaction_pulses is owned by the satisfaction-pulse
+    // surface (the old /final/satisfaction path returns 410).
+    await api.satisfactionPulse.create({
       organizationId: String(formData.get("organizationId") || ""),
       subject: String(formData.get("subject") || ""),
       question: String(formData.get("question") || ""),
       rating: Number(formData.get("rating") || 0),
       feedback: String(formData.get("feedback") || ""),
+      source: "ticket",
     });
     revalidatePath("/admin/final/satisfaction");
     return { ok: true };
@@ -929,7 +941,9 @@ export async function updateBreakGlass(id: string, formData: FormData) {
 export async function updateDmarc(id: string, formData: FormData) {
   try {
     const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
-    const res = await fetch(`${baseUrl}/api/v1/batch/dmarc/${id}`, {
+    // `encodeURIComponent` keeps the caller-supplied id inside a single path
+    // segment (no `../` traversal into other API endpoints).
+    const res = await fetch(`${baseUrl}/api/v1/batch/dmarc/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1066,7 +1080,7 @@ export async function updateIncident(id: string, formData: FormData) {
 export async function updateLicense(id: string, formData: FormData) {
   try {
     const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
-    const res = await fetch(`${baseUrl}/api/v1/batch/licenses/${id}`, {
+    const res = await fetch(`${baseUrl}/api/v1/batch/licenses/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1412,7 +1426,7 @@ export async function updateService(id: string, formData: FormData) {
 export async function updateStatusItem(id: string, formData: FormData) {
   try {
     const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
-    const res = await fetch(`${baseUrl}/api/v1/batch/status/${id}`, {
+    const res = await fetch(`${baseUrl}/api/v1/batch/status/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1475,7 +1489,7 @@ export async function updateVendorContact(id: string, formData: FormData) {
 export async function updateWebsiteMonitor(id: string, formData: FormData) {
   try {
     const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
-    const res = await fetch(`${baseUrl}/api/v1/batch/website-monitors/${id}`, {
+    const res = await fetch(`${baseUrl}/api/v1/batch/website-monitors/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -259,12 +259,25 @@ existing `cyber-*` CSS utilities remain valid.
 | `Input`, `Textarea`                                          | Themed form fields with forwarded refs and standard a11y wiring                                   | `import { Input, Textarea } from "@mct/ui";` |
 | `Dialog`                                                     | Modal with overlay, focus trap, Escape-to-close and `useId()` labelling                           | `import { Dialog } from "@mct/ui";`          |
 | `Badge`                                                      | Inline status chip — `variant` (`default`/`success`/`warning`/`danger`/`info`), `size`            | `import { Badge } from "@mct/ui";`           |
+| `Chip`                                                       | Filter chip with a labelled 24×24 remove button (`aria-label` defaults to `Remove <label>`)       | `import { Chip } from "@mct/ui";`            |
 | `Avatar`                                                     | User/org avatar with fallback initials                                                            | `import { Avatar } from "@mct/ui";`          |
 | `Skeleton` (`SkeletonText`, `SkeletonCard`, `SkeletonTable`) | Loading placeholders                                                                              | `import { Skeleton } from "@mct/ui";`        |
 
 Also exported from `@mct/ui`: `SidebarGroup`/`SidebarItem`, `ThemeProvider`
-(pinned dark in the web root layout), `cn()`, design tokens and the
+(dark-only in the web root layout), `cn()`, design tokens and the
 `useTheme` hook.
+
+### Storybook
+
+Every primitive has a story under `packages/ui/src/components/*.stories.tsx`
+(`pnpm storybook` to browse, `pnpm storybook:build` for the static build), and
+a bounded set of shared app components — `Breadcrumbs`, `EmptyState`,
+`StatusPill`, `ConfirmDialog`, `DataErrorNote`, `ToastProvider` — has stories
+under `apps/web/components/**` (UX-P3-009). The a11y addon is asserted
+(`parameters.a11y.test: "error"` in `.storybook/preview.tsx`), so Chromatic
+runs axe against every story in CI. The Storybook webpack build is currently
+broken (`SB_BUILDER-WEBPACK5_0002` — see `docs/CI.md`), so the Chromatic job
+is red until that dependency fix lands.
 
 ### Adoption plan
 
@@ -291,6 +304,5 @@ this batch):
 | `apps/web/components/admin/documents/DocumentDrawer.tsx` | 10 buttons, 7 inputs |
 | `apps/web/components/portal/SupportCenterClient.tsx` | 5 buttons, 4 inputs |
 
-Also on the backlog: promote one shared `Chip` (four copies today, UX-P3-001)
-and `ConfirmDialog` into the package, and add test/lint scripts to
-`packages/ui`.
+Also on the backlog: promote `ConfirmDialog` into the package, and add
+test/lint scripts to `packages/ui`.

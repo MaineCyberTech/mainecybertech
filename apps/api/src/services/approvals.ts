@@ -1,4 +1,5 @@
-import { getSupabaseAdmin } from "./supabase";
+import { type Request } from "express";
+import { getScopedClient, getSupabaseAdmin } from "./supabase";
 import { logAuditEvent } from "./audit";
 import { logger } from "../lib/logger";
 import { toJson } from "../lib/db-types";
@@ -227,6 +228,7 @@ export async function cancelRequest(
 }
 
 export async function addTimelineEvent(
+  req: Request,
   organizationId: string,
   moduleKey: string,
   entityType: string,
@@ -235,7 +237,10 @@ export async function addTimelineEvent(
   eventData: Record<string, unknown>,
   actorUserId?: string | null,
 ) {
-  const supabase = getSupabaseAdmin();
+  // RLS-P3-007: timeline events belong to `moduleKey`'s write surface — use
+  // the scoped client so the module's RLS policy is the backstop (the admin
+  // client remains the fallback until the module is allow-listed).
+  const supabase = getScopedClient(req, moduleKey, "write");
 
   const { error } = await supabase.from("module_timeline_events").insert({
     organization_id: organizationId,

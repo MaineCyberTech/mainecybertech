@@ -1,0 +1,268 @@
+name: Load test
+
+# TEST-P2-004: enforced k6 load tests + failure injection.
+#
+# The scripts in scripts/load-testing/ read their committed budgets from
+# scripts/load-testing/budgets.js. k6 exits 99 when a threshold fails, so a run
+# that exceeds a p95/p99 latency or error-rate budget fails this workflow.
+# Budgets are code: change them in a reviewed PR, not per run.
+#
+# Scheduled runs execute the smoke scenario plus the failure-injection
+# negative control (a simulated edge 5xx burst must breach the error budget).
+# Heavier scenarios (tickets/auth/sse/spike) are dispatch-only: the target is a
+# single shared droplet, so an unattended 1000-VU spike would be an outage,
+# not a test. Dispatch with target=prod attaches the approval-gated
+# prod-approval environment and is restricted to the main branch.
+#
+# Operator dependency: the authenticated scenarios need LOAD_TEST_AUTH_TOKEN
+# (tickets/sse) and LOAD_TEST_TEST_EMAIL / LOAD_TEST_TEST_PASSWORD (auth)
+# provisioned in the attached environment; without them the run fails before
+# generating load. The base URL defaults to the public dev API and can be
+# overridden per run or with the LOAD_TEST_API_URL repository variable.
+
+on:
+  schedule:
+    # Weekly, Monday 09:30 UTC. Schedules only fire from the default branch.
+    - cron: "30 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Scenario to run (heavy scenarios are dispatch-only)"
+        type: choice
+        options:
+          - smoke
+          - tickets
+          - auth
+          - sse
+          - spike
+          - failure-injection
+        default: smoke
+      target:
+        description: "Environment to test (prod dispatch is approval-gated)"
+        type: choice
+        options:
+          - dev
+          - prod
+        default: dev
+      api_base_url:
+        description: "Override the API base URL (optional)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: load-test-${{ github.event.inputs.target || 'dev' }}
+  cancel-in-progress: false
+
+jobs:
+  load:
+    environment: ${{ (github.event.inputs.target == 'prod') && 'prod-approval' || 'dev' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Restrict prod dispatch to the main branch
+        # A load test against production must run the workflow definition that
+        # is on main, not an arbitrary feature branch.
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'prod'
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::target=prod can only be dispatched from the main branch (got ${GITHUB_REF}). Promote develop -> main first."
+            exit 1
+          fi
+
+      - name: Resolve API base URL
+        id: target
+        env:
+          INPUT_URL: ${{ github.event.inputs.api_base_url }}
+          CONFIGURED_URL: ${{ vars.LOAD_TEST_API_URL }}
+          TARGET_ENV: ${{ github.event.inputs.target || 'dev' }}
+        run: |
+          set -euo pipefail
+          if [ -n "${INPUT_URL:-}" ]; then
+            URL="$INPUT_URL"
+          elif [ -n "${CONFIGURED_URL:-}" ]; then
+            URL="$CONFIGURED_URL"
+          elif [ "$TARGET_ENV" = "prod" ]; then
+            URL="https://api.mainecybertech.com"
+          else
+            URL="https://api.mainecybertech.us"
+          fi
+          case "$URL" in
+            http://*|https://*) ;;
+            *) echo "::error::API base URL must be http(s): $URL"; exit 1 ;;
+          esac
+          echo "api_base_url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Testing $URL (target=$TARGET_ENV)"
+
+      - name: Wait for API health
+        env:
+          API_BASE_URL: ${{ steps.target.outputs.api_base_url }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 12); do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "$API_BASE_URL/health" || true)
+            if [ "$CODE" = "200" ]; then
+              echo "API healthy (HTTP 200) after $((i * 5))s"
+              exit 0
+            fi
+            echo "Attempt $i/12: HTTP $CODE"
+            sleep 5
+          done
+          echo "::error::API /health never returned 200 at $API_BASE_URL — refusing to run a load test against an unhealthy target"
+          exit 1
+
+      - name: Install k6 (pinned + checksum-verified)
+        env:
+          K6_VERSION: "2.3.0"
+          # SHA-256 of k6-v2.3.0-linux-amd64.tar.gz from the release checksums
+          # file; refresh both together when bumping.
+          K6_SHA256: "39c3117b6af817592dcd0ce4242105c0a7af10948c2a425306f0be8f7a8a8ab1"
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 -o /tmp/k6.tar.gz \
+            "https://github.com/grafana/k6/releases/download/v${K6_VERSION}/k6-v${K6_VERSION}-linux-amd64.tar.gz"
+          echo "${K6_SHA256}  /tmp/k6.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/k6.tar.gz -C /tmp
+          sudo install -m 0755 "/tmp/k6-v${K6_VERSION}-linux-amd64/k6" /usr/local/bin/k6
+          k6 version
+
+      - name: Check scenario credentials
+        env:
+          SCENARIO: ${{ github.event.inputs.scenario || 'smoke' }}
+          AUTH_TOKEN: ${{ secrets.LOAD_TEST_AUTH_TOKEN }}
+          TEST_EMAIL: ${{ secrets.LOAD_TEST_TEST_EMAIL }}
+          TEST_PASSWORD: ${{ secrets.LOAD_TEST_TEST_PASSWORD }}
+        run: |
+          set -euo pipefail
+          case "$SCENARIO" in
+            tickets|sse)
+              if [ -z "$AUTH_TOKEN" ]; then
+                echo "::error::$SCENARIO requires the LOAD_TEST_AUTH_TOKEN secret in the attached environment"
+                exit 1
+              fi
+              ;;
+            auth)
+              if [ -z "$TEST_EMAIL" ] || [ -z "$TEST_PASSWORD" ]; then
+                echo "::error::auth requires the LOAD_TEST_TEST_EMAIL / LOAD_TEST_TEST_PASSWORD secrets in the attached environment"
+                exit 1
+              fi
+              ;;
+          esac
+          echo "Credentials present for $SCENARIO (or not required)."
+
+      - name: Run k6 scenario
+        if: github.event.inputs.scenario != 'failure-injection'
+        env:
+          API_BASE_URL: ${{ steps.target.outputs.api_base_url }}
+          AUTH_TOKEN: ${{ secrets.LOAD_TEST_AUTH_TOKEN }}
+          TEST_EMAIL: ${{ secrets.LOAD_TEST_TEST_EMAIL }}
+          TEST_PASSWORD: ${{ secrets.LOAD_TEST_TEST_PASSWORD }}
+          SUMMARY_PATH: k6-summary.json
+        run: |
+          set -euo pipefail
+          SCENARIO="${{ github.event.inputs.scenario || 'smoke' }}"
+          case "$SCENARIO" in
+            smoke)   SCRIPT=api.basic.smoke.js ;;
+            tickets) SCRIPT=tickets.load.js ;;
+            auth)    SCRIPT=auth.load.js ;;
+            sse)     SCRIPT=sse.load.js ;;
+            spike)   SCRIPT=health.spike.js ;;
+            *)       echo "::error::unknown scenario $SCENARIO"; exit 1 ;;
+          esac
+          echo "Running $SCRIPT against $API_BASE_URL (budgets: scripts/load-testing/budgets.js)"
+          k6 run "scripts/load-testing/$SCRIPT"
+
+      - name: Failure injection (simulated 5xx burst)
+        # Weekly evidence on the schedule, or an explicit dispatch. The
+        # injector proxies to the real API; the committed error budget must
+        # fail the injected run (k6 exit 99), which proves the thresholds are
+        # actually enforced. See scripts/load-testing/fault-injector.mjs.
+        if: github.event_name == 'schedule' || github.event.inputs.scenario == 'failure-injection'
+        env:
+          API_BASE_URL: ${{ steps.target.outputs.api_base_url }}
+        run: |
+          set -euo pipefail
+          UPSTREAM_URL="$API_BASE_URL" PORT=8080 node scripts/load-testing/fault-injector.mjs &
+          INJECTOR_PID=$!
+          trap 'kill "$INJECTOR_PID" 2>/dev/null || true' EXIT
+
+          READY=""
+          for _ in $(seq 1 20); do
+            if curl -sf --max-time 2 http://127.0.0.1:8080/__ready >/dev/null; then READY=1; break; fi
+            sleep 0.5
+          done
+          if [ -z "$READY" ]; then
+            echo "::error::fault injector did not become ready on 127.0.0.1:8080"
+            exit 1
+          fi
+
+          export API_BASE_URL=http://127.0.0.1:8080
+
+          echo "1/3 baseline (injector pass-through) — committed smoke budgets must pass"
+          SUMMARY_PATH=k6-smoke-baseline.json k6 run scripts/load-testing/api.basic.smoke.js
+
+          echo "2/3 injected 5xx burst — the committed error budget must fail the run (k6 exit 99)"
+          curl -sf -X POST -H "Content-Type: application/json" \
+            -d '{"mode":"inject"}' http://127.0.0.1:8080/__control >/dev/null
+          set +e
+          SUMMARY_PATH=failure-injection-summary.json k6 run scripts/load-testing/failure.injection.js
+          INJECT_CODE=$?
+          set -e
+          if [ "$INJECT_CODE" -ne 99 ]; then
+            echo "::error::expected k6 exit 99 (threshold breach) during the injected 5xx burst, got ${INJECT_CODE} — the committed budgets are not being enforced"
+            exit 1
+          fi
+          # Pin the reason: the 503 burst was observed (all checks passed) and
+          # the error-rate budget — not some unrelated threshold — failed.
+          jq -e '.metrics.checks.values.rate == 1' failure-injection-summary.json >/dev/null
+          jq -e '.thresholds[] | select(.metric == "http_req_failed" and .ok == false)' failure-injection-summary.json >/dev/null
+          echo "Injection verified: 503s observed, http_req_failed breached the committed budget, k6 exited 99."
+
+          echo "3/3 recovery — budgets must pass again after the burst ends"
+          curl -sf -X POST -H "Content-Type: application/json" \
+            -d '{"mode":"pass"}' http://127.0.0.1:8080/__control >/dev/null
+          SUMMARY_PATH=k6-smoke-recovery.json k6 run scripts/load-testing/api.basic.smoke.js
+          echo "Recovery verified."
+
+      - name: Upload k6 summaries
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: k6-summaries
+          path: |
+            k6-summary.json
+            k6-smoke-baseline.json
+            k6-smoke-recovery.json
+            failure-injection-summary.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          NTFY_URL: ${{ secrets.NTFY_ALERTS_URL }}
+          NTFY_USER: ${{ secrets.NTFY_ALERTS_USER }}
+          NTFY_PASS: ${{ secrets.NTFY_ALERTS_PASS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE="❌ Load test failed — a committed budget (p95/p99 latency or error rate) was breached or the failure-injection control failed. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # Same fail-loud notifier contract as the backup workflows: a
+          # notifier that fails silently is how a perf regression goes
+          # unnoticed, so this step must fail when no channel is configured.
+          if [ -n "$NTFY_URL" ]; then
+            curl -sf -u "$NTFY_USER:$NTFY_PASS" \
+              -H "Title: Load test failed" -H "Priority: high" -H "Tags: rotating_light" \
+              -d "$MESSAGE" "$NTFY_URL"
+            echo "Notified via ntfy"
+          elif [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -sf -X POST -H "Content-Type: application/json" \
+              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL"
+            echo "Notified via Slack"
+          else
+            echo "::error::Load-test failure notification could not be delivered: set NTFY_ALERTS_URL or SLACK_WEBHOOK_URL"
+            exit 1
+          fi

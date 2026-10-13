@@ -3,6 +3,7 @@ import { wsTransport } from "../services/supabase";
 import { env } from "../env";
 import { logger } from "../logger";
 import { loadActiveRetentionPolicies, resolveRetentionDays } from "../lib/retention-policy";
+import { BATCH_SIZE, MAX_BATCHES, purgeInBatches, type PurgeOutcome } from "../lib/purge";
 import type { TaskHandler, TaskResult } from "../task-registry";
 
 interface RetentionConfig {
@@ -10,87 +11,19 @@ interface RetentionConfig {
   notificationRetentionDays: number;
   /** AN-P2-004: first-party storefront analytics rows (no PII). */
   storeAnalyticsRetentionDays: number;
+  /** WH-P3-009: outbound/inbound delivery audit rows. */
+  webhookDeliveryRetentionDays: number;
+  /** WH-P3-009: dead letters are kept longer so an operator can triage. */
+  webhookDeadLetterRetentionDays: number;
 }
 
 const DEFAULT_CONFIG: RetentionConfig = {
   auditLogRetentionDays: 365,
   notificationRetentionDays: 90,
   storeAnalyticsRetentionDays: 90,
+  webhookDeliveryRetentionDays: 90,
+  webhookDeadLetterRetentionDays: 180,
 };
-
-/**
- * Rows deleted per batch. Deleting a year of audit rows in one statement takes
- * a long lock, can time out the connection, and holds a large transaction open
- * (audit DATA-P1-002). Batching keeps each transaction short and lets us report
- * progress.
- */
-const BATCH_SIZE = 1000;
-
-/**
- * Hard ceiling on batches per table per run. Without it a misconfigured
- * retention window (e.g. 0 days) would try to delete the entire table in one
- * invocation. When the cap is hit we report it rather than silently truncating,
- * so the next run continues and an operator sees the backlog.
- */
-const MAX_BATCHES = 200;
-
-interface PurgeOutcome {
-  table: string;
-  deleted: number;
-  batches: number;
-  /** True when MAX_BATCHES was reached before the backlog was drained. */
-  truncated: boolean;
-  error?: string;
-}
-
-/**
- * Delete rows older than `cutoff` in bounded batches.
- *
- * Selects ids first so we can report an actual count (a bare .delete() returns
- * no row count, which is how the previous implementation reported success
- * without knowing what it deleted) and so each batch is a bounded statement.
- */
-async function purgeInBatches(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: SupabaseClient<any, any, any>,
-  table: string,
-  cutoffIso: string,
-): Promise<PurgeOutcome> {
-  let deleted = 0;
-  let batches = 0;
-
-  while (batches < MAX_BATCHES) {
-    const { data: batch, error: selectError } = await supabase
-      .from(table)
-      .select("id")
-      .lt("created_at", cutoffIso)
-      .limit(BATCH_SIZE);
-
-    if (selectError) {
-      return { table, deleted, batches, truncated: false, error: selectError.message };
-    }
-    if (!batch || batch.length === 0) {
-      return { table, deleted, batches, truncated: false };
-    }
-
-    const ids = batch.map((row) => (row as { id: string }).id);
-    const { error: deleteError } = await supabase.from(table).delete().in("id", ids);
-
-    if (deleteError) {
-      return { table, deleted, batches, truncated: false, error: deleteError.message };
-    }
-
-    deleted += ids.length;
-    batches += 1;
-
-    // A short batch means the backlog is drained.
-    if (ids.length < BATCH_SIZE) {
-      return { table, deleted, batches, truncated: false };
-    }
-  }
-
-  return { table, deleted, batches, truncated: true };
-}
 
 /**
  * Archive audit rows older than `cutoff` and delete them, via the DB function
@@ -145,6 +78,8 @@ export const retentionTask: TaskHandler = async (
     ["auditLogRetentionDays", config.auditLogRetentionDays],
     ["notificationRetentionDays", config.notificationRetentionDays],
     ["storeAnalyticsRetentionDays", config.storeAnalyticsRetentionDays],
+    ["webhookDeliveryRetentionDays", config.webhookDeliveryRetentionDays],
+    ["webhookDeadLetterRetentionDays", config.webhookDeadLetterRetentionDays],
   ] as const) {
     if (typeof days !== "number" || !Number.isFinite(days) || days <= 0) {
       const error = `refusing to purge: ${name} must be a positive number of days (got ${String(days)})`;
@@ -167,6 +102,17 @@ export const retentionTask: TaskHandler = async (
     config.notificationRetentionDays,
     policies,
   );
+  // WH-P3-009: webhook_deliveries and webhook_dead_letters had no purge path.
+  const webhookDeliveryWindow = resolveRetentionDays(
+    "webhook_deliveries",
+    config.webhookDeliveryRetentionDays,
+    policies,
+  );
+  const webhookDeadLetterWindow = resolveRetentionDays(
+    "webhook_dead_letters",
+    config.webhookDeadLetterRetentionDays,
+    policies,
+  );
 
   const auditDays =
     typeof overrides.auditLogRetentionDays === "number"
@@ -176,6 +122,14 @@ export const retentionTask: TaskHandler = async (
     typeof overrides.notificationRetentionDays === "number"
       ? overrides.notificationRetentionDays
       : notificationWindow.days;
+  const webhookDeliveryDays =
+    typeof overrides.webhookDeliveryRetentionDays === "number"
+      ? overrides.webhookDeliveryRetentionDays
+      : webhookDeliveryWindow.days;
+  const webhookDeadLetterDays =
+    typeof overrides.webhookDeadLetterRetentionDays === "number"
+      ? overrides.webhookDeadLetterRetentionDays
+      : webhookDeadLetterWindow.days;
 
   const auditCutoff = new Date();
   auditCutoff.setDate(auditCutoff.getDate() - auditDays);
@@ -186,6 +140,12 @@ export const retentionTask: TaskHandler = async (
   const storeAnalyticsCutoff = new Date();
   storeAnalyticsCutoff.setDate(storeAnalyticsCutoff.getDate() - config.storeAnalyticsRetentionDays);
 
+  const webhookDeliveryCutoff = new Date();
+  webhookDeliveryCutoff.setDate(webhookDeliveryCutoff.getDate() - webhookDeliveryDays);
+
+  const webhookDeadLetterCutoff = new Date();
+  webhookDeadLetterCutoff.setDate(webhookDeadLetterCutoff.getDate() - webhookDeadLetterDays);
+
   const outcomes: PurgeOutcome[] = [];
   outcomes.push(await archiveAuditLogs(supabase, auditCutoff.toISOString()));
   outcomes.push(
@@ -194,6 +154,13 @@ export const retentionTask: TaskHandler = async (
   // AN-P2-004: storefront events previously had no retention path.
   outcomes.push(
     await purgeInBatches(supabase, "store_analytics_events", storeAnalyticsCutoff.toISOString()),
+  );
+  // WH-P3-009: bounded purges for the webhook delivery log and DLQ.
+  outcomes.push(
+    await purgeInBatches(supabase, "webhook_deliveries", webhookDeliveryCutoff.toISOString()),
+  );
+  outcomes.push(
+    await purgeInBatches(supabase, "webhook_dead_letters", webhookDeadLetterCutoff.toISOString()),
   );
 
   const failures = outcomes.filter((o) => o.error);
@@ -229,6 +196,24 @@ export const retentionTask: TaskHandler = async (
         },
       },
       storeAnalyticsCutoff: storeAnalyticsCutoff.toISOString(),
+      webhookDeliveryCutoff: webhookDeliveryCutoff.toISOString(),
+      webhookDeadLetterCutoff: webhookDeadLetterCutoff.toISOString(),
+      webhookWindows: {
+        deliveries: {
+          days: webhookDeliveryDays,
+          source:
+            typeof overrides.webhookDeliveryRetentionDays === "number"
+              ? "payload"
+              : webhookDeliveryWindow.source,
+        },
+        deadLetters: {
+          days: webhookDeadLetterDays,
+          source:
+            typeof overrides.webhookDeadLetterRetentionDays === "number"
+              ? "payload"
+              : webhookDeadLetterWindow.source,
+        },
+      },
     },
     `[retention] ${summary}`,
   );

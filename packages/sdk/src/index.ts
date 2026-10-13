@@ -1,4 +1,4 @@
-import { ApiClient, type ClientOptions, type RetryOptions, ApiError } from "./client";
+import { ApiClient, type ClientOptions, type RetryOptions } from "./client";
 import type { OrganizationOnboardInput, OrganizationOnboardResult } from "./types";
 import { AuthApi, type SignInResult, type SignUpResult } from "./auth";
 import { OrganizationsApi } from "./organizations";
@@ -218,7 +218,7 @@ import {
 export { ApiError } from "./client";
 export { AnalyticsApi } from "./analytics";
 export type { TrackAnalyticsEventInput, AnalyticsEvent, AnalyticsSummary } from "./analytics";
-export type { ClientOptions, RetryOptions } from "./client";
+export type { ClientOptions, RetryOptions, RequestOptions } from "./client";
 export type * from "./types";
 export type {
   SignInResult,
@@ -473,8 +473,26 @@ export class MCTClient {
 
 export type { Database } from "./database.types";
 
-// Shared platform catalogs (EVOL-P2-001 / EVOL-P2-002). Prefer the subpath
-// imports (`@mct/sdk/module-registry`, `@mct/sdk/webhook-events`) in the API so
-// tsup only bundles the dependency-free catalog file.
+// Shared platform catalogs (EVOL-P2-001 / EVOL-P2-002) and role keys
+// (ADMIN-P3-001). Prefer the subpath imports (`@mct/sdk/module-registry`,
+// `@mct/sdk/webhook-events`, `@mct/sdk/role-keys`) in the API so tsup only
+// bundles the dependency-free catalog files.
 export { MODULE_REGISTRY, type ModuleDefinition } from "./module-registry";
 export { WEBHOOK_EVENTS, isWebhookEvent, type WebhookEvent } from "./webhook-events";
+export {
+  CROSS_TENANT_KEYS,
+  ELEVATED_TENANT_KEYS,
+  PLATFORM_ADMIN_KEYS,
+  isCrossTenantKey,
+  isElevatedTenantKey,
+  isPlatformAdminKey,
+  roleKeyOf,
+} from "./role-keys";
+export {
+  TICKET_STATUSES,
+  TICKET_STATUS_TRANSITIONS,
+  allowedTicketTransitions,
+  isTicketStatus,
+  isTicketTransitionAllowed,
+  type TicketStatus,
+} from "./ticket-status";

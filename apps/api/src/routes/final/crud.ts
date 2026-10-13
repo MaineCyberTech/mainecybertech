@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../../services/supabase";
+import { getScopedClient } from "../../services/supabase";
 import { logAuditEvent } from "../../services/audit";
 import { AppError, success, type PaginatedResult } from "../../types";
 import {
@@ -8,7 +8,6 @@ import {
   saas,
   quote,
   dns,
-  pulse,
   time,
   budget,
   runbook,
@@ -18,6 +17,7 @@ import {
 import { queryInt } from "../../lib/query";
 import { requirePermission } from "../../middleware/permissions";
 import { assertDeleteConfirmed } from "../../lib/delete-confirm";
+import { listCountMode } from "../../lib/pagination";
 
 export function snake(s: string) {
   return s.replace(/[A-Z]/g, (l) => `_${l.toLowerCase()}`);
@@ -32,12 +32,12 @@ export function registerCrud(
 ) {
   router.get(`/${path}`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, permissionModule, "read");
       const pg = Math.max(1, queryInt(req.query.page, 1));
       const lm = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
       const q = sb
         .from(table)
-        .select("*", { count: "exact" })
+        .select("*", { count: listCountMode(req.query) })
         .eq("organization_id", req.query.organization_id as string);
       const { data, error, count } = await q
         .order("created_at", { ascending: false })
@@ -58,7 +58,7 @@ export function registerCrud(
   router.post(`/${path}`, requirePermission(permissionModule, "create"), async (req, res, next) => {
     try {
       const p = schema.parse(req.body) as Record<string, unknown>;
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, permissionModule, "write");
       const f: Record<string, unknown> = { created_by: req.authUser!.userId };
       for (const [k, v] of Object.entries(p)) {
         if (k !== "organizationId") f[snake(k)] = v;
@@ -85,7 +85,7 @@ export function registerCrud(
 
   router.get(`/${path}/:id`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, permissionModule, "read");
       const { data, error } = await sb
         .from(table)
         .select("*")
@@ -111,7 +111,7 @@ export function registerCrud(
         const p = (
           schemaWithPartial.partial ? schemaWithPartial.partial() : schemaWithPartial
         ).parse(req.body);
-        const sb = getSupabaseAdmin();
+        const sb = getScopedClient(req, permissionModule, "write");
         const fields: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(p)) {
           if (k !== "organizationId") fields[snake(k)] = v;
@@ -144,7 +144,7 @@ export function registerCrud(
     async (req, res, next) => {
       try {
         assertDeleteConfirmed(req.body);
-        const sb = getSupabaseAdmin();
+        const sb = getScopedClient(req, permissionModule, "write");
         const { error } = await sb
           .from(table)
           .delete()
@@ -171,7 +171,9 @@ const schemas: Record<string, { schema: z.ZodTypeAny; table: string; module: str
   "saas-audit": { schema: saas, table: "saas_audits", module: "saas-audit" },
   procurement: { schema: quote, table: "procurement_quotes", module: "procurement" },
   "dns-changes": { schema: dns, table: "dns_change_requests", module: "dns-changes" },
-  satisfaction: { schema: pulse, table: "satisfaction_pulses", module: "satisfaction-pulse" },
+  // FEAT-P2-005: `satisfaction_pulses` is canonically served by
+  // `/api/v1/satisfaction-pulse`; `/final/satisfaction` is a hard-deprecated
+  // stub in routes/final.ts.
   "time-entries": { schema: time, table: "time_entries", module: "time-entries" },
   budgets: { schema: budget, table: "budget_roadmaps", module: "budgets" },
   runbooks: { schema: runbook, table: "client_runbooks", module: "runbooks" },

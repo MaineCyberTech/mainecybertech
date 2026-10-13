@@ -18,7 +18,8 @@ export default async function SopPage() {
   let items: Array<{ id: string; title?: string }> = [];
   let loadFailed = false;
   try {
-    const r = await api.eduAutomation.sop.list({});
+    // FEAT-P2-005: sop_library's canonical surface is governance/sop-library.
+    const r = await api.governance.sopLibrary.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
     loadFailed = true;
@@ -44,10 +45,12 @@ export default async function SopPage() {
         fields={[
           { key: "organizationId", label: "Org ID", required: true },
           { key: "title", label: "Title", required: true },
-          { key: "sopNumber", label: "SOP Number" },
-          { key: "category", label: "Category" },
-          { key: "version", label: "Version" },
-          { key: "content", label: "Content", type: "textarea" },
+          { key: "description", label: "Description", type: "textarea" },
+          { key: "sopCategory", label: "Category" },
+          { key: "complianceFramework", label: "Compliance Framework" },
+          { key: "status", label: "Status" },
+          { key: "reviewCycleDays", label: "Review Cycle (days)", type: "number" },
+          { key: "documentUrl", label: "Document URL" },
         ]}
         title="New SOP"
         action={createSop}

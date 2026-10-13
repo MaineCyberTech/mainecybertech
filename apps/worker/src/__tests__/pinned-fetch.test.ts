@@ -13,7 +13,7 @@ jest.mock("node:https", () => ({
 
 import dns from "node:dns";
 import https from "node:https";
-import { pinnedFetch, resolvePinnedAddress } from "../lib/pinned-fetch";
+import { pinnedFetch, resolvePinnedAddress, MAX_RESPONSE_BYTES } from "../lib/pinned-fetch";
 
 const dnsLookup = dns.promises.lookup as unknown as jest.Mock;
 const httpsRequest = https.request as unknown as jest.Mock;
@@ -88,6 +88,41 @@ describe("worker pinnedFetch (SEC-P2-002)", () => {
     const callback = jest.fn();
     options.lookup("rebind.example", {}, callback);
     expect(callback).toHaveBeenCalledWith(null, "93.184.216.34", 4);
+  });
+
+  it("caps an oversized response body and stops reading [WH-P3-007]", async () => {
+    dnsLookup.mockResolvedValueOnce([{ address: "93.184.216.34", family: 4 }]);
+
+    let responseStream: (EventEmitter & { destroy: jest.Mock }) | null = null;
+    httpsRequest.mockImplementation(
+      (
+        _url: string,
+        _options: unknown,
+        cb: (res: EventEmitter & { statusCode: number }) => void,
+      ) => {
+        const res = new EventEmitter() as EventEmitter & {
+          statusCode: number;
+          destroy: jest.Mock;
+        };
+        res.statusCode = 200;
+        res.destroy = jest.fn();
+        responseStream = res;
+        process.nextTick(() => {
+          // One chunk larger than the cap: the reader must keep only the cap.
+          res.emit("data", Buffer.alloc(MAX_RESPONSE_BYTES + 1024, 0x61));
+        });
+        cb(res);
+        const req = new EventEmitter() as EventEmitter & { write: jest.Mock; end: jest.Mock };
+        req.write = jest.fn();
+        req.end = jest.fn();
+        return req;
+      },
+    );
+
+    const response = await pinnedFetch("https://big.example/status");
+    expect(response.status).toBe(200);
+    expect((await response.text()).length).toBe(MAX_RESPONSE_BYTES);
+    expect(responseStream?.destroy).toHaveBeenCalled();
   });
 });
 

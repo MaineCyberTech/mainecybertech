@@ -294,36 +294,6 @@ export async function submitProjectTaskForm(formData: FormData): Promise<TaskMut
   return updateProjectTask(formData);
 }
 
-export async function updateProjectBasics(formData: FormData) {
-  try {
-    const api = getApiClient();
-    const projectId = String(formData.get("projectId") ?? "").trim();
-    const name = String(formData.get("name") ?? "").trim();
-    const description = String(formData.get("description") ?? "").trim();
-    const status = String(formData.get("status") ?? "planned").trim();
-    const priority = String(formData.get("priority") ?? "normal").trim();
-    const startsAt = String(formData.get("startsAt") ?? "").trim();
-    const dueAt = String(formData.get("dueAt") ?? "").trim();
-    if (!projectId || !name)
-      return { ok: false as const, error: "Project ID and name are required." };
-
-    await api.projects.update(projectId, {
-      name,
-      description: description || null,
-      status,
-      priority,
-      startsAt: startsAt || null,
-      dueAt: dueAt || null,
-    });
-
-    revalidatePath(`/admin/projects/${projectId}`);
-    revalidatePath("/admin/projects");
-    return { ok: true as const };
-  } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Unknown error" };
-  }
-}
-
 export async function addProjectUpdate(formData: FormData) {
   try {
     const api = getApiClient();

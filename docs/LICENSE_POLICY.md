@@ -7,8 +7,9 @@ This document is the human-readable companion to
 [`security/license-policy.json`](../security/license-policy.json), which is the
 machine-enforced source of truth. The policy is applied in two places:
 
-1. **PR gate** — `.github/workflows/dependency-review.yml` denies strong
-   copyleft / source-available licenses on the diff of a pull request.
+1. **PR gate** — `.github/workflows/dependency-review.yml` applies the
+   allow-list (plus the reviewed exception packages) to the diff of a pull
+   request, so a newly introduced dependency with any other license fails.
 2. **Full-tree gate** — `scripts/license-gate.mjs` runs in
    `.github/workflows/test.yml` and `.github/workflows/validate.yml` (the deploy
    gate) over the entire resolved tree, using the allowlist and exceptions
@@ -82,6 +83,12 @@ The monorepo itself is `ISC` (see [`LICENSE`](../LICENSE) and every
 `package.json`). ISC is permissive and MIT-equivalent; it is intentional for
 this private, non-published monorepo. (Finding SBOM-P3-001 is a documentation
 gap, not a license change request.)
+
+**Owner acceptance (2026-10-12, SBOM-P3-003):** the maintainer reviewed the
+license choice and accepts `ISC` for the root and every workspace package; the
+root `package.json` `license` field, the `LICENSE` text and this policy now
+agree. This line is the sign-off artifact — re-open the choice if any package
+is ever published to a registry.
 
 ## Generated artifacts (tracking policy)
 

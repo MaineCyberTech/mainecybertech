@@ -1,0 +1,90 @@
+name: External uptime probe
+
+# OBS-P2-016: external uptime checks for the public platform endpoints.
+#
+# The probe runs from a GitHub Actions runner — outside the droplet — and
+# asserts the public API/web status codes and latency budgets from
+# scripts/uptime/probe-targets.json (or the UPTIME_PROBE_TARGETS repository
+# variable). This is the layer in-stack Prometheus cannot cover: a DNS,
+# Cloudflare, edge-proxy or droplet failure leaves every internal scrape green
+# while users are down. Failures notify through the same ntfy/Slack pattern as
+# the backup workflows.
+#
+# Schedules only fire from the default branch. Set the UPTIME_PROBE_ENABLED
+# repository variable to `false` to pause the schedule during a known outage;
+# a manual dispatch always runs. See docs/MONITORING_AND_ALERTING.md §2 and
+# docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md.
+
+on:
+  schedule:
+    # Hourly at :23 (off the top of the hour to dodge the cron stampede).
+    - cron: "23 * * * *"
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: "Optional JSON target list override (same shape as probe-targets.json targets)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: external-uptime-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    # Skipped only for the schedule when the operator sets the pause flag; a
+    # manual dispatch always runs.
+    if: github.event_name == 'workflow_dispatch' || vars.UPTIME_PROBE_ENABLED != 'false'
+    # The ntfy/Slack notification secrets live in the `dev` environment (same
+    # as the backup and staleness workflows); the probe itself is read-only.
+    environment: dev
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Probe public endpoints
+        env:
+          UPTIME_PROBE_TARGETS: ${{ github.event.inputs.targets || vars.UPTIME_PROBE_TARGETS }}
+          UPTIME_REPORT_PATH: uptime-report.json
+        run: |
+          set -euo pipefail
+          node scripts/uptime/probe.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload probe report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: uptime-report
+          path: uptime-report.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          NTFY_URL: ${{ secrets.NTFY_ALERTS_URL }}
+          NTFY_USER: ${{ secrets.NTFY_ALERTS_USER }}
+          NTFY_PASS: ${{ secrets.NTFY_ALERTS_PASS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE="❌ External uptime probe failed — a public platform endpoint is down or over its latency budget. Check the report: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # Same fail-loud notifier contract as the backup workflows: a
+          # notifier that fails silently is how an outage goes unnoticed, so
+          # this step must fail when no channel is configured.
+          if [ -n "$NTFY_URL" ]; then
+            curl -sf -u "$NTFY_USER:$NTFY_PASS" \
+              -H "Title: External uptime probe failed" -H "Priority: high" -H "Tags: rotating_light" \
+              -d "$MESSAGE" "$NTFY_URL"
+            echo "Notified via ntfy"
+          elif [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -sf -X POST -H "Content-Type: application/json" \
+              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL"
+            echo "Notified via Slack"
+          else
+            echo "::error::Uptime alert could not be delivered: set NTFY_ALERTS_URL or SLACK_WEBHOOK_URL"
+            exit 1
+          fi

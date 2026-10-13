@@ -23,6 +23,7 @@ import { queryInt } from "../lib/query";
 import { recordOrganizationCreated } from "../lib/metrics";
 import { assertCanAssignRole } from "../lib/role-assignment";
 import { assertDeleteConfirmed, assertOrgDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -192,7 +193,7 @@ router.get("/", responseCacheNoRenew(60, { scope: resolveAdminTenantScope }), as
     const tenantScope = await resolveAdminTenantScope(req);
     const isPlatformAdmin = tenantScope.allTenants;
 
-    let query = supabase.from("organizations").select("*", { count: "exact" });
+    let query = supabase.from("organizations").select("*", { count: listCountMode(req.query) });
 
     if (!isPlatformAdmin) {
       const orgIds = tenantScope.orgIds;

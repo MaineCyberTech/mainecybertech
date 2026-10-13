@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { colors } from "@mct/ui/tokens";
 
 export default function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -40,7 +41,7 @@ export default function ParticleBackground() {
       for (const p of particles) {
         ctx!.beginPath();
         ctx!.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx!.fillStyle = "#059669";
+        ctx!.fillStyle = colors.cyber.accent;
         ctx!.fill();
       }
     }

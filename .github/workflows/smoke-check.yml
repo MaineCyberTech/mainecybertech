@@ -1,0 +1,112 @@
+name: Smoke check
+
+# TEST-P3-002: no scheduled functional smoke existed. The deploy health gate
+# and the hourly uptime probe assert status codes/latency, but nothing verified
+# that a user can still log in and read tenant data after a deploy. This
+# workflow runs the checks in scripts/uptime/smoke.mjs from outside the droplet:
+#
+#   1. API /health returns 200;
+#   2. the web /login page renders;
+#   3. an authenticated read (sign-in + GET /api/v1/auth/me) succeeds.
+#
+# Targets:
+#   * schedule -> dev by default. Set the `SMOKE_PROD_ENABLED` repository
+#     variable to `true` to include prod (do this only once the prod
+#     environment exists — prod API /health currently 404s until the first
+#     prod deploy).
+#   * workflow_dispatch -> choose dev, prod or both.
+#
+# Operator enablement:
+#   1. Provision a dedicated read-only (non-MFA) smoke account and set the
+#      `SMOKE_EMAIL` / `SMOKE_PASSWORD` secrets on the `dev` environment (or
+#      repo-wide). Until then the authenticated read is reported as skipped —
+#      health and login still run.
+#   2. Optional overrides: `SMOKE_DEV_API_BASE` / `SMOKE_DEV_WEB_BASE` /
+#      `SMOKE_PROD_API_BASE` / `SMOKE_PROD_WEB_BASE` repository variables.
+#   3. Set `SMOKE_PROD_ENABLED=true` to include prod in the schedule.
+#   See docs/MONITORING_AND_ALERTING.md and
+#   docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md.
+
+on:
+  schedule:
+    # Twice an hour, offset off the top of the hour to dodge the cron stampede.
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Which environment(s) to smoke"
+        type: choice
+        options:
+          - dev
+          - prod
+          - both
+        default: dev
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smoke-check
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    # The ntfy/Slack notification secrets and the optional SMOKE_* credentials
+    # live in the `dev` environment (same as the uptime probe and backup
+    # workflows). `dev` has no protection rules, so the schedule never waits
+    # for an approval.
+    environment: dev
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Run smoke checks
+        env:
+          # Dispatch input wins; the schedule includes prod only once enabled.
+          SMOKE_TARGET: ${{ github.event.inputs.target || (vars.SMOKE_PROD_ENABLED == 'true' && 'both' || 'dev') }}
+          SMOKE_DEV_API_BASE: ${{ vars.SMOKE_DEV_API_BASE || 'https://api.mainecybertech.us' }}
+          SMOKE_DEV_WEB_BASE: ${{ vars.SMOKE_DEV_WEB_BASE || 'https://app.mainecybertech.us' }}
+          SMOKE_PROD_API_BASE: ${{ vars.SMOKE_PROD_API_BASE || 'https://api.mainecybertech.com' }}
+          SMOKE_PROD_WEB_BASE: ${{ vars.SMOKE_PROD_WEB_BASE || 'https://app.mainecybertech.com' }}
+          SMOKE_EMAIL: ${{ secrets.SMOKE_EMAIL }}
+          SMOKE_PASSWORD: ${{ secrets.SMOKE_PASSWORD }}
+          SMOKE_REPORT_PATH: smoke-report.json
+        run: |
+          set -euo pipefail
+          node scripts/uptime/smoke.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: smoke-report
+          path: smoke-report.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          NTFY_URL: ${{ secrets.NTFY_ALERTS_URL }}
+          NTFY_USER: ${{ secrets.NTFY_ALERTS_USER }}
+          NTFY_PASS: ${{ secrets.NTFY_ALERTS_PASS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE="❌ Smoke check failed — health, login or an authenticated read is broken. Check the report: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # Same fail-loud notifier contract as the backup/uptime workflows: a
+          # notifier that fails silently is how an outage goes unnoticed.
+          if [ -n "$NTFY_URL" ]; then
+            curl -sf -u "$NTFY_USER:$NTFY_PASS" \
+              -H "Title: Smoke check failed" -H "Priority: high" -H "Tags: rotating_light" \
+              -d "$MESSAGE" "$NTFY_URL"
+            echo "Notified via ntfy"
+          elif [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -sf -X POST -H "Content-Type: application/json" \
+              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL"
+            echo "Notified via Slack"
+          else
+            echo "::error::Smoke-check failure notification could not be delivered: set NTFY_ALERTS_URL or SLACK_WEBHOOK_URL"
+            exit 1
+          fi

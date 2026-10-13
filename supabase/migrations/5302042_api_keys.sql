@@ -19,6 +19,7 @@ create index if not exists idx_api_keys_prefix on api_keys(key_prefix);
 
 alter table api_keys enable row level security;
 
+drop policy if exists "api_keys_select_org" on api_keys;
 create policy "api_keys_select_org" on api_keys for select
   using (
     organization_id in (
@@ -27,6 +28,7 @@ create policy "api_keys_select_org" on api_keys for select
     )
   );
 
+drop policy if exists "api_keys_insert_admin" on api_keys;
 create policy "api_keys_insert_admin" on api_keys for insert
   with check (
     exists (
@@ -38,6 +40,7 @@ create policy "api_keys_insert_admin" on api_keys for insert
     )
   );
 
+drop policy if exists "api_keys_update_admin" on api_keys;
 create policy "api_keys_update_admin" on api_keys for update
   using (
     exists (
@@ -49,6 +52,7 @@ create policy "api_keys_update_admin" on api_keys for update
     )
   );
 
+drop policy if exists "api_keys_delete_admin" on api_keys;
 create policy "api_keys_delete_admin" on api_keys for delete
   using (
     exists (

@@ -249,6 +249,24 @@ describe("webhookRetry task", () => {
     expect(store.deliveries[0].retry_count).toBe(1);
   });
 
+  it("replays the stored envelope verbatim, including its timestamp [WH-P3-005]", async () => {
+    const requestBody = {
+      event: "ticket.created",
+      timestamp: "2026-09-01T09:00:00.000Z",
+      data: { ticketId: "t1" },
+    };
+    store.deliveries = [dueDelivery({ request_body: requestBody })];
+    store.endpoint = { id: "wh1", url: "https://example.com/hook", secret: null, is_active: true };
+    fetchMock.mockResolvedValue({ status: 200, text: jest.fn().mockResolvedValue("ok") });
+
+    const result = await webhookRetry({});
+
+    expect(result).toEqual({ ok: true });
+    const [, init] = fetchMock.mock.calls[0] as [string, { body: string }];
+    // The retry body must equal the first attempt's body byte-for-byte.
+    expect(init.body).toBe(JSON.stringify(requestBody));
+  });
+
   it("claims legacy rows whose next_retry_at is null before sending", async () => {
     store.deliveries = [dueDelivery({ next_retry_at: null })];
     store.endpoint = { id: "wh1", url: "https://example.com/hook", secret: null, is_active: true };

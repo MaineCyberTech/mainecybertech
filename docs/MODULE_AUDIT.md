@@ -1,5 +1,10 @@
 # Module Audit — Purpose, Implementation Status & Gaps (2026-08-05)
 
+> **HISTORICAL (superseded).** This audit reflects the codebase as of 2026-08-05.
+> Several findings below were fixed in later remediation runs; the confirmed-bug
+> table carries a per-row status reconciled on 2026-10-12. Do not treat the
+> body text as current — see `AGENTS.md` and `CHANGELOG.md` for present state.
+
 Deep-dive audit of every module area: what each module should accomplish, how fully it is
 implemented (API / SDK / admin UI / portal UI / worker), and current gaps. Based on a
 full read of all 56 API route files, 52 admin pages, 64 portal pages, worker tasks, and
@@ -24,17 +29,21 @@ patterns reported by users are real and widespread:
 
 ## Confirmed bugs
 
-| #   | Severity       | Bug                                                                                                                                                                                                | Impact                                                          |
-| --- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| A   | Crash          | `search.ts:77` filters documents by a `type` column that doesn't exist → PostgREST 400                                                                                                             | Admin global search 500s on every query                         |
-| B   | Functional     | `tickets.ts:164` filters memberships by `role` (column is `role_id`)                                                                                                                               | "Notify org admins on ticket create" never fires                |
-| C   | Security/UX    | `documents` share-link route registered after `requireAuth`; `max_access` not enforced on access_count                                                                                             | External share recipients get 401; link limits unenforced       |
-| D   | Security       | by-id PATCH/DELETE not org-scoped on `status-page`, `uptime-monitor`, `dmarc-coach`, `license-optimizer`                                                                                           | Cross-tenant writes                                             |
-| E   | Functional     | `batch.ts` PATCH validates the full create schema                                                                                                                                                  | Partial edits fail on website-monitors/licenses/status/dmarc    |
-| F   | Functional     | `file-requests` has no upload endpoint                                                                                                                                                             | `storage_path`/`notify_on_upload`/`upload_count` are write-only |
-| G   | Data integrity | 3 tables served by two routers with different schemas (`sop_library`, `insurance_evidence`, `satisfaction_pulses`)                                                                                 | Schema drift risk                                               |
-| —   | Broken UI      | `/admin/vendors`, `/admin/security-ops`, `/admin/security-suite` 404 (loading.tsx only); proposals "New"/"Edit" → stub/404; qbr detail → 404; portal "New Onboarding"/"New Form"/"Fill Form" → 404 | Dead navigation                                                 |
-| —   | Dead code      | `updateProjectBasics` + `addPortalTicketComment` server actions exist but are never imported                                                                                                       | Features half-built                                             |
+> **Reconciliation (2026-10-12):** A–F and the broken-UI/dead-code rows below were
+> fixed by later remediation runs; only bug G (dual-owned tables, tracked as
+> FEAT-P2-005) remains open. Statuses are per-row.
+
+| #   | Severity       | Bug                                                                                                                                                                                                | Impact                                                          | Status (2026-10-12)                                                        |
+| --- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| A   | Crash          | `search.ts:77` filters documents by a `type` column that doesn't exist → PostgREST 400                                                                                                             | Admin global search 500s on every query                         | **Fixed** — documents are filtered on `mime_type`/`search_vector`           |
+| B   | Functional     | `tickets.ts:164` filters memberships by `role` (column is `role_id`)                                                                                                                               | "Notify org admins on ticket create" never fires                | **Fixed** — filters on the embedded `roles.key` via `PLATFORM_ADMIN_KEYS`   |
+| C   | Security/UX    | `documents` share-link route registered after `requireAuth`; `max_access` not enforced on access_count                                                                                             | External share recipients get 401; link limits unenforced       | **Fixed** — public share route + atomic `max_access` increment              |
+| D   | Security       | by-id PATCH/DELETE not org-scoped on `status-page`, `uptime-monitor`, `dmarc-coach`, `license-optimizer`                                                                                           | Cross-tenant writes                                             | **Fixed** — routers now run `requireOrgAccess` and scope by id/org          |
+| E   | Functional     | `batch.ts` PATCH validates the full create schema                                                                                                                                                  | Partial edits fail on website-monitors/licenses/status/dmarc    | **Fixed** — PATCH parses a partial schema                                   |
+| F   | Functional     | `file-requests` has no upload endpoint                                                                                                                                                             | `storage_path`/`notify_on_upload`/`upload_count` are write-only | **Fixed** — public token upload endpoint with validation                    |
+| G   | Data integrity | 3 tables served by two routers with different schemas (`sop_library`, `insurance_evidence`, `satisfaction_pulses`)                                                                                 | Schema drift risk                                               | **Still open** — tracked as FEAT-P2-005; `sop_library`/`insurance_evidence` duplicates fail closed with 410 |
+| —   | Broken UI      | `/admin/vendors`, `/admin/security-ops`, `/admin/security-suite` 404 (loading.tsx only); proposals "New"/"Edit" → stub/404; qbr detail → 404; portal "New Onboarding"/"New Form"/"Fill Form" → 404 | Dead navigation                                                 | **Fixed** — vendors redirects; pages/routes exist                           |
+| —   | Dead code      | `updateProjectBasics` + `addPortalTicketComment` server actions exist but are never imported                                                                                                       | Features half-built                                             | **Fixed** — `addPortalTicketComment` is wired to `TicketReplyForm`; `updateProjectBasics` deleted (FEAT-P3-005) |
 
 ## Module table
 

@@ -32,6 +32,7 @@ create index idx_impersonation_log_org
 -- Only service_role can access this table (server-side writes + reads via API).
 alter table public.impersonation_log enable row level security;
 
+drop policy if exists "impersonation_log_service_role_all" on public.impersonation_log;
 create policy "impersonation_log_service_role_all" on public.impersonation_log
   for all to service_role
   using (true)

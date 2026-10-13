@@ -1,10 +1,12 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Orbitron } from "next/font/google";
 import { ThemeProvider } from "@mct/ui/providers/ThemeProvider";
+import { colors } from "@mct/ui/tokens";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { RouteAnnouncer } from "@/components/RouteAnnouncer";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { VersionBadge } from "@/components/version-badge";
 
 const inter = Inter({
@@ -22,10 +24,20 @@ export const metadata: Metadata = {
   description: "Secure MSP client and admin portal",
   applicationName: "MCT Portal",
   icons: {
-    icon: "/favicon.svg",
+    // MOB-P3-005: declare the real ICO plus the SVG, and the iOS touch icon.
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.webmanifest",
-  themeColor: "#059669",
+};
+
+// MOB-P3-004: `themeColor` is ignored in `metadata` (Next.js 15 warns and never
+// emits the tag); it must live in the viewport export.
+export const viewport: Viewport = {
+  themeColor: colors.cyber.accent,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -41,11 +53,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to main content
         </a>
         <div className="pointer-events-none fixed left-1/2 top-[20%] -z-10 h-[800px] w-[800px] -translate-x-1/2 bg-[radial-gradient(circle,rgba(5,150,105,0.08)_0%,transparent_60%)]" />
-        <ThemeProvider defaultTheme="dark" storageKey="mct-theme-dark">
+        <ThemeProvider>
           <ToastProvider>
             <RouteAnnouncer />
             <ServiceWorkerRegistrar />
             <div>{children}</div>
+            <OfflineIndicator />
             <VersionBadge />
           </ToastProvider>
         </ThemeProvider>

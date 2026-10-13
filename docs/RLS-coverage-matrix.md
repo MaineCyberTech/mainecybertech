@@ -145,7 +145,7 @@ api_keys, approval_requests, assets, backup_status, badges_earned, break_glass_a
 | permissions                              | yes     | S              | no-DEL-pol         | has OPEN (non-tenant-scoped) policy                   |
 | phishing_campaigns                       | yes     | S,I,U,D        | no                 | scopes: owner,platform_admin,member                   |
 | port_maps                                | yes     | S,I,U,D        | YES                | scopes: owner,platform_admin,member                   |
-| portal_module_settings                   | yes     | S,I,U          | no-DEL-pol         | scopes: owner,platform_admin,member                   |
+| portal_module_settings                   | yes     | S,I,U          | no-DEL-pol         | scopes: owner,platform_admin,member — **dropped 2026-10-12** (5302460, FEAT-P3-004) |
 | powershell_scripts                       | yes     | S,I,U,D        | no                 | scopes: owner,platform_admin,member                   |
 | procurement_quotes                       | yes     | S,I,U,D        | YES                | scopes: owner,platform_admin,member                   |
 | profiles                                 | yes     | S,I,U,D        | no-DEL-pol         | owner-scoped (auth.uid) only                          |

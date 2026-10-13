@@ -186,4 +186,91 @@ describe("AI API", () => {
       expect(res.body.data.draftReply).toContain("Hi there");
     });
   });
+
+  describe("AI draft review gate (FEAT-P2-004)", () => {
+    it("persists a draft with status 'draft'", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({
+        data: { id: "draft-1", status: "draft", module_key: "compliance-readiness" },
+        error: null,
+      });
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .post("/api/v1/ai/drafts")
+        .set("Authorization", authToken)
+        .send({
+          organizationId: testOrgId,
+          moduleKey: "compliance-readiness",
+          promptKey: "compliance/interpret-control",
+          draftContent: { summary: "Draft interpretation" },
+        });
+
+      expect(res.status).toBe(201);
+      expect(builder.insert).toHaveBeenCalled();
+      expect(res.body.data.status).toBe("draft");
+    });
+
+    it("validates the draft payload", async () => {
+      mockAuth();
+      const res = await request(app)
+        .post("/api/v1/ai/drafts")
+        .set("Authorization", authToken)
+        .send({});
+      expect(res.status).toBe(400);
+    });
+
+    it("lists drafts with paging metadata", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+      const res = await request(app).get("/api/v1/ai/drafts").set("Authorization", authToken);
+      expect(res.status).toBe(200);
+      expect(res.body.data.items).toEqual([]);
+      expect(res.body.data.total).toBe(0);
+    });
+
+    it("approves a draft and records the reviewer", async () => {
+      const supabase = mockAuth();
+      let calls = 0;
+      supabase.from.mockImplementation(() => {
+        calls += 1;
+        return createMockBuilder(
+          calls === 1
+            ? {
+                data: {
+                  id: "draft-1",
+                  status: "draft",
+                  module_key: "compliance-readiness",
+                  draft_content: { summary: "Draft interpretation" },
+                },
+                error: null,
+              }
+            : { data: { id: "draft-1", status: "approved" }, error: null },
+        );
+      });
+
+      const res = await request(app)
+        .post("/api/v1/ai/drafts/draft-1/review")
+        .set("Authorization", authToken)
+        .send({ decision: "approved", reviewNotes: "looks good" });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.status).toBe("approved");
+    });
+
+    it("refuses to re-review an output that is no longer a draft", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: { id: "draft-1", status: "approved", module_key: "compliance-readiness" },
+          error: null,
+        }),
+      );
+      const res = await request(app)
+        .post("/api/v1/ai/drafts/draft-1/review")
+        .set("Authorization", authToken)
+        .send({ decision: "rejected" });
+      expect(res.status).toBe(409);
+    });
+  });
 });

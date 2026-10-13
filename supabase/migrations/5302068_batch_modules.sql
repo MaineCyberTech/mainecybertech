@@ -22,8 +22,11 @@ create table if not exists license_tracking (
 
 create index if not exists idx_license_tracking_org on license_tracking(organization_id);
 alter table license_tracking enable row level security;
+drop policy if exists "license_tracking_select_org" on license_tracking;
 create policy "license_tracking_select_org" on license_tracking for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "license_tracking_insert_auth" on license_tracking;
 create policy "license_tracking_insert_auth" on license_tracking for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "license_tracking_update_org" on license_tracking;
 create policy "license_tracking_update_org" on license_tracking for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists status_items (
@@ -46,8 +49,11 @@ create table if not exists status_items (
 create index if not exists idx_status_items_org on status_items(organization_id);
 create index if not exists idx_status_items_public on status_items(is_public);
 alter table status_items enable row level security;
+drop policy if exists "status_items_select_org" on status_items;
 create policy "status_items_select_org" on status_items for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "status_items_insert_auth" on status_items;
 create policy "status_items_insert_auth" on status_items for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "status_items_update_org" on status_items;
 create policy "status_items_update_org" on status_items for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists website_monitors (
@@ -72,8 +78,11 @@ create table if not exists website_monitors (
 
 create index if not exists idx_website_monitors_org on website_monitors(organization_id);
 alter table website_monitors enable row level security;
+drop policy if exists "website_monitors_select_org" on website_monitors;
 create policy "website_monitors_select_org" on website_monitors for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "website_monitors_insert_auth" on website_monitors;
 create policy "website_monitors_insert_auth" on website_monitors for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "website_monitors_update_org" on website_monitors;
 create policy "website_monitors_update_org" on website_monitors for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists dmarc_assessments (
@@ -100,8 +109,11 @@ create table if not exists dmarc_assessments (
 create index if not exists idx_dmarc_assessments_org on dmarc_assessments(organization_id);
 create index if not exists idx_dmarc_assessments_domain on dmarc_assessments(domain);
 alter table dmarc_assessments enable row level security;
+drop policy if exists "dmarc_assessments_select_org" on dmarc_assessments;
 create policy "dmarc_assessments_select_org" on dmarc_assessments for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "dmarc_assessments_insert_auth" on dmarc_assessments;
 create policy "dmarc_assessments_insert_auth" on dmarc_assessments for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "dmarc_assessments_update_org" on dmarc_assessments;
 create policy "dmarc_assessments_update_org" on dmarc_assessments for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 commit;

@@ -116,7 +116,7 @@ describe("DomainMonitorsPage", () => {
     const Page = (await import("@/app/(admin)/admin/domain-monitors/page")).default;
     render(await Page());
     expect(screen.getByText("Example")).toBeInTheDocument();
-    expect(screen.getByText(/example.com/)).toBeInTheDocument();
+    expect(screen.getByText("example.com", { exact: false })).toBeInTheDocument();
     expect(screen.getByText("OK")).toBeInTheDocument();
   });
 

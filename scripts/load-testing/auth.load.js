@@ -1,5 +1,7 @@
 import http from "k6/http";
 import { check, sleep, group } from "k6";
+import { BUDGETS, thresholdsFor } from "./budgets.js";
+import { buildSummary } from "./summary.js";
 
 export const options = {
   stages: [
@@ -7,10 +9,7 @@ export const options = {
     { duration: "1m", target: 100 },
     { duration: "30s", target: 0 },
   ],
-  thresholds: {
-    http_req_failed: ["rate<0.02"],
-    http_req_duration: ["p(95)<5000"],
-  },
+  thresholds: thresholdsFor(BUDGETS.auth),
 };
 
 const BASE_URL = __ENV.API_BASE_URL || "http://localhost:4000";
@@ -66,10 +65,17 @@ export default function () {
       }),
       {
         headers: { "Content-Type": "application/json" },
+        // 400 is the expected outcome for an invalid code; mark it as an
+        // expected response so it does not count against the error-rate budget.
+        responseCallback: http.expectedStatuses(400),
       },
     );
     check(res, {
       "callback returns 400 for invalid code": (r) => r.status === 400,
     });
   });
+}
+
+export function handleSummary(data) {
+  return buildSummary(data, "auth");
 }

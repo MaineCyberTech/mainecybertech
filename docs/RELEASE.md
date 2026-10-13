@@ -59,16 +59,19 @@ on prod — `e2e-gate` and `migrate-gate`.
 
 ## Production environment requirements
 
-The deploy job runs under `prod-approval` on prod and `dev` on dev. The approval
+Every production-mutating job — the prod deploy, the prod Terraform apply and
+prod DB migrations — runs under `prod-approval` (`dev` on dev). The approval
 itself is a GitHub repository setting and **cannot** be enforced from the
 workflow file. Before a prod release, an owner must confirm:
 
-- `prod-approval` (and `prod`) have the required reviewers / wait timer set in
-  **Settings → Environments**.
-- The `prod` environment holds the `SUPABASE_*`, `JWT_SECRET` and other secrets
-  and vars the deploy job forwards (`SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+- `prod-approval` has the required reviewers / wait timer set in
+  **Settings → Environments** (BP-P3-003: `prod` is read-only plan/resolve and
+  needs no reviewers).
+- The `prod-approval` environment holds the `SUPABASE_*`, `JWT_SECRET`,
+  `SUPABASE_ACCESS_TOKEN`/`SUPABASE_PROJECT_REF` and other secrets and vars the
+  deploy and migration jobs forward (`SUPABASE_URL`, `SUPABASE_ANON_KEY`,
   `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_*`, `SMTP_*`, `CI_SSH_PRIVATE_KEY`, …).
-  Without them the prod deploy path cannot succeed.
+  Without them the prod deploy and migration paths cannot succeed.
 - `DO_API_TOKEN` is valid or a `DROPLET_IP` environment variable is set for prod
   so `resolve-ip` can resolve the droplet.
 

@@ -230,6 +230,37 @@ describe("retentionTask (DATA-P1-002)", () => {
     expect(state.store_analytics_events.map((row) => row.id)).toEqual(["recent-1"]);
   });
 
+  it("purges webhook deliveries and dead letters with the documented windows [WH-P3-009]", async () => {
+    const state: TableState = {
+      audit_logs: [],
+      notifications: [],
+      webhook_deliveries: [
+        { id: "wd-old", created_at: daysAgo(120) },
+        { id: "wd-recent", created_at: daysAgo(10) },
+      ],
+      webhook_dead_letters: [
+        { id: "dl-old", created_at: daysAgo(200) },
+        { id: "dl-recent", created_at: daysAgo(30) },
+      ],
+    };
+    const supabase = makeSupabase(state);
+    (createClient as unknown as jest.Mock).mockReturnValue(supabase);
+
+    const res = await retentionTask({});
+
+    expect(res.ok).toBe(true);
+    // Defaults: 90 days for deliveries, 180 days for dead letters.
+    expect(state.webhook_deliveries.map((row) => row.id)).toEqual(["wd-recent"]);
+    expect(state.webhook_dead_letters.map((row) => row.id)).toEqual(["dl-recent"]);
+  });
+
+  it("refuses a non-positive webhook retention window [WH-P3-009]", async () => {
+    const res = await retentionTask({ webhookDeliveryRetentionDays: 0 });
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/webhookDeliveryRetentionDays must be a positive number of days/);
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
   it("returns ok:false and keeps the rows when the audit archive fails", async () => {
     const state: TableState = { audit_logs: rows(100), notifications: [] };
     const supabase = makeSupabase(state, { failRpc: "archive_audit_logs" });
@@ -252,6 +283,35 @@ describe("retentionTask (DATA-P1-002)", () => {
 
     expect(res.ok).toBe(false);
     expect(res.error).toMatch(/permission denied/);
+  });
+
+  it("keeps rows exactly at the cutoff and deletes only older rows (strict .lt) [DATA-P3-003]", async () => {
+    const now = new Date("2026-10-12T12:00:00.000Z");
+    jest.useFakeTimers({ now });
+    try {
+      // Mirror the task's own date math for the 90-day notification default so
+      // the fixture lands exactly on the boundary in any timezone.
+      const cutoff = new Date(now);
+      cutoff.setDate(cutoff.getDate() - 90);
+      const state: TableState = {
+        audit_logs: [],
+        notifications: [
+          { id: "expired", created_at: new Date(cutoff.getTime() - 1).toISOString() },
+          { id: "boundary", created_at: cutoff.toISOString() },
+          { id: "fresh", created_at: new Date(cutoff.getTime() + 1).toISOString() },
+        ],
+      };
+      const supabase = makeSupabase(state);
+      (createClient as unknown as jest.Mock).mockReturnValue(supabase);
+
+      const res = await retentionTask({});
+
+      expect(res.ok).toBe(true);
+      // `.lt` is strict: a row stamped exactly at the cutoff survives.
+      expect(state.notifications.map((r) => r.id)).toEqual(["boundary", "fresh"]);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it("does not delete when there is nothing past the cutoff", async () => {

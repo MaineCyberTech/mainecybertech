@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getClientApi } from "@/lib/client-api";
+import { formErrorMessage } from "@/lib/api-error";
 import type { Role } from "@mct/sdk";
 
 type Step = 0 | 1 | 2 | 3;
@@ -126,8 +127,15 @@ export default function OrganizationOnboardingWizard() {
       });
       setCreatedId(result.organization.id);
       setStep(3);
-    } catch {
-      setError("Onboarding failed. The slug may already be in use or the admin email is invalid.");
+    } catch (error) {
+      // USE-P3-005: keep the API's specific message (e.g. "slug is already
+      // taken") instead of replacing every failure with one generic guess.
+      setError(
+        formErrorMessage(
+          error,
+          "Onboarding failed. The slug may already be in use or the admin email is invalid.",
+        ),
+      );
     } finally {
       setLoading(false);
     }
