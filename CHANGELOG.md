@@ -136,6 +136,57 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Fixed
 
+- **Remediation wave, phases 5–6 (2026-10-12, 24 PRs, audit rerun).**
+  - CI/governance: Chromatic visual gate now blocking on a broken build;
+    secret-scan failure notification; weekly Dependabot triage reminder + SLA
+    policy; break-glass runbook + issue template + branch-protection drift
+    audit; every destructive admin delete confirmation-gated with a CI guard
+    and documented recovery; k6 budgets + failure injection; hourly external
+    uptime probe (#238–#241).
+  - Webhooks: deterministic test idempotency, Buffer-typed raw bodies,
+    byte-identical retries, conflict-safe delivery upserts, 64 KiB response
+    caps, M365 batch handling, bounded retention purge, integration-sync
+    enqueue + calendar-event dedup (#242).
+  - Search/features: prefix + tsvector indexes, AI draft write/review gate,
+    one canonical API surface per table (legacy paths 410 with successor
+    links); store-page previews, scorecard docs, orphan table dropped, ticket
+    transition validation, admin-gate parity, search contracts (#243, #259).
+  - UX/a11y: single labelled Chip, dead theme paths removed, aria semantics
+    fixed, value-preserving color-token codemod, heading/input/autocomplete
+    fixes; Storybook shared-component stories + a11y addon, breadth baseline
+    with fail-on-new, interactive a11y scans (#244, #260).
+  - Portal/mobile: ticket-create confirmation, service-worker registration +
+    offline indicator, per-version document download/restore, If-Match conflict
+    handling, form-error fixes; PWA icon set, single manifest, viewport
+    themeColor, ≥44px touch targets (#245, #248).
+  - Data/retention: `drop policy if exists` backfill, purge boundary tests,
+    guarded CHECK constraints, rollback notes + migrations policy page,
+    DB-types digest binding, bounded public-interaction purge (#250).
+  - Security/privacy: rate-limit key normalization, CORS wildcard fail-closed,
+    active-org authorization, analytics anon inserts closed, notification
+    recipient scoping; consent-mode signals, telemetry scrubbing, secrets/DR
+    docs + env-parity guard, historical audit markers, coverage artifacts,
+    packages/ui test runner, image-SBOM validation + dedupe checks (#247,
+    #256, #258).
+  - Resilience/arch/RLS/perf: rollback namespace/health fixes, circuit-breaker
+    abort + timer cleanup, request-timeout abort, authenticated worker
+    metrics, behavioral RLS matrix + drift lint + scoped-client expansion, SSE
+    reconnect, bounded exports, estimated counts, bundle budgets (#257).
+  - Billing: payment-method masking, billing-email encryption, paid_at guards,
+    left-join payments, entitlement overrides (incl. all-disabled), seats +
+    trialing plans, sync gating, doc reconciliation (#253).
+  - Hygiene/infra/evolution: dead code/artifacts removed, circular-dependency
+    guard, `as any` boundary cleanup, Redis client consolidation; container
+    hardening + third-party image scan + hadolint gate, env/doc sync, tested
+    Terraform state restore; flag registry, deprecation middleware, permission
+    catalog lint, public-route inventory, AI gates, shared config package
+    (#251, #252, #255).
+  - Files/notifications: share limiter + short TTL, upload error codes,
+    sandboxed previews, restore exercise; email templates, unsubscribe/global
+    opt-out, org-scoped preferences, per-recipient throttles, deep-link
+    escaping; committed webhook event catalog (#254).
+  - Deploy fixes: `IMAGE_TAG` exported to the remote deploy shell (#228);
+    image-SBOM validator accepts CycloneDX 1.7 (#272).
 - **Remediation wave, phase 4 (2026-10-12, 9 PRs, audit rerun).**
   - Privacy: GA/Tawk.to gated on the recorded consent choice (policy version
     stored server-side); consent required + recorded on public submit/quote
