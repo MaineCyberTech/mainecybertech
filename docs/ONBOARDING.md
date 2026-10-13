@@ -52,7 +52,7 @@ mainecybertech-portal/
 │   └── seeds/         9 seed files
 ├── docs/              300+ documentation files
 ├── scripts/           PowerShell + bash utilities
-└── .github/           CI/CD workflows (28 total)
+└── .github/           CI/CD workflows (30 total)
 ```
 
 ### Key Design Principles

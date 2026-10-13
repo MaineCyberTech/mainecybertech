@@ -29,6 +29,8 @@ permissions:
 
 jobs:
   breadth:
+    # GitHub does not allow timeout-minutes on a job that calls a reusable
+    # workflow; the e2e.yml `e2e` job carries its own 45-minute timeout.
     uses: ./.github/workflows/e2e.yml
     with:
       a11y_full: true

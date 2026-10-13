@@ -13,9 +13,11 @@ on:
   pull_request:
     branches: [main, develop]
 
+# CI-P3-006: no `security-events: write` here — nothing uploads SARIF from this
+# workflow (Trivy results are uploaded as artifacts, and CodeQL owns code
+# scanning). The scope is granted only in codeql.yml, which uploads results.
 permissions:
   contents: read
-  security-events: write
 
 concurrency:
   # Cancel superseded runs on the same ref (rapid pushes to a PR). A manual
@@ -39,6 +41,9 @@ jobs:
       - uses: ./.github/actions/unit-tests
         with:
           node-version: ${{ matrix.node-version }}
+          # Optional: resolves CODEOWNERS team handles via the API (BP-P3-005).
+          # Without the secret the guard runs its syntax-only fallback.
+          codeowners-token: ${{ secrets.CODEOWNERS_READ_TOKEN }}
 
       # IR-P2-010 / OBS-P2-012: promtool check rules + rule unit tests against
       # the digest-pinned prom/prometheus image (fast, no credentials).
