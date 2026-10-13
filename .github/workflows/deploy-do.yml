@@ -261,7 +261,7 @@ jobs:
         # Cryptographically binds the SBOM to the deployed image digest and pushes
         # it to the registry as an OCI referrer, so it is durable and not subject
         # to the 30-day artifact retention window.
-        uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e
         with:
           subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api
           subject-digest: ${{ steps.build-api.outputs.digest }}
@@ -329,7 +329,7 @@ jobs:
             image-sbom-mct-worker.cdx.json
       - name: Attest mct-worker SBOM (SUPPLY-P3-001)
         # Durable, digest-bound SBOM attestation (see build-api).
-        uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e
         with:
           subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker
           subject-digest: ${{ steps.build-worker.outputs.digest }}
@@ -405,7 +405,7 @@ jobs:
             image-sbom-mct-web.cdx.json
       - name: Attest mct-web SBOM (SUPPLY-P3-001)
         # Durable, digest-bound SBOM attestation (see build-api).
-        uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e
         with:
           subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web
           subject-digest: ${{ steps.build-web.outputs.digest }}
