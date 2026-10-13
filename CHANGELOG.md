@@ -187,6 +187,15 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
     escaping; committed webhook event catalog (#254).
   - Deploy fixes: `IMAGE_TAG` exported to the remote deploy shell (#228);
     image-SBOM validator accepts CycloneDX 1.7 (#272).
+  - Final wave: bulk-invite batching (500 invites 2002 → 17 DB calls) with the
+    invite security flow preserved + DLQ replay idempotency key (#274); hotfix
+    runbook, reviewer-checklist reconciliation, required-check guard matrix
+    modeling, CODEOWNERS validation, release workflow, e2e retry policy,
+    per-job timeouts, workflow-inventory guard, badge cleanup, image-pin
+    guard, smoke-check workflow (#275).
+  - Register after the wave: **580 verified-fixed / 108 partially-fixed /
+    2 still-open / 0 open** (the two remaining are the operator-gated prod
+    deploy P1s).
 - **Remediation wave, phase 4 (2026-10-12, 9 PRs, audit rerun).**
   - Privacy: GA/Tawk.to gated on the recorded consent choice (policy version
     stored server-side); consent required + recorded on public submit/quote
