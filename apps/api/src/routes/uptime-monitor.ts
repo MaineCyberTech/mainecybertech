@@ -9,6 +9,8 @@ import { requirePermission } from "../middleware/permissions";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
 import type { Tables } from "@mct/sdk/database.types";
 import { queryInt } from "../lib/query";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -116,7 +118,7 @@ router.get("/checks", async (req, res, next) => {
 
     const { data, error, count } = await supabase
       .from("uptime_checks")
-      .select("*", { count: "exact" })
+      .select("*", { count: listCountMode(req.query) })
       .eq("organization_id", req.query.organization_id as string)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -222,13 +224,22 @@ router.delete(
   requirePermission("uptime-monitor", "delete"),
   async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getScopedClient(req, "uptime-monitor", "write");
+      const organizationId = req.query.organization_id as string;
       const { error } = await supabase
         .from("uptime_checks")
         .delete()
         .eq("id", String(req.params.id))
-        .eq("organization_id", req.query.organization_id as string);
+        .eq("organization_id", organizationId);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
+      await logAuditEvent({
+        organizationId,
+        actorUserId: req.authUser!.userId,
+        action: "uptime_check.deleted",
+        entityType: "uptime_check",
+        entityId: String(req.params.id),
+      });
       res.status(204).send();
     } catch (err) {
       next(err);

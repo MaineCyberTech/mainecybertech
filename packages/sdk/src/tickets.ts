@@ -1,5 +1,5 @@
-import { ApiClient } from "./client";
-import type { Ticket, TicketComment, PaginatedResult } from "./types";
+import { ApiClient, type RequestOptions } from "./client";
+import type { Ticket, TicketComment, PaginatedResult, BulkUpdateResult } from "./types";
 
 export class TicketsApi {
   constructor(private client: ApiClient) {}
@@ -43,9 +43,17 @@ export class TicketsApi {
       externalJsmIssueKey?: string | null;
       labels?: string[] | null;
       resolution?: string | null;
+      /**
+       * USE-P3-004: the row version last read. When set, the API compares it
+       * with the stored version and rejects a stale write with 409.
+       */
+      ifMatch?: number;
     },
   ) {
-    return this.client.patch<Ticket>(`/api/v1/tickets/${id}`, data);
+    const { ifMatch, ...body } = data;
+    const options: RequestOptions | undefined =
+      ifMatch !== undefined ? { ifMatch } : undefined;
+    return this.client.patch<Ticket>(`/api/v1/tickets/${id}`, body, undefined, options);
   }
 
   listComments(ticketId: string) {
@@ -79,11 +87,7 @@ export class TicketsApi {
   }
 
   bulkUpdate(ids: string[], updates: { status?: string; priority?: string }) {
-    return this.client.post<{
-      results: Array<{ id: string; success: boolean; error?: string }>;
-      successful: number;
-      failed: number;
-    }>("/api/v1/tickets/bulk", {
+    return this.client.post<BulkUpdateResult>("/api/v1/tickets/bulk", {
       ids,
       ...updates,
     });

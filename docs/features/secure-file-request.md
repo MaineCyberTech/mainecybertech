@@ -103,6 +103,65 @@ Category: operations
 - `PATCH` with `status: "revoked"` invalidates the public link (410 on subsequent access)
 - `DELETE` removes the request entirely (admin/super_admin only)
 
+## Upload Security Controls
+
+### Content sniffing (FILE-P2-005)
+
+Every document and file-request upload passes through
+`apps/api/src/lib/upload-validation.ts` before storage. Declared MIME and
+filename extension are untrusted:
+
+- Markup/script content (`<!doctype`, `<html`, `<svg`, `<?xml` at the start;
+  `<script`, `<svg`, `<html`, `<!doctype` anywhere) is rejected for every
+  type, scanned across the whole buffer — leading padding cannot push it past
+  the old 512-byte head check.
+- The detected container must match the declared MIME: images (JPEG/PNG/GIF/
+  WebP magic bytes), PDF (`%PDF-`), Office (`docx`/`xlsx`/`pptx` OOXML zip
+  packages, `doc`/`xls`/`ppt` OLE2 compound files), archives (zip/gzip/7z/rar/
+  tar), RTF, JSON and plain text.
+- A known filename extension that disagrees with the detected container is a
+  polyglot mismatch and is rejected (`VALIDATION` 400), e.g. a zip renamed
+  `.pdf`.
+
+### Malware scanning (FILE-P2-003, optional)
+
+The API ships a pluggable scan hook (`apps/api/src/lib/malware-scan.ts`) that
+is a **no-op unless `MALWARE_SCANNER_URL` is set**. When set, uploads are
+POSTed to it as `multipart/form-data` (field `file`) before the object is
+written to storage; infected content is rejected (400) and an unreachable or
+malformed scanner fails closed (503).
+
+Operator setup:
+
+1. Run a scanner reachable from the API container. For ClamAV, deploy a
+   `clamav-rest` sidecar (e.g. `cws/clamav-rest`) on the compose network and
+   set `MALWARE_SCANNER_URL=http://clamav-rest:8080/scan`. For VirusTotal,
+   run an internal proxy that submits to the VirusTotal API and maps the
+   analysis stats to `{"clean": true|false}` — never expose the API key.
+2. Set `MALWARE_SCANNER_URL` (and `MALWARE_SCANNER_API_KEY` when the scanner
+   needs an `x-apikey` header) as a GitHub secret so `deploy-do.yml` writes it
+   to the droplet `.env`; the compose file passes both through to the API.
+3. Verify: upload an EICAR test string through a document upload — expect
+   `400` and no object in the `documents` bucket; upload a normal file —
+   expect success.
+
+### Bucket-level limits (FILE-P2-003)
+
+`storage.buckets.file_size_limit` is set on the `documents` bucket (25 MiB,
+matching the file-request multer cap) and authenticated INSERT/UPDATE policies
+were removed (FILE-P2-008), so object writes must flow through the API where
+sniffing and scanning run.
+
+`allowed_mime_types` is **deliberately not set**: the storage API enforces it
+on service-role writes too, and `scripts/restore-storage.sh` re-uploads
+archived objects without their original `Content-Type`, so an allow-list would
+break disaster-recovery restores until the backup/restore scripts preserve
+MIME metadata. The tradeoff is accepted because direct-to-storage writes are
+closed and the API enforces the MIME allow-list plus the content checks above.
+If an allow-list is added later, update `scripts/backup-storage.sh` /
+`scripts/restore-storage.sh` to capture and replay `Content-Type` first, and
+backfill old archives.
+
 ## Troubleshooting
 
 | Issue                               | Resolution                                            |

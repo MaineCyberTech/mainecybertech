@@ -10,7 +10,8 @@ import * as path from "path";
  *   - are NOT admin-only (`requireAdmin`), and
  *   - do NOT contain any tenant-scope predicate:
  *       requireOrgAccessByParam | .eq("organization_id" |
- *       assertResourceOrg | req.orgScope | req.query.organization_id
+ *       assertResourceOrg | loadOwned | applyResolvedOrg |
+ *       req.orgScope | req.query.organization_id
  *
  * Every such handler MUST appear in the explicit KNOWN_UNSCOPED allowlist
  * (commented with the reason). New tenant-scoped resources added without an
@@ -28,12 +29,14 @@ const SCOPE_MARKERS = [
   "requireOrgAccessByParam",
   '.eq("organization_id"',
   "assertResourceOrg",
+  // Mandatory-predicate helper (MT-P2-002) and the entity->org ownership
+  // loader: both verify the caller's tenant scope for the row/query.
+  "applyResolvedOrg",
+  "loadOwned",
   "req.orgScope",
   "req.query.organization_id",
   "organization_id:",
 ];
-
-const METHODS = ["get", "post", "put", "patch", "delete", "all"];
 
 /**
  * Seed allowlist (from the remediation plan) plus genuinely global / user-scoped
@@ -45,7 +48,9 @@ const METHODS = ["get", "post", "put", "patch", "delete", "all"];
  */
 const KNOWN_UNSCOPED = new Set<string>([
   // --- not-yet-remediated tenant resources (from the plan) ---
-  "findings",
+  // findings, tickets and qbr were remediated for MT-P2-002 (mandatory
+  // `applyResolvedOrg` predicates) and are deliberately NOT allowlisted any
+  // more: a new unscoped `:param` handler in one of them now fails this guard.
   "approvals",
   "proposals",
   "api-keys",
@@ -57,7 +62,6 @@ const KNOWN_UNSCOPED = new Set<string>([
   "ai",
   "memberships",
   "webhook-management",
-  "tickets",
   // --- genuinely global / user-scoped / public / admin-only modules ---
   "roles",
   "store",
@@ -80,7 +84,6 @@ const KNOWN_UNSCOPED = new Set<string>([
   "audit",
   "governance",
   "sla",
-  "qbr",
   "status-page",
   "uptime-monitor",
   "training-hub",

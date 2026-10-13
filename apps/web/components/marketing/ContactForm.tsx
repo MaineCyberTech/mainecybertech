@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { submitLead } from "../../app/(public)/contact/actions";
+import { fetchPublicInit } from "../../lib/public-init";
 import { getClientEnv } from "../../lib/env";
 
-const API_BASE = getClientEnv().NEXT_PUBLIC_API_URL;
 const TURNSTILE_SITE_KEY = getClientEnv().NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 interface FormData {
@@ -41,13 +41,10 @@ export default function ContactForm() {
   const turnstileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/v1/public/init`)
-      .then((r) => r.json())
-      .then((d) => {
-        setTrackingId(d.data.trackingId);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    fetchPublicInit().then((id) => {
+      setTrackingId(id);
+      setLoading(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -107,7 +104,7 @@ export default function ContactForm() {
   }
 
   const inputCls = (field: keyof FormData) =>
-    `w-full rounded border border-white/10 bg-cyber-base/60 px-4 py-3 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 focus:shadow-[0_0_10px_rgba(5,150,105,0.2)] ${errors[field] ? "border-red-500" : ""}`;
+    `w-full rounded border border-white/10 bg-cyber-base/60 px-4 py-3 text-base text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 focus:shadow-[0_0_10px_rgba(5,150,105,0.2)] sm:text-sm ${errors[field] ? "border-red-500" : ""}`;
 
   const labelCls = "mb-2 block text-xs font-semibold uppercase tracking-widest text-slate-300";
 
@@ -331,7 +328,7 @@ export default function ContactForm() {
       <button
         type="submit"
         disabled={loading || submitting || !consent || (!!TURNSTILE_SITE_KEY && !captchaToken)}
-        className="w-full rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-400 disabled:shadow-none"
+        className="w-full rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-4 font-display text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-400 disabled:shadow-none"
       >
         {loading
           ? "Establishing Secure Connection..."

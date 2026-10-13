@@ -1,0 +1,5 @@
+# Team-resolution fixture for scripts/ci/check-codeowners.sh (BP-P3-005).
+# @mainecybertech/ghost-team exists only in teams-full.json, so the guard must
+# fail against teams.json and pass against teams-full.json.
+* @mainecybertech/backend
+/docs/ @mainecybertech/ghost-team

@@ -3,50 +3,72 @@
 import { revalidatePath } from "next/cache";
 import { getApiClient } from "@/lib/api";
 
-export async function approveOrganization(formData: FormData) {
-  const api = getApiClient();
+export type MembershipApprovalResult = {
+  ok: boolean;
+  error?: string;
+};
+
+export async function approveOrganization(formData: FormData): Promise<MembershipApprovalResult> {
   const organizationId = String(formData.get("organizationId"));
 
-  await api.organizations.update(organizationId, { status: "approved" });
+  try {
+    await getApiClient().organizations.update(organizationId, { status: "approved" });
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Unexpected error." };
+  }
 
   revalidatePath("/admin/approvals");
   revalidatePath(`/admin/organizations/${organizationId}`);
   revalidatePath("/admin/audit");
+  return { ok: true };
 }
 
-export async function rejectOrganization(formData: FormData) {
-  const api = getApiClient();
+export async function rejectOrganization(formData: FormData): Promise<MembershipApprovalResult> {
   const organizationId = String(formData.get("organizationId"));
 
-  await api.organizations.update(organizationId, { status: "rejected" });
+  try {
+    await getApiClient().organizations.update(organizationId, { status: "rejected" });
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Unexpected error." };
+  }
 
   revalidatePath("/admin/approvals");
   revalidatePath(`/admin/organizations/${organizationId}`);
   revalidatePath("/admin/audit");
+  return { ok: true };
 }
 
-export async function approveMembership(formData: FormData) {
-  const api = getApiClient();
+/**
+ * Status-only membership transitions. The membership already has a role, so
+ * the queue must NOT send `roleId: ""` — that fails UUID validation and left
+ * every pending user unapprovable (USE-P1-003). Errors are returned so the
+ * client component can display the API message instead of throwing into an
+ * error boundary.
+ */
+export async function approveMembership(formData: FormData): Promise<MembershipApprovalResult> {
   const membershipId = String(formData.get("membershipId"));
 
-  await api.memberships.update(membershipId, {
-    roleId: "",
-    status: "approved",
-  });
+  try {
+    await getApiClient().memberships.update(membershipId, { status: "approved" });
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Unexpected error." };
+  }
 
   revalidatePath("/admin/approvals");
   revalidatePath("/admin/audit");
+  return { ok: true };
 }
 
-export async function rejectMembership(formData: FormData) {
-  const api = getApiClient();
+export async function rejectMembership(formData: FormData): Promise<MembershipApprovalResult> {
   const membershipId = String(formData.get("membershipId"));
 
-  await api.memberships.update(membershipId, {
-    roleId: "",
-    status: "rejected",
-  });
+  try {
+    await getApiClient().memberships.update(membershipId, { status: "rejected" });
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Unexpected error." };
+  }
 
   revalidatePath("/admin/approvals");
   revalidatePath("/admin/audit");
+  return { ok: true };
 }

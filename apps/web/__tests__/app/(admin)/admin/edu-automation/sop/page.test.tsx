@@ -10,7 +10,7 @@ jest.mock("@/lib/module-actions", () => ({}));
 const mockList = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
-    eduAutomation: { sop: { list: mockList } },
+    governance: { sopLibrary: { list: mockList } },
   }),
 }));
 

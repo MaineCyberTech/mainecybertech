@@ -53,13 +53,18 @@ router.get("/bootstrap", responseCacheNoRenew(30), async (req, res, next) => {
     }
 
     // Per-tenant module provisioning overrides the subscription-derived set.
+    // BILL-P3-005: the existence of any rows — even an all-disabled set — is an
+    // explicit admin override, so a revoked module is not re-enabled by the
+    // subscription fallback below.
     const { data: entitlements } = await supabase
       .from("client_portal_entitlements")
       .select("organization_id, module_key, enabled")
       .in("organization_id", orgIds.length ? orgIds : ["__none__"]);
 
     const entitlementsByOrg = new Map<string, string[]>();
+    const orgsWithOverrides = new Set<string>();
     for (const e of entitlements ?? []) {
+      orgsWithOverrides.add(e.organization_id);
       if (!e.enabled) continue;
       const list = entitlementsByOrg.get(e.organization_id) ?? [];
       list.push(e.module_key);
@@ -71,7 +76,6 @@ router.get("/bootstrap", responseCacheNoRenew(30), async (req, res, next) => {
       const role = Array.isArray(m.roles) ? m.roles[0] : m.roles;
       const sub = subByOrg.get(m.organization_id) ?? null;
       const isActive = isSubscriptionActive(sub?.status);
-      const provisioned = entitlementsByOrg.get(m.organization_id);
       return {
         organizationId: m.organization_id,
         organizationName: org?.name ?? null,
@@ -85,7 +89,9 @@ router.get("/bootstrap", responseCacheNoRenew(30), async (req, res, next) => {
               currentPeriodEnd: sub.currentPeriodEnd,
             }
           : null,
-        enabledModules: provisioned?.length ? provisioned : deriveEnabledModules(isActive),
+        enabledModules: orgsWithOverrides.has(m.organization_id)
+          ? (entitlementsByOrg.get(m.organization_id) ?? [])
+          : deriveEnabledModules(isActive),
       };
     });
 
@@ -109,8 +115,10 @@ router.get("/bootstrap", responseCacheNoRenew(30), async (req, res, next) => {
   }
 });
 
-// Admin: per-tenant module provisioning.
-router.get("/entitlements", requireAdmin, requireOrgAccess, async (req, res, next) => {
+// Admin: per-tenant module provisioning. requireOrgAccess runs first so the
+// org-pinned admin check in requireAdmin applies to the requested organization
+// (MT-P2-007) — same order as audit.ts / bulk.ts.
+router.get("/entitlements", requireOrgAccess, requireAdmin, async (req, res, next) => {
   try {
     const organizationId = req.query.organization_id as string;
     if (!organizationId) throw new AppError("VALIDATION", "organization_id required", 400);
@@ -134,7 +142,7 @@ const entitlementsSchema = z.object({
     .min(1),
 });
 
-router.put("/entitlements", requireAdmin, requireOrgAccess, async (req, res, next) => {
+router.put("/entitlements", requireOrgAccess, requireAdmin, async (req, res, next) => {
   try {
     const parsed = entitlementsSchema.parse(req.body);
     const supabase = getSupabaseAdmin();

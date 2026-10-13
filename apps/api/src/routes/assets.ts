@@ -8,12 +8,15 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
+import { EXPORT_ROW_LIMIT } from "../lib/pagination";
 import { applyOrgScope, applyRequestedOrg, resolveAdminTenantScope } from "../lib/admin-scope";
 import { assertResourceOrg } from "../lib/tenant";
 import { createAssetSchema, updateAssetSchema } from "../validators/assets";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { moduleCommentSchema } from "../validators/comments";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -52,7 +55,9 @@ router.get("/export", async (req, res, next) => {
       scope,
     );
     query = applyOrgScope(query, "organization_id", scope);
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(EXPORT_ROW_LIMIT);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -72,7 +77,7 @@ router.get("/", async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("assets").select("*", { count: "exact" });
+    let query = supabase.from("assets").select("*", { count: listCountMode(req.query) });
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
     const status = req.query.status as string | undefined;
@@ -213,6 +218,7 @@ router.post("/", requirePermission("assets", "create"), async (req, res, next) =
       metadata: { name: parsed.name },
     });
     await addTimelineEvent(
+      req,
       parsed.organizationId,
       "assets",
       "asset",
@@ -307,6 +313,7 @@ router.patch(
 
 router.delete("/:id", requirePermission("assets", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "assets", "write");
     const { data: asset, error: fetchError } = await supabase
       .from("assets")

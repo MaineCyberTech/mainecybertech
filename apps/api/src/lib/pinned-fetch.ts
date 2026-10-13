@@ -15,6 +15,13 @@ export type PinnedFetchInit = {
   signal?: AbortSignal;
 };
 
+/**
+ * WH-P3-007: cap how many response bytes are buffered from a webhook receiver.
+ * A receiver could otherwise stream an unbounded body and exhaust the
+ * process's memory; callers only persist a truncated response_body anyway.
+ */
+export const MAX_RESPONSE_BYTES = 64 * 1024;
+
 function isIpLiteral(host: string): boolean {
   return /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(":");
 }
@@ -90,14 +97,43 @@ export async function pinnedFetch(
       },
       (res: http.IncomingMessage) => {
         const chunks: Buffer[] = [];
-        res.on("data", (chunk: Buffer) => chunks.push(chunk));
-        res.on("end", () => {
+        let received = 0;
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
           resolve({
             status: res.statusCode ?? 0,
             text: async () => Buffer.concat(chunks).toString("utf8"),
           });
+        };
+        res.on("data", (chunk: Buffer) => {
+          if (settled) return;
+          // WH-P3-007: stop at the cap and close the stream instead of
+          // buffering an unbounded response body.
+          if (received >= MAX_RESPONSE_BYTES) {
+            finish();
+            res.destroy();
+            return;
+          }
+          const remaining = MAX_RESPONSE_BYTES - received;
+          if (chunk.length > remaining) {
+            chunks.push(chunk.subarray(0, remaining));
+            received = MAX_RESPONSE_BYTES;
+            finish();
+            res.destroy();
+          } else {
+            chunks.push(chunk);
+            received += chunk.length;
+          }
         });
-        res.on("error", reject);
+        res.on("end", finish);
+        res.on("close", finish);
+        res.on("error", (err: Error) => {
+          if (settled) return;
+          settled = true;
+          reject(err);
+        });
       },
     );
 

@@ -14,7 +14,9 @@
  *   3. reject revoked (`is_active = false`) or expired keys,
  *   4. attach the key's organization + the creating user so the existing
  *      `requireOrgAccess` / `requirePermission` chain still governs what the key
- *      may do, and record `last_used_at` (best effort).
+ *      may do — `requirePermission` additionally caps the request to the key's
+ *      stored `permissions` scopes (SEC-P2-004), and record `last_used_at`
+ *      (best effort).
  */
 import crypto from "crypto";
 import { getSupabaseAdmin } from "../services/supabase";
@@ -79,7 +81,12 @@ export async function authenticateApiKey(token: string): Promise<ApiKeyAuth> {
 
   if (error) throw new AppError("DB_ERROR", "API key lookup failed", 500);
   if (!data || !data.is_active) throw unauthorized();
-  if (data.expires_at && Date.parse(data.expires_at) <= Date.now()) throw unauthorized();
+  if (data.expires_at) {
+    const expiresAt = Date.parse(data.expires_at);
+    // Fail closed on an unparsable timestamp: `NaN <= Date.now()` is false,
+    // so a malformed expiry row would otherwise authenticate forever.
+    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) throw unauthorized();
+  }
   if (!timingSafeEqualHex(hashApiKey(token), data.key_hash)) throw unauthorized();
 
   // Best-effort usage timestamp; a telemetry failure must not fail the request.

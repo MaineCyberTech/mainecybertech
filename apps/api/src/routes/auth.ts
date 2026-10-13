@@ -10,6 +10,7 @@ import { logger } from "../lib/logger";
 import { rateLimitAuth, rateLimitEmail } from "../middleware/rate-limit";
 import { recordAuthAttempt } from "../lib/metrics";
 import { clearMfaFactorCache, decodeAssuranceLevel, userHasVerifiedFactor } from "../lib/mfa";
+import { decryptProfilePii } from "../lib/profile-pii";
 import {
   CODE_COUNT,
   findMatchingRecoveryCode,
@@ -76,7 +77,7 @@ router.get("/me", requireAuth, async (req, res, next) => {
     const { data: profile, error } = await supabase
       .from("profiles")
       .select(
-        "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
+        "id, full_name, email, phone, title, encrypted_pii, is_super_admin, default_organization_id, created_at",
       )
       .eq("id", req.authUser!.userId)
       .single();
@@ -86,13 +87,19 @@ router.get("/me", requireAuth, async (req, res, next) => {
       return;
     }
 
+    // SEC-P2-002: prefer the encrypted mirror as the source of truth for PII;
+    // the plaintext columns are only a fallback for not-yet-backfilled rows.
+    const pii = decryptProfilePii(
+      profile.encrypted_pii as Record<string, unknown> | null | undefined,
+    );
+
     res.json(
       success({
         userId: profile.id,
-        email: profile.email,
-        fullName: profile.full_name,
-        phone: profile.phone,
-        title: profile.title,
+        email: pii.email ?? profile.email,
+        fullName: pii.full_name ?? profile.full_name,
+        phone: pii.phone ?? profile.phone,
+        title: pii.title ?? profile.title,
         isSuperAdmin: profile.is_super_admin,
         defaultOrganizationId: profile.default_organization_id,
         createdAt: profile.created_at,
@@ -179,7 +186,11 @@ router.post("/sign-up", rateLimitAuth, async (req, res, next) => {
       email,
       password,
       options: {
-        emailRedirectTo: `${req.protocol}://${req.get("host")}/auth/callback`,
+        // The confirmation link must land on the WEB /auth/callback route.
+        // Building it from the request host pointed it at the API host, which
+        // serves no such route and 404'd (USE-P1-002). Only a trusted origin
+        // (CORS allowlist / APP_BASE_URL) is honoured — never the raw Origin.
+        emailRedirectTo: `${resolveTrustedRedirectOrigin(req.headers.origin)}/auth/callback`,
         data: { full_name: fullName ?? null },
       },
     });
@@ -302,7 +313,10 @@ router.post("/callback", rateLimitAuth, async (req, res, next) => {
 
 router.post("/sign-out", requireAuth, async (req, res, next) => {
   try {
-    const supabase = getScopedClient(req, "auth", "write");
+    // RLS-P2-007: auth.admin.* is service-role only. The scoped client uses the
+    // anon key + user JWT, so enabling `auth` in RLS_WRITES_ENABLED would break
+    // sign-out. Always use the admin client for GoTrue admin APIs.
+    const supabase = getSupabaseAdmin();
     const token = req.headers.authorization?.slice(7);
     if (token) {
       await supabase.auth.admin.signOut(token);
@@ -326,7 +340,11 @@ router.post("/forgot-password", rateLimitAuth, rateLimitEmail, async (req, res, 
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       // Only ever redirect to a trusted origin — never an echoed Origin header.
-      redirectTo: `${resolveTrustedRedirectOrigin(req.headers.origin)}/password-reset`,
+      // The link must go through the web /auth/callback route so the PKCE
+      // `code` is exchanged and a session cookie is set; /password-reset alone
+      // ignored the token and the reset endpoint requires a session
+      // (USE-P1-001).
+      redirectTo: `${resolveTrustedRedirectOrigin(req.headers.origin)}/auth/callback?next=/password-reset`,
     });
 
     if (error) {
@@ -377,7 +395,8 @@ router.post(
         throw new AppError("WEAK_PASSWORD", pwdCheck.message || "Password is too weak", 400);
       }
 
-      const supabase = getScopedClient(req, "auth", "write");
+      // RLS-P2-007: GoTrue admin API — service-role client only (see sign-out).
+      const supabase = getSupabaseAdmin();
       const { error } = await supabase.auth.admin.updateUserById(req.authUser!.userId, {
         password,
       });

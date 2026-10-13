@@ -11,6 +11,7 @@ import MiniPackageComparison from "@/components/store/MiniPackageComparison";
 import StickyMobileCta from "@/components/store/StickyMobileCta";
 import StoreProductCard from "@/components/store/StoreProductCard";
 import StoreCategoryCard from "@/components/store/StoreCategoryCard";
+import StoreAnalyticsTracker from "@/components/store/StoreAnalyticsTracker";
 import CampaignBanner from "@/components/store/CampaignBanner";
 import PackageLadderGrid from "@/components/store/PackageLadderGrid";
 import Link from "next/link";
@@ -58,6 +59,7 @@ export default async function StorePage() {
 
   return (
     <>
+      <StoreAnalyticsTracker event="store_view" page="/store" />
       <section className="flex min-h-[60vh] items-center justify-center px-4 pb-16 pt-24 text-center sm:pb-24 sm:pt-32">
         <div className="max-w-4xl">
           <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl lg:text-6xl">
@@ -131,7 +133,7 @@ export default async function StorePage() {
 
       <section className="px-4 pb-24 sm:px-6 sm:pb-32">
         <div className="mx-auto max-w-4xl">
-          <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-8 backdrop-blur-sm">
+          <div className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-8 backdrop-blur-sm">
             <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-50">
               Not Sure Where to Start?
             </h2>
@@ -144,7 +146,7 @@ export default async function StorePage() {
             </p>
             <Link
               href="/contact"
-              className="mt-6 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="mt-6 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Talk to a Human
             </Link>
@@ -296,7 +298,7 @@ export default async function StorePage() {
           </p>
           <Link
             href="/contact"
-            className="mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Contact Us
           </Link>

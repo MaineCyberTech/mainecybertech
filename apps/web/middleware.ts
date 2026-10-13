@@ -132,7 +132,12 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!isAuthenticated && (isPortalRoute || isAdminRoute)) {
-    const redirect = NextResponse.redirect(new URL("/login", request.url));
+    const loginUrl = new URL("/login", request.url);
+    // USE-P2-009: an expired cookie means the user was signed in and got
+    // bounced mid-task; tell them so instead of showing a bare login form. A
+    // missing cookie is just a signed-out visitor and needs no explanation.
+    if (token) loginUrl.searchParams.set("reason", "expired");
+    const redirect = NextResponse.redirect(loginUrl);
     applyCsp(redirect, csp, reportUrl);
     return redirect;
   }

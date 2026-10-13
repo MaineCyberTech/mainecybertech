@@ -61,6 +61,6 @@ export class StagingApi {
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/staging/${id}`);
+    return this.client.delete<void>(`/api/v1/staging/${id}`, undefined, { confirm: true });
   }
 }

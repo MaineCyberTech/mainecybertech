@@ -8,7 +8,8 @@ handling and escalation. The canonical example is
 
 Platform incident/recovery runbooks live in
 [../PLATFORM_FAILURE_RUNBOOKS.md](../PLATFORM_FAILURE_RUNBOOKS.md) and
-[../INCIDENT_RESPONSE.md](../INCIDENT_RESPONSE.md).
+[../INCIDENT_RESPONSE.md](../INCIDENT_RESPONSE.md). Platform privacy
+operations are listed separately at the end of this file.
 
 | Runbook                                                                            | Module                                 |
 | ---------------------------------------------------------------------------------- | -------------------------------------- |
@@ -72,3 +73,11 @@ Platform incident/recovery runbooks live in
 | [vendor-contract-renewal.md](vendor-contract-renewal.md)                           | Vendor Contract Renewal                |
 | [vendor-saas-subscription-audit.md](vendor-saas-subscription-audit.md)             | Vendor SaaS Subscription Audit         |
 | [website-uptime-monitor.md](website-uptime-monitor.md)                             | Website Uptime Monitor                 |
+
+## Platform privacy runbooks
+
+Platform-level (non-module) privacy procedures:
+
+| Runbook            | Purpose                                                     |
+| ------------------ | ----------------------------------------------------------- |
+| [dsar.md](dsar.md) | Data-subject access/export/erasure and offboarding procedure |

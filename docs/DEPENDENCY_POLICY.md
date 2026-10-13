@@ -1,6 +1,6 @@
 # Dependency Policy
 
-Policy owner: Platform Engineering. Last updated 2026-10-02.
+Policy owner: Platform Engineering. Last updated 2026-10-12.
 
 How dependency vulnerabilities, overrides, and updates are governed. The
 machine-enforced policy is
@@ -27,7 +27,12 @@ the dev toolchain was invisible to CI.)
 ### Allowlist
 
 Known, genuinely unpatchable findings can be recorded in the policy `allowlist`
-with a reason and an expiry. They never block but are always printed.
+with a reason and an expiry. They never block while the entry is in date, but
+they are always printed. The expiry is enforced: a missing or malformed date, or
+a date before today, means the entry stops suppressing the finding and is itself
+reported as a policy violation (`LAPSED-ALLOWLIST`), so an accepted risk cannot
+silently outlive its review (SBOM-P2-010). Renewing means re-reviewing the
+advisory and moving the date forward in the same PR.
 
 | Advisory | Package | Scope | Reason |
 | --- | --- | --- | --- |
@@ -65,8 +70,59 @@ Governance:
 - Security updates should be triaged promptly; the audit noted a large backlog.
   When a Dependabot PR changes the resolved tree, the audit and license gates
   re-run automatically.
+- Advisories published between PRs/deploys are surfaced by the weekly
+  `dependency-rescan.yml` workflow (Mondays 06:00 UTC): it re-runs
+  `scripts/audit-gate.mjs --report` over the resolved tree plus a Trivy
+  filesystem scan, and uploads the reports as the `dependency-rescan` artifact.
+  It is report-only by design (SBOM-P2-012) — triage the artifact and open a
+  fix/Dependabot PR when a finding would block under the real gate.
 - `onlyBuiltDependencies` (root `package.json`) restricts postinstall scripts to
   an allowlist (`@sentry/cli`). Adding an entry requires review.
+
+### Backlog triage (SBOM-P2-007 / SC-P2-005)
+
+The queue is kept visible by `dependabot-triage-reminder.yml` (weekly, Mondays
+07:00 UTC): it opens one deduplicated `Weekly Dependabot triage` issue listing
+the open PRs and this policy. Close the issue once the queue is triaged.
+
+SLA: security updates within 7 days; patch/minor updates within 30 days; a
+major-version update gets a dedicated upgrade issue (and an explicit
+supported-version decision) instead of a blind merge.
+
+Merge rules:
+
+- Merge a Dependabot PR only after it is rebased onto current `develop` and
+  every required check is green. Never force-push a Dependabot branch, and
+  never merge a red PR to "unblock" it.
+- An update that cannot satisfy a `pnpm.overrides` floor is not mergeable. The
+  closed `next` 16.2.9 PR (#14) is the worked example: 16.2.9 sits below the
+  `>=16.3.6` half of the `next` override, so the resolved-tree audit rejects
+  it; it was superseded by the 16.3.8+ PR (#102).
+- Major runtime bumps (e.g. the open `node:25-alpine` image PRs) are held until
+  the Node support line is upgraded deliberately; they are not auto-merged.
+
+## Duplicate versions (SC-P3-014)
+
+The lockfile carries multiple resolved versions of some packages — mostly
+transitive major-version splits that cannot be unified without upgrading their
+parents. There is no blocking duplicate/unused-dependency gate (a `depcheck`
+style unused scan needs a full install and a reviewed baseline, which remains a
+follow-up); instead the weekly `dependency-rescan.yml` runs
+`pnpm dedupe --check` **report-only** and publishes the output in the
+`dependency-rescan` artifact. Triage a reported duplicate against this table.
+
+Known intentional splits (reviewed 2026-10-12; update this list when they
+change):
+
+| Package               | Versions                    | Why it stays                                                                                        |
+| --------------------- | --------------------------- | --------------------------------------------------------------------------------------------------- |
+| `@supabase/realtime-js` | 2.106.2 / 2.117.2         | worker pins 2.106.2 (`apps/worker/package.json`) while the API resolves 2.117.2 — keep the pin until the worker realtime transport is upgraded |
+| `brace-expansion`     | 1.1.21 / 5.0.12             | scoped override: minimatch 3.x needs the 1.x line, everything else uses 5.x                          |
+| `@types/react-dom`    | 18.3.7 / 19.3.0             | React 18 types arrive transitively through an older Testing Library chain; app code is React 19      |
+| `ajv`                 | 6.15.0 / 8.20.0             | ESLint (ajv 6) vs schema tooling (ajv 8)                                                             |
+| `lucide-react`        | 0.453.0 / 0.468.0           | `packages/ui` and `apps/web` pin different minors — unify in a dedicated bump                        |
+| `dotenv`              | 16.6.1 / 17.4.2             | apps/api + worker on 16.x; a transitive consumer pulls 17.x                                          |
+| `react-is`            | 16.13.1 / 17.0.2 / 18.3.1   | transitive across React-versioned tooling                                                            |
 
 ## Local commands
 
@@ -74,5 +130,5 @@ Governance:
 node scripts/audit-gate.mjs          # full policy gate (all scopes)
 node scripts/audit-gate.mjs --report # report only, never fail
 node scripts/license-gate.mjs        # license policy (needs licenses.json; see below)
-pnpm licenses list --json > licenses.json
+node scripts/collect-licenses.mjs --out licenses.json
 ```

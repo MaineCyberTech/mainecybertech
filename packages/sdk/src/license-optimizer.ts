@@ -24,7 +24,7 @@ export class LicenseOptimizerApi {
   }
 
   remove(id: string) {
-    return this.client.delete(`/api/v1/license-optimizer/${id}`);
+    return this.client.delete(`/api/v1/license-optimizer/${id}`, undefined, { confirm: true });
   }
 
   reclaimable(params?: { organizationId: string }) {

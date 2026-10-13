@@ -32,6 +32,13 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: "/sw.js",
+        headers: [
+          // MOB-P2-002: the worker script must revalidate so updates land.
+          { key: "Cache-Control", value: "no-cache" },
+        ],
+      },
+      {
         source: "/:path*",
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },

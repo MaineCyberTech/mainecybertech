@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import crypto from "crypto";
+import { WEBHOOK_EVENTS } from "@mct/sdk/webhook-events";
 import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { requireAuth } from "../middleware/auth";
@@ -8,12 +9,16 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { AppError, success } from "../types";
+import { logger } from "../lib/logger";
+import { encryptField, decryptSecretValue } from "../lib/field-encryption";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
 import { pinnedFetch } from "../lib/pinned-fetch";
 import { assertResourceOrg, loadOwned } from "../lib/tenant";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { queryInt, queryString } from "../lib/query";
 import { enqueueTask } from "../lib/task-producer";
+import { claimIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -26,10 +31,51 @@ function maskSecret(secret: string | null | undefined): string | null {
   return secret.slice(0, 4) + "****" + secret.slice(-4);
 }
 
+/**
+ * WH-P2-008 / ACM-P2-007: signing secrets are encrypted at rest (AES-256-GCM
+ * `v1:` payloads via lib/field-encryption). Legacy plaintext values decrypt to
+ * themselves, so endpoints created before encryption keep signing; new writes
+ * are always encrypted. Returns null when no secret is set OR the stored value
+ * cannot be decrypted (wrong/rotated key) — callers must fail closed rather
+ * than sign with a corrupted value.
+ */
+function readSecret(stored: string | null | undefined): string | null {
+  if (!stored) return null;
+  const decrypted = decryptSecretValue(stored);
+  if (!decrypted.ok) {
+    logger.warn({ err: decrypted.error }, "Webhook signing secret could not be decrypted");
+    return null;
+  }
+  return decrypted.value;
+}
+
+/** Advisory rotation deadline for outbound signing secrets (90-day cadence). */
+const SECRET_ROTATION_DAYS = 90;
+
+/**
+ * WH-P3-001: deterministic idempotency key for a test ping, derived from the
+ * endpoint and the exact payload (including its generated timestamp). The key
+ * is stable for a given payload, so an exact replay claims the same key and is
+ * deduplicated — a random key could never collide and never exercised the
+ * claim/persist path.
+ */
+export function buildTestIdempotencyKey(webhookId: string, payload: unknown): string {
+  const digest = crypto
+    .createHash("sha256")
+    .update(JSON.stringify(payload))
+    .digest("hex")
+    .slice(0, 16);
+  return `test-${webhookId}-${digest}`;
+}
+
+function defaultSecretExpiry(from: Date): string {
+  return new Date(from.getTime() + SECRET_ROTATION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+
 function maskWebhookData(data: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!data) return null;
   if (data.secret) {
-    data.secret = maskSecret(data.secret as string);
+    data.secret = maskSecret(readSecret(data.secret as string));
   }
   return data;
 }
@@ -39,18 +85,22 @@ const createSchema = z.object({
   name: z.string().min(1).max(200),
   url: z.string().url().max(2000),
   secret: z.string().max(500).optional().nullable(),
-  events: z.array(z.string().min(1)).min(1, "At least one event is required"),
+  secretExpiresAt: z.string().datetime().optional().nullable(),
+  // EVOL-P2-002: only catalogued events can be subscribed to. Previously any
+  // string was accepted, so subscribers could select events nothing emits.
+  events: z.array(z.enum(WEBHOOK_EVENTS)).min(1, "At least one event is required"),
 });
 
 const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   url: z.string().url().max(2000).optional(),
   secret: z.string().max(500).optional().nullable(),
-  events: z.array(z.string().min(1)).min(1).optional(),
+  secretExpiresAt: z.string().datetime().optional().nullable(),
+  events: z.array(z.enum(WEBHOOK_EVENTS)).min(1).optional(),
   isActive: z.boolean().optional(),
 });
 
-router.get("/", async (req, res, next) => {
+router.get("/", requirePermission("webhooks", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "webhook-management", "read");
     const orgId = req.query.organization_id as string | undefined;
@@ -72,7 +122,7 @@ router.get("/", async (req, res, next) => {
 // Dead-letter routes MUST stay above the `/:id` routes so "dead-letters" is
 // never captured as a webhook endpoint id.
 
-router.get("/dead-letters", async (req, res, next) => {
+router.get("/dead-letters", requirePermission("webhooks", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "webhook-management", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));
@@ -98,7 +148,7 @@ router.get("/dead-letters", async (req, res, next) => {
       }
     }
 
-    let query = supabase.from("webhook_dead_letters").select("*", { count: "exact" });
+    let query = supabase.from("webhook_dead_letters").select("*", { count: listCountMode(req.query) });
     if (orgWebhookIds) query = query.in("webhook_id", orgWebhookIds);
     if (webhookId) query = query.eq("webhook_id", webhookId);
     if (event) query = query.eq("event", event);
@@ -177,11 +227,34 @@ router.post(
         String(req.params.id),
       );
 
+      // WH-P2-011: only a dead letter that still carries the full payload can
+      // be truthfully retried. Inline-dispatched failures store a PII-safe
+      // summary ({ event, receivedAt }) with no `data`; recreating a delivery
+      // from it would no-op in `webhook-retry` (which dead-letters rows it
+      // cannot replay) while this route had already deleted the dead letter.
+      // Refuse and keep the row so the admin sees why.
+      const storedBody = deadLetter.request_body as Record<string, unknown> | null;
+      if (!storedBody || !("data" in storedBody)) {
+        throw new AppError(
+          "CONFLICT",
+          "Dead letter has no stored payload to replay (inline dispatch kept only a summary); it cannot be retried.",
+          409,
+        );
+      }
+
       // Replay through the path the worker actually consumes: the
       // `webhook-retry` task replays due rows from `webhook_deliveries`
       // (SSRF guard + HMAC signing + attempt counting). Recreate the delivery
       // as due-now, then nudge the task so it runs before the next 5-minute
       // sweep. The scheduled task will still pick it up if the queue is down.
+      //
+      // CHAIN-P2-009: a stable per-dead-letter idempotency key makes this
+      // insert the replay claim. Two overlapping requests (an admin
+      // double-click, or a retry racing another admin) cannot create two
+      // delivery rows: the unique idempotency key lets only the first insert
+      // win. The key also rides the retried POST (webhook-retry copies it to
+      // the Idempotency-Key header) so consumers can dedupe the replay.
+      const replayKey = `dlq-replay-${deadLetter.id}`;
       const { error: insertError } = await supabase.from("webhook_deliveries").insert({
         webhook_id: deadLetter.webhook_id,
         event: deadLetter.event,
@@ -190,8 +263,14 @@ router.post(
         retry_count: 0,
         dead_letter: false,
         next_retry_at: new Date().toISOString(),
+        idempotency_key: replayKey,
       });
-      if (insertError) throw new AppError("DB_ERROR", insertError.message, 500);
+      // 23505 = the unique idempotency key already claimed this replay.
+      // Collapse to the same outcome instead of erroring or double-POSTing.
+      const alreadyReplayed = insertError?.code === "23505";
+      if (insertError && !alreadyReplayed) {
+        throw new AppError("DB_ERROR", insertError.message, 500);
+      }
 
       await enqueueTask("webhook-retry", {});
 
@@ -202,16 +281,24 @@ router.post(
         .select("id")
         .maybeSingle();
       if (deleteError) throw new AppError("DB_ERROR", deleteError.message, 500);
-      if (!deleted) throw new AppError("NOT_FOUND", "Dead letter not found", 404);
+      // The winning request may have already removed the dead letter; with a
+      // duplicate claim that is the same outcome, not a missing row.
+      if (!deleted && !alreadyReplayed) {
+        throw new AppError("NOT_FOUND", "Dead letter not found", 404);
+      }
 
-      await logAuditEvent({
-        organizationId: endpoint.organization_id,
-        actorUserId: req.authUser!.userId,
-        action: "webhook.dead_letter.retried",
-        entityType: "webhook_dead_letter",
-        entityId: deadLetter.id,
-        metadata: { webhookId: deadLetter.webhook_id, event: deadLetter.event },
-      });
+      // Only the request that actually removed the row owns the audit entry,
+      // so a collapsed duplicate does not double-log the retry.
+      if (deleted) {
+        await logAuditEvent({
+          organizationId: endpoint.organization_id,
+          actorUserId: req.authUser!.userId,
+          action: "webhook.dead_letter.retried",
+          entityType: "webhook_dead_letter",
+          entityId: deadLetter.id,
+          metadata: { webhookId: deadLetter.webhook_id, event: deadLetter.event },
+        });
+      }
 
       res.json(success({ ok: true }));
     } catch (error) {
@@ -225,6 +312,7 @@ router.delete(
   requirePermission("webhooks", "manage"),
   async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getScopedClient(req, "webhook-management", "write");
       const { deadLetter, endpoint } = await loadDeadLetterOwned(
         req,
@@ -257,10 +345,10 @@ router.delete(
   },
 );
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requirePermission("webhooks", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "webhook-management", "read");
-    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
+    await loadOwned(req, supabase, "webhook_endpoints", String(req.params.id));
     const orgId = req.query.organization_id as string | undefined;
     let query = supabase.from("webhook_endpoints").select("*").eq("id", String(req.params.id));
     if (orgId) query = query.eq("organization_id", orgId);
@@ -278,13 +366,21 @@ router.post("/", requirePermission("webhooks", "manage"), async (req, res, next)
     await assertSafeWebhookUrl(parsed.url);
     const supabase = getScopedClient(req, "webhook-management", "write");
 
+    // WH-P2-008: encrypt the signing secret at rest and record rotation
+    // metadata. `secretExpiresAt` is advisory (see docs/SECRETS_ROTATION.md);
+    // it is surfaced to operators but does not gate delivery.
+    const rotatedAt = parsed.secret ? new Date() : null;
     const { data, error } = await supabase
       .from("webhook_endpoints")
       .insert({
         organization_id: parsed.organizationId,
         name: parsed.name,
         url: parsed.url,
-        secret: parsed.secret ?? null,
+        secret: parsed.secret ? encryptField(parsed.secret) : null,
+        secret_rotated_at: rotatedAt ? rotatedAt.toISOString() : null,
+        secret_expires_at: rotatedAt
+          ? (parsed.secretExpiresAt ?? defaultSecretExpiry(rotatedAt))
+          : null,
         events: parsed.events,
         created_by: req.authUser!.userId,
       })
@@ -302,7 +398,7 @@ router.post("/", requirePermission("webhooks", "manage"), async (req, res, next)
       metadata: { name: parsed.name, url: parsed.url },
     });
 
-    res.status(201).json(success(data));
+    res.status(201).json(success(maskWebhookData(data)));
   } catch (error) {
     next(error);
   }
@@ -317,7 +413,7 @@ router.patch(
       const parsed = updateSchema.parse(req.body);
       const supabase = getScopedClient(req, "webhook-management", "write");
 
-      await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
+      await loadOwned(req, supabase, "webhook_endpoints", String(req.params.id));
 
       if (parsed.url !== undefined) {
         await assertSafeWebhookUrl(parsed.url);
@@ -338,7 +434,20 @@ router.patch(
       const updateData: Record<string, unknown> = {};
       if (parsed.name !== undefined) updateData.name = parsed.name;
       if (parsed.url !== undefined) updateData.url = parsed.url;
-      if (parsed.secret !== undefined) updateData.secret = parsed.secret;
+      if (parsed.secret !== undefined) {
+        if (parsed.secret) {
+          // WH-P2-008: re-encrypt on rotation and reset the rotation metadata.
+          const rotatedAt = new Date();
+          updateData.secret = encryptField(parsed.secret);
+          updateData.secret_rotated_at = rotatedAt.toISOString();
+          updateData.secret_expires_at =
+            parsed.secretExpiresAt ?? defaultSecretExpiry(rotatedAt);
+        } else {
+          updateData.secret = null;
+          updateData.secret_rotated_at = null;
+          updateData.secret_expires_at = null;
+        }
+      }
       if (parsed.events !== undefined) updateData.events = parsed.events;
       if (parsed.isActive !== undefined) updateData.is_active = parsed.isActive;
 
@@ -362,7 +471,7 @@ router.patch(
         metadata: parsed,
       });
 
-      res.json(success(data));
+      res.json(success(maskWebhookData(data)));
     } catch (error) {
       next(error);
     }
@@ -373,7 +482,7 @@ router.delete("/:id", requirePermission("webhooks", "manage"), async (req, res, 
   try {
     assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "webhook-management", "write");
-    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
+    await loadOwned(req, supabase, "webhook_endpoints", String(req.params.id));
     const { data, error } = await supabase
       .from("webhook_endpoints")
       .delete()
@@ -396,7 +505,7 @@ router.delete("/:id", requirePermission("webhooks", "manage"), async (req, res, 
   }
 });
 
-router.get("/:id/deliveries", async (req, res, next) => {
+router.get("/:id/deliveries", requirePermission("webhooks", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "webhook-management", "read");
     const orgId = req.query.organization_id as string | undefined;
@@ -415,7 +524,7 @@ router.get("/:id/deliveries", async (req, res, next) => {
 
     const { data, error, count } = await supabase
       .from("webhook_deliveries")
-      .select("*", { count: "exact" })
+      .select("*", { count: listCountMode(req.query) })
       .eq("webhook_id", String(req.params.id))
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -430,7 +539,7 @@ router.get("/:id/deliveries", async (req, res, next) => {
 router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "webhook-management", "write");
-    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
+    await loadOwned(req, supabase, "webhook_endpoints", String(req.params.id));
     const { data: webhook, error: fetchError } = await supabase
       .from("webhook_endpoints")
       .select("*")
@@ -443,12 +552,28 @@ router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, re
       timestamp: new Date().toISOString(),
       data: { message: "Test from Maine CyberTech" },
     };
+    // WH-P3-001: deterministic key (endpoint + exact payload) and a claim
+    // before sending, mirroring the shared outbound dispatcher. An exact replay
+    // of the same payload is deduplicated instead of delivered twice.
+    const idempotencyKey = buildTestIdempotencyKey(webhook.id, payload);
+    const claimed = await claimIdempotencyKey(idempotencyKey, "processing");
+    if (!claimed) {
+      res.json(success({ ok: true, deduplicated: true, idempotency_key: idempotencyKey }));
+      return;
+    }
+
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (webhook.secret) {
+    const signingSecret = webhook.secret ? readSecret(webhook.secret) : null;
+    if (webhook.secret && !signingSecret) {
+      // Fail closed: a configured secret that cannot be decrypted must not be
+      // reported as a successful unsigned test delivery.
+      throw new AppError("CONFIG_ERROR", "Webhook signing secret could not be decrypted", 500);
+    }
+    if (signingSecret) {
       const hmac = crypto
-        .createHmac("sha256", webhook.secret)
+        .createHmac("sha256", signingSecret)
         .update(JSON.stringify(payload))
         .digest("hex");
       headers["X-Webhook-Signature"] = `sha256=${hmac}`;
@@ -481,26 +606,38 @@ router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, re
 
     const duration = Date.now() - start;
 
-    // Generate idempotency key for this delivery attempt
-    const idempotencyKey = `test-${webhook.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-
-    await supabase.from("webhook_deliveries").insert({
-      webhook_id: webhook.id,
-      event: "ping",
-      status: error
-        ? "failed"
-        : responseStatus >= 200 && responseStatus < 300
-          ? "success"
-          : "failed",
-      request_body: payload,
-      response_status: responseStatus || null,
-      response_body: responseBody || null,
-      error,
-      duration_ms: duration,
-      idempotency_key: idempotencyKey,
-    });
+    // WH-P3-006: upsert on the idempotency key so a re-test after a released
+    // claim updates the existing row instead of silently failing the unique
+    // constraint and losing the successful attempt's record.
+    const { error: insertError } = await supabase.from("webhook_deliveries").upsert(
+      {
+        webhook_id: webhook.id,
+        event: "ping",
+        status: error
+          ? "failed"
+          : responseStatus >= 200 && responseStatus < 300
+            ? "success"
+            : "failed",
+        request_body: payload,
+        response_status: responseStatus || null,
+        response_body: responseBody || null,
+        error,
+        duration_ms: duration,
+        idempotency_key: idempotencyKey,
+      },
+      { onConflict: "idempotency_key" },
+    );
+    if (insertError) {
+      logger.warn(
+        { err: insertError.message, webhookId: webhook.id },
+        "Failed to record webhook test delivery",
+      );
+    }
 
     if (error || responseStatus >= 400) {
+      // Release the claim so the same payload can be retried; on success the
+      // claim stays as the dedup marker (mirrors the shared dispatcher).
+      await deleteIdempotencyKey(idempotencyKey).catch(() => undefined);
       await supabase
         .from("webhook_endpoints")
         .update({

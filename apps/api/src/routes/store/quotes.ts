@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { z, ZodError } from "zod";
 import { getSupabaseAdmin } from "../../services/supabase";
 import { requireAuth } from "../../middleware/auth";
@@ -21,6 +21,23 @@ import {
 } from "../../lib/intake-handoff";
 import { dispatchWebhook } from "../../lib/webhook-dispatcher";
 import { logger } from "../../lib/logger";
+import { consentVersionFrom } from "../../lib/consent";
+
+/**
+ * Platform-wide intake gate (MT-P2-008).
+ *
+ * `store_quote_requests`, `store_leads` and `store_proposal_drafts` are
+ * platform-level tables with no `organization_id`, so they must only be
+ * readable/actionable by a genuine cross-tenant admin (`resolveAdminTenantScope
+ * .allTenants`). A single-org admin is denied rather than receiving every
+ * tenant's intake PII.
+ */
+async function requirePlatformAdmin(req: Request): Promise<void> {
+  const scope = await resolveAdminTenantScope(req);
+  if (!scope.allTenants) {
+    throw new AppError("FORBIDDEN", "Platform admin access required", 403);
+  }
+}
 
 /** Quotes, structured quote requests, leads and proposal drafts. Extracted from `routes/store.ts` (same pattern as `routes/final/`). */
 export function registerQuoteRoutes(router: Router) {
@@ -42,6 +59,10 @@ export function registerQuoteRoutes(router: Router) {
     needsOnsite: z.boolean().optional(),
     adminAccessAvailable: z.boolean().optional(),
     requestedConsult: z.boolean().optional(),
+    // PRIV-P2-002: the quote carries PII, so consent to the Privacy Policy is
+    // required and recorded server-side with the policy version.
+    consent: z.boolean().optional(),
+    consentVersion: z.string().min(1).max(64).optional(),
   });
 
   const updateProposalDraftSchema = z.object({
@@ -69,6 +90,14 @@ export function registerQuoteRoutes(router: Router) {
   router.post("/quotes", async (req, res, next) => {
     try {
       const parsed = createQuoteSchema.parse(req.body);
+
+      // PRIV-P2-002: require and record consent before storing the quote PII.
+      if (parsed.consent !== true) {
+        throw new AppError("CONSENT_REQUIRED", "Consent to the Privacy Policy is required.", 400);
+      }
+      const consentAt = new Date().toISOString();
+      const consentVersion = consentVersionFrom(parsed.consentVersion);
+
       const supabase = getSupabaseAdmin();
 
       const { data, error } = await supabase
@@ -79,6 +108,8 @@ export function registerQuoteRoutes(router: Router) {
           phone: parsed.phone || null,
           notes: parsed.notes,
           items: parsed.items,
+          consent_at: consentAt,
+          consent_version: consentVersion,
         })
         .select()
         .single();
@@ -103,6 +134,8 @@ export function registerQuoteRoutes(router: Router) {
             }),
             items: toJson(parsed.items),
             notes: parsed.notes,
+            consent_at: consentAt,
+            consent_version: consentVersion,
           })
           .select()
           .single();
@@ -146,7 +179,14 @@ export function registerQuoteRoutes(router: Router) {
         action: "store.quote.submit",
         entityType: "store_quote",
         entityId: data.id,
-        metadata: { name: parsed.name, email: parsed.email, leadScore, leadBand },
+        metadata: {
+          name: parsed.name,
+          email: parsed.email,
+          leadScore,
+          leadBand,
+          consentAt,
+          consentVersion,
+        },
       });
 
       res.status(201).json(success(data));
@@ -196,9 +236,10 @@ export function registerQuoteRoutes(router: Router) {
     },
   );
 
-  // GET /api/v1/store/quote-requests - list structured quote requests (admin)
-  router.get("/quote-requests", requireAuth, requireAdmin, async (_req, res, next) => {
+  // GET /api/v1/store/quote-requests - list structured quote requests (platform admin)
+  router.get("/quote-requests", requireAuth, requireAdmin, async (req, res, next) => {
     try {
+      await requirePlatformAdmin(req);
       const supabase = getSupabaseAdmin();
       const { data, error } = await supabase
         .from("store_quote_requests")
@@ -213,9 +254,10 @@ export function registerQuoteRoutes(router: Router) {
     }
   });
 
-  // GET /api/v1/store/leads - list scored leads (admin)
-  router.get("/leads", requireAuth, requireAdmin, async (_req, res, next) => {
+  // GET /api/v1/store/leads - list scored leads (platform admin)
+  router.get("/leads", requireAuth, requireAdmin, async (req, res, next) => {
     try {
+      await requirePlatformAdmin(req);
       const supabase = getSupabaseAdmin();
       const { data, error } = await supabase
         .from("store_leads")
@@ -230,7 +272,7 @@ export function registerQuoteRoutes(router: Router) {
     }
   });
 
-  // POST /api/v1/store/quote-requests/:id/proposal - generate a proposal draft (admin)
+  // POST /api/v1/store/quote-requests/:id/proposal - generate a proposal draft (platform admin)
   router.post(
     "/quote-requests/:id/proposal",
     requireAuth,
@@ -238,6 +280,7 @@ export function registerQuoteRoutes(router: Router) {
     requireOrgAccess,
     async (req, res, next) => {
       try {
+        await requirePlatformAdmin(req);
         const parsed = generateProposalDraftSchema.parse(req.body ?? {});
         const supabase = getSupabaseAdmin();
         const actorUserId = req.authUser?.userId ?? null;
@@ -346,9 +389,10 @@ export function registerQuoteRoutes(router: Router) {
     },
   );
 
-  // GET /api/v1/store/proposal-drafts - list proposal drafts (admin)
-  router.get("/proposal-drafts", requireAuth, requireAdmin, async (_req, res, next) => {
+  // GET /api/v1/store/proposal-drafts - list proposal drafts (platform admin)
+  router.get("/proposal-drafts", requireAuth, requireAdmin, async (req, res, next) => {
     try {
+      await requirePlatformAdmin(req);
       const supabase = getSupabaseAdmin();
       const { data, error } = await supabase
         .from("store_proposal_drafts")
@@ -363,9 +407,10 @@ export function registerQuoteRoutes(router: Router) {
     }
   });
 
-  // PATCH /api/v1/store/proposal-drafts/:id - review/update a proposal draft (admin)
+  // PATCH /api/v1/store/proposal-drafts/:id - review/update a proposal draft (platform admin)
   router.patch("/proposal-drafts/:id", requireAuth, requireAdmin, async (req, res, next) => {
     try {
+      await requirePlatformAdmin(req);
       const parsed = updateProposalDraftSchema.parse(req.body);
       const supabase = getSupabaseAdmin();
 
@@ -409,7 +454,7 @@ export function registerQuoteRoutes(router: Router) {
     }
   });
 
-  // POST /api/v1/store/quote-requests/:id/convert - intake -> project handoff (admin)
+  // POST /api/v1/store/quote-requests/:id/convert - intake -> project handoff (platform admin)
   router.post(
     "/quote-requests/:id/convert",
     requireAuth,
@@ -417,6 +462,7 @@ export function registerQuoteRoutes(router: Router) {
     requireOrgAccess,
     async (req, res, next) => {
       try {
+        await requirePlatformAdmin(req);
         const parsed = convertQuoteRequestSchema.parse(req.body);
         const supabase = getSupabaseAdmin();
         const actorUserId = req.authUser?.userId ?? null;

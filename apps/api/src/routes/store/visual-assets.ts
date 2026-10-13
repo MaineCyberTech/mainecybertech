@@ -7,6 +7,7 @@ import { AppError, success, failure } from "../../types";
 import { logAuditEvent } from "../../services/audit";
 import { type UpdateRow } from "../../lib/db-types";
 import { LIST_HARD_CAP } from "../../lib/pagination";
+import { assertDeleteConfirmed } from "../../lib/delete-confirm";
 
 /** Store visual assets (admin CRUD). Extracted from `routes/store.ts` (same pattern as `routes/final/`).
  *
@@ -194,6 +195,7 @@ export function registerVisualAssetRoutes(router: Router) {
   // DELETE /api/v1/store/visual-assets/:id - delete a visual asset (admin)
   router.delete("/visual-assets/:id", requireAuth, requireAdmin, async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getSupabaseAdmin();
       const { error } = await supabase
         .from("store_visual_assets")

@@ -1,4 +1,7 @@
 import { logger } from "./logger";
+import { closeScanLock } from "./lib/scan-lock";
+import { closeIdempotency } from "./lib/idempotency";
+import { closeTaskQueue } from "./producer";
 
 let shuttingDown = false;
 let inFlightTasks: Promise<void>[] = [];
@@ -60,4 +63,16 @@ export async function drainInFlight(): Promise<void> {
   }
   inFlightTasks = [];
   logger.info("Worker shut down gracefully");
+}
+
+/**
+ * Close the Redis-backed handles the worker opens outside BullMQ's own
+ * connections (RES-P2-009): the scan-lock client, the idempotency client and
+ * the producer's task queue. Without this a completed drain still leaves open
+ * sockets, so the process never exits on its own and Docker eventually
+ * SIGKILLs it at the stop timeout. Best-effort: a handle that fails to close
+ * must not abort the shutdown path (the force-exit watchdog is the backstop).
+ */
+export async function closeWorkerResources(): Promise<void> {
+  await Promise.allSettled([closeScanLock(), closeIdempotency(), closeTaskQueue()]);
 }

@@ -136,6 +136,196 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Fixed
 
+- **Remediation wave, phases 5–6 (2026-10-12, 24 PRs, audit rerun).**
+  - CI/governance: Chromatic visual gate now blocking on a broken build;
+    secret-scan failure notification; weekly Dependabot triage reminder + SLA
+    policy; break-glass runbook + issue template + branch-protection drift
+    audit; every destructive admin delete confirmation-gated with a CI guard
+    and documented recovery; k6 budgets + failure injection; hourly external
+    uptime probe (#238–#241).
+  - Webhooks: deterministic test idempotency, Buffer-typed raw bodies,
+    byte-identical retries, conflict-safe delivery upserts, 64 KiB response
+    caps, M365 batch handling, bounded retention purge, integration-sync
+    enqueue + calendar-event dedup (#242).
+  - Search/features: prefix + tsvector indexes, AI draft write/review gate,
+    one canonical API surface per table (legacy paths 410 with successor
+    links); store-page previews, scorecard docs, orphan table dropped, ticket
+    transition validation, admin-gate parity, search contracts (#243, #259).
+  - UX/a11y: single labelled Chip, dead theme paths removed, aria semantics
+    fixed, value-preserving color-token codemod, heading/input/autocomplete
+    fixes; Storybook shared-component stories + a11y addon, breadth baseline
+    with fail-on-new, interactive a11y scans (#244, #260).
+  - Portal/mobile: ticket-create confirmation, service-worker registration +
+    offline indicator, per-version document download/restore, If-Match conflict
+    handling, form-error fixes; PWA icon set, single manifest, viewport
+    themeColor, ≥44px touch targets (#245, #248).
+  - Data/retention: `drop policy if exists` backfill, purge boundary tests,
+    guarded CHECK constraints, rollback notes + migrations policy page,
+    DB-types digest binding, bounded public-interaction purge (#250).
+  - Security/privacy: rate-limit key normalization, CORS wildcard fail-closed,
+    active-org authorization, analytics anon inserts closed, notification
+    recipient scoping; consent-mode signals, telemetry scrubbing, secrets/DR
+    docs + env-parity guard, historical audit markers, coverage artifacts,
+    packages/ui test runner, image-SBOM validation + dedupe checks (#247,
+    #256, #258).
+  - Resilience/arch/RLS/perf: rollback namespace/health fixes, circuit-breaker
+    abort + timer cleanup, request-timeout abort, authenticated worker
+    metrics, behavioral RLS matrix + drift lint + scoped-client expansion, SSE
+    reconnect, bounded exports, estimated counts, bundle budgets (#257).
+  - Billing: payment-method masking, billing-email encryption, paid_at guards,
+    left-join payments, entitlement overrides (incl. all-disabled), seats +
+    trialing plans, sync gating, doc reconciliation (#253).
+  - Hygiene/infra/evolution: dead code/artifacts removed, circular-dependency
+    guard, `as any` boundary cleanup, Redis client consolidation; container
+    hardening + third-party image scan + hadolint gate, env/doc sync, tested
+    Terraform state restore; flag registry, deprecation middleware, permission
+    catalog lint, public-route inventory, AI gates, shared config package
+    (#251, #252, #255).
+  - Files/notifications: share limiter + short TTL, upload error codes,
+    sandboxed previews, restore exercise; email templates, unsubscribe/global
+    opt-out, org-scoped preferences, per-recipient throttles, deep-link
+    escaping; committed webhook event catalog (#254).
+  - Deploy fixes: `IMAGE_TAG` exported to the remote deploy shell (#228);
+    image-SBOM validator accepts CycloneDX 1.7 (#272).
+  - Final wave: bulk-invite batching (500 invites 2002 → 17 DB calls) with the
+    invite security flow preserved + DLQ replay idempotency key (#274); hotfix
+    runbook, reviewer-checklist reconciliation, required-check guard matrix
+    modeling, CODEOWNERS validation, release workflow, e2e retry policy,
+    per-job timeouts, workflow-inventory guard, badge cleanup, image-pin
+    guard, smoke-check workflow (#275).
+  - Register after the wave: **580 verified-fixed / 108 partially-fixed /
+    2 still-open / 0 open** (the two remaining are the operator-gated prod
+    deploy P1s).
+- **Remediation wave, phase 4 (2026-10-12, 9 PRs, audit rerun).**
+  - Privacy: GA/Tawk.to gated on the recorded consent choice (policy version
+    stored server-side); consent required + recorded on public submit/quote
+    paths (`consent_at`/`consent_version`, migration `5302449`); geolocation
+    lookup HTTPS-only with a minimal field set (#227).
+  - Portal/admin UX: ticket lists paginate with server totals; permanent-delete
+    copy aligned and the unreachable Restore removed; onboarding redirect and
+    duplicate-submit fixes; checklist toggles; session/MFA expiry messaging +
+    step-up redirect; privileged-action confirmations and feedback (#229).
+  - Dialogs/UI kit: dialogs constrained to the viewport with internal scroll;
+    bounded `@mct/ui` adoption with the remaining plan documented (#230).
+  - Data/DR: prod backup/restore target behind `prod-approval` +
+    `PROD_BACKUP_ENABLED`; Terraform state bucket versioning; platform backup
+    heartbeats + worker staleness check; org-delete audit archive guard
+    (migrations `5302450`/`5302451`) (#231).
+  - Resilience: single `QUEUE_BACKEND` shared by API/worker with fail-closed
+    parity assertions; Redis degradation metrics + alerts + runbook; Stripe
+    sync page cap (#232).
+  - Webhooks/RLS: scoped `webhook_dead_letters` DELETE policy (migration
+    `5302452`) with corrected delete-client docs (#233).
+  - Secrets: rotation runbook of record + evidence/dry-run; no Terraform plan
+    artifacts leave the runner; JWT rotation rewritten around the Supabase
+    signing secret; correct environment targeting (#234).
+  - Notifications: full Web Push channel — subscriptions (migration `5302453`),
+    API, RFC 8291 worker sender, service-worker handlers, preferences UI
+    (VAPID operator-gated) (#235).
+  - Docs/records: operations docs reconciled with the pipeline; audit run
+    contract rewritten with an unindexed-run guard; release-gate verdict
+    rebound to the current register (#236).
+  - Deploy hotfix: `IMAGE_TAG` exported to the remote deploy shell so the
+    digest-pinned compose interpolation works again (#228).
+- **Remediation wave, phase 3 (2026-10-11, 13 PRs, audit rerun).**
+  - Release/docs: breaking/behavior manifest (`docs/UPGRADE.md`, migrations
+    `5302420`–`5302446`); rollback docs on the manual `terraform-do` flow;
+    main/develop claim corrected; `RELEASE_GATE.md` rebound; AWS-era gap
+    analysis marked historical; migration guide corrected (#213).
+  - IR readiness: ntfy `portal-status` subscriber surface + publish procedure;
+    IR/breach plans refreshed to the Alertmanager→ntfy path; on-call rota and
+    postmortem/comms templates; tabletop catalog refreshed + dry-run recorded
+    (#214).
+  - Uploads: content sniffer covers Office/archive/text/JSON + polyglot
+    mismatch rejection (plus latent magic-byte fixes); pluggable malware-scan
+    hook (fail-closed, operator-gated) (#215).
+  - Admin safeguards: bulk document dry-run/preview + confirm gate; invites no
+    longer pre-confirmed (`inviteUserByEmail`, pending onboarding admin);
+    destructive-op rate limiter (#216).
+  - RLS: `document_versions` UPDATE policy on the approved-aware predicate;
+    `store_quotes` INSERT scoped; auth admin calls via the service-role client
+    (#217).
+  - Performance: 60s storefront cache with admin-write eviction; 15s
+    permission cache with invalidation; SSE channel cap + per-user channel
+    sharing (#218).
+  - Hygiene: documents center split into components/hooks; product catalog
+    canonical copy + sync guard; prompt corpus pinned with a size budget
+    (#219).
+  - Notifications: sensitive-content redaction on stored/emailed bodies;
+    delivery SLO counts worker terminal outcomes (#220).
+  - Supply chain: scoped/expiring license exceptions; SBOM predicate
+    verification + digest-pinned deploys; weekly dependency rescan (#221).
+  - Testing: worker scan-task suite + raised floor; coverage thresholds and
+    suite/test totals machine-verified; flake reporter (#222).
+  - Tenancy: by-id reads fail closed; store intake/analytics platform-gated;
+    task-registry payload scope validation (#223).
+  - Evolvability: single webhook event catalog (all 11 dispatched) + parity
+    guard; SDK module registry with drift tests (#224).
+  - E2E: mobile dialog width pinned to the viewport; storefront overflow
+    fixmes documented; onboarding locator made deterministic (#225).
+- **Remediation wave, phase 2 (2026-10-11, 14 PRs, audit rerun).**
+  - Core workflows: bulk operations return per-item results; notification deep
+    links fixed; notification surfaces surface failures; SSE fallback interval
+    cleaned up; password-policy copy aligned (#197).
+  - UX/a11y: ticket-card interactive nesting fixed; inline errors announced
+    (`role="alert"`); missing page titles added with a route-title guard (#196).
+  - CI gates: E2E always reports on main; path-filtered required checks
+    rejected; security scans added to required-check JSON; prod dispatch
+    restricted to `main`; backup dispatcher retired (#198).
+  - Search: documents in portal/admin search with visibility filtering;
+    `get_analytics_summary` RPC; dedicated search rate limiter (#199).
+  - Billing: webhook writes fail closed and release claims; terminal states
+    are monotonic; tenant-scoped reads; trial/interval/void/refund lifecycle
+    columns and handling (#200, #203).
+  - Data: audit logs archived before purge/org-delete; retention windows from
+    the registry; `updated_at` triggers installed (#202).
+  - Privacy: DSAR export/erasure + runbook; recursive audit redaction; policy
+    reconciled; `PRIVACY.md`/`SUBPROCESSORS.md` (#204).
+  - Security: PII read path uses encrypted columns; role-catalog mutations are
+    super-admin-only; privileged sessions always require aal2 (#205).
+  - Infra/DR: rollback script fixed; deploy gate covers all services; storage
+    backups verified + restore-tested; staleness alarm (#206).
+  - Analytics: no IP/UA stored; storefront tracking wired with CSRF; 90-day
+    retention; admin summary consumer (#207).
+  - Resilience: real task deadline + `task_dead_letters` DLQ + alert; inbound
+    webhook persistence failures 5xx; graceful shutdown; rolling deploys (#208).
+- **Remediation wave (2026-10-11, 23 PRs, audit rerun).**
+  - Role assignment is centralized (`assertCanAssignRole`): assigning a
+    cross-tenant role requires a platform super admin, nobody can change their
+    own role, and a DB trigger rejects user-writable `profiles.is_super_admin`
+    (migration `5302437`) (#171).
+  - Core auth workflows: password reset routes through `/auth/callback`, signup
+    confirmation uses the trusted app origin, status-only membership approvals
+    work, and the SDK treats empty 204 responses as success (#175).
+  - Response cache keys include the caller's tenant scope, so an all-tenant
+    response can no longer be served to a single-org member (#174).
+  - API keys enforce stored scopes, reject expired/unparsable `expires_at`, and
+    a daily prune task retires expired keys; `GET /api-keys` is gated (#181).
+  - Downloads and admin search enforce the `can_read_document` visibility
+    model; direct-to-storage writes are closed and the documents bucket has a
+    25 MiB limit (migration `5302439`) (#187, #189).
+  - Worker monitoring uses pinned fetch (SSRF rebinding), the worker exposes
+    `worker_queue_connected` and fails `/health` on queue loss, and webhook DLQ
+    retries are truthful and atomically claimed (#179, #182, #192).
+  - Alerting: 12 new Prometheus rules (impersonation, dead letters, delivery
+    failures, latency, circuit breaker, auth failures, worker failures/queue,
+    billing drift) with promtool check/test wired into required CI (#178,
+    #190); the deploy guard fails prod on an empty `METRICS_TOKEN` (#183).
+  - Billing: Stripe sync paginates and fails loudly on truncation; failed
+    payments notify billing contacts; reconciliation detects drift and alerts
+    (#186, #190).
+  - Admin abuse: approvals reject self-approval and terminal-state transitions,
+    the Stripe portal requires a billing contact, and previously un-audited
+    DELETE handlers log audit events (#185).
+  - Privacy: GA/Tawk.to load only after consent; visitor IP/geo is
+    consent-gated and recorded server-side (migration `5302438`) (#188).
+  - Mobile: service worker registered with an API-safe cache strategy, a 16px
+    control floor, dialog scroll fixes, and mobile Playwright projects (#184).
+  - Migrations: destructive replacements are transaction-wrapped with a CI
+    guard (#176); the restore-test baseline loader and backup dispatcher are
+    fixed (#170).
+  - Docs: monitoring/alerting, release gate, secret matrix, incident/breach and
+    RTO/RPO pages updated to the deployed state (#173).
 - Proposal creation lost the phase association for nested items — items declared
   inside a phase were written with `phase_id: null`. They now link to the phase
   they were declared under (`apps/api/src/routes/proposals.ts`).

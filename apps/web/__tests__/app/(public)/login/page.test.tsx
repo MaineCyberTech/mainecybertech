@@ -108,3 +108,25 @@ describe("LoginPage", () => {
     expect(totpInput).toHaveValue("");
   });
 });
+
+describe("LoginPage session expiry (USE-P2-009)", () => {
+  afterEach(() => {
+    window.history.pushState({}, "", "/");
+  });
+
+  it("explains an expired session when the middleware appends ?reason=expired", async () => {
+    window.history.pushState({}, "", "/login?reason=expired");
+
+    render(<LoginPage />);
+
+    expect(
+      await screen.findByText(/your session expired\. please sign in again/i),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show the expiry notice for a plain visit", () => {
+    render(<LoginPage />);
+
+    expect(screen.queryByText(/your session expired/i)).not.toBeInTheDocument();
+  });
+});

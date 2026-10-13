@@ -11,12 +11,12 @@ Stripe-backed billing: invoices, subscriptions, payments, billing customer looku
 ## Key Features
 
 - Invoice list + detail (org-scoped)
-- Subscription list
-- Payment list
-- Billing customer lookup
-- Manual Stripe sync (admin)
-- Stripe billing portal session creation (redirect URL)
-- Webhook-driven updates (`checkout.session.completed`, etc.) with signature verification
+- Subscription list (interval, trial window, cancellation and seat quantity mirrored)
+- Payment list (includes payments not linked to an invoice)
+- Billing customer lookup (encrypted billing email, masked payment method)
+- Manual Stripe sync (requires `billing:manage`)
+- Stripe billing portal session creation (redirect URL; billing contacts or `billing:manage`)
+- Webhook-driven updates (`checkout.session.completed`, etc.) with full signature verification
 
 ## Endpoints
 
@@ -28,14 +28,15 @@ Stripe-backed billing: invoices, subscriptions, payments, billing customer looku
 | GET    | /api/v1/billing/subscriptions    | List subscriptions                |
 | GET    | /api/v1/billing/payments         | List payments                     |
 | GET    | /api/v1/billing/billing-customer | Get billing customer              |
-| POST   | /api/v1/billing/sync             | Manual Stripe sync (admin)        |
-| POST   | /api/v1/billing/create-portal-session | Create Stripe billing portal URL |
+| POST   | /api/v1/billing/sync             | Manual Stripe sync (`billing:manage`) |
+| POST   | /api/v1/billing/create-portal-session | Create Stripe billing portal URL (billing contact or `billing:manage`) |
 
 ## Data Model
 
-Key tables: `billing_customers` (organization_id, stripe_customer_id, billing_email), `invoices`, `subscriptions`, `payments` (stripe objects mirrored with org scoping). Requires `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` env vars.
+Key tables: `billing_customers` (organization_id, stripe_customer_id, billing_email encrypted at rest, payment method masked in responses), `invoices` (incl. `voided_at`), `subscriptions` (incl. `interval`, `trial_start`/`trial_end`, `cancel_at_period_end`, `canceled_at`, `quantity`), `payments` (incl. `refund_amount_cents`/`refunded_at`) — Stripe objects mirrored with org scoping. `subscriptions.amount_cents` is the per-seat unit amount; multiply by `quantity` for the plan total. Requires `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` env vars.
 
 ## Access Control
 
 - All billing routes: `requireAuth` + `requireOrgAccess` (org-scoped by `organization_id`)
-- Manual sync: `requireAdmin`
+- Manual sync: `requirePermission('billing', 'manage')` (admin/super_admin bypass via the permission resolver, matching every other route)
+- Portal session: an approved billing contact for the org, or a `billing:manage` holder / platform admin

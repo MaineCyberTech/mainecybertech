@@ -1,15 +1,41 @@
 import crypto from "crypto";
+import type { WebhookEvent } from "@mct/sdk/webhook-events";
 import { getSupabaseAdmin } from "../services/supabase";
 import { enqueueTask } from "./task-producer";
 import { logger } from "./logger";
 import { claimIdempotencyKey, deleteIdempotencyKey } from "./idempotency";
+import { decryptSecretValue } from "./field-encryption";
 import { assertSafeWebhookUrl } from "./ssrf-guard";
 import { pinnedFetch } from "./pinned-fetch";
 import { recordWebhookDelivery, recordWebhookDeadLetter } from "./metrics";
+import type { Database } from "@mct/sdk/database.types";
 
 const MAX_ATTEMPTS = 3;
 const RETRY_BASE_MS = 200;
 const RETRY_FACTOR = 2;
+
+type DeliveryInsert = Database["public"]["Tables"]["webhook_deliveries"]["Insert"];
+
+/**
+ * WH-P3-006: delivery rows are keyed by their idempotency key. A re-dispatch
+ * of the same logical event after a released claim must update the existing
+ * row instead of failing the unique constraint and silently losing the
+ * successful attempt's record.
+ */
+async function persistDelivery(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  row: DeliveryInsert,
+): Promise<void> {
+  const { error } = row.idempotency_key
+    ? await supabase.from("webhook_deliveries").upsert(row, { onConflict: "idempotency_key" })
+    : await supabase.from("webhook_deliveries").insert(row);
+  if (error) {
+    logger.warn(
+      { err: error.message, webhookId: row.webhook_id, idempotencyKey: row.idempotency_key },
+      "Failed to persist webhook delivery",
+    );
+  }
+}
 
 /**
  * Stable idempotency key for one logical outbound event. Derived from the
@@ -17,7 +43,7 @@ const RETRY_FACTOR = 2;
  * dispatched event maps to the same key across the API and worker layers.
  */
 export function buildOutboundIdempotencyKey(
-  event: string,
+  event: WebhookEvent,
   organizationId: string,
   data: Record<string, unknown>,
 ): string {
@@ -132,7 +158,7 @@ async function enqueueDeadLetter(
 }
 
 export async function dispatchWebhook(
-  event: string,
+  event: WebhookEvent,
   organizationId: string,
   data: Record<string, unknown>,
 ): Promise<void> {
@@ -185,8 +211,37 @@ export async function dispatchWebhook(
         "Idempotency-Key": idempotencyKey,
       };
 
+      // WH-P2-008: signing secrets are encrypted at rest; decrypt before
+      // signing. A configured secret that cannot be decrypted (wrong/rotated
+      // FIELD_ENCRYPTION_KEY) fails closed: the delivery is recorded failed
+      // and dead-lettered instead of being sent unsigned.
+      let signingSecret: string | null = null;
       if (endpoint.secret) {
-        const hmac = crypto.createHmac("sha256", endpoint.secret).update(body).digest("hex");
+        const decrypted = decryptSecretValue(endpoint.secret);
+        if (!decrypted.ok) {
+          const error = "Signing secret could not be decrypted";
+          await persistDelivery(supabase, {
+            webhook_id: endpoint.id,
+            event,
+            status: "failed",
+            request_body: { event, receivedAt: new Date().toISOString() },
+            response_status: null,
+            response_body: null,
+            error,
+            retry_count: 0,
+            dead_letter: true,
+            idempotency_key: idempotencyKey,
+          });
+          recordWebhookDelivery("failed", event);
+          await enqueueDeadLetter(supabase, endpoint.id, event, error, 0);
+          await deleteIdempotencyKey(idempotencyKey);
+          continue;
+        }
+        signingSecret = decrypted.value;
+      }
+
+      if (signingSecret) {
+        const hmac = crypto.createHmac("sha256", signingSecret).update(body).digest("hex");
         headers["X-Webhook-Signature"] = `sha256=${hmac}`;
       }
 
@@ -205,7 +260,7 @@ export async function dispatchWebhook(
       // attempts and mark failed rows dead-lettered — the inline path already
       // exhausted its retries and enqueued a dead letter below, so the worker
       // retry task must not retry the same delivery (single retry owner).
-      await supabase.from("webhook_deliveries").insert({
+      await persistDelivery(supabase, {
         webhook_id: endpoint.id,
         event,
         status: failed ? "failed" : "success",

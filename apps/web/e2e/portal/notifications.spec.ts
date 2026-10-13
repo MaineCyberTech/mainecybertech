@@ -1,8 +1,8 @@
-import { test, expect } from "../fixtures";
+import { test, expect, gotoApp } from "../fixtures";
 
 test.describe("portal notification bell", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/portal/dashboard");
+    await gotoApp(page, "/portal/dashboard");
   });
 
   test("shows notification bell in header", async ({ page }) => {
@@ -25,7 +25,7 @@ test.describe("portal notification bell", () => {
 
 test.describe("admin notification bell", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/admin");
+    await gotoApp(page, "/admin");
   });
 
   test("shows notification bell in admin header", async ({ page }) => {

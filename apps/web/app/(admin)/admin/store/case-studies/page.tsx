@@ -2,6 +2,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import AdminPreviewNote from "@/components/admin/AdminPreviewNote";
 import { getCaseStudies } from "@/lib/catalog/v5-loaders";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +40,7 @@ export default async function AdminStoreCaseStudiesPage() {
         </button>
       }
     >
+      <AdminPreviewNote />
       {caseStudies.length === 0 ? (
         <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-6 text-center text-sm text-slate-400">
           No case studies yet. Case-study generation is coming soon.

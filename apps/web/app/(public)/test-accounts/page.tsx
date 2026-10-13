@@ -454,6 +454,7 @@ export default function TestAccountsPage() {
   if (!isTestAccountsEnabled()) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-cyber-base px-6">
+        <title>Test Accounts — Maine CyberTech</title>
         <div className="text-center">
           <h1 className="text-xl font-bold text-slate-100">Not Available</h1>
           <p className="mt-2 text-sm text-slate-400">
@@ -495,6 +496,7 @@ export default function TestAccountsPage() {
 
   return (
     <div className="min-h-screen overflow-y-auto bg-cyber-base">
+      <title>Test Accounts — Maine CyberTech</title>
       <div className="mx-auto max-w-5xl px-4 py-12">
         <div className="mb-8 text-center">
           <h1 className="font-display text-3xl font-bold uppercase tracking-[0.1em] text-slate-100">
@@ -509,7 +511,10 @@ export default function TestAccountsPage() {
         </div>
 
         {error && (
-          <div className="mx-auto mb-6 max-w-md rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <div
+            role="alert"
+            className="mx-auto mb-6 max-w-md rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+          >
             {error}
           </div>
         )}

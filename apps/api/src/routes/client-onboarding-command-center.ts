@@ -25,6 +25,7 @@ import {
   exportOnboardingRecords,
 } from "../services/client-onboarding-command-center";
 import { escapeCsvValue } from "../lib/csv";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: Router = Router();
 
@@ -118,7 +119,7 @@ router.get(
       const supabase = getSupabaseAdmin();
       const record = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "client_onboarding_command_center_records",
         getParam(req, "id"),
         "id, organization_id",
@@ -156,7 +157,7 @@ router.patch(
     const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const record = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "client_onboarding_command_center_records",
       getParam(req, "id"),
       "id, organization_id",
@@ -176,15 +177,17 @@ router.delete(
   requirePermission("client-onboarding-command-center", "delete"),
   async (req: Request, res: Response, next: NextFunction) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const record = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "client_onboarding_command_center_records",
       getParam(req, "id"),
       "id, organization_id",
     );
     const userId = getUserId(req);
+    // Audit is written by deleteOnboardingRecord (action: client_onboarding.delete).
     const result = await deleteOnboardingRecord(record.organization_id as string, userId, getParam(req, "id"));
     res.json(result);
   } catch (error) {
@@ -204,7 +207,7 @@ router.post(
     const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const record = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "client_onboarding_command_center_records",
       getParam(req, "id"),
       "id, organization_id, phase",
@@ -247,7 +250,7 @@ router.patch(
     const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const item = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "client_onboarding_checklist_items",
       getParam(req, "itemId"),
       "id, organization_id",

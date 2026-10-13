@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef, type ReactNode } from "react";
+import { Button } from "@mct/ui/components/Button";
+import { Input, Textarea } from "@mct/ui/components/Input";
 import type { Category } from "@/lib/catalog/types";
 import { createCategoryAction, updateCategoryAction } from "./actions";
 import { useFocusTrap } from "@/lib/use-focus-trap";
@@ -49,7 +51,7 @@ export default function CategoryForm({
       <div onClick={() => setOpen(true)}>{children}</div>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60" onClick={() => setOpen(false)} />
           <div
             role="dialog"
@@ -59,7 +61,7 @@ export default function CategoryForm({
             onKeyDown={(e) => {
               if (e.key === "Escape") setOpen(false);
             }}
-            className="relative z-10 w-full max-w-lg rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl"
+            className="relative z-10 max-h-[90vh] w-[calc(100vw-2rem)] min-w-0 max-w-lg overflow-y-auto rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl"
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 id="category-form-title" className="text-lg font-bold text-slate-50">
@@ -84,88 +86,59 @@ export default function CategoryForm({
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === "edit" && <input type="hidden" name="id" value={category!.id} />}
 
-              <div>
-                <label
-                  htmlFor="cat-name"
-                  className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                >
-                  Name
-                </label>
-                <input
-                  id="cat-name"
-                  name="name"
-                  required
-                  defaultValue={category?.name ?? ""}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
-                />
-              </div>
+              <Input
+                id="cat-name"
+                name="name"
+                label="Name"
+                required
+                defaultValue={category?.name ?? ""}
+              />
 
-              <div>
-                <label
-                  htmlFor="cat-slug"
-                  className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                >
-                  Slug
-                </label>
-                <input
-                  id="cat-slug"
-                  name="slug"
-                  required
-                  defaultValue={category?.slug ?? ""}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
-                />
-              </div>
+              <Input
+                id="cat-slug"
+                name="slug"
+                label="Slug"
+                required
+                defaultValue={category?.slug ?? ""}
+              />
 
-              <div>
-                <label
-                  htmlFor="cat-description"
-                  className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                >
-                  Description
-                </label>
-                <textarea
-                  id="cat-description"
-                  name="description"
-                  rows={3}
-                  defaultValue={category?.description ?? ""}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
-                />
-              </div>
+              <Textarea
+                id="cat-description"
+                name="description"
+                label="Description"
+                rows={3}
+                defaultValue={category?.description ?? ""}
+              />
 
-              <div>
-                <label
-                  htmlFor="cat-productIds"
-                  className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                >
-                  Product IDs (comma-separated)
-                </label>
-                <input
-                  id="cat-productIds"
-                  name="productIds"
-                  defaultValue={(category?.productIds ?? []).join(", ")}
-                  placeholder="prod-1, prod-2"
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
-                />
-              </div>
+              <Input
+                id="cat-productIds"
+                name="productIds"
+                label="Product IDs (comma-separated)"
+                defaultValue={(category?.productIds ?? []).join(", ")}
+                placeholder="prod-1, prod-2"
+              />
 
               {error && (
-                <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
+                <div
+                  role="alert"
+                  className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300"
+                >
                   {error}
                 </div>
               )}
 
               <div className="flex justify-end gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-400 transition hover:border-emerald-600/30 hover:text-slate-200"
                   disabled={pending}
                 >
                   Cancel
-                </button>
-                <button type="submit" className="cyber-button" disabled={pending}>
+                </Button>
+                <Button type="submit" loading={pending}>
                   {pending ? "Saving..." : mode === "create" ? "Create" : "Update"}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

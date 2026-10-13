@@ -5,16 +5,22 @@
 > See `apps/api/.env.example`, `apps/web/.env.example`, `apps/worker/.env.example` for minimal starter configs.
 >
 > All three apps load **`.env.local`** for local development (API/Worker via explicit `dotenv.config()`, Web via Next.js convention). Docker Compose also references `.env.local` via `env_file`. Run `pwsh scripts/sync_supabase_env.auto.v2.ps1` to populate local Supabase connection values.
+>
+> EVOL-P3-005: shared field definitions (`NODE_ENV`, `LOG_LEVEL`, `SUPABASE_*`,
+> `REDIS_*`, `SMTP_*`, `SENTRY_*`, the queue-backend enum) live in
+> `packages/config/src/env.ts` (`@mct/config/env`) and are composed by each
+> app's schema. The per-app tables below remain the operator-facing reference.
 
 ## Web (`apps/web`)
 
 | Variable                                | Required | Default                | Description                                                                                 |
 | --------------------------------------- | -------- | ---------------------- | ------------------------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_API_URL`                   | Yes      | —                      | URL of the API server (e.g. `http://localhost:4000`)                                        |
+| `API_INTERNAL_URL`                      | No       | —                      | Server-side SSR override for the API base URL (falls back to `NEXT_PUBLIC_API_URL`); ARCH-P3-003 |
 | `NODE_ENV`                              | No       | `development`          | Node environment                                                                            |
 | `NEXT_PUBLIC_GA_ID`                     | No       | —                      | Google Analytics measurement ID (e.g. `G-XXXXXXXXXX`)                                       |
 | `NEXT_PUBLIC_TAWKTO_ID`                 | No       | —                      | Tawk.to widget ID (e.g. `66898d27e1e4f70f24ee3260/1i24kuosn`)                               |
-| `NEXT_PUBLIC_SENTRY_DSN`                | No       | —                      | Sentry DSN for error tracking                                                               |
+| `NEXT_PUBLIC_SENTRY_DSN`                | No       | —                      | Web Sentry DSN (public by design); delivered as a web build arg by `deploy-do.yml` (inlined into the client bundle) and as the web service runtime env |
 | `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | No       | `0.2` prod / `0` other | Client-side Sentry trace sample rate (0–1); invalid values use the default                  |
 | `NEXT_PUBLIC_SENTRY_RELEASE`            | No       | `NEXT_PUBLIC_GIT_SHA`  | Client-side Sentry release identifier                                                       |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`        | No       | —                      | Cloudflare Turnstile site key (contact form captcha)                                        |
@@ -28,9 +34,11 @@
 | `SENTRY_ORG`                            | No       | —                      | Sentry org slug (for source maps)                                                           |
 | `SENTRY_PROJECT`                        | No       | —                      | Sentry project slug (for source maps)                                                       |
 | `SENTRY_TRACES_SAMPLE_RATE`             | No       | `0.2` prod / `0` other | Server-side Sentry trace sample rate (0–1)                                                  |
-| `SENTRY_RELEASE`                        | No       | `NEXT_PUBLIC_GIT_SHA`  | Server-side Sentry release identifier                                                       |
+| `SENTRY_RELEASE`                        | No       | `NEXT_PUBLIC_GIT_SHA`  | Server-side Sentry release identifier; `deploy-do.yml` writes the deployed commit/image tag to the droplet `.env` (OBS-P3-004) |
 
 > **Note:** The web app no longer requires `NEXT_PUBLIC_SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Auth is proxied through the API via `POST /api/v1/auth/callback`.
+
+> **Note:** `apps/web/public/version.json` is a generated build artifact, not tracked. `pnpm --filter=web generate:version` (run by `dev`, `build` and `typecheck`) writes it from the `NEXT_PUBLIC_*` values above; without those values it records the local build time.
 
 ## API (`apps/api`)
 
@@ -42,8 +50,8 @@
 | `SUPABASE_URL`               | Yes      | —                            | Supabase project URL (e.g. `http://127.0.0.1:54321` for local)                                                                                                                                                      |
 | `SUPABASE_ANON_KEY`          | Yes      | —                            | Supabase publishable/anon key                                                                                                                                                                                       |
 | `SUPABASE_SERVICE_ROLE_KEY`  | Yes      | —                            | Supabase service role key (admin access)                                                                                                                                                                            |
-| `JWT_SECRET`                 | Yes      | —                            | JWT signing secret (required; multi-secret rotation via comma-separated values)                                                                                                                                     |
-| `CORS_ORIGIN`                | No       | `http://localhost:3000`      | Allowed CORS origin; comma-separated for multiple (deploy includes `app.*` + `www.*`)                                                                                                                               |
+| `JWT_SECRET`                 | Yes      | —                            | API JWT verification secret list (Supabase signs sessions; required; multi-secret rotation via comma-separated values — see `docs/JWT_ROTATION.md`)                                                                  |
+| `CORS_ORIGIN`                | No       | `http://localhost:3000`      | Allowed CORS origins; comma-separated for multiple (deploy includes `app.*` + `www.*`). `"*"` is rejected at boot: the API always sends credentials, so allow-all would expose authenticated responses to any site (SEC-P3-006). |
 | `APP_DOMAIN`                 | No       | `app.mainecybertech.com`     | Public app domain (used by Caddy reverse proxy and APP_BASE_URL)                                                                                                                                                    |
 | `API_DOMAIN`                 | No       | `api.mainecybertech.com`     | Public API domain (used by Caddy reverse proxy and worker API_BASE_URL)                                                                                                                                             |
 | `LOG_LEVEL`                  | No       | `info`                       | Logging level (`debug`, `info`, `warn`, `error`)                                                                                                                                                                    |
@@ -52,11 +60,13 @@
 | `SMTP_USER`                  | No       | —                            | SMTP username                                                                                                                                                                                                       |
 | `SMTP_PASS`                  | No       | —                            | SMTP password                                                                                                                                                                                                       |
 | `EMAIL_FROM`                 | No       | `noreply@mainecybertech.com` | From address for outgoing emails                                                                                                                                                                                    |
+| `VAPID_PUBLIC_KEY`           | No       | —                            | Web Push (NOTIF-P2-001) base64url P-256 public key returned to browsers by `GET /push-subscriptions/vapid-public-key`. Unset = push channel disabled (no-op)                                                         |
 | `SENTRY_DSN`                 | No       | —                            | Sentry DSN for error tracking                                                                                                                                                                                       |
 | `SENTRY_TRACES_SAMPLE_RATE`  | No       | `0.2` prod / `0` otherwise   | Sentry trace sample rate (0–1)                                                                                                                                                                                      |
-| `SENTRY_RELEASE`             | No       | `GIT_SHA`                    | Sentry release identifier (defaults to `process.env.GIT_SHA`)                                                                                                                                                       |
+| `SENTRY_RELEASE`             | No       | `GIT_SHA`                    | Sentry release identifier; `deploy-do.yml` writes the deployed commit/image tag to the droplet `.env` (OBS-P3-004). Falls back to `process.env.GIT_SHA` |
 | `PUBLIC_TRAFFIC_WEBHOOK_URL` | No       | —                            | Teams webhook URL for visitor notifications (marketing site)                                                                                                                                                        |
 | `PUBLIC_LEAD_WEBHOOK_URL`    | No       | —                            | Teams webhook URL for new lead notifications (marketing site)                                                                                                                                                       |
+| `GEO_LOOKUP_URL`             | No       | —                            | Visitor geolocation endpoint; default `https://ip-api.com/json/`. Must be HTTPS (plaintext is refused); only called after consent, and only the city/region/country fields are requested                              |
 | `JSM_DOMAIN`                 | No       | —                            | JSM domain for auto-ticket creation from web leads                                                                                                                                                                  |
 | `JSM_EMAIL`                  | No       | —                            | JSM user email for API auth                                                                                                                                                                                         |
 | `JSM_API_TOKEN`              | No       | —                            | JSM API token                                                                                                                                                                                                       |
@@ -67,14 +77,18 @@
 | `REDIS_URL`                  | No       | —                            | Redis URL for caching, idempotency, and BullMQ (required in production)                                                                                                                                             |
 | `REDIS_PASSWORD`             | No       | —                            | Redis password (required in production; used by docker-compose and worker)                                                                                                                                          |
 | `TURNSTILE_SECRET_KEY`       | No       | —                            | Cloudflare Turnstile secret; when set, `POST /public/submit` requires a valid captcha token                                                                                                                         |
+| `MALWARE_SCANNER_URL`        | No       | —                            | Upload malware-scan endpoint (FILE-P2-003). Unset = scanning disabled (no-op). When set, document/file-request uploads are POSTed as multipart/form-data (`file`) before storage and must answer `{"clean":true}` / `{"clean":false}`, or ClamAV REST `{"Status":"OK"}`/`{"Status":"FOUND"}`. Infected content → 400; unreachable/malformed verdict → 503 (fail closed). Operator setup: `docs/features/secure-file-request.md`. |
+| `MALWARE_SCANNER_API_KEY`    | No       | —                            | Optional `x-apikey` header for `MALWARE_SCANNER_URL` (e.g. a VirusTotal proxy)                                                                                                                          |
 | `TASK_QUEUE_ENABLED`         | No       | `false`                      | When `true`, API enqueues background tasks instead of running them inline                                                                                                                                           |
+| `QUEUE_BACKEND`              | No       | `bullmq`                     | Queue backend contract shared with the worker. The API only enqueues to BullMQ and both sides fail closed in production on anything else (ARCH-P2-004)                                                               |
+| `STRIPE_SYNC_MAX_PAGES`      | No       | `10`                         | Page cap for `POST /billing/sync` (100 objects per page; max 100). Raise for accounts with more than 1000 objects per list (PERF-P2-006)                                                                            |
 | `RLS_READS_ENABLED`          | No       | —                            | Comma-separated module keys that use the user-scoped (RLS) Supabase client for reads (see `docs/RLS-rollout.md`)                                                                                                    |
 | `RLS_WRITES_ENABLED`         | No       | —                            | Comma-separated module keys that use the user-scoped (RLS) client for writes                                                                                                                                        |
 | `JIRA_WEBHOOK_SECRET`        | No       | —                            | Jira webhook secret for HMAC signature verification                                                                                                                                                                 |
 | `JSM_WEBHOOK_SECRET`         | No       | —                            | JSM webhook secret for HMAC signature verification                                                                                                                                                                  |
-| `MFA_ENFORCEMENT_ENABLED`    | No       | `false`                      | When `true`, an `aal1` session that has a verified TOTP factor is rejected with `403 MFA_REQUIRED` on non-`/auth/*` routes. Users without a factor are never blocked. Requires MFA enabled on the Supabase project. |
-| `FIELD_ENCRYPTION_KEY`       | No       | —                            | AES-256-GCM key for encrypted PII fields (`profiles.encrypted_pii`). Falls back to a dev `plain:` marker when unset.                                                                                                |
-| `METRICS_TOKEN`              | No       | —                            | When set, `GET /metrics` requires `Authorization: Bearer <token>` (returns 404 otherwise).                                                                                                                          |
+| `MFA_ENFORCEMENT_ENABLED`    | No       | `false`                      | When `true`, an `aal1` session that has a verified TOTP factor is rejected with `403 MFA_REQUIRED` on non-`/auth/*` routes. **`admin`/`super_admin` sessions are enforced even when this is unset/false** (SEC-P2-005). Users without a factor are never blocked. Requires MFA enabled on the Supabase project. |
+| `FIELD_ENCRYPTION_KEY`       | No       | —                            | AES-256-GCM key (64-char hex or base64, 32 bytes) for encrypted PII fields (`profiles.encrypted_pii`) and outbound webhook signing secrets (`webhook_endpoints.secret`). Profile reads decrypt the PII column as the source of truth (SEC-P2-002); run `scripts/backfill-profile-pii.mjs` so existing rows have an encrypted copy. Required in production; falls back to a dev `plain:` marker when unset. Also read by the worker to decrypt signing secrets. |
+| `METRICS_TOKEN`              | Prod     | —                            | Shared bearer token for `GET /metrics` and the Prometheus scrape. **Required in deployed environments** (an empty token makes the API return 404, the scrape fail, and `MCTServiceDown` false-fire); the prod deploy fails closed when empty, dev warns.                                                                                                                          |
 | `M365_CLIENT_STATE`          | No       | —                            | Shared clientState validated on inbound M365 change notifications. This is the only M365 webhook credential; Graph does not HMAC-sign payloads, so there is no `M365_WEBHOOK_SECRET`.                              |
 
 ## Worker (`apps/worker`)
@@ -87,8 +101,10 @@
 | `SUPABASE_ANON_KEY`         | Yes      | —                            | Supabase publishable/anon key                                                   |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes      | —                            | Supabase service role key (for task DB access)                                  |
 | `WORKER_CONCURRENCY`        | No       | `10`                         | Max concurrent jobs                                                             |
-| `WORKER_TIMEOUT`            | No       | `30000`                      | Job timeout in ms                                                               |
-| `QUEUE_BACKEND`             | No       | `inline`                     | Queue backend (`inline`, `sqs`, or `bullmq`; set to `bullmq` in docker-compose) |
+| `WORKER_TIMEOUT`            | No       | `30000`                      | BullMQ job lock duration in ms. NOT a handler deadline — see `WORKER_TASK_TIMEOUT_MS` |
+| `WORKER_TASK_TIMEOUT_MS`    | No       | `600000`                     | Real handler deadline in ms: at this point the task's AbortSignal fires and the task fails as `timeout` (0 disables). RES-P2-002 |
+| `WORKER_SHUTDOWN_TIMEOUT_MS` | No      | `30000`                      | Graceful-shutdown drain budget in ms; the worker force-exits (1) if still draining after this. Keep the compose `stop_grace_period` above it (60s in production). RES-P2-009 |
+| `QUEUE_BACKEND`             | No       | `inline`                     | Queue backend (`inline`, `sqs`, or `bullmq`; production must be `bullmq` — the API only enqueues to BullMQ; ARCH-P2-004) |
 | `SQS_QUEUE_URL`             | No       | —                            | SQS queue URL for task processing                                               |
 | `STRIPE_SECRET_KEY`         | No       | —                            | Stripe API key for billing reconciliation                                       |
 | `JIRA_BASE_URL`             | No       | —                            | Jira instance base URL                                                          |
@@ -105,6 +121,9 @@
 | `SMTP_USER`                 | No       | —                            | SMTP username                                                                   |
 | `SMTP_PASS`                 | No       | —                            | SMTP password                                                                   |
 | `EMAIL_FROM`                | No       | `noreply@mainecybertech.com` | From address for outgoing emails                                                |
+| `VAPID_PUBLIC_KEY`          | No       | —                            | Web Push base64url P-256 public key (NOTIF-P2-001); set together with the two below, unset = push disabled |
+| `VAPID_PRIVATE_KEY`         | No       | —                            | Web Push base64url P-256 private key; signs the VAPID JWT                        |
+| `VAPID_SUBJECT`             | No       | —                            | VAPID contact, e.g. `mailto:ops@mainecybertech.com`                              |
 | `API_BASE_URL`              | No       | —                            | Public API base URL for notification links                                      |
 | `HEALTH_PORT`               | No       | `3001`                       | Health check server port                                                        |
 | `REDIS_URL`                 | No       | —                            | Redis URL for BullMQ (`QUEUE_BACKEND=bullmq`)                                   |
@@ -112,7 +131,7 @@
 | `TASK_QUEUE_ENABLED`        | No       | `false`                      | When `true`, API enqueues tasks instead of inline                               |
 | `SENTRY_DSN`                | No       | —                            | Sentry DSN for worker error tracking                                            |
 | `SENTRY_TRACES_SAMPLE_RATE` | No       | `0.2` prod / `0` otherwise   | Sentry trace sample rate (0–1)                                                  |
-| `SENTRY_RELEASE`            | No       | `GIT_SHA`                    | Sentry release identifier (defaults to `process.env.GIT_SHA`)                   |
+| `SENTRY_RELEASE`            | No       | `GIT_SHA`                    | Sentry release identifier; `deploy-do.yml` writes the deployed commit/image tag to the droplet `.env` (OBS-P3-004). Falls back to `process.env.GIT_SHA` |
 | `APP_BASE_URL`              | No       | —                            | Public app base URL for notification links                                      |
 
 ## E2E Tests (`apps/web/e2e`)
@@ -133,7 +152,7 @@ for the full deployment/terraform secret list.
 | ------------------------- | -------------------------------------- | ------------------------------------------------------------------------ |
 | `E2E_JWT_SECRET`          | `e2e.yml`                              | Optional JWT secret for the E2E API; falls back to a built-in test value |
 | `SUPABASE_ACCESS_TOKEN`   | `supabase-migrations.yml`              | Supabase CLI auth for `supabase link` / `supabase db push`               |
-| `CHROMATIC_PROJECT_TOKEN` | `chromatic.yml`                        | Chromatic visual-regression upload (best-effort job)                     |
+| `CHROMATIC_PROJECT_TOKEN` | `chromatic.yml`                        | Chromatic visual-regression upload (job fails on a broken Storybook build or a visual change once a baseline exists) |
 | `AWS_ACCESS_KEY_ID`       | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | S3/Spaces key for backup upload and restore download |
 | `AWS_SECRET_ACCESS_KEY`   | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | S3/Spaces secret for backup upload and restore       |
 | `S3_BUCKET`               | backup/restore workflows and scripts   | Backup bucket **name** (contract: `docs/ROLLBACK_PROCEDURES.md` §3a)     |
@@ -142,11 +161,42 @@ for the full deployment/terraform secret list.
 | `BACKUP_ENCRYPTION_KEY`   | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | openssl passphrase encrypting backups; secret, never printed |
 | `SUPABASE_URL`            | `storage-backup.yml`                   | Supabase project URL for the Storage REST API                            |
 | `SUPABASE_SERVICE_ROLE_KEY` | `storage-backup.yml`                 | Service-role key for Storage list/download/upload (already a deploy secret) |
-| `SLACK_WEBHOOK_URL`       | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | Slack notification when a backup or restore test fails |
+| `SLACK_WEBHOOK_URL`       | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | Slack fallback notification when a backup or restore test fails (ntfy is primary; see the secrets matrix) |
+
+## Alerting and notification variables
+
+These are not app `.env.local` variables. `ALERTMANAGER_*` are written to the
+droplet `.env` by `deploy-do.yml` (from GitHub environment secrets/variables)
+and substituted into `infra/digitalocean/alertmanager.tmpl.yml` by the
+`alertmanager` compose service at start; `NTFY_ALERTS_*` are GitHub environment
+secrets read by the CI workflows that notify on failures (backup/restore,
+staleness, external uptime probe, load test, secret-history scan,
+branch-protection audit). See
+[`MONITORING_AND_ALERTING.md`](MONITORING_AND_ALERTING.md) §9 and the
+[`GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`](GITHUB_SECRETS_AND_VARIABLES_MATRIX.md).
+
+| Variable                            | Required              | Source                          | Description                                                                                                                       |
+| ----------------------------------- | --------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` | Yes (prod)            | GitHub secret → droplet `.env`  | External **dead-man's-switch** heartbeat URL, not on the droplet (IR-P0-003); prod deploys fail closed when empty, dev warns       |
+| `ALERTMANAGER_CRITICAL_WEBHOOK_URL` | Yes (for real alerts) | GitHub secret → droplet `.env`  | Critical-alert webhook — ntfy `portal-alerts` in the deployed environment (IR-P0-003)                                              |
+| `ALERTMANAGER_DEFAULT_WEBHOOK_URL`  | No                    | GitHub secret → droplet `.env`  | Catch-all webhook for non-critical alerts — ntfy `portal-alerts` in the deployed environment                                       |
+| `ALERTMANAGER_SLACK_API_URL`        | No                    | GitHub secret → droplet `.env`  | Slack incoming-webhook URL used by the critical/default receivers                                                                  |
+| `ALERTMANAGER_SLACK_CHANNEL`        | No                    | GitHub variable → droplet `.env` | Slack channel name (e.g. `#alerts`); non-secret                                                                                   |
+| `ALERTMANAGER_WEBHOOK_USER`         | With a webhook URL    | GitHub secret → droplet `.env`  | Basic-auth username for the critical/default webhooks (ntfy relay user `portal-relay`)                                             |
+| `ALERTMANAGER_WEBHOOK_PASS`         | With a webhook URL    | GitHub secret → droplet `.env`  | Basic-auth password for the above (secret)                                                                                         |
+| `NTFY_ALERTS_URL`                   | Yes (CI alerts)       | GitHub secret (environment)     | ntfy topic URL for CI failure notifications (primary channel; `SLACK_WEBHOOK_URL` is the fallback)                                 |
+| `NTFY_ALERTS_USER`                  | Yes (CI alerts)       | GitHub secret (environment)     | ntfy basic-auth user for the above (write-only relay user)                                                                         |
+| `NTFY_ALERTS_PASS`                  | Yes (CI alerts)       | GitHub secret (environment)     | ntfy basic-auth password for the above (secret)                                                                                    |
+
+If an `ALERTMANAGER_*` variable is unset, compose substitutes a no-op localhost
+URL so the stack still starts — but the dead-man's switch is only real when
+`ALERTMANAGER_WATCHDOG_WEBHOOK_URL` points off-box. Secret values are rendered
+safely (a value containing `&`, `\` or `"` cannot corrupt the config;
+OBS-P3-005).
 
 ## CI / Docker
 
-The deploy workflow (`deploy-do.yml`) writes the runtime env to `/opt/mct-portal/.env` on the DO droplet via SSH heredoc. `infra/digitalocean/docker-compose.yml` interpolates that file for the values it references in each service's `environment:` block.
+The deploy workflow (`deploy-do.yml`) writes the runtime env to `/opt/mct-portal/.env` on the DO droplet with `printf '%s'` (values are written literally and never re-expanded by the shell). `infra/digitalocean/docker-compose.yml` interpolates that file for the values it references in each service's `environment:` block.
 
 Web `NEXT_PUBLIC_*` vars are passed as Docker build args for client-side inlining, and set as runtime env vars for server-side use.
 
@@ -193,6 +243,45 @@ Local Supabase provides these values at `http://127.0.0.1:54321`:
 | `read`            | Boolean      | Read status                                                                                                 |
 | `read_at`         | Timestamptz? | When the notification was read                                                                              |
 | `created_at`      | Timestamptz  | Creation timestamp                                                                                          |
+
+### Web Push (VAPID) — operator runbook (NOTIF-P2-001)
+
+Browser push is operator-gated. Until the VAPID variables are set the channel
+stays disabled and is metered as `skipped` (a no-op, not a failure): the API
+reports `enabled: false` from `GET /push-subscriptions/vapid-public-key`, the
+preferences UI shows "Push notifications are not configured on this server",
+and the worker's `notification-push` task returns without sending.
+
+1. Generate one VAPID key pair per environment:
+
+   ```sh
+   npx web-push generate-vapid-keys --json
+   ```
+
+2. Set the values as GitHub environment secrets (they are written to the
+   droplet `.env` by `deploy-do.yml` and read by `infra/digitalocean/docker-compose.yml`)
+   or in `.env.local` for local development:
+
+   | Variable             | Service    | Purpose                                                                       |
+   | -------------------- | ---------- | ----------------------------------------------------------------------------- |
+   | `VAPID_PUBLIC_KEY`   | API, worker | base64url uncompressed P-256 public key (65 bytes); handed to browsers         |
+   | `VAPID_PRIVATE_KEY`  | worker     | base64url P-256 private scalar (32 bytes); signs the VAPID JWT                 |
+   | `VAPID_SUBJECT`      | worker     | Contact for push services, e.g. `mailto:ops@mainecybertech.com`                |
+
+3. Redeploy or restart the API and worker. The worker warns at boot on a
+   *partial* VAPID configuration (some but not all three set) and refuses to
+   send on a public/private key mismatch — check the logs if pushes do not
+   arrive after enabling.
+
+Rotating the pair is a credential rotation: generate a new pair and update the
+worker. Existing browser subscriptions keep working (VAPID authorizes the
+sender; it is not tied to the subscription's own keys). No migration is
+needed. See [`SECRETS_ROTATION.md`](SECRETS_ROTATION.md).
+
+Delivery health: each subscription send is counted in
+`worker_notification_delivery_total{channel="push"}`; subscriptions the push
+service reports gone (HTTP 404/410) are soft-revoked and counted in
+`worker_push_subscriptions_revoked_total`.
 
 ## Jira / JSM Integration
 

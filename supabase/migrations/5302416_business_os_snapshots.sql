@@ -14,4 +14,5 @@ alter table business_os_snapshots enable row level security;
 
 -- Platform-internal data: the admin API reads it with the service role, so
 -- no member/anon policy is granted.
+drop policy if exists "bos_admin_select" on business_os_snapshots;
 create policy "bos_admin_select" on business_os_snapshots for select using (false);

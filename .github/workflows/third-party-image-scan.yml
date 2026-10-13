@@ -1,0 +1,151 @@
+name: Third-party image scan
+
+# CTR-P3-007: the four digest-pinned third-party images in the droplet compose
+# (redis, caddy, prometheus, alertmanager) were never scanned — only the built
+# mct-* images are (build-push.yml / deploy-do.yml). A pinned digest that later
+# becomes known-vulnerable could stay deployed until a Dependabot bump landed,
+# with nothing gating it. This weekly scan resolves the refs straight from
+# infra/digitalocean/docker-compose.yml (so it always scans what the stack
+# actually pins, including a Dependabot bump) and fails on CRITICAL/HIGH with
+# an available fix, then alerts through the shared ntfy/Slack path.
+#
+# NOTE: schedules only fire from the default branch, so this file must be on
+# `main` for the cron to fire there.
+
+on:
+  schedule:
+    # Weekly, Mondays 07:00 UTC (after the 05:00 SBOM and 06:00 dependency
+    # re-scan runs).
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: third-party-image-scan
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      images: ${{ steps.resolve.outputs.images }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Resolve pinned third-party image refs from compose
+        id: resolve
+        # Single source of truth: scan exactly the digest-pinned refs the
+        # droplet stack runs. `$`-interpolated app images (built and scanned by
+        # this repo) never carry an @sha256 here and are skipped.
+        #
+        # DET-P3-002 guard: every literal (non-`$`) image ref in the compose
+        # file must be digest-pinned. The mct-api/mct-worker/mct-web refs are
+        # the repo's own images — they are built, scanned and attested by CI
+        # and the deploy resolves them to digests before running — so they are
+        # the only refs allowed to carry a mutable tag.
+        run: |
+          set -euo pipefail
+          unpinned=$(grep -E '^[[:space:]]+image:[[:space:]]+' \
+            infra/digitalocean/docker-compose.yml | grep -v '\$' | grep -v '@sha256:' || true)
+          if [ -n "$unpinned" ]; then
+            echo "::error::third-party image refs must be digest-pinned (@sha256:):"
+            printf '%s\n' "$unpinned"
+            exit 1
+          fi
+          images=$(grep -E '^[[:space:]]+image:[[:space:]]+[^$]+@sha256:' \
+            infra/digitalocean/docker-compose.yml | awk '{print $2}' | sort -u)
+          if [ -z "$images" ]; then
+            echo "::error::no digest-pinned third-party images found in infra/digitalocean/docker-compose.yml"
+            exit 1
+          fi
+          json=$(printf '%s\n' "$images" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "images=$json" >> "$GITHUB_OUTPUT"
+          echo "Scanning refs:"
+          printf '%s\n' "$images"
+
+  scan:
+    needs: resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      # Scan every ref even when one fails, so the alert lists all findings.
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.resolve.outputs.images) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Scan ${{ matrix.image }} (CRITICAL/HIGH)
+        # Same Trivy action as the app-image scans. `ignore-unfixed: true`
+        # matches build-push.yml: fail on findings that have a fix (bump the
+        # pin); an unfixed upstream CVE would only repeat alert noise.
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        with:
+          scan-type: image
+          image-ref: ${{ matrix.image }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+
+      - name: Generate ${{ matrix.image }} SBOM (CycloneDX)
+        # SBOM-P3-008: a digest-bound SBOM for each pinned third-party image,
+        # the same durable record class as the mct-* image SBOMs, resolved
+        # from the compose refs so a Dependabot bump is covered automatically.
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        with:
+          scan-type: image
+          image-ref: ${{ matrix.image }}
+          format: cyclonedx
+          output: third-party-sbom.cdx.json
+          scanners: vuln
+
+      - name: Validate the SBOM (floor + digest binding)
+        # The same validator the app-image SBOMs run; an empty/partial Trivy
+        # output must not become the durable record for the digest.
+        env:
+          IMAGE_REF: ${{ matrix.image }}
+        run: |
+          digest="sha256:${IMAGE_REF##*@sha256:}"
+          node scripts/validate-sbom.mjs --image --digest "$digest" third-party-sbom.cdx.json
+
+      - name: Upload the SBOM
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: third-party-image-sbom-${{ strategy.job-index }}
+          path: third-party-sbom.cdx.json
+          retention-days: 30
+
+  notify:
+    needs: [resolve, scan]
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Notify on failure
+        env:
+          NTFY_URL: ${{ secrets.NTFY_ALERTS_URL }}
+          NTFY_USER: ${{ secrets.NTFY_ALERTS_USER }}
+          NTFY_PASS: ${{ secrets.NTFY_ALERTS_PASS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE="❌ Third-party image scan failed — a pinned redis/caddy/prometheus/alertmanager digest has CRITICAL/HIGH findings. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # Do not swallow delivery failures (DR-P2-003): the run is already
+          # red, and a silent notifier is how this scan goes unnoticed.
+          if [ -n "$NTFY_URL" ]; then
+            curl -sf -u "$NTFY_USER:$NTFY_PASS" \
+              -H "Title: Third-party image scan failed" -H "Priority: high" -H "Tags: rotating_light" \
+              -d "$MESSAGE" "$NTFY_URL"
+            echo "Notified via ntfy"
+          elif [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -sf -X POST -H "Content-Type: application/json" \
+              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL"
+            echo "Notified via Slack"
+          else
+            echo "::error::Scan-failure notification could not be delivered: set NTFY_ALERTS_URL or SLACK_WEBHOOK_URL"
+            exit 1
+          fi

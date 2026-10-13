@@ -23,15 +23,19 @@ create index if not exists idx_dynamic_client_forms_type on dynamic_client_forms
 
 alter table dynamic_client_forms enable row level security;
 
+drop policy if exists "dynamic_client_forms_org_read" on dynamic_client_forms;
 create policy "dynamic_client_forms_org_read" on dynamic_client_forms
   for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "dynamic_client_forms_org_insert" on dynamic_client_forms;
 create policy "dynamic_client_forms_org_insert" on dynamic_client_forms
   for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "dynamic_client_forms_org_update" on dynamic_client_forms;
 create policy "dynamic_client_forms_org_update" on dynamic_client_forms
   for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "dynamic_client_forms_org_delete" on dynamic_client_forms;
 create policy "dynamic_client_forms_org_delete" on dynamic_client_forms
   for delete using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
@@ -55,14 +59,18 @@ create index if not exists idx_dynamic_form_submissions_status on dynamic_form_s
 
 alter table dynamic_form_submissions enable row level security;
 
+drop policy if exists "dynamic_form_submissions_org_read" on dynamic_form_submissions;
 create policy "dynamic_form_submissions_org_read" on dynamic_form_submissions
   for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "dynamic_form_submissions_org_insert" on dynamic_form_submissions;
 create policy "dynamic_form_submissions_org_insert" on dynamic_form_submissions
   for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "dynamic_form_submissions_org_update" on dynamic_form_submissions;
 create policy "dynamic_form_submissions_org_update" on dynamic_form_submissions
   for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "dynamic_form_submissions_org_delete" on dynamic_form_submissions;
 create policy "dynamic_form_submissions_org_delete" on dynamic_form_submissions
   for delete using (organization_id in (select organization_id from memberships where user_id = auth.uid()));

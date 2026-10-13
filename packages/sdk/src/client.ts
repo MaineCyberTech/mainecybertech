@@ -17,6 +17,18 @@ export interface ClientOptions {
   retries?: Partial<RetryOptions>;
 }
 
+/**
+ * Per-call request options.
+ *
+ * `ifMatch` (USE-P3-004) sends an `If-Match` header carrying the row version
+ * the caller read, so the API's optimistic-locking middleware can reject a
+ * write that would overwrite a concurrent edit with 409 VERSION_CONFLICT
+ * instead of silently last-write-winning.
+ */
+export interface RequestOptions {
+  ifMatch?: number;
+}
+
 const DEFAULT_RETRY: RetryOptions = {
   maxRetries: 3,
   initialDelayMs: 200,
@@ -69,7 +81,11 @@ export class ApiClient {
   private unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
   constructor(opts: ClientOptions) {
-    this.baseUrl = opts.baseUrl.replace(/\/+$/, "");
+    // Strip trailing slashes without a regex: `/\/+$/` backtracks quadratically
+    // on a long run of slashes that is not at the end of the string.
+    let end = opts.baseUrl.length;
+    while (end > 0 && opts.baseUrl[end - 1] === "/") end--;
+    this.baseUrl = opts.baseUrl.slice(0, end);
     this.getToken = opts.getToken ?? (async () => null);
     this.getCsrfToken = opts.getCsrfToken ?? (() => undefined);
     this.getActiveOrgId = opts.getActiveOrgId ?? (() => null);
@@ -93,10 +109,32 @@ export class ApiClient {
 
         clearTimeout(timer);
 
-        const json: ApiResponse<T> = await res.json();
+        // 204 (and other empty-body) responses are valid — e.g. every DELETE
+        // endpoint. `res.json()` rejects on an empty body, which used to turn a
+        // successful delete into a retried, then thrown, failure (USE-P1-004).
+        // The clone is taken BEFORE the body is read so a genuinely empty body
+        // can be told apart from malformed JSON, which must still error.
+        const clone = res.clone();
+        let json: ApiResponse<T> | null = null;
+        try {
+          json = (await res.json()) as ApiResponse<T>;
+        } catch (error) {
+          let bodyText: string | null = null;
+          try {
+            bodyText = await clone.text();
+          } catch {
+            bodyText = null;
+          }
 
-        if (!res.ok || !json.success) {
-          const err = json.error ?? {
+          if (bodyText !== null && bodyText.trim() === "") {
+            json = null;
+          } else {
+            throw error;
+          }
+        }
+
+        if (!res.ok || (json !== null && json.success !== true)) {
+          const err: NonNullable<ApiResponse<T>["error"]> = json?.error ?? {
             code: "UNKNOWN",
             message: `HTTP ${res.status}`,
             status: res.status,
@@ -113,7 +151,7 @@ export class ApiClient {
           throw new ApiError(err.code, err.message, err.status, err.details);
         }
 
-        return json.data as T;
+        return (json ? json.data : null) as T;
       } catch (error) {
         if (error instanceof ApiError) throw error;
 
@@ -151,6 +189,7 @@ export class ApiClient {
     path: string,
     body?: unknown,
     params?: Record<string, string | number | undefined>,
+    options?: RequestOptions,
   ): Promise<T> {
     const [token, activeOrgId] = await Promise.all([this.getToken(), this.getActiveOrgId()]);
     const url = `${this.baseUrl}${path}${buildQuery(params)}`;
@@ -166,6 +205,9 @@ export class ApiClient {
     }
     if (activeOrgId) {
       headers["X-Active-Org"] = activeOrgId;
+    }
+    if (options?.ifMatch !== undefined) {
+      headers["If-Match"] = String(options.ifMatch);
     }
 
     // Unsafe methods get an idempotency key so a retry of the SAME logical
@@ -196,8 +238,9 @@ export class ApiClient {
     path: string,
     body?: unknown,
     params?: Record<string, string | number | undefined>,
+    options?: RequestOptions,
   ): Promise<T> {
-    return this.request<T>("PATCH", path, body, params);
+    return this.request<T>("PATCH", path, body, params, options);
   }
 
   put<T>(path: string, body?: unknown): Promise<T> {

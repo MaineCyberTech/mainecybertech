@@ -53,7 +53,7 @@ export default function DeleteVisualAssetButton({ id }: { id: string }) {
       >
         Cancel
       </button>
-      {error && <span className="text-[11px] text-red-400">{error}</span>}
+      {error && <span role="alert" className="text-[11px] text-red-400">{error}</span>}
     </div>
   );
 }

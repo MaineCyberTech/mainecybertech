@@ -44,6 +44,7 @@ jest.mock("../middleware/permissions", () => ({
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";
+import { logAuditEvent } from "../services/audit";
 import statusPageRouter from "../routes/status-page";
 
 const authToken = "Bearer test-token";
@@ -293,6 +294,27 @@ describe("Status Page API", () => {
         .set("Authorization", authToken);
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveProperty("items");
+    });
+  });
+
+  describe("DELETE /api/v1/status-page/components/:id", () => {
+    it("deletes a component and audit-logs it", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockImplementation(
+        tableAwareFrom(createMockBuilder({ data: null, error: null })),
+      );
+      const res = await request(app)
+        .delete(`/api/v1/status-page/components/c1?organization_id=${testOrgId}`)
+        .set("Authorization", authToken).send({ confirm: true });
+      expect(res.status).toBe(204);
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: testOrgId,
+          action: "components.deleted",
+          entityType: "components",
+          entityId: "c1",
+        }),
+      );
     });
   });
 

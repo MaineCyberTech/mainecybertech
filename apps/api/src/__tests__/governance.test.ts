@@ -141,8 +141,30 @@ describe("Governance API", () => {
 
     expect(r.status).toBe(200);
     // Only editable content fields reach the UPDATE — status/approver columns
-    // are not writable via PATCH (they are transition-only).
-    expect(builder.update).toHaveBeenCalledWith({ title: "Updated FW" });
+    // are not writable via PATCH (they are transition-only), and updated_at is
+    // set server-side (DATA-P2-009).
+    expect(builder.update).toHaveBeenCalledWith({
+      title: "Updated FW",
+      updated_at: expect.any(String),
+    });
+  });
+
+  it("PATCH /change-requests/:id sets updated_at server-side (DATA-P2-009)", async () => {
+    const s = ma();
+    const builder = createMockBuilder({ data: { id: "ch-1", title: "Updated FW" }, error: null });
+    s.from.mockReturnValue(builder);
+
+    const before = Date.now();
+    const r = await request(app)
+      .patch(`/api/v1/governance/change-requests/ch-1?organization_id=${org}`)
+      .set("Authorization", auth)
+      .send({ title: "Updated FW", updated_at: "1999-01-01T00:00:00.000Z" });
+
+    expect(r.status).toBe(200);
+    const payload = (builder.update as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
+    expect(payload.updated_at).not.toBe("1999-01-01T00:00:00.000Z");
+    expect(typeof payload.updated_at).toBe("string");
+    expect(new Date(payload.updated_at as string).getTime()).toBeGreaterThanOrEqual(before);
   });
 
   describe("change-request transitions", () => {
@@ -223,7 +245,7 @@ describe("Governance API", () => {
     s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
     const r = await request(app)
       .delete("/api/v1/governance/change-requests/ch-1")
-      .set("Authorization", auth);
+      .set("Authorization", auth).send({ confirm: true });
     expect(r.status).toBe(204);
   });
 

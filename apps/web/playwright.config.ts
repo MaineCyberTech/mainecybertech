@@ -7,7 +7,13 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   timeout: 45000,
   workers: process.env.CI ? 1 : undefined,
-  reporter: [["html", { outputFolder: "../../.playwright-report" }], ["list"]],
+  reporter: [
+    ["html", { outputFolder: "../../.playwright-report" }],
+    ["list"],
+    // Machine-readable results for the CI flake summary (TEST-P2-003). Lives
+    // in outputDir so it uploads with the failure artifact.
+    ["json", { outputFile: "../../.playwright-results/results.json" }],
+  ],
   outputDir: "../../.playwright-results",
 
   use: {
@@ -32,8 +38,31 @@ export default defineConfig({
     },
     {
       name: "chromium",
+      // Mobile assertions only hold below the sm breakpoint; keep them out of
+      // the desktop project (MOB-P2-003).
+      testIgnore: /mobile\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
+        storageState: ".playwright-auth.json",
+      },
+      dependencies: ["setup"],
+    },
+    {
+      // MOB-P2-003: mobile viewport coverage for horizontal overflow, the
+      // 16px form-control floor, service-worker caching and dialog scrolling.
+      name: "mobile-chrome",
+      testMatch: /mobile\.spec\.ts/,
+      use: {
+        ...devices["Pixel 7"],
+        storageState: ".playwright-auth.json",
+      },
+      dependencies: ["setup"],
+    },
+    {
+      name: "mobile-safari",
+      testMatch: /mobile\.spec\.ts/,
+      use: {
+        ...devices["iPhone 13"],
         storageState: ".playwright-auth.json",
       },
       dependencies: ["setup"],

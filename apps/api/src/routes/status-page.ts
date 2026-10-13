@@ -7,6 +7,8 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { queryInt } from "../lib/query";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -158,7 +160,7 @@ function crudTable(
       const offset = (page - 1) * limit;
       const q = supabase
         .from(table)
-        .select("*", { count: "exact" })
+        .select("*", { count: listCountMode(req.query) })
         .eq("organization_id", req.query.organization_id as string)
         .order("created_at", { ascending: false });
       const { data, error, count } = await q.range(offset, offset + limit - 1);
@@ -251,13 +253,22 @@ function crudTable(
     requirePermission("status-pages", "delete"),
     async (req, res, next) => {
       try {
+        assertDeleteConfirmed(req.body);
         const supabase = getScopedClient(req, "status-page", "write");
+        const organizationId = req.query.organization_id as string;
         const { error } = await supabase
           .from(table)
           .delete()
           .eq("id", String(req.params.id))
-          .eq("organization_id", req.query.organization_id as string);
+          .eq("organization_id", organizationId);
         if (error) throw new AppError("DB_ERROR", error.message, 500);
+        await logAuditEvent({
+          organizationId,
+          actorUserId: req.authUser!.userId,
+          action: `${resource}.deleted`,
+          entityType: resource,
+          entityId: String(req.params.id),
+        });
         res.status(204).send();
       } catch (err) {
         next(err);

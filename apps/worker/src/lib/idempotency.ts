@@ -1,6 +1,7 @@
 import IORedis from "ioredis";
 import { env, resolveRedisUrl } from "../env";
 import { logger } from "../logger";
+import { recordRedisFailure } from "../redis-failures";
 
 let client: IORedis | null = null;
 let memoryMutex: Promise<void> | null = null;
@@ -67,6 +68,8 @@ export async function claimIdempotencyKey(
       const result = await redis.set(prefixedKey, value, "EX", ttlSeconds, "NX");
       return result === "OK";
     } catch (error) {
+      // ARCH-P2-005: meter the fallback so a lost Redis dedup is alertable.
+      recordRedisFailure("idempotency", "claim");
       logger.warn(
         { error: error instanceof Error ? error.message : String(error) },
         "Redis claimIdempotencyKey failed, falling back to in-memory",
@@ -100,6 +103,7 @@ export async function deleteIdempotencyKey(key: string): Promise<void> {
       await redis.del(prefixedKey);
       return;
     } catch (error) {
+      recordRedisFailure("idempotency", "delete");
       logger.warn(
         { error: error instanceof Error ? error.message : String(error) },
         "Redis deleteIdempotencyKey failed",
@@ -110,6 +114,49 @@ export async function deleteIdempotencyKey(key: string): Promise<void> {
   await acquireMemoryLock();
   try {
     IN_MEMORY_FALLBACK.delete(key);
+  } finally {
+    // lock is released by the promise chain
+  }
+}
+
+/**
+ * NOTIF-P3-007: atomically increment a counter key (Redis INCR + EXPIRE, or
+ * the in-memory fallback) and return the post-increment value. Mirrors the API
+ * helper so the worker-side email throttle behaves like the API-side one.
+ */
+export async function incrementIdempotencyCounter(
+  key: string,
+  ttlSeconds: number,
+): Promise<number> {
+  const redis = getRedis();
+  const prefixedKey = `idempotency:${key}`;
+
+  if (redis) {
+    try {
+      const count = await redis.incr(prefixedKey);
+      if (count === 1) await redis.expire(prefixedKey, ttlSeconds);
+      return count;
+    } catch (error) {
+      recordRedisFailure("idempotency", "incr");
+      logger.warn(
+        { error: error instanceof Error ? error.message : String(error) },
+        "Redis incrementIdempotencyCounter failed, falling back to in-memory",
+      );
+    }
+  }
+
+  await acquireMemoryLock();
+  try {
+    const now = Date.now();
+    const entry = IN_MEMORY_FALLBACK.get(key);
+    if (!entry || entry.expiresAt <= now) {
+      evictInMemoryIfNeeded();
+      IN_MEMORY_FALLBACK.set(key, { value: "1", expiresAt: now + ttlSeconds * 1000 });
+      return 1;
+    }
+    const next = Number(entry.value) + 1;
+    entry.value = String(Number.isFinite(next) ? next : 1);
+    return Number(entry.value);
   } finally {
     // lock is released by the promise chain
   }

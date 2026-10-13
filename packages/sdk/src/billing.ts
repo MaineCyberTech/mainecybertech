@@ -15,6 +15,8 @@ export interface Invoice {
   invoice_pdf_url?: string | null;
   due_at?: string | null;
   paid_at?: string | null;
+  /** Set when the invoice transitions to `void` (BILL-P2-005). */
+  voided_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +31,14 @@ export interface Subscription {
   current_period_end?: string | null;
   amount_cents?: number | null;
   currency?: string | null;
+  /** Stripe price recurring interval: day/week/month/year (BILL-P2-005). */
+  interval?: string | null;
+  trial_start?: string | null;
+  trial_end?: string | null;
+  cancel_at_period_end?: boolean | null;
+  canceled_at?: string | null;
+  /** Subscription item seat count. */
+  quantity?: number | null;
   created_at: string;
 }
 
@@ -41,6 +51,9 @@ export interface Payment {
   currency: string;
   status: string;
   paid_at?: string | null;
+  /** Amount refunded so far, in minor units (BILL-P2-001). */
+  refund_amount_cents?: number | null;
+  refunded_at?: string | null;
   created_at: string;
   invoices?: { invoice_number?: string | null; status?: string | null } | null;
 }

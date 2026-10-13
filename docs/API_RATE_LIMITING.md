@@ -2,7 +2,7 @@
 
 ## Overview
 
-The MCT API uses rate limiting to prevent abuse and ensure fair usage. There is a global IP limiter (`app.ts`) plus four `express-rate-limit` instances in `apps/api/src/middleware/rate-limit.ts` (`rateLimitByUser`, `rateLimitAuth`, `rateLimitEmail`, `rateLimitMetrics`).
+The MCT API uses rate limiting to prevent abuse and ensure fair usage. There is a global IP limiter (`app.ts`) plus six `express-rate-limit` instances in `apps/api/src/middleware/rate-limit.ts` (`rateLimitByUser`, `rateLimitSearch`, `rateLimitAdminOps`, `rateLimitAuth`, `rateLimitEmail`, `rateLimitMetrics`).
 
 ## Rate Limiters
 
@@ -28,6 +28,20 @@ This limiter applies to all requests based on the client's IP address.
 | Skip         | `/health`, `/api/v1/docs`, `/api/v1/openapi.json`, loopback     |
 
 This limiter provides higher limits for authenticated users and falls back to IP-based limiting for unauthenticated requests.
+
+### 3. Admin Operations Rate Limiter
+
+| Setting      | Value                                                                                                                                    |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Window       | 1 minute                                                                                                                                 |
+| Max requests | 10 per user                                                                                                                              |
+| Scope        | `POST /api/v1/bulk/invite`, `POST /api/v1/documents/bulk/folder`, `POST /api/v1/documents/bulk/metadata`, `POST /api/v1/tickets/bulk`, `POST /api/v1/organizations/onboard`, `DELETE /api/v1/organizations/:id`, `GET /api/v1/audit/export`, `GET /api/v1/audit/impersonation/export` |
+| Key          | SHA-256 hash of the Bearer token (32 hex chars), then client IP                                                                          |
+| Skip         | loopback (`127.0.0.1`/`::1`)                                                                                                             |
+
+ADMIN-P2-005: these routes fan out to hundreds of rows/users or cascade tenant
+data, so a single token cannot hammer them at script speed. See
+[ADMIN_BULK_OPERATIONS.md](ADMIN_BULK_OPERATIONS.md) for the operator flow.
 
 ## Rate Limit Headers
 

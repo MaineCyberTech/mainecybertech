@@ -15,13 +15,13 @@ Stripe API ──→ POST /api/v1/webhooks/stripe ──→ billing_customers / 
 
 ### `billing_customers`
 
-| Column                   | Type   | Description                 |
-| ------------------------ | ------ | --------------------------- |
-| `id`                     | UUID   | PK                          |
-| `organization_id`        | UUID   | FK → organizations (unique) |
-| `stripe_customer_id`     | text   | Stripe customer ID (unique) |
-| `billing_email`          | citext | Billing contact email       |
-| `default_payment_method` | text   | Stripe payment method ID    |
+| Column                   | Type   | Description                            |
+| ------------------------ | ------ | -------------------------------------- |
+| `id`                     | UUID   | PK                                     |
+| `organization_id`        | UUID   | FK → organizations (unique)            |
+| `stripe_customer_id`     | text   | Stripe customer ID (unique)            |
+| `billing_email`          | citext | Billing contact email, encrypted at rest |
+| `default_payment_method` | text   | Stripe payment method ID (masked in API responses) |
 
 ### `subscriptions`
 
@@ -36,6 +36,12 @@ Stripe API ──→ POST /api/v1/webhooks/stripe ──→ billing_customers / 
 | `current_period_end`     | timestamptz | Billing period end                         |
 | `amount_cents`           | bigint      | Amount in cents                            |
 | `currency`               | text        | ISO currency code (default `usd`)          |
+| `interval`               | text        | Stripe price interval (day/week/month/year)|
+| `trial_start`            | timestamptz | Trial start (when Stripe reports one)      |
+| `trial_end`              | timestamptz | Trial end                                  |
+| `cancel_at_period_end`   | boolean     | Cancels at period end (default `false`)    |
+| `canceled_at`            | timestamptz | When the subscription was canceled         |
+| `quantity`               | integer     | Subscription item seat count               |
 
 ### `invoices`
 
@@ -54,19 +60,22 @@ Stripe API ──→ POST /api/v1/webhooks/stripe ──→ billing_customers / 
 | `invoice_pdf_url`    | text                  | Invoice PDF download link                       |
 | `due_at`             | timestamptz           | Payment due date                                |
 | `paid_at`            | timestamptz           | Payment date                                    |
+| `voided_at`          | timestamptz           | When the invoice was voided                     |
 
 ### `payments`
 
-| Column                     | Type        | Description                |
-| -------------------------- | ----------- | -------------------------- |
-| `id`                       | UUID        | PK                         |
-| `organization_id`          | UUID        | FK → organizations         |
-| `invoice_id`               | UUID        | FK → invoices              |
-| `stripe_payment_intent_id` | text        | Stripe PI ID (unique)      |
-| `amount_cents`             | bigint      | Amount in cents            |
-| `currency`                 | text        | ISO currency code          |
-| `status`                   | text        | succeeded, failed, pending |
-| `paid_at`                  | timestamptz | Payment timestamp          |
+| Column                     | Type        | Description                                  |
+| -------------------------- | ----------- | -------------------------------------------- |
+| `id`                       | UUID        | PK                                           |
+| `organization_id`          | UUID        | FK → organizations                           |
+| `invoice_id`               | UUID        | FK → invoices                                |
+| `stripe_payment_intent_id` | text        | Stripe PI ID (unique)                        |
+| `amount_cents`             | bigint      | Amount in cents                              |
+| `currency`                 | text        | ISO currency code                            |
+| `status`                   | text        | succeeded, failed, pending, refunded, partially_refunded |
+| `paid_at`                  | timestamptz | Payment timestamp                            |
+| `refund_amount_cents`      | bigint      | Amount refunded so far, in cents             |
+| `refunded_at`              | timestamptz | When the (latest) refund was created         |
 
 ## API Endpoints
 
@@ -74,14 +83,14 @@ All endpoints at `/api/v1/billing/*`, require authentication.
 
 | Method | Path                | Description                                                          |
 | ------ | ------------------- | -------------------------------------------------------------------- |
-| `GET`  | `/summary`          | Active subs, overdue/paid/total counts + recent 5 invoices           |
+| `GET`  | `/summary`          | Active + trialing subs, overdue/paid/total counts + recent 5 invoices |
 | `GET`  | `/invoices`         | Paginated invoice list, filterable by `organization_id` and `status` |
 | `GET`  | `/invoices/:id`     | Single invoice detail                                                |
 | `GET`  | `/subscriptions`    | All subscriptions, filterable by `organization_id`                   |
-| `GET`  | `/payments`         | Paginated payment list with joined invoice data                      |
-| `GET`  | `/billing-customer` | Single billing customer by `organization_id`                         |
-| `POST` | `/sync`             | Admin-only: pulls latest invoices + subscriptions + payments from Stripe |
-| `POST` | `/create-portal-session` | Any org member: Stripe-hosted billing portal URL                 |
+| `GET`  | `/payments`         | Paginated payment list with left-joined invoice data                 |
+| `GET`  | `/billing-customer` | Single billing customer by `organization_id` (decrypted email, masked payment method) |
+| `POST` | `/sync`             | Requires `billing:manage`: pulls latest invoices + subscriptions + payments + charge refunds from Stripe |
+| `POST` | `/create-portal-session` | Billing contacts or `billing:manage` holders: Stripe-hosted billing portal URL |
 
 ## Webhook Handler
 
@@ -90,14 +99,16 @@ All endpoints at `/api/v1/billing/*`, require authentication.
 Stripe webhook `POST /api/v1/webhooks/stripe` handles:
 
 - `invoice.paid` / `invoice.payment_failed` → upserts invoice to DB
-- `invoice.voided` → sets invoice status to `void`
+- `invoice.voided` → sets invoice status to `void` and records `voided_at`
 - `invoice.marked_uncollectible` → sets invoice status to `uncollectible`
 - `payment_intent.succeeded` / `payment_intent.payment_failed` / `payment_intent.canceled` → upserts a `payments` row (linked to the invoice when resolvable)
-- `charge.refunded` → marks the linked payment `refunded` (or `partially_refunded`)
-- `customer.subscription.*` → upserts subscription to DB
+- `charge.refunded` → marks the linked payment `refunded` (or `partially_refunded`) and stores `refund_amount_cents` / `refunded_at`
+- `customer.subscription.*` → upserts subscription to DB, including `interval`, `trial_start`, `trial_end`, `cancel_at_period_end`, `canceled_at` and `quantity`
 - `checkout.session.completed` → creates/updates `billing_customers` via `client_reference_id`
 
-Requires `stripe-signature` header (validated for presence). Events are
+Requires a valid `stripe-signature` header: the signature is verified in full
+with `STRIPE_WEBHOOK_SECRET` over the exact received bytes via Stripe's
+`constructEvent` (missing header → 400, missing secret → 500). Events are
 deduplicated with an atomic claim keyed on `stripe-${event.id}`; the claim is
 released on failure so Stripe retries can reprocess.
 
@@ -110,8 +121,10 @@ released on failure so Stripe retries can reprocess.
 `GET /client-portal/bootstrap` and the server-side `requireEntitlement(moduleKey)`
 middleware. Premium modules (`findings`, `security-ops`, `governance`,
 `training-hub`, `service-catalog`, `qbr`) require an active/trialing
-subscription unless an admin has provisioned the module via
-`client_portal_entitlements`. Denials return `402 PAYMENT_REQUIRED`.
+subscription unless the org has an explicit admin override in
+`client_portal_entitlements`. The presence of **any** override rows — even an
+all-disabled set — wins over the subscription-derived default set, so an admin
+can revoke every module. Denials return `402 PAYMENT_REQUIRED`.
 
 Admin/super-admin roles bypass the plan gate. If the entitlement lookup itself
 fails (transient DB error), the middleware **fails open** — access is allowed
@@ -119,11 +132,33 @@ and the failure is logged at error level — so a billing-mirror outage cannot
 lock paying customers out of modules. Authentication, org-access, and RBAC
 still apply; only the plan boundary is relaxed.
 
+**Single source of module enablement:** per-org enablement lives in
+`client_portal_entitlements` plus the `deriveEnabledModules()` defaults — there
+is no separate per-org module-settings table. The unused
+`portal_module_settings` table from migration `5302058` was dropped in
+`5302460` (FEAT-P3-004).
+
 ## Payments
 
 `payments` is populated from `payment_intent.*` webhook events and from
-`POST /billing/sync` (`/v1/payment_intents?customer=...`). Payment history is
-therefore no longer seed-only. Amounts are stored in minor units (cents).
+`POST /billing/sync` (`/v1/payment_intents?customer=...`). Refund state is
+backfilled from `/v1/charges?customer=...` (the live path is
+`charge.refunded`), so a missed refund webhook still converges to
+`refunded` / `partially_refunded` with `refund_amount_cents` and `refunded_at`.
+Payment history is therefore no longer seed-only. Amounts are stored in minor
+units (cents).
+
+### Billing data handling
+
+- `billing_customers.billing_email` is written through the field-encryption
+  helper (`FIELD_ENCRYPTION_KEY`, AES-256-GCM) and decrypted only on the
+  authorized `GET /billing-customer` read. Legacy plaintext rows still decrypt
+  to themselves and are rewritten encrypted on the next checkout webhook.
+- The raw Stripe payment-method id (`pm_...`) is never returned to users: API
+  responses carry a masked prefix/suffix descriptor. No PAN or CVC is ever
+  stored or received.
+- Paid invoices always carry a `paid_at`: `status_transitions.paid_at` when
+  Stripe sends it, otherwise the invoice `created` time (never an epoch date).
 
 ## Worker Task: `stripe-reconcile`
 
@@ -131,9 +166,13 @@ therefore no longer seed-only. Amounts are stored in minor units (cents).
 
 Periodic batch task that:
 
-1. Queries approved `memberships` with `stripe_subscription_id`
-2. Fetches subscription status from Stripe API
-3. Suspends memberships where subscription is no longer active
+1. Queries billing customers with a Stripe customer id
+2. Fetches the preferred active/trialing subscription from Stripe
+3. Writes the fetched Stripe state back to the mirror — including `interval`,
+   `trial_start`, `trial_end`, `cancel_at_period_end`, `canceled_at` and
+   `quantity` (BILL-P2-001/P2-005)
+4. Suspends memberships where the subscription is terminal (canceled/unpaid/incomplete_expired)
+5. Detects invoice/payment drift and fails the run on drift or errors
 
 Configurable: `organizationId`, `dryRun`, `batchSize`.
 
@@ -143,11 +182,11 @@ Configurable: `organizationId`, `dryRun`, `batchSize`.
 
 Shows:
 
-- Stat cards: Active Plans, Overdue, Paid, Total Invoices
-- Active Plan section: plan name, price, billing period, status badge
-- Billing Details: billing email, payment method
+- Stat cards: Active Plans (active + trialing), Overdue, Paid, Total Invoices
+- Active Plan section: plan name, seat total (unit amount × quantity), stored billing interval, status badge
+- Billing Details: billing email (decrypted server-side), masked payment method
 - Invoice table: number, date, amount (formatted currency), status pill, PDF/View links
-- "Sync from Stripe" button
+- "Sync from Stripe" button, rendered only when the caller holds `billing:manage` (the API rejects other roles with 403)
 
 ## SDK
 
@@ -169,6 +208,7 @@ client.billing.syncFromStripe(data?)         // { synced: number }
 | ------------------- | ------- | ----------------- | --------------------- |
 | `STRIPE_SECRET_KEY` | Worker  | For reconcile     | Stripe secret API key |
 | `STRIPE_SECRET_KEY` | API     | For sync endpoint | Stripe secret API key |
+| `STRIPE_WEBHOOK_SECRET` | API | For webhooks      | Stripe webhook signing secret (`constructEvent` verification) |
 
 The `STRIPE_SECRET_KEY` env var is now defined in the **API** env schema (`apps/api/src/config/env.ts`) and validated via `getEnv()`. The API's `POST /billing/sync` endpoint uses the validated env var. For production, `STRIPE_SECRET_KEY` is stored in SSM Parameter Store and injected into the API ECS task definition via Terraform secrets.
 

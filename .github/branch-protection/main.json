@@ -3,10 +3,13 @@
     "strict": true,
     "contexts": [
       "Test / test (20.x)",
+      "Test / security-scan",
+      "Test / secrets-scan",
       "Lint / lint (20.x)",
       "TypeCheck / typecheck",
       "E2E / e2e (20.x)",
-      "Dependency Review / review"
+      "Dependency Review / review",
+      "CodeQL / Analyze (javascript-typescript)"
     ]
   },
   "enforce_admins": true,

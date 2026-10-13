@@ -18,6 +18,14 @@ export interface PaginationInput {
  */
 export const LIST_HARD_CAP = 1000;
 
+/**
+ * Upper bound for CSV/JSON export queries (PERF-P3-001). Exports materialize
+ * the whole result in memory before writing the response, so the cap protects
+ * the 256MB API container from concurrent large reads. Streaming exports
+ * remain a follow-up.
+ */
+export const EXPORT_ROW_LIMIT = 5000;
+
 export interface PaginationMeta {
   page: number;
   limit: number;
@@ -46,6 +54,18 @@ export function paginationMeta(input: PaginationInput, total: number): Paginatio
     total,
     totalPages: Math.max(1, Math.ceil(total / input.limit)),
   };
+}
+
+/**
+ * PERF-P3-002: choose the PostgREST count mode for a paginated list.
+ *
+ * `exact` runs a COUNT(*) scan for every list request; `estimated` uses
+ * planner statistics and is enough for pagination chrome. Callers that need an
+ * exact total opt in with `?withTotal=1` (or `?exactTotal=1`).
+ */
+export function listCountMode(query: Record<string, unknown>): "exact" | "estimated" {
+  const value = query.withTotal ?? query.exactTotal;
+  return value === "1" || value === "true" ? "exact" : "estimated";
 }
 
 /** Apply the parsed pagination range to a Supabase select query. */

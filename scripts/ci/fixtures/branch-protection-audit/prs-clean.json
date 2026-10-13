@@ -1,0 +1,10 @@
+[
+  {
+    "number": 901,
+    "title": "clean merge",
+    "html_url": "https://github.com/fixture/repo/pull/901",
+    "merged_at": "2026-01-05T12:00:00Z",
+    "base": { "ref": "main" },
+    "head": { "sha": "clean-sha-0001" }
+  }
+]

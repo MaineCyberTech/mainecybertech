@@ -1,8 +1,9 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
+import express from "express";
 import webhooksRouter from "../routes/webhooks";
+import { webhookBodyParser } from "../middleware/webhook-body";
 import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
-import { getEnv } from "../config/env";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("stripe", () => {
@@ -58,13 +59,19 @@ jest.mock("../services/supabase", () => {
 });
 
 jest.mock("../services/audit", () => ({
-  logAuditEvent: jest.fn(),
+  logAuditEvent: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock("../lib/idempotency", () => ({
   checkIdempotencyKey: jest.fn().mockResolvedValue(null),
   claimIdempotencyKey: jest.fn().mockResolvedValue(true),
   storeIdempotencyKey: jest.fn().mockResolvedValue(undefined),
+  deleteIdempotencyKey: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock("../lib/metrics", () => ({
+  recordWebhookDelivery: jest.fn(),
+  recordBillingDunningNotification: jest.fn(),
 }));
 
 jest.mock("../lib/webhook-signature", () => ({
@@ -86,9 +93,20 @@ jest.mock("../lib/logger", () => ({
   },
 }));
 
+jest.mock("../lib/notify", () => ({
+  notifyAndEmail: jest.fn(),
+}));
+
 const app = createTestApp();
 app.use("/api/v1/webhooks", webhooksRouter);
 app.use(errorHandler);
+
+// WH-P2-006: production mounts the per-provider body caps before the global
+// parser; this app mirrors that ordering so the caps are exercised end-to-end.
+const cappedApp = express();
+cappedApp.use(webhookBodyParser());
+cappedApp.use("/api/v1/webhooks", webhooksRouter);
+cappedApp.use(errorHandler);
 
 describe("webhooks routes", () => {
   beforeEach(() => {
@@ -163,6 +181,73 @@ describe("webhooks routes", () => {
       expect(upsertArgs.subtotal_cents).toBe(500);
       expect(upsertArgs.tax_cents).toBe(50);
       expect(upsertArgs.total_cents).toBe(550);
+    });
+
+    it("records a paid invoice without status_transitions instead of throwing (BILL-P3-003)", async () => {
+      mockStripeEvent({
+        type: "invoice.paid",
+        id: "evt_inv_no_transitions",
+        data: {
+          object: {
+            customer: "cus_1",
+            id: "in_no_transitions",
+            number: "INV-1002",
+            status: "paid",
+            subtotal: 100,
+            tax: 0,
+            total: 100,
+            currency: "usd",
+            hosted_invoice_url: null,
+            invoice_pdf: null,
+            due_date: null,
+            created: 1700000100,
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "invoice.paid", id: "evt_inv_no_transitions" });
+
+      expect(res.status).toBe(200);
+      const upsertArgs = builders["invoices"].upsert.mock.calls[0][0];
+      expect(upsertArgs.status).toBe("paid");
+      expect(upsertArgs.paid_at).toBe(new Date(1700000100 * 1000).toISOString());
+    });
+
+    it("stores the checkout billing email encrypted at rest (BILL-P3-002)", async () => {
+      mockStripeEvent({
+        type: "checkout.session.completed",
+        id: "evt_checkout_1",
+        data: {
+          object: {
+            customer: "cus_1",
+            client_reference_id: "org-1",
+            customer_details: { email: "billing@acme.test" },
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({});
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "checkout.session.completed", id: "evt_checkout_1" });
+
+      expect(res.status).toBe(200);
+      const upsertArgs = builders["billing_customers"].upsert.mock.calls[0][0];
+      expect(upsertArgs.billing_email).not.toBe("billing@acme.test");
+      expect(upsertArgs.billing_email).toMatch(/^(plain:|v1:)/);
     });
 
     function mockStripeEvent(event: unknown) {
@@ -259,6 +344,63 @@ describe("webhooks routes", () => {
       expect(upsertArgs.paid_at).toBeNull();
     });
 
+    it("notifies the org billing contacts on invoice.payment_failed (BILL-P2-004)", async () => {
+      mockStripeEvent({
+        type: "invoice.payment_failed",
+        id: "evt_inv_fail",
+        data: {
+          object: {
+            customer: "cus_1",
+            id: "in_fail",
+            number: "INV-2002",
+            status: "open",
+            subtotal: 5000,
+            tax: 0,
+            total: 5000,
+            currency: "usd",
+            hosted_invoice_url: "https://invoice.stripe.com/fail",
+            invoice_pdf: null,
+            due_date: 1700000000,
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+        memberships: {
+          data: [
+            { user_id: "u-billing", role_id: "role-billing", roles: { key: "client-billing" } },
+          ],
+          error: null,
+        },
+        role_permissions: {
+          data: [{ role_id: "role-billing", permissions: { module_key: "billing" } }],
+          error: null,
+        },
+        profiles: { data: [{ id: "u-billing", email: "ap@acme.example" }], error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "invoice.payment_failed", id: "evt_inv_fail" });
+
+      expect(res.status).toBe(200);
+      const { notifyAndEmail } = await import("../lib/notify");
+      expect(notifyAndEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "u-billing",
+          organizationId: "org-1",
+          module: "billing",
+          moduleId: "in_fail",
+          action: "payment_failed",
+          email: "ap@acme.example",
+        }),
+      );
+    });
+
     it("marks the linked payment refunded on charge.refunded (BILL-P1-003)", async () => {
       mockStripeEvent({
         type: "charge.refunded",
@@ -270,6 +412,7 @@ describe("webhooks routes", () => {
             amount: 55000,
             amount_refunded: 55000,
             currency: "usd",
+            refunds: { data: [{ id: "re_1", created: 1700000500 }] },
           },
         },
       });
@@ -288,6 +431,9 @@ describe("webhooks routes", () => {
       expect(res.status).toBe(200);
       const updateArgs = builders["payments"].update.mock.calls[0][0];
       expect(updateArgs.status).toBe("refunded");
+      // BILL-P2-001: the refunded amount and date are stored alongside status.
+      expect(updateArgs.refund_amount_cents).toBe(55000);
+      expect(updateArgs.refunded_at).toBe(new Date(1700000500 * 1000).toISOString());
     });
 
     it("marks a partial refund as partially_refunded", async () => {
@@ -301,6 +447,7 @@ describe("webhooks routes", () => {
             amount: 55000,
             amount_refunded: 10000,
             currency: "usd",
+            refunds: { data: [{ id: "re_2", created: 1700000600 }] },
           },
         },
       });
@@ -319,13 +466,22 @@ describe("webhooks routes", () => {
       expect(res.status).toBe(200);
       const updateArgs = builders["payments"].update.mock.calls[0][0];
       expect(updateArgs.status).toBe("partially_refunded");
+      expect(updateArgs.refund_amount_cents).toBe(10000);
+      expect(updateArgs.refunded_at).toBe(new Date(1700000600 * 1000).toISOString());
     });
 
     it("maps invoice.voided onto the void status (BILL-P1-003)", async () => {
       mockStripeEvent({
         type: "invoice.voided",
         id: "evt_void_1",
-        data: { object: { id: "in_void", customer: "cus_1", status: "void" } },
+        data: {
+          object: {
+            id: "in_void",
+            customer: "cus_1",
+            status: "void",
+            status_transitions: { voided_at: 1700000900 },
+          },
+        },
       });
 
       const supabaseModule = await import("../services/supabase");
@@ -342,6 +498,8 @@ describe("webhooks routes", () => {
       expect(res.status).toBe(200);
       const updateArgs = builders["invoices"].update.mock.calls[0][0];
       expect(updateArgs.status).toBe("void");
+      // BILL-P2-005: the void transition is timestamped.
+      expect(updateArgs.voided_at).toBe(new Date(1700000900 * 1000).toISOString());
       expect(builders["invoices"].eq).toHaveBeenCalledWith("stripe_invoice_id", "in_void");
     });
 
@@ -367,6 +525,342 @@ describe("webhooks routes", () => {
       const updateArgs = builders["invoices"].update.mock.calls[0][0];
       expect(updateArgs.status).toBe("uncollectible");
     });
+
+    it("fails the event and releases the claim when a mirror write fails (BILL-P2-006)", async () => {
+      mockStripeEvent({
+        type: "payment_intent.succeeded",
+        id: "evt_pi_write_fail",
+        data: {
+          object: {
+            id: "pi_write_fail",
+            customer: "cus_1",
+            invoice: null,
+            amount: 1000,
+            amount_received: 1000,
+            currency: "usd",
+            status: "succeeded",
+            created: 1700000000,
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const builders: Record<string, any> = {};
+      const supabase = {
+        from: jest.fn().mockImplementation((table: string) => {
+          let builder: ReturnType<typeof createMockBuilder>;
+          if (table === "payments") {
+            // The monotonic read succeeds (no existing row); the write fails.
+            builder = createMockBuilder({ data: null, error: null });
+            (builder as any).upsert = jest.fn(() =>
+              Promise.resolve({ data: null, error: { message: "db down" } }),
+            );
+          } else {
+            const result: MockResult =
+              table === "billing_customers"
+                ? { data: { organization_id: "org-1" }, error: null }
+                : { data: null, error: null };
+            builder = createMockBuilder(result);
+          }
+          builders[table] = builder;
+          return builder;
+        }),
+      };
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "payment_intent.succeeded", id: "evt_pi_write_fail" });
+
+      // Fail loudly so Stripe retries instead of the mirror silently drifting.
+      expect(res.status).toBe(500);
+      expect(builders["payments"].upsert).toHaveBeenCalled();
+
+      const { recordWebhookDelivery } = await import("../lib/metrics");
+      expect(recordWebhookDelivery).toHaveBeenCalledWith(
+        "failed",
+        "stripe.payment_intent.succeeded",
+      );
+
+      const { deleteIdempotencyKey } = await import("../lib/idempotency");
+      expect(deleteIdempotencyKey).toHaveBeenCalledWith("stripe-evt_pi_write_fail");
+    });
+
+    it("does not mark the event processed when the delivery log write fails (BILL-P2-006)", async () => {
+      mockStripeEvent({
+        type: "checkout.session.completed",
+        id: "evt_log_fail",
+        data: {
+          object: {
+            customer: "cus_1",
+            client_reference_id: "org-1",
+            customer_details: { email: "ap@acme.example" },
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase } = mockSupabaseWithBuilders({
+        webhook_deliveries: { data: null, error: { message: "delivery log down" } },
+      });
+      // The handler resolves the admin client once for the mirror writes and
+      // `logWebhookDelivery` resolves it again, so stub both calls.
+      (supabaseModule.getSupabaseAdmin as jest.Mock)
+        .mockReturnValueOnce(supabase)
+        .mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "checkout.session.completed", id: "evt_log_fail" });
+
+      expect(res.status).toBe(500);
+      const { deleteIdempotencyKey, storeIdempotencyKey } = await import("../lib/idempotency");
+      expect(deleteIdempotencyKey).toHaveBeenCalledWith("stripe-evt_log_fail");
+      // The "done" mark must not be written when the delivery record failed.
+      expect(storeIdempotencyKey).not.toHaveBeenCalled();
+    });
+
+    it("keeps a refunded payment refunded when a late payment_intent.succeeded arrives (BILL-P2-007)", async () => {
+      mockStripeEvent({
+        type: "payment_intent.succeeded",
+        id: "evt_pi_late",
+        data: {
+          object: {
+            id: "pi_refunded",
+            customer: "cus_1",
+            invoice: null,
+            amount: 55000,
+            amount_received: 55000,
+            currency: "usd",
+            status: "succeeded",
+            created: 1700000000,
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+        payments: { data: { status: "refunded" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "payment_intent.succeeded", id: "evt_pi_late" });
+
+      expect(res.status).toBe(200);
+      expect(builders["payments"].upsert).not.toHaveBeenCalled();
+    });
+
+    it("keeps a void invoice void when a late invoice.paid arrives (BILL-P2-007)", async () => {
+      mockStripeEvent({
+        type: "invoice.paid",
+        id: "evt_inv_late",
+        data: {
+          object: {
+            customer: "cus_1",
+            id: "in_void",
+            number: "INV-9001",
+            status: "paid",
+            subtotal: 500,
+            tax: 0,
+            total: 500,
+            currency: "usd",
+            hosted_invoice_url: null,
+            invoice_pdf: null,
+            due_date: null,
+            status_transitions: { paid_at: 1700000000 },
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+        invoices: { data: { status: "void" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "invoice.paid", id: "evt_inv_late" });
+
+      expect(res.status).toBe(200);
+      expect(builders["invoices"].upsert).not.toHaveBeenCalled();
+    });
+
+    it("keeps a canceled subscription canceled when a late subscription.updated arrives (BILL-P2-007)", async () => {
+      mockStripeEvent({
+        type: "customer.subscription.updated",
+        id: "evt_sub_late",
+        data: {
+          object: {
+            id: "sub_1",
+            customer: "cus_1",
+            status: "active",
+            items: { data: [{ price: { nickname: "Pro", unit_amount: 1000, currency: "usd" } }] },
+            current_period_start: 1700000000,
+            current_period_end: 1702592000,
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+        subscriptions: { data: { status: "canceled" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "customer.subscription.updated", id: "evt_sub_late" });
+
+      expect(res.status).toBe(200);
+      expect(builders["subscriptions"].upsert).not.toHaveBeenCalled();
+    });
+
+    it("returns 5xx and releases the claim when a persistence write fails [RES-P2-007]", async () => {
+      mockStripeEvent({
+        type: "invoice.paid",
+        id: "evt_fail_1",
+        data: {
+          object: {
+            customer: "cus_1",
+            id: "in_fail",
+            number: "INV-FAIL",
+            status: "paid",
+            subtotal: 100,
+            tax: 0,
+            total: 100,
+            currency: "usd",
+            hosted_invoice_url: null,
+            invoice_pdf: null,
+            due_date: null,
+            status_transitions: { paid_at: 1700000000 },
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+        // The invoice upsert fails (DB degradation) even though the customer
+        // lookup succeeded.
+        invoices: { data: null, error: { message: "connection refused", code: "57P01" } },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const { deleteIdempotencyKey, storeIdempotencyKey } = await import("../lib/idempotency");
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "invoice.paid", id: "evt_fail_1" });
+
+      expect(res.status).toBeGreaterThanOrEqual(500);
+      // The claim must be released so Stripe's retry can reprocess the event.
+      expect(deleteIdempotencyKey).toHaveBeenCalledWith("stripe-evt_fail_1");
+      expect(storeIdempotencyKey).not.toHaveBeenCalled();
+    });
+
+    it("mirrors the trial, interval and cancellation lifecycle on customer.subscription.updated (BILL-P2-001/P2-005)", async () => {
+      mockStripeEvent({
+        type: "customer.subscription.updated",
+        id: "evt_sub_1",
+        data: {
+          object: {
+            id: "sub_123",
+            customer: "cus_1",
+            status: "trialing",
+            current_period_start: 1700000000,
+            current_period_end: 1702592000,
+            trial_start: 1700000000,
+            trial_end: 1701000000,
+            cancel_at_period_end: true,
+            canceled_at: null,
+            items: {
+              data: [
+                {
+                  quantity: 5,
+                  price: {
+                    nickname: "Pro",
+                    unit_amount: 9900,
+                    currency: "usd",
+                    recurring: { interval: "month" },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "customer.subscription.updated", id: "evt_sub_1" });
+
+      expect(res.status).toBe(200);
+      const upsertArgs = builders["subscriptions"].upsert.mock.calls[0][0];
+      expect(upsertArgs.status).toBe("trialing");
+      expect(upsertArgs.interval).toBe("month");
+      expect(upsertArgs.trial_start).toBe(new Date(1700000000 * 1000).toISOString());
+      expect(upsertArgs.trial_end).toBe(new Date(1701000000 * 1000).toISOString());
+      expect(upsertArgs.cancel_at_period_end).toBe(true);
+      expect(upsertArgs.canceled_at).toBeNull();
+      expect(upsertArgs.quantity).toBe(5);
+    });
+
+    it("persists canceled_at when a subscription is deleted (BILL-P2-001)", async () => {
+      mockStripeEvent({
+        type: "customer.subscription.deleted",
+        id: "evt_sub_del",
+        data: {
+          object: {
+            id: "sub_canceled",
+            customer: "cus_1",
+            status: "canceled",
+            current_period_start: 1700000000,
+            current_period_end: 1702592000,
+            trial_start: null,
+            trial_end: null,
+            cancel_at_period_end: false,
+            canceled_at: 1702000000,
+            items: { data: [{ quantity: 1, price: { nickname: "Pro" } }] },
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "customer.subscription.deleted", id: "evt_sub_del" });
+
+      expect(res.status).toBe(200);
+      const upsertArgs = builders["subscriptions"].upsert.mock.calls[0][0];
+      expect(upsertArgs.status).toBe("canceled");
+      expect(upsertArgs.canceled_at).toBe(new Date(1702000000 * 1000).toISOString());
+      expect(upsertArgs.cancel_at_period_end).toBe(false);
+      expect(upsertArgs.trial_end).toBeNull();
+    });
   });
 
   describe("POST /jira", () => {
@@ -384,6 +878,40 @@ describe("webhooks routes", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
+    });
+
+    it("returns 5xx and releases the claim when the task update fails [RES-P2-007]", async () => {
+      const supabaseModule = await import("../services/supabase");
+      let projectTaskCalls = 0;
+      const supabase = {
+        from: jest.fn().mockImplementation((table: string) => {
+          if (table === "project_tasks") {
+            projectTaskCalls += 1;
+            // First call: the status lookup succeeds. Second call: the update
+            // hits the degraded DB.
+            return projectTaskCalls === 1
+              ? createMockBuilder({ data: { id: "task-1", status: "todo" }, error: null })
+              : createMockBuilder({ data: null, error: { message: "db down" } });
+          }
+          return createMockBuilder({ data: null, error: null });
+        }),
+      };
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const { deleteIdempotencyKey } = await import("../lib/idempotency");
+      const res = await request(app)
+        .post("/api/v1/webhooks/jira")
+        .set("x-hub-signature", "sig_123")
+        .send({
+          webhookEvent: "issue_updated",
+          issue: {
+            key: "PROJ-777",
+            fields: { status: { name: "Done" }, summary: "Status change" },
+          },
+        });
+
+      expect(res.status).toBeGreaterThanOrEqual(500);
+      expect(deleteIdempotencyKey).toHaveBeenCalled();
     });
 
     it("returns 401 when signature header missing", async () => {
@@ -504,6 +1032,29 @@ describe("webhooks routes", () => {
       expect(res.body.success).toBe(true);
     });
 
+    it("returns 5xx and releases the claim when the audit write fails [RES-P2-007]", async () => {
+      const { logAuditEvent } = await import("../services/audit");
+      (logAuditEvent as jest.Mock).mockResolvedValueOnce(false);
+
+      const { deleteIdempotencyKey } = await import("../lib/idempotency");
+      const res = await request(app)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [
+            {
+              resource: "users/auditfail",
+              changeType: "updated",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+              resourceData: { id: "auditfail" },
+            },
+          ],
+        });
+
+      expect(res.status).toBeGreaterThanOrEqual(500);
+      expect(deleteIdempotencyKey).toHaveBeenCalled();
+    });
+
     it("rejects M365 webhook with wrong clientState", async () => {
       const res = await request(app)
         .post("/api/v1/webhooks/m365")
@@ -611,6 +1162,141 @@ describe("webhooks routes", () => {
       expect(claimIdempotencyKey).toHaveBeenCalled();
       // Third argument is the TTL in seconds: the enforced replay window.
       expect((claimIdempotencyKey as jest.Mock).mock.calls[0][2]).toBe(7 * 24 * 60 * 60);
+    });
+
+    it("processes every notification in a batch, not just value[0] [WH-P3-008]", async () => {
+      const { claimIdempotencyKey } = await import("../lib/idempotency");
+      const { logAuditEvent } = await import("../services/audit");
+      (claimIdempotencyKey as jest.Mock).mockClear();
+      (logAuditEvent as jest.Mock).mockClear();
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [
+            {
+              resource: "users/batch-1",
+              changeType: "updated",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+              resourceData: { id: "batch-1" },
+            },
+            {
+              resource: "users/batch-2",
+              changeType: "created",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+              resourceData: { id: "batch-2" },
+            },
+          ],
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toMatchObject({ received: true, processed: 2, duplicates: 0 });
+      expect(claimIdempotencyKey).toHaveBeenCalledTimes(2);
+      const keys = (claimIdempotencyKey as jest.Mock).mock.calls.map(
+        (call) => call[0] as string,
+      );
+      // Per-notification keys: identical resources would collapse, distinct
+      // ones must not.
+      expect(keys[0]).not.toBe(keys[1]);
+      expect(logAuditEvent).toHaveBeenCalledTimes(2);
+    });
+
+    it("skips an already-claimed notification and reports the duplicate [WH-P3-008]", async () => {
+      const { claimIdempotencyKey } = await import("../lib/idempotency");
+      const { logAuditEvent } = await import("../services/audit");
+      (logAuditEvent as jest.Mock).mockClear();
+      (claimIdempotencyKey as jest.Mock)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(false);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [
+            {
+              resource: "users/dup-1",
+              changeType: "updated",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+            },
+            {
+              resource: "users/dup-2",
+              changeType: "updated",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+            },
+          ],
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toMatchObject({ received: true, processed: 1, duplicates: 1 });
+      expect(logAuditEvent).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("inbound payload caps and schemas [WH-P2-006]", () => {
+    it("rejects a Stripe body over the 1mb provider cap with 413", async () => {
+      const res = await request(cappedApp)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({
+          id: "evt_big",
+          type: "checkout.session.completed",
+          padding: "x".repeat(1024 * 1024 + 1024),
+        });
+
+      expect(res.status).toBe(413);
+      expect(res.body.error?.code).toBe("PAYLOAD_TOO_LARGE");
+    });
+
+    it("rejects an M365 body over its 256kb provider cap with 413", async () => {
+      const res = await request(cappedApp)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [{ clientState: "m365-client-state", padding: "x".repeat(300 * 1024) }],
+        });
+
+      expect(res.status).toBe(413);
+      expect(res.body.error?.code).toBe("PAYLOAD_TOO_LARGE");
+    });
+
+    it("rejects a malformed Jira payload with 400 before signature verification", async () => {
+      const { verifyWebhookSignature } = await import("../lib/webhook-signature");
+      (verifyWebhookSignature as jest.Mock).mockClear();
+
+      const res = await request(cappedApp)
+        .post("/api/v1/webhooks/jira")
+        .set("x-hub-signature", "sig_123")
+        .send([{ webhookEvent: "issue_created" }]);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error?.code).toBe("VALIDATION");
+      // The schema gate runs before the HMAC comparison (WH-P2-006).
+      expect(verifyWebhookSignature).not.toHaveBeenCalled();
+    });
+
+    it("rejects an M365 payload whose value is not a non-empty array with 400", async () => {
+      const res = await request(cappedApp)
+        .post("/api/v1/webhooks/m365")
+        .send({ value: "not-an-array" });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error?.code).toBe("VALIDATION");
+    });
+
+    it("still accepts a valid payload under the cap", async () => {
+      const res = await request(cappedApp)
+        .post("/api/v1/webhooks/jira")
+        .set("x-hub-signature", "sig_123")
+        .send({
+          webhookEvent: "issue_created",
+          issue: { key: "PROJ-1", fields: { status: { name: "To Do" }, summary: "ok" } },
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
     });
   });
 

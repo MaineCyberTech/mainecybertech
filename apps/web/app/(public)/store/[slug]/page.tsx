@@ -12,6 +12,7 @@ import TrustBadgeList from "@/components/store/TrustBadgeList";
 import IntakeFormRenderer from "@/components/store/IntakeFormRenderer";
 import { TrustPanelFromProduct } from "@/components/store/TrustPanel";
 import StickyMobileCta from "@/components/store/StickyMobileCta";
+import StoreAnalyticsTracker from "@/components/store/StoreAnalyticsTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,7 @@ export async function generateMetadata({
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm">
+    <div className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-6 backdrop-blur-sm">
       <h2 className="mb-4 font-display text-lg font-bold uppercase tracking-wider text-emerald-400">
         {title}
       </h2>
@@ -73,6 +74,11 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
 
   return (
     <section className="min-h-screen px-4 pb-20 pt-32 sm:px-6 sm:pt-40">
+      <StoreAnalyticsTracker
+        event="product_detail_view"
+        page={`/store/${slug}`}
+        productId={product.id}
+      />
       <div className="mx-auto max-w-4xl">
         <nav className="mb-8 text-sm font-semibold uppercase tracking-widest text-slate-500">
           <Link
@@ -209,7 +215,7 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
         <div className="mt-12 text-center">
           <Link
             href={`/contact?service=${product.slug}`}
-            className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Request This Service
           </Link>
@@ -220,7 +226,7 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
             <h2 className="mb-8 text-center font-display text-2xl font-bold uppercase tracking-wider text-slate-50">
               Request This <span className="text-emerald-500">Service</span>
             </h2>
-            <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm sm:p-10">
+            <div className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-6 backdrop-blur-sm sm:p-10">
               <IntakeFormRenderer
                 productId={product.id}
                 productName={product.name}

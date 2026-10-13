@@ -74,7 +74,7 @@ export default async function StoreCategoriesPage() {
           return (
             <div
               key={cat.id}
-              className="glass-card group relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5 transition hover:border-emerald-600/30 hover:shadow-[0_0_20px_rgba(5,150,105,0.08)]"
+              className="glass-card group relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-cyber-base/80 to-[#0D1622]/80 p-5 transition hover:border-emerald-600/30 hover:shadow-[0_0_20px_rgba(5,150,105,0.08)]"
             >
               <div className="mb-3 flex items-start justify-between gap-2">
                 <div>

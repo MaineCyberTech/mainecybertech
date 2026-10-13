@@ -40,7 +40,7 @@ export class RolesApi {
   }
 
   delete(id: string) {
-    return this.client.delete(`/api/v1/roles/${id}`);
+    return this.client.delete(`/api/v1/roles/${id}`, undefined, { confirm: true });
   }
 
   getPermissions(roleId: string) {

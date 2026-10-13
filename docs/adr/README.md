@@ -20,7 +20,7 @@ entries on this page, not as full records.
 | 001 | Switch from AWS ECS to DigitalOcean Droplet                                                          | Accepted | 2026-05    |
 | 002 | Use BullMQ (Redis) over SQS for job queuing                                                          | Accepted | 2026-05    |
 | 003 | PKCE Auth with JWT Cookie                                                                            | Accepted | 2026-05    |
-| 004 | In-Memory Cache over Redis                                                                           | Accepted | 2026-05    |
+| 004 | In-Memory Cache over Redis                                                                           | Superseded by 012 | 2026-05 |
 | 005 | Hosted Supabase over Self-Hosted                                                                     | Accepted | 2026-05    |
 | 006 | Custom SDK over Generated API Client                                                                 | Accepted | 2026-05    |
 | 007 | Turborepo Monorepo Structure                                                                         | Accepted | 2026-05    |
@@ -28,6 +28,7 @@ entries on this page, not as full records.
 | 009 | MFA: Supabase-native TOTP, opt-in `aal2` enforcement, login step, recovery codes, no trusted devices | Accepted | 2026-09-27 |
 | 010 | Dark-only theme pinned                                                                               | Accepted | 2026-09-27 |
 | 011 | Shared web UI kit is the only sanctioned pattern                                                     | Accepted | 2026-09-27 |
+| 012 | Redis-backed response cache with a metered in-memory fallback (supersedes 004)                       | Accepted | 2026-10-12 |
 
 ---
 
@@ -142,3 +143,26 @@ failure as an empty state" class of bug is structurally prevented. Contributors
 extend the shared maps/components instead of copy-pasting; nested
 section/sub-list empties stay inline by design. Documented in
 `docs/WEB_UI_CONVENTIONS.md` and catalogued in `docs/ui-kit.md`.
+
+## 012 — Redis-backed response cache with a metered in-memory fallback (supersedes 004)
+
+**Status:** Accepted (supersedes 004)
+**Date:** 2026-10-12
+
+**Context:** ADR 004 chose an in-memory response cache for a single-instance
+deployment. The as-built API (`apps/api/src/middleware/cache.ts`) now connects
+to the shared Redis when `REDIS_URL`/`REDIS_PASSWORD` is configured and keeps
+the in-memory Map only as a bounded (5,000-entry) fallback. ADR 004 was still
+cited as the current decision even though the runtime had already moved on.
+
+**Decision:** Keep the Redis-backed cache as the primary backend, with the
+in-memory Map as an explicit degradation path. Every fallback (`connect`, `get`,
+`set`) increments a Redis-failure metric (`recordRedisFailure`) so degradation
+is observable instead of silent. When a second API replica is added, Redis is
+required; the in-memory path only serves the current single-instance topology.
+
+**Consequences:** Cache entries are shared across restarts and survive API
+container recreation; a Redis outage degrades to per-process caching and is
+metered/alarmed. The queue, cache, idempotency store and scan locks still share
+one non-replicated Redis (ARCH-P2-005) — splitting or replicating it remains
+open work. See `docs/ARCHITECTURE_DIAGRAM.md` for the current topology.

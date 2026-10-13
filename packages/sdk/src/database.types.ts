@@ -1,5 +1,6 @@
 // Auto-generated from supabase/migrations/*.sql — DO NOT EDIT MANUALLY
 // Run: node scripts/generate-db-types.js to regenerate
+// Source migrations digest (sha256): 157f1173a2285e68306dfc09f865ecb0bcd7b7eba65bd5670a600f5747b872e9
 export type Json =
   | string
   | number
@@ -357,6 +358,55 @@ export type Database = {
         };
         Relationships: [
           { foreignKeyName: "assets_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
+      };
+      audit_log_archive: {
+        Row: {
+          action: string;
+          actor_type: "user" | "system" | "service";
+          actor_user_id: string | null;
+          archive_reason: string;
+          archived_at: string;
+          created_at: string;
+          entity_id: string | null;
+          entity_type: string;
+          id: string;
+          ip_address: string | null;
+          metadata: Json;
+          organization_id: string | null;
+          user_agent: string | null;
+        };
+        Insert: {
+          action: string;
+          created_at: string;
+          entity_type: string;
+          id: string;
+          actor_type?: "user" | "system" | "service" | null;
+          actor_user_id?: string | null;
+          archive_reason?: string | null;
+          archived_at?: string | null;
+          entity_id?: string | null;
+          ip_address?: string | null;
+          metadata?: Json | null;
+          organization_id?: string | null;
+          user_agent?: string | null;
+        };
+        Update: {
+          action?: string | null;
+          actor_type?: "user" | "system" | "service" | null;
+          actor_user_id?: string | null;
+          archive_reason?: string | null;
+          archived_at?: string | null;
+          created_at?: string | null;
+          entity_id?: string | null;
+          entity_type?: string | null;
+          id?: string | null;
+          ip_address?: string | null;
+          metadata?: Json | null;
+          organization_id?: string | null;
+          user_agent?: string | null;
+        };
+        Relationships: [
         ];
       };
       audit_logs: {
@@ -2565,6 +2615,7 @@ export type Database = {
           tax_cents: number;
           total_cents: number;
           updated_at: string;
+          voided_at: string | null;
         };
         Insert: {
           organization_id: string;
@@ -2582,6 +2633,7 @@ export type Database = {
           tax_cents?: number | null;
           total_cents?: number | null;
           updated_at?: string | null;
+          voided_at?: string | null;
         };
         Update: {
           created_at?: string | null;
@@ -2599,6 +2651,7 @@ export type Database = {
           tax_cents?: number | null;
           total_cents?: number | null;
           updated_at?: string | null;
+          voided_at?: string | null;
         };
         Relationships: [
           { foreignKeyName: "invoices_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
@@ -3263,7 +3316,7 @@ export type Database = {
       };
       notification_preferences: {
         Row: {
-          channel: "email" | "sms" | "in_app";
+          channel: "email" | "sms" | "in_app" | "push";
           created_at: string;
           enabled: boolean;
           id: string;
@@ -3273,7 +3326,7 @@ export type Database = {
           version: number;
         };
         Insert: {
-          channel: "email" | "sms" | "in_app";
+          channel: "email" | "sms" | "in_app" | "push";
           module_key: string;
           organization_id: string;
           user_id: string;
@@ -3283,7 +3336,7 @@ export type Database = {
           version?: number | null;
         };
         Update: {
-          channel?: "email" | "sms" | "in_app" | null;
+          channel?: "email" | "sms" | "in_app" | "push" | null;
           created_at?: string | null;
           enabled?: boolean | null;
           id?: string | null;
@@ -3631,6 +3684,8 @@ export type Database = {
           invoice_id: string | null;
           organization_id: string;
           paid_at: string | null;
+          refund_amount_cents: number | null;
+          refunded_at: string | null;
           status: string;
           stripe_payment_intent_id: string | null;
         };
@@ -3643,6 +3698,8 @@ export type Database = {
           id?: string | null;
           invoice_id?: string | null;
           paid_at?: string | null;
+          refund_amount_cents?: number | null;
+          refunded_at?: string | null;
           stripe_payment_intent_id?: string | null;
         };
         Update: {
@@ -3653,6 +3710,8 @@ export type Database = {
           invoice_id?: string | null;
           organization_id?: string | null;
           paid_at?: string | null;
+          refund_amount_cents?: number | null;
+          refunded_at?: string | null;
           status?: string | null;
           stripe_payment_intent_id?: string | null;
         };
@@ -3787,6 +3846,31 @@ export type Database = {
           { foreignKeyName: "phishing_targets_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };
+      platform_backup_heartbeats: {
+        Row: {
+          last_success_at: string;
+          recorded_at: string;
+          run_id: string | null;
+          run_url: string | null;
+          workflow: string;
+        };
+        Insert: {
+          last_success_at: string;
+          workflow: string;
+          recorded_at?: string | null;
+          run_id?: string | null;
+          run_url?: string | null;
+        };
+        Update: {
+          last_success_at?: string | null;
+          recorded_at?: string | null;
+          run_id?: string | null;
+          run_url?: string | null;
+          workflow?: string | null;
+        };
+        Relationships: [
+        ];
+      };
       port_maps: {
         Row: {
           connected_device: string | null;
@@ -3844,35 +3928,6 @@ export type Database = {
         };
         Relationships: [
           { foreignKeyName: "port_maps_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
-        ];
-      };
-      portal_module_settings: {
-        Row: {
-          created_at: string;
-          id: string;
-          module_key: string;
-          organization_id: string;
-          settings: Json;
-          updated_at: string;
-        };
-        Insert: {
-          module_key: string;
-          organization_id: string;
-          created_at?: string | null;
-          id?: string | null;
-          settings?: Json | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          id?: string | null;
-          module_key?: string | null;
-          organization_id?: string | null;
-          settings?: Json | null;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          { foreignKeyName: "portal_module_settings_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };
       powershell_scripts: {
@@ -4228,6 +4283,7 @@ export type Database = {
           issue_type: string | null;
           jira_last_synced_at: string | null;
           labels: string[] | null;
+          m365_event_id: string | null;
           metadata: Json;
           organization_id: string;
           owner_id: string | null;
@@ -4263,6 +4319,7 @@ export type Database = {
           issue_type?: string | null;
           jira_last_synced_at?: string | null;
           labels?: string[] | null;
+          m365_event_id?: string | null;
           metadata?: Json | null;
           owner_id?: string | null;
           parent_task_id?: string | null;
@@ -4292,6 +4349,7 @@ export type Database = {
           issue_type?: string | null;
           jira_last_synced_at?: string | null;
           labels?: string[] | null;
+          m365_event_id?: string | null;
           metadata?: Json | null;
           organization_id?: string | null;
           owner_id?: string | null;
@@ -4611,6 +4669,8 @@ export type Database = {
           client_name: string | null;
           client_phone: string | null;
           company_name: string | null;
+          consent_at: string | null;
+          consent_version: string | null;
           created_at: string | null;
           employees: string | null;
           id: string;
@@ -4631,6 +4691,8 @@ export type Database = {
           client_name?: string | null;
           client_phone?: string | null;
           company_name?: string | null;
+          consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string | null;
           employees?: string | null;
           id?: string | null;
@@ -4651,6 +4713,8 @@ export type Database = {
           client_name?: string | null;
           client_phone?: string | null;
           company_name?: string | null;
+          consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string | null;
           employees?: string | null;
           id?: string | null;
@@ -4666,6 +4730,47 @@ export type Database = {
           user_agent?: string | null;
         };
         Relationships: [
+        ];
+      };
+      push_subscriptions: {
+        Row: {
+          auth: string;
+          created_at: string;
+          endpoint: string;
+          id: string;
+          last_seen_at: string;
+          organization_id: string | null;
+          p256dh: string;
+          revoked_at: string | null;
+          user_agent: string | null;
+          user_id: string;
+        };
+        Insert: {
+          auth: string;
+          endpoint: string;
+          p256dh: string;
+          user_id: string;
+          created_at?: string | null;
+          id?: string | null;
+          last_seen_at?: string | null;
+          organization_id?: string | null;
+          revoked_at?: string | null;
+          user_agent?: string | null;
+        };
+        Update: {
+          auth?: string | null;
+          created_at?: string | null;
+          endpoint?: string | null;
+          id?: string | null;
+          last_seen_at?: string | null;
+          organization_id?: string | null;
+          p256dh?: string | null;
+          revoked_at?: string | null;
+          user_agent?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "push_subscriptions_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };
       qbr_reports: {
@@ -5599,14 +5704,12 @@ export type Database = {
           created_at: string | null;
           event: string;
           id: string;
-          ip_address: string | null;
           metadata: Json | null;
           page: string | null;
           product_id: string | null;
           promo_id: string | null;
           quiz_id: string | null;
           quote_id: string | null;
-          user_agent: string | null;
         };
         Insert: {
           event: string;
@@ -5615,14 +5718,12 @@ export type Database = {
           category_id?: string | null;
           created_at?: string | null;
           id?: string | null;
-          ip_address?: string | null;
           metadata?: Json | null;
           page?: string | null;
           product_id?: string | null;
           promo_id?: string | null;
           quiz_id?: string | null;
           quote_id?: string | null;
-          user_agent?: string | null;
         };
         Update: {
           anonymous_id?: string | null;
@@ -5631,14 +5732,12 @@ export type Database = {
           created_at?: string | null;
           event?: string | null;
           id?: string | null;
-          ip_address?: string | null;
           metadata?: Json | null;
           page?: string | null;
           product_id?: string | null;
           promo_id?: string | null;
           quiz_id?: string | null;
           quote_id?: string | null;
-          user_agent?: string | null;
         };
         Relationships: [
         ];
@@ -5954,6 +6053,8 @@ export type Database = {
       };
       store_quote_requests: {
         Row: {
+          consent_at: string | null;
+          consent_version: string | null;
           created_at: string;
           customer: Json;
           id: string;
@@ -5965,6 +6066,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string | null;
           customer?: Json | null;
           id?: string | null;
@@ -5976,6 +6079,8 @@ export type Database = {
           updated_at?: string | null;
         };
         Update: {
+          consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string | null;
           customer?: Json | null;
           id?: string | null;
@@ -5991,6 +6096,8 @@ export type Database = {
       };
       store_quotes: {
         Row: {
+          consent_at: string | null;
+          consent_version: string | null;
           created_at: string | null;
           email: string;
           id: string;
@@ -6005,6 +6112,8 @@ export type Database = {
         Insert: {
           email: string;
           name: string;
+          consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string | null;
           id?: string | null;
           items?: Json | null;
@@ -6015,6 +6124,8 @@ export type Database = {
           updated_at?: string | null;
         };
         Update: {
+          consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string | null;
           email?: string | null;
           id?: string | null;
@@ -6082,16 +6193,22 @@ export type Database = {
       subscriptions: {
         Row: {
           amount_cents: number | null;
+          cancel_at_period_end: boolean;
+          canceled_at: string | null;
           created_at: string;
           currency: string | null;
           current_period_end: string | null;
           current_period_start: string | null;
           id: string;
+          interval: string | null;
           metadata: Json;
           organization_id: string;
           plan_name: string;
+          quantity: number | null;
           status: string;
           stripe_subscription_id: string | null;
+          trial_end: string | null;
+          trial_start: string | null;
           updated_at: string;
         };
         Insert: {
@@ -6099,27 +6216,39 @@ export type Database = {
           plan_name: string;
           status: string;
           amount_cents?: number | null;
+          cancel_at_period_end?: boolean | null;
+          canceled_at?: string | null;
           created_at?: string | null;
           currency?: string | null;
           current_period_end?: string | null;
           current_period_start?: string | null;
           id?: string | null;
+          interval?: string | null;
           metadata?: Json | null;
+          quantity?: number | null;
           stripe_subscription_id?: string | null;
+          trial_end?: string | null;
+          trial_start?: string | null;
           updated_at?: string | null;
         };
         Update: {
           amount_cents?: number | null;
+          cancel_at_period_end?: boolean | null;
+          canceled_at?: string | null;
           created_at?: string | null;
           currency?: string | null;
           current_period_end?: string | null;
           current_period_start?: string | null;
           id?: string | null;
+          interval?: string | null;
           metadata?: Json | null;
           organization_id?: string | null;
           plan_name?: string | null;
+          quantity?: number | null;
           status?: string | null;
           stripe_subscription_id?: string | null;
+          trial_end?: string | null;
+          trial_start?: string | null;
           updated_at?: string | null;
         };
         Relationships: [
@@ -6183,6 +6312,37 @@ export type Database = {
         };
         Relationships: [
           { foreignKeyName: "tabletop_exercises_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
+      };
+      task_dead_letters: {
+        Row: {
+          attempts: number;
+          created_at: string;
+          error: string | null;
+          id: string;
+          last_attempt_at: string;
+          payload: Json;
+          task_type: string;
+        };
+        Insert: {
+          task_type: string;
+          attempts?: number | null;
+          created_at?: string | null;
+          error?: string | null;
+          id?: string | null;
+          last_attempt_at?: string | null;
+          payload?: Json | null;
+        };
+        Update: {
+          attempts?: number | null;
+          created_at?: string | null;
+          error?: string | null;
+          id?: string | null;
+          last_attempt_at?: string | null;
+          payload?: Json | null;
+          task_type?: string | null;
+        };
+        Relationships: [
         ];
       };
       ticket_comments: {
@@ -6300,7 +6460,7 @@ export type Database = {
           priority: "low" | "normal" | "high" | "urgent";
           resolution: string | null;
           source: string;
-          status: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed";
+          status: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | "open";
           title: string;
           updated_at: string;
           version: number;
@@ -6321,7 +6481,7 @@ export type Database = {
           priority?: "low" | "normal" | "high" | "urgent" | null;
           resolution?: string | null;
           source?: string | null;
-          status?: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | null;
+          status?: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | "open" | null;
           updated_at?: string | null;
           version?: number | null;
         };
@@ -6340,7 +6500,7 @@ export type Database = {
           priority?: "low" | "normal" | "high" | "urgent" | null;
           resolution?: string | null;
           source?: string | null;
-          status?: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | null;
+          status?: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | "open" | null;
           title?: string | null;
           updated_at?: string | null;
           version?: number | null;
@@ -6972,6 +7132,8 @@ export type Database = {
           name: string;
           organization_id: string;
           secret: string | null;
+          secret_expires_at: string | null;
+          secret_rotated_at: string | null;
           updated_at: string;
           url: string;
           version: number;
@@ -6989,6 +7151,8 @@ export type Database = {
           last_failure_at?: string | null;
           last_success_at?: string | null;
           secret?: string | null;
+          secret_expires_at?: string | null;
+          secret_rotated_at?: string | null;
           updated_at?: string | null;
           version?: number | null;
         };
@@ -7004,6 +7168,8 @@ export type Database = {
           name?: string | null;
           organization_id?: string | null;
           secret?: string | null;
+          secret_expires_at?: string | null;
+          secret_rotated_at?: string | null;
           updated_at?: string | null;
           url?: string | null;
           version?: number | null;
@@ -7092,12 +7258,12 @@ export type Database = {
       document_visibility: "private" | "org" | "internal" | "public";
       invoice_status: "draft" | "open" | "paid" | "void" | "uncollectible" | "overdue";
       membership_status: "pending" | "approved" | "rejected" | "suspended";
-      notification_channel: "email" | "sms" | "in_app";
+      notification_channel: "email" | "sms" | "in_app" | "push";
       org_status: "pending" | "approved" | "rejected" | "suspended";
       project_status: "planned" | "active" | "blocked" | "client_review" | "completed" | "archived";
       task_status: "todo" | "in_progress" | "in_review" | "blocked" | "done";
       ticket_priority: "low" | "normal" | "high" | "urgent";
-      ticket_status: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed";
+      ticket_status: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | "open";
     };
     CompositeTypes: Record<string, never>;
   };

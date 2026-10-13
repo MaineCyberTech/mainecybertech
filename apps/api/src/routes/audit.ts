@@ -4,9 +4,11 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { requireOrgAccess } from "../middleware/org-access";
+import { rateLimitAdminOps } from "../middleware/rate-limit";
 import { logAuditEvent } from "../services/audit";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { queryInt } from "../lib/query";
+import { listCountMode } from "../lib/pagination";
 import {
   applyOrgScope,
   applyRequestedOrg,
@@ -30,7 +32,7 @@ router.get("/", async (req, res, next) => {
 
     const requestedOrg = req.query.organization_id as string | undefined;
 
-    let query = getSupabaseAdmin().from("audit_logs").select("*", { count: "exact" });
+    let query = getSupabaseAdmin().from("audit_logs").select("*", { count: listCountMode(req.query) });
     query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
     query = applyOrgScope(query, "organization_id", scope);
 
@@ -67,7 +69,9 @@ const auditExportColumns: CsvColumn[] = [
   { key: "created_at" },
 ];
 
-router.get("/export", async (req, res, next) => {
+// ADMIN-P2-005: a full-trail export (up to 10k rows) is an expensive admin
+// operation — cap it with the shared admin-ops limiter.
+router.get("/export", rateLimitAdminOps, async (req, res, next) => {
   try {
     const scope = await resolveAdminTenantScope(req);
 
@@ -132,7 +136,7 @@ router.get("/impersonation", async (req, res, next) => {
 
     let query = getSupabaseAdmin()
       .from("impersonation_log")
-      .select("*", { count: "exact" });
+      .select("*", { count: listCountMode(req.query) });
 
     const requestedOrg = req.query.organization_id as string | undefined;
     if (requestedOrg) query = query.eq("organization_id", requestedOrg);
@@ -165,7 +169,7 @@ const impersonationExportColumns: CsvColumn[] = [
   { key: "metadata" },
 ];
 
-router.get("/impersonation/export", async (req, res, next) => {
+router.get("/impersonation/export", rateLimitAdminOps, async (req, res, next) => {
   try {
     const scope = await resolveAdminTenantScope(req);
     if (!scope.allTenants) {

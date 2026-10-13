@@ -14,8 +14,15 @@ x-app-env: &app-env
   JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
   CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
   APP_BASE_URL: https://${APP_DOMAIN:-app.mainecybertech.com}
+  # ARCH-P2-004: ONE queue backend contract for the API producer and the
+  # worker consumer. Both services read this value and both refuse to start in
+  # production on anything but bullmq, so the two sides cannot drift apart
+  # (the API can only enqueue to BullMQ).
+  QUEUE_BACKEND: ${QUEUE_BACKEND:-bullmq}
 
-# Bound container logs so the droplet's disk cannot fill up.
+# Bound container logs so the droplet's disk cannot fill up. Deploy-do also
+# snapshots the running stack's logs before `compose down` destroys them
+# (OBS-P2-015); see docs/MONITORING_AND_ALERTING.md > Application-Level Logging.
 x-logging: &default-logging
   driver: json-file
   options:
@@ -43,6 +50,9 @@ services:
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
     volumes:
+      # INFRA-P3-003: persistence is RDB-snapshot only (no AOF) — this is a
+      # deliberate decision recorded in docs/RTO_RPO.md (Redis RPO 24h);
+      # in-flight BullMQ work is re-driven by producers/retries after a loss.
       - redis-data:/data
       - ./redis-entrypoint.sh:/usr/local/bin/redis-entrypoint.sh:ro
     tmpfs:
@@ -62,11 +72,14 @@ services:
 
   # ===== Our Apps =====
   # App images are built+tagged by CI with the immutable commit SHA. The deploy
-  # workflow resolves each tag to its manifest digest and verifies the build
-  # attestation before `up` (see README.md > Container image pinning); they are
-  # not statically digest-pinned because the SHA tag changes per release.
+  # workflow resolves each tag to its manifest digest, verifies the build
+  # provenance AND CycloneDX SBOM attestations for that digest, then passes the
+  # digest here via MCT_<SERVICE>_IMAGE so the pull/run uses `@sha256:...`
+  # instead of the mutable tag (SBOM-P2-011; see docs/CI.md > "Provenance
+  # verification at deploy"). The tag-based fallback exists only for manual
+  # operator runs (`IMAGE_TAG=<sha> docker compose up -d`).
   api:
-    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-api:${IMAGE_TAG:?IMAGE_TAG must be set}
+    image: ${MCT_API_IMAGE:-${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-api:${IMAGE_TAG:?IMAGE_TAG must be set}}
     logging: *default-logging
     <<: *security
     environment:
@@ -76,6 +89,10 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      # OBS-P3-004: tag API errors/transactions with the deployed commit. The
+      # deploy writes SENTRY_RELEASE (the image tag / commit SHA) to the droplet
+      # .env; without it release correlation falls back to nothing.
+      SENTRY_RELEASE: ${SENTRY_RELEASE:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       # PII field encryption (AES-256-GCM). Without this the dev `plain:`
@@ -84,6 +101,10 @@ services:
       # Cloudflare Turnstile: when the secret is set, /public/submit requires a
       # valid captcha token (the site key is inlined into the web build).
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      # Upload malware scanning (FILE-P2-003). Unset = no-op; point at a
+      # ClamAV sidecar or a VirusTotal proxy (see docs/features/secure-file-request.md).
+      MALWARE_SCANNER_URL: ${MALWARE_SCANNER_URL:-}
+      MALWARE_SCANNER_API_KEY: ${MALWARE_SCANNER_API_KEY:-}
       # Prometheus /metrics bearer gate (unset => token gate disabled).
       METRICS_TOKEN: ${METRICS_TOKEN:-}
       MFA_ENFORCEMENT_ENABLED: ${MFA_ENFORCEMENT_ENABLED:-false}
@@ -95,6 +116,9 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       EMAIL_FROM: ${EMAIL_FROM:-noreply@mainecybertech.com}
+      # Web Push (NOTIF-P2-001): the API only needs the public key it hands to
+      # browsers; unset = the push channel is disabled.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       PUBLIC_TRAFFIC_WEBHOOK_URL: ${PUBLIC_TRAFFIC_WEBHOOK_URL:-}
       PUBLIC_LEAD_WEBHOOK_URL: ${PUBLIC_LEAD_WEBHOOK_URL:-}
       JSM_DOMAIN: ${JSM_DOMAIN:-}
@@ -119,6 +143,11 @@ services:
     tmpfs:
       - /tmp
     read_only: true
+    # RES-P2-009: the worker drains in-flight jobs for up to
+    # WORKER_SHUTDOWN_TIMEOUT_MS (default 30s). Docker's default 10s stop
+    # timeout SIGKILLs it before that, so give the app services a grace period
+    # larger than the drain budget.
+    stop_grace_period: 60s
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
       interval: 30s
@@ -128,17 +157,19 @@ services:
       start_period: 30s
 
   worker:
-    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:?IMAGE_TAG must be set}
+    image: ${MCT_WORKER_IMAGE:-${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:?IMAGE_TAG must be set}}
     logging: *default-logging
     <<: *security
     environment:
       <<: *app-env
       LOG_LEVEL: info
       HEALTH_PORT: 3001
-      QUEUE_BACKEND: bullmq
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      # OBS-P3-004: same release marker as the API, so worker task failures and
+      # API errors can be correlated to the same deploy.
+      SENTRY_RELEASE: ${SENTRY_RELEASE:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       JIRA_BASE_URL: ${JIRA_BASE_URL:-}
       JIRA_EMAIL: ${JIRA_EMAIL:-}
@@ -149,11 +180,21 @@ services:
       M365_TENANT_ID: ${M365_TENANT_ID:-}
       M365_CLIENT_ID: ${M365_CLIENT_ID:-}
       M365_CLIENT_SECRET: ${M365_CLIENT_SECRET:-}
+      # Needed to decrypt outbound webhook signing secrets at rest (WH-P2-008).
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:-}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       EMAIL_FROM: ${EMAIL_FROM:-noreply@mainecybertech.com}
+      # Web Push (NOTIF-P2-001): the worker holds the private key and subject
+      # and does the VAPID signing; unset (or partial) = push is a no-op.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+      # ARCH-P3-005: worker /metrics is gated with the same token as the API;
+      # Prometheus sends it (see prometheus.yml). Unset => /metrics 404s.
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
       API_BASE_URL: https://${API_DOMAIN:-api.mainecybertech.com}
     depends_on:
       redis:
@@ -167,6 +208,11 @@ services:
     tmpfs:
       - /tmp
     read_only: true
+    # RES-P2-009: align the container stop budget with the worker's drain
+    # watchdog (WORKER_SHUTDOWN_TIMEOUT_MS, default 30s). Without this Docker
+    # SIGKILLs the worker at its 10s default mid-drain, so in-flight jobs are
+    # killed and redelivered.
+    stop_grace_period: 60s
     # Liveness probe on the worker's HEALTH_PORT (audit IR-P1-003). Without
     # this, `docker inspect` reports "missing" and the deploy's container
     # health gate cannot confirm the worker — enabling it lets a worker that
@@ -184,14 +230,26 @@ services:
       start_period: 30s
 
   web:
-    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:?IMAGE_TAG must be set}
+    image: ${MCT_WEB_IMAGE:-${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:?IMAGE_TAG must be set}}
     logging: *default-logging
     <<: *security
     environment:
       NODE_ENV: production
+      # ARCH-P3-003: server-side runtime API URL. NEXT_PUBLIC_* is inlined at
+      # build time, so the server cannot be redirected with the compose value
+      # below; API_INTERNAL_URL is read at request time by lib/api.ts and keeps
+      # SSR traffic on the docker network instead of the public edge.
+      API_INTERNAL_URL: http://api:4000
       NEXT_PUBLIC_API_URL: http://api:4000
       NEXT_TELEMETRY_DISABLED: 1
+      # OBS-P2-011: the web Sentry configs read NEXT_PUBLIC_SENTRY_DSN, not
+      # SENTRY_DSN. The build arg inlines it into the client bundle; this
+      # runtime copy covers the standalone server. Both come from the deploy.
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      # OBS-P3-004: server-side Sentry release marker for the deployed commit
+      # (the client bundle keeps its build-time NEXT_PUBLIC_GIT_SHA).
+      SENTRY_RELEASE: ${SENTRY_RELEASE:-}
     depends_on:
       api:
         condition: service_started
@@ -235,6 +293,14 @@ services:
     # shared box rather than isolate it.
     pids_limit: 256
     read_only: true
+    # INFRA-P2-007: prometheus had no healthcheck, so the deploy gate could
+    # not assert it. /-/ready returns 200 once the TSDB is ready to serve.
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   # Alertmanager — alert DELIVERY + the dead-man's switch (IR-P0-003).
   # Prometheus forwards firing alerts here (see prometheus.yml `alerting:`).
@@ -268,26 +334,22 @@ services:
       # Mounted READ-ONLY as a template. Alertmanager has no shell-style variable
       # substitution of its own (a literal ${VAR} in a url: fails validation with
       # "first path segment in URL cannot contain colon"), and the image has no
-      # envsubst (alpine/busybox). The entrypoint renders the template with sed
-      # into a writable path, fails loudly if any placeholder survives, then
-      # hands off to alertmanager.
+      # envsubst (alpine/busybox). The entrypoint renders the template with the
+      # awk renderer below into a writable path, fails loudly if any placeholder
+      # survives, then hands off to alertmanager.
       - ./alertmanager.tmpl.yml:/etc/alertmanager/alertmanager.tmpl.yml:ro
+      # OBS-P3-005: renderer that substitutes the placeholders with index/substr
+      # (not gsub, whose replacement string treats "&" and "\" specially) and
+      # escapes each value for the double-quoted YAML scalar it lands in, so a
+      # secret containing "&", "\" or '"' cannot corrupt the rendered config.
+      - ./render-alertmanager.awk:/etc/alertmanager/render-alertmanager.awk:ro
       # Alertmanager keeps its notification/silence state here; a named volume
       # survives restarts so a deploy does not re-fire duplicate notifications.
       - alertmanager-data:/alertmanager
     entrypoint: ["/bin/sh", "-c"]
     command:
       - >
-        awk '{
-          gsub(/\$\{ALERTMANAGER_DEFAULT_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_DEFAULT_WEBHOOK_URL"]);
-          gsub(/\$\{ALERTMANAGER_CRITICAL_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_CRITICAL_WEBHOOK_URL"]);
-          gsub(/\$\{ALERTMANAGER_WEBHOOK_USER\}/, ENVIRON["ALERTMANAGER_WEBHOOK_USER"]);
-          gsub(/\$\{ALERTMANAGER_WEBHOOK_PASS\}/, ENVIRON["ALERTMANAGER_WEBHOOK_PASS"]);
-          gsub(/\$\{ALERTMANAGER_WATCHDOG_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_WATCHDOG_WEBHOOK_URL"]);
-          gsub(/\$\{ALERTMANAGER_SLACK_API_URL\}/, ENVIRON["ALERTMANAGER_SLACK_API_URL"]);
-          gsub(/\$\{ALERTMANAGER_SLACK_CHANNEL\}/, ENVIRON["ALERTMANAGER_SLACK_CHANNEL"]);
-          print
-        }' /etc/alertmanager/alertmanager.tmpl.yml > /tmp/alertmanager.yml
+        awk -f /etc/alertmanager/render-alertmanager.awk /etc/alertmanager/alertmanager.tmpl.yml > /tmp/alertmanager.yml
         && ! grep -E '\$\{ALERTMANAGER' /tmp/alertmanager.yml | grep -vE '^[[:space:]]*#' | grep -q .
         && exec /bin/alertmanager --config.file=/tmp/alertmanager.yml
         --storage.path=/alertmanager --log.level=info
@@ -317,7 +379,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      # CTR-P3-003: read-only config. Without `:ro` a process inside caddy
+      # could rewrite the host-side /opt/mct-portal/Caddyfile (TLS termination
+      # for every user) and the change would survive restarts/redeploys.
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./certs:/etc/caddy/certs:ro
       - caddy-data:/data
       - caddy-config:/config
@@ -335,6 +400,12 @@ services:
     restart: unless-stopped
     mem_limit: 64m
     pids_limit: 128
+    # CTR-P3-003: no writable rootfs. Caddy's state lives in the caddy-data /
+    # caddy-config volumes; /tmp is the only writable path a compromised
+    # process gets (matching api/web/prometheus/alertmanager).
+    read_only: true
+    tmpfs:
+      - /tmp
 
 volumes:
   redis-data:

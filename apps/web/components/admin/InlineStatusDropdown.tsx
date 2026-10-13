@@ -2,9 +2,17 @@
 
 import { useTransition } from "react";
 import { inlineUpdateAction } from "@/app/(admin)/admin/tickets/[ticketId]/actions";
+import { allowedTicketTransitions } from "@mct/sdk/ticket-status";
 
-const STATUSES = ["new", "open", "triaged", "pending", "resolved", "closed"];
 const PRIORITIES = ["low", "normal", "high", "urgent"];
+
+/**
+ * FEAT-P3-006: offer the current status plus only the transitions the API's
+ * shared map allows, so the UI cannot submit a move the API will 409.
+ */
+function statusOptions(current: string): string[] {
+  return [...new Set([current, ...allowedTicketTransitions(current)])];
+}
 
 const STATUS_COLORS: Record<string, string> = {
   resolved: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300 hover:ring-emerald-500/40",
@@ -41,7 +49,7 @@ export function InlineStatusDropdown({ ticketId, current }: { ticketId: string; 
           "border-blue-500/25 bg-blue-500/10 text-blue-300 hover:ring-blue-500/40",
       )}
     >
-      {STATUSES.map((s) => (
+      {statusOptions(current).map((s) => (
         <option key={s} value={s}>
           {s}
         </option>

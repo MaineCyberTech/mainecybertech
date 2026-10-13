@@ -56,7 +56,8 @@ export class SecurityOpsApi {
       this.client.post<OffboardingRecord>("/api/v1/security-ops/offboarding", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<OffboardingRecord>(`/api/v1/security-ops/offboarding/${id}`, d),
-    remove: (id: string) => this.client.delete(`/api/v1/security-ops/offboarding/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/security-ops/offboarding/${id}`, undefined, { confirm: true }),
     completeStep: (id: string, d: { stepName: string; completed: boolean }) =>
       this.client.post<OffboardingRecord>(
         `/api/v1/security-ops/offboarding/${id}/complete-step`,
@@ -79,7 +80,8 @@ export class SecurityOpsApi {
       this.client.post<BreakGlassAccount>("/api/v1/security-ops/break-glass", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<BreakGlassAccount>(`/api/v1/security-ops/break-glass/${id}`, d),
-    remove: (id: string) => this.client.delete(`/api/v1/security-ops/break-glass/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/security-ops/break-glass/${id}`, undefined, { confirm: true }),
   };
 
   onboarding = {
@@ -96,7 +98,8 @@ export class SecurityOpsApi {
       this.client.post<OnboardingClient>("/api/v1/security-ops/onboarding", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<OnboardingClient>(`/api/v1/security-ops/onboarding/${id}`, d),
-    remove: (id: string) => this.client.delete(`/api/v1/security-ops/onboarding/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/security-ops/onboarding/${id}`, undefined, { confirm: true }),
   };
 
   patchCompliance = {
@@ -113,7 +116,10 @@ export class SecurityOpsApi {
       this.client.post<PatchGroup>("/api/v1/security-ops/patch-compliance", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<PatchGroup>(`/api/v1/security-ops/patch-compliance/${id}`, d),
-    remove: (id: string) => this.client.delete(`/api/v1/security-ops/patch-compliance/${id}`),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/security-ops/patch-compliance/${id}`, undefined, {
+        confirm: true,
+      }),
     stats: (params?: Record<string, string | undefined>) => {
       const qp: Record<string, string | undefined> = {};
       if (params) for (const [k, v] of Object.entries(params)) if (v !== undefined) qp[k] = v;

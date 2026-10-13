@@ -59,6 +59,11 @@ function makeChain(terminal: "endpoints" | "deliveries" | "updates") {
     if (terminal === "deliveries") deliveryInserts.push(row);
     return Promise.resolve({ error: null });
   });
+  // WH-P3-006: keyed delivery rows are persisted with upsert-on-idempotency-key.
+  chain.upsert = jest.fn((row: Record<string, unknown>) => {
+    if (terminal === "deliveries") deliveryInserts.push(row);
+    return Promise.resolve({ error: null });
+  });
   chain.then = (
     onFulfilled: (v: unknown) => unknown,
     onRejected: (e: unknown) => unknown,
@@ -184,5 +189,27 @@ describe("dispatchWebhook outbound idempotency", () => {
     expect(deliveryInserts[0].retry_count).toBe(1);
     expect(deliveryInserts[0].dead_letter).toBe(false);
     expect(recordWebhookDelivery).toHaveBeenCalledWith("success", "ticket.created");
+  });
+
+  it("fails closed when a configured signing secret cannot be decrypted [WH-P2-008]", async () => {
+    const { recordWebhookDelivery, recordWebhookDeadLetter } = await import("../lib/metrics");
+    (recordWebhookDelivery as jest.Mock).mockClear();
+    (recordWebhookDeadLetter as jest.Mock).mockClear();
+
+    // v1 payload with no FIELD_ENCRYPTION_KEY in this suite's env mock: the
+    // dispatcher must not send an unsigned delivery.
+    (endpoint as { secret: string | null }).secret = "v1:AAAA:BBBB:CCCC";
+    try {
+      await dispatchWebhook("ticket.created", "org-1", data);
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      const deliveryRow = deliveryInserts.find((r) => "status" in r);
+      expect(deliveryRow?.status).toBe("failed");
+      expect(deliveryRow?.dead_letter).toBe(true);
+      expect(recordWebhookDelivery).toHaveBeenCalledWith("failed", "ticket.created");
+      expect(recordWebhookDeadLetter).toHaveBeenCalledWith("ticket.created");
+    } finally {
+      (endpoint as { secret: string | null }).secret = null;
+    }
   });
 });

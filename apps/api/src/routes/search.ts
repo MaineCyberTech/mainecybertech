@@ -6,28 +6,57 @@ import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { requireOrgAccess } from "../middleware/org-access";
 import { logAuditEvent } from "../services/audit";
+import { filterReadableDocuments } from "../lib/document-visibility";
 import { sanitizeSearchTerm } from "../lib/search";
 import { queryInt } from "../lib/query";
 import { isCrossTenantKey, roleKeyOf } from "../lib/roles";
 import { recordSearchQuery } from "../lib/metrics";
+import { rateLimitSearch } from "../middleware/rate-limit";
 
 const router: ReturnType<typeof Router> = Router();
 
-router.use(requireAuth, requireAdmin, requireOrgAccess);
+// SEARCH-P2-007: the admin typeahead hits this route on every debounced
+// keystroke; bound the burst before the auth/database work.
+router.use(rateLimitSearch);
+
+// Order matters: requireOrgAccess must resolve the request's tenant scope
+// (`req.orgScope` / `req.orgId`) before requireAdmin runs, so the org-pinned
+// admin check applies and a plain tenant `admin` cannot widen scope with
+// another tenant's `?organization_id` (SEARCH-P2-009). Same order as
+// audit.ts / bulk.ts.
+router.use(requireAuth, requireOrgAccess, requireAdmin);
 
 router.get("/", async (req, res, next) => {
   try {
     const q = sanitizeSearchTerm(req.query.q);
+    // SEARCH-P2-004: page size is caller-tunable (default 5, hard cap 25).
+    const limit = Math.min(25, Math.max(1, queryInt(req.query.limit, 5)));
     if (!q || q.length < 2) {
-      res.json(success({ users: [], organizations: [], tickets: [], projects: [], documents: [] }));
+      // Same shape as a populated response (counts + limit) so the OpenAPI
+      // contract and SDK types hold for empty queries too.
+      res.json(
+        success({
+          users: [],
+          organizations: [],
+          tickets: [],
+          projects: [],
+          documents: [],
+          counts: { users: 0, organizations: 0, tickets: 0, projects: 0, documents: 0 },
+          limit,
+        }),
+      );
       return;
     }
 
     const supabase = getSupabaseAdmin();
-    // SEARCH-P2-004: page size is caller-tunable (default 5, hard cap 25).
-    const limit = Math.min(25, Math.max(1, queryInt(req.query.limit, 5)));
     const searchTerm = `${q}%`;
     const wildcardTerm = `%${q}%`;
+    // SEARCH-P2-006: tickets/projects/documents carry a stored generated
+    // `search_vector` (GIN-indexed). OR a `wfts` (websearch_to_tsquery) branch
+    // onto the ILIKE predicates: `wfts` never raises on arbitrary user text,
+    // and the sanitizer already stripped the PostgREST `.or()` grammar
+    // characters (`,()."%\*`), so the term cannot reshape the filter.
+    const ftsTerm = `search_vector.wfts(english).${q}`;
 
     // Resolve the caller's own approved memberships (with role keys) so we can
     // scope every entity to their tenants and decide whether they are a true
@@ -113,7 +142,7 @@ router.get("/", async (req, res, next) => {
     let ticketQuery = supabase
       .from("tickets")
       .select("id, title, status, priority, organization_id", { count: "exact" })
-      .or(`title.ilike.${wildcardTerm},description.ilike.${wildcardTerm}`)
+      .or(`title.ilike.${wildcardTerm},description.ilike.${wildcardTerm},${ftsTerm}`)
       .limit(limit);
     if (!allTenants) {
       ticketQuery = ticketQuery.in(
@@ -125,7 +154,7 @@ router.get("/", async (req, res, next) => {
     let projectQuery = supabase
       .from("projects")
       .select("id, name, status, priority, organization_id", { count: "exact" })
-      .or(`name.ilike.${wildcardTerm},description.ilike.${wildcardTerm}`)
+      .or(`name.ilike.${wildcardTerm},description.ilike.${wildcardTerm},${ftsTerm}`)
       .limit(limit);
     if (!allTenants) {
       projectQuery = projectQuery.in(
@@ -134,11 +163,20 @@ router.get("/", async (req, res, next) => {
       );
     }
 
+    // SEARCH-P2-008: the service-role client bypasses RLS, so the documents
+    // query must be filtered by the `can_read_document` visibility model in
+    // code. Unreadable rows are dropped after the query, so fetch a bounded
+    // window (5x the page, capped) and trim to the caller's page size once the
+    // readable subset is known.
+    const documentFetchLimit = Math.min(100, limit * 5);
+
     let documentQuery = supabase
       .from("documents")
-      .select("id, name, mime_type, visibility, organization_id", { count: "exact" })
-      .or(`name.ilike.${wildcardTerm},mime_type.ilike.${wildcardTerm}`)
-      .limit(limit);
+      .select("id, name, mime_type, visibility, organization_id, uploaded_by", {
+        count: "exact",
+      })
+      .or(`name.ilike.${wildcardTerm},mime_type.ilike.${wildcardTerm},${ftsTerm}`)
+      .limit(documentFetchLimit);
     if (!allTenants) {
       documentQuery = documentQuery.in(
         "organization_id",
@@ -182,6 +220,18 @@ router.get("/", async (req, res, next) => {
     if (pErr) throw new AppError("DB_ERROR", pErr.message, 500);
     if (dErr) throw new AppError("DB_ERROR", dErr.message, 500);
 
+    // SEARCH-P2-008: drop private/internal documents the caller may not read
+    // (the service-role client bypasses RLS). Super admins short-circuit inside
+    // the helper — `is_super_admin()` makes every document readable, so their
+    // exact DB count stays meaningful; for everyone else the reported count is
+    // the readable subset of the fetched window, never the unfiltered total.
+    const readableDocuments = (
+      await filterReadableDocuments(req.authUser!.userId, documents ?? [], {
+        orgIds: allTenants ? undefined : scopedOrgIds,
+        isSuperAdmin: callerIsSuperAdmin,
+      })
+    ).slice(0, limit);
+
     // SEARCH-P2-001: never persist the raw search term. Operators may search
     // for customer emails/phones/keywords, and the audit redactor only matches
     // on key names, so a plaintext `query` would live in `audit_logs` for the
@@ -205,7 +255,7 @@ router.get("/", async (req, res, next) => {
           organizations: organizations?.length ?? 0,
           tickets: tickets?.length ?? 0,
           projects: projects?.length ?? 0,
-          documents: documents?.length ?? 0,
+          documents: readableDocuments.length,
         },
       },
     });
@@ -218,14 +268,18 @@ router.get("/", async (req, res, next) => {
         organizations: organizations ?? [],
         tickets: tickets ?? [],
         projects: projects ?? [],
-        documents: documents ?? [],
+        documents: readableDocuments,
         // SEARCH-P2-004: per-entity totals + the applied page size (additive).
+        // SEARCH-P2-008: the documents total reflects only rows the caller may
+        // read, so an admin cannot infer hidden private/internal documents.
         counts: {
           users: uCount ?? 0,
           organizations: oCount ?? 0,
           tickets: tCount ?? 0,
           projects: pCount ?? 0,
-          documents: dCount ?? 0,
+          documents: callerIsSuperAdmin
+            ? (dCount ?? readableDocuments.length)
+            : readableDocuments.length,
         },
         limit,
       }),

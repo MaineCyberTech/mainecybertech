@@ -64,6 +64,11 @@ function makeChain(terminal: "endpoints" | "other") {
     deliveryInserts.push(row);
     return Promise.resolve({ error: null });
   });
+  // WH-P3-006: delivery rows are persisted with upsert-on-idempotency-key.
+  chain.upsert = jest.fn((row: Record<string, unknown>) => {
+    deliveryInserts.push(row);
+    return Promise.resolve({ error: null });
+  });
   chain.then = (onFulfilled: (v: unknown) => unknown, onRejected: (e: unknown) => unknown) =>
     Promise.resolve({ data: terminal === "endpoints" ? [endpoint] : null, error: null }).then(
       onFulfilled,
@@ -164,5 +169,59 @@ describe("worker webhookDispatcher idempotency", () => {
       idempotencyKey: "wh-out-meter-fail",
     });
     expect(recordWebhookDelivery).toHaveBeenCalledWith("failed", "ticket.created");
+  });
+
+  it("persists the full timestamped envelope so a retry replays it verbatim [WH-P3-005]", async () => {
+    fetchMock.mockResolvedValue({
+      status: 500,
+      text: jest.fn().mockResolvedValue("boom"),
+    });
+
+    await webhookDispatcher({
+      event: "ticket.created",
+      organizationId: "org-1",
+      data,
+      idempotencyKey: "wh-out-envelope",
+    });
+
+    expect(deliveryInserts).toHaveLength(1);
+    const stored = deliveryInserts[0].request_body as {
+      event: string;
+      timestamp: string;
+      data: unknown;
+    };
+    const [, init] = fetchMock.mock.calls[0] as [string, { body: string }];
+    expect(stored.timestamp).toEqual(expect.any(String));
+    expect(JSON.stringify(stored)).toBe(init.body);
+  });
+
+  it("records the successful attempt after a failed one once the claim is released [WH-P3-006]", async () => {
+    const payload = {
+      event: "ticket.created",
+      organizationId: "org-1",
+      data,
+      idempotencyKey: "wh-out-retry-record",
+    };
+
+    fetchMock.mockResolvedValueOnce({
+      status: 500,
+      text: jest.fn().mockResolvedValue("boom"),
+    });
+    await webhookDispatcher(payload);
+    // The failure releases the claim so a later dispatch of the same event
+    // can attempt delivery again.
+    expect(deliveryInserts).toHaveLength(1);
+
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      text: jest.fn().mockResolvedValue("ok"),
+    });
+    await webhookDispatcher(payload);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(deliveryInserts).toHaveLength(2);
+    const key = `${payload.idempotencyKey}:${endpoint.id}`;
+    expect(deliveryInserts[1].idempotency_key).toBe(key);
+    expect(deliveryInserts[1].status).toBe("success");
   });
 });

@@ -31,9 +31,13 @@ create index if not exists idx_vendor_contracts_end_date on vendor_contracts(end
 create index if not exists idx_vendor_contracts_status on vendor_contracts(status);
 
 alter table vendor_contracts enable row level security;
+drop policy if exists "vendor_contracts_select_org" on vendor_contracts;
 create policy "vendor_contracts_select_org" on vendor_contracts for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "vendor_contracts_insert_auth" on vendor_contracts;
 create policy "vendor_contracts_insert_auth" on vendor_contracts for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "vendor_contracts_update_org" on vendor_contracts;
 create policy "vendor_contracts_update_org" on vendor_contracts for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "vendor_contracts_delete_admin" on vendor_contracts;
 create policy "vendor_contracts_delete_admin" on vendor_contracts for delete using (exists (select 1 from memberships m join roles r on m.role_id = r.id where m.user_id = auth.uid() and m.organization_id = vendor_contracts.organization_id and r.key in ('super_admin', 'admin')));
 
 create table if not exists vendor_contacts (
@@ -59,9 +63,13 @@ create index if not exists idx_vendor_contacts_org on vendor_contacts(organizati
 create index if not exists idx_vendor_contacts_vendor on vendor_contacts(vendor_name);
 
 alter table vendor_contacts enable row level security;
+drop policy if exists "vendor_contacts_select_org" on vendor_contacts;
 create policy "vendor_contacts_select_org" on vendor_contacts for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "vendor_contacts_insert_auth" on vendor_contacts;
 create policy "vendor_contacts_insert_auth" on vendor_contacts for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "vendor_contacts_update_org" on vendor_contacts;
 create policy "vendor_contacts_update_org" on vendor_contacts for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "vendor_contacts_delete_admin" on vendor_contacts;
 create policy "vendor_contacts_delete_admin" on vendor_contacts for delete using (exists (select 1 from memberships m join roles r on m.role_id = r.id where m.user_id = auth.uid() and m.organization_id = vendor_contacts.organization_id and r.key in ('super_admin', 'admin')));
 
 commit;

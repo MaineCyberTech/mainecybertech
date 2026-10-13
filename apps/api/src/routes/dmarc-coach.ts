@@ -7,6 +7,8 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { queryInt } from "../lib/query";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -40,7 +42,7 @@ router.get("/", async (req, res, next) => {
     const offset = (page - 1) * limit;
     const q = supabase
       .from("dmarc_analyses")
-      .select("*", { count: "exact" })
+      .select("*", { count: listCountMode(req.query) })
       .eq("organization_id", req.query.organization_id as string)
       .order("created_at", { ascending: false });
     const { data, error, count } = await q.range(offset, offset + limit - 1);
@@ -128,6 +130,7 @@ router.patch("/:id", requirePermission("dmarc-coach", "edit"), async (req, res, 
 
 router.delete("/:id", requirePermission("dmarc-coach", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "dmarc-coach", "write");
     const { data, error } = await supabase
       .from("dmarc_analyses")

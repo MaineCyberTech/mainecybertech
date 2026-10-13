@@ -1,7 +1,7 @@
 import Redis from "ioredis";
 import { getEnv, resolveRedisUrl } from "../config/env";
 import { logger } from "./logger";
-import { recordIdempotencyKeyHit } from "./metrics";
+import { recordIdempotencyKeyHit, recordRedisFailure } from "./metrics";
 
 let redisClient: Redis | null = null;
 let memoryMutex: Promise<void> | null = null;
@@ -69,6 +69,9 @@ export async function checkIdempotencyKey(key: string): Promise<string | null> {
       const value = await redis.get(prefixedKey);
       if (value) return value;
     } catch (err: unknown) {
+      // ARCH-P2-005: meter the in-memory fallback so the degradation is
+      // alertable (portal_redis_failures_total), not just a warn log.
+      recordRedisFailure("idempotency", "get");
       logger.warn(
         { error: String(err) },
         "Redis checkIdempotencyKey failed, falling back to in-memory",
@@ -110,6 +113,7 @@ export async function claimIdempotencyKey(
       if (result !== "OK") recordIdempotencyKeyHit();
       return result === "OK";
     } catch (err: unknown) {
+      recordRedisFailure("idempotency", "claim");
       logger.warn(
         { error: String(err) },
         "Redis claimIdempotencyKey failed, falling back to in-memory",
@@ -144,6 +148,7 @@ export async function storeIdempotencyKey(key: string, value: string): Promise<v
       await redis.setex(prefixedKey, IDEMPOTENCY_TTL_SECONDS, value);
       return;
     } catch (err: unknown) {
+      recordRedisFailure("idempotency", "store");
       logger.warn(
         { error: String(err) },
         "Redis storeIdempotencyKey failed, falling back to in-memory",
@@ -172,6 +177,7 @@ export async function deleteIdempotencyKey(key: string): Promise<void> {
       await redis.del(prefixedKey);
       return;
     } catch (err: unknown) {
+      recordRedisFailure("idempotency", "delete");
       logger.warn({ error: String(err) }, "Redis deleteIdempotencyKey failed");
     }
   }
@@ -179,6 +185,50 @@ export async function deleteIdempotencyKey(key: string): Promise<void> {
   await acquireMemoryLock();
   try {
     IN_MEMORY_FALLBACK.delete(key);
+  } finally {
+    // lock is released by the promise chain
+  }
+}
+
+/**
+ * NOTIF-P3-007: atomically increment a counter key (Redis INCR + EXPIRE, or
+ * the in-memory fallback) and return the post-increment value. Used by the
+ * per-recipient email throttle; unlike `claimIdempotencyKey` it never rejects
+ * the call, the caller compares the returned count against its ceiling.
+ */
+export async function incrementIdempotencyCounter(
+  key: string,
+  ttlSeconds: number,
+): Promise<number> {
+  const redis = getRedisClient();
+  const prefixedKey = `idempotency:${key}`;
+
+  if (redis) {
+    try {
+      const count = await redis.incr(prefixedKey);
+      if (count === 1) await redis.expire(prefixedKey, ttlSeconds);
+      return count;
+    } catch (err: unknown) {
+      recordRedisFailure("idempotency", "incr");
+      logger.warn(
+        { error: String(err) },
+        "Redis incrementIdempotencyCounter failed, falling back to in-memory",
+      );
+    }
+  }
+
+  await acquireMemoryLock();
+  try {
+    const now = Date.now();
+    const entry = IN_MEMORY_FALLBACK.get(key);
+    if (!entry || entry.expiresAt <= now) {
+      evictInMemoryIfNeeded();
+      IN_MEMORY_FALLBACK.set(key, { value: "1", expiresAt: now + ttlSeconds * 1000 });
+      return 1;
+    }
+    const next = Number(entry.value) + 1;
+    entry.value = String(Number.isFinite(next) ? next : 1);
+    return Number(entry.value);
   } finally {
     // lock is released by the promise chain
   }

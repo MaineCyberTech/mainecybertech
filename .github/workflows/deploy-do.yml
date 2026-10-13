@@ -58,18 +58,37 @@ jobs:
       test_accounts_enabled: ${{ steps.env.outputs.test_accounts_enabled }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Restrict prod dispatch to the main branch
+        # BP-P2-006: a manual dispatch with deploy_target=prod must come from
+        # the develop -> main promotion path, not an arbitrary feature branch.
+        # Push deploys to main are unaffected (they always target prod).
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'prod'
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::deploy_target=prod can only be dispatched from the main branch (got ${GITHUB_REF}). Promote develop -> main first."
+            exit 1
+          fi
       - name: Validate rollback SHA
         if: github.event.inputs.rollback_sha != ''
+        env:
+          # CI-P3-013: never interpolate dispatch inputs directly into a run
+          # script — pass them through env so shell metacharacters in the input
+          # cannot inject commands before validation.
+          ROLLBACK_SHA_INPUT: ${{ github.event.inputs.rollback_sha }}
         run: |
           # The value is used unquoted in a remote root shell; only allow hex.
-          if ! printf '%s' "${{ github.event.inputs.rollback_sha }}" | grep -Eq '^[0-9a-f]{7,40}$'; then
+          if ! printf '%s' "$ROLLBACK_SHA_INPUT" | grep -Eq '^[0-9a-f]{7,40}$'; then
             echo "::error::rollback_sha must be 7-40 lowercase hex characters"
             exit 1
           fi
       - name: Determine environment
         id: env
+        env:
+          # CI-P3-013: env indirection for dispatch inputs (see above).
+          REF_NAME_INPUT: ${{ github.ref_name }}
+          DEPLOY_TARGET_INPUT: ${{ github.event.inputs.deploy_target }}
         run: |
-          if [ "${{ github.ref_name }}" = "main" ] || [ "${{ github.event.inputs.deploy_target }}" = "prod" ]; then
+          if [ "$REF_NAME_INPUT" = "main" ] || [ "$DEPLOY_TARGET_INPUT" = "prod" ]; then
             APP_DOMAIN=app.mainecybertech.com
             API_DOMAIN=api.mainecybertech.com
             WWW_DOMAIN=www.mainecybertech.com
@@ -231,6 +250,13 @@ jobs:
           format: cyclonedx
           output: image-sbom-mct-api.cdx.json
           scanners: vuln
+      - name: Validate mct-api image SBOM (SBOM-P3-005)
+        # Floor + digest-binding check before attestation: an empty or partial
+        # Trivy output must never become the durable record for a digest.
+        run: |
+          node scripts/validate-sbom.mjs --image \
+            --digest "${{ steps.build-api.outputs.digest }}" \
+            image-sbom-mct-api.cdx.json
       - name: Attest mct-api SBOM (SUPPLY-P3-001)
         # Cryptographically binds the SBOM to the deployed image digest and pushes
         # it to the registry as an OCI referrer, so it is durable and not subject
@@ -295,6 +321,12 @@ jobs:
           format: cyclonedx
           output: image-sbom-mct-worker.cdx.json
           scanners: vuln
+      - name: Validate mct-worker image SBOM (SBOM-P3-005)
+        # Floor + digest-binding check before attestation (see build-api).
+        run: |
+          node scripts/validate-sbom.mjs --image \
+            --digest "${{ steps.build-worker.outputs.digest }}" \
+            image-sbom-mct-worker.cdx.json
       - name: Attest mct-worker SBOM (SUPPLY-P3-001)
         # Durable, digest-bound SBOM attestation (see build-api).
         uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
@@ -336,6 +368,7 @@ jobs:
             NEXT_PUBLIC_BUILD_TIME=${{ github.event.head_commit.timestamp || github.event.pusher.date || '' }}
             NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED=${{ needs.setup.outputs.test_accounts_enabled }}
             NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN || secrets.SENTRY_DSN }}
           tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -364,6 +397,12 @@ jobs:
           format: cyclonedx
           output: image-sbom-mct-web.cdx.json
           scanners: vuln
+      - name: Validate mct-web image SBOM (SBOM-P3-005)
+        # Floor + digest-binding check before attestation (see build-api).
+        run: |
+          node scripts/validate-sbom.mjs --image \
+            --digest "${{ steps.build-web.outputs.digest }}" \
+            image-sbom-mct-web.cdx.json
       - name: Attest mct-web SBOM (SUPPLY-P3-001)
         # Durable, digest-bound SBOM attestation (see build-api).
         uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
@@ -396,6 +435,13 @@ jobs:
     if: ${{ always() && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # SBOM-P2-011: the digests resolved and verified here are handed to the
+    # deploy job, which pulls/runs exactly these digests instead of the
+    # mutable tag.
+    outputs:
+      api_digest: ${{ steps.verify.outputs.api_digest }}
+      worker_digest: ${{ steps.verify.outputs.worker_digest }}
+      web_digest: ${{ steps.verify.outputs.web_digest }}
     permissions:
       contents: read
       packages: read
@@ -419,7 +465,8 @@ jobs:
         # `docker buildx imagetools inspect` resolves the pushed tag to the
         # immutable digest the attestation is bound to.
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-      - name: Verify build provenance for each image (fail closed)
+      - name: Verify build provenance + SBOM attestations for each image (fail closed)
+        id: verify
         env:
           # gh needs a token for the attestation API; without it the CLI exits
           # 4 with "set the GH_TOKEN environment variable" before verifying
@@ -435,6 +482,39 @@ jobs:
           ROLLBACK_SHA: ${{ github.event.inputs.rollback_sha }}
         run: |
           set -euo pipefail
+
+          # SBOM-P2-011: verify BOTH predicates this pipeline attests - SLSA
+          # build provenance AND the CycloneDX SBOM - and publish the resolved
+          # digest as a job output. The deploy job pulls/runs exactly that
+          # digest, so re-pointing the mutable tag after this check cannot
+          # substitute the artifact, and the SBOM predicate can no longer be
+          # absent while verification still passes. (gh defaults to the
+          # provenance predicate; it is passed explicitly so the pair is
+          # self-documenting.)
+          verify_image() {
+            local img="$1" digest="$2"
+            gh attestation verify "oci://${GHCR_PREFIX}/${img}@${digest}" \
+              --repo "$REPO_SLUG" \
+              --signer-workflow "$REPO_SLUG/.github/workflows/deploy-do.yml" \
+              --source-digest "$IMAGE_TAG" \
+              --predicate-type https://slsa.dev/provenance/v1
+            gh attestation verify "oci://${GHCR_PREFIX}/${img}@${digest}" \
+              --repo "$REPO_SLUG" \
+              --signer-workflow "$REPO_SLUG/.github/workflows/deploy-do.yml" \
+              --source-digest "$IMAGE_TAG" \
+              --predicate-type https://cyclonedx.org/bom
+            echo "Attestations VERIFIED (provenance + CycloneDX SBOM) for ${img}@${digest}"
+          }
+
+          publish_digest() {
+            local img="$1" digest="$2"
+            case "$img" in
+              mct-api)    echo "api_digest=$digest" >> "$GITHUB_OUTPUT" ;;
+              mct-worker) echo "worker_digest=$digest" >> "$GITHUB_OUTPUT" ;;
+              mct-web)    echo "web_digest=$digest" >> "$GITHUB_OUTPUT" ;;
+            esac
+          }
+
           if [ -n "${ROLLBACK_SHA:-}" ]; then
             # ------------------------------------------------------------------
             # ROLLBACK PATH (fail closed, with an explicit allow-list)
@@ -481,14 +561,12 @@ jobs:
               if [ -n "$ALLOW" ] && [ "$ALLOW" = "$DIGEST" ]; then
                 echo "::warning::Legacy rollback image allow-listed (no attestation expected): $img@$DIGEST"
                 echo "### Legacy rollback (allow-listed, unverified): $img@$DIGEST" >> "$GITHUB_STEP_SUMMARY"
+                publish_digest "$img" "$DIGEST"
                 continue
               fi
               # Fail closed. `set -e` applies: a non-zero verify aborts the job.
-              gh attestation verify "oci://${GHCR_PREFIX}/${img}@${DIGEST}" \
-                --repo "$REPO_SLUG" \
-                --signer-workflow "$REPO_SLUG/.github/workflows/deploy-do.yml" \
-                --source-digest "$IMAGE_TAG"
-              echo "Attestation VERIFIED for ${img}@${DIGEST}"
+              verify_image "$img" "$DIGEST"
+              publish_digest "$img" "$DIGEST"
             done
           else
             # ------------------------------------------------------------------
@@ -506,15 +584,14 @@ jobs:
                 exit 1
               fi
               echo "Resolved $REF -> $DIGEST"
-              gh attestation verify "oci://${GHCR_PREFIX}/${img}@${DIGEST}" \
-                --repo "$REPO_SLUG" \
-                --signer-workflow "$REPO_SLUG/.github/workflows/deploy-do.yml" \
-                --source-digest "$IMAGE_TAG"
-              echo "Attestation VERIFIED for ${img}@${DIGEST}"
+              verify_image "$img" "$DIGEST"
+              publish_digest "$img" "$DIGEST"
             done
           fi
 
-  # validate: always runs (test + lint + typecheck) for every deploy
+  # validate: always runs (test + lint + typecheck) for every deploy.
+  # Reusable-workflow calls cannot declare timeout-minutes (GitHub limitation);
+  # the callee's jobs carry their own timeouts (validate.yml).
   validate:
     needs: [setup]
     uses: ./.github/workflows/validate.yml
@@ -582,11 +659,25 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          # OBS-P3-004: release marker for API/worker (and web server-side)
+          # Sentry events. Same expression as the workflow-level IMAGE_TAG, so
+          # the marker matches the image actually running (including a rollback
+          # dispatch, where it is the rolled-back commit).
+          SENTRY_RELEASE: ${{ github.event.inputs.rollback_sha || github.sha }}
+          # OBS-P2-011: the web app reads NEXT_PUBLIC_SENTRY_DSN (the same DSN,
+          # public by design), not SENTRY_DSN. Forward it for the web service
+          # env; the build arg comes from the same expression in build-web.
+          NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN || secrets.SENTRY_DSN }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          # Web Push (NOTIF-P2-001). Optional: unset/empty keeps the channel
+          # disabled (no-op), so a deploy without the secrets still succeeds.
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
@@ -612,6 +703,8 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           FIELD_ENCRYPTION_KEY: ${{ secrets.FIELD_ENCRYPTION_KEY }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          MALWARE_SCANNER_URL: ${{ secrets.MALWARE_SCANNER_URL }}
+          MALWARE_SCANNER_API_KEY: ${{ secrets.MALWARE_SCANNER_API_KEY }}
           RLS_READS_ENABLED: ${{ secrets.RLS_READS_ENABLED }}
           RLS_WRITES_ENABLED: ${{ secrets.RLS_WRITES_ENABLED }}
           # IR-P0-003 alerting path. These are the same variable names the
@@ -644,7 +737,7 @@ jobs:
           # Secrets are forwarded as environment variables rather than being
           # interpolated into the remote script, so a value containing $,
           # backticks or quotes cannot execute on the droplet.
-          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,M365_CLIENT_STATE,JIRA_WEBHOOK_SECRET,JSM_WEBHOOK_SECRET,METRICS_TOKEN,MFA_ENFORCEMENT_ENABLED,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,TURNSTILE_SECRET_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,ALERTMANAGER_WATCHDOG_WEBHOOK_URL,ALERTMANAGER_CRITICAL_WEBHOOK_URL,ALERTMANAGER_DEFAULT_WEBHOOK_URL,ALERTMANAGER_SLACK_API_URL,ALERTMANAGER_SLACK_CHANNEL,ALERTMANAGER_WEBHOOK_USER,ALERTMANAGER_WEBHOOK_PASS,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
+          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SENTRY_RELEASE,NEXT_PUBLIC_SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,VAPID_SUBJECT,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,M365_CLIENT_STATE,JIRA_WEBHOOK_SECRET,JSM_WEBHOOK_SECRET,METRICS_TOKEN,MFA_ENFORCEMENT_ENABLED,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,TURNSTILE_SECRET_KEY,MALWARE_SCANNER_URL,MALWARE_SCANNER_API_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,ALERTMANAGER_WATCHDOG_WEBHOOK_URL,ALERTMANAGER_CRITICAL_WEBHOOK_URL,ALERTMANAGER_DEFAULT_WEBHOOK_URL,ALERTMANAGER_SLACK_API_URL,ALERTMANAGER_SLACK_CHANNEL,ALERTMANAGER_WEBHOOK_USER,ALERTMANAGER_WEBHOOK_PASS,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
           script: |
             set -e
             timeout 60 cloud-init status --wait 2>/dev/null || true
@@ -674,11 +767,16 @@ jobs:
               printf 'STRIPE_SECRET_KEY=%s\n' "$STRIPE_SECRET_KEY"
               printf 'STRIPE_WEBHOOK_SECRET=%s\n' "$STRIPE_WEBHOOK_SECRET"
               printf 'SENTRY_DSN=%s\n' "$SENTRY_DSN"
+              printf 'SENTRY_RELEASE=%s\n' "$SENTRY_RELEASE"
+              printf 'NEXT_PUBLIC_SENTRY_DSN=%s\n' "$NEXT_PUBLIC_SENTRY_DSN"
               printf 'SMTP_HOST=%s\n' "$SMTP_HOST"
               printf 'SMTP_PORT=%s\n' "$SMTP_PORT"
               printf 'SMTP_USER=%s\n' "$SMTP_USER"
               printf 'SMTP_PASS=%s\n' "$SMTP_PASS"
               printf 'EMAIL_FROM=%s\n' "$EMAIL_FROM"
+              printf 'VAPID_PUBLIC_KEY=%s\n' "$VAPID_PUBLIC_KEY"
+              printf 'VAPID_PRIVATE_KEY=%s\n' "$VAPID_PRIVATE_KEY"
+              printf 'VAPID_SUBJECT=%s\n' "$VAPID_SUBJECT"
               printf 'JIRA_BASE_URL=%s\n' "$JIRA_BASE_URL"
               printf 'JIRA_EMAIL=%s\n' "$JIRA_EMAIL"
               printf 'JIRA_API_TOKEN=%s\n' "$JIRA_API_TOKEN"
@@ -704,6 +802,8 @@ jobs:
               printf 'REDIS_PASSWORD=%s\n' "$REDIS_PASSWORD"
               printf 'FIELD_ENCRYPTION_KEY=%s\n' "$FIELD_ENCRYPTION_KEY"
               printf 'TURNSTILE_SECRET_KEY=%s\n' "$TURNSTILE_SECRET_KEY"
+              printf 'MALWARE_SCANNER_URL=%s\n' "$MALWARE_SCANNER_URL"
+              printf 'MALWARE_SCANNER_API_KEY=%s\n' "$MALWARE_SCANNER_API_KEY"
               printf 'RLS_READS_ENABLED=%s\n' "$RLS_READS_ENABLED"
               printf 'RLS_WRITES_ENABLED=%s\n' "$RLS_WRITES_ENABLED"
               printf 'ALERTMANAGER_WATCHDOG_WEBHOOK_URL=%s\n' "$ALERTMANAGER_WATCHDOG_WEBHOOK_URL"
@@ -715,6 +815,23 @@ jobs:
               printf 'ALERTMANAGER_WEBHOOK_PASS=%s\n' "$ALERTMANAGER_WEBHOOK_PASS"
             } >> /opt/mct-portal/.env
             chmod 600 /opt/mct-portal/.env
+            # OBS-P2-013 fail-closed guard: an empty METRICS_TOKEN makes the API
+            # /metrics endpoint 404 and the authenticated Prometheus scrape fail,
+            # which false-fires MCTServiceDown and blinds monitoring. Production
+            # must not ship without the token, so fail the deploy rather than
+            # ship a permanently-down scrape; dev warns so iteration is not
+            # blocked. Mirrors the watchdog guard below. Checked BEFORE the
+            # credentials file is written so a failed prod deploy cannot clobber
+            # the running stack's token file (Prometheus re-reads it per scrape).
+            if [ -z "${METRICS_TOKEN:-}" ]; then
+              if [ "${{ needs.setup.outputs.name }}" = "prod" ]; then
+                echo "ERROR: METRICS_TOKEN is empty." >&2
+                echo "OBS-P2-013 requires a non-empty METRICS_TOKEN: the API /metrics gate returns 404 without it, the Prometheus scrape fails, and MCTServiceDown false-fires." >&2
+                echo "Set the repository/environment secret and re-run the deploy." >&2
+                exit 1
+              fi
+              echo "WARNING: METRICS_TOKEN is empty in the '${{ needs.setup.outputs.name }}' environment — the API /metrics scrape will 404 and MCTServiceDown will false-fire. Production deploys will fail until it is set." >&2
+            fi
             # Prometheus credentials_file for the authenticated mct-api scrape.
             # Written HERE because METRICS_TOKEN is forwarded to this step's
             # environment (the deploy step's envs list does not include it, so
@@ -760,16 +877,38 @@ jobs:
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           fingerprint: ${{ secrets.DO_SSH_HOST_FINGERPRINT }}
           command_timeout: 45m
-          envs: CF_ORIGIN_CERT,CF_ORIGIN_KEY,GHCR_TOKEN,GHCR_ACTOR
+          envs: CF_ORIGIN_CERT,CF_ORIGIN_KEY,GHCR_TOKEN,GHCR_ACTOR,API_DIGEST,WORKER_DIGEST,WEB_DIGEST,IMAGE_TAG
           script: |
             set -e
+            # The compose file's tag fallback (${IMAGE_TAG:?}) is interpolated
+            # even when MCT_*_IMAGE digest refs are set, so the remote shell
+            # must always have IMAGE_TAG (SBOM-P2-011 regression fix).
+            export IMAGE_TAG="${IMAGE_TAG:?IMAGE_TAG must be set}"
             printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
             mkdir -p /opt/mct-portal/certs
             printf '%s\n' "$CF_ORIGIN_CERT" > /opt/mct-portal/certs/fullchain.pem
             printf '%s\n' "$CF_ORIGIN_KEY" > /opt/mct-portal/certs/privkey.pem
             chmod 600 /opt/mct-portal/certs/privkey.pem
+            # SBOM-P2-011: pull and run the exact digests that
+            # verify-attestations resolved and attestation-verified, never the
+            # mutable tag. A registry writer re-pointing the tag after
+            # verification cannot substitute the artifact, and the tag is only
+            # ever a fallback for manual operator runs (see the compose file).
+            if [ -z "${API_DIGEST:-}" ] || [ -z "${WORKER_DIGEST:-}" ] || [ -z "${WEB_DIGEST:-}" ]; then
+              echo "ERROR: resolved image digests are missing (verify-attestations outputs)." >&2
+              echo "Refusing to deploy by mutable tag; re-run the workflow." >&2
+              exit 1
+            fi
+            export MCT_API_IMAGE="${{ needs.setup.outputs.ghcr_prefix }}/mct-api@${API_DIGEST}"
+            export MCT_WORKER_IMAGE="${{ needs.setup.outputs.ghcr_prefix }}/mct-worker@${WORKER_DIGEST}"
+            export MCT_WEB_IMAGE="${{ needs.setup.outputs.ghcr_prefix }}/mct-web@${WEB_DIGEST}"
+            echo "Deploying pinned images:"
+            echo "  ${MCT_API_IMAGE}"
+            echo "  ${MCT_WORKER_IMAGE}"
+            echo "  ${MCT_WEB_IMAGE}"
             # NOTE: no `docker image prune` here — old mct-* images are still in
-            # use until compose down/up, so pruning pre-pull would remove nothing.
+            # use until the rolling recreate below replaces them, so pruning
+            # pre-pull would remove nothing.
             # Retry pulls — the droplet's connection to GHCR can reset mid-pull.
             pull_retry() {
               local img="$1" attempt=1
@@ -783,9 +922,9 @@ jobs:
                 sleep 10
               done
             }
-            pull_retry ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
-            pull_retry ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
-            pull_retry ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
+            pull_retry "${MCT_API_IMAGE}"
+            pull_retry "${MCT_WORKER_IMAGE}"
+            pull_retry "${MCT_WEB_IMAGE}"
             CADDYFILE="infra/digitalocean/Caddyfile.${{ needs.setup.outputs.name }}"
             [ -f "/opt/mct-portal/repo/$CADDYFILE" ] || CADDYFILE="infra/digitalocean/Caddyfile"
             if [ -s "/opt/mct-portal/certs/fullchain.pem" ] && [ -s "/opt/mct-portal/certs/privkey.pem" ]; then
@@ -803,25 +942,102 @@ jobs:
             # creates a directory at that path and the container fails to start
             # (or, worse, the alerting path is silently absent).
             cp /opt/mct-portal/repo/infra/digitalocean/alertmanager.tmpl.yml /opt/mct-portal/alertmanager.tmpl.yml
+            # OBS-P3-005: the renderer the alertmanager entrypoint runs is also
+            # a bind mount; it must exist or the container cannot render the
+            # template.
+            cp /opt/mct-portal/repo/infra/digitalocean/render-alertmanager.awk /opt/mct-portal/render-alertmanager.awk
             cd /opt/mct-portal
+            # OBS-P2-015: replacing a container destroys its json-file logs, so
+            # incident evidence vanished on every deploy. Snapshot the running
+            # stack's logs (gzipped, last 7 kept) before the rolling recreate.
+            # Shipping off-box remains an operator follow-up (see
+            # docs/MONITORING_AND_ALERTING.md > Application-Level Logging).
+            if docker compose -p mct-portal ps -q 2>/dev/null | grep -q .; then
+              mkdir -p /opt/mct-portal/logs
+              LOG_STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+              docker compose -p mct-portal logs --no-color --timestamps 2>&1 \
+                | gzip -c > "/opt/mct-portal/logs/pre-deploy-$LOG_STAMP.log.gz" || true
+              # Keep the most recent snapshots only so droplet disk stays bounded.
+              ls -1t /opt/mct-portal/logs/pre-deploy-*.log.gz 2>/dev/null | tail -n +8 | xargs -r rm -f
+              echo "Snapshotted pre-deploy container logs to /opt/mct-portal/logs/pre-deploy-$LOG_STAMP.log.gz"
+            fi
             # Remember what is currently running so a failed deploy can revert.
-            PREV_TAG=$(docker inspect --format '{{.Config.Image}}' mct-portal-api-1 2>/dev/null | sed 's/.*://')
-            docker compose -p mct-portal down --remove-orphans || true
-            docker rm -f mct-portal-caddy-1 2>/dev/null || true
-            # A failed `compose up` must not leave the site down: the previous
-            # stack was already stopped by the `down` above. Restore it before
-            # exiting (the health-gate rollback below only covers the case
-            # where `up` succeeded but containers never became healthy).
-            if ! IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans; then
-              echo "ERROR: docker compose up failed; restoring the previous stack" >&2
-              docker compose -p mct-portal logs --tail=40 redis 2>/dev/null || true
-              if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "${{ env.IMAGE_TAG }}" ]; then
-                echo "Rolling back to previously running tag $PREV_TAG" >&2
-                docker compose -p mct-portal down --remove-orphans || true
-                IMAGE_TAG="$PREV_TAG" GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans || true
+            # SBOM-P2-011: keep the FULL image reference (a digest ref for
+            # deploys after this change, a tag ref for older ones) so the
+            # rollback path restores exactly what was running.
+            PREV_API_IMAGE=$(docker inspect --format '{{.Config.Image}}' mct-portal-api-1 2>/dev/null || true)
+            PREV_WORKER_IMAGE=$(docker inspect --format '{{.Config.Image}}' mct-portal-worker-1 2>/dev/null || true)
+            PREV_WEB_IMAGE=$(docker inspect --format '{{.Config.Image}}' mct-portal-web-1 2>/dev/null || true)
+            # Health probe for a compose container (probing the app ports from
+            # the host does not work — only caddy publishes ports).
+            container_health() {
+              docker inspect --format '{{.State.Health.Status}}' "mct-portal-$1-1" 2>/dev/null || echo "missing"
+            }
+            recreate_service() {
+              local svc="$1"
+              # MCT_*_IMAGE (digest refs) are exported above; compose resolves
+              # them per service (see infra/digitalocean/docker-compose.yml).
+              docker compose -p mct-portal up -d --no-deps --remove-orphans "$svc"
+            }
+            wait_service_healthy() {
+              local svc="$1" attempts="${2:-18}"
+              for attempt in $(seq 1 "$attempts"); do
+                if [ "$(container_health "$svc")" = "healthy" ]; then
+                  echo "$svc healthy (attempt $attempt)"
+                  return 0
+                fi
+                echo "Waiting for $svc to become healthy (attempt $attempt/$attempts)..."
+                sleep 10
+              done
+              return 1
+            }
+            rollback_stack() {
+              echo "Rolling back to the previously running images" >&2
+              echo "  ${PREV_API_IMAGE:-<unset>} / ${PREV_WORKER_IMAGE:-<unset>} / ${PREV_WEB_IMAGE:-<unset>}" >&2
+              docker compose -p mct-portal down --remove-orphans || true
+              # Empty values fall back to the tag-based compose defaults.
+              MCT_API_IMAGE="$PREV_API_IMAGE" \
+              MCT_WORKER_IMAGE="$PREV_WORKER_IMAGE" \
+              MCT_WEB_IMAGE="$PREV_WEB_IMAGE" \
+                docker compose -p mct-portal up -d --remove-orphans || true
+            }
+            # RES-P2-010: rolling recreate. Previously `compose down` stopped
+            # the whole stack, so every release and rollback was a planned full
+            # outage. `up -d --no-deps` replaces ONE service at a time while
+            # caddy keeps serving the others; wait for each to become healthy
+            # before touching the next so a bad revision stops the rollout
+            # early instead of taking every service down.
+            deploy_failed=0
+            for svc in api worker web; do
+              if ! recreate_service "$svc"; then
+                echo "ERROR: docker compose up failed for $svc" >&2
+                deploy_failed=1
+                break
+              fi
+              if ! wait_service_healthy "$svc"; then
+                echo "ERROR: $svc did not become healthy after recreate" >&2
+                deploy_failed=1
+                break
+              fi
+            done
+            if [ "$deploy_failed" = "1" ]; then
+              docker compose -p mct-portal logs --tail=40 "$svc" 2>/dev/null || true
+              if [ -n "$PREV_API_IMAGE" ] && [ "$PREV_API_IMAGE" != "$MCT_API_IMAGE" ]; then
+                rollback_stack
               fi
               exit 1
             fi
+            # Refresh the proxy last (a changed Caddyfile is only picked up by a
+            # recreated container) — the app services behind it are healthy.
+            docker rm -f mct-portal-caddy-1 2>/dev/null || true
+            if ! recreate_service caddy; then
+              echo "ERROR: failed to recreate caddy" >&2
+              exit 1
+            fi
+            # Bring any remaining changed services (redis, prometheus,
+            # alertmanager) up to date; a no-op for unchanged ones. The exported
+            # MCT_*_IMAGE digest refs keep the app services pinned.
+            docker compose -p mct-portal up -d --remove-orphans
             sleep 15
             echo "=== Docker compose ps ==="
             docker compose -p mct-portal ps --format 'table {{.Name}}\t{{.Status}}\t{{.Ports}}'
@@ -832,39 +1048,73 @@ jobs:
             # containers report healthy, so a failed deploy can still roll
             # back. Use the containers' own healthchecks (probing the app
             # ports from the host does not work - they are not published).
+            # INFRA-P2-007: assert EVERY service that declares a healthcheck,
+            # not just api/web/worker. A restart-looping alertmanager (which
+            # also takes prometheus down via depends_on), a broken caddy
+            # config or a dead redis used to deploy green with the alerting
+            # and reverse-proxy path silently gone.
             container_health() {
               docker inspect --format '{{.State.Health.Status}}' "mct-portal-$1-1" 2>/dev/null || echo "missing"
             }
+            GATED_SERVICES="redis api worker web alertmanager prometheus caddy"
             healthy=0
             for attempt in $(seq 1 18); do
-              if [ "$(container_health api)" = "healthy" ] && [ "$(container_health web)" = "healthy" ] && [ "$(container_health worker)" = "healthy" ]; then
+              unhealthy=""
+              for svc in $GATED_SERVICES; do
+                status="$(container_health "$svc")"
+                [ "$status" = "healthy" ] || unhealthy="${unhealthy} ${svc}=${status}"
+              done
+              if [ -z "$unhealthy" ]; then
                 healthy=1
-                echo "Health checks passed (attempt $attempt)"
+                echo "Health checks passed (attempt $attempt): ${GATED_SERVICES}"
                 break
               fi
-              echo "Waiting for services to become healthy (attempt $attempt/18)..."
+              echo "Waiting for services to become healthy (attempt $attempt/18):${unhealthy}"
               sleep 10
             done
             if [ "$healthy" != "1" ]; then
-              echo "=== Caddy logs (last 30 lines) ==="
-              docker compose -p mct-portal logs --tail=30 caddy 2>/dev/null || true
-              if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "${{ env.IMAGE_TAG }}" ]; then
-                echo "Attempting rollback to previously running tag $PREV_TAG" >&2
-                docker compose -p mct-portal down --remove-orphans || true
-                IMAGE_TAG="$PREV_TAG" GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans || true
+              echo "=== Alerting/proxy logs (last 30 lines each) ==="
+              for svc in caddy alertmanager prometheus; do
+                echo "--- ${svc} ---"
+                docker compose -p mct-portal logs --tail=30 "$svc" 2>/dev/null || true
+              done
+              if [ -n "$PREV_API_IMAGE" ] && [ "$PREV_API_IMAGE" != "$MCT_API_IMAGE" ]; then
+                echo "Attempting rollback to previously running images" >&2
+                rollback_stack
               fi
               echo "ERROR: health checks failed after deploy" >&2
               exit 1
             fi
 
-            echo "=== Pruning old mct images (keep current tag) ==="
-            docker images --format '{{.Repository}}:{{.Tag}}' | grep -E "mct-(api|worker|web)" | grep -v ":${{ env.IMAGE_TAG }}$" | xargs -r docker rmi -f 2>/dev/null || true
+            echo "=== Pruning old mct images (keep the running digests) ==="
+            # SBOM-P2-011: digest-pulled images carry no tag, so the previous
+            # tag-based keep-list no longer matched. Keep the image IDs the
+            # running containers use and remove every other mct-* image.
+            KEEP_IDS="$(docker inspect --format '{{.Image}}' \
+              mct-portal-api-1 mct-portal-worker-1 mct-portal-web-1 2>/dev/null | sort -u | tr '\n' ' ' || true)"
+            if [ -n "$KEEP_IDS" ]; then
+              for id in $(docker images --no-trunc --format '{{.ID}} {{.Repository}}' \
+                | awk '/mct-(api|worker|web)/ {print $1}' | sort -u); do
+                case " ${KEEP_IDS} " in
+                  *" ${id} "*) ;;
+                  *) docker rmi -f "${id}" >/dev/null 2>&1 || true ;;
+                esac
+              done
+            else
+              echo "WARNING: could not determine the running image IDs; skipping prune"
+            fi
             docker image prune -f 2>/dev/null || true
         env:
           CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
           CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_ACTOR: ${{ github.actor }}
+          # SBOM-P2-011: digests resolved and attestation-verified by the
+          # verify-attestations job. The remote script pulls/runs these exact
+          # digests instead of the mutable tag.
+          API_DIGEST: ${{ needs['verify-attestations'].outputs.api_digest }}
+          WORKER_DIGEST: ${{ needs['verify-attestations'].outputs.worker_digest }}
+          WEB_DIGEST: ${{ needs['verify-attestations'].outputs.web_digest }}
 
       - name: Health check
         env:

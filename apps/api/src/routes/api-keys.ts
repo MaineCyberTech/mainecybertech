@@ -18,6 +18,15 @@ const createSchema = z.object({
   organizationId: z.string().uuid(),
   name: z.string().min(1).max(100),
   expiresAt: z.string().datetime().optional(),
+  // Scope cap for the key, in permission-catalog format `${module}:${action}`.
+  // Omitted/empty means the key grants nothing: `requirePermission` denies
+  // every gated route unless the key's stored scopes contain the requested
+  // permission (SEC-P2-004). Scopes only ever narrow the creator's effective
+  // permissions — they can never widen them.
+  permissions: z
+    .array(z.string().regex(/^[a-z0-9][a-z0-9-]*:(view|create|edit|delete|manage)$/))
+    .max(100)
+    .optional(),
 });
 
 function generateApiKey(): { fullKey: string; prefix: string; hash: string } {
@@ -30,8 +39,8 @@ function generateApiKey(): { fullKey: string; prefix: string; hash: string } {
   };
 }
 
-// GET /api/v1/api-keys — list keys for an org
-router.get("/", async (req, res, next) => {
+// GET /api/v1/api-keys — list keys for an org (ACM-P3-006: admin-gated)
+router.get("/", requirePermission("api-keys", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "api-keys", "read");
     const orgId = req.query.organization_id as string;
@@ -68,6 +77,7 @@ router.post("/", requirePermission("api-keys", "manage"), async (req, res, next)
         key_prefix: prefix,
         created_by: req.authUser!.userId,
         expires_at: parsed.expiresAt ?? null,
+        permissions: parsed.permissions ?? [],
       })
       .select("id, name, key_prefix, is_active, created_at")
       .single();
@@ -94,7 +104,7 @@ router.post("/", requirePermission("api-keys", "manage"), async (req, res, next)
 router.patch("/:id", requirePermission("api-keys", "manage"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "api-keys", "write");
-    await loadOwned(req, supabase as any, "api_keys", String(req.params.id));
+    await loadOwned(req, supabase, "api_keys", String(req.params.id));
 
     const orgId = req.query.organization_id as string;
     const platformAdmin =
@@ -147,7 +157,7 @@ router.delete("/:id", requirePermission("api-keys", "manage"), async (req, res, 
   try {
     assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "api-keys", "write");
-    await loadOwned(req, supabase as any, "api_keys", String(req.params.id));
+    await loadOwned(req, supabase, "api_keys", String(req.params.id));
 
     const orgId = req.query.organization_id as string;
     const platformAdmin =

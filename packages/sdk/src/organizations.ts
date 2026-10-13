@@ -65,8 +65,12 @@ export class OrganizationsApi {
     return this.client.patch<Organization>(`/api/v1/organizations/${id}`, data);
   }
 
-  remove(id: string) {
-    return this.client.delete<void>(`/api/v1/organizations/${id}`);
+  remove(id: string, slug: string) {
+    return this.client.delete<void>(
+      `/api/v1/organizations/${id}`,
+      undefined,
+      { confirm: true, slug },
+    );
   }
 
   listDomains(orgId: string) {
@@ -85,7 +89,11 @@ export class OrganizationsApi {
   }
 
   removeDomain(orgId: string, domainId: string) {
-    return this.client.delete<void>(`/api/v1/organizations/${orgId}/domains/${domainId}`);
+    return this.client.delete<void>(
+      `/api/v1/organizations/${orgId}/domains/${domainId}`,
+      undefined,
+      { confirm: true },
+    );
   }
 
   uploadLogo(orgId: string, file: File | Blob) {

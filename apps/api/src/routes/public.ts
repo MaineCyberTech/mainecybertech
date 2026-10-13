@@ -7,8 +7,46 @@ import { logAuditEvent } from "../services/audit";
 import { logger } from "../lib/logger";
 import { httpClients } from "../lib/http-client";
 import { isBotUserAgent, shouldSendVisitorAlert } from "../lib/bot-detection";
+import { consentVersionFrom } from "../lib/consent";
 
 const router: ReturnType<typeof Router> = Router();
+
+// AN-P2-005 / PRIV-P2-006: HTTPS only. The ip-api.com free tier is HTTP-only,
+// so operators must point GEO_LOOKUP_URL at a licensed/HTTPS endpoint; env
+// validation rejects plaintext URLs.
+const DEFAULT_GEO_LOOKUP_URL = "https://ip-api.com/json/";
+// PRIV-P2-006: only the fields this route persists are requested. The
+// provider's full record (lat/lon, ISP, timezone, ...) is never fetched.
+const GEO_LOOKUP_FIELDS = "status,city,regionName,country";
+
+async function lookupVisitorLocation(ipAddress: string): Promise<string> {
+  try {
+    const cleanIp = ipAddress.replace("::ffff:", "");
+    const baseUrl = getEnv().GEO_LOOKUP_URL ?? DEFAULT_GEO_LOOKUP_URL;
+    // PRIV-P2-006: fail closed on a plaintext endpoint — the visitor IP must
+    // never be sent over HTTP. GEO_LOOKUP_URL is validated as HTTPS at boot;
+    // this also guards direct callers with a hand-built env.
+    if (!baseUrl.startsWith("https://")) {
+      logger.warn("GEO_LOOKUP_URL is not HTTPS — skipping visitor geolocation");
+      return "Unknown";
+    }
+    const geoRes = await httpClients.geo.get(
+      `${baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`}${cleanIp}?fields=${GEO_LOOKUP_FIELDS}`,
+    );
+    const geoData: {
+      status: string;
+      city?: string | null;
+      regionName?: string | null;
+      country?: string | null;
+    } = await geoRes.json();
+    if (geoData.status === "success") {
+      return `${geoData.city}, ${geoData.regionName}, ${geoData.country}`;
+    }
+  } catch {
+    // Geo lookup failure is non-critical
+  }
+  return "Unknown";
+}
 
 const submitSchema = z.object({
   trackingId: z.string().uuid(),
@@ -21,6 +59,11 @@ const submitSchema = z.object({
   urgency: z.string().min(1).max(50),
   message: z.string().min(1).max(5000),
   captchaToken: z.string().min(1).max(10000).optional(),
+  // PRIV-P2-001 / PRIV-P2-002: the form's consent checkbox is persisted
+  // server-side on the interaction row instead of living only in the browser,
+  // together with the privacy-policy version the visitor was shown.
+  consent: z.boolean().optional(),
+  consentVersion: z.string().min(1).max(64).optional(),
 });
 
 async function verifyCaptcha(token: string): Promise<boolean> {
@@ -47,6 +90,7 @@ async function verifyCaptcha(token: string): Promise<boolean> {
 router.get("/init", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const env = getEnv();
     const interactionId = crypto.randomUUID();
     const ipAddress = req.ip || req.socket.remoteAddress || "Unknown";
     const userAgent = req.headers["user-agent"] || "Unknown";
@@ -57,39 +101,40 @@ router.get("/init", async (req, res, next) => {
     // endpoint constantly; do not treat them as human visitors.
     const isBot = isBotUserAgent(userAgent);
 
-    let location = "Unknown";
-    if (!isBot) {
-      try {
-        const cleanIp = ipAddress.replace("::ffff:", "");
-        const geoRes = await httpClients.geo.get(`http://ip-api.com/json/${cleanIp}`);
-        const geoData: {
-          status: string;
-          city?: string | null;
-          regionName?: string | null;
-          country?: string | null;
-        } = await geoRes.json();
-        if (geoData.status === "success") {
-          location = `${geoData.city}, ${geoData.regionName}, ${geoData.country}`;
-        }
-      } catch {
-        // Geo lookup failure is non-critical
-      }
-    }
+    // PRIV-P2-001 / AN-P2-005: default-deny. The interaction row is created so
+    // the contact forms have a tracking ID, but IP/user-agent/geolocation are
+    // only captured — and the third-party geo lookup only called — after the
+    // visitor has explicitly opted in. The web app appends `consent=granted`
+    // once a stored choice exists.
+    const consentGranted = req.query.consent === "granted";
+    // PRIV-P2-002: record which privacy-policy version the visitor consented
+    // to, alongside the timestamp (default-deny when no version is supplied).
+    const consentVersion = consentGranted ? consentVersionFrom(req.query.consentVersion) : null;
+    const location = consentGranted && !isBot ? await lookupVisitorLocation(ipAddress) : "Unknown";
 
     const { error } = await supabase.from("public_interactions").insert({
       id: interactionId,
-      ip_address: ipAddress,
+      ip_address: consentGranted ? ipAddress : null,
       location,
-      user_agent: userAgent,
+      user_agent: consentGranted ? userAgent : null,
       platform,
       referrer,
       is_bot: isBot,
+      consent_at: consentGranted ? new Date().toISOString() : null,
+      consent_version: consentVersion,
     });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    const env = getEnv();
-    if (env.PUBLIC_TRAFFIC_WEBHOOK_URL && !isBot && shouldSendVisitorAlert(ipAddress)) {
+    // AN-P2-005: the visitor alert is a third-party call, so it is part of the
+    // consent gate — nothing leaves the server for a visitor who has not opted
+    // in. The alert never contains the IP address.
+    if (
+      env.PUBLIC_TRAFFIC_WEBHOOK_URL &&
+      consentGranted &&
+      !isBot &&
+      shouldSendVisitorAlert(ipAddress)
+    ) {
       const visitorCard = {
         type: "message",
         attachments: [
@@ -129,6 +174,13 @@ router.post("/submit", async (req, res, next) => {
     const parsed = submitSchema.parse(req.body);
     const env = getEnv();
 
+    // PRIV-P2-002: the lead carries PII, so consent is required server-side
+    // (previously a client could omit the flag and the submission was stored
+    // anyway). The decision and the policy version are persisted below.
+    if (parsed.consent !== true) {
+      throw new AppError("CONSENT_REQUIRED", "Consent to the Privacy Policy is required.", 400);
+    }
+
     // SEC-P2-002: Turnstile is mandatory in production (env validation refuses
     // to boot without TURNSTILE_SECRET_KEY). When configured anywhere, a
     // verified token is required. Previously the check was skipped whenever the
@@ -155,6 +207,16 @@ router.post("/submit", async (req, res, next) => {
       throw new AppError("NOT_FOUND", "Session expired. Please refresh the page.", 404);
     }
 
+    // PRIV-P2-001 / AN-P2-005 / PRIV-P2-002: consent is required above, so IP
+    // and user-agent are captured here at submit time, and the consent record
+    // (timestamp + policy version) is persisted server-side.
+    const submittedAt = new Date().toISOString();
+    const effectiveIp = record.ip_address ?? (req.ip || req.socket.remoteAddress || null);
+    const effectiveUserAgent =
+      record.user_agent ?? ((req.headers["user-agent"] as string) || null);
+    const consentAt = record.consent_at ?? submittedAt;
+    const consentVersion = record.consent_version ?? consentVersionFrom(parsed.consentVersion);
+
     const { error: updateError } = await supabase
       .from("public_interactions")
       .update({
@@ -167,14 +229,18 @@ router.post("/submit", async (req, res, next) => {
         employees: parsed.employees,
         urgency: parsed.urgency,
         client_message: parsed.message,
-        submitted_at: new Date().toISOString(),
+        submitted_at: submittedAt,
+        consent_at: consentAt,
+        consent_version: consentVersion,
+        ip_address: effectiveIp,
+        user_agent: effectiveUserAgent,
       })
       .eq("id", parsed.trackingId);
 
     if (updateError) throw new AppError("DB_ERROR", updateError.message, 500);
 
     if (env.PUBLIC_LEAD_WEBHOOK_URL) {
-      const teamsMessage = `🚨 **NEW MSP LEAD: ${parsed.company}** 🚨\n\n**Service Interest:** ${parsed.services}\n**Urgency:** ${parsed.urgency}\n\n**Client Information**\n* **Contact:** ${parsed.name}\n* **Email:** ${parsed.email}\n* **Phone:** ${parsed.phone}\n* **Company:** ${parsed.company}\n* **Size:** ${parsed.employees} employees\n\n**Message:**\n${parsed.message}\n\n**Session Metadata**\n* **Location:** ${record.location}\n* **Platform:** ${record.platform ? record.platform.replace(/"/g, "") : "Unknown"}\n* **IP Address:** ${record.ip_address}\n* **Referrer:** ${record.referrer}\n* **Tracking ID:** ${record.id}`;
+      const teamsMessage = `🚨 **NEW MSP LEAD: ${parsed.company}** 🚨\n\n**Service Interest:** ${parsed.services}\n**Urgency:** ${parsed.urgency}\n\n**Client Information**\n* **Contact:** ${parsed.name}\n* **Email:** ${parsed.email}\n* **Phone:** ${parsed.phone}\n* **Company:** ${parsed.company}\n* **Size:** ${parsed.employees} employees\n\n**Message:**\n${parsed.message}\n\n**Session Metadata**\n* **Location:** ${record.location}\n* **Platform:** ${record.platform ? record.platform.replace(/"/g, "") : "Unknown"}\n* **IP Address:** ${effectiveIp ?? "Unknown"}\n* **Referrer:** ${record.referrer}\n* **Tracking ID:** ${record.id}`;
 
       const leadCard = {
         type: "message",
@@ -218,12 +284,12 @@ h3. Client Information
 
 h3. Captured Session Metadata
 || Property || Value ||
-| *IP Address* | ${record.ip_address} |
+| *IP Address* | ${effectiveIp ?? "Unknown"} |
 | *Location* | ${record.location} |
 | *Platform* | ${record.platform ? record.platform.replace(/"/g, "") : "Unknown"} |
 | *Referrer* | ${record.referrer} |
 | *Session ID* | ${record.id} |
-| *User Agent* | ${record.user_agent} |`;
+| *User Agent* | ${effectiveUserAgent ?? "Unknown"} |`;
 
       httpClients.jsm
         .post(

@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "./logger";
+import { redactSensitiveContent } from "./notification-content";
 import { recordNotificationDelivery, recordNotificationSuppressed } from "./metrics";
 import { claimIdempotencyKey } from "./lib/idempotency";
 
@@ -16,15 +17,16 @@ import { claimIdempotencyKey } from "./lib/idempotency";
  * send is preferable to dropping a user-visible notification.
  */
 
-export type NotificationChannel = "email" | "in_app";
+export type NotificationChannel = "email" | "in_app" | "push";
 
 export interface ResolvedChannels {
   email: boolean;
   in_app: boolean;
+  push: boolean;
 }
 
-const ENABLED_BY_DEFAULT: ResolvedChannels = { email: true, in_app: true };
-const DELIVERABLE_CHANNELS: readonly NotificationChannel[] = ["email", "in_app"];
+const ENABLED_BY_DEFAULT: ResolvedChannels = { email: true, in_app: true, push: true };
+const DELIVERABLE_CHANNELS: readonly NotificationChannel[] = ["email", "in_app", "push"];
 
 type PreferenceRow = { channel: string | null; enabled: boolean | null };
 
@@ -37,7 +39,9 @@ export async function resolveChannels(
       .from("notification_preferences")
       .select("channel, enabled")
       .eq("user_id", input.userId)
-      .eq("module_key", input.module);
+      // NOTIF-P3-005: `module_key = 'all'` is the global opt-out row written
+      // by the unsubscribe endpoint; honour it for every module.
+      .in("module_key", [input.module, "all"]);
 
     if (input.organizationId) {
       query = query.eq("organization_id", input.organizationId);
@@ -141,6 +145,11 @@ export async function insertNotification(
     return { inserted: false, deduped: false, suppressed: true };
   }
 
+  // NOTIF-P2-005: filter secrets/PII before the row is stored (and before the
+  // dedup key is derived, so a retried replay still hashes identically).
+  const title = redactSensitiveContent(input.title);
+  const body = redactSensitiveContent(input.body);
+
   const notificationKey =
     input.notificationKey ??
     buildNotificationKey({
@@ -148,8 +157,8 @@ export async function insertNotification(
       module: input.module,
       moduleId: input.moduleId,
       action: input.action,
-      title: input.title,
-      body: input.body,
+      title,
+      body,
     });
 
   try {
@@ -159,8 +168,8 @@ export async function insertNotification(
         {
           user_id: input.userId,
           organization_id: input.organizationId ?? null,
-          title: input.title,
-          body: input.body,
+          title,
+          body,
           module: input.module,
           module_id: input.moduleId ?? null,
           action: input.action,
@@ -172,7 +181,7 @@ export async function insertNotification(
 
     if (error) {
       logger.warn(
-        { error: error.message, userId: input.userId, title: input.title },
+        { error: error.message, userId: input.userId, title },
         "Failed to create in-app notification",
       );
       recordNotificationDelivery("in_app", "failed");
@@ -187,7 +196,7 @@ export async function insertNotification(
       {
         error: error instanceof Error ? error.message : String(error),
         userId: input.userId,
-        title: input.title,
+        title,
         notificationKey,
       },
       "Failed to create in-app notification",

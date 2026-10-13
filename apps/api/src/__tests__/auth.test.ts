@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import authRouter from "../routes/auth";
-import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
+import { createTestApp, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -11,6 +11,7 @@ jest.mock("../config/env", () => ({
     SUPABASE_ANON_KEY: "test-anon-key",
     SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
     CORS_ORIGIN: "*",
+    APP_BASE_URL: "https://app.example.com",
     LOG_LEVEL: "silent",
     API_PORT: 4000,
   }),
@@ -28,7 +29,7 @@ jest.mock("../services/audit", () => ({
   logAuditEvent: jest.fn(),
 }));
 
-import { getSupabaseAdmin, getSupabaseUser } from "../services/supabase";
+import { getScopedClient, getSupabaseAdmin, getSupabaseUser } from "../services/supabase";
 import { clearMfaFactorCache } from "../lib/mfa";
 
 const app = createTestApp();
@@ -85,6 +86,7 @@ function mockSupabase() {
         mfa: {
           listFactors: jest.fn().mockResolvedValue({ data: { factors: [] }, error: null }),
         },
+        signOut: jest.fn().mockResolvedValue({ error: null }),
       },
     },
   };
@@ -230,6 +232,43 @@ describe("POST /sign-up", () => {
       }),
     });
   });
+
+  // USE-P1-002: the confirmation link used to be built from the API request
+  // host, so it 404'd on the API host instead of reaching the web callback.
+  it("builds emailRedirectTo from APP_BASE_URL, not the API host", async () => {
+    const supabase = mockSupabase();
+
+    const res = await request(app)
+      .post("/api/v1/auth/sign-up")
+      .set("Host", "api.example.com")
+      .send({ email: "new@b.com", password: "SecurePass123!" });
+
+    expect(res.status).toBe(200);
+    const options = supabase.auth.signUp.mock.calls[0][0].options as {
+      emailRedirectTo: string;
+    };
+    expect(options.emailRedirectTo).toBe("https://app.example.com/auth/callback");
+    expect(options.emailRedirectTo).not.toContain("api.example.com");
+  });
+
+  // SEC-P3-001: the caller also controls the Origin header, so a spoofed
+  // Origin must not leak the confirmation link to an attacker-controlled host.
+  it("ignores an attacker-controlled Origin header for emailRedirectTo", async () => {
+    const supabase = mockSupabase();
+
+    const res = await request(app)
+      .post("/api/v1/auth/sign-up")
+      .set("Host", "api.example.com")
+      .set("Origin", "https://evil.example.com")
+      .send({ email: "new@b.com", password: "SecurePass123!" });
+
+    expect(res.status).toBe(200);
+    const options = supabase.auth.signUp.mock.calls[0][0].options as {
+      emailRedirectTo: string;
+    };
+    expect(options.emailRedirectTo).toBe("https://app.example.com/auth/callback");
+    expect(options.emailRedirectTo).not.toContain("evil.example.com");
+  });
 });
 
 describe("forgot-password", () => {
@@ -254,6 +293,26 @@ describe("forgot-password", () => {
       "test@example.com",
       expect.any(Object),
     );
+  });
+
+  // USE-P1-001: the reset link must go through the web /auth/callback route
+  // (which exchanges the PKCE code and sets the session cookie) before the
+  // reset form; /password-reset alone ignored the token.
+  it("routes the reset link through /auth/callback with a next=/password-reset", async () => {
+    const supabase = mockSupabase();
+    supabase.auth.resetPasswordForEmail = jest.fn().mockResolvedValue({
+      data: {},
+      error: null,
+    });
+
+    const res = await request(app)
+      .post("/api/v1/auth/forgot-password")
+      .send({ email: "test@example.com" });
+
+    expect(res.status).toBe(200);
+    expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith("test@example.com", {
+      redirectTo: "https://app.example.com/auth/callback?next=/password-reset",
+    });
   });
 
   it("returns 400 for missing email", async () => {
@@ -288,6 +347,9 @@ describe("reset-password", () => {
     expect(supabase.auth.admin.updateUserById).toHaveBeenCalledWith("user-1", {
       password: "StrongP@ss1",
     });
+    // RLS-P2-007: auth.admin.* must go through the service-role client; the
+    // RLS-scoped client (anon key + user JWT) cannot call it.
+    expect(getScopedClient).not.toHaveBeenCalled();
   });
 
   it("returns 403 when email does not match authenticated user", async () => {
@@ -336,6 +398,33 @@ describe("reset-password", () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toBeDefined();
     expect(res.body.error.code).toBe("VALIDATION");
+  });
+});
+
+describe("POST /sign-out", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("revokes the session via the service-role admin client (RLS-P2-007)", async () => {
+    const supabase = mockSupabase();
+
+    const res = await request(app)
+      .post("/api/v1/auth/sign-out")
+      .set("Authorization", "Bearer token-123");
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(supabase.auth.admin.signOut).toHaveBeenCalledWith("token-123");
+    expect(getScopedClient).not.toHaveBeenCalled();
+  });
+
+  it("returns 401 without auth", async () => {
+    mockSupabase();
+
+    const res = await request(app).post("/api/v1/auth/sign-out");
+
+    expect(res.status).toBe(401);
   });
 });
 

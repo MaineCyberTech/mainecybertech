@@ -81,7 +81,7 @@ export default function DmarcAnalyzeForm() {
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-[#0A1118] hover:bg-emerald-500 disabled:opacity-50"
+          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-cyber-base hover:bg-emerald-500 disabled:opacity-50"
         >
           {isPending ? "Analyzing…" : "Analyze"}
         </button>
@@ -90,7 +90,7 @@ export default function DmarcAnalyzeForm() {
             Grade: {String((result as Record<string, unknown>).overall_grade ?? "—")}
           </span>
         )}
-        {error && <span className="text-sm text-red-400">{error}</span>}
+        {error && <span role="alert" className="text-sm text-red-400">{error}</span>}
       </div>
     </form>
   );

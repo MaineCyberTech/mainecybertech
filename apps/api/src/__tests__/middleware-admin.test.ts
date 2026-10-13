@@ -112,6 +112,24 @@ describe("requireAdmin middleware", () => {
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 403 }));
   });
 
+  it("returns 403 for elevated tenant roles — the API set matches the web admin gate (ADMIN-P3-001)", async () => {
+    for (const key of [
+      "dispatcher",
+      "engineer",
+      "security-analyst",
+      "project-manager",
+      "finance",
+      "onboarding-specialist",
+    ]) {
+      mockSupabase([{ roles: { id: "role-elevated", key } }]);
+      const next = jest.fn();
+
+      await requireAdmin(mockReq("user-1"), mockRes(), next as NextFunction);
+
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 403 }));
+    }
+  });
+
   it("returns 403 when query fails", async () => {
     mockSupabase([], { message: "DB error" });
     const next = jest.fn();

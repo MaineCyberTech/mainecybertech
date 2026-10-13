@@ -1,9 +1,11 @@
 import { getApiClient } from "@/lib/api";
+import { formErrorMessage } from "@/lib/api-error";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminDocumentsCenterClient from "@/components/admin/AdminDocumentsCenterClient";
 import { bulkFolderAction, bulkMetadataAction } from "@/app/(admin)/admin/documents/bulk-actions";
+import { summarizeBulkUpdate } from "@/lib/bulk-results";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Documents - Admin - Maine CyberTech" };
@@ -23,6 +25,8 @@ type DocumentRecord = {
   mime_type?: string | null;
   visibility?: string | null;
   current_version?: number | null;
+  /** Optimistic-locking row version (USE-P3-004). */
+  version?: number;
   metadata?: Record<string, unknown> | null;
   file_name?: string | null;
   file_size?: number | null;
@@ -49,6 +53,7 @@ type ActionResult = {
   document?: DocumentRecord;
   documentId?: string;
   ids?: string[];
+  failed?: { id: string; error: string }[];
   visibility?: string;
 };
 
@@ -242,6 +247,27 @@ export default async function AdminDocumentsPage() {
     }
   }
 
+  /**
+   * USE-P3-004: prefer the row version the client last rendered (the form
+   * carries it), falling back to a just-before-write read. Either way the
+   * PATCH is sent with If-Match, so a stale write gets a 409 instead of
+   * silently overwriting a concurrent edit.
+   */
+  async function resolveDocumentIfMatch(
+    api: ReturnType<typeof getApiClient>,
+    documentId: string,
+    formData: FormData,
+  ): Promise<number | undefined> {
+    const fromForm = Number(formData.get("version"));
+    if (Number.isInteger(fromForm) && fromForm > 0) return fromForm;
+    try {
+      const current = await api.documents.get(documentId);
+      return current?.version;
+    } catch {
+      return undefined;
+    }
+  }
+
   async function updateMetadataAction(formData: FormData): Promise<ActionResult> {
     "use server";
     await requireAdminAccess();
@@ -282,11 +308,13 @@ export default async function AdminDocumentsPage() {
         }
       }
 
+      const ifMatch = await resolveDocumentIfMatch(api, documentId, formData);
       const data = await api.documents.update(documentId, {
         name: title,
         description,
         folderPath,
         storagePath: storagePathInput ?? undefined,
+        ...(ifMatch !== undefined ? { ifMatch } : {}),
       });
 
       return {
@@ -297,7 +325,7 @@ export default async function AdminDocumentsPage() {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unexpected error.",
+        error: formErrorMessage(error, "Unexpected error."),
       };
     }
   }
@@ -319,7 +347,11 @@ export default async function AdminDocumentsPage() {
         return { ok: false, error: "Document ID is required." };
       }
 
-      const data = await api.documents.update(documentId, { visibility });
+      const ifMatch = await resolveDocumentIfMatch(api, documentId, formData);
+      const data = await api.documents.update(documentId, {
+        visibility,
+        ...(ifMatch !== undefined ? { ifMatch } : {}),
+      });
 
       return {
         ok: true,
@@ -329,7 +361,7 @@ export default async function AdminDocumentsPage() {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unexpected error.",
+        error: formErrorMessage(error, "Unexpected error."),
       };
     }
   }
@@ -424,9 +456,21 @@ export default async function AdminDocumentsPage() {
         return { ok: false, error: "Select a valid visibility value." };
       }
 
-      await api.documents.bulkMetadata({ documentIds: ids, visibility });
+      // ADMIN-P2-003: the API treats a visibility flip as elevated and requires
+      // an explicit confirmation; the operator chose a visibility value and
+      // submitted the bulk visibility form, so echo that confirmation.
+      const result = await api.documents.bulkMetadata({
+        documentIds: ids,
+        visibility,
+        confirm: true,
+      });
+      const { succeeded, failed } = summarizeBulkUpdate(ids, result);
 
-      return { ok: true, kind: "bulk_visibility", ids, visibility };
+      if (!succeeded.length && failed.length) {
+        return { ok: false, error: failed[0].error, ids: [], failed };
+      }
+
+      return { ok: true, kind: "bulk_visibility", ids: succeeded, failed, visibility };
     } catch (error) {
       return {
         ok: false,
@@ -452,15 +496,27 @@ export default async function AdminDocumentsPage() {
         return { ok: false, error: "Type DELETE to bulk remove document records." };
       }
 
+      // Delete per item and report the real outcome: the old loop swallowed
+      // every failure and always claimed success (USE-P1-004 / USE-P2-001).
+      const deleted: string[] = [];
+      const failed: { id: string; error: string }[] = [];
       for (const id of ids) {
         try {
           await api.documents.remove(id);
-        } catch {
-          // skip already-deleted docs
+          deleted.push(id);
+        } catch (error) {
+          failed.push({
+            id,
+            error: error instanceof Error ? error.message : "Delete failed",
+          });
         }
       }
 
-      return { ok: true, kind: "bulk_deleted", ids };
+      if (!deleted.length && failed.length) {
+        return { ok: false, error: failed[0].error, ids: [], failed };
+      }
+
+      return { ok: true, kind: "bulk_deleted", ids: deleted, failed };
     } catch (error) {
       return {
         ok: false,

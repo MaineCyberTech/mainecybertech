@@ -19,6 +19,8 @@ import {
 } from "../validators/governance";
 import { queryInt } from "../lib/query";
 import { parsePartialUpdate } from "../lib/validators";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 type SopFrameworkRow = {
   compliance_framework: string | null;
@@ -49,7 +51,7 @@ function crudRoute(
       const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
       const q = sb
         .from(table)
-        .select("*", { count: "exact" })
+        .select("*", { count: listCountMode(req.query) })
         .eq("organization_id", req.query.organization_id as string);
       const { data, error, count } = await q
         .order("created_at", { ascending: false })
@@ -124,6 +126,10 @@ function crudRoute(
           if (k === "organizationId") continue;
           if (v !== undefined) fields[snake(k)] = v;
         }
+        // DATA-P2-009: set the modification timestamp server-side. The column
+        // is not in the create/update schema, so a caller cannot mass-assign
+        // it; the DB trigger (5302441) is the backstop for non-API writes.
+        fields.updated_at = new Date().toISOString();
         const { data, error } = await sb
           .from(table)
           .update(fields as never)
@@ -151,6 +157,7 @@ function crudRoute(
     requirePermission(permissionModule, "delete"),
     async (req, res, next) => {
       try {
+        assertDeleteConfirmed(req.body);
         const sb = getScopedClient(req, "governance", "write");
         const { error } = await sb
           .from(table)

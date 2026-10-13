@@ -7,15 +7,19 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
+import { rateLimitAdminOps } from "../middleware/rate-limit";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
+import { EXPORT_ROW_LIMIT } from "../lib/pagination";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { createNotification, notifyAndEmail } from "../lib/notify";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { isPlatformAdminKey, PLATFORM_ADMIN_KEYS, roleKeyOf } from "../lib/roles";
+import { isTicketTransitionAllowed } from "@mct/sdk/ticket-status";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import {
   applyOrgScope,
   applyRequestedOrg,
+  applyResolvedOrg,
   NO_ORG_MATCH,
   resolveAdminTenantScope,
   type AdminTenantScope,
@@ -29,6 +33,7 @@ import {
 } from "../validators/ticket";
 import { queryInt } from "../lib/query";
 import { recordTicketCreated } from "../lib/metrics";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -73,7 +78,9 @@ router.get("/export", async (req, res, next) => {
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter as never);
 
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(EXPORT_ROW_LIMIT);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -99,10 +106,10 @@ router.get("/", async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("tickets").select("*", { count: "exact" });
-
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    let query = supabase.from("tickets").select("*", { count: listCountMode(req.query) });
+    // MT-P2-002: mandatory org predicate; fails closed without a resolved or
+    // explicit org instead of listing every tenant.
+    query = applyResolvedOrg(req, query);
 
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter as never);
@@ -130,13 +137,12 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "tickets", "read");
     let query = supabase
       .from("tickets")
       .select("*, ticket_comments(*)")
       .eq("id", String(req.params.id));
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = applyResolvedOrg(req, query);
     const { data, error } = await query.single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Ticket not found", 404);
@@ -234,10 +240,12 @@ router.patch(
     try {
       const parsed = updateTicketSchema.parse(req.body);
       const supabase = getScopedClient(req, "tickets", "write");
-      const orgId = req.query.organization_id as string | undefined;
 
-      let currentQuery = supabase.from("tickets").select("version").eq("id", String(req.params.id));
-      if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
+      let currentQuery = supabase
+        .from("tickets")
+        .select("version, status")
+        .eq("id", String(req.params.id));
+      currentQuery = applyResolvedOrg(req, currentQuery);
       const { data: current, error: fetchError } = await currentQuery.single();
 
       if (fetchError || !current) {
@@ -245,6 +253,19 @@ router.patch(
       }
 
       checkVersionMatch(current.version, req.ifMatchVersion);
+
+      // FEAT-P3-006: status changes must follow the shared transition map.
+      // Invalid moves are a state conflict (409), not a validation error: the
+      // payload is well-formed, the ticket is in the wrong state for it.
+      const statusChanged =
+        parsed.status !== undefined && parsed.status !== (current.status as string | undefined);
+      if (statusChanged && !isTicketTransitionAllowed(current.status, parsed.status)) {
+        throw new AppError(
+          "INVALID_STATUS_TRANSITION",
+          `Ticket cannot move from "${current.status}" to "${parsed.status}".`,
+          409,
+        );
+      }
 
       const updateData: Record<string, unknown> = {};
       if (parsed.title !== undefined) updateData.title = parsed.title;
@@ -265,7 +286,7 @@ router.patch(
         .update(updateData as never)
         .eq("id", String(req.params.id))
         .eq("version", current.version as number);
-      if (orgId) query = query.eq("organization_id", orgId);
+      query = applyResolvedOrg(req, query);
       const { data, error } = await query.select().single();
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -277,6 +298,25 @@ router.patch(
         entityType: "ticket",
         entityId: data.id,
         metadata: { ...parsed, version: data.version },
+      });
+
+      // FEAT-P3-006: transitions are also recorded as a distinct audit event so
+      // workflow reporting can separate state changes from field edits.
+      if (statusChanged) {
+        await logAuditEvent({
+          actorUserId: req.authUser!.userId,
+          action: "ticket.status_transition",
+          entityType: "ticket",
+          entityId: data.id,
+          metadata: { from: current.status, to: parsed.status, version: data.version },
+        });
+      }
+
+      // EVOL-P2-002: catalogued outbound events for every mutation, not just create.
+      dispatchWebhook("ticket.updated", data.organization_id, {
+        ticketId: data.id,
+        title: data.title,
+        status: data.status,
       });
 
       if (parsed.assignedTo) {
@@ -298,6 +338,12 @@ router.patch(
             email: assignee.email ?? undefined,
           });
         }
+
+        dispatchWebhook("ticket.assigned", data.organization_id, {
+          ticketId: data.id,
+          title: data.title,
+          assignedTo: parsed.assignedTo,
+        });
       }
 
       res.json(success(data));
@@ -310,12 +356,12 @@ router.patch(
 router.get("/:id/comments", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "tickets", "read");
-    const orgId = req.query.organization_id as string | undefined;
 
-    // Verify the ticket exists and (when scoped) belongs to the caller's org
-    // before exposing its comments.
+    // Verify the ticket exists AND belongs to the caller's org before exposing
+    // its comments. The predicate is mandatory (MT-P2-002): no resolved or
+    // explicit org fails closed.
     let ticketQuery = supabase.from("tickets").select("id").eq("id", String(req.params.id));
-    if (orgId) ticketQuery = ticketQuery.eq("organization_id", orgId);
+    ticketQuery = applyResolvedOrg(req, ticketQuery);
     const { data: ticket, error: ticketError } = await ticketQuery.single();
     if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
 
@@ -336,16 +382,15 @@ router.post("/:id/comments", requirePermission("tickets", "edit"), async (req, r
   try {
     const parsed = addTicketCommentSchema.parse(req.body);
     const supabase = getScopedClient(req, "tickets", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
     // Verify the ticket exists AND belongs to the caller's org before
     // commenting — prevents cross-tenant comment injection and notification
-    // spam into the victim org.
+    // spam into the victim org. Mandatory predicate (MT-P2-002).
     let ticketQuery = supabase
       .from("tickets")
       .select("id, organization_id, title, created_by, assigned_to")
       .eq("id", String(req.params.id));
-    if (orgId) ticketQuery = ticketQuery.eq("organization_id", orgId);
+    ticketQuery = applyResolvedOrg(req, ticketQuery);
     const { data: ticket, error: ticketError } = await ticketQuery.single();
     if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
 
@@ -371,29 +416,34 @@ router.post("/:id/comments", requirePermission("tickets", "edit"), async (req, r
       entityId: data.id,
     });
 
-    if (ticket) {
-      const notifyIds: string[] = [ticket.created_by, ticket.assigned_to]
-        .filter((id): id is string => typeof id === "string")
-        .filter((id) => id !== req.authUser!.userId);
-      const uniqueIds = [...new Set(notifyIds)];
-      if (uniqueIds.length) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, email")
-          .in("id", uniqueIds);
+    const notifyIds: string[] = [ticket.created_by, ticket.assigned_to]
+      .filter((id): id is string => typeof id === "string")
+      .filter((id) => id !== req.authUser!.userId);
+    const uniqueIds = [...new Set(notifyIds)];
+    if (uniqueIds.length) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .in("id", uniqueIds);
 
-        for (const profile of profiles ?? []) {
-          await notifyAndEmail({
-            userId: profile.id,
-            organizationId: ticket.organization_id,
-            title: "New Comment on Ticket",
-            body: `${req.authUser!.email} commented on "${ticket.title}": "${parsed.body.slice(0, 100)}${parsed.body.length > 100 ? "..." : ""}"`,
-            module: "tickets",
-            moduleId: String(req.params.id),
-            action: "comment",
-            email: profile.email ?? undefined,
-          });
-        }
+      for (const profile of profiles ?? []) {
+        await notifyAndEmail({
+          userId: profile.id,
+          organizationId: ticket.organization_id,
+          title: "New Comment on Ticket",
+          // NOTIF-P2-005: the comment excerpt is deliberately NOT included.
+          // Raw comment text can carry credentials/PII; the notification is an
+          // abstract plus the deep link instead. The comment id is the natural
+          // idempotency key, so distinct comments still notify while a retry
+          // of the same comment dedupes. It is namespaced per recipient so
+          // several participants each get their own row.
+          body: `${req.authUser!.email} commented on "${ticket.title}".`,
+          module: "tickets",
+          moduleId: String(req.params.id),
+          action: "comment",
+          notificationKey: `ticket-comment-${String(data.id)}-${profile.id}`,
+          email: profile.email ?? undefined,
+        });
       }
     }
 
@@ -411,19 +461,24 @@ router.patch(
       const parsed = updateTicketCommentSchema.parse(req.body);
       const supabase = getScopedClient(req, "tickets", "write");
 
-      const { data: existing, error: fetchError } = await supabase
+      let commentQuery = supabase
         .from("ticket_comments")
         .select("id, author_id, organization_id, body, created_at")
         .eq("id", String(req.params.commentId))
-        .eq("ticket_id", String(req.params.id))
-        .single();
+        .eq("ticket_id", String(req.params.id));
+      // MT-P2-002: mandatory predicate; no resolved/explicit org fails closed.
+      commentQuery = applyResolvedOrg(req, commentQuery);
+      const { data: existing, error: fetchError } = await commentQuery.single();
 
       if (fetchError || !existing) throw new AppError("NOT_FOUND", "Comment not found", 404);
 
       // Tenant check: the comment's ticket must belong to the comment's org,
       // and (when the caller is scoped to an org) that org must match.
-      const orgId = req.query.organization_id as string | undefined;
-      if (orgId && orgId !== existing.organization_id) {
+      const scopeOrgId =
+        req.orgId ??
+        (req.query.organization_id as string | undefined) ??
+        (req.body?.organizationId as string | undefined);
+      if (scopeOrgId && scopeOrgId !== existing.organization_id) {
         throw new AppError("FORBIDDEN", "Not authorized for this comment", 403);
       }
 
@@ -493,19 +548,18 @@ router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, n
   try {
     assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "tickets", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
     let fetchQuery = supabase
       .from("tickets")
       .select("id, organization_id")
       .eq("id", String(req.params.id));
-    if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
+    fetchQuery = applyResolvedOrg(req, fetchQuery);
     const { data: ticket, error: fetchError } = await fetchQuery.single();
 
     if (fetchError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
 
     let deleteQuery = supabase.from("tickets").delete().eq("id", String(req.params.id));
-    if (orgId) deleteQuery = deleteQuery.eq("organization_id", orgId);
+    deleteQuery = applyResolvedOrg(req, deleteQuery);
     const { error } = await deleteQuery;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -525,7 +579,8 @@ router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, n
 });
 
 /**
- * Resolve which of the given ticket ids belong to the caller's tenant scope.
+ * Resolve which of the given ticket ids belong to the caller's tenant scope,
+ * with their current status for transition validation (FEAT-P3-006).
  *
  * `bulk_update_with_version` skips its per-row `is_org_member` check when the
  * caller is service-role (`auth.uid()` is null) — which is exactly how this
@@ -536,23 +591,26 @@ router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, n
  * touch any tenant; everyone else is restricted to their own approved orgs and
  * ids outside that set are dropped before the RPC runs.
  */
-async function resolveOwnedTicketIds(
+async function resolveOwnedTicketRows(
   supabase: SupabaseClient,
   ticketIds: string[],
   scope: AdminTenantScope,
-): Promise<string[]> {
-  if (scope.allTenants) return ticketIds;
-  const orgIds = scope.orgIds.length > 0 ? scope.orgIds : [NO_ORG_MATCH];
-  const { data, error } = await supabase
-    .from("tickets")
-    .select("id")
-    .in("id", ticketIds)
-    .in("organization_id", orgIds);
+): Promise<{ id: string; status: string | null }[]> {
+  let query = supabase.from("tickets").select("id, status").in("id", ticketIds);
+  if (!scope.allTenants) {
+    const orgIds = scope.orgIds.length > 0 ? scope.orgIds : [NO_ORG_MATCH];
+    query = query.in("organization_id", orgIds);
+  }
+  const { data, error } = await query;
   if (error) throw new AppError("DB_ERROR", error.message, 500);
-  return (data ?? []).map((t: { id: string }) => t.id);
+  return (data ?? []).map((t: { id: string; status?: string | null }) => ({
+    id: t.id,
+    status: t.status ?? null,
+  }));
 }
 
-router.post("/bulk", requireAdmin, async (req, res, next) => {
+// ADMIN-P2-005: mass ticket state transitions are an expensive admin op.
+router.post("/bulk", rateLimitAdminOps, requireAdmin, async (req, res, next) => {
   try {
     const { ids, status, priority } = bulkTicketUpdateSchema.parse(req.body);
 
@@ -562,10 +620,23 @@ router.post("/bulk", requireAdmin, async (req, res, next) => {
     // can never update another tenant's tickets (cross-tenant write).
     const scope = await resolveAdminTenantScope(req);
     const supabase = getScopedClient(req, "tickets", "write");
-    const ownedIds = await resolveOwnedTicketIds(supabase, ids, scope);
-    const skipped = ids.length - ownedIds.length;
+    const ownedRows = await resolveOwnedTicketRows(supabase, ids, scope);
+    const skipped = ids.length - ownedRows.length;
 
-    const updates = ownedIds.map((id) => {
+    // FEAT-P3-006: a mass status change still has to obey the transition map.
+    // Rows whose current status cannot legally move to the requested status are
+    // dropped from the update set and counted as failed (with the pair recorded
+    // in the audit metadata); priority-only bulk edits are unaffected.
+    const invalidTransitions =
+      status !== undefined
+        ? ownedRows.filter((row) => !isTicketTransitionAllowed(row.status, status))
+        : [];
+    const updatableRows =
+      status !== undefined
+        ? ownedRows.filter((row) => isTicketTransitionAllowed(row.status, status))
+        : ownedRows;
+
+    const updates = updatableRows.map(({ id }) => {
       const data: Record<string, string> = {};
       if (status) data.status = status;
       if (priority) data.priority = priority;
@@ -590,16 +661,29 @@ router.post("/bulk", requireAdmin, async (req, res, next) => {
 
     const resultRows = (results as unknown as { success: boolean }[] | null) ?? [];
     const successful = resultRows.filter((r) => r.success).length;
-    const failed = resultRows.filter((r) => !r.success);
+    const failed = resultRows.filter((r) => !r.success).length + invalidTransitions.length;
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
       action: "ticket.bulk_update",
       entityType: "ticket",
-      metadata: { ids, ownedIds, skipped, status, priority, successful, failed: failed.length },
+      metadata: {
+        ids,
+        ownedIds: updatableRows.map((row) => row.id),
+        skipped,
+        status,
+        priority,
+        successful,
+        failed,
+        invalidTransitions: invalidTransitions.map((row) => ({
+          id: row.id,
+          from: row.status,
+          to: status,
+        })),
+      },
     });
 
-    res.json(success({ results, successful, failed: failed.length, skipped }));
+    res.json(success({ results, successful, failed, skipped }));
   } catch (error) {
     next(error);
   }

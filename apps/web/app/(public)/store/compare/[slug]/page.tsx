@@ -131,7 +131,7 @@ export default async function CompareDetailPage({ params }: { params: Promise<{ 
           Side-by-side comparison of features, scope, and pricing.
         </p>
 
-        <div className="overflow-x-auto rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] backdrop-blur-sm">
+        <div className="overflow-x-auto rounded-lg border border-emerald-600/10 bg-cyber-card-subtle backdrop-blur-sm">
           <table className="w-full border-collapse">
             <thead>
               <tr>
@@ -181,7 +181,7 @@ export default async function CompareDetailPage({ params }: { params: Promise<{ 
         <div className="mt-12 text-center">
           <Link
             href="/contact"
-            className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Not Sure? Talk to Us
           </Link>

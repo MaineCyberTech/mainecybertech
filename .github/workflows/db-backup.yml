@@ -1,20 +1,75 @@
 name: Database Backup
+
+# Daily encrypted pg_dump to S3/Spaces.
+#
+# Scheduled runs target the dev database/buckets (the `dev` environment holds
+# the SUPABASE_*/Spaces secrets these jobs resolve).
+#
+# DATA-P2-010: production long-term backup is a supported target:
+#   * workflow_dispatch `environment: prod` runs from `main` and attaches the
+#     approval-gated `prod-approval` environment (required reviewers must be
+#     configured in GitHub for the gate to be real).
+#   * the schedule targets prod automatically once the operator sets the
+#     `PROD_BACKUP_ENABLED` repository variable to `true`. That run attaches
+#     `prod-backup` instead of `dev` (one schedule target at a time; dispatch
+#     `environment: dev` manually to keep the dev dump). Create `prod-backup`
+#     with the prod backup secrets and NO required reviewers: an approval-gated
+#     environment would leave an unattended scheduled backup waiting for a
+#     human instead of running.
+# Operator dependency (cannot be set from the repo): the prod backup secrets
+# (`SUPABASE_DB_URL`, `BACKUP_ENCRYPTION_KEY`, `AWS_*`/`DO_SPACES_*`,
+# `S3_BUCKET`/`S3_PREFIX`) must be provisioned in the environment the job
+# attaches — see docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md.
+#
+# On success the job records a platform heartbeat (DR-P2-008) so the worker's
+# backup-dr-check alerts when the REAL backups go stale.
+
 on:
   schedule:
     - cron: "0 4 * * *"
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (prod dispatch requires main + the prod-approval gate)"
+        type: choice
+        options:
+          - dev
+          - prod
+        default: dev
 
 permissions:
   contents: read
 
 jobs:
   backup:
-    # Backups target the dev database/buckets; the dev environment holds
-    # the SUPABASE_*/Spaces secrets these jobs resolve.
-    environment: dev
+    # Dispatch: the selected environment (prod -> the approval-gated
+    # prod-approval). Schedule: dev normally; prod-backup once the operator has
+    # enabled the scheduled prod target.
+    environment: ${{ (github.event.inputs.environment == 'prod') && 'prod-approval' || (github.event_name == 'schedule' && vars.PROD_BACKUP_ENABLED == 'true') && 'prod-backup' || 'dev' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Restrict prod dispatch to the main branch
+        # A prod backup must run the workflow definition that is on main, not
+        # an arbitrary feature branch.
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::environment=prod can only be dispatched from the main branch (got ${GITHUB_REF}). Promote develop -> main first."
+            exit 1
+          fi
+
+      - name: Record tool versions
+        # DR-P3-003: aws/jq and (when present) pg_dump come from the runner
+        # image; the fallback client container in scripts/backup-database.sh is
+        # digest-pinned. Record the versions so a backup result is triageable.
+        run: |
+          aws --version
+          jq --version
+          (pg_dump --version || echo "pg_dump not on runner — script uses the pinned postgres:16-alpine client container")
+
       - name: Run database backup script
         id: backup
         env:
@@ -45,6 +100,17 @@ jobs:
           # Fail the job if no non-empty dump was produced.
           VERIFY_BACKUP: "1"
         run: bash scripts/backup-database.sh
+
+      - name: Record platform backup heartbeat
+        # DR-P2-008: the last successful run is the platform's real backup
+        # signal (the client-facing `backup_status` module is product data).
+        # Fail closed — an unrecorded success is indistinguishable from a
+        # stopped backup.
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          HEARTBEAT_WORKFLOW: db-backup
+        run: bash scripts/record-backup-heartbeat.sh
+
       - name: Notify on failure
         if: failure()
         env:
@@ -53,14 +119,20 @@ jobs:
           NTFY_PASS: ${{ secrets.NTFY_ALERTS_PASS }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          MESSAGE="❌ Database backup failed for develop branch. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          # Notifications go to the org ntfy topic; Slack remains a fallback
-          # while SLACK_WEBHOOK_URL is configured.
+          MESSAGE="❌ Database backup failed. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # DR-P2-003: do not swallow delivery failures. A notifier that fails
+          # silently (or a missing channel) is exactly how a backup outage goes
+          # unnoticed, so this step must fail loudly — the run is already red.
           if [ -n "$NTFY_URL" ]; then
             curl -sf -u "$NTFY_USER:$NTFY_PASS" \
               -H "Title: Database backup failed" -H "Priority: high" -H "Tags: rotating_light" \
-              -d "$MESSAGE" "$NTFY_URL" || true
+              -d "$MESSAGE" "$NTFY_URL"
+            echo "Notified via ntfy"
           elif [ -n "$SLACK_WEBHOOK_URL" ]; then
             curl -sf -X POST -H "Content-Type: application/json" \
-              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL" || true
+              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL"
+            echo "Notified via Slack"
+          else
+            echo "::error::Backup failure notification could not be delivered: set NTFY_ALERTS_URL or SLACK_WEBHOOK_URL"
+            exit 1
           fi

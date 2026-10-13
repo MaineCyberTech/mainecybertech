@@ -409,11 +409,6 @@ on conflict (id) do nothing;
 -- ---------------------------------------------------------
 -- 21. MODULE TABLES - settings/keys/ai/comments/timeline/results/triage/licenses/status/dmarc
 -- ---------------------------------------------------------
-insert into public.portal_module_settings (id, organization_id, module_key, settings) values
-  ('81200000-0000-0000-0000-000000000001'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'assets', jsonb_build_object('track_warranty', true, 'auto_scan', false)),
-  ('81200000-0000-0000-0000-000000000002'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'governance', jsonb_build_object('require_approval', true))
-on conflict (id) do nothing;
-
 insert into public.api_keys (id, organization_id, name, key_hash, key_prefix, permissions, created_by, is_active, last_used_at) values
   ('81210000-0000-0000-0000-000000000001'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Northwind Case Sync', 'sha256_northwind_case_sync_seed', 'mct_nw_', '["tickets:read", "documents:read"]'::jsonb, '66ce903f-6fe0-45da-878b-a0398e6b1981'::uuid, true, now() - interval '1 day'),
   ('81210000-0000-0000-0000-000000000002'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'Summit Compliance Export', 'sha256_summit_compliance_seed', 'mct_sm_', '["findings:read", "audit:read"]'::jsonb, '66ce903f-6fe0-45da-878b-a0398e6b1981'::uuid, true, now() - interval '3 hours')

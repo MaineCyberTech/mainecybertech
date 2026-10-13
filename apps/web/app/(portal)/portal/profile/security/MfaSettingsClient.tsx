@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useToast } from "@/components/ui/ToastProvider";
 import { formatDateShort } from "@/lib/format";
@@ -22,10 +23,12 @@ export default function MfaSettingsClient({
   initialFactors,
   initialRecovery = null,
   recovered = false,
+  mfaRequired = false,
 }: {
   initialFactors: MfaFactorView[];
   initialRecovery?: MfaRecoveryStatusView | null;
   recovered?: boolean;
+  mfaRequired?: boolean;
 }) {
   const { pushToast } = useToast();
   const [factors, setFactors] = useState<MfaFactorView[]>(initialFactors);
@@ -43,6 +46,11 @@ export default function MfaSettingsClient({
   const [stepUpError, setStepUpError] = useState("");
   const [stepUpBusy, setStepUpBusy] = useState(false);
   const stepUpInputRef = useRef<HTMLInputElement>(null);
+  // USE-P2-009: state for the ?mfa=required step-up banner.
+  const [requiredCode, setRequiredCode] = useState("");
+  const [requiredBusy, setRequiredBusy] = useState(false);
+  const [requiredError, setRequiredError] = useState("");
+  const [requiredVerified, setRequiredVerified] = useState(false);
 
   useEffect(() => {
     if (stepUpFor) stepUpInputRef.current?.focus();
@@ -178,6 +186,27 @@ export default function MfaSettingsClient({
     }
   }
 
+  async function confirmRequiredStepUp() {
+    const factor = factors.find((f) => f.status === "verified");
+    if (!factor) {
+      setRequiredError(
+        "No verified authenticator app was found. Add an authenticator app below, then verify to continue.",
+      );
+      return;
+    }
+    setRequiredBusy(true);
+    setRequiredError("");
+    const result = await stepUpMfaAction(factor.id, requiredCode.trim());
+    setRequiredBusy(false);
+    if (!result.ok) {
+      setRequiredError(result.error);
+      return;
+    }
+    setRequiredVerified(true);
+    setRequiredCode("");
+    pushToast("success", "Second factor verified. You can continue.", "Verified");
+  }
+
   async function copyRecoveryCodes() {
     if (!recoveryCodes) return;
     try {
@@ -202,6 +231,63 @@ export default function MfaSettingsClient({
           is optional and can be removed at any time.
         </p>
       </div>
+
+      {mfaRequired ? (
+        <section
+          aria-labelledby="mfa-required-title"
+          className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-6"
+        >
+          <h2 id="mfa-required-title" className="text-lg font-semibold text-amber-100">
+            Second factor required
+          </h2>
+          {requiredVerified ? (
+            <div className="mt-3 space-y-3">
+              <p className="text-sm text-amber-100/90">
+                Your authenticator code was verified. You can continue to the portal.
+              </p>
+              <Link href="/portal/dashboard" className="cyber-button inline-flex">
+                Continue to dashboard
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-3 space-y-3">
+              <p className="text-sm text-amber-100/90">
+                Your session needs a fresh authenticator verification before you can continue. Enter
+                the 6-digit code from your authenticator app.
+              </p>
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <label htmlFor="required-step-up-code" className="cyber-label">
+                    Authenticator code
+                  </label>
+                  <input
+                    id="required-step-up-code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={8}
+                    value={requiredCode}
+                    onChange={(e) => setRequiredCode(e.target.value)}
+                    className="cyber-input w-40"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={confirmRequiredStepUp}
+                  disabled={requiredBusy || requiredCode.trim().length < 6}
+                  className="cyber-button"
+                >
+                  {requiredBusy ? "Verifying..." : "Verify to continue"}
+                </button>
+              </div>
+              {requiredError ? (
+                <p role="alert" className="text-sm text-red-300">
+                  {requiredError}
+                </p>
+              ) : null}
+            </div>
+          )}
+        </section>
+      ) : null}
 
       {message ? (
         <div

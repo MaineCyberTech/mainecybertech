@@ -14,9 +14,13 @@ create table if not exists public.training_courses (
 );
 create index if not exists idx_training_courses_org on public.training_courses (organization_id);
 alter table public.training_courses enable row level security;
+drop policy if exists "courses_org_select" on public.training_courses;
 create policy "courses_org_select" on public.training_courses for select using (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = training_courses.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "courses_org_insert" on public.training_courses;
 create policy "courses_org_insert" on public.training_courses for insert with check (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = training_courses.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "courses_org_update" on public.training_courses;
 create policy "courses_org_update" on public.training_courses for update using (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = training_courses.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "courses_admin_delete" on public.training_courses;
 create policy "courses_admin_delete" on public.training_courses for delete using (EXISTS (SELECT 1 FROM memberships m JOIN roles r ON m.role_id = r.id WHERE m.organization_id = training_courses.organization_id AND m.user_id = auth.uid() AND r.key = 'admin'));
 
 create table if not exists public.training_lessons (
@@ -30,9 +34,13 @@ create table if not exists public.training_lessons (
 );
 create index if not exists idx_training_lessons_course on public.training_lessons (course_id);
 alter table public.training_lessons enable row level security;
+drop policy if exists "lessons_org_select" on public.training_lessons;
 create policy "lessons_org_select" on public.training_lessons for select using (EXISTS (SELECT 1 FROM training_courses tc JOIN memberships m ON m.organization_id = tc.organization_id WHERE tc.id = training_lessons.course_id AND m.user_id = auth.uid()));
+drop policy if exists "lessons_org_insert" on public.training_lessons;
 create policy "lessons_org_insert" on public.training_lessons for insert with check (EXISTS (SELECT 1 FROM training_courses tc JOIN memberships m ON m.organization_id = tc.organization_id WHERE tc.id = training_lessons.course_id AND m.user_id = auth.uid()));
+drop policy if exists "lessons_org_update" on public.training_lessons;
 create policy "lessons_org_update" on public.training_lessons for update using (EXISTS (SELECT 1 FROM training_courses tc JOIN memberships m ON m.organization_id = tc.organization_id WHERE tc.id = training_lessons.course_id AND m.user_id = auth.uid()));
+drop policy if exists "lessons_admin_delete" on public.training_lessons;
 create policy "lessons_admin_delete" on public.training_lessons for delete using (EXISTS (SELECT 1 FROM training_courses tc JOIN memberships m ON m.role_id = (SELECT id FROM roles WHERE key = 'admin') WHERE tc.id = training_lessons.course_id AND m.organization_id = tc.organization_id AND m.user_id = auth.uid()));
 
 create table if not exists public.training_enrollments (
@@ -46,6 +54,9 @@ create table if not exists public.training_enrollments (
 );
 create index if not exists idx_training_enrollments_user on public.training_enrollments (user_id);
 alter table public.training_enrollments enable row level security;
+drop policy if exists "enrollments_own" on public.training_enrollments;
 create policy "enrollments_own" on public.training_enrollments for select using (user_id = auth.uid());
+drop policy if exists "enrollments_own_insert" on public.training_enrollments;
 create policy "enrollments_own_insert" on public.training_enrollments for insert with check (user_id = auth.uid());
+drop policy if exists "enrollments_own_update" on public.training_enrollments;
 create policy "enrollments_own_update" on public.training_enrollments for update using (user_id = auth.uid());

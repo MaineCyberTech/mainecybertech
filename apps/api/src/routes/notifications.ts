@@ -1,19 +1,169 @@
 import { Router } from "express";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
+import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@mct/sdk/database.types";
 import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
-import { requireOrgAccess } from "../middleware/org-access";
+import {
+  assertOrgScopeMatches,
+  assertSharesActiveOrg,
+  requireOrgAccess,
+} from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
-import { AppError, success } from "../types";
+import { AppError, success, failure } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { getEnv } from "../config/env";
 import { queryInt } from "../lib/query";
+import { applyResolvedOrg } from "../lib/admin-scope";
 import { buildNotificationKey, createNotification } from "../lib/notify";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
+
+/**
+ * PERF-P2-005: SSE fan-out limits.
+ *
+ * A per-process cap rejects new streams with 503 + Retry-After once too many
+ * are open (NotificationBell already falls back to polling on stream error),
+ * and every stream for the same user shares one Supabase Realtime channel
+ * instead of opening a channel each. Realtime subscriptions are then bounded
+ * by distinct users rather than by open tabs/reconnect storms.
+ */
+export const SSE_MAX_STREAMS = 200;
+
+let activeSseStreams = 0;
+
+/** Reserve one of the per-process stream slots. */
+export function acquireSseSlot(): boolean {
+  if (activeSseStreams >= SSE_MAX_STREAMS) return false;
+  activeSseStreams += 1;
+  return true;
+}
+
+/** Release a slot taken by acquireSseSlot(). */
+export function releaseSseSlot(): void {
+  if (activeSseStreams > 0) activeSseStreams -= 1;
+}
+
+/** Test hook: number of SSE streams currently open. */
+export function sseActiveStreams(): number {
+  return activeSseStreams;
+}
+
+/** Test hook: reset the stream counter. */
+export function resetSseStreams(): void {
+  activeSseStreams = 0;
+}
+
+type NotificationSubscriber = (
+  event: "notification" | "notification_update",
+  row: Record<string, unknown>,
+) => void;
+
+interface SharedNotificationChannel {
+  client: SupabaseClient<Database>;
+  channel: RealtimeChannel;
+  subscribers: Set<NotificationSubscriber>;
+  pendingSubscribed: Set<() => void>;
+  subscribed: boolean;
+}
+
+const sharedNotificationChannels = new Map<string, SharedNotificationChannel>();
+
+/**
+ * Subscribe to `notifications` changes for one user, sharing a single Supabase
+ * Realtime channel across every SSE stream for that user. Returns an
+ * unsubscribe function; the channel is removed when the last subscriber
+ * leaves.
+ */
+export function subscribeToUserNotifications(
+  client: SupabaseClient<Database>,
+  userId: string,
+  subscriber: NotificationSubscriber,
+  onSubscribed?: () => void,
+): () => void {
+  const topic = `notifications:${userId}`;
+  let entry = sharedNotificationChannels.get(topic);
+
+  if (!entry) {
+    const subscribers = new Set<NotificationSubscriber>();
+    const pendingSubscribed = new Set<() => void>();
+    const created: SharedNotificationChannel = {
+      client,
+      channel: null as unknown as RealtimeChannel,
+      subscribers,
+      pendingSubscribed,
+      subscribed: false,
+    };
+    created.channel = client
+      .channel(topic)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          for (const fn of subscribers) fn("notification", row);
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          for (const fn of subscribers) fn("notification_update", row);
+        },
+      )
+      .subscribe((status) => {
+        if (status !== "SUBSCRIBED") return;
+        created.subscribed = true;
+        for (const notify of pendingSubscribed) notify();
+        pendingSubscribed.clear();
+      });
+    sharedNotificationChannels.set(topic, created);
+    entry = created;
+  }
+
+  entry.subscribers.add(subscriber);
+  if (entry.subscribed) {
+    onSubscribed?.();
+  } else if (onSubscribed) {
+    entry.pendingSubscribed.add(onSubscribed);
+  }
+
+  return () => {
+    const current = sharedNotificationChannels.get(topic);
+    if (!current) return;
+    current.subscribers.delete(subscriber);
+    if (onSubscribed) current.pendingSubscribed.delete(onSubscribed);
+    if (current.subscribers.size === 0) {
+      sharedNotificationChannels.delete(topic);
+      current.client.removeChannel(current.channel);
+    }
+  };
+}
+
+/** Test hook: number of shared Supabase channels currently held. */
+export function sharedNotificationChannelCount(): number {
+  return sharedNotificationChannels.size;
+}
+
+/** Test hook: drop the shared-channel registry (does not unsubscribe). */
+export function resetSharedNotificationChannels(): void {
+  sharedNotificationChannels.clear();
+}
 
 function sanitizeNotification(n: Record<string, unknown>): Record<string, unknown> {
   return {
@@ -45,6 +195,28 @@ export function notificationInScope(
 
 // SSE stream for real-time notifications using Supabase realtime
 router.get("/stream", async (req, res, next) => {
+  // PERF-P2-005: refuse new streams once the per-process cap is reached.
+  // The client falls back to polling, so a 503 degrades instead of hanging.
+  if (!acquireSseSlot()) {
+    res.setHeader("Retry-After", "10");
+    res
+      .status(503)
+      .json(
+        failure(
+          "SERVICE_UNAVAILABLE",
+          "Too many notification streams; retry shortly",
+          503,
+        ),
+      );
+    return;
+  }
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    releaseSseSlot();
+  };
+
   try {
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
@@ -104,44 +276,20 @@ router.get("/stream", async (req, res, next) => {
     );
     authValidationInterval.unref();
 
-    // Use Supabase realtime subscription for real-time notifications
-    const channel = supabase
-      .channel(`notifications:${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const row = payload.new as Record<string, unknown>;
-          if (!notificationInScope(row, userId, scopedOrgId)) return;
-          const safe = sanitizeNotification(row);
-          res.write(`event: notification\ndata: ${JSON.stringify(safe)}\n\n`);
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const row = payload.new as Record<string, unknown>;
-          if (!notificationInScope(row, userId, scopedOrgId)) return;
-          const safe = sanitizeNotification(row);
-          res.write(`event: notification_update\ndata: ${JSON.stringify(safe)}\n\n`);
-        },
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          res.write(`data: ${JSON.stringify({ type: "subscribed" })}\n\n`);
-        }
-      });
+    // Use a shared Supabase realtime subscription per user: two tabs (or a
+    // reconnect storm) for the same user reuse one channel.
+    const unsubscribe = subscribeToUserNotifications(
+      supabase,
+      userId,
+      (event, row) => {
+        if (!notificationInScope(row, userId, scopedOrgId)) return;
+        const safe = sanitizeNotification(row);
+        res.write(`event: ${event}\ndata: ${JSON.stringify(safe)}\n\n`);
+      },
+      () => {
+        res.write(`data: ${JSON.stringify({ type: "subscribed" })}\n\n`);
+      },
+    );
 
     // Send initial unread notifications on connect
     let initialQuery = supabase
@@ -164,10 +312,13 @@ router.get("/stream", async (req, res, next) => {
 
     req.on("close", () => {
       clearInterval(keepaliveInterval);
-      supabase.removeChannel(channel);
+      clearInterval(authValidationInterval);
+      unsubscribe();
+      release();
       res.end();
     });
   } catch (error) {
+    release();
     next(error);
   }
 });
@@ -201,12 +352,15 @@ router.get("/", async (req, res, next) => {
 
     let query = supabase
       .from("notifications")
-      .select("*", { count: "exact" })
+      .select("*", { count: listCountMode(req.query) })
       .eq("user_id", req.authUser!.userId)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (unreadOnly) query = query.eq("read", false);
+    // MT-P3-002: apply the same resolved-org predicate as the SSE stream, so
+    // an org-less row cannot surface in a scoped member's inbox.
+    query = applyResolvedOrg(req, query);
 
     const { data, error, count } = await query;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -220,11 +374,14 @@ router.get("/", async (req, res, next) => {
 router.get("/unread-count", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "notifications", "read");
-    const { count, error } = await supabase
+    let query = supabase
       .from("notifications")
       .select("*", { count: "exact", head: true })
       .eq("user_id", req.authUser!.userId)
       .eq("read", false);
+    query = applyResolvedOrg(req, query);
+
+    const { count, error } = await query;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success({ count: count ?? 0 }));
@@ -294,6 +451,14 @@ router.post("/", requireAdmin, async (req, res, next) => {
     const parsed = createNotificationSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
+    // MT-P3-002: the admin create endpoint is not a cross-tenant message drop.
+    // The recipient must share the caller's resolved org (platform admins stay
+    // cross-tenant by design), and the row must carry that org so org-less
+    // rows cannot bypass the SSE/list scope assertion.
+    await assertSharesActiveOrg(req, parsed.userId);
+    if (parsed.organizationId) assertOrgScopeMatches(req, parsed.organizationId);
+    const organizationId = parsed.organizationId ?? req.orgId ?? undefined;
+
     const notificationKey = buildNotificationKey({
       userId: parsed.userId,
       module: parsed.module,
@@ -310,7 +475,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
     // security-critical alerts.
     const result = await createNotification({
       userId: parsed.userId,
-      organizationId: parsed.organizationId,
+      organizationId,
       title: parsed.title,
       body: parsed.body,
       module: parsed.module,

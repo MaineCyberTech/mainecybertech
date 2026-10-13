@@ -26,7 +26,7 @@ body {
 
 @layer utilities {
   .cyber-page-bg {
-    @apply min-h-screen bg-[#0A1118] text-slate-50;
+    @apply min-h-screen bg-cyber-base text-slate-50;
   }
 
   .cyber-container {
@@ -34,11 +34,11 @@ body {
   }
 
   .glass-card {
-    @apply rounded-xl border border-white/5 bg-[rgba(18,30,45,0.75)] backdrop-blur-md shadow-[0_20px_40px_rgba(0,0,0,0.45)];
+    @apply rounded-xl border border-white/5 bg-cyber-card backdrop-blur-md shadow-[0_20px_40px_rgba(0,0,0,0.45)];
   }
 
   .glass-card-hover {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:border-emerald-600/25 hover:bg-[rgba(25,40,60,0.95)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.6)];
+    @apply transition-all duration-300 hover:-translate-y-1 hover:border-emerald-600/25 hover:bg-cyber-card-hover hover:shadow-[0_20px_40px_rgba(0,0,0,0.6)];
   }
 
   .cyber-heading {
@@ -50,7 +50,7 @@ body {
   }
 
   .cyber-button {
-    @apply rounded-lg border-2 border-emerald-600 bg-emerald-600 px-4 py-2.5 font-display text-xs font-bold uppercase tracking-[0.18em] text-[#0A1118] transition-all duration-300 hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.35)];
+    @apply rounded-lg border-2 border-emerald-600 bg-emerald-600 px-4 py-2.5 font-display text-xs font-bold uppercase tracking-[0.18em] text-cyber-base transition-all duration-300 hover:bg-transparent hover:text-emerald-500 hover:shadow-glow-lg;
   }
 
   .cyber-button-secondary {
@@ -58,7 +58,7 @@ body {
   }
 
   .cyber-button-sm {
-    @apply rounded-lg border-2 border-emerald-600 bg-emerald-600 px-3 py-1.5 font-display text-[10px] font-bold uppercase tracking-[0.18em] text-[#0A1118] transition-all duration-300 hover:bg-transparent hover:text-emerald-500;
+    @apply rounded-lg border-2 border-emerald-600 bg-emerald-600 px-3 py-1.5 font-display text-[10px] font-bold uppercase tracking-[0.18em] text-cyber-base transition-all duration-300 hover:bg-transparent hover:text-emerald-500;
   }
 
   .cyber-button-danger {
@@ -70,7 +70,7 @@ body {
   }
 
   .cyber-input {
-    @apply w-full rounded-lg border border-white/10 bg-[#0A1118]/60 px-4 py-3 text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-[#0A1118]/90 focus:shadow-[0_0_10px_rgba(5,150,105,0.2)];
+    @apply w-full rounded-lg border border-white/10 bg-cyber-base/60 px-4 py-3 text-base text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 focus:shadow-[0_0_10px_rgba(5,150,105,0.2)] sm:text-sm;
   }
 
   .cyber-label {
@@ -94,7 +94,7 @@ body {
   }
 
   .cyber-sticky-header {
-    @apply sticky top-0 z-40 border-b border-emerald-600/20 bg-[#0A1118]/85 backdrop-blur-md;
+    @apply sticky top-0 z-40 border-b border-emerald-600/20 bg-cyber-base/85 backdrop-blur-md;
   }
 
   .cyber-grid-cards {
@@ -148,20 +148,6 @@ body {
   .cyber-subnav-scroll {
     @apply flex flex-nowrap gap-3 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0;
   }
-}
-
-/* Dark mode support (handled by ThemeProvider) */
-:root[data-theme="dark"] {
-  --cyber-base: #0A1118;
-  --cyber-card: rgba(18, 30, 45, 0.75);
-  --cyber-card-hover: rgba(25, 40, 60, 0.95);
-}
-
-:root[data-theme="light"] {
-  --cyber-base: #f8fafc;
-  --cyber-card: rgba(255, 255, 255, 0.9);
-  --cyber-card-hover: rgba(241, 245, 249, 0.95);
-  --cyber-accent: #059669;
 }
 
 /* Focus visible styles */

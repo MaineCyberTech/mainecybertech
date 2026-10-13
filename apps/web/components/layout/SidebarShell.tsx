@@ -116,7 +116,7 @@ export default function SidebarShell({
               <button
                 ref={closeRef}
                 onClick={() => closeDrawer()}
-                className="rounded p-1 text-slate-400 transition hover:bg-white/5 hover:text-white"
+                className="-m-2 rounded p-3 text-slate-400 transition hover:bg-white/5 hover:text-white"
                 aria-label="Close menu"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -172,7 +172,7 @@ describe("Device Profiles API", () => {
     );
     const res = await request(app)
       .delete("/api/v1/device-profiles/dp-1")
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 });
@@ -213,7 +213,7 @@ describe("Device Profiles tenant isolation", () => {
     mockProfile(ORG_A);
     const res = await request(app)
       .delete(`/api/v1/device-profiles/${PROFILE_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 
@@ -221,7 +221,7 @@ describe("Device Profiles tenant isolation", () => {
     mockProfile(ORG_B);
     const res = await request(app)
       .delete(`/api/v1/device-profiles/${PROFILE_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(404);
   });
 });

@@ -62,6 +62,6 @@ export class KnowledgeBaseApi {
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/knowledge-base/${id}`);
+    return this.client.delete<void>(`/api/v1/knowledge-base/${id}`, undefined, { confirm: true });
   }
 }

@@ -1,0 +1,87 @@
+name: Break-glass record
+description: Record a branch-protection bypass (emergency merge) for the audit trail — see docs/RUNBOOK_EMERGENCY_MERGE.md.
+title: "[break-glass]: "
+labels: ["break-glass"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this record **before** bypassing branch protection on `main` or
+        `develop` (or within 30 minutes of the merge when the emergency leaves
+        no time). The process, roles and post-incident review are defined in
+        [docs/RUNBOOK_EMERGENCY_MERGE.md](https://github.com/MaineCyberTech/mainecybertech/blob/HEAD/docs/RUNBOOK_EMERGENCY_MERGE.md).
+        Do not include secrets or tenant data.
+  - type: input
+    id: incident
+    attributes:
+      label: Incident / ticket reference
+      description: Link to the incident record, GitHub issue or on-call thread that justifies the bypass.
+      placeholder: "https://github.com/MaineCyberTech/mainecybertech/issues/..."
+    validations:
+      required: true
+  - type: input
+    id: approver
+    attributes:
+      label: Approver
+      description: Repo owner (or security reviewer as delegate) who approved the bypass, and where the approval is recorded.
+      placeholder: "@owner — approved in the incident thread"
+    validations:
+      required: true
+  - type: input
+    id: timebox
+    attributes:
+      label: Time-box
+      description: When the protection relaxation starts and when it must be restored (default 4 hours).
+      placeholder: "2026-10-12 14:00Z → 18:00Z"
+    validations:
+      required: true
+  - type: input
+    id: target
+    attributes:
+      label: Branch and PR
+      description: The protected branch and the PR being merged (plus any backport).
+      placeholder: "main — PR #123"
+    validations:
+      required: true
+  - type: textarea
+    id: bypassed
+    attributes:
+      label: Required checks / reviews bypassed
+      description: Which required status checks, CODEOWNERS review or conversation-resolution rule could not be satisfied, and why.
+    validations:
+      required: true
+  - type: textarea
+    id: settings
+    attributes:
+      label: Protection settings changed
+      description: The exact change (e.g. removed context `E2E / e2e (20.x)`, turned off `enforce_admins`), who made it and when.
+    validations:
+      required: true
+  - type: input
+    id: merge_commit
+    attributes:
+      label: Merge commit SHA
+      description: The commit that landed on the protected branch (fill in after the merge).
+    validations:
+      required: false
+  - type: textarea
+    id: restoration
+    attributes:
+      label: Restoration evidence
+      description: Paste the `gh api .../protection` output (or the drift workflow result) proving the settings were restored, and when.
+    validations:
+      required: true
+  - type: input
+    id: review
+    attributes:
+      label: Post-incident review owner and date
+      description: Who runs the blameless review (docs/INCIDENT_RESPONSE.md §4.4) and by when — within 5 business days of the merge.
+    validations:
+      required: true
+  - type: textarea
+    id: justification
+    attributes:
+      label: Why the normal path could not complete
+      description: The stuck check / outage / reviewer unavailability, what was tried first, and the follow-up issue for the root cause.
+    validations:
+      required: true

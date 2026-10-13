@@ -49,14 +49,20 @@ export class FinalApi {
     reject: (id: string) => this.c.post(`/api/v1/final/dns-changes/${id}/reject`),
     implement: (id: string) => this.c.post(`/api/v1/final/dns-changes/${id}/implement`),
   };
+  /**
+   * FEAT-P2-005: `satisfaction_pulses` is canonically owned by the
+   * satisfaction-pulse module; this client is kept for backward compatibility
+   * and now calls the canonical `/api/v1/satisfaction-pulse` surface (the old
+   * `/api/v1/final/satisfaction` path returns 410).
+   */
   satisfaction = {
     list: (p?: Record<string, string | number | undefined>) =>
-      this.c.get<PaginatedResult<unknown>>("/api/v1/final/satisfaction", qp(p)),
-    get: (id: string) => this.c.get<unknown>(`/api/v1/final/satisfaction/${id}`),
-    create: (d: Record<string, unknown>) => this.c.post("/api/v1/final/satisfaction", d),
+      this.c.get<PaginatedResult<unknown>>("/api/v1/satisfaction-pulse", qp(p)),
+    get: (id: string) => this.c.get<unknown>(`/api/v1/satisfaction-pulse/${id}`),
+    create: (d: Record<string, unknown>) => this.c.post("/api/v1/satisfaction-pulse", d),
     update: (id: string, d: Record<string, unknown>) =>
-      this.c.patch(`/api/v1/final/satisfaction/${id}`, d),
-    remove: (id: string) => this.c.delete(`/api/v1/final/satisfaction/${id}`),
+      this.c.patch(`/api/v1/satisfaction-pulse/${id}`, d),
+    remove: (id: string) => this.c.delete(`/api/v1/satisfaction-pulse/${id}`),
   };
   timeEntries = {
     list: (p?: Record<string, string | number | undefined>) =>

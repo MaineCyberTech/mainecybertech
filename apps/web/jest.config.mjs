@@ -23,6 +23,9 @@ export default {
     "^server-only$": "<rootDir>/__mocks__/server-only.js",
     "^@mct/ui/(.*)$": "<rootDir>/../../packages/ui/src/$1",
     "^@mct/ui$": "<rootDir>/../../packages/ui/src/index.ts",
+    // EVOL-P2-001 / EVOL-P2-002 / ADMIN-P3-001 / FEAT-P3-006: shared catalog
+    // subpaths resolve to source.
+    "^@mct/sdk/(module-registry|role-keys|ticket-status|webhook-events)$": "<rootDir>/../../packages/sdk/src/$1",
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   collectCoverageFrom: [

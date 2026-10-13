@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { renderEmailLayout } from "@mct/sdk/email-template";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { getSupabaseAdmin } from "../services/supabase";
@@ -9,6 +10,8 @@ import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { queryInt } from "../lib/query";
 import { setActiveOrganizations } from "../lib/metrics";
+import { enqueueTask } from "../lib/task-producer";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -35,7 +38,7 @@ router.get("/organizations", async (req, res, next) => {
     const query = supabase
       .from("organizations")
       .select("id, name, slug, status, primary_domain, support_plan, created_at", {
-        count: "exact",
+        count: listCountMode(req.query),
       })
       .order("name")
       .range(offset, offset + limit - 1);
@@ -59,15 +62,13 @@ router.post("/test-email", rateLimitEmail, async (req, res, next) => {
       to,
       subject: "MCT Portal — Test Email",
       text: "This is a test email from the Maine CyberTech Portal. If you received this, SMTP is configured correctly.",
-      html: `
-        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-          <h1 style="color: #059669; margin-bottom: 16px;">✅ Test Email</h1>
-          <p style="color: #374151; line-height: 1.6;">This is a test email from the <strong>Maine CyberTech Portal</strong>.</p>
-          <p style="color: #374151; line-height: 1.6;">If you received this, SMTP is configured correctly.</p>
-          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-          <p style="color: #9ca3af; font-size: 12px;">Sent from the MCT Portal admin panel</p>
-        </div>
-      `,
+      // NOTIF-P3-001: use the shared layout so the admin test exercises the
+      // same branding as real notification mail.
+      html: renderEmailLayout({
+        heading: "✅ Test Email",
+        bodyHtml:
+          "<p>This is a test email from the <strong>Maine CyberTech Portal</strong>.</p><p>If you received this, SMTP is configured correctly.</p>",
+      }),
     });
 
     if (!sent) {
@@ -82,6 +83,90 @@ router.post("/test-email", rateLimitEmail, async (req, res, next) => {
     });
 
     res.json(success({ sent: true, to }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * API-P3-005: the batch Jira/JSM/M365 integration syncs are per-tenant tasks
+ * that cannot run unattended — each needs an explicit project/organization
+ * target — but nothing could enqueue them either. This super-admin endpoint is
+ * the documented dispatch path (see docs/JIRA_JSM_INTEGRATION.md).
+ */
+const INTEGRATION_SYNC_TASKS = ["jira-sync", "jsm-sync", "m365-calendar-sync"] as const;
+
+const integrationSyncSchema = z
+  .object({
+    task: z.enum(INTEGRATION_SYNC_TASKS),
+    organizationId: z.string().uuid(),
+    projectId: z.string().uuid().optional(),
+    projectKey: z.string().min(1).max(100).optional(),
+    userPrincipalName: z.string().min(3).max(320).optional(),
+    batchSize: z.number().int().positive().max(500).optional(),
+    fullSync: z.boolean().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.task === "m365-calendar-sync" && !value.projectId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["projectId"],
+        message: "projectId is required for m365-calendar-sync",
+      });
+    }
+    if (value.task === "m365-calendar-sync" && !value.userPrincipalName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["userPrincipalName"],
+        message:
+          "userPrincipalName is required for m365-calendar-sync (app-only tokens cannot use /me)",
+      });
+    }
+  });
+
+// POST /api/v1/admin/integration-syncs — enqueue a per-tenant batch sync
+router.post("/integration-syncs", async (req, res, next) => {
+  try {
+    // Same platform-admin gate as GET /organizations: a tenant admin must not
+    // be able to trigger integration work for another tenant.
+    const supabase = getSupabaseAdmin();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_super_admin")
+      .eq("id", req.authUser!.userId)
+      .maybeSingle();
+
+    if (!profile?.is_super_admin) {
+      throw new AppError("FORBIDDEN", "Super admin access required", 403);
+    }
+
+    const parsed = integrationSyncSchema.parse(req.body);
+    const payload: Record<string, unknown> = { organizationId: parsed.organizationId };
+    if (parsed.projectId) payload.projectId = parsed.projectId;
+    if (parsed.projectKey) payload.projectKey = parsed.projectKey;
+    if (parsed.userPrincipalName) payload.userPrincipalName = parsed.userPrincipalName;
+    if (parsed.batchSize) payload.batchSize = parsed.batchSize;
+    if (parsed.fullSync !== undefined) payload.fullSync = parsed.fullSync;
+
+    const enqueued = await enqueueTask(parsed.task, payload);
+    if (!enqueued) {
+      throw new AppError(
+        "QUEUE_UNAVAILABLE",
+        "Task queue is not available; the integration sync was not enqueued",
+        503,
+      );
+    }
+
+    await logAuditEvent({
+      organizationId: parsed.organizationId,
+      actorUserId: req.authUser!.userId,
+      action: "admin.integration_sync.enqueued",
+      entityType: "worker_task",
+      entityId: parsed.task,
+      metadata: payload,
+    });
+
+    res.json(success({ enqueued: true, task: parsed.task }));
   } catch (error) {
     next(error);
   }

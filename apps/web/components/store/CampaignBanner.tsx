@@ -39,7 +39,7 @@ export default async function CampaignBanner() {
             return (
               <div
                 key={campaign.id}
-                className={`flex flex-col rounded-xl border ${cardBorder.split(" ")[0]} bg-[rgba(18,30,45,0.5)] p-8 backdrop-blur-sm transition hover:bg-[rgba(18,30,45,0.7)]`}
+                className={`flex flex-col rounded-xl border ${cardBorder.split(" ")[0]} bg-cyber-card-subtle p-8 backdrop-blur-sm transition hover:bg-cyber-card-overlay`}
               >
                 <div className="mb-5 flex items-center gap-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-cyber-base/60">
@@ -82,7 +82,7 @@ export default async function CampaignBanner() {
                 <div className="mt-6">
                   <Link
                     href="/contact"
-                    className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-2.5 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+                    className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-2.5 font-display text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
                   >
                     Learn More
                   </Link>

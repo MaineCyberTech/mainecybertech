@@ -3,6 +3,7 @@ import request from "supertest";
 import profilesRouter, { resolveImageUpload } from "../routes/profiles";
 import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
+import { encryptProfilePii, decryptProfilePii } from "../lib/profile-pii";
 
 jest.mock("../config/env", () => ({
   getEnv: jest.fn().mockReturnValue({
@@ -108,11 +109,42 @@ describe("profiles routes", () => {
 
       expect(res.status).toBe(200);
     });
+
+    it("returns decrypted PII from encrypted_pii instead of the plaintext mirror (SEC-P2-002)", async () => {
+      mockAuth();
+      const row = {
+        ...PROFILE,
+        full_name: "Stale Plaintext",
+        email: "stale@example.com",
+        encrypted_pii: encryptProfilePii(
+          {
+            full_name: "Encrypted Name",
+            email: "encrypted@example.com",
+            phone: "555",
+            title: "Encrypted Title",
+          },
+          {},
+        ),
+      };
+      (getSupabaseUser as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [row], error: null }),
+      );
+
+      const res = await request(app)
+        .get("/api/v1/profiles")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data[0].full_name).toBe("Encrypted Name");
+      expect(res.body.data[0].email).toBe("encrypted@example.com");
+      expect(res.body.data[0].phone).toBe("555");
+      expect(res.body.data[0].encrypted_pii).toBeUndefined();
+    });
   });
 
   describe("GET /:id", () => {
     it("returns a profile by id (own profile)", async () => {
-      const supabase = mockAuth();
+      mockAuth();
       // authUser is user-1, requesting user-1 (own profile) — no admin check needed
       const result: MockResult = { data: PROFILE, error: null };
       (getSupabaseUser as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
@@ -186,6 +218,53 @@ describe("profiles routes", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.full_name).toBe("Updated Name");
+    });
+
+    it("merges a change over the encrypted copy, not the stale plaintext mirror (SEC-P2-002)", async () => {
+      const supabase = mockAuth();
+      const current = {
+        id: "user-1",
+        version: 3,
+        full_name: "Stale Plaintext",
+        email: "stale@example.com",
+        phone: "000",
+        title: "Stale",
+        encrypted_pii: encryptProfilePii(
+          { full_name: "Encrypted Name", email: "enc@example.com", phone: "111", title: "Enc" },
+          {},
+        ),
+      };
+      const fetchBuilder = createMockBuilder({ data: current, error: null });
+      const updateBuilder = createMockBuilder({
+        data: {
+          ...current,
+          full_name: "New Name",
+          encrypted_pii: encryptProfilePii(
+            { full_name: "New Name", email: "enc@example.com", phone: "111", title: "Enc" },
+            {},
+          ),
+        },
+        error: null,
+      });
+      supabase.from.mockReturnValueOnce(fetchBuilder).mockReturnValueOnce(updateBuilder);
+
+      const res = await request(app)
+        .patch("/api/v1/profiles/user-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ fullName: "New Name" });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.full_name).toBe("New Name");
+
+      const written = updateBuilder.update.mock.calls[0][0] as {
+        encrypted_pii: Record<string, unknown>;
+      };
+      expect(decryptProfilePii(written.encrypted_pii)).toMatchObject({
+        full_name: "New Name",
+        email: "enc@example.com",
+        phone: "111",
+        title: "Enc",
+      });
     });
 
     it("returns 404 when profile not found", async () => {

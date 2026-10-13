@@ -170,9 +170,18 @@ describe("auth redirects", () => {
     expectPassedThrough();
   });
 
-  it("treats an expired auth cookie as unauthenticated", async () => {
+  it("treats an expired auth cookie as unauthenticated and explains why (USE-P2-009)", async () => {
     await middleware(makeRequest({ pathname: "/portal/dashboard", token: expiredToken() }));
-    expectRedirect("/login");
+    const url = lastRedirect();
+    expect(url.pathname).toBe("/login");
+    expect(url.searchParams.get("reason")).toBe("expired");
+  });
+
+  it("does not add an expiry reason when no session cookie is present", async () => {
+    await middleware(makeRequest({ pathname: "/portal/dashboard" }));
+    const url = lastRedirect();
+    expect(url.pathname).toBe("/login");
+    expect(url.searchParams.get("reason")).toBeNull();
   });
 
   it("treats a malformed auth cookie as unauthenticated", async () => {

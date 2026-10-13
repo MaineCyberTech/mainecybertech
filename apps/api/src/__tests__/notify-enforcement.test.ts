@@ -5,7 +5,15 @@ jest.mock("../config/env", () => ({
     NODE_ENV: "test",
     APP_BASE_URL: "http://localhost:3000",
     LOG_LEVEL: "silent",
+    // NOTIF-P3-005: the unsubscribe link derives its HMAC key from this.
+    SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
   }),
+}));
+
+jest.mock("../lib/notification-throttle", () => ({
+  EMAIL_THROTTLE_WINDOW_SECONDS: 3600,
+  EMAIL_THROTTLE_MAX_PER_WINDOW: 30,
+  isEmailThrottled: jest.fn().mockResolvedValue(false),
 }));
 
 jest.mock("../services/supabase", () => ({
@@ -26,7 +34,10 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { logger } from "../lib/logger";
 import { sendEmail } from "../lib/email";
 import { enqueueTask } from "../lib/task-producer";
+import { isEmailThrottled } from "../lib/notification-throttle";
+import { verifyUnsubscribeToken } from "../lib/unsubscribe-token";
 import {
+  claimNotificationEmail,
   createNotification,
   notifyAndEmail,
   buildNotificationKey,
@@ -223,6 +234,82 @@ describe("notifyAndEmail preference enforcement (NOTIF-P1-001)", () => {
   });
 });
 
+describe("notifyAndEmail email idempotency (NOTIF-P2-009)", () => {
+  it("sends the email once for the first notification", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    const result = await notifyAndEmail({ ...baseOpts, email: "user@example.com" });
+
+    expect(result.inserted).toBe(true);
+    expect(result.emailQueued).toBe(true);
+    expect(enqueueTask).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not enqueue a second email when the in-app notification was deduped", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    const first = await notifyAndEmail({ ...baseOpts, email: "user@example.com" });
+    const second = await notifyAndEmail({ ...baseOpts, email: "user@example.com" });
+
+    expect(first.inserted).toBe(true);
+    expect(first.emailQueued).toBe(true);
+    expect(second.deduped).toBe(true);
+    expect(second.emailQueued).toBe(false);
+    expect(second.emailSkipped).toBe(true);
+    expect(enqueueTask).toHaveBeenCalledTimes(1);
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("claims the email when in-app is suppressed so a repeat cannot double-send", async () => {
+    const supabase = fakeSupabase({
+      preferences: [{ channel: "in_app", enabled: false }],
+    });
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+    const opts = {
+      ...baseOpts,
+      email: "user@example.com",
+      notificationKey: "notif-p2-009-suppressed-repeat",
+    };
+
+    const first = await notifyAndEmail(opts);
+    const second = await notifyAndEmail(opts);
+
+    expect(first.suppressed).toBe(true);
+    expect(first.emailQueued).toBe(true);
+    expect(second.emailQueued).toBe(false);
+    expect(second.emailSkipped).toBe(true);
+    expect(enqueueTask).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("claimNotificationEmail (NOTIF-P2-009)", () => {
+  it("returns true when this call inserted the notification", async () => {
+    await expect(
+      claimNotificationEmail({ inserted: true, deduped: false, suppressed: false }, "k1"),
+    ).resolves.toBe(true);
+  });
+
+  it("returns false when the notification was deduped — an earlier call owns the send", async () => {
+    await expect(
+      claimNotificationEmail({ inserted: false, deduped: true, suppressed: false }, "k2"),
+    ).resolves.toBe(false);
+  });
+
+  it("falls back to the idempotency store when in-app is suppressed", async () => {
+    const key = "notif-p2-009-claim-fallback";
+    await expect(
+      claimNotificationEmail({ inserted: false, deduped: false, suppressed: true }, key),
+    ).resolves.toBe(true);
+    await expect(
+      claimNotificationEmail({ inserted: false, deduped: false, suppressed: true }, key),
+    ).resolves.toBe(false);
+  });
+});
+
 describe("notification email link escaping (CodeQL js/xss)", () => {
   it("percent-encodes the module id and escapes the href", async () => {
     const supabase = fakeSupabase({ preferences: [] });
@@ -239,6 +326,163 @@ describe("notification email link escaping (CodeQL js/xss)", () => {
     // The payload is percent-encoded, so it cannot terminate the href attribute.
     expect(payload.html).toContain("%22%3E%3Cscript%3E");
     expect(payload.html).not.toContain('"><script>');
+  });
+});
+
+describe("shared email template (NOTIF-P3-001/005)", () => {
+  it("renders the shared layout with preferences + signed unsubscribe footer links", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    await notifyAndEmail({ ...baseOpts, email: "user@example.com" });
+
+    const payload = (enqueueTask as jest.Mock).mock.calls[0][1] as {
+      subject: string;
+      text: string;
+      html: string;
+    };
+    expect(payload.subject).toBe("[Maine CyberTech] New Comment on Ticket");
+    expect(payload.html).toContain("Manage notification preferences");
+    expect(payload.html).toContain("Unsubscribe from these emails");
+
+    const match = payload.html.match(/unsubscribe\?token=([^"&]+)/);
+    expect(match).not.toBeNull();
+    const token = decodeURIComponent((match as RegExpMatchArray)[1]!);
+    expect(verifyUnsubscribeToken(token, "test-service-role-key")).toEqual({
+      userId: "user-1",
+      organizationId: "org-1",
+    });
+  });
+});
+
+describe("per-recipient email throttle (NOTIF-P3-007)", () => {
+  it("drops only the email (in-app row stays) when the recipient budget is exhausted", async () => {
+    (isEmailThrottled as jest.Mock).mockResolvedValueOnce(true);
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    const result = await notifyAndEmail({ ...baseOpts, email: "user@example.com" });
+
+    expect(result.emailThrottled).toBe(true);
+    expect(result.emailSkipped).toBe(true);
+    expect(result.emailQueued).toBe(false);
+    expect(result.inserted).toBe(true);
+    expect(enqueueTask).not.toHaveBeenCalled();
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("checks the throttle against the recipient address", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    await notifyAndEmail({ ...baseOpts, email: "recipient@example.com" });
+
+    expect(isEmailThrottled).toHaveBeenCalledWith("recipient@example.com");
+  });
+});
+
+describe("billing notification link (BILL-P2-004)", () => {
+  it("links dunning emails to the portal billing page", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    await notifyAndEmail({
+      ...baseOpts,
+      module: "billing",
+      moduleId: "in_fail",
+      action: "payment_failed",
+      title: "Payment failed",
+      body: "Invoice INV-2002 could not be charged.",
+      email: "user@example.com",
+    });
+
+    const payload = (enqueueTask as jest.Mock).mock.calls[0][1] as { text: string; html: string };
+    expect(payload.text).toContain("http://localhost:3000/portal/billing");
+    expect(payload.html).toContain("http://localhost:3000/portal/billing");
+  });
+});
+
+describe("notification content sensitivity filter (NOTIF-P2-005)", () => {
+  it("redacts credential-like content before storing and emailing", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+
+    // Assembled at runtime so the repo's diff-based secret scanner does not
+    // flag the fixture itself.
+    const secret = ["AKIA", "IOSFODNN7EXAMPLE"].join("");
+    await notifyAndEmail({
+      ...baseOpts,
+      body: `Server credentials in the ticket: ${secret} (password=hunter2)`,
+      email: "user@example.com",
+    });
+
+    const storedBody = String(supabase.inserts[0].body);
+    expect(storedBody).not.toContain(secret);
+    expect(storedBody).not.toContain("hunter2");
+    expect(storedBody).toContain("[redacted]");
+
+    const payload = (enqueueTask as jest.Mock).mock.calls[0][1] as {
+      text: string;
+      html: string;
+    };
+    expect(payload.text).not.toContain(secret);
+    expect(payload.text).not.toContain("hunter2");
+    expect(payload.html).not.toContain(secret);
+    expect(payload.html).not.toContain("hunter2");
+  });
+});
+
+describe("notification delivery metric semantics (NOTIF-P2-010)", () => {
+  const emailMetric = async (status: string) => {
+    const metric = await notificationDeliveryTotal.get();
+    return (
+      metric.values.find(
+        (v) => v.labels.channel === "email" && v.labels.status === status,
+      )?.value ?? 0
+    );
+  };
+
+  it("records a successful enqueue as queued, not as a delivery success", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+    (enqueueTask as jest.Mock).mockResolvedValue(true);
+
+    const queuedBefore = await emailMetric("queued");
+    const successBefore = await emailMetric("success");
+
+    const result = await notifyAndEmail({
+      ...baseOpts,
+      body: `queued-metric-${Date.now()}`,
+      email: "user@example.com",
+    });
+
+    expect(result.emailQueued).toBe(true);
+    expect(await emailMetric("queued")).toBe(queuedBefore + 1);
+    expect(await emailMetric("success")).toBe(successBefore);
+  });
+
+  it("records an inline send outcome as a terminal success", async () => {
+    const supabase = fakeSupabase({ preferences: [] });
+    supabase.installDedup();
+    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase as never);
+    (enqueueTask as jest.Mock).mockResolvedValue(false);
+    (sendEmail as jest.Mock).mockResolvedValue(true);
+
+    const successBefore = await emailMetric("success");
+
+    await notifyAndEmail({
+      ...baseOpts,
+      body: `inline-metric-${Date.now()}`,
+      email: "user@example.com",
+    });
+
+    expect(await emailMetric("success")).toBe(successBefore + 1);
   });
 });
 

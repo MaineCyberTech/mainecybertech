@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef, type ReactNode } from "react";
+import { Button } from "@mct/ui/components/Button";
+import { Input, Textarea } from "@mct/ui/components/Input";
 import { useFocusTrap } from "@/lib/use-focus-trap";
 import type {
   CatalogProduct,
@@ -72,7 +74,7 @@ export default function ProductForm({
       <div onClick={() => setOpen(true)}>{children}</div>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60" onClick={() => setOpen(false)} />
           <div
             role="dialog"
@@ -82,7 +84,7 @@ export default function ProductForm({
             onKeyDown={(e) => {
               if (e.key === "Escape") setOpen(false);
             }}
-            className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl"
+            className="relative z-10 max-h-[90vh] w-[calc(100vw-2rem)] min-w-0 max-w-2xl overflow-y-auto rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl"
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 id="product-form-title" className="text-lg font-bold text-slate-50">
@@ -90,7 +92,7 @@ export default function ProductForm({
               </h2>
               <button
                 onClick={() => setOpen(false)}
-                className="text-slate-400 hover:text-white"
+                className="-m-3 rounded p-3 text-slate-400 hover:text-white"
                 aria-label="Close"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,112 +110,56 @@ export default function ProductForm({
               {mode === "edit" && <input type="hidden" name="id" value={product!.id} />}
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="prod-name"
-                    className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    Name
-                  </label>
-                  <input
-                    id="prod-name"
-                    name="name"
-                    required
-                    defaultValue={product?.name ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="prod-slug"
-                    className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    Slug
-                  </label>
-                  <input
-                    id="prod-slug"
-                    name="slug"
-                    required
-                    defaultValue={product?.slug ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
-                  />
-                </div>
+                <Input
+                  id="prod-name"
+                  name="name"
+                  label="Name"
+                  required
+                  defaultValue={product?.name ?? ""}
+                />
+                <Input
+                  id="prod-slug"
+                  name="slug"
+                  label="Slug"
+                  required
+                  defaultValue={product?.slug ?? ""}
+                />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="prod-categoryId"
-                    className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    Category ID
-                  </label>
-                  <input
-                    id="prod-categoryId"
-                    name="categoryId"
-                    defaultValue={product?.categoryId ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="prod-category"
-                    className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    Category (label)
-                  </label>
-                  <input
-                    id="prod-category"
-                    name="category"
-                    defaultValue={product?.category ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
-                  />
-                </div>
+                <Input
+                  id="prod-categoryId"
+                  name="categoryId"
+                  label="Category ID"
+                  defaultValue={product?.categoryId ?? ""}
+                />
+                <Input
+                  id="prod-category"
+                  name="category"
+                  label="Category (label)"
+                  defaultValue={product?.category ?? ""}
+                />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div>
-                  <label
-                    htmlFor="prod-type"
-                    className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    Type
-                  </label>
-                  <input
-                    id="prod-type"
-                    name="type"
-                    defaultValue={product?.type ?? "service"}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="prod-status"
-                    className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    Status
-                  </label>
-                  <input
-                    id="prod-status"
-                    name="status"
-                    defaultValue={product?.status ?? "draft"}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="prod-priceRange"
-                    className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    Price Range
-                  </label>
-                  <input
-                    id="prod-priceRange"
-                    name="priceRange"
-                    defaultValue={product?.priceRange ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
-                  />
-                </div>
+                <Input
+                  id="prod-type"
+                  name="type"
+                  label="Type"
+                  defaultValue={product?.type ?? "service"}
+                />
+                <Input
+                  id="prod-status"
+                  name="status"
+                  label="Status"
+                  defaultValue={product?.status ?? "draft"}
+                />
+                <Input
+                  id="prod-priceRange"
+                  name="priceRange"
+                  label="Price Range"
+                  defaultValue={product?.priceRange ?? ""}
+                />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -261,68 +207,36 @@ export default function ProductForm({
                 </div>
               </div>
 
-              <div>
-                <label
-                  htmlFor="prod-summary"
-                  className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                >
-                  Summary
-                </label>
-                <textarea
-                  id="prod-summary"
-                  name="summary"
-                  rows={2}
-                  defaultValue={product?.summary ?? ""}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
-                />
-              </div>
+              <Textarea
+                id="prod-summary"
+                name="summary"
+                label="Summary"
+                rows={2}
+                defaultValue={product?.summary ?? ""}
+              />
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="prod-marketingHeadline"
-                    className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    Marketing Headline
-                  </label>
-                  <input
-                    id="prod-marketingHeadline"
-                    name="marketingHeadline"
-                    defaultValue={product?.marketingHeadline ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="prod-tags"
-                    className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    Tags (comma-separated)
-                  </label>
-                  <input
-                    id="prod-tags"
-                    name="tags"
-                    defaultValue={(product?.tags ?? []).join(", ")}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="prod-marketingCopy"
-                  className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                >
-                  Marketing Copy
-                </label>
-                <textarea
-                  id="prod-marketingCopy"
-                  name="marketingCopy"
-                  rows={3}
-                  defaultValue={product?.marketingCopy ?? ""}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
+                <Input
+                  id="prod-marketingHeadline"
+                  name="marketingHeadline"
+                  label="Marketing Headline"
+                  defaultValue={product?.marketingHeadline ?? ""}
+                />
+                <Input
+                  id="prod-tags"
+                  name="tags"
+                  label="Tags (comma-separated)"
+                  defaultValue={(product?.tags ?? []).join(", ")}
                 />
               </div>
+
+              <Textarea
+                id="prod-marketingCopy"
+                name="marketingCopy"
+                label="Marketing Copy"
+                rows={3}
+                defaultValue={product?.marketingCopy ?? ""}
+              />
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
@@ -387,40 +301,36 @@ export default function ProductForm({
                 </div>
               </div>
 
-              <div>
-                <label
-                  htmlFor="prod-attributes"
-                  className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                >
-                  Extra attributes (JSON)
-                </label>
-                <textarea
-                  id="prod-attributes"
-                  name="attributes"
-                  rows={3}
-                  placeholder='{"intakeFields": [], "fulfillmentWorkflow": []}'
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 font-mono text-xs text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
-                />
-              </div>
+              <Textarea
+                id="prod-attributes"
+                name="attributes"
+                label="Extra attributes (JSON)"
+                rows={3}
+                placeholder='{"intakeFields": [], "fulfillmentWorkflow": []}'
+                className="font-mono text-xs"
+              />
 
               {error && (
-                <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
+                <div
+                  role="alert"
+                  className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300"
+                >
                   {error}
                 </div>
               )}
 
               <div className="flex justify-end gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-400 transition hover:border-emerald-600/30 hover:text-slate-200"
                   disabled={pending}
                 >
                   Cancel
-                </button>
-                <button type="submit" className="cyber-button" disabled={pending}>
+                </Button>
+                <Button type="submit" loading={pending}>
                   {pending ? "Saving..." : mode === "create" ? "Create" : "Update"}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

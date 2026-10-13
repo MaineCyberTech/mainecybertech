@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getClientApi } from "@/lib/client-api";
+import { formErrorMessage } from "@/lib/api-error";
 
 type Props = {
   organizations: { id: string; name: string }[];
@@ -20,12 +21,14 @@ export default function BulkInviteForm({ organizations, roles }: Props) {
   const [roleId, setRoleId] = useState("");
   const [results, setResults] = useState<Result[] | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!orgId || !roleId || !csv.trim()) return;
     setSubmitting(true);
     setResults(null);
+    setRequestError(null);
 
     try {
       const invites = csv
@@ -38,10 +41,18 @@ export default function BulkInviteForm({ organizations, roles }: Props) {
         });
       const result = await getClientApi().bulk.invite({ organizationId: orgId, roleId, invites });
       setResults(result.results as unknown as Result[]);
-    } catch {
-      setResults([{ email: "", status: "error", message: "Request failed" }]);
+    } catch (error) {
+      // USE-P3-005: name the failure and state that nothing was imported;
+      // "Request failed" hid both the cause and the CSV's fate.
+      setRequestError(
+        formErrorMessage(
+          error,
+          "Could not reach the server. Your CSV was not imported — try again.",
+        ),
+      );
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   }
 
   const created = results?.filter((r) => r.status === "created").length ?? 0;
@@ -109,6 +120,15 @@ export default function BulkInviteForm({ organizations, roles }: Props) {
       <button type="submit" disabled={submitting} className="cyber-button">
         {submitting ? "Processing..." : "Import Users"}
       </button>
+
+      {requestError ? (
+        <div
+          role="alert"
+          className="rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300"
+        >
+          {requestError}
+        </div>
+      ) : null}
 
       {results ? (
         <div className="space-y-3">

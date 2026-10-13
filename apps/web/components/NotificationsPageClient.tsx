@@ -5,6 +5,7 @@ import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 import { getClientApi } from "@/lib/client-api";
 import { formatDateTime } from "@/lib/format";
+import { notificationHref } from "@/lib/notification-links";
 
 type NotificationItem = {
   id: string;
@@ -52,6 +53,7 @@ export default function NotificationsPageClient({ basePath, initialPage = 1 }: P
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [filterRead, setFilterRead] = useState<"all" | "unread" | "read">("all");
   const [filterModule, setFilterModule] = useState<string>("");
 
@@ -59,6 +61,7 @@ export default function NotificationsPageClient({ basePath, initialPage = 1 }: P
 
   const fetchPage = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const result = await getClientApi().notifications.list({
         page,
@@ -67,8 +70,16 @@ export default function NotificationsPageClient({ basePath, initialPage = 1 }: P
       });
       setNotifications(result.items);
       setTotal(result.total);
-    } catch {
-      /* ignore */
+    } catch (err) {
+      // Surface the failure instead of rendering a false "No notifications
+      // found." empty state (USE-P2-005).
+      setNotifications([]);
+      setTotal(0);
+      setLoadError(
+        err instanceof Error && err.message
+          ? err.message
+          : "Failed to load notifications. Please try again.",
+      );
     }
     setLoading(false);
   }, [page, filterRead]);
@@ -91,13 +102,7 @@ export default function NotificationsPageClient({ basePath, initialPage = 1 }: P
     );
   }
 
-  const moduleHref = (n: NotificationItem) => {
-    if (!n.module_id) return "#";
-    if (n.module === "tickets") return `${basePath}/tickets/${n.module_id}`;
-    if (n.module === "projects") return `${basePath}/projects/${n.module_id}`;
-    if (n.module === "documents") return `${basePath}/documents/${n.module_id}`;
-    return basePath;
-  };
+  const moduleHref = (n: NotificationItem) => notificationHref(basePath, n);
 
   const filtered = filterModule
     ? notifications.filter((n) => n.module === filterModule)
@@ -163,6 +168,16 @@ export default function NotificationsPageClient({ basePath, initialPage = 1 }: P
       <div className="space-y-2">
         {loading ? (
           <div className="py-8 text-center text-sm text-slate-400">Loading...</div>
+        ) : loadError ? (
+          <div
+            role="alert"
+            className="flex flex-col items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-8 text-center text-sm text-red-300"
+          >
+            <p>{loadError}</p>
+            <button onClick={() => void fetchPage()} className="cyber-button-secondary text-xs">
+              Retry
+            </button>
+          </div>
         ) : filteredByRead.length === 0 ? (
           <EmptyState icon="💬" title="No notifications found." />
         ) : (

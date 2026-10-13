@@ -29,6 +29,7 @@ jest.mock("../lib/health", () => ({
 import { getEnv } from "../config/env";
 import { getSupabaseAdminNoBreaker } from "../services/supabase";
 import { checkRedisHealth } from "../lib/health";
+import { redisConnected } from "../lib/metrics";
 
 const baseEnv = {
   NODE_ENV: "test",
@@ -157,6 +158,32 @@ describe("health check", () => {
       expect(res.body.data.checks.database.status).toBe("healthy");
       expect(res.body.data.checks.redis.status).toBe("not_configured");
       expect(res.body.data.checks.stripe.status).toBe("not_configured");
+    });
+
+    // ARCH-P2-005: Redis is a non-fatal dependency, but its degradation must
+    // be visible: listed under `degraded` and metered for alerting.
+    it("lists an unhealthy redis under degraded and meters it [ARCH-P2-005]", async () => {
+      (getEnv as jest.Mock).mockReturnValue({ ...baseEnv, METRICS_TOKEN: "s3cret" });
+      const supabase = {
+        from: jest.fn().mockReturnValue({
+          select: jest.fn().mockResolvedValue({ error: null }),
+        }),
+      };
+      (getSupabaseAdminNoBreaker as jest.Mock).mockReturnValue(supabase);
+      (checkRedisHealth as jest.Mock).mockResolvedValue({
+        status: "unhealthy",
+        latencyMs: 5,
+        error: "connection refused",
+      });
+
+      const res = await request(app).get("/health/detail").set("Authorization", "Bearer s3cret");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.checks.redis.status).toBe("unhealthy");
+      expect(res.body.data.degraded).toContain("redis");
+
+      const metric = await redisConnected.get();
+      expect(metric.values[0]?.value).toBe(0);
     });
   });
 

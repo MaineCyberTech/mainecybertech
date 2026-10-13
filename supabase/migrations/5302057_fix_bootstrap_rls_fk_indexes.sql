@@ -37,6 +37,7 @@ $$;
 -- Fix notifications RLS: prevent any user from injecting notifications for other users
 -- =========================================================
 DROP POLICY IF EXISTS "notifications_insert_all" ON public.notifications;
+drop policy if exists "notifications_insert_system_or_admin" on public.notifications;
 CREATE POLICY "notifications_insert_system_or_admin"
   ON public.notifications FOR INSERT
   WITH CHECK (
@@ -54,6 +55,7 @@ CREATE POLICY "notifications_insert_system_or_admin"
 -- Fix logos storage: restrict uploads to super admins only
 -- =========================================================
 DROP POLICY IF EXISTS "logos_insert_public" ON storage.objects;
+drop policy if exists "logos_insert_admin_only" on storage.objects;
 CREATE POLICY "logos_insert_admin_only"
   ON storage.objects FOR INSERT
   WITH CHECK (

@@ -20,6 +20,10 @@ runcmd:
   # SSH is restricted to admin_ip_ranges (same allowlist as the DigitalOcean
   # firewall in firewall.tf). The variable is required (no default) — set it to
   # office/VPN CIDRs. SSH is key-only.
+  # INFRA-P3-008: these rules run ONCE at first boot (droplet.tf ignores
+  # user_data changes). Narrowing admin_ip_ranges later updates only the DO
+  # cloud firewall; refresh the host rules per infra/terraform/README.md >
+  # SSH allowlist changes.
   - ufw --force enable
 %{ for cidr in admin_ip_ranges ~}
   - ufw allow from ${cidr} to any port 22 proto tcp

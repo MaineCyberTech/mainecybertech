@@ -44,11 +44,42 @@ function withDerivedCounts(categories: Category[], products: CatalogProduct[]): 
 }
 
 /**
+ * PERF-P2-002: short-TTL, per-process cache of the assembled catalog snapshot.
+ *
+ * Storefront routes render with `force-dynamic`, so without this every
+ * layout + page (and generateMetadata) re-reads the catalog over the API. The
+ * API itself response-caches the public catalog routes, so even a miss here
+ * does not hit Supabase per view. Only DB-backed snapshots are cached — the
+ * bundled-JSON fallback means the API failed or is empty, so the next request
+ * retries instead of pinning the fallback for the TTL.
+ */
+const CATALOG_CACHE_TTL_MS = 60_000;
+
+let catalogCache: { snapshot: CatalogSnapshot; expires: number } | null = null;
+
+/** Test hook: drop the in-process catalog snapshot. */
+export function invalidateCatalogCache(): void {
+  catalogCache = null;
+}
+
+/**
  * Loads the store catalog from the DB-backed store API, falling back to the
  * bundled JSON when the API is unavailable or the tables are empty. This is what
  * makes admin catalog edits reach the public storefront.
  */
 export async function loadCatalog(): Promise<CatalogSnapshot> {
+  if (catalogCache && catalogCache.expires > Date.now()) {
+    return catalogCache.snapshot;
+  }
+
+  const snapshot = await loadCatalogUncached();
+  if (snapshot.source === "db") {
+    catalogCache = { snapshot, expires: Date.now() + CATALOG_CACHE_TTL_MS };
+  }
+  return snapshot;
+}
+
+async function loadCatalogUncached(): Promise<CatalogSnapshot> {
   const [dbProducts, dbCategories] = await Promise.all([fetchDbProducts(), fetchDbCategories()]);
 
   if (dbProducts && dbCategories) {

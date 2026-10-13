@@ -52,6 +52,7 @@ create index if not exists idx_client_onboarding_created on client_onboarding_co
 
 alter table client_onboarding_command_center_records enable row level security;
 
+drop policy if exists "client_onboarding_select_org" on client_onboarding_command_center_records;
 create policy "client_onboarding_select_org" on client_onboarding_command_center_records for select
   using (
     organization_id in (
@@ -59,6 +60,7 @@ create policy "client_onboarding_select_org" on client_onboarding_command_center
     )
   );
 
+drop policy if exists "client_onboarding_insert_auth" on client_onboarding_command_center_records;
 create policy "client_onboarding_insert_auth" on client_onboarding_command_center_records for insert
   with check (
     organization_id in (
@@ -66,6 +68,7 @@ create policy "client_onboarding_insert_auth" on client_onboarding_command_cente
     )
   );
 
+drop policy if exists "client_onboarding_update_org" on client_onboarding_command_center_records;
 create policy "client_onboarding_update_org" on client_onboarding_command_center_records for update
   using (
     organization_id in (
@@ -73,6 +76,7 @@ create policy "client_onboarding_update_org" on client_onboarding_command_center
     )
   );
 
+drop policy if exists "client_onboarding_delete_admin" on client_onboarding_command_center_records;
 create policy "client_onboarding_delete_admin" on client_onboarding_command_center_records for delete
   using (
     exists (
@@ -111,6 +115,7 @@ create index if not exists idx_onboarding_checklist_phase on client_onboarding_c
 
 alter table client_onboarding_checklist_items enable row level security;
 
+drop policy if exists "client_onboarding_checklist_select_org" on client_onboarding_checklist_items;
 create policy "client_onboarding_checklist_select_org" on client_onboarding_checklist_items for select
   using (
     organization_id in (
@@ -118,6 +123,7 @@ create policy "client_onboarding_checklist_select_org" on client_onboarding_chec
     )
   );
 
+drop policy if exists "client_onboarding_checklist_insert_auth" on client_onboarding_checklist_items;
 create policy "client_onboarding_checklist_insert_auth" on client_onboarding_checklist_items for insert
   with check (
     organization_id in (
@@ -125,6 +131,7 @@ create policy "client_onboarding_checklist_insert_auth" on client_onboarding_che
     )
   );
 
+drop policy if exists "client_onboarding_checklist_update_org" on client_onboarding_checklist_items;
 create policy "client_onboarding_checklist_update_org" on client_onboarding_checklist_items for update
   using (
     organization_id in (
@@ -132,6 +139,7 @@ create policy "client_onboarding_checklist_update_org" on client_onboarding_chec
     )
   );
 
+drop policy if exists "client_onboarding_checklist_delete_admin" on client_onboarding_checklist_items;
 create policy "client_onboarding_checklist_delete_admin" on client_onboarding_checklist_items for delete
   using (
     exists (

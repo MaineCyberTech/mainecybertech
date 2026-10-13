@@ -22,8 +22,11 @@ create table if not exists change_requests (
 );
 create index if not exists idx_change_requests_org on change_requests(organization_id);
 alter table change_requests enable row level security;
+drop policy if exists "cr_select_org" on change_requests;
 create policy "cr_select_org" on change_requests for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "cr_insert_auth" on change_requests;
 create policy "cr_insert_auth" on change_requests for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "cr_update_org" on change_requests;
 create policy "cr_update_org" on change_requests for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists risk_register (
@@ -47,8 +50,11 @@ create table if not exists risk_register (
 );
 create index if not exists idx_risk_register_org on risk_register(organization_id);
 alter table risk_register enable row level security;
+drop policy if exists "risk_select_org" on risk_register;
 create policy "risk_select_org" on risk_register for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "risk_insert_auth" on risk_register;
 create policy "risk_insert_auth" on risk_register for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "risk_update_org" on risk_register;
 create policy "risk_update_org" on risk_register for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists retention_policies (
@@ -70,8 +76,11 @@ create table if not exists retention_policies (
 );
 create index if not exists idx_retention_policies_org on retention_policies(organization_id);
 alter table retention_policies enable row level security;
+drop policy if exists "retention_select_org" on retention_policies;
 create policy "retention_select_org" on retention_policies for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "retention_insert_auth" on retention_policies;
 create policy "retention_insert_auth" on retention_policies for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "retention_update_org" on retention_policies;
 create policy "retention_update_org" on retention_policies for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists tabletop_exercises (
@@ -94,8 +103,11 @@ create table if not exists tabletop_exercises (
 );
 create index if not exists idx_tabletop_exercises_org on tabletop_exercises(organization_id);
 alter table tabletop_exercises enable row level security;
+drop policy if exists "tt_select_org" on tabletop_exercises;
 create policy "tt_select_org" on tabletop_exercises for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "tt_insert_auth" on tabletop_exercises;
 create policy "tt_insert_auth" on tabletop_exercises for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "tt_update_org" on tabletop_exercises;
 create policy "tt_update_org" on tabletop_exercises for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 commit;

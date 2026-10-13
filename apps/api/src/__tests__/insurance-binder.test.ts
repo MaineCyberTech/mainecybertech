@@ -171,7 +171,7 @@ describe("Insurance Binder API", () => {
     const res = await request(app)
       .delete("/api/v1/insurance-binder/ie-1")
       .query({ organization_id: testOrgId })
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 

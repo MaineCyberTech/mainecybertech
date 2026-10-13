@@ -57,7 +57,7 @@ export default function PromoForm({
       <div onClick={() => setOpen(true)}>{children}</div>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60" onClick={() => setOpen(false)} />
           <div
             role="dialog"
@@ -67,7 +67,13 @@ export default function PromoForm({
             onKeyDown={(e) => {
               if (e.key === "Escape") setOpen(false);
             }}
-            className="relative z-10 w-full max-w-lg rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl"
+            // `w-[calc(100vw-2rem)]` pins the width to the viewport
+            // regardless of the containing block (a transformed ancestor or
+            // flex min-content chain can otherwise size this to 405-437px
+            // on Chrome against a 361px viewport). `min-w-0` drops the flex
+            // `min-width:auto` floor and `overflow-x-hidden` clips wide
+            // children. `p-4` on the overlay keeps a 1rem gutter.
+            className="relative z-10 max-h-[90vh] w-[calc(100vw-2rem)] min-w-0 max-w-lg overflow-y-auto overflow-x-hidden rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl"
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 id="promo-form-title" className="text-lg font-bold text-slate-50">
@@ -252,7 +258,10 @@ export default function PromoForm({
               </div>
 
               {error && (
-                <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
+                <div
+                  role="alert"
+                  className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300"
+                >
                   {error}
                 </div>
               )}

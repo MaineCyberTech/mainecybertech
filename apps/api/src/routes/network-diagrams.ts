@@ -12,6 +12,8 @@ import {
 } from "../validators/network-diagrams";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -25,7 +27,7 @@ router.get("/", async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("network_diagrams").select("*", { count: "exact" });
+    let query = supabase.from("network_diagrams").select("*", { count: listCountMode(req.query) });
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -110,7 +112,7 @@ router.patch("/:id", requirePermission("network-port-maps", "edit"), async (req,
   try {
     const parsed = updateNetworkDiagramSchema.parse(req.body);
     const supabase = getScopedClient(req, "network-diagrams", "write");
-    await loadOwned(req, supabase as any, "network_diagrams", String(req.params.id as string));
+    await loadOwned(req, supabase, "network_diagrams", String(req.params.id as string));
 
     const updateData: Record<string, unknown> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
@@ -144,8 +146,9 @@ router.patch("/:id", requirePermission("network-port-maps", "edit"), async (req,
 
 router.delete("/:id", requirePermission("network-port-maps", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "network-diagrams", "write");
-    await loadOwned(req, supabase as any, "network_diagrams", String(req.params.id as string));
+    await loadOwned(req, supabase, "network_diagrams", String(req.params.id as string));
     const { error } = await supabase
       .from("network_diagrams")
       .delete()

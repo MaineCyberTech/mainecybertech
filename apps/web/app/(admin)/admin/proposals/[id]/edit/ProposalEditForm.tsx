@@ -105,12 +105,12 @@ export default function ProposalEditForm({
           />
         </div>
       </div>
-      {error && <p className="text-sm text-red-300">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
       {saved && <p className="text-sm text-emerald-300">Proposal updated.</p>}
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-emerald-500 disabled:opacity-50"
+        className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-emerald-500 disabled:opacity-50"
       >
         {pending ? "Saving..." : "Save Changes"}
       </button>

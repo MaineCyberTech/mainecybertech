@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { getClientApi } from "@/lib/client-api";
-import { formatCurrency, formatDateShort } from "@/lib/format";
+import { formatBillingInterval, formatCurrency, formatDateShort } from "@/lib/format";
+import { usePermissions } from "@/lib/use-permissions";
 
 type Invoice = {
   id: string;
@@ -25,6 +26,10 @@ type Subscription = {
   status: string;
   amount_cents?: number | null;
   currency?: string | null;
+  /** Stripe price recurring interval (BILL-P3-006). */
+  interval?: string | null;
+  /** Subscription item seat count; amount_cents is the per-seat amount. */
+  quantity?: number | null;
   current_period_end?: string | null;
   created_at: string;
 };
@@ -75,10 +80,29 @@ function statusColor(status: string) {
   return colors[status] ?? "border-white/10 bg-white/5 text-slate-400";
 }
 
+/**
+ * BILL-P3-006: `amount_cents` mirrors the per-seat unit amount, so a
+ * multi-seat plan must render the seat total (unit × quantity) instead of
+ * understating the plan price.
+ */
+function planTotalCents(sub: Subscription): number {
+  const seats = sub.quantity && sub.quantity > 1 ? sub.quantity : 1;
+  return (sub.amount_cents ?? 0) * seats;
+}
+
+function seatSuffix(quantity?: number | null): string {
+  return quantity && quantity > 1 ? ` · ${quantity} seats` : "";
+}
+
 export default function BillingPageClient({ summary, subscriptions, invoices, customer }: Props) {
+  const { can } = usePermissions();
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
+
+  // BILL-P3-007: POST /billing/sync requires `billing:manage`, which most
+  // client roles do not hold — only render the action when it can succeed.
+  const canSync = can("billing", "manage");
 
   async function handleSync() {
     setSyncing(true);
@@ -143,8 +167,10 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
             <div>
               <p className="text-xl font-bold text-slate-50">{activeSub.plan_name}</p>
               <p className="mt-1 text-sm text-slate-400">
-                {formatCents(activeSub.amount_cents ?? 0, activeSub.currency ?? "usd")}/mo &middot;
-                Next billing {formatDate(activeSub.current_period_end)}
+                {formatCents(planTotalCents(activeSub), activeSub.currency ?? "usd")}
+                {formatBillingInterval(activeSub.interval)}
+                {seatSuffix(activeSub.quantity)} &middot; Next billing{" "}
+                {formatDate(activeSub.current_period_end)}
               </p>
             </div>
             <span
@@ -194,13 +220,15 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
       <section className="cyber-panel">
         <div className="flex items-center justify-between">
           <h2 className="cyber-heading text-lg">Invoices</h2>
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="cyber-button-secondary text-xs"
-          >
-            {syncing ? "Syncing..." : "Sync from Stripe"}
-          </button>
+          {canSync ? (
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="cyber-button-secondary text-xs"
+            >
+              {syncing ? "Syncing..." : "Sync from Stripe"}
+            </button>
+          ) : null}
         </div>
         <div className="mt-6 overflow-x-auto">
           {invoices.length === 0 ? (
@@ -304,7 +332,9 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
                 <div>
                   <p className="font-medium text-slate-200">{sub.plan_name}</p>
                   <p className="mt-1 text-xs text-slate-400">
-                    {formatCents(sub.amount_cents ?? 0, sub.currency ?? "usd")}/mo
+                    {formatCents(planTotalCents(sub), sub.currency ?? "usd")}
+                    {formatBillingInterval(sub.interval)}
+                    {seatSuffix(sub.quantity)}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">

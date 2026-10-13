@@ -19,22 +19,32 @@ type ApiKeyWithSecret = ApiKey & { fullKey: string };
 export default function AdminApiKeysClient({
   organizations,
   initialKeys,
+  availableScopes,
 }: {
   organizations: Organization[];
   initialKeys: ApiKey[];
+  /** `${module}:${action}` scopes the current admin may grant to a key. */
+  availableScopes: string[];
 }) {
   const [keys, setKeys] = useState<ApiKey[]>(initialKeys);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [newOrgId, setNewOrgId] = useState("");
+  const [newScopes, setNewScopes] = useState<string[]>([]);
   const [newKeyResult, setNewKeyResult] = useState<ApiKeyWithSecret | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const toggleScope = (scope: string) => {
+    setNewScopes((prev) =>
+      prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope],
+    );
+  };
+
   const handleCreate = async () => {
-    if (!newName.trim() || !newOrgId) return;
+    if (!newName.trim() || !newOrgId || newScopes.length === 0) return;
     setCreating(true);
     setError("");
     try {
@@ -43,12 +53,14 @@ export default function AdminApiKeysClient({
       const result = await client.apiKeys.create({
         organizationId: newOrgId,
         name: newName.trim(),
+        permissions: newScopes,
       });
       setNewKeyResult(result);
       setKeys((prev) => [result, ...prev]);
       setShowCreate(false);
       setNewName("");
       setNewOrgId("");
+      setNewScopes([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create API key");
     } finally {
@@ -86,7 +98,10 @@ export default function AdminApiKeysClient({
   return (
     <div className="space-y-6">
       {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+        <div
+          role="alert"
+          className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300"
+        >
           {error}
         </div>
       )}
@@ -106,7 +121,7 @@ export default function AdminApiKeysClient({
               setCopied(true);
               window.setTimeout(() => setCopied(false), 2000);
             }}
-            className="mt-2 rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-[#0A1118] hover:bg-emerald-500"
+            className="mt-2 rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-cyber-base hover:bg-emerald-500"
           >
             {copied ? "Copied!" : "Copy to clipboard"}
           </button>
@@ -164,9 +179,33 @@ export default function AdminApiKeysClient({
               />
             </div>
           </div>
+          <div>
+            <span className="cyber-label">Scopes</span>
+            <p className="mt-1 text-xs text-slate-400">
+              The key can only use these permissions — select at least one. Scopes can never exceed
+              your own permissions.
+            </p>
+            <div className="mt-2 grid max-h-48 gap-1 overflow-y-auto rounded border border-white/10 bg-cyber-base/60 p-3 sm:grid-cols-2">
+              {availableScopes.length === 0 ? (
+                <p className="text-xs text-slate-400">No scopes available.</p>
+              ) : (
+                availableScopes.map((scope) => (
+                  <label key={scope} className="flex items-center gap-2 text-xs text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={newScopes.includes(scope)}
+                      onChange={() => toggleScope(scope)}
+                      className="accent-emerald-500"
+                    />
+                    <span className="font-mono">{scope}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
           <button
             onClick={handleCreate}
-            disabled={creating || !newName.trim() || !newOrgId}
+            disabled={creating || !newName.trim() || !newOrgId || newScopes.length === 0}
             className="cyber-button"
           >
             {creating ? "Creating..." : "Generate Key"}

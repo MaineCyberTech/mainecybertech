@@ -9,6 +9,8 @@ import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
+import { rateLimitAdminOps } from "../middleware/rate-limit";
+import { clearPermissionCache } from "../lib/permissions";
 import { resolveAdminTenantScope } from "../lib/admin-scope";
 import {
   createOrganizationSchema,
@@ -19,6 +21,9 @@ import {
 } from "../validators/organization";
 import { queryInt } from "../lib/query";
 import { recordOrganizationCreated } from "../lib/metrics";
+import { assertCanAssignRole } from "../lib/role-assignment";
+import { assertDeleteConfirmed, assertOrgDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -56,7 +61,7 @@ const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
 
-router.post("/onboard", requireAdmin, async (req, res, next) => {
+router.post("/onboard", rateLimitAdminOps, requireAdmin, async (req, res, next) => {
   try {
     const parsed = onboardSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -82,6 +87,10 @@ router.post("/onboard", requireAdmin, async (req, res, next) => {
 
     if (roleError) throw new AppError("DB_ERROR", roleError.message, 500);
     if (!role) throw new AppError("NOT_FOUND", `Role ${parsed.adminRoleKey} not found`, 404);
+
+    // SEC-P1-001: onboarding assigns a cross-tenant admin role, so only a
+    // platform super admin may run it.
+    await assertCanAssignRole(supabase, req.authUser!.userId, parsed.adminRoleKey);
 
     const { data: existingProfile } = await supabase
       .from("profiles")
@@ -115,25 +124,39 @@ router.post("/onboard", requireAdmin, async (req, res, next) => {
       );
     }
 
+    // ADMIN-P2-004: the first admin membership starts `pending`, not
+    // `approved`. Auto-approving it meant an invited (unconfirmed) account
+    // could act for the brand-new tenant immediately; a platform super admin
+    // now approves it from the memberships queue after the invitee confirms
+    // their email. `approvalRequired` is returned so callers surface the step.
     const { data: membership, error: memError } = await supabase
       .from("memberships")
       .insert({
         organization_id: org.id,
         user_id: userId,
         role_id: role.id,
-        status: "approved",
+        status: "pending",
       })
       .select()
       .single();
 
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);
 
+    // PERF-P2-003: onboarding inserts an approved membership; the new admin's
+    // cached resolution (if any) must be dropped.
+    clearPermissionCache(userId);
+
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
       action: "organization.onboard",
       entityType: "organization",
       entityId: org.id,
-      metadata: { name: parsed.name, adminEmail: parsed.adminEmail, invited },
+      metadata: {
+        name: parsed.name,
+        adminEmail: parsed.adminEmail,
+        invited,
+        approvalRequired: true,
+      },
     });
 
     invalidateCache(`/api/v1/organizations`);
@@ -143,6 +166,7 @@ router.post("/onboard", requireAdmin, async (req, res, next) => {
         adminUser: { id: userId, email: parsed.adminEmail },
         membership,
         invited,
+        approvalRequired: true,
       }),
     );
   } catch (error) {
@@ -150,7 +174,7 @@ router.post("/onboard", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
+router.get("/", responseCacheNoRenew(60, { scope: resolveAdminTenantScope }), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "organizations", "read");
 
@@ -169,7 +193,7 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
     const tenantScope = await resolveAdminTenantScope(req);
     const isPlatformAdmin = tenantScope.allTenants;
 
-    let query = supabase.from("organizations").select("*", { count: "exact" });
+    let query = supabase.from("organizations").select("*", { count: listCountMode(req.query) });
 
     if (!isPlatformAdmin) {
       const orgIds = tenantScope.orgIds;
@@ -402,15 +426,76 @@ router.patch(
 
 router.delete(
   "/:id",
+  rateLimitAdminOps,
   requireOrgAccessByParam,
   requirePermission("organizations", "manage"),
   async (req, res, next) => {
     try {
       const supabase = getScopedClient(req, "organizations", "write");
-      const { error } = await supabase
+      // The archive is a privileged compliance step, so it always runs with the
+      // service-role client (the archive RPC is not executable by anon/
+      // authenticated). The organization delete below keeps the scoped client
+      // so RLS, when enabled for this module, still gates it.
+      const admin = getSupabaseAdmin();
+      const orgId = String(req.params.id);
+
+      const { data: org, error: orgError } = await supabase
         .from("organizations")
-        .delete()
-        .eq("id", String(req.params.id));
+        .select("id, name, slug")
+        .eq("id", orgId)
+        .single();
+      if (orgError || !org) throw new AppError("NOT_FOUND", "Organization not found", 404);
+
+      // ADMIN-P2-002: a bare { confirm: true } is not enough for a cascading
+      // tenant wipe; the caller must echo the organization slug. Recovery is
+      // operator-only (PITR / backup restore, docs/ROLLBACK_PROCEDURES.md §3).
+      assertOrgDeleteConfirmed(req.body, org);
+
+      // ADMIN-P2-002: record what the cascade is about to destroy so the audit
+      // event shows the blast radius, not just the org id.
+      const countOrgRows = async (table: string): Promise<number> => {
+        const { count } = await admin
+          .from(table)
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", orgId);
+        return count ?? 0;
+      };
+      const [memberships, domains, documents, tickets, projects] = await Promise.all([
+        countOrgRows("memberships"),
+        countOrgRows("organization_domains"),
+        countOrgRows("documents"),
+        countOrgRows("tickets"),
+        countOrgRows("projects"),
+      ]);
+
+      // DATA-P2-005: audit_logs.organization_id is `on delete cascade`, so the
+      // delete below would destroy the org's compliance history. Copy it to
+      // the append-only archive first and fail closed: if the archive step
+      // fails, or any audit row remains, the organization is not deleted.
+      const { error: archiveError } = await admin.rpc(
+        "archive_org_audit_logs",
+        // `as never`: the generated Database type declares
+        // `Functions: Record<string, never>`, so RPC args are untyped here.
+        { p_organization_id: orgId } as never,
+      );
+      if (archiveError) {
+        throw new AppError("DB_ERROR", `audit archive failed: ${archiveError.message}`, 500);
+      }
+
+      const { count, error: remainingError } = await admin
+        .from("audit_logs")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", orgId);
+      if (remainingError) throw new AppError("DB_ERROR", remainingError.message, 500);
+      if ((count ?? 0) > 0) {
+        throw new AppError(
+          "CONFLICT",
+          "Audit history could not be fully archived; organization was not deleted",
+          409,
+        );
+      }
+
+      const { error } = await supabase.from("organizations").delete().eq("id", orgId);
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -418,7 +503,13 @@ router.delete(
         actorUserId: req.authUser!.userId,
         action: "organization.delete",
         entityType: "organization",
-        entityId: String(req.params.id),
+        entityId: orgId,
+        metadata: {
+          name: org.name,
+          slug: org.slug,
+          // ADMIN-P2-002: pre-delete cascade summary.
+          cascade: { memberships, domains, documents, tickets, projects },
+        },
       });
 
       res.status(204).send();
@@ -512,6 +603,7 @@ router.patch("/:id/domains/:domainId", requireOrgAccessByParam, requireAdmin, as
 
 router.delete("/:id/domains/:domainId", requireOrgAccessByParam, requireAdmin, async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getSupabaseAdmin();
     const { data: deleted, error } = await supabase
       .from("organization_domains")

@@ -90,7 +90,7 @@ export class FindingsApi {
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/findings/${id}`);
+    return this.client.delete<void>(`/api/v1/findings/${id}`, undefined, { confirm: true });
   }
 
   verify(id: string, data: { organizationId: string }) {

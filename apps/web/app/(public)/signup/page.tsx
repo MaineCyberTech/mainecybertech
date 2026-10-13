@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { signupAction } from "@/lib/auth/auth-actions";
 import { Button } from "@mct/ui/components/Button";
+import PasswordPolicyHint from "@/components/PasswordPolicyHint";
+
+function isNextRedirect(error: unknown): boolean {
+  const digest = (error as { digest?: unknown })?.digest;
+  return typeof digest === "string" && digest.startsWith("NEXT_REDIRECT");
+}
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("");
@@ -18,23 +24,34 @@ export default function SignupPage() {
     setMessage("");
     setErrorMsg("");
 
-    const result = await signupAction(email, password, fullName);
+    try {
+      const result = await signupAction(email, password, fullName);
 
-    setLoading(false);
+      if (result?.error) {
+        setErrorMsg(result.error);
+        return;
+      }
 
-    if (result?.error) {
-      setErrorMsg(result.error);
-      return;
+      setMessage("Check your email to confirm your account, then return to continue.");
+    } catch (error) {
+      // USE-P3-005: a thrown action (network drop, timeout, redirect) used to
+      // leave the button stuck on "Creating Account..." forever.
+      if (isNextRedirect(error)) throw error;
+      setErrorMsg(
+        error instanceof Error && error.message
+          ? error.message
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setLoading(false);
     }
-
-    setMessage("Check your email to confirm your account, then return to continue.");
   }
 
   return (
     <>
       <title>Sign Up — Maine CyberTech</title>
       <div className="mx-auto flex min-h-screen max-w-md items-center px-6">
-        <div className="w-full rounded-lg border border-white/5 bg-[rgba(18,30,45,0.75)] p-8 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur-md">
+        <div className="w-full rounded-lg border border-white/5 bg-cyber-card p-8 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur-md">
           <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
             Create Secure Account
           </h1>
@@ -57,6 +74,7 @@ export default function SignupPage() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Your full name"
+                autoComplete="name"
                 required
               />
             </div>
@@ -75,6 +93,7 @@ export default function SignupPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@clientdomain.com"
+                autoComplete="email"
                 required
               />
             </div>
@@ -93,8 +112,10 @@ export default function SignupPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••"
+                autoComplete="new-password"
                 required
               />
+              <PasswordPolicyHint className="mt-2 text-xs text-slate-400" />
             </div>
 
             {errorMsg ? (

@@ -25,7 +25,7 @@ interface ProductCardProps {
 
 function ProductCard({ product }: ProductCardProps) {
   return (
-    <article className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm transition hover:border-emerald-600/30 hover:shadow-[0_0_20px_rgba(5,150,105,0.1)]">
+    <article className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-6 backdrop-blur-sm transition hover:border-emerald-600/30 hover:shadow-[0_0_20px_rgba(5,150,105,0.1)]">
       <div className="mb-4">
         <span className="inline-flex rounded-full border border-emerald-600/20 bg-emerald-600/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
           {categoryIcons[product.category] ?? "▸"} {product.category}
@@ -68,7 +68,7 @@ function PromotionCard({ promotion }: { promotion: StorePromotion }) {
         <div className="flex-1">
           <div className="mb-2 flex items-center gap-2">
             {promotion.badge_text && (
-              <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#0A1118]">
+              <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-cyber-base">
                 {promotion.badge_text}
               </span>
             )}
@@ -91,7 +91,7 @@ function PromotionCard({ promotion }: { promotion: StorePromotion }) {
 
 function CampaignCard({ campaign }: { campaign: SeasonalCampaign }) {
   return (
-    <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm">
+    <div className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-6 backdrop-blur-sm">
       <div className="mb-4">
         <span className="inline-flex rounded-full border border-emerald-600/20 bg-emerald-600/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
           {campaign.audience}
@@ -222,7 +222,7 @@ export default async function PortalStorePage() {
       </section>
 
       {/* CTA */}
-      <section className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-8 text-center backdrop-blur-sm">
+      <section className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-8 text-center backdrop-blur-sm">
         <h2 className="mb-3 font-display text-xl font-bold uppercase tracking-wider text-slate-50">
           Need Help Choosing?
         </h2>
@@ -233,7 +233,7 @@ export default async function PortalStorePage() {
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/portal/service-catalog"
-            className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Service Finder Quiz
           </Link>

@@ -122,9 +122,15 @@ id,action,entity_type,entity_id,organization_id,actor_user_id,actor_type,metadat
 **Processing per row:**
 
 1. Look up user by email in `profiles` table
-2. If not found, create via `supabase.auth.admin.createUser()` (confirmed email, random password)
+2. If not found, invite via `supabase.auth.admin.inviteUserByEmail()` — the
+   auth account stays **unconfirmed** until the invitee clicks the email link
+   and sets a password (ADMIN-P2-004; there is no pre-confirmed/random-password
+   path any more)
 3. Check for existing membership (skip if already exists)
 4. Create membership with status `"pending"`
+
+The route is rate-limited to 10 requests/minute per token by `rateLimitAdminOps`
+(ADMIN-P2-005). See [ADMIN_BULK_OPERATIONS.md](ADMIN_BULK_OPERATIONS.md).
 
 **Response:** `{ results: [{ email, status, message }] }`
 
@@ -149,7 +155,7 @@ Form with:
 
 ### SDK
 
-No dedicated SDK method — uses direct `fetch()` or the form-based approach.
+`client.bulk.invite({ organizationId, roleId, invites })` in `packages/sdk/src/bulk.ts`.
 
 ---
 
@@ -402,3 +408,57 @@ On `/admin`:
 | `5302032_webhook_endpoints.sql`      | `webhook_endpoints` + `webhook_deliveries` tables + RLS        |
 | `5302028_seed_permissions.sql`       | Added `webhooks.view`, `webhooks.manage` permissions (updated) |
 | `5302034_ticket_comment_editing.sql` | `edited_at` column + UPDATE RLS on `ticket_comments`           |
+
+---
+
+## Destructive Action Confirmations (ADMIN-P2-002)
+
+Every destructive `DELETE` handler requires an explicit confirmation body.
+The shared helper is `assertDeleteConfirmed` (`apps/api/src/lib/delete-confirm.ts`);
+a request without it fails closed with `400 CONFIRMATION_REQUIRED` before any
+row is touched. Organization delete additionally requires the typed slug
+(`assertOrgDeleteConfirmed`).
+
+### Confirmation matrix
+
+| Action | Endpoint | Confirmation body | Recovery |
+| ------ | -------- | ----------------- | -------- |
+| Delete organization | `DELETE /api/v1/organizations/:id` | `{ confirm: true, slug: "<org slug>" }` | Operator-only: Supabase PITR or S3 backup restore (`docs/ROLLBACK_PROCEDURES.md` §3) |
+| Delete organization domain | `DELETE /api/v1/organizations/:id/domains/:domainId` | `{ confirm: true }` | Re-add the domain |
+| Delete user (account erasure) | `DELETE /api/v1/users/:id` | `{ confirm: true }` | None (GDPR erasure is intentional) |
+| Delete membership / role | `DELETE /api/v1/memberships/:id`, `DELETE /api/v1/roles/:id` | `{ confirm: true }` | Re-invite / recreate |
+| Delete document / ticket / project / task | `DELETE /api/v1/documents/:id`, `/tickets/:id`, `/projects/:id`, `/projects/:id/tasks/:taskId` | `{ confirm: true }` | PITR / backup restore |
+| Delete API key / webhook endpoint / dead letter | `DELETE /api/v1/api-keys/:id`, `/webhook-endpoints/:id`, `/webhook-endpoints/dead-letters/:id` | `{ confirm: true }` | Recreate |
+| Delete module records (assets, proposals, findings, batch, store, …) | module `DELETE` routes | `{ confirm: true }` | PITR / backup restore |
+
+The SDK sends the confirmation body for all of the above, so web callers keep
+working unchanged. The admin UI keeps its own dialog on top: typed `DELETE` for
+tickets/documents, typed organization slug for organizations, `ConfirmDialog`
+for module records (see `apps/web/components/admin/ConfirmDialog.tsx`).
+
+### Organization delete is permanent
+
+`DELETE /api/v1/organizations/:id` is the highest-blast-radius delete in the
+product: the FK graph cascades across the tenant schema (memberships, domains,
+documents, tickets, projects, webhooks, …). It therefore:
+
+1. Requires the typed slug, not just `{ confirm: true }`.
+2. Archives the org's `audit_logs` rows to the append-only archive first and
+   fails closed if any row cannot be archived (DATA-P2-005).
+3. Writes an `organization.delete` audit event that includes the pre-delete
+   cascade summary (`metadata.cascade`: memberships/domains/documents/tickets/projects).
+
+There is no in-console undo and no soft-delete tombstone — the product decision
+is hard delete (DATA-P1-003). Recovery is operator-only; see
+[`ROLLBACK_PROCEDURES.md`](ROLLBACK_PROCEDURES.md) §3 ("Recovering a deleted
+organization") before deleting.
+
+### CI guard
+
+`apps/api/src/__tests__/destructive-delete-guard.test.ts` statically scans every
+`router.delete` handler and fails when one does not call
+`assertDeleteConfirmed`/`assertOrgDeleteConfirmed`. A small, documented
+allowlist covers self-service deletes (own MFA factor, own recovery codes, own
+notification, device push unsubscribe, share revocation, own project
+update/comment); adding a new DELETE route requires either the confirmation
+helper or an explicit entry with a reason.

@@ -1,5 +1,5 @@
 import { jest } from "@jest/globals";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const mockSignupAction = jest.fn();
@@ -25,6 +25,20 @@ describe("SignupPage", () => {
     expect(screen.getByPlaceholderText("name@clientdomain.com")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("••••••••••")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /create account/i })).toBeInTheDocument();
+  });
+
+  it("wires autocomplete attributes for password managers (WCAG 1.3.5)", () => {
+    render(<SignupPage />);
+
+    expect(screen.getByPlaceholderText("Your full name")).toHaveAttribute("autocomplete", "name");
+    expect(screen.getByPlaceholderText("name@clientdomain.com")).toHaveAttribute(
+      "autocomplete",
+      "email",
+    );
+    expect(screen.getByPlaceholderText("••••••••••")).toHaveAttribute(
+      "autocomplete",
+      "new-password",
+    );
   });
 
   it("shows error message on failed signup", async () => {

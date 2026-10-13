@@ -33,14 +33,16 @@ function fakeSupabase(options: {
 }) {
   const seenKeys = new Set<string>();
   const inserts: Record<string, unknown>[] = [];
+  let preferenceBuilder: Record<string, unknown> | null = null;
 
   const build = () => {
     const from = jest.fn((table: string) => {
       if (table === "notification_preferences") {
-        return chain({
+        preferenceBuilder = chain({
           data: options.preferences ?? [],
           error: options.preferencesError ?? null,
         });
+        return preferenceBuilder;
       }
       const builder = chain({ data: [], error: null });
       builder.upsert = jest.fn((row: Record<string, unknown>) => {
@@ -56,7 +58,14 @@ function fakeSupabase(options: {
   };
 
   const client = build();
-  return { client, inserts, seenKeys };
+  return {
+    client,
+    inserts,
+    seenKeys,
+    get preferenceBuilder() {
+      return preferenceBuilder;
+    },
+  };
 }
 
 const input = {
@@ -79,7 +88,7 @@ describe("worker resolveChannels (NOTIF-P1-001)", () => {
       organizationId: "org-1",
       module: "projects",
     });
-    expect(channels).toEqual({ email: true, in_app: false });
+    expect(channels).toEqual({ email: true, in_app: false, push: true });
   });
 
   it("defaults both channels to enabled when no row exists", async () => {
@@ -88,7 +97,7 @@ describe("worker resolveChannels (NOTIF-P1-001)", () => {
       userId: "user-1",
       module: "projects",
     });
-    expect(channels).toEqual({ email: true, in_app: true });
+    expect(channels).toEqual({ email: true, in_app: true, push: true });
   });
 
   it("is fail-safe when preferences cannot be read", async () => {
@@ -97,7 +106,7 @@ describe("worker resolveChannels (NOTIF-P1-001)", () => {
       userId: "user-1",
       module: "projects",
     });
-    expect(channels).toEqual({ email: true, in_app: true });
+    expect(channels).toEqual({ email: true, in_app: true, push: true });
   });
 
   it("ignores undeliverable channels such as sms", async () => {
@@ -108,7 +117,20 @@ describe("worker resolveChannels (NOTIF-P1-001)", () => {
       userId: "user-1",
       module: "projects",
     });
-    expect(channels).toEqual({ email: true, in_app: true });
+    expect(channels).toEqual({ email: true, in_app: true, push: true });
+  });
+
+  it("reads the global 'all' opt-out row alongside the module row (NOTIF-P3-005)", async () => {
+    const fake = fakeSupabase({ preferences: [{ channel: "email", enabled: false }] });
+    const channels = await resolveChannels(fake.client, {
+      userId: "user-1",
+      organizationId: "org-1",
+      module: "projects",
+    });
+
+    expect(channels.email).toBe(false);
+    expect(fake.preferenceBuilder?.in).toHaveBeenCalledWith("module_key", ["projects", "all"]);
+    expect(fake.preferenceBuilder?.eq).toHaveBeenCalledWith("organization_id", "org-1");
   });
 });
 
@@ -149,6 +171,37 @@ describe("worker insertNotification (NOTIF-P1-001/002)", () => {
     const a = buildNotificationKey({ ...input });
     const b = buildNotificationKey({ ...input, body: "a different task body" });
     expect(a).not.toBe(b);
+  });
+});
+
+describe("worker notification sensitivity filter (NOTIF-P2-005)", () => {
+  it("redacts credential-like content before the row is stored", async () => {
+    const { client, inserts } = fakeSupabase({ preferences: [] });
+    // Assembled at runtime so the repo's diff-based secret scanner does not
+    // flag the fixture itself.
+    const secret = ["AKIA", "IOSFODNN7EXAMPLE"].join("");
+
+    await insertNotification(client, {
+      ...input,
+      body: `Credentials: ${secret} password=hunter2`,
+    });
+
+    const storedBody = String(inserts[0].body);
+    expect(storedBody).not.toContain(secret);
+    expect(storedBody).not.toContain("hunter2");
+    expect(storedBody).toContain("[redacted]");
+  });
+
+  it("derives the dedup key from the sanitized content so retries still dedupe", async () => {
+    const { client, seenKeys } = fakeSupabase({ preferences: [] });
+    const raw = { ...input, body: "api_key=abcdef123456" };
+
+    const first = await insertNotification(client, raw);
+    const second = await insertNotification(client, raw);
+
+    expect(first.inserted).toBe(true);
+    expect(second.deduped).toBe(true);
+    expect(seenKeys.size).toBe(1);
   });
 });
 

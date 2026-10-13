@@ -88,6 +88,6 @@ export class ComplianceApi {
   removeControl(id: string, organizationId: string) {
     return this.client.delete<void>(`/api/v1/compliance/controls/${id}`, {
       organization_id: organizationId,
-    });
+    }, { confirm: true });
   }
 }

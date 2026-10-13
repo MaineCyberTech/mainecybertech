@@ -197,6 +197,8 @@ describe("webhook dead-letter routes", () => {
           status: "failed",
           dead_letter: false,
           retry_count: 0,
+          // CHAIN-P2-009: the replay carries a stable dedup key.
+          idempotency_key: "dlq-replay-dl1",
         }),
       );
       expect(enqueueTask).toHaveBeenCalledWith("webhook-retry", {});
@@ -209,6 +211,61 @@ describe("webhook dead-letter routes", () => {
           entityId: "dl1",
         }),
       );
+    });
+
+    it("collapses a concurrent replay instead of creating a second delivery [CHAIN-P2-009]", async () => {
+      // The unique idempotency key rejects the second insert while the first
+      // replay is still in flight.
+      deliveryBuilder = createMockBuilder({
+        data: null,
+        error: { code: "23505", message: "duplicate key value violates unique constraint" },
+      } as MockResult);
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "webhook_dead_letters") return deadLetterBuilder;
+        if (table === "webhook_endpoints") return endpointBuilder;
+        return deliveryBuilder;
+      });
+
+      const res = await request(app)
+        .post("/api/v1/webhook-endpoints/dead-letters/dl1/retry")
+        .set("Authorization", "Bearer token");
+
+      // A duplicate claim is the same outcome, not a 500 — and it must not
+      // create the second delivery row that would double-POST.
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual({ ok: true });
+      expect(deliveryBuilder.insert).toHaveBeenCalledTimes(1);
+      expect(enqueueTask).toHaveBeenCalledWith("webhook-retry", {});
+    });
+
+    it("keeps the dead letter and returns 409 when there is no payload to replay [WH-P2-011]", async () => {
+      deadLetterBuilder = createMockBuilder({
+        data: {
+          ...deadLetterRow,
+          // Inline-dispatched failures store a PII-safe summary with no `data`.
+          request_body: { event: "ticket.created", receivedAt: "2026-09-01T09:00:00.000Z" },
+        },
+        error: null,
+      } as MockResult);
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "webhook_dead_letters") return deadLetterBuilder;
+        if (table === "webhook_endpoints") return endpointBuilder;
+        return deliveryBuilder;
+      });
+
+      const res = await request(app)
+        .post("/api/v1/webhook-endpoints/dead-letters/dl1/retry")
+        .set("Authorization", "Bearer token");
+
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe("CONFLICT");
+      expect(res.body.error.message).toContain("no stored payload");
+      // The dead letter must survive a refused retry: no delivery, no task,
+      // no delete, no audit — the admin sees the reason instead of a no-op.
+      expect(deliveryBuilder.insert).not.toHaveBeenCalled();
+      expect(enqueueTask).not.toHaveBeenCalled();
+      expect(deadLetterBuilder.delete).not.toHaveBeenCalled();
+      expect(logAuditEvent).not.toHaveBeenCalled();
     });
 
     it("returns 404 (and does not retry) when the endpoint is in another org", async () => {
@@ -269,7 +326,7 @@ describe("webhook dead-letter routes", () => {
     it("dismisses the dead letter and audits it", async () => {
       const res = await request(app)
         .delete("/api/v1/webhook-endpoints/dead-letters/dl1")
-        .set("Authorization", "Bearer token");
+        .set("Authorization", "Bearer token").send({ confirm: true });
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual({ ok: true });
@@ -298,7 +355,7 @@ describe("webhook dead-letter routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/webhook-endpoints/dead-letters/dl1")
-        .set("Authorization", "Bearer token");
+        .set("Authorization", "Bearer token").send({ confirm: true });
 
       expect(res.status).toBe(404);
       expect(deadLetterBuilder.delete).not.toHaveBeenCalled();
@@ -314,7 +371,7 @@ describe("webhook dead-letter routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/webhook-endpoints/dead-letters/missing")
-        .set("Authorization", "Bearer token");
+        .set("Authorization", "Bearer token").send({ confirm: true });
 
       expect(res.status).toBe(404);
       expect(logAuditEvent).not.toHaveBeenCalled();

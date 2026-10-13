@@ -25,7 +25,7 @@ export class InsuranceBinderApi {
   }
 
   remove(id: string) {
-    return this.client.delete(`/api/v1/insurance-binder/${id}`);
+    return this.client.delete(`/api/v1/insurance-binder/${id}`, undefined, { confirm: true });
   }
 
   coverageReport() {

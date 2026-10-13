@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const mockPush = jest.fn();
@@ -133,6 +133,21 @@ describe("AdminTicketCenterClient", () => {
     expect(screen.getByText("Software Update")).toBeInTheDocument();
   });
 
+  it("renders filter chips with a labelled 24x24 remove button", async () => {
+    const user = userEvent.setup();
+    render(
+      <AdminTicketCenterClient
+        tickets={tickets}
+        organizations={organizations}
+        createTicketAction={mockCreateTicketAction}
+      />,
+    );
+    await user.type(screen.getByPlaceholderText("Search tickets..."), "Network");
+
+    const remove = screen.getByRole("button", { name: 'Remove Search: "Network"' });
+    expect(remove).toHaveClass("h-6", "w-6");
+  });
+
   it("shows create ticket modal on button click", async () => {
     const user = userEvent.setup();
     render(
@@ -156,5 +171,62 @@ describe("AdminTicketCenterClient", () => {
     );
     const link = screen.getByText("Network Outage").closest("a");
     expect(link).toHaveAttribute("href", "/admin/tickets/t1");
+  });
+
+  it("keeps per-row selection controls out of the ticket link", async () => {
+    const user = userEvent.setup();
+    render(
+      <AdminTicketCenterClient
+        tickets={tickets}
+        organizations={organizations}
+        createTicketAction={mockCreateTicketAction}
+        updateTicketStatusAction={jest.fn()}
+        bulkUpdateTicketsAction={jest.fn()}
+      />,
+    );
+
+    const checkbox = screen.getAllByRole("checkbox", { name: "Select ticket" })[0];
+    expect(checkbox.closest("a")).toBeNull();
+    expect(screen.getByRole("button", { name: "new" }).closest("a")).toBeNull();
+
+    await user.click(checkbox);
+    expect(checkbox).toBeChecked();
+    expect(screen.getByText("1 ticket selected")).toBeInTheDocument();
+  });
+
+  it("loads further pages from the server beyond the initial fetch (USE-P2-002)", async () => {
+    const user = userEvent.setup();
+    const makeTicket = (i: number) => ({
+      id: `t${i}`,
+      subject: `Ticket ${i}`,
+      description: "Details",
+      status: "new",
+      priority: "normal",
+      organization_id: "org-1",
+      updated_at: new Date().toISOString(),
+    });
+    const initial = Array.from({ length: 30 }, (_, i) => makeTicket(i));
+    const more = Array.from({ length: 10 }, (_, i) => makeTicket(30 + i));
+    const loadMore = jest.fn().mockResolvedValue({ ok: true, items: more, total: 40 });
+
+    render(
+      <AdminTicketCenterClient
+        tickets={initial}
+        organizations={organizations}
+        createTicketAction={mockCreateTicketAction}
+        loadMoreTicketsAction={loadMore}
+        total={40}
+      />,
+    );
+
+    // First reveal the remaining locally fetched rows (30 loaded, 25 shown).
+    await user.click(screen.getByRole("button", { name: /Show more \(5 remaining\)/ }));
+    // Then fetch the next server page — the old client-only "Show more" could
+    // never exceed the fetched rows.
+    await user.click(screen.getByRole("button", { name: /Show more \(10 remaining\)/ }));
+
+    await waitFor(() => expect(loadMore).toHaveBeenCalledWith(2));
+    await waitFor(() => expect(screen.getByText("Ticket 39")).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /Show more/ })).not.toBeInTheDocument();
   });
 });

@@ -1,6 +1,6 @@
 # Data Breach Response Plan — MCT Platform
 
-**Owner:** Security lead · **Last reviewed:** 2026-10-02 · **Review cadence:** quarterly
+**Owner:** Security lead · **Last reviewed:** 2026-10-11 · **Review cadence:** quarterly
 
 This is the *privacy / data-breach* companion to the platform incident response
 plan in `docs/INCIDENT_RESPONSE.md`. That document tells you how to run an
@@ -117,8 +117,10 @@ attacker is involved. Grounded in this stack:
 ### 2.3 Availability
 
 - **Ransomware / deletion / accidental drop** affecting any table above.
-- **Backup loss** (the S3 objects are the only durable copy — see `IR-P0-003`
-  and the `DR-P0-001`/`DR-P0-002` findings on scheduled backups).
+- **Backup loss** (the S3 objects are the only durable copy — see the
+  `DR-P0-001`/`DR-P0-002` findings on scheduled backups and `IR-P1-004` on
+  restore verification; `IR-P0-003` covers the alerting-path residual, not
+  backup coverage).
 - **Extended loss of access** to personal data such that subjects' rights (e.g.
   access/erasure requests) cannot be met.
 - **Corrupted restore** that yields a backup missing recent rows (integrity +
@@ -131,20 +133,27 @@ plus human reports. The real sources for a *breach* are:
 
 | Source | What it reveals | Where |
 |---|---|---|
-| `audit_logs` table | Who did what to which entity, from which IP; rows written by `apps/api/src/services/audit.ts` (PII fields redacted). An "audit trail gap" is logged on insert failure — treat as a coverage loss. | `audit_logs`; service `apps/api/src/services/audit.ts` |
+| `audit_logs` table | Who did what to which entity: `actor_user_id` plus key-level-redacted `metadata`, written by `apps/api/src/services/audit.ts`. The `ip_address`/`user_agent` columns exist but the runtime writer does **not** populate them (PRIV-P3-002) — do not use them for source attribution; platform-admin IP/UA lives in `impersonation_log`. An "audit trail gap" is logged on insert failure — treat as a coverage loss. | `audit_logs`; service `apps/api/src/services/audit.ts` |
 | `impersonation_log` table | Platform-admin cross-tenant access (`actor_user_id`, `organization_id`, `reason`, `ip_address`). Unexpected volume or unexpected orgs = investigate as possible breach. | `impersonation_log` |
 | Sentry | Exceptions, e.g. DB errors on RLS-enabled modules, unexpected 403/empty-result spikes. | API/worker/web Sentry init |
-| Prometheus rules | `MCTServiceDown`, `MCTHighRequestErrorRate`, and `Watchdog`. | `infra/digitalocean/prometheus.rules.yml` |
+| Prometheus rules | `MCTServiceDown`, `MCTHighRequestErrorRate`, `MCTImpersonationBurst`, `MCTTenantScopeRegression`, and `Watchdog` (delivered via Alertmanager → ntfy). | `infra/digitalocean/prometheus.rules.yml` |
 | CI / CodeQL / secret scan | A committed secret (leaked service-role key, JWT secret, connection string) caught pre-commit or in CI. | `.husky/pre-commit`, `scripts/scan-secrets.sh`, `test.yml` `secrets-scan`, `codeql.yml` |
 | Tenant / user reports | "I can see another org's data", "my invoice is wrong", unexpected logins. | Support channel → security@mainecybertech.com |
-| Backup / restore jobs | Backup failure notices, restore anomalies (`db-backup.yml`, `db-restore-test.yml`). | GitHub Actions notifications + `SLACK_WEBHOOK_URL` |
+| Backup / restore jobs | Backup failure notices, restore anomalies (`db-backup.yml`, `db-restore-test.yml`). | GitHub Actions notifications + ntfy (`NTFY_ALERTS_*`; Slack fallback via `SLACK_WEBHOOK_URL`) |
 | Third-party notification | Supabase, DigitalOcean, Stripe, Cloudflare, Atlassian, Microsoft report an incident on their side. | Vendor security contact |
 
-**Known detection gap — must be stated in any breach timeline.** Alertmanager is
-**not deployed**; `prometheus.rules.yml` says delivery requires it. The `Watchdog`
-rule has no receiver, so a total loss of the monitoring path is silent. This is
-audit `IR-P0-003` and `IR-014`; until fixed, a breach could be detected late or
-by the tenant first. Track the fix as a P1 in the risk register.
+**Known detection gap — must be stated in any breach timeline.** Alertmanager
+**is deployed** and delivers `critical`/`default` Prometheus alerts to the org
+ntfy topic (`https://ntfy.mainecybertech.us/portal-alerts`). The `Watchdog`
+dead-man's-switch receiver is wired, but its external heartbeat URL
+(`ALERTMANAGER_WATCHDOG_WEBHOOK_URL`) is **still unset**, so a total loss of the
+droplet is not yet detected by an off-box system (prod deploys fail closed until
+it is provisioned). This is the residual of audit `IR-P0-003`; until the
+external heartbeat is provisioned and drilled, a breach could be detected late
+or by the tenant first. Track the residual as a P1 in the risk register.
+Status of the audit row: **partially fixed — residual = external watchdog URL
+unset**; Alertmanager itself *is* deployed and delivering, so the original
+"Alertmanager not deployed" wording is superseded and must not be repeated.
 
 Additional low-visibility signals called out by the audit — audit-write failures,
 webhook dead-letter growth, worker health, and RLS regressions — currently have
@@ -246,15 +255,17 @@ data, how many data subjects, and what harm is foreseeable.*
 | Client / prospect contacts | `store_leads`, `vendor_contacts` (`contact_name`, `email`, `phone`), `identity_verifications` (`requestor_name`, `requestor_email`) |
 | Employee records (tenant's clients) | `phishing_targets` (`email`, `name`), `offboarding_checklists` (`employee_name`, `employee_email`), `onboarding_clients`, `break_glass_accounts` (custodian) |
 | Authentication / security | `auth.users` (Supabase-managed), `mfa_recovery_codes` (hashes only), `api_keys`, `break_glass_accounts` |
-| Activity / audit (contains actor identifiers and IP) | `audit_logs` (`ip_address`, `user_agent`, `actor_user_id`), `impersonation_log` (`ip_address`, `user_agent`, `reason`) |
+| Activity / audit (actor identifiers; IP/UA only in `impersonation_log`) | `audit_logs` (`actor_user_id`, redacted `metadata`; the `ip_address`/`user_agent` columns exist but are not written by the runtime — PRIV-P3-002), `impersonation_log` (`ip_address`, `user_agent`, `reason`) |
 | Content that may embed PII | `documents`, `document_versions`, `document_shares`, `chat_messages`, `tickets`, `ticket_comments`, `dynamic_form_submissions`, `satisfaction_pulses`, `training_enrollments` |
 
 > Note: `profiles` keeps plaintext `full_name`/`email`/`phone`/`title` as the
 > response source of truth and additionally stores an AES-256-GCM `encrypted_pii`
 > mirror (migration `5302135`). A database read therefore exposes plaintext PII.
 > `audit_logs.metadata` is PII-redacted at write time by
-> `apps/api/src/services/audit.ts`, but `ip_address`/`user_agent`/`actor_user_id`
-> are still personal data.
+> `apps/api/src/services/audit.ts`; `actor_user_id` is personal data.
+> `ip_address`/`user_agent` columns exist but the runtime writer does not
+> populate them (only seeded demo rows carry values) — treat the audit trail as
+> who/what/when and `impersonation_log` as the IP/UA source (PRIV-P3-002).
 
 ### 6.2 Counting data subjects
 
@@ -278,6 +289,9 @@ data, how many data subjects, and what harm is foreseeable.*
 
 - The **Security lead** owns the assessment and presents the facts.
 - The **Incident Commander** runs the incident and communication cadence.
+- Role assignments and escalation contacts come from the on-call rota in
+  [`INCIDENT_RESPONSE.md`](INCIDENT_RESPONSE.md) §8 (fill
+  [`templates/ONCALL_ROTA.md`](templates/ONCALL_ROTA.md) before go-live).
 - The **notification decision is made jointly by the Security lead and Legal /
   DPO**, recorded in the breach register, and approved by MCT leadership before
   any external notice.
@@ -405,11 +419,13 @@ its target is escalated.
 
 Within **5 business days** of closing a breach, the Security lead produces a
 blameless post-incident review using the platform-IR postmortem format
-(`docs/INCIDENT_RESPONSE.md` §4.4) with a **breach-specific** addition:
+([`templates/POSTMORTEM.md`](templates/POSTMORTEM.md); see
+`docs/INCIDENT_RESPONSE.md` §4.4) with a **breach-specific** addition:
 
 - What personal data was actually affected, and was the assessment accurate?
 - Did detection sources (§3) work, and how long did detection take? Explicitly
-  record whether the **Alertmanager gap** (`IR-P0-003`) or an unalerted signal
+  record whether the **alerting-path residual** (`IR-P0-003`: external watchdog
+  URL unset, missed-heartbeat drill not recorded) or an unalerted signal
   (`IR-P1-006`, `IR-009`) contributed to latency.
 - Was the notification decision reached in time, and was it correct?
 - What evidence-preservation or chain-of-custody steps were missed?
@@ -426,7 +442,7 @@ An incident that produces no documentation, config, or control change is **not
 closed** (same rule as `docs/INCIDENT_RESPONSE.md` §4.4). Update this plan, the
 containment playbooks in §5, or the detection sources in §3 whenever the review
 shows a gap — and re-run the relevant tabletop scenario from
-`incident_tabletop_scenarios.md`.
+[`INCIDENT_TABLETOP_SCENARIOS.md`](INCIDENT_TABLETOP_SCENARIOS.md).
 
 ## 11. Related documents and current gaps
 
@@ -439,12 +455,16 @@ shows a gap — and re-run the relevant tabletop scenario from
 | `docs/MONITORING_AND_ALERTING.md` | Detection signals and logging |
 | `docs/ROLLBACK_PROCEDURES.md` | Migration/DB rollback used by §5.3 |
 | `docs/RTO_RPO.md` | Backup/restore targets referenced by §2.3 |
+| `docs/INCIDENT_TABLETOP_SCENARIOS.md` | Scenario catalog used by §10 |
+| `docs/templates/POSTMORTEM.md` | Post-incident review format used by §10 |
 | `SECURITY.md` | How to **report** a vulnerability to MCT |
 
 Known gaps that limit this plan until fixed (track in the risk register):
 
-- **No Alertmanager / off-box receiver** (`IR-P0-003`, `IR-014`) — silent
-  monitoring loss; delayed breach detection.
+- **Off-box dead-man's switch not provisioned** (`IR-P0-003`) — Alertmanager →
+  ntfy delivery is live, but the external watchdog heartbeat URL is still unset,
+  so total droplet loss is silent off-box; delayed breach detection until the
+  URL is provisioned and the missed-heartbeat drill is recorded.
 - **No runtime RLS-regression alert** (`IR-P1-006`) — confidentiality breaches in
   §2.1 may be noticed only by a tenant.
 - **No alert on `audit_logs` write gaps or admin/impersonation abuse**
@@ -453,7 +473,8 @@ Known gaps that limit this plan until fixed (track in the risk register):
   (`DR-P0-001`, `DR-P0-002`, `IR-P1-004`, `IR-P1-005`) — an availability breach
   may be discovered only during recovery.
 - **On-call rota unassigned** (`docs/INCIDENT_RESPONSE.md` §8) — escalation
-  contacts for this plan are not yet named.
+  contacts for this plan are not yet named; fill
+  [`templates/ONCALL_ROTA.md`](templates/ONCALL_ROTA.md) (`IR-P2-008`).
 
 **Owner:** Security lead · **Review cadence:** quarterly, and after every
 declared breach.

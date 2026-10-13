@@ -7,6 +7,7 @@ import { getClientApi } from "@/lib/client-api";
 type SearchResult = {
   tickets: Array<{ id: string; title: string; status: string; priority: string }>;
   projects: Array<{ id: string; name: string; status: string; priority: string }>;
+  documents: Array<{ id: string; name: string; mime_type?: string | null }>;
 };
 
 export default function PortalGlobalSearch() {
@@ -59,7 +60,9 @@ export default function PortalGlobalSearch() {
 
   function resultCount() {
     if (!results) return 0;
-    return results.tickets.length + results.projects.length;
+    return (
+      results.tickets.length + results.projects.length + (results.documents?.length ?? 0)
+    );
   }
 
   function pill(text: string, color: "emerald" | "amber" | "slate" = "slate") {
@@ -85,7 +88,7 @@ export default function PortalGlobalSearch() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => results && resultCount() > 0 && setOpen(true)}
-        placeholder="Search tickets, projects..."
+        placeholder="Search tickets, projects, documents..."
         aria-label="Search portal"
         className="w-full rounded-lg border border-white/10 bg-cyber-base/80 px-4 py-2.5 pl-10 text-sm text-slate-50 outline-none transition focus:border-emerald-600"
       />
@@ -147,6 +150,27 @@ export default function PortalGlobalSearch() {
                     {pill(p.status)}
                     {pill(p.priority)}
                   </div>
+                </Link>
+              ))}
+            </div>
+          ) : null}
+
+          {results.documents && results.documents.length > 0 ? (
+            <div className="border-t border-white/5 p-3">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">
+                Documents
+              </p>
+              {results.documents.map((d) => (
+                <Link
+                  key={d.id}
+                  href={`/portal/documents/${d.id}`}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-md px-3 py-2 transition hover:bg-white/5"
+                >
+                  <p className="mr-3 truncate text-sm font-medium text-slate-200">{d.name}</p>
+                  {d.mime_type ? (
+                    <span className="shrink-0 truncate text-xs text-slate-400">{d.mime_type}</span>
+                  ) : null}
                 </Link>
               ))}
             </div>

@@ -177,7 +177,7 @@ describe("store visual assets", () => {
   it("deletes a visual asset", async () => {
     setup();
 
-    const res = await request(app).delete("/api/v1/store/visual-assets/va-1");
+    const res = await request(app).delete("/api/v1/store/visual-assets/va-1").send({ confirm: true });
 
     expect(res.status).toBe(204);
   });

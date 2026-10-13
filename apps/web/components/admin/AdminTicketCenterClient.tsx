@@ -5,6 +5,7 @@ import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 import { useFocusTrap } from "@/lib/use-focus-trap";
 import { formatDateTime, formatRelativeTime } from "@/lib/format";
+import { Chip } from "@mct/ui";
 
 const PAGE_SIZE = 25;
 
@@ -23,6 +24,8 @@ const STATUS_OPTIONS = [
 
 const PRIORITY_OPTIONS = ["low", "normal", "high", "urgent"] as const;
 
+type TicketCounts = { open: number; closed: number; all: number };
+
 type Props = {
   tickets: TicketRecord[];
   organizations: OrganizationRecord[];
@@ -32,6 +35,12 @@ type Props = {
     status: string,
   ) => Promise<{ ok: boolean; error?: string }>;
   bulkUpdateTicketsAction?: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
+  // USE-P2-002: server-side paging beyond the initial fetch + accurate totals.
+  loadMoreTicketsAction?: (
+    page: number,
+  ) => Promise<{ ok: boolean; items?: TicketRecord[]; total?: number; error?: string }>;
+  total?: number;
+  counts?: TicketCounts;
 };
 
 function ticketSubject(ticket: TicketRecord) {
@@ -187,58 +196,58 @@ function TicketCard({
   };
 
   return (
-    <div className="relative">
-      <Link
-        href={`/admin/tickets/${ticket.id}`}
-        className="block rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-      >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="checkbox"
-                checked={selected}
-                onChange={handleCheckboxChange}
-                className="h-6 w-6 rounded border-white/20 bg-cyber-base text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
-                aria-label="Select ticket"
-              />
-              <p className="font-medium text-slate-50">{ticketSubject(ticket)}</p>
-              {ticket.external_jsm_issue_key ? (
-                <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[11px] text-blue-300">
-                  {ticket.external_jsm_issue_key}
-                </span>
-              ) : null}
-            </div>
-            <p className="mt-2 line-clamp-2 text-sm text-slate-400">
-              {ticketDescription(ticket) ?? "No description provided."}
-            </p>
+    <div className="relative rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-500/20 hover:bg-cyber-base/80">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={handleCheckboxChange}
+              className="h-6 w-6 rounded border-white/20 bg-cyber-base text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
+              aria-label="Select ticket"
+            />
+            <Link
+              href={`/admin/tickets/${ticket.id}`}
+              className="font-medium text-slate-50 transition hover:text-emerald-300"
+            >
+              {ticketSubject(ticket)}
+            </Link>
+            {ticket.external_jsm_issue_key ? (
+              <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[11px] text-blue-300">
+                {ticket.external_jsm_issue_key}
+              </span>
+            ) : null}
           </div>
-          <div className="relative flex flex-wrap items-center gap-2">
-            {onStatusChange ? (
-              <button
-                type="button"
-                onClick={handleStatusClick}
-                className={
-                  statusPillClass(status) + " cursor-pointer hover:ring-1 hover:ring-emerald-500/40"
-                }
-              >
-                {status}
-              </button>
-            ) : (
-              <span className={statusPillClass(status)}>{status}</span>
-            )}
-            <span className={priorityPillClass(priority)}>{priority}</span>
-          </div>
+          <p className="mt-2 line-clamp-2 text-sm text-slate-400">
+            {ticketDescription(ticket) ?? "No description provided."}
+          </p>
         </div>
-        <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-400">
-          <span>Org: {orgMap.get(ticket.organization_id) ?? ticket.organization_id}</span>
-          <span>Category: {ticketCategory(ticket)}</span>
-          <span>Assignee: {assigneeLabel(ticket)}</span>
-          <span title={formatDateTime(ticket.updated_at ?? ticket.created_at)}>
-            Updated {formatRelativeTime(ticket.updated_at ?? ticket.created_at)}
-          </span>
+        <div className="relative flex flex-wrap items-center gap-2">
+          {onStatusChange ? (
+            <button
+              type="button"
+              onClick={handleStatusClick}
+              className={
+                statusPillClass(status) + " cursor-pointer hover:ring-1 hover:ring-emerald-500/40"
+              }
+            >
+              {status}
+            </button>
+          ) : (
+            <span className={statusPillClass(status)}>{status}</span>
+          )}
+          <span className={priorityPillClass(priority)}>{priority}</span>
         </div>
-      </Link>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-400">
+        <span>Org: {orgMap.get(ticket.organization_id) ?? ticket.organization_id}</span>
+        <span>Category: {ticketCategory(ticket)}</span>
+        <span>Assignee: {assigneeLabel(ticket)}</span>
+        <span title={formatDateTime(ticket.updated_at ?? ticket.created_at)}>
+          Updated {formatRelativeTime(ticket.updated_at ?? ticket.created_at)}
+        </span>
+      </div>
       {dropdownOpen && onStatusChange ? (
         <StatusDropdown
           ticketId={ticket.id}
@@ -251,27 +260,15 @@ function TicketCard({
   );
 }
 
-function Chip({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
-      {children}
-      <button
-        type="button"
-        onClick={onRemove}
-        className="ml-0.5 text-emerald-400 hover:text-emerald-200"
-      >
-        &times;
-      </button>
-    </span>
-  );
-}
-
 export default function AdminTicketCenterClient({
   tickets,
   organizations,
   createTicketAction,
   updateTicketStatusAction,
   bulkUpdateTicketsAction,
+  loadMoreTicketsAction,
+  total,
+  counts,
 }: Props) {
   const [openModal, setOpenModal] = useState(false);
   const ticketModalRef = useRef<HTMLDivElement>(null);
@@ -284,6 +281,21 @@ export default function AdminTicketCenterClient({
   const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "updated">("updated");
   const [page, setPage] = useState(1);
+
+  // USE-P2-002: pages fetched from the server after the initial 100 rows. The
+  // prop array is reset whenever the server re-renders the page.
+  const [extraTickets, setExtraTickets] = useState<TicketRecord[]>([]);
+  const [serverPage, setServerPage] = useState(1);
+  const [serverExhausted, setServerExhausted] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setExtraTickets([]);
+    setServerPage(1);
+    setServerExhausted(false);
+    setLoadMoreError(null);
+  }, [tickets]);
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -321,14 +333,22 @@ export default function AdminTicketCenterClient({
     }
   };
 
+  const allTickets = useMemo(() => [...tickets, ...extraTickets], [tickets, extraTickets]);
   const visibleTickets = useMemo(
-    () => tickets.filter((ticket) => !isDeletedTicket(ticket)),
-    [tickets],
+    () => allTickets.filter((ticket) => !isDeletedTicket(ticket)),
+    [allTickets],
   );
   const orgMap = useMemo(
     () => new Map(organizations.map((org) => [org.id, org.name ?? org.id])),
     [organizations],
   );
+
+  const totalCount = total ?? allTickets.length;
+  const stats: TicketCounts = counts ?? {
+    open: visibleTickets.filter((t) => !isClosedStatus(ticketStatus(t))).length,
+    closed: visibleTickets.filter((t) => isClosedStatus(ticketStatus(t))).length,
+    all: visibleTickets.length,
+  };
 
   const filtered = useMemo(() => {
     let items = visibleTickets;
@@ -379,7 +399,38 @@ export default function AdminTicketCenterClient({
     return filtered.slice(start, end);
   }, [filtered, page]);
 
-  const hasMore = paginated.length < filtered.length;
+  const hasMoreLocal = paginated.length < filtered.length;
+  const hasMoreServer = !serverExhausted && allTickets.length < totalCount;
+  const hasMore = hasMoreLocal || hasMoreServer;
+  const remaining = hasMoreLocal
+    ? filtered.length - paginated.length
+    : Math.max(0, totalCount - allTickets.length);
+
+  const handleShowMore = async () => {
+    if (hasMoreLocal || !loadMoreTicketsAction) {
+      setPage((p) => p + 1);
+      return;
+    }
+    setLoadingMore(true);
+    setLoadMoreError(null);
+    try {
+      const nextPage = serverPage + 1;
+      const result = await loadMoreTicketsAction(nextPage);
+      if (!result.ok) {
+        setLoadMoreError(result.error ?? "Failed to load more tickets.");
+        return;
+      }
+      const items = result.items ?? [];
+      if (items.length === 0) setServerExhausted(true);
+      setExtraTickets((prev) => [...prev, ...items]);
+      setServerPage(nextPage);
+      setPage((p) => p + 1);
+    } catch {
+      setLoadMoreError("Failed to load more tickets.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const activeFilters: { label: string; onRemove: () => void }[] = [];
   if (search.trim())
@@ -441,15 +492,9 @@ export default function AdminTicketCenterClient({
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
-        <StatCard
-          label="Open Tickets"
-          value={visibleTickets.filter((t) => !isClosedStatus(ticketStatus(t))).length}
-        />
-        <StatCard
-          label="Closed Tickets"
-          value={visibleTickets.filter((t) => isClosedStatus(ticketStatus(t))).length}
-        />
-        <StatCard label="All Tickets" value={visibleTickets.length} />
+        <StatCard label="Open Tickets" value={stats.open} />
+        <StatCard label="Closed Tickets" value={stats.closed} />
+        <StatCard label="All Tickets" value={stats.all} />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -522,9 +567,7 @@ export default function AdminTicketCenterClient({
       {activeFilters.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2">
           {activeFilters.map((f, i) => (
-            <Chip key={i} onRemove={f.onRemove}>
-              {f.label}
-            </Chip>
+            <Chip key={i} label={f.label} onRemove={f.onRemove} />
           ))}
           <button
             type="button"
@@ -694,7 +737,7 @@ export default function AdminTicketCenterClient({
               <button
                 type="button"
                 onClick={() => setOpenModal(true)}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-emerald-500"
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-emerald-500"
               >
                 Create Ticket
               </button>
@@ -705,11 +748,17 @@ export default function AdminTicketCenterClient({
           <div className="mt-6 text-center">
             <button
               type="button"
-              className="cyber-button-secondary"
-              onClick={() => setPage((p) => p + 1)}
+              className="cyber-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={loadingMore}
+              onClick={() => void handleShowMore()}
             >
-              Show more ({filtered.length - paginated.length} remaining)
+              {loadingMore ? "Loading…" : `Show more (${remaining} remaining)`}
             </button>
+            {loadMoreError ? (
+              <p role="alert" className="mt-2 text-xs text-red-400">
+                {loadMoreError}
+              </p>
+            ) : null}
           </div>
         ) : null}
       </section>
@@ -847,7 +896,7 @@ export default function AdminTicketCenterClient({
                   {isPending ? "Creating..." : "Create Ticket"}
                 </button>
               </div>
-              {formError && <p className="text-sm text-red-400">{formError}</p>}
+              {formError && <p role="alert" className="text-sm text-red-400">{formError}</p>}
             </form>
           </div>
         </div>

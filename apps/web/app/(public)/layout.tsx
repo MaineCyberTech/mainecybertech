@@ -1,10 +1,12 @@
-import Script from "next/script";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 import MarketingHeader from "../../components/marketing/MarketingHeader";
 import MarketingFooter from "../../components/marketing/MarketingFooter";
 import ParticleBackground from "../../components/marketing/ParticleBackground";
 import LocalBusinessJsonLd from "../../components/seo/LocalBusinessJsonLd";
+import AnalyticsScripts from "../../components/consent/AnalyticsScripts";
+import ConsentBanner from "../../components/consent/ConsentBanner";
+import ConsentProvider from "../../components/consent/ConsentProvider";
 import { siteConfig } from "../../lib/seo/site";
 import { getClientEnv } from "../../lib/env";
 
@@ -53,34 +55,16 @@ export default async function PublicLayout({ children }: { children: React.React
   const nonce = headersList.get("x-nonce") ?? "";
 
   return (
-    <>
+    <ConsentProvider>
+      {/* PRIV-P2-001: GA/Tawk.to are gated on an explicit, persisted choice. */}
+      <AnalyticsScripts gaId={GA_ID} tawktoId={TAWKTO_ID} nonce={nonce} />
+
       <LocalBusinessJsonLd />
-      {GA_ID && (
-        <>
-          <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-            strategy="afterInteractive"
-            nonce={nonce}
-          />
-          <Script id="ga-init" strategy="afterInteractive" nonce={nonce}>
-            {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${GA_ID}');`}
-          </Script>
-        </>
-      )}
-
-      {TAWKTO_ID && (
-        <Script
-          src={`https://embed.tawk.to/${TAWKTO_ID}`}
-          strategy="afterInteractive"
-          crossOrigin="anonymous"
-          nonce={nonce}
-        />
-      )}
-
       <ParticleBackground />
       <MarketingHeader />
       <main id="main-content">{children}</main>
       <MarketingFooter />
-    </>
+      <ConsentBanner />
+    </ConsentProvider>
   );
 }

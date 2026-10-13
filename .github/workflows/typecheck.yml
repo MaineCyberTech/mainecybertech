@@ -21,6 +21,7 @@ concurrency:
 jobs:
   typecheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout

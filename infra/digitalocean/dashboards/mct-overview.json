@@ -67,13 +67,13 @@
     },
     {
       "id": 5,
-      "title": "Notification delivery success (30d)",
+      "title": "Email delivery success (worker outcomes, 30d)",
       "type": "stat",
       "gridPos": { "h": 6, "w": 6, "x": 6, "y": 6 },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(portal_notification_delivery_total{status=\"success\"}[30d])) / clamp_min(sum(rate(portal_notification_delivery_total[30d])), 0.0001)",
+          "expr": "sum(rate(worker_notification_delivery_total{channel=\"email\",status=\"success\"}[30d])) / clamp_min(sum(rate(worker_notification_delivery_total{channel=\"email\",status=~\"success|failed\"}[30d])), 0.0001)",
           "legendFormat": "success"
         }
       ],

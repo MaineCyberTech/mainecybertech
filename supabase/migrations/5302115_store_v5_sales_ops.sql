@@ -30,8 +30,10 @@ create table if not exists store_proposal_drafts (
 alter table store_leads enable row level security;
 alter table store_proposal_drafts enable row level security;
 
+drop policy if exists "Service role full access to leads" on store_leads;
 create policy "Service role full access to leads" on store_leads
   for all to service_role using (true) with check (true);
 
+drop policy if exists "Service role full access to proposal drafts" on store_proposal_drafts;
 create policy "Service role full access to proposal drafts" on store_proposal_drafts
   for all to service_role using (true) with check (true);

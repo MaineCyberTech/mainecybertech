@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { colors } from "@mct/ui/tokens";
 import { logoutAction } from "@/lib/auth/auth-actions";
 import { clientLogger } from "@/lib/client-logger";
 
@@ -31,8 +32,8 @@ export default function GlobalError({
           margin: 0,
           padding: 0,
           minHeight: "100vh",
-          backgroundColor: "#0A1118",
-          color: "#E2E8F0",
+          backgroundColor: colors.cyber.base,
+          color: colors.slate[200],
           fontFamily: "system-ui, sans-serif",
           display: "flex",
           alignItems: "center",
@@ -44,11 +45,11 @@ export default function GlobalError({
           style={{ maxWidth: "400px", textAlign: "center", padding: "2rem" }}
         >
           <h1
-            style={{ fontSize: "2rem", marginBottom: "1rem", color: "#F87171" }}
+            style={{ fontSize: "2rem", marginBottom: "1rem", color: colors.red[400] }}
           >
             Something went wrong
           </h1>
-          <p style={{ color: "#94A3B8", marginBottom: "2rem" }}>
+          <p style={{ color: colors.slate[400], marginBottom: "2rem" }}>
             We encountered an unexpected error. Please try refreshing the page
             or contact support if the problem persists.
           </p>
@@ -63,7 +64,7 @@ export default function GlobalError({
             <button
               onClick={reset}
               style={{
-                backgroundColor: "#059669",
+                backgroundColor: colors.cyber.accent,
                 color: "white",
                 border: "none",
                 padding: "0.75rem 1.5rem",
@@ -79,9 +80,9 @@ export default function GlobalError({
               <button
                 type="submit"
                 style={{
-                  backgroundColor: "#1E293B",
-                  color: "#E2E8F0",
-                  border: "1px solid #334155",
+                  backgroundColor: colors.slate[800],
+                  color: colors.slate[200],
+                  border: `1px solid ${colors.slate[700]}`,
                   padding: "0.75rem 1.5rem",
                   borderRadius: "0.5rem",
                   fontSize: "1rem",
@@ -96,8 +97,8 @@ export default function GlobalError({
               href="/login"
               style={{
                 backgroundColor: "transparent",
-                color: "#94A3B8",
-                border: "1px solid #334155",
+                color: colors.slate[400],
+                border: `1px solid ${colors.slate[700]}`,
                 padding: "0.75rem 1.5rem",
                 borderRadius: "0.5rem",
                 fontSize: "1rem",
@@ -114,7 +115,7 @@ export default function GlobalError({
             style={{
               marginTop: "2rem",
               textAlign: "left",
-              color: "#64748B",
+              color: colors.slate[500],
               fontSize: "0.875rem",
             }}
           >

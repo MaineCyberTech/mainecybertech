@@ -1,4 +1,6 @@
 {
+  "historical": true,
+  "historical_note": "EXEC-P3-001: historical alignment-engine dashboard data (2026-06-23); APPROVED_FOR_DEV_DEPLOY is not a current release decision. See prompts/PROVENANCE.md.",
   "p0": 0,
   "p1": 0,
   "p2": 3,

@@ -241,7 +241,7 @@ describe("Domain Monitors tenant isolation", () => {
     mockMonitor(ORG_A);
     const res = await request(app)
       .delete(`/api/v1/domain-monitors/${MONITOR_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 
@@ -249,7 +249,7 @@ describe("Domain Monitors tenant isolation", () => {
     mockMonitor(ORG_B);
     const res = await request(app)
       .delete(`/api/v1/domain-monitors/${MONITOR_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(404);
   });
 });

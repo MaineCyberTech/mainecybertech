@@ -7,9 +7,21 @@ import { formatDateTime, formatRelativeTime } from "@/lib/format";
 
 type TicketRecord = Record<string, any> & { id: string };
 
+type TicketCounts = { open: number; closed: number; all: number };
+
 type Props = {
   tickets: TicketRecord[];
-  createTicketAction: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
+  createTicketAction: (
+    formData: FormData,
+  ) => Promise<{ ok: boolean; error?: string; ticketId?: string; subject?: string }>;
+  // USE-P2-002: server-side pagination metadata. Optional so the component
+  // still renders standalone (tests, other call sites) with page-local values.
+  page?: number;
+  pageSize?: number;
+  total?: number;
+  counts?: TicketCounts;
+  // USE-P3-001: `?create=1` deep link (dashboard CTA) opens the create form.
+  initialCreateOpen?: boolean;
 };
 
 function ticketSubject(ticket: TicketRecord) {
@@ -80,16 +92,22 @@ function TicketList({
   title,
   tickets,
   emptyText,
+  total,
 }: {
   title: string;
   tickets: TicketRecord[];
   emptyText: string;
+  total?: number;
 }) {
   return (
     <section className="cyber-panel">
       <div className="flex items-center justify-between gap-3">
         <h2 className="cyber-heading text-lg">{title}</h2>
-        <span className="cyber-pill">Total {tickets.length}</span>
+        <span className="cyber-pill">
+          {total !== undefined && total > tickets.length
+            ? `Showing ${tickets.length} of ${total}`
+            : `Total ${tickets.length}`}
+        </span>
       </div>
       <div className="mt-6 space-y-4">
         {tickets.length > 0 ? (
@@ -140,12 +158,23 @@ function TicketList({
   );
 }
 
-export default function SupportCenterClient({ tickets, createTicketAction }: Props) {
+export default function SupportCenterClient({
+  tickets,
+  createTicketAction,
+  page = 1,
+  pageSize,
+  total,
+  counts,
+  initialCreateOpen = false,
+}: Props) {
   const [showHistory, setShowHistory] = useState(false);
-  const [openModal, setOpenModal] = useState(false);
+  const [openModal, setOpenModal] = useState(initialCreateOpen);
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, openModal);
   const [formError, setFormError] = useState<string | null>(null);
+  // USE-P3-001: closing the modal silently left users unsure the ticket was
+  // submitted; keep the created ticket so the list page can confirm it.
+  const [createdTicket, setCreatedTicket] = useState<{ id: string; subject: string } | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const visibleTickets = useMemo(
@@ -161,6 +190,21 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
     [visibleTickets],
   );
   const visibleOpenTickets = openTickets.length > 0 ? openTickets : visibleTickets;
+
+  // USE-P2-002: the stat cards must reflect every ticket, not just the fetched
+  // page, so prefer the server totals and fall back to page-local counts.
+  const stats: TicketCounts = counts ?? {
+    open: openTickets.length,
+    closed: closedTickets.length,
+    all: visibleTickets.length,
+  };
+  const effectivePageSize = pageSize ?? (visibleTickets.length || 25);
+  const effectiveTotal = total ?? visibleTickets.length;
+  const totalPages = Math.max(1, Math.ceil(effectiveTotal / effectivePageSize));
+  const rangeStart = effectiveTotal === 0 ? 0 : (page - 1) * effectivePageSize + 1;
+  // Base the window end on the rows actually rendered (the last page is
+  // usually short), not the nominal page window.
+  const rangeEnd = Math.min(rangeStart + visibleTickets.length - 1, effectiveTotal);
 
   return (
     <div className="space-y-6">
@@ -178,10 +222,26 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
         </button>
       </div>
 
+      {createdTicket ? (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm text-emerald-200"
+        >
+          <span>
+            Ticket created: <span className="font-medium">{createdTicket.subject}</span>.
+          </span>
+          {createdTicket.id ? (
+            <Link href={`/portal/support/${createdTicket.id}`} className="underline">
+              View ticket
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="grid gap-3 md:grid-cols-3">
-        <StatCard label="Open Tickets" value={openTickets.length} />
-        <StatCard label="Closed Tickets" value={closedTickets.length} />
-        <StatCard label="All Tickets" value={visibleTickets.length} />
+        <StatCard label="Open Tickets" value={stats.open} />
+        <StatCard label="Closed Tickets" value={stats.closed} />
+        <StatCard label="All Tickets" value={stats.all} />
       </div>
 
       <TicketList
@@ -207,10 +267,55 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
               title="All Tickets"
               tickets={visibleTickets}
               emptyText="No ticket history yet."
+              total={effectiveTotal}
             />
           </div>
         ) : null}
       </section>
+
+      {effectiveTotal > 0 ? (
+        <nav
+          aria-label="Ticket pagination"
+          className="flex flex-col items-center justify-between gap-3 sm:flex-row"
+        >
+          <p className="text-xs text-slate-400">
+            Showing {rangeStart}–{rangeEnd} of {effectiveTotal} tickets
+          </p>
+          {totalPages > 1 ? (
+            <div className="flex items-center gap-3">
+              {page > 1 ? (
+                <Link
+                  href={`/portal/support?page=${page - 1}`}
+                  className="cyber-button-secondary text-xs"
+                  rel="prev"
+                >
+                  Previous
+                </Link>
+              ) : (
+                <span className="cyber-button-secondary text-xs opacity-40" aria-disabled="true">
+                  Previous
+                </span>
+              )}
+              <span className="text-xs text-slate-400">
+                Page {Math.min(page, totalPages)} of {totalPages}
+              </span>
+              {page < totalPages ? (
+                <Link
+                  href={`/portal/support?page=${page + 1}`}
+                  className="cyber-button-secondary text-xs"
+                  rel="next"
+                >
+                  Next
+                </Link>
+              ) : (
+                <span className="cyber-button-secondary text-xs opacity-40" aria-disabled="true">
+                  Next
+                </span>
+              )}
+            </div>
+          ) : null}
+        </nav>
+      ) : null}
 
       {openModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -222,7 +327,7 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
             onKeyDown={(e) => {
               if (e.key === "Escape") setOpenModal(false);
             }}
-            className="w-full max-w-2xl rounded-xl border border-white/10 bg-cyber-card-deep shadow-2xl"
+            className="max-h-[90vh] w-[calc(100vw-2rem)] min-w-0 max-w-2xl overflow-y-auto rounded-xl border border-white/10 bg-cyber-card-deep shadow-2xl"
           >
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <div>
@@ -250,6 +355,12 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
                 startTransition(async () => {
                   const result = await createTicketAction(formData);
                   if (result.ok) {
+                    // USE-P3-001: confirm the submission with the created
+                    // ticket (and a link) instead of only closing the modal.
+                    setCreatedTicket({
+                      id: result.ticketId ?? "",
+                      subject: result.subject ?? "Submitted",
+                    });
                     setOpenModal(false);
                   } else {
                     setFormError(result.error ?? "Failed to create ticket.");
@@ -324,7 +435,7 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
                   {isPending ? "Submitting..." : "Submit Ticket"}
                 </button>
               </div>
-              {formError && <p className="text-sm text-red-400">{formError}</p>}
+              {formError && <p role="alert" className="text-sm text-red-400">{formError}</p>}
             </form>
           </div>
         </div>

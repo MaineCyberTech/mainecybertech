@@ -34,8 +34,10 @@ import {
   decodeAssuranceLevel,
   isMfaExemptPath,
   requiresSecondFactor,
+  userHasPrivilegedRole,
   userHasVerifiedFactor,
 } from "../lib/mfa";
+import { createMockBuilder } from "./helpers";
 
 function unsignedJwt(payload: Record<string, unknown>): string {
   const encode = (value: Record<string, unknown>) =>
@@ -43,12 +45,35 @@ function unsignedJwt(payload: Record<string, unknown>): string {
   return `${encode({ alg: "HS256", typ: "JWT" })}.${encode(payload)}.signature`;
 }
 
-function mockAdmin({ factors, error = null }: { factors?: unknown[]; error?: unknown }) {
+function mockAdmin({
+  factors,
+  error = null,
+  isSuperAdmin = false,
+  roleKeys = [] as string[],
+}: {
+  factors?: unknown[];
+  error?: unknown;
+  isSuperAdmin?: boolean;
+  roleKeys?: string[];
+} = {}) {
   const listFactors = jest.fn().mockResolvedValue({
     data: error ? null : { factors: factors ?? [] },
     error,
   });
+  const from = jest.fn((table: string) => {
+    if (table === "profiles") {
+      return createMockBuilder({ data: { is_super_admin: isSuperAdmin }, error: null });
+    }
+    if (table === "memberships") {
+      return createMockBuilder({
+        data: roleKeys.map((key) => ({ roles: { key } })),
+        error: null,
+      });
+    }
+    return createMockBuilder({ data: null, error: null });
+  });
   (getSupabaseAdmin as jest.Mock).mockReturnValue({
+    from,
     auth: { getUser: jest.fn(), admin: { mfa: { listFactors } } },
   });
   return listFactors;
@@ -114,6 +139,49 @@ describe("userHasVerifiedFactor", () => {
   });
 });
 
+describe("userHasPrivilegedRole [SEC-P2-005]", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    clearMfaFactorCache();
+  });
+
+  it("detects an approved admin membership", async () => {
+    mockAdmin({ roleKeys: ["admin"] });
+    await expect(userHasPrivilegedRole("user-1")).resolves.toBe(true);
+  });
+
+  it("detects the is_super_admin profile flag", async () => {
+    mockAdmin({ isSuperAdmin: true });
+    await expect(userHasPrivilegedRole("user-1")).resolves.toBe(true);
+  });
+
+  it("returns false for a regular member", async () => {
+    mockAdmin({ roleKeys: ["client_user"] });
+    await expect(userHasPrivilegedRole("user-1")).resolves.toBe(false);
+  });
+
+  it("caches the lookup", async () => {
+    mockAdmin({ roleKeys: ["admin"] });
+    const from = (getSupabaseAdmin as jest.Mock)().from as jest.Mock;
+
+    await userHasPrivilegedRole("user-1");
+    await userHasPrivilegedRole("user-1");
+
+    expect(from).toHaveBeenCalledTimes(2); // profiles + memberships, once
+  });
+
+  it("falls back to not-privileged when the lookup errors", async () => {
+    (getSupabaseAdmin as jest.Mock).mockReturnValue({
+      from: jest.fn(() => {
+        throw new Error("db down");
+      }),
+      auth: { getUser: jest.fn(), admin: { mfa: { listFactors: jest.fn() } } },
+    });
+
+    await expect(userHasPrivilegedRole("user-1")).resolves.toBe(false);
+  });
+});
+
 describe("requiresSecondFactor", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -121,9 +189,54 @@ describe("requiresSecondFactor", () => {
     envState.MFA_ENFORCEMENT_ENABLED = "true";
   });
 
-  it("does nothing when enforcement is disabled", async () => {
+  it("does not block a regular user when the opt-in flag is off", async () => {
     envState.MFA_ENFORCEMENT_ENABLED = "false";
     mockAdmin({ factors: [{ status: "verified", factor_type: "totp" }] });
+
+    await expect(
+      requiresSecondFactor(unsignedJwt({ aal: "aal1" }), "user-1", "/api/v1/tickets"),
+    ).resolves.toBe(false);
+  });
+
+  it("enforces a privileged session even when the flag is unset", async () => {
+    envState.MFA_ENFORCEMENT_ENABLED = undefined;
+    mockAdmin({ factors: [{ status: "verified", factor_type: "totp" }], roleKeys: ["admin"] });
+
+    await expect(
+      requiresSecondFactor(unsignedJwt({ aal: "aal1" }), "user-1", "/api/v1/tickets"),
+    ).resolves.toBe(true);
+  });
+
+  it("enforces an admin membership even when the opt-in flag is off", async () => {
+    envState.MFA_ENFORCEMENT_ENABLED = "false";
+    mockAdmin({ factors: [{ status: "verified", factor_type: "totp" }], roleKeys: ["admin"] });
+
+    await expect(
+      requiresSecondFactor(unsignedJwt({ aal: "aal1" }), "user-1", "/api/v1/tickets"),
+    ).resolves.toBe(true);
+  });
+
+  it("enforces the is_super_admin profile flag even when the opt-in flag is off", async () => {
+    envState.MFA_ENFORCEMENT_ENABLED = "false";
+    mockAdmin({ factors: [{ status: "verified", factor_type: "totp" }], isSuperAdmin: true });
+
+    await expect(
+      requiresSecondFactor(unsignedJwt({ aal: "aal1" }), "user-1", "/api/v1/tickets"),
+    ).resolves.toBe(true);
+  });
+
+  it("does not block a privileged user with no enrolled factor", async () => {
+    envState.MFA_ENFORCEMENT_ENABLED = "false";
+    mockAdmin({ factors: [], roleKeys: ["super_admin"] });
+
+    await expect(
+      requiresSecondFactor(unsignedJwt({ aal: "aal1" }), "user-1", "/api/v1/tickets"),
+    ).resolves.toBe(false);
+  });
+
+  it("does not block a regular member when the flag is off", async () => {
+    envState.MFA_ENFORCEMENT_ENABLED = "false";
+    mockAdmin({ factors: [{ status: "verified", factor_type: "totp" }], roleKeys: ["client_user"] });
 
     await expect(
       requiresSecondFactor(unsignedJwt({ aal: "aal1" }), "user-1", "/api/v1/tickets"),

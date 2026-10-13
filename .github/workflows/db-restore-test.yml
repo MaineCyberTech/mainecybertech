@@ -1,21 +1,71 @@
 name: Database Restore Test
+
+# Weekly restore of the newest backup into a throwaway Postgres, with
+# integrity assertions (see docs/RTO_RPO.md).
+#
+# Scheduled runs verify the dev backups. DATA-P2-010: production long-term
+# backup is a supported target:
+#   * workflow_dispatch `environment: prod` runs from `main` and attaches the
+#     approval-gated `prod-approval` environment (required reviewers must be
+#     configured in GitHub for the gate to be real).
+#   * the schedule targets prod automatically once the operator sets the
+#     `PROD_BACKUP_ENABLED` repository variable to `true`; that run attaches
+#     `prod-backup` instead of `dev` (one schedule target at a time; dispatch
+#     `environment: dev` manually to keep verifying the dev backups). Use the
+#     same environment the prod backup writes with — no required reviewers, so
+#     the unattended verification actually runs.
+# Operator dependency: the prod backup secrets must be provisioned in the
+# environment the job attaches (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md).
+#
+# The "a backup ran" heartbeat is recorded by db-backup.yml; this workflow
+# proves the backup is restorable and is covered by
+# backup-staleness-check.yml's independent GitHub-API check.
+
 on:
   schedule:
     - cron: "0 6 * * 1"  # Every Monday at 6 AM UTC
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (prod dispatch requires main + the prod-approval gate)"
+        type: choice
+        options:
+          - dev
+          - prod
+        default: dev
 
 permissions:
   contents: read
 
 jobs:
   restore-test:
-    # Backups target the dev database/buckets; the dev environment holds
-    # the SUPABASE_*/Spaces secrets these jobs resolve.
-    environment: dev
+    # Dispatch: the selected environment (prod -> the approval-gated
+    # prod-approval). Schedule: dev normally; prod-backup once the operator has
+    # enabled the scheduled prod target.
+    environment: ${{ (github.event.inputs.environment == 'prod') && 'prod-approval' || (github.event_name == 'schedule' && vars.PROD_BACKUP_ENABLED == 'true') && 'prod-backup' || 'dev' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Restrict prod dispatch to the main branch
+        # A prod restore test must run the workflow definition that is on main,
+        # not an arbitrary feature branch.
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::environment=prod can only be dispatched from the main branch (got ${GITHUB_REF}). Promote develop -> main first."
+            exit 1
+          fi
+
+      - name: Record tool versions
+        # DR-P3-003: aws/jq/psql are runner-provided. Print them so a green or
+        # red result can be tied to the toolchain that produced it; the
+        # Postgres server image below is digest-pinned.
+        run: |
+          aws --version
+          jq --version
+          psql --version
 
       - name: Load restore-test baseline
         id: baseline
@@ -23,9 +73,17 @@ jobs:
           # The baseline file is the single source of truth for "verified"
           # (referenced by docs/INCIDENT_RESPONSE.md §4.3). Load it into the
           # job environment so the verification step cannot drift from it.
+          # $GITHUB_ENV accepts only KEY=VALUE lines — the file's comments and
+          # blank lines made `cat` fail, so the floors never loaded and the
+          # integrity assertions never ran (audit DR-P1-001). Keep only
+          # assignments, and fail fast if the file has none.
           set -euo pipefail
           if [ -f .github/restore-test-baseline.env ]; then
-            cat .github/restore-test-baseline.env >> "$GITHUB_ENV"
+            if ! grep -qE '^[A-Za-z_][A-Za-z0-9_]*=' .github/restore-test-baseline.env; then
+              echo "::error::.github/restore-test-baseline.env contains no KEY=VALUE floors"
+              exit 1
+            fi
+            grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .github/restore-test-baseline.env >> "$GITHUB_ENV"
           fi
 
       - name: Find latest backup
@@ -109,11 +167,14 @@ jobs:
 
       - name: Start temp PostgreSQL
         run: |
+          # DR-P3-003: digest-pinned (postgres:16-alpine) so a restore
+          # pass/fail cannot reflect a drifting floating tag. The client
+          # tooling in this job is recorded in the tool-versions step above.
           docker run -d --name test-pg \
             -e POSTGRES_PASSWORD=test \
             -e POSTGRES_DB=restore_test \
             -p 127.0.0.1:5432:5432 \
-            postgres:16-alpine
+            postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
           sleep 5
 
       - name: Restore backup to temp database
@@ -247,13 +308,19 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           MESSAGE="❌ Database restore test failed — backups may not be recoverable. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          # Notifications go to the org ntfy topic; Slack remains a fallback
-          # while SLACK_WEBHOOK_URL is configured.
+          # DR-P2-003: do not swallow delivery failures. A notifier that fails
+          # silently (or a missing channel) is exactly how a backup outage goes
+          # unnoticed, so this step must fail loudly — the run is already red.
           if [ -n "$NTFY_URL" ]; then
             curl -sf -u "$NTFY_USER:$NTFY_PASS" \
               -H "Title: Database restore test failed" -H "Priority: high" -H "Tags: rotating_light" \
-              -d "$MESSAGE" "$NTFY_URL" || true
+              -d "$MESSAGE" "$NTFY_URL"
+            echo "Notified via ntfy"
           elif [ -n "$SLACK_WEBHOOK_URL" ]; then
             curl -sf -X POST -H "Content-Type: application/json" \
-              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL" || true
+              -d "{\"text\":\"$MESSAGE\"}" "$SLACK_WEBHOOK_URL"
+            echo "Notified via Slack"
+          else
+            echo "::error::Restore-test failure notification could not be delivered: set NTFY_ALERTS_URL or SLACK_WEBHOOK_URL"
+            exit 1
           fi

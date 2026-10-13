@@ -5,6 +5,18 @@ import { logger } from "./logger";
 export const TASK_QUEUE_NAME = "mct-tasks";
 export const TASK_JOB_NAME = "task";
 
+/**
+ * Destructive/global maintenance tasks are scheduled by the worker itself and
+ * are never triggered from an API request. Refusing them here keeps a future
+ * route from turning request input into a platform-wide purge (MT-P2-006).
+ */
+const SCHEDULED_ONLY_TASKS = new Set([
+  "retention",
+  "public-interaction-retention",
+  "orphan-cleanup",
+  "api-key-prune",
+]);
+
 let queue: Queue | null = null;
 let queueError: Error | null = null;
 let enabled: boolean | null = null;
@@ -78,11 +90,29 @@ export async function enqueueTask(
   payload: Record<string, unknown>,
 ): Promise<boolean> {
   try {
+    if (SCHEDULED_ONLY_TASKS.has(taskType)) {
+      logger.warn({ taskType }, "Refusing to enqueue a scheduled-only task from the API");
+      return false;
+    }
+
+    // ARCH-P2-004: fail closed when the queue backend contract is not BullMQ.
+    // The API can only produce to BullMQ, so enqueueing while the worker is
+    // configured for another backend would report success for work that is
+    // never consumed. Production already refuses to boot in this state
+    // (assertQueueBackendParity); this covers non-production drift too.
+    const env = safeGetEnv();
+    if (env && (env.QUEUE_BACKEND ?? "bullmq") !== "bullmq") {
+      logger.error(
+        { taskType, queueBackend: env.QUEUE_BACKEND },
+        "Queue backend mismatch — the API can only enqueue to BullMQ; refusing enqueue",
+      );
+      return false;
+    }
+
     if (!isTaskQueueEnabled()) {
       return false;
     }
 
-    const env = safeGetEnv();
     if (!env?.REDIS_URL) {
       logger.debug({ taskType }, "REDIS_URL not configured — skipping task enqueue");
       return false;

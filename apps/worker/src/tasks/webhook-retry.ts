@@ -1,5 +1,6 @@
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
+import { decryptSecretValue } from "../lib/field-encryption";
 import { assertSafeUrl } from "../lib/ssrf-guard";
 import { pinnedFetch } from "../lib/pinned-fetch";
 import { recordWebhookDelivery, recordWebhookDeadLetter } from "../metrics";
@@ -8,6 +9,45 @@ import type { TaskResult } from "../task-registry";
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 60_000; // 1 minute
 const BATCH_SIZE = 20;
+// WH-P2-012: how long a claimed row stays invisible to other retry runs. If
+// the worker dies mid-attempt, the row becomes due again after the lease.
+const RETRY_LEASE_MS = 5 * 60 * 1000;
+
+/**
+ * WH-P2-012: claim a due delivery before attempting it. The conditional
+ * update only matches the exact row version the batch query selected (same
+ * retry_count and next_retry_at), so two overlapping retry runs cannot both
+ * send the same delivery. The new next_retry_at doubles as a lease: a crash
+ * mid-attempt re-exposes the row after RETRY_LEASE_MS.
+ */
+async function claimDeliveryForRetry(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  delivery: { id: string; retry_count: number; next_retry_at: string | null },
+  now: Date,
+): Promise<boolean> {
+  const leaseUntil = new Date(now.getTime() + RETRY_LEASE_MS).toISOString();
+  const base = supabase
+    .from("webhook_deliveries")
+    .update({ next_retry_at: leaseUntil })
+    .eq("id", delivery.id)
+    .eq("retry_count", delivery.retry_count);
+
+  // Exact-match the snapshot we selected (`is null` for legacy rows without a
+  // next_retry_at): any concurrent claim changes the value and loses.
+  const claim = delivery.next_retry_at
+    ? base.eq("next_retry_at", delivery.next_retry_at)
+    : base.is("next_retry_at", null);
+
+  const { data, error } = await claim.select("id").maybeSingle();
+  if (error) {
+    logger.warn(
+      { deliveryId: delivery.id, error: error.message },
+      "Failed to claim webhook delivery for retry",
+    );
+    return false;
+  }
+  return Boolean(data);
+}
 
 export async function webhookRetry(_payload: Record<string, unknown>): Promise<TaskResult> {
   try {
@@ -47,6 +87,18 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
     for (const delivery of deliveries) {
       // Narrow webhook_id (the column is nullable for generic inbound logs).
       if (!delivery.webhook_id) continue;
+
+      // WH-P2-012: one atomic claim per row before any side effect. A
+      // concurrent retry run that selected the same row loses the claim and
+      // skips instead of double-sending.
+      if (!(await claimDeliveryForRetry(supabase, delivery, new Date()))) {
+        logger.debug(
+          { deliveryId: delivery.id },
+          "webhook-retry: delivery already claimed elsewhere, skipping",
+        );
+        continue;
+      }
+
       try {
         const { data: endpoint } = await supabase
           .from("webhook_endpoints")
@@ -68,10 +120,24 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
         // would send a delivery with no `data`, so dead-letter it instead.
         const stored = delivery.request_body as Record<string, unknown> | null;
         if (!stored || !("data" in stored)) {
+          // WH-P2-011: an admin retry deletes the original dead letter before
+          // this task runs, so re-create it with the reason the replay was
+          // refused — otherwise the delivery vanishes from the DLQ entirely.
           await supabase
             .from("webhook_deliveries")
             .update({ dead_letter: true, next_retry_at: null })
             .eq("id", delivery.id);
+
+          await supabase.from("webhook_dead_letters").insert({
+            webhook_id: delivery.webhook_id,
+            event: delivery.event,
+            request_body: delivery.request_body,
+            last_error: "Not replayable: stored payload has no data field",
+            attempt_count: (delivery.retry_count ?? 0) + 1,
+            last_attempt_at: new Date().toISOString(),
+          });
+
+          recordWebhookDeadLetter(delivery.event);
           deadLettered++;
           continue;
         }
@@ -109,8 +175,19 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
         }
 
         if (endpoint.secret) {
+          // WH-P2-008: decrypt the encrypted-at-rest signing secret. A
+          // decryption failure throws into the per-delivery catch below, which
+          // retries and eventually dead-letters rather than signing with a
+          // corrupted value.
+          const decrypted = decryptSecretValue(endpoint.secret);
+          if (!decrypted.ok) {
+            throw new Error(`Signing secret could not be decrypted: ${decrypted.error}`);
+          }
           const crypto = await import("crypto");
-          const hmac = crypto.createHmac("sha256", endpoint.secret).update(body).digest("hex");
+          const hmac = crypto
+            .createHmac("sha256", decrypted.value)
+            .update(body)
+            .digest("hex");
           headers["X-Webhook-Signature"] = `sha256=${hmac}`;
         }
 

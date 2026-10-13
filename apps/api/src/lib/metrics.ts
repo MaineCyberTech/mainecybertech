@@ -110,6 +110,18 @@ export const notificationSuppressedTotal = new Counter({
   registers: [register],
 });
 
+/**
+ * NOTIF-P3-007: sends dropped by the per-recipient email throttle. Kept
+ * separate from preference suppression so an operator can tell a deliberate
+ * opt-out from abuse-driven throttling.
+ */
+export const notificationThrottledTotal = new Counter({
+  name: "portal_notification_throttled_total",
+  help: "Total number of notification emails dropped by the per-recipient throttle",
+  labelNames: ["channel"],
+  registers: [register],
+});
+
 export const notificationDedupTotal = new Counter({
   name: "portal_notification_dedup_total",
   help: "Total number of notifications skipped because the dedup key already existed",
@@ -230,23 +242,50 @@ export function recordIdempotencyKeyHit() {
 
 /**
  * Record the outcome of a notification/email delivery attempt.
- * `status` is `success`, `failed`, or `skipped` (e.g. SMTP not configured).
+ *
+ * Terminal outcomes are `success`, `failed` or `skipped` (e.g. SMTP not
+ * configured). `queued` is the API-side hand-off to the worker queue
+ * (NOTIF-P2-010): an enqueue is NOT a delivery, so the delivery SLO
+ * (docs/SLO.md) counts only the worker's terminal outcomes.
  */
 export function recordNotificationDelivery(
-  channel: "in_app" | "email",
-  status: "success" | "failed" | "skipped",
+  channel: "in_app" | "email" | "push",
+  status: "success" | "failed" | "skipped" | "queued",
 ) {
   notificationDeliveryTotal.inc({ channel, status });
 }
 
 /** Record that a channel was suppressed by the recipient's preferences. */
-export function recordNotificationSuppressed(channel: "in_app" | "email", module: string) {
+export function recordNotificationSuppressed(channel: "in_app" | "email" | "push", module: string) {
   notificationSuppressedTotal.inc({ channel, module });
 }
 
+/** Record that a send was dropped by the per-recipient throttle (NOTIF-P3-007). */
+export function recordNotificationThrottled(channel: "in_app" | "email" | "push") {
+  notificationThrottledTotal.inc({ channel });
+}
+
 /** Record that an insert was skipped because its dedup key already existed. */
-export function recordNotificationDedup(channel: "in_app" | "email") {
+export function recordNotificationDedup(channel: "in_app" | "email" | "push") {
   notificationDedupTotal.inc({ channel });
+}
+
+/**
+ * BILL-P2-004: dunning notices emitted for failed/overdue payments, by
+ * outcome. A sustained `no_recipients` rate means orgs are failing payments
+ * with no resolvable billing contact — worth alerting on.
+ */
+export const billingDunningNotificationsTotal = new Counter({
+  name: "portal_billing_dunning_notifications_total",
+  help: "Billing dunning notifications emitted for failed payments, by outcome",
+  labelNames: ["outcome"],
+  registers: [register],
+});
+
+export function recordBillingDunningNotification(
+  outcome: "notified" | "no_recipients" | "error",
+) {
+  billingDunningNotificationsTotal.inc({ outcome });
 }
 
 /** Record a cross-tenant/impersonation access event (ADMIN-P1-002). */
@@ -260,4 +299,51 @@ export function setActiveOrganizations(count: number) {
 
 export function setActiveUsers(count: number) {
   activeUsers.set(count);
+}
+
+/**
+ * ARCH-P2-004: the producer half of the queue backend contract. Both the API
+ * and the worker read the same QUEUE_BACKEND setting; the worker exports
+ * worker_queue_backend_info. A mismatch means the API enqueues into a queue
+ * no worker consumes.
+ */
+export const queueBackendInfo = new Gauge({
+  name: "portal_queue_backend_info",
+  help: "Configured API enqueue backend (label backend) — must match the worker's worker_queue_backend_info",
+  labelNames: ["backend"],
+  registers: [register],
+});
+
+export function setQueueBackendInfo(backend: string) {
+  queueBackendInfo.set({ backend }, 1);
+}
+
+/**
+ * ARCH-P2-005: one non-replicated Redis backs the queue, cache, idempotency
+ * and scan locks. Each consumer degrades to a per-process fallback on Redis
+ * errors; these signals make that degradation alertable instead of log-only.
+ *
+ * `portal_redis_failures_total` counts every operation that fell back;
+ * `portal_redis_connected` is 1/0 based on the API's Redis health probe and is
+ * left unset when Redis is not configured.
+ */
+export const redisFailuresTotal = new Counter({
+  name: "portal_redis_failures_total",
+  help: "API Redis operation failures that degraded to a fallback path, by component and operation",
+  labelNames: ["component", "operation"],
+  registers: [register],
+});
+
+export function recordRedisFailure(component: "cache" | "idempotency", operation: string) {
+  redisFailuresTotal.inc({ component, operation });
+}
+
+export const redisConnected = new Gauge({
+  name: "portal_redis_connected",
+  help: "1 when the last Redis health probe succeeded, 0 when it failed (unset when Redis is not configured)",
+  registers: [register],
+});
+
+export function setRedisConnected(connected: boolean) {
+  redisConnected.set(connected ? 1 : 0);
 }

@@ -4,6 +4,7 @@ import { sendEmail } from "../email";
 import { getSupabaseAdmin } from "../services/supabase";
 import type { TablesInsert } from "@mct/sdk/database.types";
 import { assertSafeUrl } from "../lib/ssrf-guard";
+import { pinnedFetch, resolvePinnedAddress } from "../lib/pinned-fetch";
 import type { TaskHandler, TaskResult } from "../task-registry";
 import { insertNotification } from "../notification-store";
 import tls from "node:tls";
@@ -23,8 +24,14 @@ function escapeHtml(value: string): string {
 /**
  * Read the TLS peer certificate for an https URL and return its expiry.
  * Returns null for non-https URLs, connection failures, or bad certs.
+ *
+ * SEC-P2-001 / CHAIN-P2-010: the host is resolved and validated exactly once
+ * (resolvePinnedAddress) and the socket dials the validated address, keeping
+ * the original hostname as the SNI / certificate-verification name. A
+ * rebinding host can therefore not answer the guard with a public IP and the
+ * TLS handshake with a private one.
  */
-async function fetchSslExpiry(
+export async function fetchSslExpiry(
   url: string,
 ): Promise<{ expires: string; daysRemaining: number } | null> {
   let host: string;
@@ -38,29 +45,40 @@ async function fetchSslExpiry(
     return null;
   }
 
+  let pinned: { address: string; family: number };
+  try {
+    pinned = await resolvePinnedAddress(url);
+  } catch {
+    // Unresolvable or private/loopback target: fail closed, no socket.
+    return null;
+  }
+
   return new Promise((resolve) => {
-    const socket = tls.connect({ host, port, servername: host, timeout: 8000 }, () => {
-      try {
-        const cert = socket.getPeerCertificate();
-        if (!cert || !cert.valid_to) {
+    const socket = tls.connect(
+      { host: pinned.address, port, servername: host, timeout: 8000 },
+      () => {
+        try {
+          const cert = socket.getPeerCertificate();
+          if (!cert || !cert.valid_to) {
+            socket.destroy();
+            resolve(null);
+            return;
+          }
+          const expires = new Date(cert.valid_to);
+          if (Number.isNaN(expires.getTime())) {
+            socket.destroy();
+            resolve(null);
+            return;
+          }
+          const daysRemaining = Math.floor((expires.getTime() - Date.now()) / 86_400_000);
+          socket.destroy();
+          resolve({ expires: expires.toISOString(), daysRemaining });
+        } catch {
           socket.destroy();
           resolve(null);
-          return;
         }
-        const expires = new Date(cert.valid_to);
-        if (Number.isNaN(expires.getTime())) {
-          socket.destroy();
-          resolve(null);
-          return;
-        }
-        const daysRemaining = Math.floor((expires.getTime() - Date.now()) / 86_400_000);
-        socket.destroy();
-        resolve({ expires: expires.toISOString(), daysRemaining });
-      } catch {
-        socket.destroy();
-        resolve(null);
-      }
-    });
+      },
+    );
     socket.on("error", () => {
       socket.destroy();
       resolve(null);
@@ -275,6 +293,15 @@ export const m365HardeningScan: TaskHandler = async (_payload): Promise<TaskResu
   }
 };
 
+/**
+ * DR-P2-008: platform backup workflows whose last successful run must be
+ * recorded in `platform_backup_heartbeats` (written by
+ * scripts/record-backup-heartbeat.sh). The threshold mirrors
+ * backup-staleness-check.yml's 30h window for the daily backup; restore tests
+ * stay on that workflow's independent GitHub-API check.
+ */
+const PLATFORM_BACKUP_HEARTBEATS = [{ workflow: "db-backup", maxAgeHours: 30 }] as const;
+
 export const backupDrCheck: TaskHandler = async (_payload): Promise<TaskResult> => {
   try {
     const supabase = getSupabaseAdmin();
@@ -282,6 +309,42 @@ export const backupDrCheck: TaskHandler = async (_payload): Promise<TaskResult> 
     const twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString();
     const fortyEightHoursAgo = new Date(now - 48 * 60 * 60 * 1000).toISOString();
 
+    // Platform heartbeat (DR-P2-008) — the authoritative signal. The
+    // client-facing `backup_status` rows below are product data (seeded per
+    // organization), not evidence that the platform's own backups ran.
+    const { data: heartbeats, error: heartbeatError } = await supabase
+      .from("platform_backup_heartbeats")
+      .select("workflow, last_success_at");
+    if (heartbeatError) {
+      return {
+        ok: false,
+        error: `Failed to fetch platform_backup_heartbeats: ${heartbeatError.message}`,
+      };
+    }
+
+    const heartbeatRows = (heartbeats ?? []) as Array<{
+      workflow: string;
+      last_success_at: string | null;
+    }>;
+    const staleHeartbeats: string[] = [];
+    for (const expected of PLATFORM_BACKUP_HEARTBEATS) {
+      const row = heartbeatRows.find((h) => h.workflow === expected.workflow);
+      if (!row || !row.last_success_at) {
+        staleHeartbeats.push(`${expected.workflow} (no successful run recorded)`);
+        continue;
+      }
+      const ageHours = (now - Date.parse(row.last_success_at)) / (60 * 60 * 1000);
+      if (!Number.isFinite(ageHours) || ageHours > expected.maxAgeHours) {
+        staleHeartbeats.push(
+          Number.isFinite(ageHours)
+            ? `${expected.workflow} (${Math.floor(ageHours)}h old; limit ${expected.maxAgeHours}h)`
+            : `${expected.workflow} (unparseable last_success_at)`,
+        );
+      }
+    }
+
+    // Client-facing module rows: keep their own warning/critical bookkeeping
+    // separate from the platform signal.
     const { data: records, error: fetchError } = await supabase
       .from("backup_status")
       .select("id, last_backup_at");
@@ -290,15 +353,11 @@ export const backupDrCheck: TaskHandler = async (_payload): Promise<TaskResult> 
       return { ok: false, error: `Failed to fetch backup_status records: ${fetchError.message}` };
     }
 
-    if (!records || records.length === 0) {
-      logger.info("backup-dr-check: no backup records found");
-      return { ok: true };
-    }
-
+    const clientRecords = (records ?? []) as Array<{ id: string; last_backup_at: string | null }>;
     const warningIds: string[] = [];
     const criticalIds: string[] = [];
 
-    for (const record of records as Array<{ id: string; last_backup_at: string | null }>) {
+    for (const record of clientRecords) {
       if (!record.last_backup_at) {
         criticalIds.push(record.id);
       } else if (record.last_backup_at < fortyEightHoursAgo) {
@@ -316,11 +375,18 @@ export const backupDrCheck: TaskHandler = async (_payload): Promise<TaskResult> 
       await supabase.from("backup_status").update({ status: "critical" }).in("id", criticalIds);
     }
 
+    if (staleHeartbeats.length > 0) {
+      const error = `Platform backup heartbeat stale: ${staleHeartbeats.join(", ")}`;
+      logger.error({ stale: staleHeartbeats }, `backup-dr-check: ${error}`);
+      return { ok: false, error };
+    }
+
     logger.info(
       {
         warnings: warningIds.length,
         criticals: criticalIds.length,
-        total: records.length,
+        total: clientRecords.length,
+        heartbeats: heartbeatRows.length,
       },
       "backup-dr-check: completed",
     );
@@ -542,16 +608,16 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
         errorMsg = `Blocked: ${blocked}`;
       } else {
         try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 10000);
+          // SEC-P2-001 / CHAIN-P2-010: pinnedFetch validates the DNS answers
+          // and pins the connection to the validated address, so a host that
+          // rebinds between the guard above and the connection is still
+          // blocked (the global fetch would have re-resolved the name).
           const start = performance.now();
-          const response = await fetch(check.url, {
-            signal: controller.signal,
-            redirect: "manual",
+          const response = await pinnedFetch(check.url, {
+            signal: AbortSignal.timeout(10_000),
           });
           responseTimeMs = Math.round(performance.now() - start);
           statusCode = response.status;
-          clearTimeout(timeout);
         } catch (err) {
           errorMsg = err instanceof Error ? err.message : String(err);
         }
@@ -596,12 +662,11 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
 
       if (!blocked) {
         try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 10000);
+          // SEC-P2-001 / CHAIN-P2-010: pinnedFetch pins the validated DNS
+          // answer to the connection (see websiteMonitorCheck above).
           const start = performance.now();
-          const response = await fetch(mon.url, {
-            signal: controller.signal,
-            redirect: "manual",
+          const response = await pinnedFetch(mon.url, {
+            signal: AbortSignal.timeout(10_000),
           });
           responseTimeMs = Math.round(performance.now() - start);
           statusCode = response.status;
@@ -610,7 +675,6 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
             pageBytes = html.length;
             audit = auditPage(html, responseTimeMs);
           }
-          clearTimeout(timeout);
         } catch {
           statusCode = 0;
         }

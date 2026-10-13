@@ -1,0 +1,6 @@
+{
+  "total_count": 1,
+  "check_runs": [
+    { "name": "test (20.x)", "conclusion": "success", "status": "completed" }
+  ]
+}

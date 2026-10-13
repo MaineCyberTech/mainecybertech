@@ -57,22 +57,28 @@ export default function UploadForm({
         type="file"
         required
         aria-label="Choose file"
-        className="block w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2.5 text-sm text-slate-200 file:mr-3 file:rounded-md file:border-0 file:bg-emerald-600 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-[#0A1118] hover:file:bg-emerald-500"
+        className="block w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2.5 text-sm text-slate-200 file:mr-3 file:rounded-md file:border-0 file:bg-emerald-600 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-cyber-base hover:file:bg-emerald-500"
       />
       {error && (
-        <p className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
+        <p
+          role="alert"
+          className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300"
+        >
           {error}
         </p>
       )}
       {success && (
-        <p className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-300">
+        <p
+          role="status"
+          className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-300"
+        >
           {success}
         </p>
       )}
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-emerald-500 disabled:opacity-50"
+        className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-emerald-500 disabled:opacity-50"
       >
         {pending ? "Uploading..." : "Upload File"}
       </button>

@@ -390,7 +390,7 @@ So once you open a PR, the expected validation path is:
 1. lint and typecheck
 2. test execution (unit/integration + schema guards)
 3. Playwright E2E if web, package, seed, or migration files changed
-4. `terraform fmt`/plan if `infra/terraform/digitalocean/**` changed (plan runs on PRs; apply runs from `develop`/`main`)
+4. no Terraform validation runs on a PR — `terraform-do.yml` is **manual-dispatch only** (no push/PR triggers); dispatch it after merge when you need a plan/apply
 
 This means contributors should expect PRs to be the first official gate after local work.
 
@@ -400,17 +400,17 @@ This means contributors should expect PRs to be the first official gate after lo
 
 Merges to `develop` run:
 
-- `terraform-do.yml` (DigitalOcean infrastructure)
 - `deploy-do.yml` (Build 3 GHCR images + SSH deploy to droplet)
 - `supabase-migrations.yml` (runs when `supabase/**` changed)
+- Terraform is **not** push-triggered: `terraform-do.yml` is manual-dispatch only (see below)
 
 ### Practical meaning
 
 When your PR is merged into `develop`:
 
-- Terraform applies changes to the **dev/testing DigitalOcean droplet** using `env/backend.dev.hcl`
 - The web app, API, and worker deploy to the **single DO droplet** behind Caddy via `deploy-do.yml`
 - `supabase-migrations.yml` runs when `supabase/**` changed, since that workflow triggers on `develop` and `main`.
+- Terraform changes are applied only when an operator dispatches `terraform-do.yml` from `develop` with **apply** on; it plans by default and dev uses `env/backend.dev.hcl`.
 
 ### What to validate in testing/dev
 
@@ -429,15 +429,15 @@ Before promoting onward, verify:
 
 Merges to `main` run:
 
-- `terraform-do.yml` (DigitalOcean infrastructure; the prod apply job uses the `prod-approval` environment)
 - `deploy-do.yml` (Build 3 GHCR images + SSH deploy to production droplet; the prod `deploy` job uses the same `prod-approval` environment)
 - `supabase-migrations.yml` (runs as deployment gate)
+- Terraform is **not** push-triggered: dispatch `terraform-do.yml` from `main` with **apply** on; the prod apply job uses the `prod-approval` environment and waits on the e2e/migration gates
 
 ### Practical meaning
 
 When tested changes are promoted and merged into `main`:
 
-- Terraform applies against the **production DigitalOcean backend** and **production tfvars**
+- When dispatched, Terraform applies against the **production DigitalOcean backend** and **production tfvars**
 - The web app, API, and worker deploy to the **production DO droplet** behind Caddy via `deploy-do.yml`
 - Supabase migrations run as a required gate before the deployment proceeds.
 
@@ -460,13 +460,15 @@ After deployment, verify:
 Workflows reference these GitHub Environments:
 
 - `dev` — dev deploy, Terraform dev apply, dev migrations.
-- `prod` — prod migrations, plus the read-only `resolve-ip`/`terraform-plan` jobs.
-- `prod-approval` — the production-mutating jobs: `deploy-do` prod `deploy`
-  and `terraform-do` `terraform-apply-prod`. Required reviewers (1+) must be
+- `prod` — read-only `resolve-ip`/`terraform-plan` jobs only; nothing mutates.
+- `prod-approval` — the production-mutating jobs (BP-P3-003): `deploy-do` prod
+  `deploy`, `terraform-do` `terraform-apply-prod`, and prod DB migrations
+  (`supabase-migrations.yml` on `main`). Required reviewers (1+) must be
   configured in GitHub (Settings → Environments → `prod-approval`); that
   setting **cannot live in the repo**. None are configured yet, so the
-  approval gate is not currently in force and a prod deploy will start without
-  pausing. The prod secrets/variables must be available to `prod-approval`.
+  approval gate is not currently in force and a prod deploy (or migration)
+  will start without pausing. The prod secrets/variables must be available to
+  `prod-approval`.
 
 The canonical, verified list of secrets and variables — which workflow uses
 each one and whether it is dev/prod scoped — is

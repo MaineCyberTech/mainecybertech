@@ -25,7 +25,22 @@ export interface AdminTenantScope {
 /** Sentinel UUID predicate that matches no rows, so an empty scope fails closed. */
 export const NO_ORG_MATCH = "00000000-0000-0000-0000-000000000000";
 
-export async function resolveAdminTenantScope(req: Request): Promise<AdminTenantScope> {
+/**
+ * Per-request memo. The response cache resolves the scope before the handler
+ * runs (middleware/cache.ts) and the handler resolves it again; memoizing keeps
+ * that to a single pair of membership/profile lookups per request (MT-P1-004).
+ */
+const scopeByRequest = new WeakMap<Request, Promise<AdminTenantScope>>();
+
+export function resolveAdminTenantScope(req: Request): Promise<AdminTenantScope> {
+  const cached = scopeByRequest.get(req);
+  if (cached) return cached;
+  const resolved = computeAdminTenantScope(req);
+  scopeByRequest.set(req, resolved);
+  return resolved;
+}
+
+async function computeAdminTenantScope(req: Request): Promise<AdminTenantScope> {
   const userId = req.authUser?.userId;
   if (!userId) return { allTenants: false, orgIds: [] };
 
@@ -96,4 +111,36 @@ export function applyRequestedOrg<T>(
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (query as any).eq(column, requestedOrg) as T;
+}
+
+/**
+ * Mandatory org predicate for a tenant-scoped read (MT-P2-002).
+ *
+ * The legacy `if (orgId) query = query.eq(...)` idiom fails OPEN when the
+ * org-access gate did not run: the predicate is silently skipped and the query
+ * returns every tenant's rows. This helper only ever narrows:
+ *
+ * - a resolved org (`req.orgId`, set by `requireOrgAccess` for members, API
+ *   keys and explicit/active-org switches) always becomes a predicate;
+ * - otherwise an explicit `organization_id`/`organizationId` supplied by the
+ *   caller (already validated by the gate when it ran) becomes the predicate;
+ * - an org-agnostic platform admin (`req.orgScope.platformAdmin` with no org)
+ *   is intentionally cross-tenant and audited by the gate, so the query stays
+ *   unscoped;
+ * - anything else — no gate, no scope — fails closed with a 403 instead of
+ *   returning an unscoped result.
+ */
+export function applyResolvedOrg<T>(req: Request, query: T, column = "organization_id"): T {
+  const explicitQuery =
+    typeof req.query?.organization_id === "string" ? req.query.organization_id : undefined;
+  const explicitBody =
+    typeof req.body?.organizationId === "string" ? req.body.organizationId : undefined;
+  const orgId = req.orgId ?? explicitQuery ?? explicitBody;
+
+  if (orgId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (query as any).eq(column, orgId) as T;
+  }
+  if (req.orgScope?.platformAdmin) return query;
+  throw new AppError("FORBIDDEN", "No organization scope resolved for this request", 403);
 }

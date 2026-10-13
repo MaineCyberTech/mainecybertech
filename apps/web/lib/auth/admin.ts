@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getApiClient } from "@/lib/api";
-import { isPlatformAdminKey } from "@/lib/roles";
+import { isCrossTenantKey } from "@/lib/roles";
 
 type AdminAccessResult = {
   userId: string;
@@ -39,7 +39,7 @@ export async function requireAdminAccess(): Promise<AdminAccessResult> {
 
   const adminMembership = memberships.find((m) => {
     const role = m.roles;
-    return role && isPlatformAdminKey(role.key);
+    return role && isCrossTenantKey(role.key);
   });
 
   if (!adminMembership) {

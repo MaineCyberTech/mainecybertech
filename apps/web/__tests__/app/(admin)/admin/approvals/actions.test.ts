@@ -29,8 +29,9 @@ describe("approveOrganization", () => {
     const formData = new FormData();
     formData.set("organizationId", "org-1");
 
-    await approveOrganization(formData);
+    const result = await approveOrganization(formData);
 
+    expect(result).toEqual({ ok: true });
     expect(mockOrganizationsUpdate).toHaveBeenCalledWith("org-1", {
       status: "approved",
     });
@@ -39,6 +40,22 @@ describe("approveOrganization", () => {
       "/admin/organizations/org-1",
     );
     expect(mockRevalidatePath).toHaveBeenCalledWith("/admin/audit");
+  });
+
+  it("returns the API error instead of throwing", async () => {
+    mockOrganizationsUpdate.mockRejectedValueOnce(new Error("Forbidden"));
+
+    const { approveOrganization } = await import(
+      "@/app/(admin)/admin/approvals/actions"
+    );
+
+    const formData = new FormData();
+    formData.set("organizationId", "org-1");
+
+    const result = await approveOrganization(formData);
+
+    expect(result).toEqual({ ok: false, error: "Forbidden" });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });
 
@@ -55,8 +72,9 @@ describe("rejectOrganization", () => {
     const formData = new FormData();
     formData.set("organizationId", "org-1");
 
-    await rejectOrganization(formData);
+    const result = await rejectOrganization(formData);
 
+    expect(result).toEqual({ ok: true });
     expect(mockOrganizationsUpdate).toHaveBeenCalledWith("org-1", {
       status: "rejected",
     });
@@ -69,7 +87,7 @@ describe("approveMembership", () => {
     jest.clearAllMocks();
   });
 
-  it("approves a membership", async () => {
+  it("approves a membership with a status-only PATCH", async () => {
     const { approveMembership } = await import(
       "@/app/(admin)/admin/approvals/actions"
     );
@@ -77,14 +95,30 @@ describe("approveMembership", () => {
     const formData = new FormData();
     formData.set("membershipId", "mem-1");
 
-    await approveMembership(formData);
+    const result = await approveMembership(formData);
 
+    expect(result).toEqual({ ok: true });
+    // USE-P1-003: never send roleId: "" — the UUID schema rejects it.
     expect(mockMembershipsUpdate).toHaveBeenCalledWith("mem-1", {
-      roleId: "",
       status: "approved",
     });
     expect(mockRevalidatePath).toHaveBeenCalledWith("/admin/approvals");
     expect(mockRevalidatePath).toHaveBeenCalledWith("/admin/audit");
+  });
+
+  it("returns the API error instead of throwing", async () => {
+    const { approveMembership } = await import(
+      "@/app/(admin)/admin/approvals/actions"
+    );
+    mockMembershipsUpdate.mockRejectedValueOnce(new Error("Validation failed"));
+
+    const formData = new FormData();
+    formData.set("membershipId", "mem-1");
+
+    const result = await approveMembership(formData);
+
+    expect(result).toEqual({ ok: false, error: "Validation failed" });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });
 
@@ -93,7 +127,7 @@ describe("rejectMembership", () => {
     jest.clearAllMocks();
   });
 
-  it("rejects a membership", async () => {
+  it("rejects a membership with a status-only PATCH", async () => {
     const { rejectMembership } = await import(
       "@/app/(admin)/admin/approvals/actions"
     );
@@ -101,13 +135,28 @@ describe("rejectMembership", () => {
     const formData = new FormData();
     formData.set("membershipId", "mem-1");
 
-    await rejectMembership(formData);
+    const result = await rejectMembership(formData);
 
+    expect(result).toEqual({ ok: true });
     expect(mockMembershipsUpdate).toHaveBeenCalledWith("mem-1", {
-      roleId: "",
       status: "rejected",
     });
     expect(mockRevalidatePath).toHaveBeenCalledWith("/admin/approvals");
     expect(mockRevalidatePath).toHaveBeenCalledWith("/admin/audit");
+  });
+
+  it("returns the API error instead of throwing", async () => {
+    const { rejectMembership } = await import(
+      "@/app/(admin)/admin/approvals/actions"
+    );
+    mockMembershipsUpdate.mockRejectedValueOnce(new Error("Forbidden"));
+
+    const formData = new FormData();
+    formData.set("membershipId", "mem-1");
+
+    const result = await rejectMembership(formData);
+
+    expect(result).toEqual({ ok: false, error: "Forbidden" });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });

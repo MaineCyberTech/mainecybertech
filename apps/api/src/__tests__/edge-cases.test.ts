@@ -38,13 +38,6 @@ function mockAuth() {
   return supabase;
 }
 
-const PROJECT = {
-  id: "00000000-0000-0000-0000-000000000030",
-  name: "Test Project",
-  status: "active",
-  organization_id: "00000000-0000-0000-0000-000000000001",
-};
-
 /*
  * Route-level suite: auth/permission/subscription middleware is stubbed so
  * mocks serve route queries only. Enforcement itself is covered by the
@@ -155,7 +148,7 @@ describe("API edge cases", () => {
 
       const res = await request(app)
         .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect([403, 500]).toContain(res.status);
     });

@@ -5,9 +5,11 @@
 Trigger an automated rollback from GitHub Actions:
 
 1. Navigate to **Actions → deploy-do → Run workflow**
-2. Set **deploy_target** to `dev` or `prod`
-3. Set **rollback_sha** to the 7–40 char lowercase-hex SHA of the previous working commit
-4. Run the workflow
+2. Select the branch to run from: `main` for `prod` (a `prod` dispatch from
+   any other ref fails closed — BP-P2-006), `develop` for `dev`
+3. Set **deploy_target** to `dev` or `prod`
+4. Set **rollback_sha** to the 7–40 char lowercase-hex SHA of the previous working commit
+5. Run the workflow
 
 The workflow will deploy the images already published under the `rollback_sha` tag. **Builds are skipped when `rollback_sha` is set** (`build-api`/`build-worker`/`build-web` are gated on `rollback_sha == ''`), so the target image tag must already exist in GHCR — otherwise the pull on the droplet fails. Then it SSHes in and runs:
 
@@ -74,6 +76,35 @@ mechanisms below (reverse migration, PITR, or an S3 backup restore), not on
 in-row tombstones. If soft delete is ever revisited it must be implemented
 end-to-end: writes set `deleted_at`/`deleted_by`, every read **and every RLS
 policy** filters `deleted_at is null`, and child rows are handled.
+
+### Recovering a deleted organization (ADMIN-P2-002)
+
+`DELETE /api/v1/organizations/:id` is a permanent, cascading hard delete. It
+requires the typed organization slug (`{ confirm: true, slug: "<slug>" }`) and
+fails closed if the org's `audit_logs` rows cannot first be copied to the
+append-only archive — but once it succeeds there is no in-console undo and no
+tombstone. Recovery is an operator procedure:
+
+1. Confirm the deletion time and blast radius. The `organization.delete` audit
+   event records `metadata.cascade` (memberships/domains/documents/tickets/projects);
+   the org's archived audit rows are in `audit_log_archive`.
+2. Choose the recovery path:
+   - **Within PITR retention (7 days):** follow Option B below to restore the
+     project to a point immediately before the delete, then copy the
+     organization row and its dependent rows forward. Do not point production
+     at the throwaway restore instance permanently.
+   - **Beyond PITR:** follow §3a to restore the latest daily dump into a
+     throwaway project, then copy the org's rows forward the same way.
+3. Re-link storage objects: file storage is not part of the database dump —
+   restore the affected prefixes with `scripts/restore-storage.sh` (see
+   `storage-restore-test.yml` for the pattern), then re-verify memberships and
+   domains for the org.
+4. Record the recovery: operator, restore point, and row counts in the incident
+   log (`docs/INCIDENT_RESPONSE.md`).
+
+Prevention: the admin console's Danger Zone requires typing the organization
+slug, and the API enforces the same typed-slug contract, so a single mistaken
+click can no longer delete a tenant.
 
 ### Option A: Reverse migration
 
@@ -170,21 +201,41 @@ User uploads (`documents`, `avatars`, `logos`) are backed up by
 `scripts/backup-storage.sh` via `.github/workflows/storage-backup.yml`.
 
 ```bash
-# Dry-run: show which objects would be restored
+# 1. Dry-run: show which objects would be restored
 SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
   ./scripts/restore-storage.sh --dry-run
 
-# Restore the newest archive (decrypts when BACKUP_ENCRYPTION_KEY is set)
+# 2. Verify the newest archive against its manifest WITHOUT uploading
+#    (decrypts when BACKUP_ENCRYPTION_KEY is set; no Supabase creds needed).
+#    This is what .github/workflows/storage-restore-test.yml runs weekly.
+BACKUP_ENCRYPTION_KEY=... ./scripts/restore-storage.sh --verify-only
+
+# 3. Restore the newest archive (decrypts when BACKUP_ENCRYPTION_KEY is set)
 BACKUP_ENCRYPTION_KEY=... ./scripts/restore-storage.sh
 ```
+
+The restore refuses an archive that does not carry `MANIFEST.txt`, is empty, or
+whose extracted file count does not match the manifest's `object_count` — a
+partial backup fails instead of silently restoring a subset.
 
 Storage objects are keyed by path, so a database restore and a storage restore
 together restore working `documents.storage_path` links. A DB-only restore
 leaves those rows pointing at missing objects — always pair the two.
+`.github/workflows/storage-restore-test.yml` exercises the verification weekly
+against the newest archive; a green run is the storage-restore exercise
+artifact. `scripts/exercise-storage-restore.sh` (run by the validate workflow)
+additionally drives `--verify-only` against synthetic valid/corrupt/encrypted
+archives on every CI run, so the assertions themselves are exercised even when
+no live backup has landed yet (FILE-P3-004). A restore INTO a scratch Supabase
+project remains an operator drill.
 
 ## 4. Terraform Rollback
 
-### Roll back infrastructure via git revert
+### Roll back infrastructure via git revert + a manual apply
+
+`terraform-do.yml` is **manual-dispatch only** — there are no push/PR triggers
+(by design; see the header in `.github/workflows/terraform-do.yml`), so a push
+neither plans nor applies anything.
 
 ```bash
 # On your local machine
@@ -195,12 +246,23 @@ git log --oneline infra/terraform/digitalocean/
 
 # Revert the offending commit (creates a new commit that undoes the changes)
 git revert <bad-commit-hash>
-
-# Push to trigger terraform-do workflow
-git push origin <branch>
+git push origin <branch>   # merge it as usual; this does NOT apply Terraform
 ```
 
-The `terraform-do.yml` workflow will run a plan on the PR/push and apply automatically (dev) or require prod-approval (main).
+Then dispatch the workflow:
+
+1. **Actions → terraform-do → Run workflow**
+2. Select the branch: `main` for prod, `develop` for dev.
+3. Leave **apply** off to run a plan only; check the plan output.
+4. Re-run with **apply** on to apply the reverted configuration.
+
+The prod apply (`terraform-apply-prod`) runs only from `main`, attaches the
+`prod-approval` environment, and waits on `e2e-gate` and `migrate-gate`; the dev
+apply (`terraform-apply-dev`) runs from `develop` under the `dev` environment.
+The weekly scheduled run is **plan-only**: it stays skipped until the operator
+sets the repository variable `TF_DRIFT_PLAN_ENABLED` to `true` (after the
+`DO_API_TOKEN` rotation) and fails the run when the plan is non-empty. It never
+applies — every apply is the manual dispatch above.
 
 ### Roll back a single resource
 
@@ -213,14 +275,44 @@ terraform apply -var-file=dev.tfvars -target=digitalocean_droplet.mct_portal
 
 ### Restore previous Terraform state (emergency)
 
-```bash
-# If state is corrupted, restore from DO Spaces backups
-# State is stored in DO Spaces (S3-compatible):
-#   bucket: mct-portal-tfstate-<env>
-#   key: terraform/do/terraform.tfstate
+State is stored in DO Spaces (S3-compatible). The names come from
+`infra/terraform/digitalocean/env/backend.<env>.hcl`:
 
-# Restore from a prior version via DO Spaces UI or CLI
+| Environment | Bucket                               | Key                                  |
+| ----------- | ------------------------------------ | ------------------------------------ |
+| dev         | `portal-terraform-state-development` | `digitalocean/dev/terraform.tfstate` |
+| prod        | `portal-terraform-state-production`  | `digitalocean/prod/terraform.tfstate` |
+
+Versioning is enforced by Terraform (`digitalocean_spaces_bucket.terraform_state`
+in `state-bucket.tf`, DR-P2-005), so every state write keeps a previous object
+version — including the `terraform.tfstate.tflock` lock object (`use_lockfile`).
+
+The scripted procedure (DR-P3-005 / IR-P3-001) wraps the `aws s3api` calls and
+refuses to overwrite the live state object without an explicit confirmation:
+
+```bash
+# 1. List the previous state versions (read-only)
+AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... \
+  ./scripts/terraform-state-restore.sh --env dev --list
+
+# 2. Non-destructive check: copy the chosen version to a scratch key, then
+#    download/inspect it as printed (the live state is untouched)
+./scripts/terraform-state-restore.sh --env dev --scratch <VERSION_ID>
+
+# 3. Overwrite the live state object (destructive; requires --yes)
+./scripts/terraform-state-restore.sh --env dev --restore <VERSION_ID> --yes
+
+# 4. Verify with a plan-only run before any apply
+cd infra/terraform/digitalocean
+terraform init -reconfigure -backend-config=env/backend.dev.hcl
+terraform plan -var-file=<your-tfvars>
 ```
+
+The list/scratch/restore behavior and the `--yes` guard are tested in CI
+(`scripts/ci/test-terraform-state-restore.sh`). The live DO Spaces drill is
+still an operator action: record it in
+[`PLATFORM_FAILURE_RUNBOOKS.md`](PLATFORM_FAILURE_RUNBOOKS.md) §6 before
+claiming this path is verified.
 
 ### Resources with `prevent_destroy`
 
@@ -247,16 +339,18 @@ terraform plan -var-file=dev.tfvars -destroy -target=digitalocean_droplet.mct_po
 
 ### Prod-approval environment
 
-All production deployments reference the `prod-approval` GitHub environment:
-the Docker prod deploy (`deploy-do.yml`, `deploy` job) and the Terraform prod
-apply (`terraform-do.yml`, `terraform-apply-prod`).
+Every production-mutating job references the `prod-approval` GitHub
+environment: the Docker prod deploy (`deploy-do.yml`, `deploy` job), the
+Terraform prod apply (`terraform-do.yml`, `terraform-apply-prod`) and prod DB
+migrations (`supabase-migrations.yml` on `main`, BP-P3-003). The read-only
+`prod` environment is only used by `resolve-ip` / `terraform-plan`.
 
 **Required reviewers are a GitHub repository setting, not workflow code:**
 configure them under Settings → Environments → `prod-approval` → Required
 reviewers (add 1+). Until that list is populated there is **no working
-manual-approval gate** and a prod deploy will start without pausing. The prod
-deploy secrets/variables must also be available to `prod-approval` (scoped to
-it or repo-wide).
+manual-approval gate** and a prod deploy (or migration) will start without
+pausing. The prod deploy and migration secrets/variables must also be
+available to `prod-approval` (scoped to it or repo-wide).
 
 ## Deployment Verification
 

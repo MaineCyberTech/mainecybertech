@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import type { CatalogProduct } from "@/lib/catalog/types";
 import { getClientApi } from "@/lib/client-api";
+import { track } from "@/lib/catalog/analytics";
+import { CONSENT_VERSION } from "@/lib/consent";
 import {
   getQuoteItems,
   addToQuote,
@@ -62,6 +64,9 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  // PRIV-P2-002: the quote carries PII, so consent is required (and recorded
+  // server-side with the policy version).
+  const [consent, setConsent] = useState(false);
 
   useEffect(() => {
     const merged: QuoteItem[] = [];
@@ -169,6 +174,10 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
       setStatus({ type: "error", message: "Name, email, and phone are required." });
       return;
     }
+    if (!consent) {
+      setStatus({ type: "error", message: "You must consent to the Privacy Policy." });
+      return;
+    }
 
     setSubmitting(true);
     setStatus(null);
@@ -184,6 +193,8 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
           name: i.name,
           priceRange: i.priceRange,
         })),
+        consent: true,
+        consentVersion: String(CONSENT_VERSION),
       });
       setStatus({
         type: "success",
@@ -194,6 +205,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
       setForm({ name: "", email: "", phone: "", notes: "" });
       localStorage.removeItem("mct_quote");
       clearQuote();
+      track("quote_submit", { page: "/store/quote" });
     } catch {
       setStatus({
         type: "error",
@@ -300,7 +312,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90"
+                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-base text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 sm:text-sm"
                   required
                 />
               </div>
@@ -316,7 +328,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90"
+                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-base text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 sm:text-sm"
                   required
                 />
               </div>
@@ -332,7 +344,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90"
+                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-base text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 sm:text-sm"
                   required
                 />
               </div>
@@ -348,14 +360,34 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                   rows={3}
                   value={form.notes}
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90"
+                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-base text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 sm:text-sm"
                 />
+              </div>
+
+              <div className="flex items-start gap-3">
+                <input
+                  id="quote-consent"
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 rounded border border-white/10 bg-cyber-base/60 text-emerald-600 focus:ring-emerald-600"
+                />
+                <label htmlFor="quote-consent" className="text-xs leading-relaxed text-slate-400">
+                  I agree to the{" "}
+                  <Link
+                    href="/privacy"
+                    className="text-emerald-400 underline transition hover:text-emerald-300"
+                  >
+                    Privacy Policy
+                  </Link>{" "}
+                  and consent to my data being processed.
+                </label>
               </div>
 
               <button
                 type="submit"
-                disabled={submitting || items.length === 0}
-                className="w-full rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-3 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-400 disabled:shadow-none"
+                disabled={submitting || items.length === 0 || !consent}
+                className="w-full rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-3 font-display text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-400 disabled:shadow-none"
               >
                 {submitting ? "Submitting..." : "Submit Quote Request"}
               </button>

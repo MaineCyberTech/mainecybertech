@@ -11,9 +11,13 @@ create table if not exists public.status_components (
 );
 create index if not exists idx_status_components_org on public.status_components (organization_id);
 alter table public.status_components enable row level security;
+drop policy if exists "status_org_select" on public.status_components;
 create policy "status_org_select" on public.status_components for select using (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = status_components.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "status_org_insert" on public.status_components;
 create policy "status_org_insert" on public.status_components for insert with check (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = status_components.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "status_org_update" on public.status_components;
 create policy "status_org_update" on public.status_components for update using (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = status_components.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "status_admin_delete" on public.status_components;
 create policy "status_admin_delete" on public.status_components for delete using (EXISTS (SELECT 1 FROM memberships m JOIN roles r ON m.role_id = r.id WHERE m.organization_id = status_components.organization_id AND m.user_id = auth.uid() AND r.key = 'admin'));
 
 create table if not exists public.status_incidents (
@@ -32,9 +36,13 @@ create table if not exists public.status_incidents (
 );
 create index if not exists idx_status_incidents_org on public.status_incidents (organization_id);
 alter table public.status_incidents enable row level security;
+drop policy if exists "incidents_org_select" on public.status_incidents;
 create policy "incidents_org_select" on public.status_incidents for select using (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = status_incidents.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "incidents_org_insert" on public.status_incidents;
 create policy "incidents_org_insert" on public.status_incidents for insert with check (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = status_incidents.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "incidents_org_update" on public.status_incidents;
 create policy "incidents_org_update" on public.status_incidents for update using (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = status_incidents.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "incidents_admin_delete" on public.status_incidents;
 create policy "incidents_admin_delete" on public.status_incidents for delete using (EXISTS (SELECT 1 FROM memberships m JOIN roles r ON m.role_id = r.id WHERE m.organization_id = status_incidents.organization_id AND m.user_id = auth.uid() AND r.key = 'admin'));
 
 create table if not exists public.maintenance_notices (
@@ -52,7 +60,11 @@ create table if not exists public.maintenance_notices (
 );
 create index if not exists idx_maintenance_notices_org on public.maintenance_notices (organization_id);
 alter table public.maintenance_notices enable row level security;
+drop policy if exists "maintenance_org_select" on public.maintenance_notices;
 create policy "maintenance_org_select" on public.maintenance_notices for select using (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = maintenance_notices.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "maintenance_org_insert" on public.maintenance_notices;
 create policy "maintenance_org_insert" on public.maintenance_notices for insert with check (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = maintenance_notices.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "maintenance_org_update" on public.maintenance_notices;
 create policy "maintenance_org_update" on public.maintenance_notices for update using (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = maintenance_notices.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "maintenance_admin_delete" on public.maintenance_notices;
 create policy "maintenance_admin_delete" on public.maintenance_notices for delete using (EXISTS (SELECT 1 FROM memberships m JOIN roles r ON m.role_id = r.id WHERE m.organization_id = maintenance_notices.organization_id AND m.user_id = auth.uid() AND r.key = 'admin'));

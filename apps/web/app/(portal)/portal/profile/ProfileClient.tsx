@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getClientApi } from "@/lib/client-api";
+import PasswordPolicyHint from "@/components/PasswordPolicyHint";
 
 type Props = {
   initialData: {
@@ -27,7 +28,6 @@ export default function ProfilePage({ initialData }: Props) {
   const [error, setError] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [pwCurrent, setPwCurrent] = useState("");
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
   const [savingPw, setSavingPw] = useState(false);
@@ -77,10 +77,6 @@ export default function ProfilePage({ initialData }: Props) {
       setError("Passwords do not match.");
       return;
     }
-    if (pwNew.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
     setSavingPw(true);
     setMessage("");
     setError("");
@@ -88,7 +84,6 @@ export default function ProfilePage({ initialData }: Props) {
     try {
       await getClientApi().auth.resetPassword(email, pwNew);
       setMessage("Password changed successfully.");
-      setPwCurrent("");
       setPwNew("");
       setPwConfirm("");
     } catch (err: unknown) {
@@ -137,7 +132,10 @@ export default function ProfilePage({ initialData }: Props) {
         </div>
       ) : null}
       {error ? (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+        <div
+          role="alert"
+          className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300"
+        >
           {error}
         </div>
       ) : null}
@@ -241,19 +239,6 @@ export default function ProfilePage({ initialData }: Props) {
       </div>
 
       <form onSubmit={handlePasswordChange} className="space-y-6">
-        <div>
-          <label htmlFor="profile-pw-current" className="cyber-label">
-            Current Password
-          </label>
-          <input
-            id="profile-pw-current"
-            type="password"
-            value={pwCurrent}
-            onChange={(e) => setPwCurrent(e.target.value)}
-            required
-            className="cyber-input"
-          />
-        </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label htmlFor="profile-pw-new" className="cyber-label">
@@ -265,9 +250,9 @@ export default function ProfilePage({ initialData }: Props) {
               value={pwNew}
               onChange={(e) => setPwNew(e.target.value)}
               required
-              minLength={6}
               className="cyber-input"
             />
+            <PasswordPolicyHint />
           </div>
           <div>
             <label htmlFor="profile-pw-confirm" className="cyber-label">

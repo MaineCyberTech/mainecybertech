@@ -102,7 +102,7 @@ export function Dialog({
         ref={dialogRef}
         tabIndex={-1}
         className={cn(
-          "fixed inset-0 z-50 flex items-center justify-center p-4",
+          "fixed inset-0 z-50 flex items-start justify-center p-4 sm:items-center",
           "animate-in fade-in-0 zoom-in-95 duration-200",
         )}
         role="dialog"
@@ -113,7 +113,7 @@ export function Dialog({
       >
         <div
           className={cn(
-            "relative w-full overflow-hidden rounded-xl border border-white/10 bg-[#0A1118]/95 shadow-[0_25px_50px_rgba(0,0,0,0.5)] backdrop-blur-md",
+            "relative max-h-[90vh] w-[calc(100vw-2rem)] min-w-0 overflow-y-auto rounded-xl border border-white/10 bg-cyber-base/95 shadow-[0_25px_50px_rgba(0,0,0,0.5)] backdrop-blur-md",
             "animate-in slide-in-from-bottom-4 zoom-in-95 duration-200",
             sizeStyles[size],
           )}
@@ -121,7 +121,7 @@ export function Dialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="absolute top-3 right-3 z-10 flex-shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200"
+            className="absolute top-3 right-3 z-10 -m-1.5 flex-shrink-0 rounded-lg p-3 text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200"
             aria-label="Close dialog"
           >
             <X className="h-5 w-5" aria-hidden="true" />

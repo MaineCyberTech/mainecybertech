@@ -1,6 +1,6 @@
 # Incident Response Plan — MCT Platform
 
-**Owner:** Platform/Engineering lead · **Last reviewed:** 2026-10-02 · **Review cadence:** quarterly
+**Owner:** Platform/Engineering lead · **Last reviewed:** 2026-10-11 · **Review cadence:** quarterly
 
 This is the *platform* incident response plan for the MCT Portal stack
 (api, web, worker, Supabase, DigitalOcean infrastructure). It is distinct from
@@ -37,6 +37,11 @@ MCT is a small team; one person may hold several roles, but each must be
 | Scribe | Maintains the incident log (times, actions, evidence, decisions) |
 | Security lead | Leads containment/forensics for suspected compromise; owns the breach decision with Legal |
 
+Role assignments (primary, backup, contact channel, escalation) are recorded in
+the on-call rota — fill [`templates/ONCALL_ROTA.md`](templates/ONCALL_ROTA.md)
+and commit the completed table into §8 before go-live. Until then the plan is
+**not operational** (`IR-P2-008`).
+
 ## 3. Declaring an incident
 
 1. Anyone may declare. **When in doubt, declare** — false alarms are cheap.
@@ -64,8 +69,14 @@ MCT is a small team; one person may hold several roles, but each must be
 - **Data integrity**: stop writes to the affected tables/jobs before restoring,
   or the restore will be overwritten.
 - **Security**: revoke the affected credentials first (see
-  `secret_rotation_runbook.md`), then isolate. Prefer revocation over
-  investigation-in-place — the audit trail survives revocation.
+  [`SECRETS_ROTATION.md`](SECRETS_ROTATION.md) §Emergency Rotation and the
+  break-glass/revocation runbook
+  [`SECRET_ROTATION_RUNBOOK.md`](SECRET_ROTATION_RUNBOOK.md)), then
+  isolate. Prefer revocation over
+  investigation-in-place — the audit trail survives revocation. Set the
+  replacement on the **consuming** environment (not `--env prod` by reflex) and
+  record the rotation per [`SECRETS_ROTATION.md`](SECRETS_ROTATION.md)
+  §Rotation Evidence.
 
 ### 4.3 Eradicate and recover
 
@@ -79,8 +90,10 @@ MCT is a small team; one person may hold several roles, but each must be
 
 ### 4.4 Post-incident (within 5 business days)
 
-- Write a blameless postmortem: timeline, root cause, contributing factors,
-  what detection missed, and **dated** action items with owners.
+- Write a blameless postmortem using
+  [`templates/POSTMORTEM.md`](templates/POSTMORTEM.md): timeline, root cause,
+  contributing factors, what detection missed, and **dated** action items with
+  owners.
 - File findings into the risk register with the same `AREA-Px-NNN` convention
   used by audits.
 - Update this plan, the runbooks, or the alerting rules when the postmortem
@@ -91,12 +104,19 @@ MCT is a small team; one person may hold several roles, but each must be
 | Audience | Channel | When |
 |---|---|---|
 | Internal | Incident channel | Continuous during response |
-| Affected tenants | Status page / email | Sev-1 within 60 min of confirmation; updates hourly |
-| All tenants | Status page | When impact is platform-wide |
+| Affected tenants | Status topic `portal-status` + email | Sev-1 within 60 min of confirmation; updates hourly |
+| All tenants | Status topic `portal-status` | When impact is platform-wide |
 | Regulators / data subjects | Per `docs/DATA_BREACH_RESPONSE.md` | Only with Legal's decision |
 
+The status surface (subscriber instructions, publishing commands, cadence) is
+[`STATUS_AND_COMMUNICATION.md`](STATUS_AND_COMMUNICATION.md); message templates
+are in [`templates/INCIDENT_COMMS.md`](templates/INCIDENT_COMMS.md).
+
 Never speculate about cause or data exposure externally. State what is known,
-what is not, and when the next update comes.
+what is not, and when the next update comes. For suspected personal-data
+breaches, external wording is Legal-gated — do not post until the Security lead
+and Legal have made the notification decision
+([`DATA_BREACH_RESPONSE.md`](DATA_BREACH_RESPONSE.md) §7).
 
 ## 6. Evidence handling
 
@@ -104,33 +124,52 @@ what is not, and when the next update comes.
   a key does not require deleting the audit trail.
 - Keep a single canonical timeline; the scribe owns it.
 - Do not paste secret values into the channel, the postmortem, or the log —
-  reference the secret's name and location only (see `secret_rotation_runbook.md`).
+  reference the secret's name and location only (see
+  [`SECRETS_ROTATION.md`](SECRETS_ROTATION.md)).
 
 ## 7. Common playbooks
 
 | Scenario | First action | Document |
 |---|---|---|
 | Bad deploy | Rollback workflow | `docs/ROLLBACK_PROCEDURES.md` |
-| Database corruption/loss | Freeze writes, then restore | `backup_restore_drill_plan.md` |
-| Key/token leak | Revoke, then rotate consumers | `secret_rotation_runbook.md` |
+| Database corruption/loss | Freeze writes, then restore | `docs/ROLLBACK_PROCEDURES.md` §3, `docs/RTO_RPO.md` |
+| Key/token leak | Revoke, then rotate consumers | [`SECRETS_ROTATION.md`](SECRETS_ROTATION.md) §Emergency Rotation, [`SECRET_ROTATION_RUNBOOK.md`](SECRET_ROTATION_RUNBOOK.md) |
 | Suspected tenant data exposure | Contain, then breach decision | `docs/DATA_BREACH_RESPONSE.md` |
-| Full monitoring loss | Verify from an off-box check | `docs/MONITORING_AND_ALERTING.md` §8 |
-| RLS/tenant isolation regression | Disable affected module writes, patch policy | `docs/audits/.../37_*`, ADR-008 notes |
+| Full monitoring loss | Verify via the alert path / off-box heartbeat (external heartbeat not yet provisioned) | `docs/MONITORING_AND_ALERTING.md` §9, `docs/ALERT_PATH_EXERCISE.md` |
+| RLS/tenant isolation regression | Disable affected module writes, patch policy | `docs/RLS-rollout.md`, `docs/RLS-coverage-matrix.md` |
+| Platform outage comms | Post to the status topic | `docs/STATUS_AND_COMMUNICATION.md` |
 
 ## 8. On-call rota and current gaps
 
-- **Rota:** _to be filled by the Engineering lead — the plan is not operational
-  until names and escalation contacts are recorded here._
-- **Known gap (audit `IR-P0-003`):** there is no independent dead-man's switch.
-  Alertmanager is referenced by `infra/digitalocean/prometheus.rules.yml` but
-  not deployed, and Sentry notifications live inside the monitored path. Until
-  that is fixed, a total monitoring failure is silent. Track the fix as a P1 in
-  the risk register.
+- **Rota:** fill [`templates/ONCALL_ROTA.md`](templates/ONCALL_ROTA.md) and
+  commit the completed table here — primary, backup, and contact channel per
+  role, even if one person holds several roles. **The plan is not operational
+  until this is filled** (`IR-P2-008`).
+- **Known gap (audit `IR-P0-003`, partially fixed):** Alertmanager **is deployed**
+  and delivers `critical`/`default` Prometheus alerts to the org ntfy topic
+  (`https://ntfy.mainecybertech.us/portal-alerts`). The independent dead-man's
+  switch is wired in configuration, but its external heartbeat URL
+  (`ALERTMANAGER_WATCHDOG_WEBHOOK_URL`) is **still unset**, so a total loss of
+  this droplet is not yet detected off-box (prod deploys fail closed until the
+  URL is provisioned). Provision the external heartbeat and record the
+  documented stop-Alertmanager drill (`docs/MONITORING_AND_ALERTING.md` §9).
+  Sentry notifications still live inside the monitored path. Track the residual
+  as a P1 in the risk register. **Status detail:** the residual is the external
+  heartbeat URL only — the audit's original "Alertmanager not deployed" wording
+  is superseded; do not repeat it in incident notes.
 
 ## 9. Testing
 
 - Exercise one scenario per quarter using
-  `incident_tabletop_scenarios.md`; record participants, gaps found, and
-  action items.
-- Exercise the restore path per `backup_restore_drill_plan.md` on the cadence
-  it defines, and keep the green run artifact as evidence.
+  [`INCIDENT_TABLETOP_SCENARIOS.md`](INCIDENT_TABLETOP_SCENARIOS.md); record
+  participants, gaps found, and action items. The first recorded exercise is the
+  IR-011 desk dry-run in
+  [`INCIDENT_TABLETOP_DRYRUN_2026-10-11.md`](INCIDENT_TABLETOP_DRYRUN_2026-10-11.md);
+  the live missed-heartbeat drill is still operator-gated (`IR-P0-003`).
+- Exercise the restore path on the cadence in
+  [`RTO_RPO.md`](RTO_RPO.md) §Validating RPO/RTO and keep the green
+  `db-restore-test` run artifact as evidence. The 5-minute PITR RPO needs a
+  dated exercise before it is claimed as achieved. The drill program (D1–D7)
+  and its results ledger are
+  [`runbooks/backup-restore-drill-plan.md`](runbooks/backup-restore-drill-plan.md)
+  / [`runbooks/backup-restore-drill-ledger.md`](runbooks/backup-restore-drill-ledger.md).

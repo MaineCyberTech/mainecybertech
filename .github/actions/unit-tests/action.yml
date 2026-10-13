@@ -1,15 +1,25 @@
 name: Unit tests and schema guards
 description: >
   The coverage suite plus every repo guard (OpenAPI, docs counts/links, DB
-  types, RLS hygiene, membership-predicate lint, review.md mirror). Shared by
-  test.yml (PRs) and validate.yml (push deploy gate) so the two definitions
-  cannot drift apart again.
+  types, RLS hygiene, membership-predicate lint, migration transaction lint,
+  permission-catalog lint, public-route inventory, required-check parity,
+  CODEOWNERS syntax/team handles, branch-protection drift/bypass fixtures,
+  review.md mirror). Shared by test.yml (PRs) and validate.yml (push deploy
+  gate) so the two definitions cannot drift apart again.
 
 inputs:
   node-version:
     description: Node.js version to install
     required: false
     default: "20"
+  codeowners-token:
+    description: >
+      Optional fine-grained PAT with Organization -> Members: read. When set,
+      scripts/ci/check-codeowners.sh resolves every @org/team handle in
+      .github/CODEOWNERS via the GitHub API; when empty the guard validates
+      syntax only (documented fallback, BP-P3-005).
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -21,6 +31,22 @@ runs:
     - name: Run tests with coverage
       shell: bash
       run: pnpm test:coverage
+
+    - name: Upload coverage reports (TEST-P3-003)
+      # Publishes each package's coverage output + jest results so the measured
+      # percentages behind the ratcheted floors are observable from CI instead
+      # of inferred. Best-effort: a missing report never fails the job.
+      if: always()
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: coverage-reports
+        path: |
+          apps/*/coverage/
+          packages/*/coverage/
+          apps/*/.jest-results.json
+          packages/*/.jest-results.json
+        retention-days: 14
+        if-no-files-found: ignore
 
     - name: Validate OpenAPI spec
       shell: bash
@@ -34,13 +60,37 @@ runs:
 
     - name: Check docs counts
       # Fails when README/AGENTS/INDEX state counts that have drifted from the
-      # repo (web components, unit tests, migrations, OpenAPI paths).
+      # repo (web components, unit tests/suites, migrations, OpenAPI paths,
+      # coverage thresholds). MCT_VERIFY_TEST_COUNTS=1 makes the per-package
+      # test totals fail-closed against the .jest-results.json files the
+      # coverage step above writes (TEST-P2-008).
       shell: bash
+      env:
+        MCT_VERIFY_TEST_COUNTS: "1"
       run: node scripts/check-docs-counts.mjs
 
     - name: Check docs links
       shell: bash
       run: node scripts/check-docs-links.mjs
+
+    - name: Check environment parity (SECRET-P3-005)
+      # Fails when a runtime env schema key is missing from its .env.example,
+      # an example key is neither in the schema nor the documented allowlist,
+      # or a key is absent from docs/ENVIRONMENT_VARIABLES.md. Self-tests its
+      # negative fixtures first so a broken detector cannot pass silently.
+      shell: bash
+      run: |
+        node scripts/check-env-parity.mjs --self-test
+        node scripts/check-env-parity.mjs
+
+    - name: Check historical gate markers (EXEC-P3-001)
+      # Fails when a committed prompts/ JSON carries a machine-readable release
+      # decision without the explicit historical: true marker, so a stale
+      # APPROVED artifact cannot be cited as current release evidence.
+      shell: bash
+      run: |
+        node scripts/check-historical-gates.mjs --self-test
+        node scripts/check-historical-gates.mjs
 
     - name: Verify database types are current
       shell: bash
@@ -50,6 +100,22 @@ runs:
       shell: bash
       run: node scripts/verify-rls.mjs
 
+    - name: Verify permission references resolve against the catalog (ACM-P3-002)
+      # Fails when a requirePermission literal, a live RLS
+      # user_has_permission predicate, or a registerCrud module key references
+      # a pair absent from the permissions catalog (migrations). The wrapper
+      # also runs a negative fixture, so a broken detector cannot pass silently.
+      shell: bash
+      run: scripts/ci/check-permission-catalog.sh
+
+    - name: Verify the public route inventory is current (ACM-P3-003)
+      # docs/PUBLIC_ROUTES.md is generated from the auth:false OpenAPI RouteDefs
+      # in apps/api/src/openapi/spec.ts; fails when the committed inventory is
+      # stale. scripts/openapi-audit.js keeps the spec itself in sync with the
+      # Express route tree.
+      shell: bash
+      run: node scripts/public-route-inventory.mjs --check
+
     - name: Verify no raw unfiltered membership predicate (DATA-P1-001)
       # Fails when a migration newer than the baseline reintroduces the
       # `memberships where user_id = auth.uid()` predicate without a
@@ -58,6 +124,66 @@ runs:
       shell: bash
       run: node scripts/check-rls-predicate.mjs
 
+    - name: Verify destructive migrations are transaction-wrapped (DATA-P2-002)
+      # Fails when a migration contains `drop table` / `alter table ... drop
+      # column` outside begin;/commit;. Under psql autocommit a mid-file
+      # failure leaves the earlier drops committed, so the table-replacement
+      # migrations can lose data on a partial apply. Also runs a negative
+      # fixture through the detector so a broken guard cannot pass silently.
+      shell: bash
+      run: scripts/ci/check-migration-transactions.sh
+
+    - name: Verify required branch-protection checks resolve (BP-P2-005)
+      # Every required context in .github/branch-protection/*.json must be a
+      # check-run name some workflow emits, and the emitting workflow's
+      # pull_request trigger must not be path-filtered (a filtered required
+      # check never reports on PRs that miss its paths - CI-P2-009). The
+      # wrapper also runs a negative fixture, so a broken guard cannot pass
+      # silently. Shared by the PR gate and the deploy gate.
+      shell: bash
+      run: scripts/ci/check-required-checks.sh
+
+    - name: Verify CODEOWNERS syntax and team handles (BP-P3-005)
+      # A syntax typo or a nonexistent team handle makes GitHub silently drop
+      # the owner for that path, so require_code_owner_reviews stops applying.
+      # Team resolution needs CODEOWNERS_READ_TOKEN (Organization -> Members:
+      # read); without it the guard runs the documented syntax-only fallback.
+      shell: bash
+      env:
+        CODEOWNERS_READ_TOKEN: ${{ inputs.codeowners-token }}
+      run: scripts/ci/check-codeowners.sh
+
+    - name: Verify the branch-protection drift/bypass detector (BP-P2-002/BP-P2-003)
+      # Fixture-driven self-test for scripts/branch-protection-audit.mjs: the
+      # scheduled audit must fail on a drifted or unprotected branch and on a
+      # merged PR that missed/failed a required check, and pass on matching
+      # fixtures, so a broken detector cannot pass silently.
+      shell: bash
+      run: scripts/ci/check-branch-protection-audit.sh
+
     - name: Verify review.md mirror is in sync
       shell: bash
       run: node scripts/sync-review-md.mjs --check
+
+    - name: Verify prompt pack provenance (AI-P3-006)
+      # Dependency-free. Runs in the shared PR/deploy test job so a change to
+      # prompts/ is caught before merge; validate.yml's prompt-provenance job
+      # keeps running it as defence in depth.
+      shell: bash
+      run: node scripts/verify-prompts.js verify
+
+    - name: Verify store catalog copies are in sync (HYGIENE-P2-002)
+      # apps/api/src/data/products.json is a generated mirror of the canonical
+      # apps/web/lib/catalog/data/products.json; fail when a one-sided edit
+      # makes the API fallback/seed serve different copy than the storefront.
+      shell: bash
+      run: node scripts/sync-product-catalog.mjs check
+
+    - name: Verify no circular imports (HYGIENE-P3-009)
+      # Fails when a static import/export/require edge closes a cycle across
+      # apps/* and packages/*. The guard self-tests against a synthetic cycle
+      # first so a broken detector cannot pass silently.
+      shell: bash
+      run: |
+        node scripts/check-circular-deps.mjs --self-test
+        node scripts/check-circular-deps.mjs

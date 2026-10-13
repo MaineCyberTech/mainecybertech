@@ -20,6 +20,7 @@ create index if not exists idx_sla_logs_breached on sla_logs(organization_id, br
 alter table sla_logs enable row level security;
 
 -- RLS policies
+drop policy if exists "sla_logs_select_org" on sla_logs;
 create policy "sla_logs_select_org" on sla_logs for select
   using (
     organization_id in (
@@ -28,6 +29,7 @@ create policy "sla_logs_select_org" on sla_logs for select
     )
   );
 
+drop policy if exists "sla_logs_insert_admin" on sla_logs;
 create policy "sla_logs_insert_admin" on sla_logs for insert
   with check (
     exists (

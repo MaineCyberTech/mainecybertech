@@ -1,4 +1,4 @@
-import { ApiClient, type ClientOptions, type RetryOptions, ApiError } from "./client";
+import { ApiClient, type ClientOptions, type RetryOptions } from "./client";
 import type { OrganizationOnboardInput, OrganizationOnboardResult } from "./types";
 import { AuthApi, type SignInResult, type SignUpResult } from "./auth";
 import { OrganizationsApi } from "./organizations";
@@ -97,7 +97,12 @@ import {
 import { FieldServicesApi } from "./field-services";
 import { EduAutomationApi } from "./edu-automation";
 import { FinalApi } from "./final";
-import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
+import {
+  SearchApi,
+  type SearchResult,
+  type PortalSearchResult,
+  type SearchDocument,
+} from "./search";
 import type {
   ClientOnboardingRecord,
   ChecklistItem,
@@ -213,7 +218,7 @@ import {
 export { ApiError } from "./client";
 export { AnalyticsApi } from "./analytics";
 export type { TrackAnalyticsEventInput, AnalyticsEvent, AnalyticsSummary } from "./analytics";
-export type { ClientOptions, RetryOptions } from "./client";
+export type { ClientOptions, RetryOptions, RequestOptions } from "./client";
 export type * from "./types";
 export type {
   SignInResult,
@@ -238,6 +243,7 @@ export type {
   BulkInviteResult,
   SearchResult,
   PortalSearchResult,
+  SearchDocument,
   ApprovalRequest,
   ApprovalStats,
   ApprovalDetail,
@@ -466,3 +472,27 @@ export class MCTClient {
 }
 
 export type { Database } from "./database.types";
+
+// Shared platform catalogs (EVOL-P2-001 / EVOL-P2-002) and role keys
+// (ADMIN-P3-001). Prefer the subpath imports (`@mct/sdk/module-registry`,
+// `@mct/sdk/webhook-events`, `@mct/sdk/role-keys`) in the API so tsup only
+// bundles the dependency-free catalog files.
+export { MODULE_REGISTRY, type ModuleDefinition } from "./module-registry";
+export { WEBHOOK_EVENTS, isWebhookEvent, type WebhookEvent } from "./webhook-events";
+export {
+  CROSS_TENANT_KEYS,
+  ELEVATED_TENANT_KEYS,
+  PLATFORM_ADMIN_KEYS,
+  isCrossTenantKey,
+  isElevatedTenantKey,
+  isPlatformAdminKey,
+  roleKeyOf,
+} from "./role-keys";
+export {
+  TICKET_STATUSES,
+  TICKET_STATUS_TRANSITIONS,
+  allowedTicketTransitions,
+  isTicketStatus,
+  isTicketTransitionAllowed,
+  type TicketStatus,
+} from "./ticket-status";

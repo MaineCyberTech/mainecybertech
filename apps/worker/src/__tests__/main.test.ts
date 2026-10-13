@@ -1,11 +1,12 @@
 import { jest } from "@jest/globals";
-import { envSchema, parseEnv, type Env } from "../env";
+import { parseEnv, type Env } from "../env";
 import {
   registerTask,
   getTaskHandler,
   getRegisteredTaskTypes,
   executeTask,
   type TaskMessage,
+  type TaskHandler,
   type TaskResult,
 } from "../task-registry";
 
@@ -35,6 +36,7 @@ describe("env schema", () => {
     expect(env.LOG_LEVEL).toBe("info");
     expect(env.WORKER_CONCURRENCY).toBe(10);
     expect(env.WORKER_TIMEOUT).toBe(30000);
+    expect(env.WORKER_TASK_TIMEOUT_MS).toBe(600000);
     expect(env.SUPABASE_URL).toBe("https://test.supabase.co");
     expect(env.SUPABASE_ANON_KEY).toBe("test-anon-key");
   });
@@ -46,6 +48,7 @@ describe("env schema", () => {
       LOG_LEVEL: "debug",
       WORKER_CONCURRENCY: "5",
       WORKER_TIMEOUT: "60000",
+      WORKER_TASK_TIMEOUT_MS: "900000",
       SUPABASE_URL: "https://test.supabase.co",
       SUPABASE_ANON_KEY: "test-key",
       SMTP_HOST: "smtp.test.local",
@@ -57,6 +60,7 @@ describe("env schema", () => {
     expect(env.LOG_LEVEL).toBe("debug");
     expect(env.WORKER_CONCURRENCY).toBe(5);
     expect(env.WORKER_TIMEOUT).toBe(60000);
+    expect(env.WORKER_TASK_TIMEOUT_MS).toBe(900000);
     expect(env.SUPABASE_URL).toBe("https://test.supabase.co");
     expect(env.SUPABASE_ANON_KEY).toBe("test-key");
   });
@@ -70,6 +74,25 @@ describe("env schema", () => {
         SMTP_HOST: "smtp.test.local",
       }),
     ).toThrow(/QUEUE_BACKEND/);
+  });
+
+  // ARCH-P2-004: the API only enqueues to BullMQ, so a production worker on
+  // sqs would never consume its tasks — fail closed.
+  it("rejects QUEUE_BACKEND=sqs in production [ARCH-P2-004]", () => {
+    expect(() =>
+      parseEnv({
+        ...REQUIRED,
+        NODE_ENV: "production",
+        SMTP_HOST: "smtp.test.local",
+        QUEUE_BACKEND: "sqs",
+        SQS_QUEUE_URL: "https://sqs.us-east-1.amazonaws.com/123/q",
+      }),
+    ).toThrow(/QUEUE_BACKEND/);
+  });
+
+  it("accepts QUEUE_BACKEND=sqs outside production [ARCH-P2-004]", () => {
+    const env = parseEnv({ ...REQUIRED, QUEUE_BACKEND: "sqs" });
+    expect(env.QUEUE_BACKEND).toBe("sqs");
   });
 
   it("accepts QUEUE_BACKEND=bullmq in production [RES-P2-003]", () => {
@@ -189,7 +212,10 @@ describe("executeTask", () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(handler).toHaveBeenCalledWith({ key: "value" });
+    expect(handler).toHaveBeenCalledWith(
+      { key: "value" },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 
   it("returns error for unknown task type", async () => {
@@ -200,6 +226,40 @@ describe("executeTask", () => {
 
     expect(result.ok).toBe(false);
     expect(result.error).toContain("Unknown task type");
+  });
+
+  it("rejects tenant scope on a task that does not declare it [MT-P2-006]", async () => {
+    const handler = jest.fn<() => Promise<TaskResult>>().mockResolvedValue({ ok: true });
+    registerTask("scope-test", handler);
+
+    const result = await executeTask({
+      type: "scope-test",
+      payload: { organizationId: "00000000-0000-0000-0000-0000000000aa" },
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/does not accept tenant scope/i);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("validates declared tenant scope keys as UUIDs [MT-P2-006]", async () => {
+    const handler = jest.fn<() => Promise<TaskResult>>().mockResolvedValue({ ok: true });
+    registerTask("tenant-scope-test", handler, { tenantScopeKeys: ["organizationId"] });
+
+    const invalid = await executeTask({
+      type: "tenant-scope-test",
+      payload: { organizationId: "not-a-uuid" },
+    });
+    expect(invalid.ok).toBe(false);
+    expect(invalid.error).toMatch(/invalid organizationId/i);
+    expect(handler).not.toHaveBeenCalled();
+
+    const valid = await executeTask({
+      type: "tenant-scope-test",
+      payload: { organizationId: "00000000-0000-0000-0000-0000000000aa" },
+    });
+    expect(valid.ok).toBe(true);
+    expect(handler).toHaveBeenCalledTimes(1);
   });
 
   it("returns error when handler throws", async () => {
@@ -215,6 +275,34 @@ describe("executeTask", () => {
 
     expect(result.ok).toBe(false);
     expect(result.error).toBe("handler exploded");
+  });
+
+  it("aborts a handler that exceeds its deadline [RES-P2-002]", async () => {
+    let receivedSignal: AbortSignal | undefined;
+    const handler: TaskHandler = (_payload, context) =>
+      new Promise<TaskResult>((resolve) => {
+        receivedSignal = context?.signal;
+        context?.signal.addEventListener("abort", () =>
+          resolve({ ok: false, error: "aborted by signal" }),
+        );
+      });
+    registerTask("slow-task", handler);
+
+    const result = await executeTask({ type: "slow-task", payload: {} }, { timeoutMs: 20 });
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("timed out");
+    expect(receivedSignal?.aborted).toBe(true);
+  });
+
+  it("fails a handler that never settles even if it ignores the signal [RES-P2-002]", async () => {
+    const handler: TaskHandler = () => new Promise<TaskResult>(() => {});
+    registerTask("hung-task", handler);
+
+    const result = await executeTask({ type: "hung-task", payload: {} }, { timeoutMs: 20 });
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("timed out");
   });
 
   it("ping task returns ok", async () => {

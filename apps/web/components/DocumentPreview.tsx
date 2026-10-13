@@ -11,7 +11,11 @@ export default function DocumentPreview({ url, mimeType, fileName, className = "
   const mime = mimeType?.toLowerCase() ?? "";
   const ext = (fileName?.split(".").pop() ?? "").toLowerCase();
 
-  if (mime.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) {
+  // FILE-P3-008: SVG is active content and the server rejects it for uploads;
+  // never treat it (or a bare .svg name) as a previewable image.
+  const isSvg = mime === "image/svg+xml" || ext === "svg";
+
+  if (!isSvg && (mime.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp"].includes(ext))) {
     return (
       <div className={`overflow-hidden rounded-lg border border-white/10 ${className}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -27,7 +31,13 @@ export default function DocumentPreview({ url, mimeType, fileName, className = "
   if (mime === "application/pdf" || ext === "pdf") {
     return (
       <div className={`overflow-hidden rounded-lg border border-white/10 ${className}`}>
-        <iframe src={url} className="h-96 w-full" title={fileName ?? "PDF Preview"} />
+        {/* FILE-P3-008: fully sandboxed — no scripts, no same-origin access. */}
+        <iframe
+          src={url}
+          sandbox=""
+          className="h-96 w-full"
+          title={fileName ?? "PDF Preview"}
+        />
       </div>
     );
   }
@@ -56,7 +66,9 @@ export default function DocumentPreview({ url, mimeType, fileName, className = "
   ) {
     return (
       <div className={`overflow-hidden rounded-lg border border-white/10 ${className}`}>
-        <iframe src={url} className="h-64 w-full" title={fileName ?? "Text Preview"} />
+        {/* FILE-P3-008: fully sandboxed — text-ish content must never run
+            scripts or reach the portal origin from the storage document. */}
+        <iframe src={url} sandbox="" className="h-64 w-full" title={fileName ?? "Text Preview"} />
       </div>
     );
   }

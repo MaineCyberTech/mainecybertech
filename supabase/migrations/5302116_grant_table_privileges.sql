@@ -19,6 +19,12 @@
 -- tables created by later migrations in the same session).
 --
 -- Idempotent: GRANT ... ON TABLE is a no-op if already granted.
+--
+-- Rollback: revoke the granted table/sequence privileges from
+-- service_role / authenticated / anon and drop the matching default
+-- privileges. Rolling this back on its own re-opens the 42501 regression it
+-- fixed; only revert together with the migration that depended on the grants
+-- (see docs/migrations/README.md).
 
 do $$
 declare t text;

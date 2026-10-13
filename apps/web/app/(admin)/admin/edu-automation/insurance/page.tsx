@@ -15,10 +15,11 @@ export const metadata = { title: "Insurance Evidence - Edu & Automation - Admin"
 export default async function InsurancePage() {
   await requireAdminAccess();
   const api = getApiClient();
-  let items: Array<{ id: string; category?: string }> = [];
+  let items: Array<{ id: string; title?: string }> = [];
   let loadFailed = false;
   try {
-    const r = await api.eduAutomation.insurance.list({});
+    // FEAT-P2-005: insurance_evidence's canonical surface is insurance-binder.
+    const r = await api.insuranceBinder.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
     loadFailed = true;
@@ -43,11 +44,14 @@ export default async function InsurancePage() {
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },
-          { key: "category", label: "Category", required: true },
-          { key: "evidenceDescription", label: "Evidence Description", required: true },
-          { key: "evidenceStatus", label: "Status" },
-          { key: "documentReference", label: "Document Ref" },
-          { key: "renewalDate", label: "Renewal Date", type: "date" },
+          { key: "title", label: "Title", required: true },
+          { key: "evidenceType", label: "Evidence Type" },
+          { key: "description", label: "Description", type: "textarea" },
+          { key: "coverageArea", label: "Coverage Area" },
+          { key: "insuranceProvider", label: "Insurance Provider" },
+          { key: "policyNumber", label: "Policy Number" },
+          { key: "expiryDate", label: "Expiry Date", type: "date" },
+          { key: "status", label: "Status" },
         ]}
         title="New Insurance Record"
         action={createInsurance}
@@ -64,7 +68,7 @@ export default async function InsurancePage() {
                     className="transition hover:text-emerald-400"
                     href={`/admin/edu-automation/insurance/${item.id}`}
                   >
-                    <p className="font-medium text-slate-50">{item.category ?? String(item.id)}</p>
+                    <p className="font-medium text-slate-50">{item.title ?? String(item.id)}</p>
                   </Link>
                 </div>
               ))

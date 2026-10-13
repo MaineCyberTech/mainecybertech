@@ -32,7 +32,7 @@ async function scopedMemberUserIds(scope: AdminTenantScope): Promise<string[]> {
   return (data ?? []).map((m) => m.user_id as string);
 }
 
-router.get("/summary", responseCache(30), async (req, res, next) => {
+router.get("/summary", responseCache(30, { scope: resolveAdminTenantScope }), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     // A single-org admin sees only their own tenant's aggregates; the
@@ -142,7 +142,7 @@ router.get("/summary", responseCache(30), async (req, res, next) => {
   }
 });
 
-router.get("/approvals-overdue", responseCache(30), async (req, res, next) => {
+router.get("/approvals-overdue", responseCache(30, { scope: resolveAdminTenantScope }), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const scope = await resolveAdminTenantScope(req);
@@ -166,7 +166,7 @@ router.get("/approvals-overdue", responseCache(30), async (req, res, next) => {
   }
 });
 
-router.get("/recent-activity", responseCache(15), async (req, res, next) => {
+router.get("/recent-activity", responseCache(15, { scope: resolveAdminTenantScope }), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const scope = await resolveAdminTenantScope(req);
@@ -190,7 +190,7 @@ router.get("/recent-activity", responseCache(15), async (req, res, next) => {
   }
 });
 
-router.get("/org-health", responseCache(60), async (req, res, next) => {
+router.get("/org-health", responseCache(60, { scope: resolveAdminTenantScope }), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const scope = await resolveAdminTenantScope(req);
@@ -256,7 +256,7 @@ router.get("/org-health", responseCache(60), async (req, res, next) => {
   }
 });
 
-router.get("/snapshots", responseCache(60), async (req, res, next) => {
+router.get("/snapshots", responseCache(60, { scope: resolveAdminTenantScope }), async (req, res, next) => {
   try {
     const scope = await resolveAdminTenantScope(req);
     // business_os_snapshots is a platform-level table with no organization_id.

@@ -10,7 +10,13 @@ import { requirePermission } from "../middleware/permissions";
 import { requireEntitlement } from "../middleware/entitlement";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
-import { applyOrgScope, applyRequestedOrg, resolveAdminTenantScope } from "../lib/admin-scope";
+import { EXPORT_ROW_LIMIT } from "../lib/pagination";
+import {
+  applyOrgScope,
+  applyRequestedOrg,
+  applyResolvedOrg,
+  resolveAdminTenantScope,
+} from "../lib/admin-scope";
 import {
   createFindingSchema,
   updateFindingSchema,
@@ -20,6 +26,8 @@ import {
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { moduleCommentSchema } from "../validators/comments";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -56,7 +64,9 @@ router.get("/export", async (req, res, next) => {
     query = applyOrgScope(query, "organization_id", scope);
     const status = req.query.status as string | undefined;
     if (status) query = query.eq("status", status);
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(EXPORT_ROW_LIMIT);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -76,9 +86,10 @@ router.get("/", async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("findings").select("*", { count: "exact" });
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    let query = supabase.from("findings").select("*", { count: listCountMode(req.query) });
+    // MT-P2-002: the org predicate is mandatory — a request without a resolved
+    // (or explicit) org fails closed instead of listing every tenant.
+    query = applyResolvedOrg(req, query);
     const status = req.query.status as string | undefined;
     if (status) query = query.eq("status", status);
     const severity = req.query.severity as string | undefined;
@@ -105,8 +116,7 @@ router.get("/stats", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "findings", "read");
     let query = supabase.from("findings").select("severity, status");
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = applyResolvedOrg(req, query);
 
     const { data, error } = await query;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -129,13 +139,12 @@ router.get("/stats", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "findings", "read");
     let query = supabase
       .from("findings")
       .select("*")
       .eq("id", String(req.params.id) as string);
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = applyResolvedOrg(req, query);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Finding not found", 404);
 
@@ -202,6 +211,7 @@ router.post("/", requirePermission("findings", "create"), async (req, res, next)
     });
 
     await addTimelineEvent(
+      req,
       parsed.organizationId,
       "findings",
       "finding",
@@ -228,7 +238,7 @@ router.patch(
 
       const current = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "findings",
         String(req.params.id) as string,
         "id, version, organization_id",
@@ -290,10 +300,11 @@ router.patch(
 
 router.delete("/:id", requirePermission("findings", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "findings", "write");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "findings",
       String(req.params.id) as string,
       "id, organization_id",
@@ -324,7 +335,7 @@ router.post("/:id/verify", requirePermission("findings", "edit"), async (req, re
 
     const current = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "findings",
       String(req.params.id) as string,
       "id, organization_id, status, version",
@@ -358,6 +369,7 @@ router.post("/:id/verify", requirePermission("findings", "edit"), async (req, re
     });
 
     await addTimelineEvent(
+      req,
       current.organization_id as string,
       "findings",
       "finding",
@@ -380,7 +392,7 @@ router.post("/:id/resolve", requirePermission("findings", "edit"), async (req, r
 
     const current = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "findings",
       String(req.params.id) as string,
       "id, organization_id, status, version",
@@ -414,6 +426,7 @@ router.post("/:id/resolve", requirePermission("findings", "edit"), async (req, r
     });
 
     await addTimelineEvent(
+      req,
       current.organization_id as string,
       "findings",
       "finding",
@@ -434,7 +447,7 @@ router.get("/:id/comments", async (req, res, next) => {
     const supabase = getScopedClient(req, "findings", "read");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "findings",
       String(req.params.id) as string,
       "id, organization_id",
@@ -458,7 +471,7 @@ router.post("/:id/comments", async (req, res, next) => {
     const supabase = getScopedClient(req, "findings", "write");
     const finding = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "findings",
       String(req.params.id) as string,
       "id, organization_id",
@@ -502,7 +515,7 @@ router.get("/:id/timeline", async (req, res, next) => {
     const supabase = getScopedClient(req, "findings", "read");
     await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "findings",
       String(req.params.id) as string,
       "id, organization_id",

@@ -23,7 +23,7 @@ jest.mock("@/components/portal/PortalSubnav", () => ({
   default: () => <nav data-testid="subnav" />,
 }));
 
-async function renderPage(searchParams: { recovered?: string } = {}) {
+async function renderPage(searchParams: { recovered?: string; mfa?: string } = {}) {
   const Page = (await import("@/app/(portal)/portal/profile/security/page")).default;
   return render(
     <ToastProvider>{await Page({ searchParams: Promise.resolve(searchParams) })}</ToastProvider>,
@@ -57,5 +57,14 @@ describe("SecurityPage", () => {
       .getAllByRole("alert")
       .find((element) => element.textContent?.includes("Unable to load security settings."));
     expect(alert).toBeTruthy();
+  });
+
+  it("surfaces the step-up banner when ?mfa=required is present (USE-P2-009)", async () => {
+    await renderPage({ mfa: "required" });
+
+    expect(
+      screen.getByRole("heading", { name: /second factor required/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /verify to continue/i })).toBeInTheDocument();
   });
 });

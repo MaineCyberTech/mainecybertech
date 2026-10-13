@@ -1,5 +1,7 @@
 import http from "k6/http";
 import { check, sleep, group } from "k6";
+import { BUDGETS, thresholdsFor } from "./budgets.js";
+import { buildSummary } from "./summary.js";
 
 export const options = {
   stages: [
@@ -7,10 +9,7 @@ export const options = {
     { duration: "2m", target: 200 },
     { duration: "30s", target: 0 },
   ],
-  thresholds: {
-    http_req_failed: ["rate<0.01"],
-    http_req_duration: ["p(95)<1000"],
-  },
+  thresholds: thresholdsFor(BUDGETS.sse),
 };
 
 const BASE_URL = __ENV.API_BASE_URL || "http://localhost:4000";
@@ -52,4 +51,8 @@ export default function () {
   });
 
   sleep(2);
+}
+
+export function handleSummary(data) {
+  return buildSummary(data, "sse");
 }

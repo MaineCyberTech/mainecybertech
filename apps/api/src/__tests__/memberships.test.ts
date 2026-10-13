@@ -96,7 +96,7 @@ describe("memberships routes", () => {
     });
 
     it("does not org-scope self lookups (user_id = caller)", async () => {
-      const supabase = mockAuth();
+      mockAuth();
       const builder = createMockBuilder({ data: [MEMBERSHIP], error: null });
       const eqSpy = jest.fn().mockReturnValue(builder);
       builder.eq = eqSpy;
@@ -137,6 +137,7 @@ describe("memberships routes", () => {
       const supabase = mockAuth();
       supabase.from
         .mockReturnValueOnce(createMockBuilder({ data: { id: "user-2" }, error: null }))
+        .mockReturnValueOnce(createMockBuilder({ data: { key: "member" }, error: null }))
         .mockReturnValueOnce(createMockBuilder({ data: null, error: null }))
         .mockReturnValueOnce(createMockBuilder({ data: { id: "new-mem" }, error: null }));
 
@@ -172,6 +173,7 @@ describe("memberships routes", () => {
       const supabase = mockAuth();
       supabase.from
         .mockReturnValueOnce(createMockBuilder({ data: { id: "user-2" }, error: null }))
+        .mockReturnValueOnce(createMockBuilder({ data: { key: "member" }, error: null }))
         .mockReturnValueOnce(createMockBuilder({ data: { id: "existing-mem" }, error: null }));
 
       const res = await request(app)
@@ -190,9 +192,12 @@ describe("memberships routes", () => {
   describe("PATCH /:id", () => {
     it("updates a membership (admin only)", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(
-        createMockBuilder({ data: { ...MEMBERSHIP, status: "approved" }, error: null }),
-      );
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "roles") return createMockBuilder({ data: { key: "member" }, error: null });
+        if (table === "profiles")
+          return createMockBuilder({ data: { is_super_admin: true }, error: null });
+        return createMockBuilder({ data: { ...MEMBERSHIP, status: "approved" }, error: null });
+      });
 
       const res = await request(app)
         .patch("/api/v1/memberships/mem-1")
@@ -200,6 +205,40 @@ describe("memberships routes", () => {
         .send({ roleId: "00000000-0000-0000-0000-000000000020", status: "approved" });
 
       expect(res.status).toBe(200);
+    });
+
+    // USE-P1-003: the admin queue sends a status-only PATCH; the membership
+    // keeps its current role instead of requiring (or clearing) roleId.
+    it("approves a membership with a status-only PATCH", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({
+        data: { ...MEMBERSHIP, status: "approved" },
+        error: null,
+      });
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .patch("/api/v1/memberships/mem-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ status: "approved" });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.status).toBe("approved");
+      // The role must not be overwritten (or nulled) by a status transition.
+      expect(builder.update).toHaveBeenCalledWith({ status: "approved" });
+    });
+
+    it("rejects an empty-string roleId", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(createMockBuilder({ data: MEMBERSHIP, error: null }));
+
+      const res = await request(app)
+        .patch("/api/v1/memberships/mem-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ roleId: "", status: "approved" });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("VALIDATION");
     });
 
     it("returns 404 when the membership belongs to another org", async () => {
@@ -227,7 +266,7 @@ describe("memberships routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/memberships/mem-1")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
@@ -243,7 +282,7 @@ describe("memberships routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/memberships/mem-1")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(404);
     });

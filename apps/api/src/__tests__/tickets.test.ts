@@ -25,7 +25,14 @@ jest.mock("../services/audit", () => ({
   logAuditEvent: jest.fn(),
 }));
 
+jest.mock("../lib/notify", () => ({
+  notifyAndEmail: jest.fn(),
+  createNotification: jest.fn(),
+}));
+
 import { getSupabaseAdmin } from "../services/supabase";
+import { notifyAndEmail } from "../lib/notify";
+import { logAuditEvent } from "../services/audit";
 
 function mockAuth() {
   const supabase = { from: jest.fn(), auth: { getUser: jest.fn() }, rpc: jest.fn() };
@@ -81,7 +88,7 @@ describe("tickets routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/tickets")
+        .get("/api/v1/tickets?organization_id=00000000-0000-0000-0000-000000000001")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -111,7 +118,9 @@ describe("tickets routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/tickets/00000000-0000-0000-0000-000000000010")
+        .get(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=00000000-0000-0000-0000-000000000001",
+        )
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -125,7 +134,9 @@ describe("tickets routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/tickets/00000000-0000-0000-0000-000000000999")
+        .get(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000999?organization_id=00000000-0000-0000-0000-000000000001",
+        )
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
@@ -161,11 +172,75 @@ describe("tickets routes", () => {
       );
 
       const res = await request(app)
-        .patch("/api/v1/tickets/00000000-0000-0000-0000-000000000010")
+        .patch(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=00000000-0000-0000-0000-000000000001",
+        )
         .set("Authorization", "Bearer token-123")
         .send({ title: "Updated Title" });
 
       expect(res.status).toBe(200);
+    });
+
+    // FEAT-P3-006: status changes must follow the shared transition map.
+    it("allows a transition the map permits and audits it distinctly", async () => {
+      mockAuth();
+      const supabase = (getSupabaseAdmin as jest.Mock)();
+      supabase.from.mockImplementation(() =>
+        createMockBuilder({ data: { ...TICKET, status: "open" }, error: null }),
+      );
+
+      const res = await request(app)
+        .patch(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=00000000-0000-0000-0000-000000000001",
+        )
+        .set("Authorization", "Bearer token-123")
+        .send({ status: "in_progress" });
+
+      expect(res.status).toBe(200);
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "ticket.status_transition",
+          metadata: expect.objectContaining({ from: "open", to: "in_progress" }),
+        }),
+      );
+    });
+
+    it("rejects a status jump the map forbids with 409", async () => {
+      mockAuth();
+      const supabase = (getSupabaseAdmin as jest.Mock)();
+      supabase.from.mockImplementation(() =>
+        createMockBuilder({ data: { ...TICKET, status: "closed" }, error: null }),
+      );
+
+      const res = await request(app)
+        .patch(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=00000000-0000-0000-0000-000000000001",
+        )
+        .set("Authorization", "Bearer token-123")
+        .send({ status: "new" });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error?.code).toBe("INVALID_STATUS_TRANSITION");
+    });
+
+    it("treats a same-status update as a no-op", async () => {
+      mockAuth();
+      const supabase = (getSupabaseAdmin as jest.Mock)();
+      supabase.from.mockImplementation(() =>
+        createMockBuilder({ data: { ...TICKET, status: "open" }, error: null }),
+      );
+
+      const res = await request(app)
+        .patch(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=00000000-0000-0000-0000-000000000001",
+        )
+        .set("Authorization", "Bearer token-123")
+        .send({ status: "open" });
+
+      expect(res.status).toBe(200);
+      expect(logAuditEvent).not.toHaveBeenCalledWith(
+        expect.objectContaining({ action: "ticket.status_transition" }),
+      );
     });
   });
 
@@ -177,7 +252,9 @@ describe("tickets routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments")
+        .get(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=00000000-0000-0000-0000-000000000001",
+        )
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -202,6 +279,49 @@ describe("tickets routes", () => {
         });
 
       expect(res.status).toBe(201);
+    });
+
+    it("notifies with an abstract body that omits the comment excerpt (NOTIF-P2-005)", async () => {
+      mockAuth();
+      const supabase = (getSupabaseAdmin as jest.Mock)();
+      const ticket = {
+        id: "00000000-0000-0000-0000-000000000010",
+        organization_id: "00000000-0000-0000-0000-000000000001",
+        title: "Printer offline",
+        created_by: "user-2",
+        assigned_to: null,
+      };
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "tickets") return createMockBuilder({ data: ticket, error: null });
+        if (table === "profiles") {
+          return createMockBuilder({
+            data: [{ id: "user-2", email: "other@example.com" }],
+            error: null,
+          });
+        }
+        return createMockBuilder({ data: { id: "comment-9" }, error: null });
+      });
+
+      const secret = "correct-horse-battery-staple";
+      const res = await request(app)
+        .post("/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments")
+        .set("Authorization", "Bearer token-123")
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          body: `the admin password=${secret} is on the whiteboard`,
+          isInternal: false,
+        });
+
+      expect(res.status).toBe(201);
+      expect(notifyAndEmail).toHaveBeenCalledTimes(1);
+      const call = (notifyAndEmail as jest.Mock).mock.calls[0][0] as {
+        body: string;
+        notificationKey: string;
+      };
+      expect(call.body).not.toContain(secret);
+      expect(call.body).not.toContain("whiteboard");
+      expect(call.body).toContain("Printer offline");
+      expect(call.notificationKey).toBe("ticket-comment-comment-9-user-2");
     });
   });
 
@@ -235,7 +355,7 @@ describe("tickets routes", () => {
       });
 
       const res = await request(app)
-        .patch("/api/v1/tickets/ticket-1/comments/comment-1")
+        .patch(`/api/v1/tickets/ticket-1/comments/comment-1?organization_id=${ORG}`)
         .set("Authorization", "Bearer token-123")
         .send({ body: "Edited comment" });
 
@@ -245,7 +365,7 @@ describe("tickets routes", () => {
     });
 
     it("rejects a non-author, non-admin user with 403", async () => {
-      const supabase = mockFromSequence({
+      mockFromSequence({
         ticket_comments: {
           data: {
             id: "comment-1",
@@ -261,7 +381,7 @@ describe("tickets routes", () => {
       });
 
       const res = await request(app)
-        .patch("/api/v1/tickets/ticket-1/comments/comment-1")
+        .patch(`/api/v1/tickets/ticket-1/comments/comment-1?organization_id=${ORG}`)
         .set("Authorization", "Bearer token-123")
         .send({ body: "Edited comment" });
 
@@ -289,7 +409,7 @@ describe("tickets routes", () => {
       });
 
       const res = await request(app)
-        .patch("/api/v1/tickets/ticket-1/comments/comment-1")
+        .patch(`/api/v1/tickets/ticket-1/comments/comment-1?organization_id=${ORG}`)
         .set("Authorization", "Bearer token-123")
         .send({ body: "Edited by admin" });
 
@@ -298,7 +418,7 @@ describe("tickets routes", () => {
     });
 
     it("rejects edits when the caller is scoped to a different org than the comment", async () => {
-      const supabase = mockFromSequence({
+      mockFromSequence({
         ticket_comments: {
           data: {
             id: "comment-1",
@@ -326,17 +446,17 @@ describe("tickets routes", () => {
           data: {
             id: "comment-1",
             author_id: "user-1",
-            organization_id: OTHER_ORG,
+            organization_id: ORG,
             body: "Original",
             created_at: new Date().toISOString(),
           },
           error: null,
         },
-        tickets: { data: { id: "ticket-1", organization_id: ORG }, error: null },
+        tickets: { data: { id: "ticket-1", organization_id: OTHER_ORG }, error: null },
       });
 
       const res = await request(app)
-        .patch("/api/v1/tickets/ticket-1/comments/comment-1")
+        .patch(`/api/v1/tickets/ticket-1/comments/comment-1?organization_id=${ORG}`)
         .set("Authorization", "Bearer token-123")
         .send({ body: "Edited comment" });
 
@@ -394,6 +514,44 @@ describe("tickets routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
+    });
+
+    it("GET /:id returns 404 for a ticket in another org (MT-P2-002)", async () => {
+      const OTHER_ORG = "00000000-0000-0000-0000-000000000002";
+      const supabase = mockAuth();
+      const builder = createMockBuilder({ data: null, error: null });
+      let orgFilter: string | null = null;
+      (builder as any).eq = jest.fn((column: string, value: unknown) => {
+        if (column === "organization_id") orgFilter = value as string;
+        return builder;
+      });
+      (builder as any).single = jest.fn(() =>
+        Promise.resolve({
+          data:
+            orgFilter === OTHER_ORG
+              ? { id: "00000000-0000-0000-0000-000000000010", organization_id: OTHER_ORG }
+              : null,
+          error: null,
+        }),
+      );
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .get(`/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
+
+    it("fails closed without a resolved or explicit org (MT-P2-002)", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(createMockBuilder({ data: TICKET, error: null }));
+
+      const res = await request(app)
+        .get("/api/v1/tickets/00000000-0000-0000-0000-000000000010")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
     });
 
     it("DELETE /:id filters the fetch and delete by organization_id", async () => {
@@ -490,6 +648,7 @@ describe("tickets routes", () => {
       roleKey?: string;
       memberOrgs?: string[];
       ownedIds?: string[];
+      statuses?: Record<string, string>;
     }) {
       const supabase = mockAuth();
       const builders: Record<string, ReturnType<typeof createMockBuilder>> = {};
@@ -506,7 +665,13 @@ describe("tickets routes", () => {
         } else if (table === "profiles") {
           result = { data: { is_super_admin: opts.isSuperAdmin ?? false }, error: null };
         } else if (table === "tickets") {
-          result = { data: (opts.ownedIds ?? []).map((id) => ({ id })), error: null };
+          result = {
+            data: (opts.ownedIds ?? []).map((id) => ({
+              id,
+              status: opts.statuses?.[id],
+            })),
+            error: null,
+          };
         } else {
           result = { data: null, error: null };
         }
@@ -514,10 +679,13 @@ describe("tickets routes", () => {
         builders[table] = builder;
         return builder;
       });
-      supabase.rpc.mockResolvedValue({
-        data: (opts.ownedIds ?? []).map((id) => ({ id, success: true })),
-        error: null,
-      });
+      supabase.rpc.mockImplementation(
+        (_name: string, args: { updates: { id: string }[] }) =>
+          Promise.resolve({
+            data: args.updates.map((u) => ({ id: u.id, success: true })),
+            error: null,
+          }),
+      );
       return { supabase, builders };
     }
 
@@ -584,8 +752,66 @@ describe("tickets routes", () => {
       });
       expect(res.body.data.successful).toBe(2);
       expect(res.body.data.skipped).toBe(0);
-      // An all-tenants admin needs no per-org ownership lookup.
-      expect(builders.tickets).toBeUndefined();
+      // A cross-tenant admin needs no per-org ownership filter, but the status
+      // lookup still runs so transitions can be validated (FEAT-P3-006).
+      expect(builders.tickets).toBeDefined();
+      expect(builders.tickets.in).toHaveBeenCalledWith("id", [OWNED_ID, FOREIGN_ID]);
+      expect(builders.tickets.in).not.toHaveBeenCalledWith(
+        "organization_id",
+        expect.anything(),
+      );
+    });
+
+    // FEAT-P3-006: bulk status changes obey the same transition map.
+    it("skips a bulk status change the map forbids and reports it as failed", async () => {
+      const { supabase } = mockBulk({
+        memberOrgs: [ORG],
+        ownedIds: [OWNED_ID],
+        statuses: { [OWNED_ID]: "closed" },
+      });
+
+      const res = await request(app)
+        .post("/api/v1/tickets/bulk")
+        .set("Authorization", "Bearer token-123")
+        .send({ ids: [OWNED_ID], status: "new" });
+
+      expect(res.status).toBe(200);
+      expect(supabase.rpc).toHaveBeenCalledWith("bulk_update_with_version", {
+        table_name: "tickets",
+        updates: [],
+      });
+      expect(res.body.data.successful).toBe(0);
+      expect(res.body.data.failed).toBe(1);
+      expect(res.body.data.skipped).toBe(0);
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "ticket.bulk_update",
+          metadata: expect.objectContaining({
+            invalidTransitions: [{ id: OWNED_ID, from: "closed", to: "new" }],
+          }),
+        }),
+      );
+    });
+
+    it("applies a bulk status change the map allows", async () => {
+      const { supabase } = mockBulk({
+        memberOrgs: [ORG],
+        ownedIds: [OWNED_ID],
+        statuses: { [OWNED_ID]: "open" },
+      });
+
+      const res = await request(app)
+        .post("/api/v1/tickets/bulk")
+        .set("Authorization", "Bearer token-123")
+        .send({ ids: [OWNED_ID], status: "in_progress" });
+
+      expect(res.status).toBe(200);
+      expect(supabase.rpc).toHaveBeenCalledWith("bulk_update_with_version", {
+        table_name: "tickets",
+        updates: [{ id: OWNED_ID, data: { status: "in_progress" } }],
+      });
+      expect(res.body.data.successful).toBe(1);
+      expect(res.body.data.failed).toBe(0);
     });
   });
 });

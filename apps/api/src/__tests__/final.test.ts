@@ -77,7 +77,6 @@ describe("Final API", () => {
     "saas-audit",
     "procurement",
     "dns-changes",
-    "satisfaction",
     "time-entries",
     "budgets",
     "runbooks",
@@ -94,6 +93,21 @@ describe("Final API", () => {
     });
   }
 
+  // FEAT-P2-005: satisfaction_pulses is canonically served by
+  // /api/v1/satisfaction-pulse; the old /final/satisfaction surface is
+  // hard-deprecated (410 + successor link) rather than a second validator.
+  it("hard-deprecates /final/satisfaction with a successor link", async () => {
+    ma();
+    const r = await request(app)
+      .get("/api/v1/final/satisfaction")
+      .set("Authorization", auth);
+    expect(r.status).toBe(410);
+    expect(r.headers.link).toContain(
+      '</api/v1/satisfaction-pulse>; rel="successor-version"',
+    );
+    expect(r.headers.deprecation).toBe("true");
+  });
+
   it("creates a sharepoint plan", async () => {
     const s = ma();
     s.from.mockReturnValue(
@@ -109,7 +123,7 @@ describe("Final API", () => {
   it("deletes a sharepoint plan", async () => {
     const s = ma();
     s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
-    const r = await request(app).delete("/api/v1/final/sharepoint/sp-1").set("Authorization", auth);
+    const r = await request(app).delete("/api/v1/final/sharepoint/sp-1").set("Authorization", auth).send({ confirm: true });
     expect(r.status).toBe(204);
   });
 

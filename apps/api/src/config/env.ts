@@ -1,4 +1,30 @@
 import { z } from "zod";
+import {
+  fieldEncryptionKeySchema,
+  logLevelSchema,
+  nodeEnvSchema,
+  queueBackendSchema,
+  redisEnvShape,
+  resolveRedisUrl,
+  sentryEnvShape,
+  smtpEnvShape,
+  stripeSecretKeySchema,
+  supabaseEnvShape,
+} from "@mct/config/env";
+
+// EVOL-P3-005: re-exported so existing call sites keep importing from
+// `../config/env` while the implementation lives in the shared package.
+export { resolveRedisUrl };
+
+/**
+ * SEC-P3-006: the API always answers credentialed CORS requests (app.ts sets
+ * `credentials: true`), so a wildcard origin would let any site read
+ * authenticated responses. Allow-all is therefore not supported: CORS_ORIGIN
+ * must be an explicit comma-separated allowlist.
+ */
+export function hasWildcardCorsOrigin(corsOrigin: string): boolean {
+  return corsOrigin.split(",").some((origin) => origin.trim() === "*");
+}
 
 /**
  * True when `raw` is a 64-char hex or base64 value that decodes to exactly 32
@@ -17,40 +43,60 @@ function isValidFieldEncryptionKey(raw?: string): boolean {
 }
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  NODE_ENV: nodeEnvSchema,
   API_PORT: z.coerce.number().default(4000),
-  SUPABASE_URL: z.string().url(),
-  SUPABASE_ANON_KEY: z.string().min(1),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  ...supabaseEnvShape,
+  CORS_ORIGIN: z
+    .string()
+    .default("http://localhost:3000")
+    .refine((value) => !hasWildcardCorsOrigin(value), {
+      message:
+        'CORS_ORIGIN does not support "*": the API sends credentials on every CORS response, so allow-all would expose authenticated responses to any site (SEC-P3-006). Use an explicit comma-separated allowlist.',
+    }),
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
-  LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
+  LOG_LEVEL: logLevelSchema,
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
-  SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.coerce.number().optional(),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASS: z.string().optional(),
-  EMAIL_FROM: z.string().optional(),
-  SENTRY_DSN: z.string().optional(),
-  // Optional Sentry trace sample rate (0–1). Defaults to 0.2 in production, 0
-  // otherwise. See lib/sentry.ts.
-  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
-  // Optional Sentry release identifier. Defaults to process.env.GIT_SHA.
-  SENTRY_RELEASE: z.string().optional(),
-  STRIPE_SECRET_KEY: z.string().optional(),
+  ...smtpEnvShape,
+  // Web Push (NOTIF-P2-001): VAPID public key returned to browsers by
+  // GET /push-subscriptions/vapid-public-key. The worker holds the private key
+  // and subject; the API only needs the public half. Unset = the push channel
+  // is disabled (no-op) — the preference UI reports it as unavailable.
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  ...sentryEnvShape,
+  STRIPE_SECRET_KEY: stripeSecretKeySchema,
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   // AES-256-GCM key for profile PII at rest (hex/base64, 32 bytes).
-  FIELD_ENCRYPTION_KEY: z.string().optional(),
+  FIELD_ENCRYPTION_KEY: fieldEncryptionKeySchema,
   PUBLIC_TRAFFIC_WEBHOOK_URL: z.string().optional(),
   PUBLIC_LEAD_WEBHOOK_URL: z.string().optional(),
+  // PRIV-P2-002 / AN-P2-005: visitor IP geolocation endpoint. Defaults to the
+  // HTTPS ip-api endpoint in routes/public.ts; the lookup only runs after the
+  // visitor grants analytics consent and only the city/region/country fields
+  // are requested. HTTPS is enforced (PRIV-P2-006) so a visitor IP is never
+  // sent over plaintext.
+  GEO_LOOKUP_URL: z
+    .string()
+    .url()
+    .refine((value) => value.startsWith("https://"), {
+      message:
+        "GEO_LOOKUP_URL must be an HTTPS URL — visitor IPs are never sent over plaintext HTTP",
+    })
+    .optional(),
   JSM_DOMAIN: z.string().optional(),
   JSM_EMAIL: z.string().optional(),
   JSM_API_TOKEN: z.string().optional(),
   JSM_SERVICEDESK_ID: z.string().optional(),
   JSM_REQUEST_TYPE_ID: z.string().optional(),
-  REDIS_URL: z.string().url().optional(),
-  TASK_QUEUE_ENABLED: z.enum(["true", "false"]).optional(),
-  REDIS_PASSWORD: z.string().optional(),
+  ...redisEnvShape,
+  // ARCH-P2-004: the API producer only speaks BullMQ (`lib/task-producer.ts`),
+  // while the worker's consumer backend is its own setting. Both processes
+  // read this one value (docker-compose x-app-env), and production fails
+  // closed on anything but bullmq so an enqueue/consume split cannot start.
+  QUEUE_BACKEND: queueBackendSchema.default("bullmq"),
+  // PERF-P2-006: page cap for the Stripe sync (100 objects per page). The
+  // default bounds a sync at 1000 objects per list per customer; raise it for
+  // very large accounts instead of changing code.
+  STRIPE_SYNC_MAX_PAGES: z.coerce.number().int().positive().max(100).optional(),
   JIRA_WEBHOOK_SECRET: z.string().optional(),
   JSM_WEBHOOK_SECRET: z.string().optional(),
   // Shared clientState validated on inbound M365 change notifications. This is
@@ -58,12 +104,22 @@ const envSchema = z.object({
   // routes/webhooks.ts. There is intentionally no M365_WEBHOOK_SECRET.
   M365_CLIENT_STATE: z.string().optional(),
   TURNSTILE_SECRET_KEY: z.string().optional(),
+  // FILE-P2-003: optional upload malware-scan endpoint. Unset (or empty, as
+  // the deploy writes the key even when the secret is unset) = scanning
+  // disabled (no-op). When set, uploads are POSTed to it before storage; see
+  // lib/malware-scan.ts and docs/features/secure-file-request.md.
+  MALWARE_SCANNER_URL: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().url().optional(),
+  ),
+  MALWARE_SCANNER_API_KEY: z.string().optional(),
   // Shared bearer token gating GET /metrics. When set, the endpoint 404s
   // without it; Prometheus must send `Authorization: Bearer <token>`.
   METRICS_TOKEN: z.string().optional(),
   // Opt-in MFA (aal2) enforcement: when "true", an aal1 session that has a
   // verified TOTP factor is rejected with 403 MFA_REQUIRED on non-auth routes.
-  // See lib/mfa.ts. Default off so enabling it can never lock users out.
+  // See lib/mfa.ts. admin/super_admin sessions are enforced even when this is
+  // unset/false (SEC-P2-005). Users without a factor are never blocked.
   MFA_ENFORCEMENT_ENABLED: z.enum(["true", "false"]).optional(),
   // Comma-separated module keys whose reads/writes use the user-scoped (RLS)
   // client instead of the service-role client. Empty = service-role (default).
@@ -93,6 +149,25 @@ export function assertProductionTurnstile(
 }
 
 /**
+ * ARCH-P2-004: fail closed at boot in production when the queue backend is not
+ * BullMQ. The API can only enqueue to BullMQ (`lib/task-producer.ts`), so a
+ * worker configured for `sqs`/`inline` would never consume API tasks — the API
+ * would keep reporting successful enqueues while webhooks, emails and scans
+ * are silently dropped. Both processes read the same QUEUE_BACKEND value
+ * (docker-compose x-app-env), so this assertion is the producer half of the
+ * parity check; the worker's env schema enforces the consumer half.
+ */
+export function assertQueueBackendParity(
+  env: Pick<Env, "NODE_ENV" | "QUEUE_BACKEND">,
+): void {
+  if (env.NODE_ENV === "production" && env.QUEUE_BACKEND !== "bullmq") {
+    throw new Error(
+      `QUEUE_BACKEND=${env.QUEUE_BACKEND} is not supported in production: the API only enqueues to BullMQ, so the worker backend must match (set QUEUE_BACKEND=bullmq)`,
+    );
+  }
+}
+
+/**
  * SEC-P1-001: fail closed at boot in production. A missing or malformed
  * FIELD_ENCRYPTION_KEY must refuse startup rather than let
  * lib/field-encryption silently store PII as reversible `plain:` values.
@@ -107,24 +182,6 @@ export function assertProductionSecrets(
   }
 }
 
-/**
- * Builds a Redis connection URL, injecting REDIS_PASSWORD when the URL
- * does not already carry credentials. Used by ioredis / node-redis clients.
- */
-export function resolveRedisUrl(url: string, password?: string): string {
-  if (!password) return url;
-  try {
-    const parsed = new URL(url);
-    if (!parsed.username && !parsed.password) {
-      parsed.password = password;
-      return parsed.toString();
-    }
-  } catch {
-    // Malformed URL — leave as-is, the client will surface the error.
-  }
-  return url;
-}
-
 let _env: Env | null = null;
 
 export function getEnv(): Env {
@@ -137,6 +194,7 @@ export function getEnv(): Env {
     }
     assertProductionTurnstile(result.data);
     assertProductionSecrets(result.data);
+    assertQueueBackendParity(result.data);
     _env = result.data;
   }
   return _env;

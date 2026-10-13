@@ -1,68 +1,54 @@
 #!/usr/bin/env node
 /**
- * License allow/deny gate with documented exceptions.
+ * License allow/deny gate with documented, package-scoped exceptions.
  *
  * Why this exists (audit finding SBOM-P1-001, run 20261002-0344):
  * `dependency-review.yml` only gated vulnerability severity, so a GPL/AGPL/
  * SSPL dependency could merge undetected, and the copyleft-adjacent licenses
  * already in the tree were neither surfaced nor approved.
  *
- * Policy: security/license-policy.json. A license string passes only when:
- *   - it is an allowed permissive license (or a pure SPDX expression of them), and
- *   - it contains no denied license, and
- *   - any restricted license is an exact, reviewed entry in `exceptions`.
+ * Policy: security/license-policy.json. A package passes only when:
+ *   - its license string is an allowed permissive license (or a pure SPDX
+ *     expression of them), or
+ *   - a reviewed exception names BOTH that license string (or one of its SPDX
+ *     leaves) and this exact package, and that exception has not expired.
+ *
+ * Exceptions are matched on (license, package) — SBOM-P2-009: a different
+ * package with the same license still fails, and `UNKNOWN` fails unless the
+ * package is explicitly listed. A missing/malformed/past `expires` date is a
+ * violation (SBOM-P2-010: an accepted risk must not outlive its review).
  *
  * Usage:
- *   pnpm licenses list --json > licenses.json
- *   node scripts/license-gate.mjs [licenses.json]
+ *   node scripts/collect-licenses.mjs --out licenses.json
+ *   node scripts/license-gate.mjs [licenses.json] [--policy security/license-policy.json]
  */
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { evaluateLicenses } from "./lib/policy-gates.mjs";
+
 const ROOT = resolve(import.meta.dirname, "..");
-const POLICY = JSON.parse(
-  readFileSync(resolve(ROOT, "security/license-policy.json"), "utf8"),
-);
-const INPUT = resolve(ROOT, process.argv[2] ?? "licenses.json");
+
+const args = process.argv.slice(2);
+let policyPath = "security/license-policy.json";
+const rest = [];
+for (let i = 0; i < args.length; i += 1) {
+  if (args[i] === "--policy") {
+    policyPath = args[i + 1] ?? policyPath;
+    i += 1;
+  } else {
+    rest.push(args[i]);
+  }
+}
+
+const POLICY = JSON.parse(readFileSync(resolve(ROOT, policyPath), "utf8"));
+const INPUT = resolve(ROOT, rest[0] ?? "licenses.json");
 
 if (!existsSync(INPUT)) {
   console.error(
-    `license-gate: ${INPUT} not found. Run "pnpm licenses list --json > licenses.json" first.`,
+    `license-gate: ${INPUT} not found. Run "node scripts/collect-licenses.mjs --out licenses.json" first.`,
   );
   process.exit(2);
-}
-
-const allowed = new Set(POLICY.allowedLicenses);
-const denied = new Set(POLICY.deniedLicenses);
-const exceptions = new Map(
-  (POLICY.exceptions ?? []).map((entry) => [entry.license, entry]),
-);
-
-/** Strip a license expression down to its leaf tokens. */
-function tokens(expression) {
-  return expression
-    .replace(/[()]/g, " ")
-    .split(/\s+(?:AND|OR|WITH)\s+|\s+/i)
-    .map((token) => token.trim())
-    .filter(Boolean);
-}
-
-function classify(license) {
-  if (exceptions.has(license)) return { ok: true, kind: "exception" };
-  if (allowed.has(license)) return { ok: true, kind: "allowed" };
-  if (denied.has(license)) return { ok: false, kind: "denied", token: license };
-  // Expressions: every leaf must be allowed (or exception), and no leaf denied.
-  const leaf = tokens(license);
-  if (leaf.length > 1) {
-    for (const token of leaf) {
-      if (denied.has(token)) return { ok: false, kind: "denied", token };
-      if (!allowed.has(token) && !exceptions.has(token)) {
-        return { ok: false, kind: "unknown", token };
-      }
-    }
-    return { ok: true, kind: "allowed-expression" };
-  }
-  return { ok: false, kind: "unknown", token: license };
 }
 
 /** Read a JSON file, tolerating UTF-8 BOM and UTF-16 (PowerShell `>` output). */
@@ -82,67 +68,73 @@ function readJson(path) {
   return JSON.parse(buffer.toString("utf8").replace(/^\uFEFF/, ""));
 }
 
-const inventory = readJson(INPUT);
-const packagesByLicense = Object.entries(inventory);
+const result = evaluateLicenses(readJson(INPUT), POLICY);
 
-const violations = [];
-const exceptionHits = [];
-const usedExceptions = new Set();
+console.log(
+  `License gate: ${result.distinctLicenses} distinct license string(s), ` +
+    `${result.packages} package(s) scanned.`,
+);
 
-for (const [license, packages] of packagesByLicense) {
-  const verdict = classify(license);
-  if (verdict.ok && verdict.kind === "exception") {
-    usedExceptions.add(license);
-    for (const pkg of packages) {
-      exceptionHits.push({ license, name: pkg.name, versions: pkg.versions });
-    }
-  } else if (!verdict.ok) {
-    for (const pkg of packages) {
-      violations.push({
-        license,
-        token: verdict.token,
-        kind: verdict.kind,
-        name: pkg.name,
-        versions: pkg.versions,
-      });
-    }
-  }
-}
-
-// Flag exceptions that are configured but no longer present (policy drift).
-const staleExceptions = [...exceptions.keys()].filter((l) => !usedExceptions.has(l));
-
-console.log(`License gate: ${packagesByLicense.length} distinct license string(s) scanned.`);
-
-if (exceptionHits.length) {
-  console.log("\nAccepted exceptions in use:");
-  for (const hit of exceptionHits) {
-    const entry = exceptions.get(hit.license);
+if (result.exceptionHits.length) {
+  console.log("\nAccepted exceptions in use (package-scoped, unexpired):");
+  for (const hit of result.exceptionHits) {
     console.log(
-      `  ${hit.license} — ${hit.name}@${hit.versions.join(",")} (accepted: ${entry.reason})`,
+      `  ${hit.license} — ${hit.name}@${hit.versions.join(",")} ` +
+        `(expires ${hit.expires}; accepted: ${hit.reason})`,
     );
   }
 }
 
-if (staleExceptions.length) {
-  console.log(
-    `\n::warning::Exception(s) configured but no longer present (remove them): ${staleExceptions.join(", ")}`,
-  );
+if (result.staleExceptions.length) {
+  for (const entry of result.staleExceptions) {
+    const unused = entry.unusedPackages.length
+      ? ` (no longer present: ${entry.unusedPackages.join(", ")})`
+      : "";
+    console.log(
+      `::warning::Exception for ${entry.license} is configured but no longer present${unused}; remove it.`,
+    );
+  }
 }
 
-if (violations.length) {
-  console.error(`\nFAIL: ${violations.length} package(s) use a non-approved license:`);
-  for (const violation of violations.slice(0, 50)) {
+// Expired entries that no package relies on are drift, not a violation — the
+// ones that are relied on appear in the FAIL list below. Compare on the token
+// as well: an exception keyed to an SPDX leaf (e.g. `LGPL-3.0-or-later`) is
+// relied on through a compound license string.
+const violatedExpired = new Set(
+  result.violations
+    .filter((violation) => violation.kind === "expired-exception")
+    .flatMap((violation) => [violation.license, violation.token]),
+);
+for (const entry of result.expiredExceptions) {
+  if (!violatedExpired.has(entry.license)) {
+    console.log(
+      `::warning::Exception for ${entry.license} has an invalid/expired date ` +
+        `(${entry.expiry.reason}) and accepts nothing.`,
+    );
+  }
+}
+
+if (result.violations.length) {
+  console.error(`\nFAIL: ${result.violations.length} package(s) use a non-approved license:`);
+  for (const violation of result.violations.slice(0, 50)) {
+    const detail =
+      violation.kind === "expired-exception"
+        ? ` — exception ${violation.reason}`
+        : violation.kind === "out-of-scope"
+          ? ` — exception only covers: ${violation.scopedTo.join(", ")}`
+          : "";
     console.error(
       `  ${violation.kind.toUpperCase()} ${violation.license} (via ${violation.token}) ` +
-        `— ${violation.name}@${violation.versions.join(",")}`,
+        `— ${violation.name}@${violation.versions.join(",")}${detail}`,
     );
   }
   console.error(
     "\nEither replace the dependency or add a reviewed entry to security/license-policy.json " +
-      "and docs/LICENSE_POLICY.md.",
+      "(scoped to the exact package, with an `expires` date in the future) and docs/LICENSE_POLICY.md.",
   );
   process.exit(1);
 }
 
-console.log("\nPASS: every resolved package uses an allowed license or a documented exception.");
+console.log(
+  "\nPASS: every resolved package uses an allowed license or a documented, unexpired exception scoped to it.",
+);

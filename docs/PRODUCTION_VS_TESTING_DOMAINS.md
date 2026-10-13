@@ -1,43 +1,51 @@
 # Production vs Testing Domains
 
+Both zones run the same as-built topology: Cloudflare DNS/proxy in front of a
+DigitalOcean droplet running the `infra/digitalocean/docker-compose.yml` stack
+(Caddy → Next.js web, Express API, worker, Redis, Prometheus/Alertmanager).
+There is no Vercel or AWS ALB/ECS runtime in the current deployment path — the
+earlier Vercel/ECS descriptions were stale (INFRA-P2-005 / ARCH-P3-002).
+
 ## Production Zone: `mainecybertech.com`
 
 ### Web application
 - Hostname: `app.mainecybertech.com`
 - DNS provider: Cloudflare
-- Origin/platform: Vercel project custom domain
-- DNS record type in Cloudflare: CNAME
-- DNS target source: use the exact value returned by `vercel domains inspect app.mainecybertech.com`
+- Origin: droplet `mct-portal-prod`, Caddy on 80/443 → `web:3000`
 
 ### API
 - Hostname: `api.mainecybertech.com`
 - DNS provider: Cloudflare
-- Origin/platform: AWS ALB / ECS API service
-- DNS record type in Cloudflare: CNAME
-- DNS target source: production ALB DNS name (or another public API hostname you intentionally front through Cloudflare)
+- Origin: droplet `mct-portal-prod`, Caddy on 80/443 → `api:4000`
 
 ## Testing Zone: `mainecybertech.us`
 
 ### Web application
 - Hostname: `app.mainecybertech.us`
 - DNS provider: Cloudflare
-- Origin/platform: Vercel custom domain for the testing/staging environment
-- DNS record type in Cloudflare: CNAME
-- DNS target source: use the exact value returned by `vercel domains inspect app.mainecybertech.us`
+- Origin: droplet `mct-portal-dev`, Caddy on 80/443 → `web:3000`
 
 ### API
 - Hostname: `api.mainecybertech.us`
 - DNS provider: Cloudflare
-- Origin/platform: AWS ALB / ECS API service for testing
-- DNS record type in Cloudflare: CNAME
-- DNS target source: testing ALB DNS name (or another public testing API hostname you intentionally front through Cloudflare)
+- Origin: droplet `mct-portal-dev`, Caddy on 80/443 → `api:4000`
 
 ## Operational Separation
 
-Keep the production and testing hostnames mapped independently so you can validate testing changes without changing the production DNS records.
+Keep the production and testing hostnames mapped to separate droplets so you
+can validate changes without touching production:
 
-A clean pattern is:
-- production app → Vercel production target
-- testing app → Vercel testing/staging target
-- production API → production ALB
-- testing API → testing ALB
+- `develop` deploys to the `dev` environment/droplet (`deploy-do.yml`);
+- production deploys run from `main` through the approval-gated
+  `prod-approval` environment to the `prod` droplet;
+- secrets are set per GitHub environment (`dev` / `prod-approval`); environment
+  secrets override the repo-level defaults (e.g. `RLS_READS_ENABLED`);
+- Terraform state and droplet names (`mct-portal-dev` / `mct-portal-prod`) are
+  independent, and the dev droplet can be rebuilt without affecting prod DNS.
+
+### Verification
+
+- `curl -sSf https://api.mainecybertech.us/health` and
+  `curl -sSf https://api.mainecybertech.com/health` must return 200 with the
+  expected `status`.
+- The scheduled `external-uptime-probe.yml` exercises both zones.

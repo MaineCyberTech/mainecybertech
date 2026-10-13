@@ -13,6 +13,10 @@
 -- to keep the schema honest.
 --
 -- The columns were never written, so every value is NULL and no data is lost.
+--
+-- Rollback: re-add deleted_at / deleted_by to tickets, projects and documents
+-- plus the idx_*_deleted_at indexes exactly as 5302109 defined them; every
+-- value was NULL, so no row restore is required (see docs/migrations/README.md).
 
 begin;
 

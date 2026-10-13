@@ -59,7 +59,7 @@ export default async function CaseStudyDetailPage({
           <p className="mt-4 text-lg leading-relaxed text-slate-400">{cs.summary}</p>
         </div>
 
-        <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-8 backdrop-blur-sm">
+        <div className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-8 backdrop-blur-sm">
           <div className="prose prose-invert max-w-none">
             {cs.body.split("\n").map((paragraph: string, i: number) =>
               paragraph.trim() ? (
@@ -83,7 +83,7 @@ export default async function CaseStudyDetailPage({
         <div className="mt-12 text-center">
           <Link
             href="/contact"
-            className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Let&rsquo;s Talk About Your Project
           </Link>

@@ -23,7 +23,9 @@ The document includes:
 
 - `components[]` — one per resolved lockfile package (`purl`, integrity hash
   converted to **hex**, and `licenses`).
-- `licenses` per component, sourced from `pnpm licenses list --json`
+- `licenses` per component, sourced from the installed tree by
+  `node scripts/collect-licenses.mjs` (`pnpm licenses list --json` is broken on
+  the pinned pnpm 10.34.x and must not be used)
   (`license.id` for SPDX ids, `license.expression` for SPDX expressions such as
   `Apache-2.0 AND LGPL-3.0-or-later`, and `license.name` for ids newer than the
   CycloneDX 1.5 SPDX enum, e.g. `FSL-1.1-MIT`).
@@ -90,14 +92,41 @@ The **image SBOM** covers the built image contents (OS packages + language
 packages present in the image). It does **not** cover the build environment, the
 registry, or the deploy host.
 
+### Third-party runtime images and Actions dependencies (SBOM-P3-008)
+
+The compose stack also runs four digest-pinned third-party images — `redis`,
+`prom/prometheus`, `prom/alertmanager` and `caddy` — plus the SHA-pinned GitHub
+Actions the workflows execute. Coverage status as of 2026-10-12:
+
+- **Third-party images:** `third-party-image-scan.yml` resolves the
+  digest-pinned refs straight from `infra/digitalocean/docker-compose.yml` on
+  the weekly schedule, scans them and emits a digest-bound CycloneDX image
+  SBOM per ref (validated with `--image --digest`, uploaded as a 30-day
+  artifact). This is artifact-only, not a gate (CTR-P3-007 / SBOM-P3-008).
+- **Actions dependencies:** `scripts/actions-inventory.mjs` emits a
+  machine-readable inventory (name, pinned SHA, version comment, source file),
+  uploaded as the `actions-inventory` artifact by `sbom.yml`; its `--check`
+  mode runs in the `dependency-audit` job so an unpinned external `uses:` fails
+  CI. The Actions are inventoried rather than SBOM'd (their transitive runtime
+  is the runner image, which is out of scope).
+- **Accepted residual:** the build environment, the registry and the deploy
+  host remain outside all SBOMs. This is a scope decision, not a defect; revisit
+  if an OS advisory requires host-level attribution.
+
 ## Validation
 
 `scripts/validate-sbom.mjs` runs in `sbom.yml` before upload and fails the job
 on a malformed **lockfile** SBOM: missing/invalid `bomFormat`/`specVersion`,
 duplicate `bom-ref`s, dangling `dependencies` edges, a component count below the
-sanity floor (parser-regression guard), or a missing version/commit binding. It
-targets the CycloneDX 1.5 lockfile document and is not run against the Trivy
-image SBOMs (which use Trivy's own schema and binding fields).
+sanity floor (parser-regression guard), or a missing version/commit binding.
+
+The same script validates every **image** SBOM with `--image` (SBOM-P3-005):
+`build-push.yml` and `deploy-do.yml` run it between generation and
+upload/attestation, asserting CycloneDX shape, a non-empty component set above
+a floor, and that the document is bound to the exact pushed digest
+(`--digest "${{ steps.build-<image>.outputs.digest }}"`). An empty or partial
+Trivy output can therefore never be attested as the durable record for a
+digest.
 
 ## Who consumes these
 
@@ -113,26 +142,29 @@ image SBOMs (which use Trivy's own schema and binding fields).
 ```bash
 # Local lockfile SBOM generation
 pnpm install --frozen-lockfile
-pnpm licenses list --json > licenses.json
+node scripts/collect-licenses.mjs --out licenses.json
 node scripts/generate-sbom.mjs sbom.cdx.json
 node scripts/validate-sbom.mjs sbom.cdx.json
 
-# Cryptographically verify a released image's BUILD PROVENANCE (not the SBOM).
-# The attestation is bound to a DIGEST, so resolve the tag first:
+# Cryptographically verify a released image's BUILD PROVENANCE and SBOM
+# attestations. Both are bound to a DIGEST, so resolve the tag first:
 DIGEST=$(docker buildx imagetools inspect \
   ghcr.io/<owner>/mct-api:<sha> --format '{{.Manifest.Digest}}')
 gh attestation verify "oci://ghcr.io/<owner>/mct-api@$DIGEST" \
   --repo <owner>/<repo> \
   --signer-workflow <owner>/<repo>/.github/workflows/deploy-do.yml \
-  --source-digest <sha>
-# This is the same check the deploy pipeline runs before every pull; see
-# docs/CI.md ("Provenance verification at deploy").
+  --source-digest <sha> \
+  --predicate-type https://slsa.dev/provenance/v1
 
-# Cryptographically verify a released image's SBOM ATTESTATION (SUPPLY-P3-001).
-# The predicate is the CycloneDX document bound to the image digest:
+# The CycloneDX SBOM predicate (SUPPLY-P3-001), bound to the same digest:
 gh attestation verify "oci://ghcr.io/<owner>/mct-api@$DIGEST" \
   --repo <owner>/<repo> \
+  --signer-workflow <owner>/<repo>/.github/workflows/deploy-do.yml \
+  --source-digest <sha> \
   --predicate-type https://cyclonedx.org/bom
+# These are the same checks the deploy pipeline runs before every pull, and the
+# deploy then pulls/runs by the verified digest (SBOM-P2-011); see
+# docs/CI.md ("Provenance verification at deploy").
 
 # Lockfile SBOM artifact (30 days)
 gh run download <run-id> -n sbom-cyclonedx
@@ -156,26 +188,33 @@ jq '.metadata.component.purl' image-sbom-mct-api.cdx.json
 - On the manual `build-push.yml` path the image SBOM remains an **artifact
   only** — it is not attested as an SBOM and not pushed to the registry as an
   OCI referrer. `deploy-do.yml` is the release-authoritative producer.
-- **Provenance is now verified at deploy** (CTR-P1-003). The `verify-attestations`
-  job in `deploy-do.yml` resolves each deployed tag to its digest and runs
-  `gh attestation verify` before `deploy` pulls anything; `deploy` `needs:` the
-  job, so a failed check blocks the deploy. See
+- **Provenance and SBOM attestations are now verified at deploy** (CTR-P1-003 /
+  SBOM-P2-011). The `verify-attestations` job in `deploy-do.yml` resolves each
+  deployed tag to its digest and runs `gh attestation verify` for BOTH the SLSA
+  provenance predicate and the CycloneDX SBOM predicate before `deploy` pulls
+  anything; `deploy` `needs:` the job, so a failed check blocks the deploy. See
   [docs/CI.md](CI.md#provenance-verification-at-deploy-ctr-p1-003).
   **What this does and does not cover:**
   - Covers `mct-api`, `mct-worker`, `mct-web` images pulled by the
     `deploy-do.yml` path, bound to the exact digest and the signing workflow
     (`--signer-workflow`) and commit (`--source-digest`).
-  - Normal deploys **fail closed**: a missing or unverifiable attestation blocks
-    the deploy.
+  - The verified digests are passed to the `deploy` job, which pulls and runs
+    those images by `@sha256:...` (compose `MCT_<SERVICE>_IMAGE`) — the mutable
+    tag is never pulled after verification, so re-pointing it cannot substitute
+    the artifact.
+  - Normal deploys **fail closed**: a missing, unverifiable, or predicate-less
+    attestation blocks the deploy.
   - Does **not** cover the compose pull for any image not built by `deploy-do.yml`
     (e.g. third-party base images, sidecars).
   - Does **not** cover `build-push.yml` output — that workflow attests but is a
     different signing workflow, so its images would fail the `--signer-workflow`
     pin (it is manual-dispatch only and not on the deploy path).
   - **Rollback exception:** a `rollback_sha` dispatch may deploy an image built
-    before attestation existed. A *present-but-invalid* attestation still fails
-    the job; only the complete *absence* of one is tolerated, with a warning and
-    an explicit job-summary stamp.
+    before attestation existed. A *present-but-invalid* attestation always fails
+    the job; an image without a verifiable attestation is only tolerated when
+    its digest is named in the reviewed `LEGACY_MCT_*` allow-list, with a warning
+    and an explicit job-summary stamp. The rollback still runs by its resolved
+    digest.
 - The **lockfile** SBOM is uploaded as a CI artifact rather than attached to a
   GitHub Release. Release attachment remains open (SBOM-P2-001) because there is
   no tag or Release step yet; the commit binding added here is the prerequisite.

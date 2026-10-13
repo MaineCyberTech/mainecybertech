@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getClientApi } from "@/lib/client-api";
 import { getClientEnv } from "@/lib/env";
 import { formatDateTime } from "@/lib/format";
+import { notificationHref } from "@/lib/notification-links";
 
 const MODULES = ["tickets", "projects", "documents", "billing", "system"] as const;
 
@@ -30,9 +31,20 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [prefs, setPrefs] = useState<Record<string, boolean>>({});
   const [loadingPrefs, setLoadingPrefs] = useState(false);
+  const [prefError, setPrefError] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
+  const [recentError, setRecentError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const fallbackPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const disposedRef = useRef(false);
+
+  const closePanel = useCallback((restoreFocus = true) => {
+    setOpen(false);
+    if (restoreFocus) toggleRef.current?.focus();
+  }, []);
 
   const fetchUnread = useCallback(async () => {
     try {
@@ -52,8 +64,10 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
         unread: true,
       });
       setNotifications(result.items as NotificationItem[]);
+      setRecentError(false);
     } catch {
-      // Silently handle — recent notifications are non-critical
+      // Surface the failure instead of rendering a false "no notifications".
+      setRecentError(true);
     }
   }, []);
 
@@ -78,45 +92,106 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     }
   }, []);
 
+  const stopFallbackPolling = useCallback(() => {
+    if (fallbackPollRef.current !== null) {
+      clearInterval(fallbackPollRef.current);
+      fallbackPollRef.current = null;
+    }
+  }, []);
+
+  const startFallbackPolling = useCallback(() => {
+    if (fallbackPollRef.current === null) {
+      fallbackPollRef.current = setInterval(fetchUnread, 30000);
+    }
+  }, [fetchUnread]);
+
   useEffect(() => {
     fetchUnread();
+    disposedRef.current = false;
 
-    // Connect to SSE stream
-    const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
-    const url = `${baseUrl}/api/v1/notifications/stream`;
-    const es = new EventSource(url, { withCredentials: true });
-    eventSourceRef.current = es;
+    // API-P3-003: reconnect the SSE stream with bounded exponential backoff
+    // (1s → 2s → … capped at 30s) instead of degrading to polling forever.
+    // While a reconnect is pending, the 30s fallback poller keeps the badge
+    // fresh; a successful (re)connect stops it. `auth_expired` is terminal:
+    // the server has ended the stream because the session is expired/revoked,
+    // so we stop reconnecting and send the user to sign in again.
+    let attempt = 0;
 
-    es.addEventListener("notification", (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        // Server emits a single notification object; tolerate arrays too.
-        const hasItems =
-          (Array.isArray(data) && data.length > 0) ||
-          (data && !Array.isArray(data) && typeof data === "object");
-        if (hasItems) {
-          // Fetch fresh count from server instead of adding to local state
-          fetchUnread();
-          fetchRecent();
-          playNotificationChime();
+    const connect = () => {
+      if (disposedRef.current) return;
+      const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
+      const url = `${baseUrl}/api/v1/notifications/stream`;
+      const es = new EventSource(url, { withCredentials: true });
+      eventSourceRef.current = es;
+
+      const markConnected = () => {
+        attempt = 0;
+        stopFallbackPolling();
+      };
+      es.addEventListener("connected", markConnected);
+      es.addEventListener("subscribed", markConnected);
+
+      es.addEventListener("notification", (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          // Server emits a single notification object; tolerate arrays too.
+          const hasItems =
+            (Array.isArray(data) && data.length > 0) ||
+            (data && !Array.isArray(data) && typeof data === "object");
+          if (hasItems) {
+            // Fetch fresh count from server instead of adding to local state
+            fetchUnread();
+            fetchRecent();
+            playNotificationChime();
+          }
+        } catch {
+          // SSE data parse error — non-critical
         }
-      } catch {
-        // SSE data parse error — non-critical
-      }
-    });
+      });
 
-    es.onerror = () => {
-      // Fallback to polling if SSE fails
-      es.close();
-      const fallbackInterval = setInterval(fetchUnread, 30000);
-      return () => clearInterval(fallbackInterval);
+      es.addEventListener("auth_expired", () => {
+        // Stop all reconnect paths before navigating.
+        disposedRef.current = true;
+        es.close();
+        eventSourceRef.current = null;
+        stopFallbackPolling();
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+          window.location.assign("/login?reason=session_expired");
+        }
+      });
+
+      es.onerror = () => {
+        // Fallback to polling while the stream is down. Keep the interval id
+        // in a ref so the effect cleanup can clear it: the previous version
+        // "returned" a cleanup from the onerror handler that was discarded,
+        // leaking one 30s poller per component instance (USE-P2-006).
+        es.close();
+        eventSourceRef.current = null;
+        if (disposedRef.current) return;
+        startFallbackPolling();
+        if (reconnectTimerRef.current !== null) return;
+        const delay = Math.min(30_000, 1000 * 2 ** attempt);
+        attempt += 1;
+        reconnectTimerRef.current = setTimeout(() => {
+          reconnectTimerRef.current = null;
+          connect();
+        }, delay);
+      };
     };
+
+    connect();
 
     return () => {
-      es.close();
+      disposedRef.current = true;
+      if (reconnectTimerRef.current !== null) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      eventSourceRef.current?.close();
       eventSourceRef.current = null;
+      stopFallbackPolling();
     };
-  }, [fetchUnread, fetchRecent, playNotificationChime]);
+  }, [fetchUnread, fetchRecent, playNotificationChime, startFallbackPolling, stopFallbackPolling]);
 
   const fetchPrefs = useCallback(async () => {
     setLoadingPrefs(true);
@@ -152,6 +227,18 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closePanel();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, closePanel]);
+
   async function handleMarkAllRead() {
     try {
       await getClientApi().notifications.markAllRead();
@@ -174,28 +261,28 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
 
   async function handleTogglePref(moduleKey: string, enabled: boolean) {
     setPrefs((prev) => ({ ...prev, [moduleKey]: enabled }));
+    setPrefError(false);
     try {
       await getClientApi().notifications.updatePreferences({
         preferences: [{ moduleKey, channel: "email", enabled }],
       });
     } catch {
-      // Preference update failed — revert optimistic update
+      // Preference update failed — revert the optimistic toggle and surface it
+      // instead of silently leaving the UI out of sync with the server.
       setPrefs((prev) => ({ ...prev, [moduleKey]: !enabled }));
+      setPrefError(true);
     }
   }
 
-  const moduleHref = (n: NotificationItem) => {
-    if (n.module === "tickets" && n.module_id) return `${basePath}/tickets/${n.module_id}`;
-    if (n.module === "projects" && n.module_id) return `${basePath}/projects/${n.module_id}`;
-    if (n.module === "documents" && n.module_id) return `${basePath}/documents/${n.module_id}`;
-    return `${basePath}/notifications`;
-  };
+  const moduleHref = (n: NotificationItem) => notificationHref(basePath, n);
 
   return (
     <div ref={dropdownRef} className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        ref={toggleRef}
+        onClick={() => (open ? closePanel() : setOpen(true))}
         className="relative rounded-lg border-2 border-emerald-600 bg-transparent p-2.5 text-emerald-500 transition-all hover:bg-emerald-600/10"
+        aria-expanded={open}
         aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ""}`}
       >
         <svg
@@ -219,13 +306,19 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-white/10 bg-cyber-base shadow-2xl">
+        // MOB-P3-003: on phones the panel anchors to the viewport (the bell is
+        // inset by the header actions, so `absolute right-0` clipped off-screen);
+        // from `sm` up it returns to the usual bell-anchored dropdown.
+        <div
+          data-testid="notification-panel"
+          className="fixed right-2 top-16 z-50 w-[min(20rem,calc(100vw_-_2rem))] rounded-lg border border-white/10 bg-cyber-base shadow-2xl sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:w-80"
+        >
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <span className="text-sm font-semibold text-slate-200">Notifications</span>
             {notifications.length > 0 ? (
               <button
                 onClick={handleMarkAllRead}
-                className="text-xs text-emerald-400 hover:text-emerald-300"
+                className="-m-3.5 p-3.5 text-xs text-emerald-400 hover:text-emerald-300"
               >
                 Mark all read
               </button>
@@ -233,7 +326,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
           </div>
 
           <div className="max-h-80 overflow-y-auto">
-            {connectionError ? (
+            {connectionError || recentError ? (
               <div className="px-4 py-8 text-center text-sm text-amber-400">
                 Unable to load notifications
               </div>
@@ -264,7 +357,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
                         e.stopPropagation();
                         handleMarkRead(n.id);
                       }}
-                      className="shrink-0 rounded p-1 text-slate-600 opacity-0 transition hover:text-slate-300 focus:opacity-100 group-hover:opacity-100"
+                      className="-m-3 shrink-0 rounded p-4 text-slate-600 opacity-0 transition hover:text-slate-300 focus:opacity-100 group-hover:opacity-100"
                       title="Dismiss"
                       aria-label="Dismiss notification"
                     >
@@ -341,6 +434,11 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
                 ))}
               </div>
             )}
+            {prefError ? (
+              <p role="alert" className="mt-2 text-[11px] text-red-400">
+                Couldn&apos;t save that preference. Please try again.
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}

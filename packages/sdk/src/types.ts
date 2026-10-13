@@ -79,6 +79,11 @@ export interface OrganizationOnboardResult {
   adminUser: { id: string; email: string };
   membership: Membership;
   invited: boolean;
+  /**
+   * ADMIN-P2-004: the first-admin membership starts `pending`; a platform
+   * super admin must approve it before the admin can act for the tenant.
+   */
+  approvalRequired?: boolean;
 }
 
 export interface Ticket {
@@ -94,6 +99,11 @@ export interface Ticket {
   labels?: string[] | null;
   resolution?: string | null;
   jira_last_synced_at?: string | null;
+  /**
+   * Optimistic-locking row version (USE-P3-004). Pass it back as `ifMatch`
+   * on `tickets.update`; the API rejects a stale write with 409.
+   */
+  version?: number;
   created_at: string;
   updated_at: string;
 }
@@ -188,6 +198,11 @@ export interface Document {
   file_size: number | null;
   uploaded_by: string | null;
   current_version: number | null;
+  /**
+   * Optimistic-locking row version (USE-P3-004). Pass it back as `ifMatch`
+   * on `documents.update`; the API rejects a stale write with 409.
+   */
+  version?: number;
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
@@ -319,4 +334,46 @@ export interface DocumentAccessResponse {
   mimeType: string | null;
   downloadUrl: string;
   expiresIn: number;
+}
+
+/**
+ * Per-row outcome returned by the API's bulk update endpoints
+ * (`POST /documents/bulk/*`, `POST /tickets/bulk`). The API returns
+ * `{ results, successful, failed, skipped? }`; callers must render the
+ * per-item outcome instead of assuming the requested count succeeded
+ * (USE-P2-001).
+ */
+export interface BulkUpdateResultRow {
+  id: string;
+  success: boolean;
+  error?: string;
+  version?: number;
+}
+
+export interface BulkUpdateResult {
+  results: BulkUpdateResultRow[];
+  successful: number;
+  failed: number;
+  /** Requested ids the caller may not touch (tickets bulk endpoint only). */
+  skipped?: number;
+}
+
+/**
+ * Dry-run preview returned by the bulk document endpoints when `dryRun: true`
+ * (ADMIN-P2-003). `rows` lists only the documents the caller may touch, with
+ * the current and proposed value of every field the apply would change.
+ */
+export interface BulkPreviewRow {
+  id: string;
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+  changes: string[];
+}
+
+export interface BulkPreviewResult {
+  dryRun: true;
+  requested: number;
+  matched: number;
+  skipped: number;
+  rows: BulkPreviewRow[];
 }

@@ -34,28 +34,6 @@ function mockResponse<T>(data: T, ok = true): Promise<Response> {
   } as Response);
 }
 
-function mockStatusResponse(status: number, body: ApiResponse<unknown>): Promise<Response> {
-  return Promise.resolve({
-    ok: status >= 200 && status < 300,
-    status,
-    json: () => Promise.resolve(body),
-    headers: new Headers(),
-    redirected: false,
-    statusText: status === 502 ? "Bad Gateway" : "OK",
-    type: "basic" as ResponseType,
-    url: "",
-    clone: function () {
-      return this;
-    },
-    body: null,
-    bodyUsed: false,
-    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-    blob: () => Promise.resolve(new Blob()),
-    formData: () => Promise.resolve(new FormData()),
-    text: () => Promise.resolve(""),
-  } as Response);
-}
-
 function createClient(opts?: Partial<ClientOptions>) {
   const options: ClientOptions = {
     baseUrl: BASE_URL,
@@ -398,12 +376,13 @@ describe("MCTClient", () => {
       expect(result.name).toBe("Test");
     });
 
-    it("remove deletes organization", async () => {
+    it("remove deletes organization with the typed slug", async () => {
       mockFetch.mockResolvedValue(mockResponse(null));
 
-      await client.organizations.remove("1");
+      await client.organizations.remove("1", "test-org");
 
       expect(mockFetch.mock.calls[0][1]?.method).toBe("DELETE");
+      expect(mockFetch.mock.calls[0][1]?.body).toBe(JSON.stringify({ confirm: true, slug: "test-org" }));
     });
 
     it("listDomains fetches domains", async () => {
@@ -562,6 +541,26 @@ describe("MCTClient", () => {
       await client.tickets.update("1", { title: "Updated" });
 
       expect(mockFetch.mock.calls[0][1]?.method).toBe("PATCH");
+    });
+
+    it("update sends If-Match and strips ifMatch from the body (USE-P3-004)", async () => {
+      mockFetch.mockResolvedValue(mockResponse(ticket));
+
+      await client.tickets.update("1", { title: "Updated", ifMatch: 7 });
+
+      const init = mockFetch.mock.calls[0][1];
+      const headers = init?.headers as Record<string, string>;
+      expect(headers["If-Match"]).toBe("7");
+      expect(JSON.parse(String(init?.body))).toEqual({ title: "Updated" });
+    });
+
+    it("update omits If-Match when no version is supplied", async () => {
+      mockFetch.mockResolvedValue(mockResponse(ticket));
+
+      await client.tickets.update("1", { title: "Updated" });
+
+      const headers = mockFetch.mock.calls[0][1]?.headers as Record<string, string>;
+      expect(headers["If-Match"]).toBeUndefined();
     });
 
     it("listComments fetches comments", async () => {
@@ -951,6 +950,38 @@ describe("MCTClient", () => {
       expect(mockFetch.mock.calls[0][1]?.method).toBe("PATCH");
     });
 
+    it("update sends If-Match and strips ifMatch from the body (USE-P3-004)", async () => {
+      mockFetch.mockResolvedValue(mockResponse(doc));
+
+      await client.documents.update("1", { name: "Updated", ifMatch: 4 });
+
+      const init = mockFetch.mock.calls[0][1];
+      const headers = init?.headers as Record<string, string>;
+      expect(headers["If-Match"]).toBe("4");
+      expect(JSON.parse(String(init?.body))).toEqual({ name: "Updated" });
+    });
+
+    it("createVersionSignedUrl posts to the per-version signed-url route", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({ signedUrl: "https://s3.test.com/v1", expiresIn: 3600 }),
+      );
+
+      const result = await client.documents.createVersionSignedUrl("1", "v-1");
+
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/documents/1/versions/v-1/signed-url");
+      expect(result.signedUrl).toBe("https://s3.test.com/v1");
+    });
+
+    it("restoreVersion posts to the restore route", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ ...doc, current_version: 3 }));
+
+      const result = await client.documents.restoreVersion("1", "v-1");
+
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/documents/1/versions/v-1/restore");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+      expect(result.current_version).toBe(3);
+    });
+
     it("remove deletes a document", async () => {
       mockFetch.mockResolvedValue(mockResponse(null));
 
@@ -978,23 +1009,78 @@ describe("MCTClient", () => {
       expect(mockFetch.mock.calls[0][1]?.body).toBeInstanceOf(FormData);
     });
 
-    it("bulkFolder posts to bulk/folder", async () => {
-      mockFetch.mockResolvedValue(mockResponse({ updated: 2 }));
+    it("bulkFolder returns per-item results", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          results: [
+            { id: "1", success: true },
+            { id: "2", success: false, error: "Version conflict" },
+          ],
+          successful: 1,
+          failed: 1,
+        }),
+      );
 
       const result = await client.documents.bulkFolder({
         documentIds: ["1", "2"],
         folderPath: "/docs",
       });
 
-      expect(result.updated).toBe(2);
+      expect(result.successful).toBe(1);
+      expect(result.failed).toBe(1);
+      expect(result.results).toHaveLength(2);
+      expect(result.results[1].error).toBe("Version conflict");
     });
 
     it("bulkMetadata posts to bulk/metadata", async () => {
-      mockFetch.mockResolvedValue(mockResponse({ updated: 1 }));
+      mockFetch.mockResolvedValue(mockResponse({ results: [], successful: 0, failed: 0 }));
 
       await client.documents.bulkMetadata({ documentIds: ["1"], folderPath: "/docs" });
 
       expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+    });
+
+    it("previewBulkFolder sends dryRun and returns per-row diffs [ADMIN-P2-003]", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          dryRun: true,
+          requested: 2,
+          matched: 1,
+          skipped: 1,
+          rows: [
+            {
+              id: "1",
+              before: { folder_path: null },
+              after: { folder_path: "/docs" },
+              changes: ["folder_path"],
+            },
+          ],
+        }),
+      );
+
+      const result = await client.documents.previewBulkFolder({
+        documentIds: ["1", "2"],
+        folderPath: "/docs",
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.dryRun).toBe(true);
+      expect(result.matched).toBe(1);
+      expect(result.rows[0].changes).toEqual(["folder_path"]);
+    });
+
+    it("bulkMetadata forwards the explicit confirm for visibility applies [ADMIN-P2-003]", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ results: [], successful: 0, failed: 0 }));
+
+      await client.documents.bulkMetadata({
+        documentIds: ["1"],
+        visibility: "public",
+        confirm: true,
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.visibility).toBe("public");
+      expect(body.confirm).toBe(true);
     });
 
     it("listVersions fetches document versions", async () => {
@@ -1739,6 +1825,9 @@ describe("MCTClient", () => {
       mockFetch.mockResolvedValue(
         mockResponse(null).then((r) => {
           r.json = () => Promise.reject(new SyntaxError("Unexpected token"));
+          // Non-empty body: malformed JSON must still surface as an error,
+          // unlike an empty 204 body which resolves null (USE-P1-004).
+          r.text = () => Promise.resolve("not-json");
           return r;
         }),
       );

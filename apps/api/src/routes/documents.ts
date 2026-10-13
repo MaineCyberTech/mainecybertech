@@ -10,8 +10,12 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { getEnv } from "../config/env";
 import { responseCacheNoRenew } from "../middleware/cache";
+import { rateLimitAdminOps, rateLimitShare } from "../middleware/rate-limit";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
+import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { validateUploadContent } from "../lib/upload-validation";
+import { signedUrlDisposition } from "../lib/preview-policy";
+import { scanUploadForMalware } from "../lib/malware-scan";
 import {
   createDocumentSchema,
   updateDocumentSchema,
@@ -20,9 +24,12 @@ import {
 } from "../validators/document";
 import { z } from "zod";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { canReadDocumentById } from "../lib/document-visibility";
+import { applyResolvedOrg } from "../lib/admin-scope";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { recordDocumentCreated } from "../lib/metrics";
+import { listCountMode } from "../lib/pagination";
 
 const createShareSchema = z.object({
   expiresAt: z
@@ -143,10 +150,21 @@ const DOCUMENTS_BUCKET = "documents";
 
 const router: ReturnType<typeof Router> = Router();
 
-router.get("/shares/:token", async (req, res, next) => {
+/**
+ * FILE-P3-005: signed share URLs are short-lived (5 min) so revoking a share
+ * bounds the residual exposure of an already-issued URL to that window
+ * instead of the previous 60 minutes. The public endpoint also forces a
+ * download disposition — a shared file is never rendered inline from the
+ * storage origin. The residual window is documented in docs/modules/documents.md.
+ */
+const SHARE_SIGNED_URL_TTL_SECONDS = 300;
+
+router.get("/shares/:token", rateLimitShare, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { token } = req.params;
+    // The extra limiter middleware widens Express' inferred params type; the
+    // token is always a single path segment.
+    const token = req.params.token as string;
 
     const { data: share, error: shareError } = await supabase
       .from("document_shares")
@@ -170,7 +188,7 @@ router.get("/shares/:token", async (req, res, next) => {
 
     const { data: signedUrl, error: urlError } = await supabase.storage
       .from(doc.storage_bucket)
-      .createSignedUrl(doc.storage_path, 3600);
+      .createSignedUrl(doc.storage_path, SHARE_SIGNED_URL_TTL_SECONDS, { download: true });
 
     if (urlError || !signedUrl)
       throw new AppError("STORAGE_ERROR", "Failed to generate download URL", 500);
@@ -195,7 +213,7 @@ router.get("/shares/:token", async (req, res, next) => {
         documentName: doc.name,
         mimeType: doc.mime_type,
         downloadUrl: signedUrl.signedUrl,
-        expiresIn: 3600,
+        expiresIn: SHARE_SIGNED_URL_TTL_SECONDS,
       }),
     );
   } catch (error) {
@@ -213,10 +231,10 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("documents").select("*", { count: "exact" });
-
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    let query = supabase.from("documents").select("*", { count: listCountMode(req.query) });
+    // MT-P2-002: mandatory org predicate; fails closed without a resolved or
+    // explicit org instead of listing every tenant.
+    query = applyResolvedOrg(req, query);
 
     const visibility = req.query.visibility as string | undefined;
     if (visibility) query = query.eq("visibility", visibility as never);
@@ -244,10 +262,9 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "documents", "read");
     let query = supabase.from("documents").select("*").eq("id", String(req.params.id));
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = applyResolvedOrg(req, query);
     const { data, error } = await query.single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Document not found", 404);
@@ -302,6 +319,13 @@ router.post("/", requirePermission("documents", "create"), async (req, res, next
       metadata: { name: parsed.name },
     });
 
+    // EVOL-P2-002: catalogued outbound event for document creation.
+    dispatchWebhook("document.created", parsed.organizationId, {
+      documentId: data.id,
+      name: parsed.name,
+      visibility: parsed.visibility,
+    });
+
     recordDocumentCreated();
 
     res.status(201).json(success(data));
@@ -330,7 +354,8 @@ router.post(
       }
 
       // Sniff the bytes — the declared mimetype is not trusted. (FILE-P1-001)
-      validateUploadContent(file.buffer, file.mimetype);
+      // FILE-P2-005: extension is cross-checked against the detected container.
+      validateUploadContent(file.buffer, file.mimetype, file.originalname);
 
       const organizationId = String(req.body.organizationId ?? "").trim();
       const name = String(req.body.name ?? "").trim();
@@ -342,7 +367,17 @@ router.post(
         throw new AppError("VALIDATION", "Organization ID and name are required", 400);
       }
 
+      // FILE-P2-003: optional malware scan (no-op unless MALWARE_SCANNER_URL
+      // is configured). Runs before the object is written to storage.
+      await scanUploadForMalware(file.buffer, file.originalname, file.mimetype);
+
       const supabase = getScopedClient(req, "documents", "write");
+      // Storage writes are service-role only (FILE-P2-008): the bucket no longer
+      // grants authenticated INSERT/UPDATE, so a user-scoped client (returned
+      // when RLS_WRITES_ENABLED includes `documents`) must not be used for the
+      // object write or its rollbacks. DB writes below keep the scoped client
+      // so the RLS rollout still applies to them.
+      const storage = getSupabaseAdmin().storage;
       // Bucket is pinned server-side (FILE-P2-001) — never read from req.body.
       const bucket = DOCUMENTS_BUCKET;
       const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "-");
@@ -352,7 +387,7 @@ router.post(
       const storagePath = `${organizationId}/${Date.now()}-${safeName}`;
       // Each upload gets a unique path, so a non-atomic upsert is never needed
       // and we fail closed on an unexpected collision instead of overwriting.
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await storage
         .from(bucket)
         .upload(storagePath, file.buffer, {
           contentType: file.mimetype || undefined,
@@ -376,10 +411,10 @@ router.post(
         // caller in org A could replace (and delete the storage object of) a
         // document belonging to org B.
         if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
-        const { data: current, error: fetchError } = await currentQuery.single();
+        const { error: fetchError } = await currentQuery.single();
 
         if (fetchError) {
-          await supabase.storage.from(bucket).remove([storagePath]);
+          await storage.from(bucket).remove([storagePath]);
           throw new AppError("NOT_FOUND", "Document not found", 404);
         }
 
@@ -400,7 +435,7 @@ router.post(
         const { data, error: updateError } = await updateQuery.select().single();
 
         if (updateError) {
-          await supabase.storage.from(bucket).remove([storagePath]);
+          await storage.from(bucket).remove([storagePath]);
           throw new AppError("DB_ERROR", updateError.message, 500);
         }
 
@@ -460,7 +495,7 @@ router.post(
           .single();
 
         if (error) {
-          await supabase.storage.from(bucket).remove([storagePath]);
+          await storage.from(bucket).remove([storagePath]);
           throw new AppError("DB_ERROR", error.message, 500);
         }
 
@@ -555,6 +590,13 @@ router.patch(
         metadata: parsed,
       });
 
+      // EVOL-P2-002: catalogued outbound event for document mutations.
+      dispatchWebhook("document.updated", data.organization_id, {
+        documentId: data.id,
+        name: data.name,
+        changed: Object.keys(parsed),
+      });
+
       res.json(success(data));
     } catch (error) {
       next(error);
@@ -606,18 +648,31 @@ router.post("/:id/signed-url", requirePermission("documents", "create"), async (
     const supabase = getScopedClient(req, "documents", "write");
     let query = supabase
       .from("documents")
-      .select("storage_bucket, storage_path")
+      .select(
+        "id, organization_id, visibility, uploaded_by, storage_bucket, storage_path, mime_type, file_name",
+      )
       .eq("id", String(req.params.id));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data: doc, error: docError } = await query.single();
 
     if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
+
+    // FILE-P2-007: the service-role client bypasses RLS, so the
+    // `can_read_document` visibility model is enforced in code. An unreadable
+    // row gets the same 404 as a missing one — never reveal that it exists.
+    if (!(await canReadDocumentById(req.authUser!.userId, doc))) {
+      throw new AppError("NOT_FOUND", "Document not found", 404);
+    }
+
     if (!doc.storage_bucket || !doc.storage_path)
       throw new AppError("BAD_REQUEST", "Document has no storage reference", 400);
 
+    // FILE-P3-008: types the portal never previews are signed with
+    // `Content-Disposition: attachment` so they cannot render inline from the
+    // storage origin even if content validation were bypassed.
     const { data: signedUrl, error: urlError } = await supabase.storage
       .from(doc.storage_bucket)
-      .createSignedUrl(doc.storage_path, 3600);
+      .createSignedUrl(doc.storage_path, 3600, signedUrlDisposition(doc.mime_type, doc.file_name));
 
     if (urlError || !signedUrl)
       throw new AppError("STORAGE_ERROR", "Failed to create signed URL", 500);
@@ -648,107 +703,200 @@ async function resolveOwnedDocumentIds(
   return (data ?? []).map((d: { id: string }) => d.id);
 }
 
-router.post("/bulk/folder", requirePermission("documents", "create"), async (req, res, next) => {
-  try {
-    const parsed = bulkFolderSchema.parse(req.body);
-    const supabase = getScopedClient(req, "documents", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+/**
+ * ADMIN-P2-003: build the dry-run preview for a bulk document update.
+ *
+ * Returns one row per document the caller may touch (same org pre-filter as
+ * the apply path), with the current value, the proposed value and the list of
+ * changed fields. Reads only — no RPC, no audit event — so an operator can
+ * review the affected set before sending the explicit apply.
+ */
+async function previewBulkUpdate(
+  supabase: SupabaseClient,
+  documentIds: string[],
+  orgId: string | undefined,
+  updateData: Record<string, unknown>,
+): Promise<{
+  requested: number;
+  matched: number;
+  skipped: number;
+  rows: Array<{
+    id: string;
+    before: Record<string, unknown>;
+    after: Record<string, unknown>;
+    changes: string[];
+  }>;
+}> {
+  let query = supabase
+    .from("documents")
+    .select("id, description, folder_path, visibility")
+    .in("id", documentIds);
+  if (orgId) query = query.eq("organization_id", orgId);
+  const { data, error } = await query;
+  if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    // The bulk RPC skips its per-row check for service-role calls, so the
-    // document ids MUST be pre-filtered to the caller's org.
-    const ownedIds = await resolveOwnedDocumentIds(supabase, parsed.documentIds, orgId);
-
-    const updates = ownedIds.map((id) => ({
-      id,
-      data: { folder_path: parsed.folderPath },
-    }));
-
-    const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
-      table_name: "documents",
-      updates,
-    } as never);
-
-    if (error) {
-      throw new AppError("DB_ERROR", error.message, 500);
+  const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
+  const previewRows = rows.map((row) => {
+    const before: Record<string, unknown> = {};
+    const after: Record<string, unknown> = {};
+    const changes: string[] = [];
+    for (const [key, value] of Object.entries(updateData)) {
+      before[key] = row[key] ?? null;
+      after[key] = value;
+      if ((row[key] ?? null) !== value) changes.push(key);
     }
+    return { id: String(row.id), before, after, changes };
+  });
 
-    const resultRows = (results as unknown as { success: boolean }[] | null) ?? [];
-    const successful = resultRows.filter((r) => r.success).length;
-    const failed = resultRows.filter((r) => !r.success);
+  return {
+    requested: documentIds.length,
+    matched: previewRows.length,
+    skipped: documentIds.length - previewRows.length,
+    rows: previewRows,
+  };
+}
 
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "document.bulk_folder",
-      entityType: "document",
-      metadata: {
-        documentIds: parsed.documentIds,
-        folderPath: parsed.folderPath,
-        successful,
-        failed: failed.length,
-      },
-    });
+router.post(
+  "/bulk/folder",
+  rateLimitAdminOps,
+  requirePermission("documents", "create"),
+  async (req, res, next) => {
+    try {
+      const parsed = bulkFolderSchema.parse(req.body);
+      const supabase = getScopedClient(req, "documents", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
-    res.json(success({ results, successful, failed: failed.length }));
-  } catch (error) {
-    next(error);
-  }
-});
+      // ADMIN-P2-003: dry-run returns the resolved rows + per-field diffs and
+      // writes nothing, so an operator can review the affected set first.
+      if (parsed.dryRun) {
+        const preview = await previewBulkUpdate(supabase, parsed.documentIds, orgId, {
+          folder_path: parsed.folderPath,
+        });
+        res.json(success({ dryRun: true, ...preview }));
+        return;
+      }
 
-router.post("/bulk/metadata", requirePermission("documents", "create"), async (req, res, next) => {
-  try {
-    const parsed = bulkMetadataSchema.parse(req.body);
-    const supabase = getScopedClient(req, "documents", "write");
+      // The bulk RPC skips its per-row check for service-role calls, so the
+      // document ids MUST be pre-filtered to the caller's org.
+      const ownedIds = await resolveOwnedDocumentIds(supabase, parsed.documentIds, orgId);
 
-    const updateData: Record<string, unknown> = {};
-    if (parsed.description !== undefined) updateData.description = parsed.description;
-    if (parsed.folderPath !== undefined) updateData.folder_path = parsed.folderPath;
-    if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
+      const updates = ownedIds.map((id) => ({
+        id,
+        data: { folder_path: parsed.folderPath },
+      }));
 
-    if (Object.keys(updateData).length === 0) {
-      throw new AppError("VALIDATION", "No fields to update", 400);
+      const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
+        table_name: "documents",
+        updates,
+      } as never);
+
+      if (error) {
+        throw new AppError("DB_ERROR", error.message, 500);
+      }
+
+      const resultRows = (results as unknown as { success: boolean }[] | null) ?? [];
+      const successful = resultRows.filter((r) => r.success).length;
+      const failed = resultRows.filter((r) => !r.success);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "document.bulk_folder",
+        entityType: "document",
+        metadata: {
+          documentIds: parsed.documentIds,
+          folderPath: parsed.folderPath,
+          successful,
+          failed: failed.length,
+        },
+      });
+
+      res.json(success({ results, successful, failed: failed.length }));
+    } catch (error) {
+      next(error);
     }
+  },
+);
 
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+router.post(
+  "/bulk/metadata",
+  rateLimitAdminOps,
+  requirePermission("documents", "create"),
+  async (req, res, next) => {
+    try {
+      const parsed = bulkMetadataSchema.parse(req.body);
+      const supabase = getScopedClient(req, "documents", "write");
 
-    // The bulk RPC skips its per-row check for service-role calls, so the
-    // document ids MUST be pre-filtered to the caller's org.
-    const ownedIds = await resolveOwnedDocumentIds(supabase, parsed.documentIds, orgId);
+      const updateData: Record<string, unknown> = {};
+      if (parsed.description !== undefined) updateData.description = parsed.description;
+      if (parsed.folderPath !== undefined) updateData.folder_path = parsed.folderPath;
+      if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
 
-    const updates = ownedIds.map((id) => ({
-      id,
-      data: updateData,
-    }));
+      if (Object.keys(updateData).length === 0) {
+        throw new AppError("VALIDATION", "No fields to update", 400);
+      }
 
-    const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
-      table_name: "documents",
-      updates,
-    } as never);
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
-    if (error) {
-      throw new AppError("DB_ERROR", error.message, 500);
+      // ADMIN-P2-003: dry-run returns the resolved rows + per-field diffs and
+      // writes nothing, so an operator can review the affected set first.
+      if (parsed.dryRun) {
+        const preview = await previewBulkUpdate(supabase, parsed.documentIds, orgId, updateData);
+        res.json(success({ dryRun: true, ...preview }));
+        return;
+      }
+
+      // ADMIN-P2-003: visibility changes are elevated — require the caller to
+      // echo an explicit confirmation after reviewing the dry-run preview.
+      // Only a concrete value counts: callers that send `visibility: null`
+      // (the web "keep current visibility" shape) are not changing it.
+      if (updateData.visibility != null && parsed.confirm !== true) {
+        throw new AppError(
+          "CONFIRMATION_REQUIRED",
+          "Bulk visibility changes require an explicit confirmation body: { confirm: true }",
+          400,
+        );
+      }
+
+      // The bulk RPC skips its per-row check for service-role calls, so the
+      // document ids MUST be pre-filtered to the caller's org.
+      const ownedIds = await resolveOwnedDocumentIds(supabase, parsed.documentIds, orgId);
+
+      const updates = ownedIds.map((id) => ({
+        id,
+        data: updateData,
+      }));
+
+      const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
+        table_name: "documents",
+        updates,
+      } as never);
+
+      if (error) {
+        throw new AppError("DB_ERROR", error.message, 500);
+      }
+
+      const resultRows = (results as unknown as { success: boolean }[] | null) ?? [];
+      const successful = resultRows.filter((r) => r.success).length;
+      const failed = resultRows.filter((r) => !r.success);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "document.bulk_metadata",
+        entityType: "document",
+        metadata: {
+          documentIds: parsed.documentIds,
+          fields: Object.keys(updateData),
+          successful,
+          failed: failed.length,
+        },
+      });
+
+      res.json(success({ results, successful, failed: failed.length }));
+    } catch (error) {
+      next(error);
     }
-
-    const resultRows = (results as unknown as { success: boolean }[] | null) ?? [];
-    const successful = resultRows.filter((r) => r.success).length;
-    const failed = resultRows.filter((r) => !r.success);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "document.bulk_metadata",
-      entityType: "document",
-      metadata: {
-        documentIds: parsed.documentIds,
-        fields: Object.keys(updateData),
-        successful,
-        failed: failed.length,
-      },
-    });
-
-    res.json(success({ results, successful, failed: failed.length }));
-  } catch (error) {
-    next(error);
-  }
-});
+  },
+);
 
 router.get("/:id/versions", async (req, res, next) => {
   try {
@@ -772,7 +920,7 @@ router.get("/:id/versions", async (req, res, next) => {
     const { data, error, count } = await supabase
       .from("document_versions")
       .select("id, document_id, version_number, uploaded_by, checksum, created_at", {
-        count: "exact",
+        count: listCountMode(req.query),
       })
       .eq("document_id", String(req.params.id))
       .order("version_number", { ascending: false })
@@ -821,13 +969,20 @@ router.get(
       // org column of its own (see migration 5302026), so the org-scoping check
       // can only be made via the parent. Without this, a caller in org A could
       // mint a signed URL for a retained version belonging to org B's document.
+      // FILE-P2-007: the parent must also satisfy `can_read_document` — the
+      // service-role client bypasses RLS. Unreadable parents 404 exactly like
+      // a missing document.
       let docQuery = supabase
         .from("documents")
-        .select("storage_bucket")
+        .select("id, organization_id, visibility, uploaded_by, storage_bucket, mime_type, file_name")
         .eq("id", String(req.params.id));
       if (orgId) docQuery = docQuery.eq("organization_id", orgId);
       const { data: doc, error: docError } = await docQuery.single();
       if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
+
+      if (!(await canReadDocumentById(req.authUser!.userId, doc))) {
+        throw new AppError("NOT_FOUND", "Document not found", 404);
+      }
 
       // The version row must belong to THIS document. A version id from a
       // different document is refused (404) rather than leaking that it exists.
@@ -848,12 +1003,128 @@ router.get(
       // signed-url endpoint. Never trust a caller-supplied bucket (FILE-P2-001).
       const { data: signedUrl, error: urlError } = await supabase.storage
         .from(doc.storage_bucket)
-        .createSignedUrl(version.storage_path, 3600);
+        .createSignedUrl(
+          version.storage_path,
+          3600,
+          signedUrlDisposition(doc.mime_type, doc.file_name),
+        );
 
       if (urlError || !signedUrl)
         throw new AppError("STORAGE_ERROR", "Failed to create signed URL", 500);
 
       res.json(success({ signedUrl: signedUrl.signedUrl, expiresIn: 3600 }));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+/**
+ * USE-P3-003: restore a retained version as a NEW version.
+ *
+ * The version row itself is never mutated and the previous current bytes are
+ * never deleted: the chosen version's object is copied forward and recorded as
+ * `current_version + 1`, so restoring is itself auditable and reversible.
+ */
+router.post(
+  "/:id/versions/:versionId/restore",
+  requirePermission("documents", "edit"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "documents", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+
+      // Parent document first: `document_versions` has no org column, so the
+      // tenant check can only run against `documents` (same reasoning as the
+      // per-version signed-url route above).
+      let docQuery = supabase
+        .from("documents")
+        .select("id, organization_id, storage_bucket, storage_path, mime_type, file_name, file_size, current_version")
+        .eq("id", String(req.params.id));
+      if (orgId) docQuery = docQuery.eq("organization_id", orgId);
+      const { data: doc, error: docError } = await docQuery.single();
+      if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
+
+      // The version must belong to THIS document (a foreign version id 404s).
+      const { data: version, error: versionError } = await supabase
+        .from("document_versions")
+        .select("storage_path")
+        .eq("id", String(req.params.versionId))
+        .eq("document_id", String(req.params.id))
+        .single();
+      if (versionError || !version) throw new AppError("NOT_FOUND", "Version not found", 404);
+
+      if (!doc.storage_bucket || !version.storage_path)
+        throw new AppError("STORAGE_ERROR", "Version has no storage reference", 500);
+
+      const nextVersion = Number(doc.current_version ?? 1) + 1;
+      // Keep the original extension so preview/download heuristics still work.
+      const sourceName = String(version.storage_path).split("/").pop() || "version";
+      const suffix = sourceName.includes(".") ? sourceName.slice(sourceName.lastIndexOf(".")) : "";
+      const storagePath = `${doc.organization_id}/${Date.now()}-restored-v${nextVersion}${suffix}`;
+
+      // Storage writes are service-role only (FILE-P2-008), matching /upload.
+      const storage = getSupabaseAdmin().storage;
+      const { error: copyError } = await storage
+        .from(doc.storage_bucket)
+        .copy(version.storage_path, storagePath);
+      if (copyError) {
+        throw new AppError("STORAGE_ERROR", `Version copy failed: ${copyError.message}`, 500);
+      }
+
+      let updateQuery = supabase
+        .from("documents")
+        .update({
+          storage_bucket: doc.storage_bucket,
+          storage_path: storagePath,
+          current_version: nextVersion,
+        })
+        .eq("id", String(req.params.id))
+        // Fail closed if another writer bumped the version since the read.
+        .eq("version", Number(doc.current_version ?? 1));
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error: updateError } = await updateQuery.select().single();
+
+      if (updateError) {
+        // A zero-row update surfaces as PGRST116: another writer bumped the
+        // version between our read and write. Roll back the copy so a lost
+        // race does not leave an orphan object behind.
+        await storage.from(doc.storage_bucket).remove([storagePath]);
+        if (updateError.code === "PGRST116") {
+          throw new AppError(
+            "VERSION_CONFLICT",
+            "Document was modified by another user while restoring",
+            409,
+          );
+        }
+        throw new AppError("DB_ERROR", updateError.message, 500);
+      }
+
+      const { error: versionInsertError } = await supabase.from("document_versions").insert({
+        document_id: data.id,
+        version_number: nextVersion,
+        storage_path: storagePath,
+        uploaded_by: req.authUser!.userId,
+      });
+      if (versionInsertError) {
+        throw new AppError("DB_ERROR", versionInsertError.message, 500);
+      }
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "document.version_restore",
+        entityType: "document",
+        entityId: data.id,
+        metadata: { restoredVersionId: String(req.params.versionId), newVersion: nextVersion },
+      });
+
+      dispatchWebhook("document.updated", data.organization_id, {
+        documentId: data.id,
+        name: data.name,
+        changed: ["restore_version"],
+      });
+
+      res.json(success(data));
     } catch (error) {
       next(error);
     }

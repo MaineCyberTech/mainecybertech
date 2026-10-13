@@ -23,7 +23,7 @@ export class MembershipsApi {
   update(
     id: string,
     data: {
-      roleId: string;
+      roleId?: string;
       status: string;
       isBillingContact?: boolean;
       isSecurityContact?: boolean;
@@ -33,6 +33,6 @@ export class MembershipsApi {
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/memberships/${id}`);
+    return this.client.delete<void>(`/api/v1/memberships/${id}`, undefined, { confirm: true });
   }
 }

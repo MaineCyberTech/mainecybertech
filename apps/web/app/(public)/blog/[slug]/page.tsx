@@ -103,7 +103,7 @@ export default async function BlogPostPage({ params }: Props) {
                 {post.faq.map((item, idx) => (
                   <div
                     key={idx}
-                    className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-5 backdrop-blur-sm"
+                    className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-5 backdrop-blur-sm"
                   >
                     <h3 className="font-display text-base font-bold text-slate-100">
                       {item.question}
@@ -115,12 +115,12 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
           )}
 
-          <div className="mt-12 rounded-lg border border-emerald-600/20 bg-[rgba(18,30,45,0.75)] p-6 backdrop-blur-md">
+          <div className="mt-12 rounded-lg border border-emerald-600/20 bg-cyber-card p-6 backdrop-blur-md">
             <h2 className="font-display text-lg font-bold text-slate-100">Need help?</h2>
             <p className="mt-2 text-slate-400">{post.cta}</p>
             <Link
               href="/contact"
-              className="mt-4 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="mt-4 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Contact Us
             </Link>

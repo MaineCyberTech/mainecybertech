@@ -55,6 +55,7 @@ jest.mock("../middleware/org-access", () => ({
 
 import { getSupabaseAdmin } from "../services/supabase";
 import storeRouter from "../routes/store";
+import { invalidateCache } from "../middleware/cache";
 
 const ORG_A = "00000000-0000-0000-0000-00000000000a";
 const ORG_B = "00000000-0000-0000-0000-00000000000b";
@@ -270,7 +271,9 @@ describe("store catalog tenant isolation (MT-P0-003)", () => {
   it("rejects a single-org admin deleting another org's product", async () => {
     setup({ mode: "single", existingOrgId: ORG_B });
 
-    const res = await request(app).delete("/api/v1/store/products/p-1");
+    const res = await request(app)
+      .delete("/api/v1/store/products/p-1")
+      .send({ confirm: true });
 
     expect(res.status).toBe(403);
   });
@@ -310,7 +313,9 @@ describe("store catalog tenant isolation (MT-P0-003)", () => {
   it("rejects a single-org admin deleting a global (null-org) category", async () => {
     setup({ mode: "single", existingOrgId: null });
 
-    const res = await request(app).delete("/api/v1/store/categories/c-1");
+    const res = await request(app)
+      .delete("/api/v1/store/categories/c-1")
+      .send({ confirm: true });
 
     expect(res.status).toBe(403);
   });
@@ -375,7 +380,9 @@ describe("store promotions tenant isolation (MT-P0-004)", () => {
   it("rejects a single-org admin deleting another org's promotion", async () => {
     setup({ mode: "single", existingOrgId: ORG_B });
 
-    const res = await request(app).delete("/api/v1/store/promotions/prom-1");
+    const res = await request(app)
+      .delete("/api/v1/store/promotions/prom-1")
+      .send({ confirm: true });
 
     expect(res.status).toBe(403);
   });
@@ -417,13 +424,57 @@ describe("store quotes tenant isolation (MT-P0-005)", () => {
     expect(queryCalls.filter((c) => c.table === "store_quotes" && c.method === "in")).toHaveLength(0);
   });
 
-  it("does not scope non-org tables such as store_leads and store_quote_requests", async () => {
+  it("denies a single-org admin the platform-wide intake lists (MT-P2-008)", async () => {
     const { queryCalls } = setup({ mode: "single" });
 
-    await request(app).get("/api/v1/store/leads");
-    await request(app).get("/api/v1/store/quote-requests");
+    for (const path of [
+      "/api/v1/store/leads",
+      "/api/v1/store/quote-requests",
+      "/api/v1/store/proposal-drafts",
+    ]) {
+      const res = await request(app).get(path);
+      expect(res.status).toBe(403);
+    }
 
+    // The global intake tables are never queried for a single-org admin.
     expect(queryCalls.filter((c) => c.table === "store_leads")).toHaveLength(0);
     expect(queryCalls.filter((c) => c.table === "store_quote_requests")).toHaveLength(0);
+    expect(queryCalls.filter((c) => c.table === "store_proposal_drafts")).toHaveLength(0);
+  });
+
+  it("lets a genuine cross-tenant admin read the platform-wide intake lists", async () => {
+    setup({ mode: "cross", profile: { is_super_admin: true } });
+
+    const res = await request(app).get("/api/v1/store/leads");
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toBeInstanceOf(Array);
+  });
+});
+
+describe("store catalog response cache invalidation (PERF-P2-002)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    invalidateCache();
+  });
+
+  it("evicts cached public reads when an admin mutates a product", async () => {
+    const { updates } = setup({ mode: "single" });
+
+    const first = await request(app).get("/api/v1/store/products");
+    expect(first.status).toBe(200);
+    expect(first.headers["x-cache"]).toBe("MISS");
+
+    const cached = await request(app).get("/api/v1/store/products");
+    expect(cached.headers["x-cache"]).toBe("HIT");
+
+    const patch = await request(app)
+      .patch("/api/v1/store/products/p-1")
+      .send({ name: "Patched" });
+    expect(patch.status).toBe(200);
+    expect(updates.store_products).toMatchObject({ name: "Patched" });
+
+    const afterWrite = await request(app).get("/api/v1/store/products");
+    expect(afterWrite.headers["x-cache"]).toBe("MISS");
   });
 });

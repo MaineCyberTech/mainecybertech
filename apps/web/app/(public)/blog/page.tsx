@@ -59,7 +59,7 @@ export default function BlogPage() {
             {blogPosts.map((post) => (
               <article
                 key={post.slug}
-                className="rounded-lg border border-emerald-600/20 bg-[rgba(18,30,45,0.75)] p-6 shadow-[0_0_30px_rgba(5,150,105,0.05)] backdrop-blur-md transition hover:border-emerald-600/40 sm:p-8"
+                className="rounded-lg border border-emerald-600/20 bg-cyber-card p-6 shadow-[0_0_30px_rgba(5,150,105,0.05)] backdrop-blur-md transition hover:border-emerald-600/40 sm:p-8"
               >
                 <div className="mb-2 flex items-center gap-3">
                   <span className="rounded bg-emerald-600/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400">

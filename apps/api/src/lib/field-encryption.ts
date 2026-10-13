@@ -10,10 +10,11 @@
  * runs; reading a legacy `plain:` value logs a counter but is never silently
  * rewritten.
  *
- * NOTE: This utility is the building block. Applying it to the `profiles`
- * table requires a migration adding an `encrypted_pii jsonb` column plus a
- * backfill + read/write wiring in the profiles route — intentionally left as
- * a follow-up to avoid breaking the live profiles API without full testing.
+ * NOTE: The `profiles` table wiring is in place: migration 5302135 adds the
+ * `encrypted_pii jsonb` column, `scripts/backfill-profile-pii.mjs` backfills
+ * it, and the profile read paths decrypt it (SEC-P2-002). Run the backfill
+ * before relying on the encrypted column as the source of truth for existing
+ * rows.
  */
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import { getEnv } from "../config/env";
@@ -94,4 +95,26 @@ export function decryptObject(obj: Record<string, unknown>): Record<string, unkn
     out[k] = typeof v === "string" ? decryptField(v) : v;
   }
   return out;
+}
+
+export type SecretDecryptResult = { ok: true; value: string } | { ok: false; error: string };
+
+/**
+ * Decrypt a stored secret (e.g. a webhook endpoint signing secret), reporting
+ * failure instead of throwing so callers can fail closed. A `v1:` payload with
+ * no configured key is an error, not a pass-through: signing with the
+ * ciphertext would silently produce signatures the receiver cannot verify.
+ * Legacy plaintext values (no `v1:`/`plain:` envelope) decrypt to themselves.
+ */
+export function decryptSecretValue(payload: string): SecretDecryptResult {
+  if (payload.startsWith("v1:") && !getKey()) {
+    return { ok: false, error: "FIELD_ENCRYPTION_KEY is not configured" };
+  }
+  try {
+    return { ok: true, value: decryptField(payload) };
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    logger.error({ err: error }, "failed to decrypt stored secret");
+    return { ok: false, error };
+  }
 }

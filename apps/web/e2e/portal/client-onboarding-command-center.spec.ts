@@ -16,8 +16,10 @@ test.describe("Client Onboarding Command Center - Portal", () => {
     ).toBeVisible();
     await expect(page.getByRole("link", { name: "New Onboarding" })).toBeVisible();
     // GAP_ORG is seeded with onboarding records (seed 06/08), so the record
-    // list renders rather than the empty state.
-    await expect(page.getByText("Westbrook Dental")).toBeVisible();
+    // list renders rather than the empty state. The seed holds more than one
+    // "Westbrook Dental" record, so scope to the first match — a bare
+    // getByText() trips Playwright strict mode on the duplicate.
+    await expect(page.getByText("Westbrook Dental").first()).toBeVisible();
   });
 
   test("shows onboarding records when they exist", async ({ page }) => {

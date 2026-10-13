@@ -28,10 +28,19 @@ describe("schedule-config", () => {
         "qbr-scheduled-generate",
         "retention",
         "orphan-cleanup",
+        "api-key-prune",
+        "public-interaction-retention",
         "scheduled-notifications",
       ]),
     );
-    expect(scheduledScans.length).toBe(17);
+    expect(scheduledScans.length).toBe(19);
+  });
+
+  it("schedules the public-interaction PII purge daily (PRIV-P3-003)", () => {
+    const scan = scheduledScans.find((s) => s.name === "public-interaction-retention");
+    expect(scan).toBeDefined();
+    expect(scan?.intervalMs).toBe(SCAN_INTERVAL_DAILY_MS);
+    expect(scan?.requiresEnv).toBeUndefined();
   });
 
   it("does not schedule the per-tenant integration syncs unattended", () => {

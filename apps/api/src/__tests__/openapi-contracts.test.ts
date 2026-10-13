@@ -65,6 +65,10 @@ jest.mock("../middleware/admin", () => ({
 jest.mock("../middleware/rate-limit", () => ({
   rateLimitAuth: (_req: unknown, _res: unknown, next: () => void) => next(),
   rateLimitEmail: (_req: unknown, _res: unknown, next: () => void) => next(),
+  rateLimitAdminOps: (_req: unknown, _res: unknown, next: () => void) => next(),
+  // The search router is mounted in this suite; its limiter must be a function
+  // or express throws at mount time.
+  rateLimitSearch: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
 jest.mock("../lib/logger", () => ({
@@ -77,11 +81,15 @@ import { buildSpec } from "../openapi/spec";
 import authRouter from "../routes/auth";
 import ticketsRouter from "../routes/tickets";
 import storeRouter from "../routes/store";
+import searchRouter from "../routes/search";
+import searchPortalRouter from "../routes/search-portal";
 
 const app = createTestApp();
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/tickets", ticketsRouter);
 app.use("/api/v1/store", storeRouter);
+app.use("/api/v1/search", searchRouter);
+app.use("/api/v1/search/portal", searchPortalRouter);
 app.use(errorHandler);
 
 // --- minimal JSON-schema validator -----------------------------------------
@@ -582,7 +590,7 @@ describe("OpenAPI contract — success response schemas", () => {
         createMockBuilder({ data: [TICKET_ROW], error: null, count: 1 }),
       );
       const res = await request(app)
-        .get("/api/v1/tickets")
+        .get(`/api/v1/tickets?organization_id=${TICKET_ROW.organization_id}`)
         .set("Authorization", "Bearer token-123");
       expectResponseMatchesSpec(res, "/tickets", "get");
     });
@@ -610,7 +618,7 @@ describe("OpenAPI contract — success response schemas", () => {
         }),
       );
       const res = await request(app)
-        .get(`/api/v1/tickets/${TICKET_ROW.id}`)
+        .get(`/api/v1/tickets/${TICKET_ROW.id}?organization_id=${TICKET_ROW.organization_id}`)
         .set("Authorization", "Bearer token-123");
       expectResponseMatchesSpec(res, "/tickets/{id}", "get");
     });
@@ -638,8 +646,82 @@ describe("OpenAPI contract — success response schemas", () => {
           email: "jane@example.com",
           notes: "We need help",
           items: [{ productId: "password-security-checkup", name: "Password Security Checkup" }],
+          // PRIV-P2-002: the route requires and records consent.
+          consent: true,
         });
       expectResponseMatchesSpec(res, "/store/quotes", "post");
+    });
+  });
+
+  describe("search routes", () => {
+    const SEARCH_ORG = "00000000-0000-0000-0000-000000000001";
+
+    /**
+     * Table-aware Supabase stub for the search handlers. The caller is a
+     * super_admin profile flag + cross-tenant role so admin search short-circuits
+     * the document-visibility resolution and reports exact counts.
+     */
+    function mockSearchSupabase() {
+      const { mock } = mockSupabase();
+      mock.from.mockImplementation((table: string) => {
+        if (table === "profiles") {
+          return createMockBuilder({
+            data: [{ id: "user-1", full_name: "Test User", is_super_admin: true }],
+            error: null,
+            count: 1,
+          });
+        }
+        if (table === "memberships") {
+          return createMockBuilder({
+            data: [{ organization_id: SEARCH_ORG, roles: { id: "r1", key: "super_admin" } }],
+            error: null,
+          });
+        }
+        if (table === "tickets") {
+          return createMockBuilder({
+            data: [{ id: "t-1", title: "Ticket", status: "open", priority: "normal" }],
+            error: null,
+            count: 1,
+          });
+        }
+        if (table === "documents") {
+          return createMockBuilder({
+            data: [
+              {
+                id: "doc-1",
+                name: "Report",
+                organization_id: SEARCH_ORG,
+                mime_type: "application/pdf",
+                visibility: "org",
+              },
+            ],
+            error: null,
+            count: 1,
+          });
+        }
+        return createMockBuilder({ data: [], error: null, count: 0 });
+      });
+      return mock;
+    }
+
+    it("GET /search matches the spec (documents, counts, limit)", async () => {
+      mockSearchSupabase();
+      const res = await request(app)
+        .get("/api/v1/search?q=test&limit=10")
+        .set("Authorization", "Bearer token-123");
+      expectResponseMatchesSpec(res, "/search", "get");
+      expect(res.body.data.limit).toBe(10);
+      expect(res.body.data.counts.documents).toBe(1);
+      expect(res.body.data.documents).toHaveLength(1);
+    });
+
+    it("GET /search/portal matches the spec", async () => {
+      mockSearchSupabase();
+      const res = await request(app)
+        .get("/api/v1/search/portal?q=test")
+        .set("Authorization", "Bearer token-123");
+      expectResponseMatchesSpec(res, "/search/portal", "get");
+      expect(res.body.data.documents).toHaveLength(1);
     });
   });
 
@@ -659,6 +741,8 @@ describe("OpenAPI contract — success response schemas", () => {
       ["/tickets", "get"],
       ["/tickets/{id}", "get"],
       ["/store/quotes", "post"],
+      ["/search", "get"],
+      ["/search/portal", "get"],
     ];
     for (const [path, method] of tested) {
       expect(() => successSchema(path, method)).not.toThrow();

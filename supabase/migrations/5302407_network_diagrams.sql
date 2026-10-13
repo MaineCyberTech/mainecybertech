@@ -5,10 +5,18 @@
 -- schema (name + description + diagram jsonb of nodes/edges),
 -- replacing the earlier field-services staging columns.
 --
--- Idempotent: DROP TABLE IF EXISTS precedes the CREATE, every RLS
--- policy is preceded by DROP POLICY IF EXISTS, and index creation
--- uses IF NOT EXISTS. Safe to re-run.
+-- Re-runnable but destructive: DROP TABLE IF EXISTS precedes the CREATE, so
+-- re-applying drops the current table (and every row in it) before recreating
+-- it. The begin;/commit; wrapper keeps a fresh replay atomic (DATA-P2-002).
+--
+-- Rollback: drop this table, re-create the 5302072 field-services shape
+-- (site_name / diagram_data / device_count / vlan_count / wan_count /
+-- wireless_zones / camera_zones / notes / status / created_by) and the
+-- "nd_*" policies, then restore rows from the pre-migration backup — the
+-- drop discards them (see docs/migrations/README.md).
 -- =========================================================
+
+begin;
 
 drop table if exists network_diagrams;
 
@@ -52,3 +60,5 @@ create policy network_diagrams_delete on network_diagrams
   for delete using (
     organization_id in (select organization_id from memberships where user_id = auth.uid())
   );
+
+commit;

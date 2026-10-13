@@ -1,30 +1,47 @@
 import promClient from "prom-client";
 import { getRegisteredTaskTypes } from "./task-registry";
 import { getTaskQueueStats } from "./producer";
+import { getWorkerQueueHealth, getWorkerQueueBackend } from "./queue-health";
+import { redisFailuresTotal } from "./redis-failures";
+import { taskExecutionsTotal, taskExecutionDuration } from "./task-metrics";
 
 const register = new promClient.Registry();
 
 promClient.collectDefaultMetrics({ register });
 
-export const taskExecutionsTotal = new promClient.Counter({
-  name: "worker_task_executions_total",
-  help: "Total number of task executions",
-  labelNames: ["task_type", "status"] as const,
-  registers: [register],
-});
+// ARCH-P2-005: registered here (created dependency-free in redis-failures.ts
+// so the fallback paths can meter without importing this registry).
+register.registerMetric(redisFailuresTotal);
 
-export const taskExecutionDuration = new promClient.Histogram({
-  name: "worker_task_execution_duration_seconds",
-  help: "Task execution duration in seconds",
-  labelNames: ["task_type"] as const,
-  buckets: [0.1, 0.5, 1, 2, 5, 10, 30, 60],
-  registers: [register],
-});
+// HYGIENE-P3-009: same pattern for the task counters, which task-registry.ts
+// increments without importing this module (that edge was the import cycle).
+register.registerMetric(taskExecutionsTotal);
+register.registerMetric(taskExecutionDuration);
+
+export { taskExecutionsTotal, taskExecutionDuration } from "./task-metrics";
 
 export const taskQueueDepth = new promClient.Gauge({
   name: "worker_task_queue_depth",
   help: "Current number of tasks waiting or active in the BullMQ queue (set only when the queue connection is available)",
   labelNames: ["queue"] as const,
+  registers: [register],
+});
+
+// RES-P2-008: 1 while the worker's BullMQ connections are ready, 0 when the
+// producer Queue or the consumer Worker has lost its Redis connection.
+export const workerQueueConnected = new promClient.Gauge({
+  name: "worker_queue_connected",
+  help: "1 when the worker's BullMQ queue connections (producer and consumer) are ready, or BullMQ is not the active queue backend; 0 when a connection is lost",
+  registers: [register],
+});
+
+// ARCH-P2-004: the consumer half of the queue backend contract. The API
+// exports portal_queue_backend_info; a mismatch means enqueued work is never
+// consumed. Both processes derive from the shared QUEUE_BACKEND setting.
+export const workerQueueBackendInfo = new promClient.Gauge({
+  name: "worker_queue_backend_info",
+  help: "Configured worker queue backend (label backend) — must match the API's portal_queue_backend_info",
+  labelNames: ["backend"] as const,
   registers: [register],
 });
 
@@ -55,6 +72,14 @@ export const notificationSuppressedTotal = new promClient.Counter({
   registers: [register],
 });
 
+/** NOTIF-P3-007: sends dropped by the worker-side per-recipient email throttle. */
+export const notificationThrottledTotal = new promClient.Counter({
+  name: "worker_notification_throttled_total",
+  help: "Total number of worker notification emails dropped by the per-recipient throttle",
+  labelNames: ["channel"] as const,
+  registers: [register],
+});
+
 export const webhookDeliveriesTotal = new promClient.Counter({
   name: "worker_webhook_deliveries_total",
   help: "Total outbound webhook delivery attempts by outcome",
@@ -77,15 +102,55 @@ export function recordWebhookDeadLetter(event: string): void {
   webhookDeadLettersTotal.inc({ event });
 }
 
+/**
+ * RES-P2-002: generic (non-webhook) tasks that exhausted their BullMQ
+ * attempts and were written to `task_dead_letters`. Any increase means work
+ * is stuck and unreplayable without operator action.
+ */
+export const taskDeadLettersTotal = new promClient.Counter({
+  name: "worker_task_dead_letters_total",
+  help: "Total generic worker tasks moved to the task dead-letter set after exhausting retries",
+  labelNames: ["task_type"] as const,
+  registers: [register],
+});
+
+export function recordTaskDeadLetter(taskType: string): void {
+  taskDeadLettersTotal.inc({ task_type: taskType });
+}
+
 export function recordNotificationDelivery(
-  channel: "in_app" | "email",
+  channel: "in_app" | "email" | "push",
   status: "success" | "failed" | "skipped",
 ): void {
   notificationDeliveryTotal.inc({ channel, status });
 }
 
-export function recordNotificationSuppressed(channel: "in_app" | "email", module: string): void {
+export function recordNotificationSuppressed(
+  channel: "in_app" | "email" | "push",
+  module: string,
+): void {
   notificationSuppressedTotal.inc({ channel, module });
+}
+
+/** Record that a send was dropped by the per-recipient throttle (NOTIF-P3-007). */
+export function recordNotificationThrottled(channel: "in_app" | "email" | "push"): void {
+  notificationThrottledTotal.inc({ channel });
+}
+
+/**
+ * NOTIF-P2-001: push subscriptions the push service rejected as gone (HTTP
+ * 404/410) and the worker therefore revoked. A rising rate means clients are
+ * churning (browsers uninstalled, subscriptions expired) — normal at a low
+ * level, worth a look if it climbs with delivery failures.
+ */
+export const pushSubscriptionsRevokedTotal = new promClient.Counter({
+  name: "worker_push_subscriptions_revoked_total",
+  help: "Total push subscriptions revoked after the push service reported them gone (404/410)",
+  registers: [register],
+});
+
+export function recordPushSubscriptionRevoked(): void {
+  pushSubscriptionsRevokedTotal.inc();
 }
 
 export function updateMemoryMetrics(): void {
@@ -115,5 +180,41 @@ export async function getMetrics(): Promise<string> {
     taskQueueDepth.set({ queue: "unavailable" }, 0);
   }
 
+  // RES-P2-008: scrape-time connectivity read (producer's cached state plus
+  // the consumer's connection lifecycle state).
+  workerQueueConnected.set(getWorkerQueueHealth().connected ? 1 : 0);
+
+  // ARCH-P2-004: scrape-time backend read, for parity with the API's
+  // portal_queue_backend_info.
+  workerQueueBackendInfo.set({ backend: getWorkerQueueBackend() }, 1);
+
   return register.metrics();
+}
+
+/**
+ * Stripe reconciliation drift (BILL-P2-003).
+ *
+ * The nightly `stripe-reconcile` task compares the local billing mirror with
+ * Stripe (the source of truth) and increments this counter for every mismatch
+ * it finds: a subscription status that disagrees, or an invoice/payment
+ * count/sum that does not line up. Any drift means the local copy - and the
+ * entitlements/billing views derived from it - is stale, so
+ * infra/digitalocean/prometheus.rules.yml alerts on new drift.
+ */
+export const stripeReconcileDriftTotal = new promClient.Counter({
+  name: "worker_stripe_reconcile_drift_total",
+  help: "Stripe reconciliation drift findings by kind",
+  labelNames: ["kind"] as const,
+  registers: [register],
+});
+
+export type StripeReconcileDriftKind =
+  | "subscription_status"
+  | "invoice_count"
+  | "invoice_sum"
+  | "payment_count"
+  | "payment_sum";
+
+export function recordStripeReconcileDrift(kind: StripeReconcileDriftKind): void {
+  stripeReconcileDriftTotal.inc({ kind });
 }

@@ -27,6 +27,10 @@ jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
 }));
 
+jest.mock("@/app/(portal)/portal/support/actions", () => ({
+  createPortalTicket: jest.fn(),
+}));
+
 jest.mock("next/navigation", () => ({
   redirect: jest.fn(),
   usePathname: () => "/portal/support",
@@ -40,8 +44,23 @@ jest.mock("@/components/portal/PortalSubnav", () => ({
 jest.mock("@/components/portal/SupportCenterClient", () => {
   return {
     __esModule: true,
-    default: ({ tickets }: { tickets: any[] }) => (
-      <div data-testid="support-center">
+    default: ({
+      tickets,
+      page,
+      total,
+      initialCreateOpen,
+    }: {
+      tickets: any[];
+      page?: number;
+      total?: number;
+      initialCreateOpen?: boolean;
+    }) => (
+      <div
+        data-testid="support-center"
+        data-page={page ?? 1}
+        data-total={total ?? tickets.length}
+        data-create-open={initialCreateOpen ? "1" : "0"}
+      >
         {tickets.length > 0 ? (
           tickets.map((t: any) => <div key={t.id}>{t.subject ?? t.title}</div>)
         ) : (
@@ -51,6 +70,8 @@ jest.mock("@/components/portal/SupportCenterClient", () => {
     ),
   };
 });
+
+const defaultProps = { searchParams: Promise.resolve({}) };
 
 describe("PortalSupportPage", () => {
   beforeEach(() => {
@@ -68,7 +89,7 @@ describe("PortalSupportPage", () => {
     });
 
     const { default: PortalSupportPage } = await import("@/app/(portal)/portal/support/page");
-    const element = await PortalSupportPage();
+    const element = await PortalSupportPage(defaultProps);
     render(element);
 
     expect(screen.getByText("Login Issue")).toBeInTheDocument();
@@ -79,7 +100,7 @@ describe("PortalSupportPage", () => {
     mockTicketsList.mockResolvedValue({ items: [] });
 
     const { default: PortalSupportPage } = await import("@/app/(portal)/portal/support/page");
-    const element = await PortalSupportPage();
+    const element = await PortalSupportPage(defaultProps);
     render(element);
 
     expect(screen.getByText("No tickets")).toBeInTheDocument();
@@ -89,7 +110,7 @@ describe("PortalSupportPage", () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
     const { default: PortalSupportPage } = await import("@/app/(portal)/portal/support/page");
-    await expect(PortalSupportPage()).rejects.toThrow("No approved membership found.");
+    await expect(PortalSupportPage(defaultProps)).rejects.toThrow("No approved membership found.");
   });
 
   it("redirects when user not found", async () => {
@@ -98,7 +119,36 @@ describe("PortalSupportPage", () => {
 
     const { default: PortalSupportPage } = await import("@/app/(portal)/portal/support/page");
     const { redirect } = await import("next/navigation");
-    await PortalSupportPage();
+    await PortalSupportPage(defaultProps);
     expect(redirect).toHaveBeenCalledWith("/login");
+  });
+
+  it("deep-links the create form open from ?create=1 (USE-P3-001)", async () => {
+    mockTicketsList.mockResolvedValue({ items: [] });
+
+    const { default: PortalSupportPage } = await import("@/app/(portal)/portal/support/page");
+    const element = await PortalSupportPage({
+      searchParams: Promise.resolve({ create: "1" }),
+    });
+    render(element);
+
+    expect(screen.getByTestId("support-center")).toHaveAttribute("data-create-open", "1");
+  });
+
+  it("passes the requested page and API totals to the client (USE-P2-002)", async () => {
+    mockTicketsList.mockResolvedValue({ items: [], total: 40 });
+
+    const { default: PortalSupportPage } = await import("@/app/(portal)/portal/support/page");
+    const element = await PortalSupportPage({
+      searchParams: Promise.resolve({ page: "2" }),
+    });
+    render(element);
+
+    const client = screen.getByTestId("support-center");
+    expect(client).toHaveAttribute("data-page", "2");
+    expect(client).toHaveAttribute("data-total", "40");
+    expect(mockTicketsList).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 2, limit: 25, organizationId: "org-1" }),
+    );
   });
 });

@@ -213,7 +213,7 @@ describe("Finding tenant isolation (QW-1)", () => {
     mockFinding(ORG_A);
     const res = await request(app)
       .delete(`/api/v1/findings/${FINDING_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 
@@ -221,7 +221,7 @@ describe("Finding tenant isolation (QW-1)", () => {
     mockFinding(ORG_B);
     const res = await request(app)
       .delete(`/api/v1/findings/${FINDING_ID}`)
-      .set("Authorization", authToken);
+      .set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(404);
   });
 
@@ -266,5 +266,75 @@ describe("Finding tenant isolation (QW-1)", () => {
       .set("Authorization", authToken)
       .send({ organizationId: ORG_A, resolutionNotes: "fixed" });
     expect(res.status).toBe(404);
+  });
+});
+
+describe("Finding read tenant isolation (MT-P2-002)", () => {
+  const ORG_A = "00000000-0000-0000-0000-000000000001";
+  const ORG_B = "00000000-0000-0000-0000-000000000002";
+  const FINDING_ID = "00000000-0000-0000-0000-0000000000f1";
+
+  /**
+   * Filter-aware mock: the read only returns a row when the handler applied an
+   * `organization_id` predicate matching the row's org. A handler that skips
+   * the predicate (the old `if (orgId)` footgun) would leak the row.
+   */
+  function mockScopedRead(rowOrg: string) {
+    const supabase = mockAuth();
+    const builder = createMockBuilder({ data: null, error: null });
+    let orgFilter: string | null = null;
+    (builder as any).eq = jest.fn((column: string, value: unknown) => {
+      if (column === "organization_id") orgFilter = value as string;
+      return builder;
+    });
+    (builder as any).single = jest.fn(() =>
+      Promise.resolve({
+        data:
+          orgFilter === rowOrg
+            ? { id: FINDING_ID, organization_id: rowOrg, version: 1 }
+            : null,
+        error: null,
+      }),
+    );
+    supabase.from.mockReturnValue(builder);
+    return supabase;
+  }
+
+  it("scopes the list query to the caller's org", async () => {
+    const supabase = mockAuth();
+    const builder = createMockBuilder({ data: [], error: null, count: 0 });
+    supabase.from.mockReturnValue(builder);
+
+    const res = await request(app).get("/api/v1/findings").set("Authorization", authToken);
+
+    expect(res.status).toBe(200);
+    expect(builder.eq).toHaveBeenCalledWith("organization_id", ORG_A);
+  });
+
+  it("GET /:id returns the finding when it belongs to the caller's org", async () => {
+    mockScopedRead(ORG_A);
+    const res = await request(app)
+      .get(`/api/v1/findings/${FINDING_ID}`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(200);
+  });
+
+  it("GET /:id returns 404 for another org's finding", async () => {
+    mockScopedRead(ORG_B);
+    const res = await request(app)
+      .get(`/api/v1/findings/${FINDING_ID}`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(404);
+  });
+
+  it("GET /stats scopes the aggregate to the caller's org", async () => {
+    const supabase = mockAuth();
+    const builder = createMockBuilder({ data: [], error: null });
+    supabase.from.mockReturnValue(builder);
+
+    const res = await request(app).get("/api/v1/findings/stats").set("Authorization", authToken);
+
+    expect(res.status).toBe(200);
+    expect(builder.eq).toHaveBeenCalledWith("organization_id", ORG_A);
   });
 });

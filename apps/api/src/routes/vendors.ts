@@ -12,6 +12,8 @@ import {
   updateVendorContactSchema,
 } from "../validators/vendors";
 import { queryInt } from "../lib/query";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -32,7 +34,7 @@ function crudEndpoints(
 
       let q = supabase
         .from(table)
-        .select("*", { count: "exact" })
+        .select("*", { count: listCountMode(req.query) })
         .eq("organization_id", req.query.organization_id as string);
       const status = req.query.status as string | undefined;
       if (status) q = q.eq("status", status);
@@ -138,6 +140,7 @@ function crudEndpoints(
     requirePermission(resource, "delete"),
     async (req, res, next) => {
       try {
+        assertDeleteConfirmed(req.body);
         const supabase = getScopedClient(req, "vendors", "write");
         const { error } = await supabase
           .from(table)

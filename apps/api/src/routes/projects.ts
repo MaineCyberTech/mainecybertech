@@ -7,6 +7,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { loadOwned } from "../lib/tenant";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
+import { EXPORT_ROW_LIMIT } from "../lib/pagination";
 import { applyOrgScope, applyRequestedOrg, resolveAdminTenantScope } from "../lib/admin-scope";
 import { responseCacheNoRenew } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
@@ -30,6 +31,8 @@ import {
 } from "../validators/project";
 import { queryInt } from "../lib/query";
 import { recordProjectCreated } from "../lib/metrics";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -71,7 +74,9 @@ router.get("/export", async (req, res, next) => {
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter as never);
 
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(EXPORT_ROW_LIMIT);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -96,7 +101,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("projects").select("*", { count: "exact" });
+    let query = supabase.from("projects").select("*", { count: listCountMode(req.query) });
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -335,6 +340,7 @@ function projectSubRoute(
     requirePermission("projects", "delete"),
     async (req, res, next) => {
       try {
+        assertDeleteConfirmed(req.body);
         const supabase = getScopedClient(req, "projects", "write");
         const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
@@ -349,6 +355,15 @@ function projectSubRoute(
         const { error } = await supabase.from(table).delete().eq("id", String(req.params.id));
 
         if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+        await logAuditEvent({
+          organizationId: orgId,
+          actorUserId: req.authUser!.userId,
+          action: `${resource}.deleted`,
+          entityType: resource,
+          entityId: String(req.params.id),
+        });
+
         res.status(204).send();
       } catch (err) {
         next(err);
@@ -586,6 +601,13 @@ router.patch(
         metadata: parsed,
       });
 
+      // EVOL-P2-002: catalogued outbound event for project mutations.
+      dispatchWebhook("project.updated", data.organization_id, {
+        projectId: data.id,
+        name: data.name,
+        status: data.status,
+      });
+
       res.json(success(data));
     } catch (error) {
       next(error);
@@ -595,10 +617,11 @@ router.patch(
 
 router.delete("/:id", requirePermission("projects", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "projects", "write");
     const project = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "projects",
       String(req.params.id),
       "id, organization_id",
@@ -775,6 +798,7 @@ router.delete(
   requirePermission("projects", "delete"),
   async (req, res, next) => {
     try {
+      assertDeleteConfirmed(req.body);
       const supabase = getScopedClient(req, "projects", "write");
       await assertProjectInOrg(
         String(req.params.id),

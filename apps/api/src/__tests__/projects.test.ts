@@ -27,6 +27,7 @@ jest.mock("../services/audit", () => ({
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";
+import { logAuditEvent } from "../services/audit";
 
 function mockAuth() {
   const supabase = {
@@ -253,7 +254,7 @@ describe("projects routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
@@ -269,9 +270,32 @@ describe("projects routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe("DELETE /phases/:id (project sub-resource)", () => {
+    it("deletes a phase and audit-logs it", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: { project_id: "proj-1" }, error: null }),
+      );
+
+      const res = await request(app)
+        .delete("/api/v1/projects/phases/phase-1")
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
+
+      expect(res.status).toBe(204);
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          action: "phases.deleted",
+          entityType: "phases",
+          entityId: "phase-1",
+        }),
+      );
     });
   });
 
@@ -357,7 +381,7 @@ describe("projects routes", () => {
         .delete(
           "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031",
         )
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
@@ -697,7 +721,7 @@ describe("projects routes", () => {
         .delete(
           `/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031?organization_id=${ORG}`,
         )
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123").send({ confirm: true });
 
       expect(res.status).toBe(404);
     });

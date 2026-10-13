@@ -67,6 +67,38 @@ Governance Lead / Compliance Sponsor
 1. Verify membership: `SELECT * FROM memberships WHERE user_id = auth.uid() AND organization_id = '...'`
 2. Ensure API request includes the correct `organization_id` query param
 
+## Worker Enforcement (DATA-P2-005 / DATA-P2-006)
+
+- The `retention` worker task resolves the `audit_logs` and `notifications`
+  windows from active `retention_policies` rows (matched by `system_name` /
+  `data_category`; the longest matching window wins). An explicit task payload
+  window overrides the registry; the built-in defaults are 365/90 days.
+- `public-interaction-retention` resolves the `public_interactions` window the
+  same way (default 90 days).
+- Audit rows are **archived before deletion**: the task calls
+  `archive_audit_logs`, which copies rows to the append-only
+  `audit_log_archive` table and deletes them in one transaction.
+  `DELETE /organizations/:id` calls `archive_org_audit_logs` first and fails
+  closed (409) if any audit row remains. The archive has no FK to
+  `organizations`, so org deletion cannot cascade into it. The archive is
+  readable by platform admins (`is_super_admin`); only `service_role` can
+  execute the archive functions.
+- A database-level `BEFORE DELETE` trigger on `organizations`
+  (`archive_org_audit_logs_before_delete`, migration 5302451) archives the
+  org's audit rows and **fails the delete** if any row remains. That closes the
+  residual CHAIN-P2-004 gap: `audit_logs.organization_id` still cascades, but
+  the cascade can only run against an already-archived (empty) set — whichever
+  path deletes the organization (API, direct SQL, an admin tool).
+- **Retention/archive decision (2026-10-11):** keep a cold archive rather than
+  changing the FK to `on delete set null`, because the compliance trail must
+  survive both org teardown and the routine 365-day purge (DATA-P2-005).
+  Archive-tier export/retention (e.g. S3) is a follow-up; the archive is
+  append-only and grows unbounded for now.
+- Extending purges to stores that have no purge today (`impersonation_log`,
+  `satisfaction_pulses`, `webhook_deliveries`/`webhook_dead_letters`,
+  `document_shares`, `business_os_snapshots`) still requires code plus a
+  disposal decision per store; a policy row alone does not delete anything.
+
 ## Verification Steps
 
 ### Health Check
@@ -96,6 +128,10 @@ SELECT data_category, system_name, next_review_at FROM retention_policies WHERE 
 
 -- Status distribution
 SELECT status, count(*) FROM retention_policies GROUP BY status;
+
+-- Audit rows archived in the last 7 days (DATA-P2-005)
+SELECT archive_reason, count(*) FROM audit_log_archive
+ WHERE archived_at > now() - interval '7 days' GROUP BY archive_reason;
 ```
 
 ## Escalation

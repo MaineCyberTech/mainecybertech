@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { getClientApi } from "@/lib/client-api";
 import { formatDate } from "@/lib/format";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 type Phase = {
   id: string;
@@ -71,6 +72,25 @@ export default function ProjectTrackerPanels({ projectId }: { projectId: string 
   const [milestoneTitle, setMilestoneTitle] = useState("");
   const [milestoneDue, setMilestoneDue] = useState("");
   const [dependencyTask, setDependencyTask] = useState("");
+  // ADMIN-P2-002: removing a phase/milestone/dependency is destructive and the
+  // API now requires an explicit confirmation; the dialog is that step.
+  const [pendingDelete, setPendingDelete] = useState<{
+    kind: "phase" | "milestone" | "dependency";
+    id: string;
+    label: string;
+  } | null>(null);
+
+  const confirmDelete = () => {
+    const target = pendingDelete;
+    if (!target) return;
+    setPendingDelete(null);
+    run(() => {
+      if (target.kind === "phase") return getClientApi().projects.phases.remove(target.id);
+      if (target.kind === "milestone")
+        return getClientApi().projects.milestones.remove(target.id);
+      return getClientApi().projects.dependencies.remove(target.id);
+    });
+  };
 
   const addPhase = () =>
     run(async () => {
@@ -100,7 +120,7 @@ export default function ProjectTrackerPanels({ projectId }: { projectId: string 
 
   return (
     <div className="space-y-6">
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
 
       <section className="cyber-panel" aria-label="Project Phases">
         <h2 className="cyber-heading text-lg">Phases</h2>
@@ -117,7 +137,7 @@ export default function ProjectTrackerPanels({ projectId }: { projectId: string 
                 <button
                   type="button"
                   disabled={isPending}
-                  onClick={() => run(() => getClientApi().projects.phases.remove(p.id))}
+                  onClick={() => setPendingDelete({ kind: "phase", id: p.id, label: p.name })}
                   className="text-red-400 underline hover:text-red-300 disabled:opacity-50"
                 >
                   Remove
@@ -162,7 +182,7 @@ export default function ProjectTrackerPanels({ projectId }: { projectId: string 
                 <button
                   type="button"
                   disabled={isPending}
-                  onClick={() => run(() => getClientApi().projects.milestones.remove(m.id))}
+                  onClick={() => setPendingDelete({ kind: "milestone", id: m.id, label: m.title })}
                   className="text-red-400 underline hover:text-red-300 disabled:opacity-50"
                 >
                   Remove
@@ -218,7 +238,13 @@ export default function ProjectTrackerPanels({ projectId }: { projectId: string 
               <button
                 type="button"
                 disabled={isPending}
-                onClick={() => run(() => getClientApi().projects.dependencies.remove(d.id))}
+                onClick={() =>
+                  setPendingDelete({
+                    kind: "dependency",
+                    id: d.id,
+                    label: `dependency ${d.id.slice(0, 8)}`,
+                  })
+                }
                 className="text-red-400 underline hover:text-red-300 disabled:opacity-50"
               >
                 Remove
@@ -249,6 +275,16 @@ export default function ProjectTrackerPanels({ projectId }: { projectId: string 
           </button>
         </div>
       </section>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={pendingDelete ? `Remove ${pendingDelete.label}?` : "Remove item?"}
+        body="This permanently removes the record. This action cannot be undone."
+        confirmLabel="Remove"
+        danger
+        onConfirm={confirmDelete}
+        onClose={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

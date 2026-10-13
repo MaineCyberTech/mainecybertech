@@ -173,7 +173,7 @@ export default async function AdminVisualsPage() {
           {visualMap.categoryVisuals.map((cv) => (
             <div
               key={cv.category}
-              className="glass-card group rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5 transition hover:border-emerald-600/30"
+              className="glass-card group rounded-xl border border-white/10 bg-gradient-to-br from-cyber-base/80 to-[#0D1622]/80 p-5 transition hover:border-emerald-600/30"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-cyber-base/60">

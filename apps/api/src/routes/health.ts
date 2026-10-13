@@ -4,6 +4,7 @@ import { success } from "../types";
 import { getSupabaseAdminNoBreaker } from "../services/supabase";
 import { getEnv, type Env } from "../config/env";
 import { checkRedisHealth } from "../lib/health";
+import { setRedisConnected } from "../lib/metrics";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -119,8 +120,14 @@ async function runHealthChecks(): Promise<{
   // single-instance deployments (cache falls back to memory), so Redis status
   // is REPORTED but never degrades the overall health to 503 — a Redis outage
   // must not take down the deploy gate or make the API appear down.
+  // ARCH-P2-005: it does degrade a feature (idempotency dedup, shared cache),
+  // so it is metered (portal_redis_connected) and surfaced in /health/detail
+  // and the alert rules instead of failing the probe.
   const redis = await checkRedisHealth(env);
   checks.redis = { status: redis.status, latencyMs: redis.latencyMs, error: redis.error };
+  if (redis.status !== "not_configured") {
+    setRedisConnected(redis.status === "healthy");
+  }
 
   return { status: healthy ? "healthy" : "degraded", checks };
 }
@@ -155,6 +162,9 @@ router.get("/detail", async (req, res) => {
       service: "api",
       status,
       checks,
+      // ARCH-P2-005: explicit degraded-mode signal for dependencies that do
+      // not fail the probe (Redis) alongside those that do (database etc.).
+      degraded: Object.keys(checks).filter((name) => checks[name].status === "unhealthy"),
       uptime: process.uptime(),
     }),
   );

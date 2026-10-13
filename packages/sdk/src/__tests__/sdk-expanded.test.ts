@@ -10,10 +10,16 @@ function mockResponse<T>(data: T, ok = true, status = 200): Promise<Response> {
   const body = ok
     ? { success: true, data }
     : { success: false, error: { code: "ERROR", message: "Test error", status } };
+  // A real 204 has no body and `res.json()` rejects; keep the mock faithful so
+  // delete tests exercise the empty-body path (USE-P1-004).
+  const json =
+    status === 204
+      ? () => Promise.reject(new SyntaxError("Unexpected end of JSON input"))
+      : () => Promise.resolve(body);
   return Promise.resolve({
     ok,
     status,
-    json: () => Promise.resolve(body),
+    json,
     headers: new Headers(),
     redirected: false,
     statusText: ok ? "OK" : "Error",
@@ -823,11 +829,42 @@ describe("SDK modules — expanded coverage", () => {
   describe("SearchApi", () => {
     it("performs admin search", async () => {
       mockFetch.mockResolvedValue(
-        mockResponse({ projects: [], tickets: [], users: [], organizations: [] }),
+        mockResponse({
+          projects: [],
+          tickets: [],
+          users: [],
+          organizations: [],
+          documents: [{ id: "d1", name: "Report" }],
+          counts: { users: 0, organizations: 0, tickets: 0, projects: 0, documents: 1 },
+          limit: 5,
+        }),
       );
       const result = await client.search.admin("test");
       expect(result.projects).toHaveLength(0);
+      // SEARCH-P2-003: the admin payload includes documents.
+      expect(result.documents).toHaveLength(1);
+      // SEARCH-P3-003: counts and the applied page size are part of the contract.
+      expect(result.counts.documents).toBe(1);
+      expect(result.limit).toBe(5);
     });
+
+    it("sends the admin ?limit option", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          projects: [],
+          tickets: [],
+          users: [],
+          organizations: [],
+          documents: [],
+          counts: { users: 0, organizations: 0, tickets: 0, projects: 0, documents: 0 },
+          limit: 10,
+        }),
+      );
+      const result = await client.search.admin("test", { limit: 10 });
+      expect(result.limit).toBe(10);
+      expect(String(mockFetch.mock.calls[0][0])).toContain("limit=10");
+    });
+
     it("performs portal search", async () => {
       mockFetch.mockResolvedValue(mockResponse({ projects: [], tickets: [], documents: [] }));
       const result = await client.search.portal("test", "org-1");

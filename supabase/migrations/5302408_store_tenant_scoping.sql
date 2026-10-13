@@ -11,6 +11,7 @@ ALTER TABLE public.store_categories
 CREATE INDEX IF NOT EXISTS idx_store_categories_organization_id ON public.store_categories(organization_id);
 
 DROP POLICY IF EXISTS "store_categories_public_read" ON public.store_categories;
+drop policy if exists "store_categories_read" on public.store_categories;
 CREATE POLICY "store_categories_read" ON public.store_categories
   FOR SELECT TO anon, authenticated
   USING (organization_id IS NULL OR public.is_org_member(organization_id));
@@ -21,6 +22,7 @@ ALTER TABLE public.store_products
 CREATE INDEX IF NOT EXISTS idx_store_products_organization_id ON public.store_products(organization_id);
 
 DROP POLICY IF EXISTS "store_products_public_read" ON public.store_products;
+drop policy if exists "store_products_read" on public.store_products;
 CREATE POLICY "store_products_read" ON public.store_products
   FOR SELECT TO anon, authenticated
   USING (display = true AND (organization_id IS NULL OR public.is_org_member(organization_id)));
@@ -34,6 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_store_promotions_organization_id ON public.store_
 -- tenant-aware variant: global (NULL-org) active promos stay public; org-specific
 -- promos are scoped to members of that org.
 DROP POLICY IF EXISTS "Anyone can view active promotions" ON public.store_promotions;
+drop policy if exists "store_promotions_read" on public.store_promotions;
 CREATE POLICY "store_promotions_read" ON public.store_promotions
   FOR SELECT TO anon, authenticated
   USING (status = 'active' AND (organization_id IS NULL OR public.is_org_member(organization_id)));

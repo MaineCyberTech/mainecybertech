@@ -1,12 +1,13 @@
 import crypto from "crypto";
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
+import { decryptSecretValue } from "../lib/field-encryption";
 import { assertSafeUrl } from "../lib/ssrf-guard";
 import { pinnedFetch } from "../lib/pinned-fetch";
 import { claimIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
 import { recordWebhookDelivery, recordWebhookDeadLetter } from "../metrics";
 import type { TaskHandler, TaskResult } from "../task-registry";
-import type { Json } from "@mct/sdk/database.types";
+import type { Database, Json } from "@mct/sdk/database.types";
 
 type DispatchPayload = {
   event: string;
@@ -14,6 +15,29 @@ type DispatchPayload = {
   data: Record<string, Json>;
   idempotencyKey?: string;
 };
+
+type DeliveryInsert = Database["public"]["Tables"]["webhook_deliveries"]["Insert"];
+
+/**
+ * WH-P3-006: delivery rows are keyed by their idempotency key. A re-dispatch
+ * of the same logical event after a released claim must update the existing
+ * row (which the retry task owns) instead of failing the unique constraint and
+ * silently losing the successful attempt's record.
+ */
+async function persistDelivery(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  row: DeliveryInsert,
+): Promise<void> {
+  const { error } = row.idempotency_key
+    ? await supabase.from("webhook_deliveries").upsert(row, { onConflict: "idempotency_key" })
+    : await supabase.from("webhook_deliveries").insert(row);
+  if (error) {
+    logger.warn(
+      { err: error.message, webhookId: row.webhook_id, idempotencyKey: row.idempotency_key },
+      "Failed to persist webhook delivery",
+    );
+  }
+}
 
 /**
  * Stable idempotency key for one logical outbound event. Mirrors the API's
@@ -62,7 +86,11 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
       return { ok: true };
     }
 
-    const body = JSON.stringify({ event, timestamp: new Date().toISOString(), data });
+    // WH-P3-005: persist the exact envelope that is sent (including the
+    // timestamp) as request_body, so the retry task replays byte-identical
+    // payloads instead of drifting to `{ event, data }` without a timestamp.
+    const envelope = { event, timestamp: new Date().toISOString(), data };
+    const body = JSON.stringify(envelope);
     let successCount = 0;
     let failCount = 0;
 
@@ -100,7 +128,38 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
       }
 
       if (endpoint.secret) {
-        const hmac = crypto.createHmac("sha256", endpoint.secret).update(body).digest("hex");
+        // WH-P2-008: signing secrets are encrypted at rest; decrypt before
+        // signing. A configured secret that cannot be decrypted fails closed
+        // (failed + dead-lettered) instead of going out unsigned.
+        const decrypted = decryptSecretValue(endpoint.secret);
+        if (!decrypted.ok) {
+          failCount++;
+          const secretError = "Signing secret could not be decrypted";
+          await persistDelivery(supabase, {
+            webhook_id: endpoint.id,
+            event,
+            status: "failed",
+            request_body: envelope,
+            error: secretError,
+            retry_count: 0,
+            dead_letter: true,
+            ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
+          });
+          recordWebhookDelivery("failed", event);
+          recordWebhookDeadLetter(event);
+          await supabase
+            .from("webhook_endpoints")
+            .update({
+              last_failure_at: new Date().toISOString(),
+              last_error: secretError,
+            })
+            .eq("id", endpoint.id);
+          continue;
+        }
+        const hmac = crypto
+          .createHmac("sha256", decrypted.value)
+          .update(body)
+          .digest("hex");
         headers["X-Webhook-Signature"] = `sha256=${hmac}`;
       }
 
@@ -109,11 +168,11 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
       const blocked = await assertSafeUrl(endpoint.url);
       if (blocked) {
         failCount++;
-        await supabase.from("webhook_deliveries").insert({
+        await persistDelivery(supabase, {
           webhook_id: endpoint.id,
           event,
           status: "failed",
-          request_body: { event, data },
+          request_body: envelope,
           error: `Blocked URL: ${blocked}`,
           // A blocked URL is a permanent failure: never retry, go straight to
           // the dead-letter set so the retry task ignores it.
@@ -163,11 +222,11 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
       const duration = Date.now() - start;
       const failed = Boolean(error) || !(responseStatus >= 200 && responseStatus < 300);
 
-      await supabase.from("webhook_deliveries").insert({
+      await persistDelivery(supabase, {
         webhook_id: endpoint.id,
         event,
         status: failed ? "failed" : "success",
-        request_body: { event, data },
+        request_body: envelope,
         response_status: responseStatus || null,
         response_body: responseBody || null,
         error,

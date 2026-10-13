@@ -14,6 +14,7 @@ import {
   updateOrganizationBasics,
   createOrganizationDomain,
   updateOrganizationDomain,
+  deleteOrganizationAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -26,11 +27,16 @@ type OrgPageProps = {
   params: Promise<{
     orgId: string;
   }>;
+  searchParams: Promise<{
+    confirmDelete?: string;
+  }>;
 };
 
-export default async function OrganizationDetailPage({ params }: OrgPageProps) {
+export default async function OrganizationDetailPage({ params, searchParams }: OrgPageProps) {
   await requireAdminAccess();
   const { orgId } = await params;
+  const { confirmDelete } = await searchParams;
+  const showDeleteConfirm = confirmDelete === "1";
   const api = getApiClient();
 
   let detail: OrganizationDetail;
@@ -304,6 +310,59 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
         <div className="mt-6">
           <AdminDocUpload organizationId={org.id} />
         </div>
+      </section>
+
+      <section className="rounded-xl border border-red-500/20 bg-red-500/5 p-6">
+        <h2 className="font-display text-lg uppercase tracking-[0.12em] text-red-300">
+          Danger Zone
+        </h2>
+        <p className="mt-3 max-w-2xl text-sm text-red-100/90">
+          Deleting this organization permanently removes it and every membership, domain, document,
+          ticket, project and webhook scoped to it. This cannot be undone from the console — recovery
+          is operator-only via Supabase Point-in-Time Recovery or an S3 backup restore
+          (<span className="font-mono text-xs">docs/ROLLBACK_PROCEDURES.md</span> §3).
+        </p>
+
+        {showDeleteConfirm ? (
+          <form
+            action={
+              deleteOrganizationAction.bind(null, org.id) as unknown as (fd: FormData) => void
+            }
+            className="mt-6 flex flex-col gap-4 md:flex-row md:items-end"
+          >
+            <input type="hidden" name="organizationSlug" value={org.slug} />
+            <div className="w-full max-w-sm">
+              <label className="cyber-label" htmlFor="org-delete-confirm-slug">
+                Type {org.slug} to confirm
+              </label>
+              <input
+                id="org-delete-confirm-slug"
+                name="confirmSlug"
+                className="cyber-input"
+                placeholder={org.slug}
+                required
+              />
+            </div>
+            <SubmitButton
+              className="rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-red-300 transition hover:bg-red-500/20"
+              pendingText="Deleting…"
+            >
+              Delete Organization Permanently
+            </SubmitButton>
+            <Link href={`/admin/organizations/${org.id}`} className="cyber-button-secondary">
+              Cancel
+            </Link>
+          </form>
+        ) : (
+          <div className="mt-6">
+            <Link
+              href={`/admin/organizations/${org.id}?confirmDelete=1`}
+              className="rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-red-300 transition hover:bg-red-500/20"
+            >
+              Delete Organization
+            </Link>
+          </div>
+        )}
       </section>
 
       <OrgBrandingForm

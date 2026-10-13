@@ -4,11 +4,17 @@
 
 Use this when you need the **exact command** and **when to use it**.
 
+> Reconciled 2026-10-12 with the tree and
+> [`SUPABASE_MIGRATION_WORKFLOW.md`](SUPABASE_MIGRATION_WORKFLOW.md) — the
+> canonical workflow. There is **no** `supabase/seed.sql` or
+> `supabase/verify_seed.sql`; seeds live in `supabase/seeds/*.sql` and run via
+> `supabase/config.toml` → `[db.seed] sql_paths`.
+
 ---
 
 ## Core Commands
 
-### Rebuild local DB from migrations
+### Rebuild local DB from migrations + seeds
 
 ```bash
 supabase db reset
@@ -19,61 +25,40 @@ supabase db reset
 - you changed foundational schema logic
 - you want to test the full migration chain from scratch
 - you want to catch ordering / dependency issues
+- you changed RLS, storage, permissions, or seed data
+
+`db reset` drops the local database, re-applies every migration, and then runs
+the seed files configured in `supabase/config.toml`.
 
 ---
 
 ### Apply migrations to the linked environment
 
 ```bash
-supabase db push
+supabase db push --include-all
 ```
 
 **Use when:**
-- your migration SQL is ready
-- you want to apply schema changes to the linked Supabase project
-- you have confirmed you are targeting the correct environment
+- the migration has been reviewed and merged (CI applies it)
+- you are deliberately targeting the **linked remote** project
 
----
-
-### Seed aligned data
-
-```bash
-supabase db query < supabase/seed.sql
-```
-
-**Use when:**
-- the schema already exists
-- you need baseline or aligned data
-- you are setting up or refreshing a development/test environment
-
----
-
-### Verify the result
-
-```bash
-supabase db query < supabase/verify_seed.sql
-```
-
-**Use when:**
-- you need to confirm the migration + seed result is actually correct
-- you want to validate counts, seeded paths, versions, and permissions
+Never run this against a local database, and never use it as a local dev loop —
+it targets the hosted project.
 
 ---
 
 ## Normal Workflow
 
 ```bash
-supabase db reset
-supabase db push
-supabase db query < supabase/seed.sql
-supabase db query < supabase/verify_seed.sql
+supabase start        # one-time: start the local stack
+supabase db reset     # rebuild from migrations + config.toml seeds
 ```
 
 ### Meaning
-- `db reset` → clean local rebuild from migration history
-- `db push` → apply schema changes forward
-- `seed.sql` → load aligned data
-- `verify_seed.sql` → confirm expected output
+- `supabase start` → start the local Postgres/Auth/Storage stack
+- `db reset` → clean local rebuild from migration history, then seeds
+- `db push --include-all` → apply migrations forward on the **linked** project
+  (CI does this on `develop`/`main`)
 
 ---
 
@@ -83,14 +68,11 @@ supabase db query < supabase/verify_seed.sql
 - you do not need a full clean local rebuild
 - you are making a small incremental change and already trust local state
 
-### Skip `seed.sql` if:
-- you are only testing schema changes
-- you do not need baseline data for the current task
-
-### Do **not** skip `verify_seed.sql` if:
+### Do **not** skip `db reset` if:
 - you changed document logic
 - you changed permissions / roles / memberships
 - you changed RLS or storage-related behavior
+- you changed a migration's fresh-replay behaviour
 
 ---
 
@@ -107,18 +89,17 @@ Examples:
 
 ### Seed = data
 Examples:
+- local auth users
 - organizations
 - document rows
-- document versions
-- permission rows
+- demo/test data
+- permission edge cases
 
 ### Verify = proof
 Examples:
-- row counts
-- visibility distribution
-- seeded storage paths
-- version checks
-- permission checks
+- run the API/worker test suites (`pnpm --filter=api test`)
+- `supabase db diff --linked --schema public` (CI fails on drift)
+- spot-check counts/permissions in the local Studio
 
 ---
 
@@ -133,13 +114,17 @@ If you changed anything touching:
 - RLS
 - storage
 
-run the **full chain**:
+run the **full local chain**:
 
 ```bash
 supabase db reset
-supabase db push
-supabase db query < supabase/seed.sql
-supabase db query < supabase/verify_seed.sql
+pnpm --filter=api test
+```
+
+and regenerate the DB types when the schema changed:
+
+```bash
+node scripts/generate-db-types.js
 ```
 
 ---
@@ -148,11 +133,10 @@ supabase db query < supabase/verify_seed.sql
 
 Before commit / PR:
 
-- [ ] migration SQL written
-- [ ] local rebuild tested if needed
-- [ ] migrations pushed
-- [ ] seed run if needed
-- [ ] verification reviewed
+- [ ] migration SQL written with the next sequential prefix
+- [ ] local rebuild tested (`supabase db reset`)
+- [ ] DB types regenerated if the schema changed
+- [ ] destructive statements have a `-- Rollback:` note
 - [ ] related docs updated
 
 ---
@@ -160,8 +144,8 @@ Before commit / PR:
 ## Fastest explanation
 
 ```text
-reset = rebuild local
-push = apply schema
-seed = load data
-verify = prove it worked
+start  = run local stack
+reset  = rebuild local (migrations + seeds)
+push   = apply schema to the linked remote (CI)
+test   = prove it worked
 ```

@@ -62,7 +62,7 @@ export default function RiskAssessButton({ id }: { id: string }) {
         </button>
       </div>
       {done && <p className="mt-2 text-xs text-emerald-400">Risk assessed. Score updated.</p>}
-      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-xs text-red-400">{error}</p>}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import CommentBody from "@/components/CommentBody";
 import TicketCopilotPanel from "./TicketCopilotPanel";
 import type { Ticket, TicketComment, AuditLog } from "@mct/sdk";
+import { allowedTicketTransitions } from "@mct/sdk/ticket-status";
 import {
   InlineStatusDropdown,
   InlinePriorityDropdown,
@@ -19,7 +20,6 @@ import {
   addCommentAction,
   editCommentAction,
   deleteTicketAction,
-  restoreTicketAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -238,18 +238,12 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
           <Link href={`/portal/support/${ticketId}`} className="cyber-button-secondary">
             View in Portal
           </Link>
-          {deleted ? (
-            <form action={restoreTicketAction.bind(null, ticketId) as unknown as () => void}>
-              <SubmitButton className="cyber-button-secondary">Restore Ticket</SubmitButton>
-            </form>
-          ) : (
-            <Link
-              href={`/admin/tickets/${ticketId}?confirmDelete=1`}
-              className="rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-red-300 transition hover:bg-red-500/20"
-            >
-              Delete Ticket
-            </Link>
-          )}
+          <Link
+            href={`/admin/tickets/${ticketId}?confirmDelete=1`}
+            className="rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-red-300 transition hover:bg-red-500/20"
+          >
+            Delete Ticket
+          </Link>
           <Link href="/admin/tickets" className="cyber-button-secondary">
             Back to Tickets
           </Link>
@@ -264,8 +258,8 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
                 Confirm Ticket Deletion
               </h2>
               <p className="mt-3 max-w-2xl text-sm text-red-100/90">
-                This performs a safer soft-delete so the ticket can be restored later. Type{" "}
-                <span className="font-semibold">DELETE</span> below to confirm.
+                This permanently deletes the ticket, its comments, and its history. This cannot be
+                undone. Type <span className="font-semibold">DELETE</span> below to confirm.
               </p>
             </div>
             <Link href={`/admin/tickets/${ticketId}`} className="cyber-button-secondary">
@@ -331,11 +325,12 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
                   defaultValue={status}
                   className="cyber-input"
                 >
-                  <option value="new">new</option>
-                  <option value="triaged">triaged</option>
-                  <option value="pending">pending</option>
-                  <option value="resolved">resolved</option>
-                  <option value="closed">closed</option>
+                  {/* FEAT-P3-006: current status + only the transitions the API allows. */}
+                  {[...new Set([status, ...allowedTicketTransitions(status)])].map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

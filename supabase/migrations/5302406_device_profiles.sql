@@ -1,6 +1,15 @@
 -- Device Profile Library: canonical device_profiles table.
 -- Replaces the earlier final-module device_profiles (different column set) with the
--- Device Profile Library schema. Idempotent: drops any prior table + policies first.
+-- Device Profile Library schema. NOT safe to re-run against live data: the drop
+-- table below destroys the current rows before the replacement is created. The
+-- begin;/commit; wrapper keeps a fresh replay atomic (DATA-P2-002).
+--
+-- Rollback: drop this table, re-create the 5302074 shape
+-- (profile_name / device_type / os / settings / description / status /
+-- created_by) and the "dp_org" policies, then restore rows from the
+-- pre-migration backup — the drop discards them (see docs/migrations/README.md).
+
+begin;
 
 drop table if exists public.device_profiles cascade;
 
@@ -67,3 +76,5 @@ begin
   ('82010000-0000-0000-0000-000000000005'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Archive Standard', 'workstation', 'Dell', 'OptiPlex 5000', jsonb_build_object('usb_write_blocked', true))
   on conflict (id) do nothing;
 end $$;
+
+commit;

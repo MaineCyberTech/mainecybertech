@@ -11,7 +11,7 @@ router.use(requireAuth);
 router.use(requireOrgAccess);
 
 const MODULES = ["tickets", "projects", "documents", "billing", "system"] as const;
-const CHANNELS = ["email", "sms", "in_app"] as const;
+const CHANNELS = ["email", "sms", "in_app", "push"] as const;
 
 router.get("/", async (req, res, next) => {
   try {
@@ -57,6 +57,17 @@ router.put("/", async (req, res, next) => {
       })
       .parse(req.body);
 
+    // NOTIF-P1-004: the web UI does not send organizationId. requireOrgAccess
+    // resolves the active org (X-Active-Org header / cookie / default
+    // membership) and exposes it as req.orgId plus req.query.organization_id.
+    // Default to that resolved scope so the NOT NULL organization_id column is
+    // always populated, and fail loudly when no organization can be resolved.
+    const orgId =
+      organizationId ?? req.orgId ?? (req.query.organization_id as string | undefined);
+    if (!orgId) {
+      throw new AppError("VALIDATION", "organizationId is required", 400);
+    }
+
     const supabase = getScopedClient(req, "notification-preferences", "write");
 
     const results = [];
@@ -65,7 +76,7 @@ router.put("/", async (req, res, next) => {
         .from("notification_preferences")
         .upsert(
           {
-            organization_id: organizationId as string,
+            organization_id: orgId,
             user_id: req.authUser!.userId,
             module_key: pref.moduleKey,
             channel: pref.channel,
@@ -84,7 +95,7 @@ router.put("/", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "notification_preference.update",
       entityType: "notification_preference",
-      metadata: { organizationId, preferenceCount: preferences.length },
+      metadata: { organizationId: orgId, preferenceCount: preferences.length },
     });
 
     res.json(success({ updated: results.length }));

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { Button } from "@mct/ui/components/Button";
+import { Input, Textarea } from "@mct/ui/components/Input";
 import type {
   BulkActionResult,
   DocumentVisibility,
@@ -67,12 +69,25 @@ export default function AdminDocumentsBulkControls({
         pushToast("error", result.error ?? "Unexpected error.", "Bulk folder failed");
         return;
       }
-      onApplyFolderLocal(nextFolder, selectedIds);
-      pushToast(
-        "success",
-        `${selectedIds.length} document(s) moved to ${nextFolder}.`,
-        "Folder reassigned",
-      );
+      const succeeded = result.ids ?? [];
+      const failed = result.failed ?? [];
+      onApplyFolderLocal(nextFolder, succeeded);
+      if (failed.length) {
+        pushToast(
+          "warning",
+          `${succeeded.length} succeeded, ${failed.length} failed (${failed
+            .slice(0, 3)
+            .map((f) => f.id)
+            .join(", ")}${failed.length > 3 ? ", …" : ""}).`,
+          "Folder reassigned with failures",
+        );
+      } else {
+        pushToast(
+          "success",
+          `${succeeded.length} document(s) moved to ${nextFolder}.`,
+          "Folder reassigned",
+        );
+      }
       setShowFolderModal(false);
       setFolderValue("");
       onRefresh?.();
@@ -113,19 +128,32 @@ export default function AdminDocumentsBulkControls({
         pushToast("error", result.error ?? "Unexpected error.", "Bulk metadata failed");
         return;
       }
+      const succeeded = result.ids ?? [];
+      const failed = result.failed ?? [];
       onApplyMetadataLocal(
         {
           ...(safeDescription ? { description: safeDescription } : {}),
           ...(safeFolder ? { folder_path: safeFolder } : {}),
           ...(safeVisibility ? { visibility: safeVisibility } : {}),
         },
-        selectedIds,
+        succeeded,
       );
-      pushToast(
-        "success",
-        `${selectedIds.length} document(s) updated using safe apply rules.`,
-        "Metadata applied",
-      );
+      if (failed.length) {
+        pushToast(
+          "warning",
+          `${succeeded.length} succeeded, ${failed.length} failed (${failed
+            .slice(0, 3)
+            .map((f) => f.id)
+            .join(", ")}${failed.length > 3 ? ", …" : ""}).`,
+          "Metadata applied with failures",
+        );
+      } else {
+        pushToast(
+          "success",
+          `${succeeded.length} document(s) updated using safe apply rules.`,
+          "Metadata applied",
+        );
+      }
       setShowMetadataModal(false);
       setMetaDescription("");
       setMetaFolder("");
@@ -152,23 +180,23 @@ export default function AdminDocumentsBulkControls({
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button
+            <Button
               type="button"
-              className="cyber-button-secondary"
+              variant="secondary"
               onClick={() => setShowFolderModal(true)}
             >
               Bulk folder reassignment
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="cyber-button-secondary"
+              variant="secondary"
               onClick={() => setShowMetadataModal(true)}
             >
               Bulk metadata edit
-            </button>
-            <button type="button" className="cyber-button-secondary" onClick={onClearSelection}>
+            </Button>
+            <Button type="button" variant="secondary" onClick={onClearSelection}>
               Clear selection
-            </button>
+            </Button>
           </div>
         </div>
       </section>
@@ -183,7 +211,7 @@ export default function AdminDocumentsBulkControls({
             onKeyDown={(e) => {
               if (e.key === "Escape") setShowFolderModal(false);
             }}
-            className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
+            className="max-h-[90vh] w-[calc(100vw-2rem)] min-w-0 max-w-lg overflow-y-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
           >
             <h3
               id="bulk-folder-title"
@@ -195,14 +223,11 @@ export default function AdminDocumentsBulkControls({
               Apply one folder path across {selectedIds.length} selected document(s).
             </p>
             <div className="mt-4">
-              <label htmlFor="bulk-folder" className="cyber-label">
-                Folder Path
-              </label>
-              <input
+              <Input
                 id="bulk-folder"
+                label="Folder Path"
                 value={folderValue}
                 onChange={(e) => setFolderValue(e.target.value)}
-                className="cyber-input"
                 placeholder="Example: Client Uploads / Q2"
               />
             </div>
@@ -211,23 +236,22 @@ export default function AdminDocumentsBulkControls({
               only.
             </p>
             <div className="mt-6 flex justify-end gap-3">
-              <button
+              <Button
                 type="button"
-                className="cyber-button-secondary"
+                variant="secondary"
                 onClick={() => setShowFolderModal(false)}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="cyber-button"
-                disabled={busyKey === "bulk-folder"}
+                loading={busyKey === "bulk-folder"}
                 onClick={() => {
                   void applyBulkFolder();
                 }}
               >
                 {busyKey === "bulk-folder" ? "Applying..." : "Apply Folder"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -243,7 +267,7 @@ export default function AdminDocumentsBulkControls({
             onKeyDown={(e) => {
               if (e.key === "Escape") setShowMetadataModal(false);
             }}
-            className="w-full max-w-2xl rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
+            className="max-h-[90vh] w-[calc(100vw-2rem)] min-w-0 max-w-2xl overflow-y-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
           >
             <h3
               id="bulk-meta-title"
@@ -256,18 +280,13 @@ export default function AdminDocumentsBulkControls({
               selected documents.
             </p>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div>
-                <label htmlFor="bulk-meta-folder" className="cyber-label">
-                  Folder Path (optional)
-                </label>
-                <input
-                  id="bulk-meta-folder"
-                  value={metaFolder}
-                  onChange={(e) => setMetaFolder(e.target.value)}
-                  className="cyber-input"
-                  placeholder="Leave blank to keep current folders"
-                />
-              </div>
+              <Input
+                id="bulk-meta-folder"
+                label="Folder Path (optional)"
+                value={metaFolder}
+                onChange={(e) => setMetaFolder(e.target.value)}
+                placeholder="Leave blank to keep current folders"
+              />
               <div>
                 <label className="cyber-label" htmlFor="bulk-visibility-optional">
                   Visibility (optional)
@@ -288,15 +307,12 @@ export default function AdminDocumentsBulkControls({
               </div>
             </div>
             <div className="mt-4">
-              <label className="cyber-label" htmlFor="bulk-description-optional">
-                Description (optional)
-              </label>
-              <textarea
+              <Textarea
                 id="bulk-description-optional"
+                label="Description (optional)"
                 value={metaDescription}
                 onChange={(e) => setMetaDescription(e.target.value)}
                 rows={4}
-                className="cyber-input"
                 placeholder="Leave blank to keep current descriptions"
               />
             </div>
@@ -309,23 +325,22 @@ export default function AdminDocumentsBulkControls({
               </ul>
             </div>
             <div className="mt-6 flex justify-end gap-3">
-              <button
+              <Button
                 type="button"
-                className="cyber-button-secondary"
+                variant="secondary"
                 onClick={() => setShowMetadataModal(false)}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="cyber-button"
-                disabled={busyKey === "bulk-metadata"}
+                loading={busyKey === "bulk-metadata"}
                 onClick={() => {
                   void applyBulkMetadata();
                 }}
               >
                 {busyKey === "bulk-metadata" ? "Applying..." : "Apply Metadata"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

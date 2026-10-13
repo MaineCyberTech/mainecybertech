@@ -1,0 +1,17 @@
+# Positive fixture for scripts/ci/check-required-checks.sh (BP-P3-004).
+# A job with an explicit `name:` AND a matrix emits "<name> (<value>)" check
+# runs; the guard must resolve "Matrix Fixture / Build (20.x)" and must NOT
+# accept the unexpanded "Matrix Fixture / Build".
+name: Matrix Fixture
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    steps:
+      - run: echo fixture

@@ -19,11 +19,20 @@
  *     task files, seed files, GitHub Actions workflows, AI prompt files and
  *     build/dev/utility scripts vs the filesystem
  *   - AGENTS.md SQL migrations total and "(latest: N)" vs supabase/migrations
+ *   - README.md / docs/ONBOARDING.md / docs/API_ENDPOINT_INVENTORY.md migration,
+ *     workflow and OpenAPI-path prose counts vs the tree (DOC-P3-003)
  *   - docs/WEB_UI_CONVENTIONS.md admin/portal nav entry counts vs the
  *     `key:` occurrences in the nav catalogs
  *   - a11y route counts in AGENTS.md, docs/CI.md, docs/testing.md and
  *     docs/WEB_UI_CONVENTIONS.md vs the BASE_PAGES/FULL_PAGES arrays in
  *     apps/web/e2e/a11y.spec.ts
+ *   - docs/testing.md coverage-threshold table vs coverageThreshold.global in
+ *     each jest.config.mjs (TEST-P2-007)
+ *   - AGENTS.md per-package suite rows + total and the E2E spec row vs the
+ *     files each jest config's testMatch picks up / apps/web/e2e (TEST-P2-008)
+ *   - AGENTS.md per-package test totals vs numTotalTests in each package's
+ *     .jest-results.json (written by `test:coverage --json`; CI sets
+ *     MCT_VERIFY_TEST_COUNTS=1 so the check is fail-closed there — TEST-P2-008)
  *   - AGENTS.md (and review.md, if present) "N policies" vs
  *     collectRlsStats() from scripts/verify-rls.mjs
  *
@@ -170,6 +179,144 @@ for (const [key, label, pattern] of readmePackages) {
   }
 }
 
+// --- docs/testing.md coverage thresholds vs the jest configs (TEST-P2-007) --
+const THRESHOLD_CONFIGS = {
+  API: "apps/api/jest.config.mjs",
+  Web: "apps/web/jest.config.mjs",
+  SDK: "packages/sdk/jest.config.mjs",
+  Worker: "apps/worker/jest.config.mjs",
+};
+const THRESHOLD_KEYS = ["branches", "functions", "lines", "statements"];
+function readCoverageThreshold(relPath) {
+  const text = read(relPath);
+  const globalBlock = text.match(
+    /coverageThreshold\s*:\s*\{[\s\S]*?global\s*:\s*\{([\s\S]*?)\}/,
+  );
+  if (!globalBlock) {
+    mismatches.push(`${relPath}: coverageThreshold.global not found`);
+    return null;
+  }
+  const values = {};
+  for (const key of THRESHOLD_KEYS) {
+    const match = globalBlock[1].match(new RegExp(`\\b${key}\\s*:\\s*(\\d+)`));
+    if (!match) {
+      mismatches.push(`${relPath}: coverageThreshold.global.${key} not found`);
+      return null;
+    }
+    values[key] = Number(match[1]);
+  }
+  return values;
+}
+const testingDoc = read("docs/testing.md");
+for (const [display, configPath] of Object.entries(THRESHOLD_CONFIGS)) {
+  const declared = testingDoc.match(
+    new RegExp(`^\\|\\s*${display}\\s*\\|\\s*(\\d+)\\s*\\|\\s*(\\d+)\\s*\\|\\s*(\\d+)\\s*\\|\\s*(\\d+)\\s*\\|`, "m"),
+  );
+  if (!declared) {
+    mismatches.push(`docs/testing.md: coverage threshold row "${display}" not found`);
+    continue;
+  }
+  const declaredValues = {};
+  THRESHOLD_KEYS.forEach((key, index) => {
+    declaredValues[key] = Number(declared[index + 1]);
+  });
+  const actual = readCoverageThreshold(configPath);
+  if (!actual) continue;
+  for (const key of THRESHOLD_KEYS) {
+    check(
+      `docs/testing.md ${display} ${key} vs ${configPath}`,
+      declaredValues[key],
+      actual[key],
+    );
+  }
+}
+
+// --- Suite-file counts vs the tree (TEST-P2-008) --------------------------
+// Each rule mirrors the package's jest.config.mjs testMatch /
+// testPathIgnorePatterns; configNeedles below fail the guard if that config
+// shape changes, so the counter cannot silently drift from Jest.
+function countSuiteFiles({ root, isSuite }) {
+  let count = 0;
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "node_modules" || entry.name === ".next") continue;
+        walk(full);
+      } else if (entry.isFile() && isSuite(relative(ROOT, full), entry.name)) {
+        count += 1;
+      }
+    }
+  };
+  walk(join(ROOT, root));
+  return count;
+}
+const isTestNamed = (name) => /\.(test|spec)\.(ts|tsx)$/.test(name);
+const SUITE_PACKAGES = [
+  {
+    display: "API",
+    root: "apps/api/src",
+    config: "apps/api/jest.config.mjs",
+    configNeedles: ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts", "helpers\\\\.ts$"],
+    isSuite: (rel, name) =>
+      !rel.includes("/openapi/") &&
+      name !== "helpers.ts" &&
+      ((rel.includes("/__tests__/") && name.endsWith(".ts")) ||
+        /\.(test|spec)\.ts$/.test(name)),
+  },
+  {
+    display: "Web",
+    root: "apps/web",
+    config: "apps/web/jest.config.mjs",
+    configNeedles: [
+      "**/__tests__/**/*.ts",
+      "**/__tests__/**/*.tsx",
+      "**/?(*.)+(spec|test).ts",
+      "**/?(*.)+(spec|test).tsx",
+    ],
+    isSuite: (rel, name) =>
+      !rel.includes("e2e") &&
+      !rel.includes(".next") &&
+      ((rel.includes("/__tests__/") && /\.(ts|tsx)$/.test(name)) || isTestNamed(name)),
+  },
+  {
+    display: "Worker",
+    root: "apps/worker/src",
+    config: "apps/worker/jest.config.mjs",
+    configNeedles: ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
+    isSuite: (rel, name) =>
+      (rel.includes("/__tests__/") && name.endsWith(".ts")) || /\.(test|spec)\.ts$/.test(name),
+  },
+  {
+    display: "SDK",
+    root: "packages/sdk/src",
+    config: "packages/sdk/jest.config.mjs",
+    configNeedles: ["**/__tests__/**/*.ts"],
+    isSuite: (rel, name) => rel.includes("/__tests__/") && name.endsWith(".ts"),
+  },
+];
+const suiteCounts = {};
+for (const pkg of SUITE_PACKAGES) {
+  const configText = read(pkg.config);
+  for (const needle of pkg.configNeedles) {
+    if (!configText.includes(needle)) {
+      mismatches.push(
+        `${pkg.config}: expected testMatch/ignore ${needle} — update the suite counter in check-docs-counts.mjs`,
+      );
+    }
+  }
+  suiteCounts[pkg.display] = countSuiteFiles(pkg);
+}
+const treeSuiteTotal = Object.values(suiteCounts).reduce((sum, value) => sum + value, 0);
+for (const [display, key] of Object.entries(PACKAGES)) {
+  if (rows[key]) {
+    check(`AGENTS.md ${display} suites vs tree`, rows[key].suites, suiteCounts[display]);
+  }
+}
+if (agentsSuites !== null) {
+  check("AGENTS.md suite total vs tree", agentsSuites, treeSuiteTotal);
+}
+
 // --- docs/INDEX.md path count vs docs/openapi.yaml -----------------------
 const indexPathCount = parse(
   "docs/INDEX.md openapi paths",
@@ -287,11 +434,78 @@ if (declaredLatest !== null && migrations.length > 0) {
   );
 }
 
-// --- README.md E2E spec count --------------------------------------------
+// --- DOC-P3-003: prose counts in README/ONBOARDING/inventory --------------
+// These files stated migration/workflow/OpenAPI counts the guard did not
+// read, so they drifted silently. Guard them the same way as AGENTS.md.
+const onboarding = read("docs/ONBOARDING.md");
+const openapiPathCount = (read("docs/openapi.yaml").match(/^ {2}"\//gm) ?? []).length;
+
+const readmeMigrations = parse(
+  "README.md migration count",
+  readme,
+  /database \/ RLS foundation \(([\d,]+) migrations\)/,
+);
+if (readmeMigrations !== null) {
+  check("README.md migration count vs supabase/migrations/*.sql", readmeMigrations, migrationFiles.length);
+}
+const onboardingMigrations = parse(
+  "docs/ONBOARDING.md migration count",
+  onboarding,
+  /migrations\/\s+([\d,]+) SQL migration files/,
+);
+if (onboardingMigrations !== null) {
+  check(
+    "docs/ONBOARDING.md migration count vs supabase/migrations/*.sql",
+    onboardingMigrations,
+    migrationFiles.length,
+  );
+}
+const onboardingWorkflows = parse(
+  "docs/ONBOARDING.md workflow count",
+  onboarding,
+  /CI\/CD workflows \(([\d,]+) total\)/,
+);
+if (onboardingWorkflows !== null) {
+  check(
+    "docs/ONBOARDING.md workflow count vs .github/workflows/*.yml",
+    onboardingWorkflows,
+    workflowCount,
+  );
+}
+const onboardingOpenapiPaths = parse(
+  "docs/ONBOARDING.md openapi paths",
+  onboarding,
+  /authoritative ([\d,]+)-path spec/,
+);
+if (onboardingOpenapiPaths !== null) {
+  check("docs/ONBOARDING.md openapi paths vs docs/openapi.yaml", onboardingOpenapiPaths, openapiPathCount);
+}
+const inventoryOpenapiPaths = parse(
+  "docs/API_ENDPOINT_INVENTORY.md openapi paths",
+  read("docs/API_ENDPOINT_INVENTORY.md"),
+  /\(([\d,]+) paths\)/,
+);
+if (inventoryOpenapiPaths !== null) {
+  check(
+    "docs/API_ENDPOINT_INVENTORY.md openapi paths vs docs/openapi.yaml",
+    inventoryOpenapiPaths,
+    openapiPathCount,
+  );
+}
+
+// --- README.md / AGENTS.md E2E spec counts --------------------------------
 const e2eSpecCount = countFiles("apps/web/e2e", (full, name) => name.endsWith(".spec.ts"));
 const readmeSpecs = parse("README.md E2E spec files", readme, /\(([\d,]+) spec files\)/);
 if (readmeSpecs !== null) {
   check("README.md E2E spec files vs apps/web/e2e/**/*.spec.ts", readmeSpecs, e2eSpecCount);
+}
+const agentsSpecs = parse(
+  "AGENTS.md E2E spec files",
+  agents,
+  /^\|\s*E2E\s*\|\s*\**\s*(\d[\d,]*)\s*spec files\s*\**\s*\|/m,
+);
+if (agentsSpecs !== null) {
+  check("AGENTS.md E2E spec files vs apps/web/e2e/**/*.spec.ts", agentsSpecs, e2eSpecCount);
 }
 
 // --- AGENTS.md "API route files" row (top-level + recursive) -------------
@@ -520,6 +734,65 @@ if (a11yBase !== null && a11yFull !== null) {
       a11yTotal,
     );
   }
+}
+
+// --- Test totals from the jest --json results (TEST-P2-008) ---------------
+// `test:coverage` writes .jest-results.json per package (the scripts pass
+// --json --outputFile); CI sets MCT_VERIFY_TEST_COUNTS=1, which makes missing
+// or drifting results fatal instead of advisory.
+const JEST_RESULTS = {
+  api: "apps/api/.jest-results.json",
+  web: "apps/web/.jest-results.json",
+  sdk: "packages/sdk/.jest-results.json",
+  worker: "apps/worker/.jest-results.json",
+};
+const requireTestCounts = process.env.MCT_VERIFY_TEST_COUNTS === "1";
+const measuredTests = {};
+for (const [key, relPath] of Object.entries(JEST_RESULTS)) {
+  const raw = tryRead(relPath);
+  if (raw === null) {
+    if (requireTestCounts) {
+      mismatches.push(
+        `${relPath}: missing — run the coverage suite first (MCT_VERIFY_TEST_COUNTS=1)`,
+      );
+    }
+    continue;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed.numTotalTests === "number") {
+      measuredTests[key] = parsed.numTotalTests;
+    } else {
+      mismatches.push(`${relPath}: numTotalTests not found`);
+    }
+  } catch {
+    mismatches.push(`${relPath}: not valid JSON`);
+  }
+}
+const measuredKeys = Object.keys(measuredTests);
+if (measuredKeys.length > 0) {
+  const measuredTotal = measuredKeys.reduce((sum, key) => sum + measuredTests[key], 0);
+  for (const [display, key] of Object.entries(PACKAGES)) {
+    if (rows[key] && measuredTests[key] !== undefined) {
+      check(
+        `AGENTS.md ${display} tests vs ${JEST_RESULTS[key]}`,
+        rows[key].tests,
+        measuredTests[key],
+      );
+    }
+  }
+  if (agentsTotal !== null && measuredKeys.length === Object.keys(JEST_RESULTS).length) {
+    check("AGENTS.md test total vs jest results", agentsTotal, measuredTotal);
+  }
+  console.log(
+    `measured test totals (${measuredKeys.length}/4 packages): ` +
+      Object.entries(measuredTests)
+        .map(([key, value]) => `${key} ${value}`)
+        .join(", ") +
+      ` (total ${measuredTotal})`,
+  );
+} else if (requireTestCounts) {
+  mismatches.push("no .jest-results.json found — run the coverage suite first");
 }
 
 if (mismatches.length > 0) {

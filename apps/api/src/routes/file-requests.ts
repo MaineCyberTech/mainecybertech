@@ -11,6 +11,10 @@ import { createFileRequestSchema, updateFileRequestSchema } from "../validators/
 import { createNotification } from "../lib/notify";
 import { queryInt } from "../lib/query";
 import { validateUploadContent } from "../lib/upload-validation";
+import { scanUploadForMalware } from "../lib/malware-scan";
+import { signedUrlDisposition } from "../lib/preview-policy";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -156,7 +160,11 @@ router.post(
       const storagePath = `${data.organization_id}/requests/${data.token}/${Date.now()}-${safeName}`;
       // Byte-sniff the content: declared MIME is untrusted (markup/SVG rejected,
       // images and PDFs must match their declared type).
-      validateUploadContent(req.file.buffer, req.file.mimetype);
+      // FILE-P2-005: extension is cross-checked against the detected container.
+      validateUploadContent(req.file.buffer, req.file.mimetype, req.file.originalname);
+
+      // FILE-P2-003: optional malware scan (no-op unless configured).
+      await scanUploadForMalware(req.file.buffer, req.file.originalname, req.file.mimetype);
       const { error: uploadError } = await supabase.storage
         .from("documents")
         .upload(storagePath, req.file.buffer, {
@@ -296,7 +304,7 @@ router.get("/", async (req, res, next) => {
 
     let q = supabase
       .from("file_requests")
-      .select("*", { count: "exact" })
+      .select("*", { count: listCountMode(req.query) })
       .eq("organization_id", req.query.organization_id as string);
     const status = req.query.status as string | undefined;
     if (status) q = q.eq("status", status);
@@ -377,16 +385,18 @@ router.get("/:id/uploads/:uploadId/signed-url", async (req, res, next) => {
 
     const { data: upload, error: uploadError } = await supabase
       .from("file_request_uploads")
-      .select("storage_bucket, storage_path")
+      .select("storage_bucket, storage_path, mime_type, file_name")
       .eq("id", String(req.params.uploadId))
       .eq("file_request_id", request.id)
       .eq("organization_id", orgId)
       .single();
     if (uploadError || !upload) throw new AppError("NOT_FOUND", "Upload not found", 404);
 
+    // FILE-P3-008: non-previewable uploads are signed with an attachment
+    // disposition so they cannot render inline from the storage origin.
     const { data: signedUrl, error: urlError } = await supabase.storage
       .from(upload.storage_bucket)
-      .createSignedUrl(upload.storage_path, 3600);
+      .createSignedUrl(upload.storage_path, 3600, signedUrlDisposition(upload.mime_type, upload.file_name));
     if (urlError || !signedUrl)
       throw new AppError("STORAGE_ERROR", "Failed to create signed URL", 500);
 
@@ -487,6 +497,7 @@ router.patch("/:id", requirePermission("file-requests", "edit"), async (req, res
 
 router.delete("/:id", requirePermission("file-requests", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "file-requests", "write");
     const { error } = await supabase
       .from("file_requests")

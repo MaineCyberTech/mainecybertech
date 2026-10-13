@@ -69,14 +69,14 @@ export default function SatisfactionPulseRespondForm({
           type="button"
           disabled={isPending || currentStatus === "responded"}
           onClick={submit}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-[#0A1118] hover:bg-emerald-500 disabled:opacity-50"
+          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-cyber-base hover:bg-emerald-500 disabled:opacity-50"
         >
           {isPending ? "Saving…" : "Record Response"}
         </button>
         {currentStatus === "responded" && (
           <span className="text-sm text-emerald-400">Responded</span>
         )}
-        {error && <span className="text-sm text-red-400">{error}</span>}
+        {error && <span role="alert" className="text-sm text-red-400">{error}</span>}
       </div>
     </div>
   );

@@ -41,7 +41,7 @@ export default function ResourcesIndexPage() {
         </p>
 
         {magnets.length === 0 ? (
-          <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-12 text-center backdrop-blur-sm">
+          <div className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-12 text-center backdrop-blur-sm">
             <p className="text-slate-400">No resources available yet. Check back soon.</p>
           </div>
         ) : (

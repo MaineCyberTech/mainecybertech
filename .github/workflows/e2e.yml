@@ -9,21 +9,21 @@ on:
         default: false
   # Push trigger removed: the PR run plus the prod deploy's `workflow_call`
   # gate already cover changes, and a push trigger ran E2E 2-3x per change.
+  # No `paths:` filter on `pull_request` (BP-P2-004 / CI-P2-009 / TEST-P2-009):
+  # `E2E / e2e (20.x)` is a required check on `main`, and a path-filtered
+  # workflow never reports on PRs that miss the paths — leaving them blocked
+  # forever on a check that cannot run. `scripts/check-required-checks.mjs`
+  # fails if this filter is ever reintroduced while the check is required.
   pull_request:
     branches: [main, develop]
-    paths:
-      - "apps/web/e2e/**"
-      - "apps/web/playwright.config.ts"
-      - "apps/web/app/**"
-      - "apps/web/components/**"
-      - "packages/**"
-      - "supabase/seeds/**"
-      - "supabase/migrations/**"
-      - ".github/workflows/e2e.yml"
   workflow_call:
     inputs:
       a11y_full:
         description: "Run the full accessibility breadth scan"
+        type: boolean
+        default: false
+      a11y_update_baseline:
+        description: "Regenerate apps/web/e2e/a11y-baseline.json from the full scan (requires a11y_full)"
         type: boolean
         default: false
 
@@ -62,7 +62,9 @@ jobs:
             ${{ runner.os }}-playwright-
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium
+        # mobile-safari runs WebKit (MOB-P2-003); --with-deps provisions its
+        # system libraries on the runner.
+        run: pnpm exec playwright install --with-deps chromium webkit
 
       - name: Install Supabase CLI
         # Pinned and installed from npm rather than `supabase/setup-cli` with
@@ -92,6 +94,11 @@ jobs:
 
       - name: Apply migrations and seeds
         run: supabase db reset
+
+      - name: Run RLS allow/deny matrix
+        # RLS-P3-002: behavioral tenant-isolation checks (approved/pending
+        # members, org admin, super admin, anon) against the migration chain.
+        run: scripts/ci/check-rls-matrix.sh
 
       - name: Sync Supabase env to API
         run: |
@@ -151,6 +158,11 @@ jobs:
           NEXT_PUBLIC_API_URL: http://localhost:4000
           NEXT_TELEMETRY_DISABLED: 1
 
+      - name: Check web bundle budget
+        # PERF-P3-003: fails when the built client JS exceeds the committed
+        # budgets in scripts/bundle-budget.json. The analyzer stays opt-in.
+        run: node scripts/check-bundle-budget.mjs
+
       - name: Start web app
         run: |
           pnpm --filter=web start &
@@ -167,6 +179,24 @@ jobs:
           E2E_ADMIN_EMAIL: superadmin.real@mainecybertech.local
           E2E_ADMIN_PASSWORD: 1
           A11Y_FULL: ${{ inputs.a11y_full && '1' || '0' }}
+          A11Y_UPDATE_BASELINE: ${{ inputs.a11y_update_baseline && '1' || '0' }}
+
+      - name: Upload regenerated a11y baseline
+        # Only present when the caller asked to regenerate the baseline; the
+        # spec writes the file in A11Y_UPDATE_BASELINE mode (afterAll still runs
+        # when a locator fails), so `always()` keeps it uploadable either way.
+        if: ${{ always() && inputs.a11y_update_baseline }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: a11y-baseline
+          path: apps/web/e2e/a11y-baseline.json
+          if-no-files-found: error
+
+      - name: E2E flake summary
+        # Always runs so retry/flake counts are recorded even when the suite
+        # fails; warns but never fails the job (flake is data, not a gate yet).
+        if: always()
+        run: node scripts/e2e-flake-summary.mjs .playwright-results/results.json
 
       - name: Upload Playwright report
         if: failure()

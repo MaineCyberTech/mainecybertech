@@ -130,7 +130,7 @@ export default function CameraCalculatorClient({ organizationId, initialItems }:
           <button
             type="button"
             onClick={calculate}
-            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-[#0A1118] hover:bg-emerald-500"
+            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-cyber-base hover:bg-emerald-500"
           >
             Calculate
           </button>
@@ -145,7 +145,7 @@ export default function CameraCalculatorClient({ organizationId, initialItems }:
             </button>
           )}
         </div>
-        {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+        {error && <p role="alert" className="mt-3 text-sm text-red-400">{error}</p>}
         {savedMessage && <p className="mt-3 text-sm text-emerald-400">{savedMessage}</p>}
         {result && (
           <div className="mt-4 grid gap-3 rounded-md border border-white/10 bg-white/5 p-4 md:grid-cols-4">
