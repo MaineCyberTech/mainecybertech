@@ -247,6 +247,14 @@ router.post(
       // (SSRF guard + HMAC signing + attempt counting). Recreate the delivery
       // as due-now, then nudge the task so it runs before the next 5-minute
       // sweep. The scheduled task will still pick it up if the queue is down.
+      //
+      // CHAIN-P2-009: a stable per-dead-letter idempotency key makes this
+      // insert the replay claim. Two overlapping requests (an admin
+      // double-click, or a retry racing another admin) cannot create two
+      // delivery rows: the unique idempotency key lets only the first insert
+      // win. The key also rides the retried POST (webhook-retry copies it to
+      // the Idempotency-Key header) so consumers can dedupe the replay.
+      const replayKey = `dlq-replay-${deadLetter.id}`;
       const { error: insertError } = await supabase.from("webhook_deliveries").insert({
         webhook_id: deadLetter.webhook_id,
         event: deadLetter.event,
@@ -255,8 +263,14 @@ router.post(
         retry_count: 0,
         dead_letter: false,
         next_retry_at: new Date().toISOString(),
+        idempotency_key: replayKey,
       });
-      if (insertError) throw new AppError("DB_ERROR", insertError.message, 500);
+      // 23505 = the unique idempotency key already claimed this replay.
+      // Collapse to the same outcome instead of erroring or double-POSTing.
+      const alreadyReplayed = insertError?.code === "23505";
+      if (insertError && !alreadyReplayed) {
+        throw new AppError("DB_ERROR", insertError.message, 500);
+      }
 
       await enqueueTask("webhook-retry", {});
 
@@ -267,16 +281,24 @@ router.post(
         .select("id")
         .maybeSingle();
       if (deleteError) throw new AppError("DB_ERROR", deleteError.message, 500);
-      if (!deleted) throw new AppError("NOT_FOUND", "Dead letter not found", 404);
+      // The winning request may have already removed the dead letter; with a
+      // duplicate claim that is the same outcome, not a missing row.
+      if (!deleted && !alreadyReplayed) {
+        throw new AppError("NOT_FOUND", "Dead letter not found", 404);
+      }
 
-      await logAuditEvent({
-        organizationId: endpoint.organization_id,
-        actorUserId: req.authUser!.userId,
-        action: "webhook.dead_letter.retried",
-        entityType: "webhook_dead_letter",
-        entityId: deadLetter.id,
-        metadata: { webhookId: deadLetter.webhook_id, event: deadLetter.event },
-      });
+      // Only the request that actually removed the row owns the audit entry,
+      // so a collapsed duplicate does not double-log the retry.
+      if (deleted) {
+        await logAuditEvent({
+          organizationId: endpoint.organization_id,
+          actorUserId: req.authUser!.userId,
+          action: "webhook.dead_letter.retried",
+          entityType: "webhook_dead_letter",
+          entityId: deadLetter.id,
+          metadata: { webhookId: deadLetter.webhook_id, event: deadLetter.event },
+        });
+      }
 
       res.json(success({ ok: true }));
     } catch (error) {

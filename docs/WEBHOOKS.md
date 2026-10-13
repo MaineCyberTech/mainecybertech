@@ -62,6 +62,10 @@ constant time.
 - After the final failure the delivery moves to `webhook_dead_letters` for
   admin triage/replay in the admin console. Dead letters are retained 180 days;
   delivery rows 90 days (`scripts` retention task, migration `5302454`).
+- An admin replay re-creates the delivery with a stable dedup key
+  (`dlq-replay-<dead-letter-id>`) that is sent as the `Idempotency-Key`, so an
+  overlapping replay request (double-click or concurrent admin) collapses to a
+  single retry instead of a second POST.
 - Consumers should dedupe on `Idempotency-Key` (or on
   `event` + `timestamp` + payload digest). Re-delivery after a failure is
   expected and safe to ignore.
