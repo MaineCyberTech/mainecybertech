@@ -60,7 +60,7 @@ function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
         <button
           type="button"
           aria-label={dismissLabel(toast)}
-          className="-mr-1 -mt-1 shrink-0 rounded-md p-1 opacity-70 transition hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-0"
+          className="-mr-3.5 -mt-3.5 shrink-0 rounded-md p-3.5 opacity-70 transition hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-0"
           onClick={() => onDismiss(toast.id)}
         >
           <X className="h-4 w-4" aria-hidden="true" />

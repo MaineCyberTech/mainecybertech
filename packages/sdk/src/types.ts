@@ -99,6 +99,11 @@ export interface Ticket {
   labels?: string[] | null;
   resolution?: string | null;
   jira_last_synced_at?: string | null;
+  /**
+   * Optimistic-locking row version (USE-P3-004). Pass it back as `ifMatch`
+   * on `tickets.update`; the API rejects a stale write with 409.
+   */
+  version?: number;
   created_at: string;
   updated_at: string;
 }
@@ -193,6 +198,11 @@ export interface Document {
   file_size: number | null;
   uploaded_by: string | null;
   current_version: number | null;
+  /**
+   * Optimistic-locking row version (USE-P3-004). Pass it back as `ifMatch`
+   * on `documents.update`; the API rejects a stale write with 409.
+   */
+  version?: number;
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;

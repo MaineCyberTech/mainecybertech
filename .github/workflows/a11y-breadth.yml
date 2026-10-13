@@ -1,13 +1,26 @@
-name: A11y breadth (triage)
+name: A11y breadth (gate on new violations)
 
-# Weekly/manual full accessibility scan (68 routes, WCAG 2.2 tags). This is a
-# triage report, not a gate: it is not referenced by any required check, and a
-# red run means the breadth scan found violations to fix or promote into the
-# default 19-page gate. The default E2E gate stays on the small page list.
+# Weekly/manual full accessibility scan (68 routes, WCAG 2.2 tags) on top of the
+# 25-route default gate. UX-P3-010: this is no longer triage-only — the run
+# fails on critical/serious violations that are not recorded in
+# apps/web/e2e/a11y-baseline.json ("baseline + fail-on-new"). The baseline is
+# empty today (the 2026-10-02 scan and every weekly run since are green), so
+# the practical contract is zero-tolerance; it exists so accepted debt can be
+# recorded explicitly instead of silently skipping routes.
+#
+# Promoting this workflow to a required check is a repo-admin action on branch
+# protection (the coordinator owns that) — until then it is a scheduled
+# "required-ish" gate: red runs are real regressions, not triage noise.
+# Regenerate the baseline via dispatch with `update_baseline: true`.
 # See docs/WEB_UI_CONVENTIONS.md ("Accessibility scanning").
 
 on:
   workflow_dispatch:
+    inputs:
+      update_baseline:
+        description: "Regenerate apps/web/e2e/a11y-baseline.json instead of failing on known violations"
+        type: boolean
+        default: false
   schedule:
     - cron: "23 5 * * 1"
 
@@ -16,7 +29,10 @@ permissions:
 
 jobs:
   breadth:
+    # GitHub does not allow timeout-minutes on a job that calls a reusable
+    # workflow; the e2e.yml `e2e` job carries its own 45-minute timeout.
     uses: ./.github/workflows/e2e.yml
     with:
       a11y_full: true
+      a11y_update_baseline: ${{ inputs.update_baseline || false }}
     secrets: inherit

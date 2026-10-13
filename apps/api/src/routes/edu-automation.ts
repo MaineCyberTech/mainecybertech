@@ -8,9 +8,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
 import {
-  sop,
   compliance,
-  insurance,
   aiPolicy,
   kb,
   training,
@@ -25,6 +23,8 @@ import { applyOrgScope, resolveAdminTenantScope } from "../lib/admin-scope";
 import { parsePartialUpdate } from "../lib/validators";
 import { sanitizeSearchTerm } from "../lib/search";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { goneRoute } from "../lib/deprecated-route";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -45,7 +45,7 @@ function crud(
       const lm = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
       const q = sb
         .from(table)
-        .select("*", { count: "exact" })
+        .select("*", { count: listCountMode(req.query) })
         .eq("organization_id", req.query.organization_id as string);
       const { data, error, count } = await q
         .order("created_at", { ascending: false })
@@ -176,10 +176,13 @@ type ScorecardRow = {
 };
 
 type SchemaMap = Record<string, { schema: z.ZodTypeAny; table: string; module: string }>;
+// FEAT-P2-005: `sop_library` and `insurance_evidence` are no longer registered
+// here. Each table has exactly one canonical surface
+// (`/api/v1/governance/sop-library`, `/api/v1/insurance-binder`); the old
+// `/sop` and `/insurance` paths below are hard-deprecated stubs so the two
+// divergent validators/lifecycles cannot drift again.
 const schemas: SchemaMap = {
-  sop: { schema: sop, table: "sop_library", module: "sop-library" },
   compliance: { schema: compliance, table: "compliance_readiness", module: "compliance-readiness" },
-  insurance: { schema: insurance, table: "insurance_evidence", module: "insurance-binder" },
   "ai-policy": { schema: aiPolicy, table: "ai_policies", module: "edu-automation" },
   kb: { schema: kb, table: "knowledge_articles", module: "client-knowledge-base" },
   training: { schema: training, table: "training_modules", module: "training-hub" },
@@ -1126,5 +1129,12 @@ router.post(
 for (const [path, { schema: s, table, module }] of Object.entries(schemas)) {
   crud(path, table, s, module);
 }
+
+// FEAT-P2-005: hard-deprecated duplicates. `sop_library` is canonically served
+// by `/api/v1/governance/sop-library` and `insurance_evidence` by
+// `/api/v1/insurance-binder`; both old paths fail closed with 410 + a
+// successor-version link instead of writing through a second validator.
+router.use("/sop", goneRoute("edu-automation/sop"));
+router.use("/insurance", goneRoute("edu-automation/insurance"));
 
 export default router;

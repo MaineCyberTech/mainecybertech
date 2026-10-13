@@ -30,15 +30,19 @@ create index if not exists idx_file_requests_status on file_requests(status);
 
 alter table file_requests enable row level security;
 
+drop policy if exists "file_requests_select_org" on file_requests;
 create policy "file_requests_select_org" on file_requests for select
   using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "file_requests_insert_auth" on file_requests;
 create policy "file_requests_insert_auth" on file_requests for insert
   with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "file_requests_update_org" on file_requests;
 create policy "file_requests_update_org" on file_requests for update
   using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "file_requests_delete_admin" on file_requests;
 create policy "file_requests_delete_admin" on file_requests for delete
   using (exists (select 1 from memberships m join roles r on m.role_id = r.id where m.user_id = auth.uid() and m.organization_id = file_requests.organization_id and r.key in ('super_admin', 'admin')));
 

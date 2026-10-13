@@ -146,7 +146,10 @@ export default async function PortalDocumentDetailPage({ params }: PortalDocumen
 
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Download & Version Info</h2>
-        <DocumentVersionsClient documentId={documentId} />
+        <DocumentVersionsClient
+          documentId={documentId}
+          currentVersion={document.current_version ?? 1}
+        />
 
         <div className="mt-6 space-y-4">
           <div className="flex flex-wrap gap-3">

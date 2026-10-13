@@ -130,14 +130,14 @@ exit 1
 REMOTE_HEALTH
 
 echo "=== Health checks ==="
-# Only success/redirect codes are healthy; a 500/502/503 means the app booted
-# but is failing (the old check treated any non-000 code as success).
+# RES-P3-006: the API /health gate requires exactly 200, in parity with
+# deploy-do.yml's deploy gate (a redirect or any other code means the app
+# booted but is not serving health). The old check treated any non-000 code
+# as success.
 api_ok=""
 for i in $(seq 1 15); do
   CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$API_HOST/health" 2>/dev/null || echo "000")
-  case "$CODE" in
-    200|301|302|307) echo "API ready after $((i*4))s (HTTP $CODE)"; api_ok=1; break ;;
-  esac
+  if [ "$CODE" = "200" ]; then echo "API ready after $((i*4))s (HTTP 200)"; api_ok=1; break; fi
   echo "Attempt $i/15: HTTP $CODE"; sleep 4
 done
 if [ "$api_ok" != "1" ]; then

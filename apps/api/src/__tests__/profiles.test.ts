@@ -144,7 +144,7 @@ describe("profiles routes", () => {
 
   describe("GET /:id", () => {
     it("returns a profile by id (own profile)", async () => {
-      const supabase = mockAuth();
+      mockAuth();
       // authUser is user-1, requesting user-1 (own profile) — no admin check needed
       const result: MockResult = { data: PROFILE, error: null };
       (getSupabaseUser as jest.Mock)().from.mockReturnValue(createMockBuilder(result));

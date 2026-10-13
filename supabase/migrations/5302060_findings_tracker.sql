@@ -39,6 +39,7 @@ create index if not exists idx_findings_deadline on findings(remediation_deadlin
 
 alter table findings enable row level security;
 
+drop policy if exists "findings_select_org" on findings;
 create policy "findings_select_org" on findings for select
   using (
     organization_id in (
@@ -46,6 +47,7 @@ create policy "findings_select_org" on findings for select
     )
   );
 
+drop policy if exists "findings_insert_auth" on findings;
 create policy "findings_insert_auth" on findings for insert
   with check (
     organization_id in (
@@ -53,6 +55,7 @@ create policy "findings_insert_auth" on findings for insert
     )
   );
 
+drop policy if exists "findings_update_org" on findings;
 create policy "findings_update_org" on findings for update
   using (
     organization_id in (
@@ -60,6 +63,7 @@ create policy "findings_update_org" on findings for update
     )
   );
 
+drop policy if exists "findings_delete_admin" on findings;
 create policy "findings_delete_admin" on findings for delete
   using (
     exists (

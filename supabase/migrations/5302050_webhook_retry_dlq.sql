@@ -24,6 +24,7 @@ create index if not exists idx_webhook_dead_letters_webhook
 
 alter table public.webhook_dead_letters enable row level security;
 
+drop policy if exists "webhook_dead_letters_select_same_org" on public.webhook_dead_letters;
 create policy "webhook_dead_letters_select_same_org"
 on public.webhook_dead_letters for select
 using (
@@ -34,6 +35,7 @@ using (
   )
 );
 
+drop policy if exists "webhook_dead_letters_insert_service" on public.webhook_dead_letters;
 create policy "webhook_dead_letters_insert_service"
 on public.webhook_dead_letters for insert
 with check (
@@ -44,6 +46,7 @@ with check (
   )
 );
 
+drop policy if exists "webhook_dead_letters_update_service" on public.webhook_dead_letters;
 create policy "webhook_dead_letters_update_service"
 on public.webhook_dead_letters for update
 using (

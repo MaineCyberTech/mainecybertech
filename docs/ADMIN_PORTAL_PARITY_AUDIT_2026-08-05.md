@@ -1,5 +1,9 @@
 # Admin ↔ Portal Parity Audit — 2026-08-05
 
+> **HISTORICAL (superseded).** Snapshot of the codebase as of 2026-08-05. The P0/P1
+> items were fixed in the same-day remediation and later runs; the parity matrix below
+> is not current. See `AGENTS.md` / `CHANGELOG.md` for present state.
+
 Audited all 60 modules' admin pages (`apps/web/app/(admin)/admin/**`) against their portal/client pages using 6 parallel workers. Goal: admin side must be a **superset** of the portal side (view same data + full CRUD + admin-only actions).
 
 > **Remediation (same day):** P0-1, P0-2, P0-3, P1-A, P1-B (SDK wrappers + 3 workflow button sets), P1-C (delete wired on 17 custom detail pages), P1-D all fixed and committed. See the "Remediation Applied" section at the bottom. Full test suite green (API 724, Web 1442, SDK 262, Worker 36), lint + typecheck clean.

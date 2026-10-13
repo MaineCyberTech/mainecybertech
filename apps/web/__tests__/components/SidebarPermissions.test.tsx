@@ -44,6 +44,18 @@ describe("AdminSidebarContent permission filtering", () => {
     expect(links).not.toContain("Users");
     expect(links).not.toContain("Organizations");
   });
+
+  it("exposes aria-expanded (and no aria-haspopup) on group toggles", () => {
+    mockCan.mockReturnValue(true);
+    render(<AdminSidebarContent />);
+
+    const toggles = screen.getAllByRole("button");
+    expect(toggles.length).toBeGreaterThan(0);
+    for (const toggle of toggles) {
+      expect(toggle).toHaveAttribute("aria-expanded");
+      expect(toggle).not.toHaveAttribute("aria-haspopup");
+    }
+  });
 });
 
 describe("PortalSidebarContent permission filtering", () => {
@@ -70,5 +82,17 @@ describe("PortalSidebarContent permission filtering", () => {
   it("hides everything when no permissions are granted", () => {
     render(<PortalSidebarContent />);
     expect(screen.queryAllByRole("link")).toHaveLength(0);
+  });
+
+  it("exposes aria-expanded (and no aria-haspopup) on group toggles", () => {
+    mockCan.mockReturnValue(true);
+    render(<PortalSidebarContent />);
+
+    const toggles = screen.getAllByRole("button");
+    expect(toggles.length).toBeGreaterThan(0);
+    for (const toggle of toggles) {
+      expect(toggle).toHaveAttribute("aria-expanded");
+      expect(toggle).not.toHaveAttribute("aria-haspopup");
+    }
   });
 });

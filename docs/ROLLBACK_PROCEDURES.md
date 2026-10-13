@@ -223,7 +223,11 @@ together restore working `documents.storage_path` links. A DB-only restore
 leaves those rows pointing at missing objects — always pair the two.
 `.github/workflows/storage-restore-test.yml` exercises the verification weekly
 against the newest archive; a green run is the storage-restore exercise
-artifact. A restore INTO a scratch Supabase project remains an operator drill.
+artifact. `scripts/exercise-storage-restore.sh` (run by the validate workflow)
+additionally drives `--verify-only` against synthetic valid/corrupt/encrypted
+archives on every CI run, so the assertions themselves are exercised even when
+no live backup has landed yet (FILE-P3-004). A restore INTO a scratch Supabase
+project remains an operator drill.
 
 ## 4. Terraform Rollback
 
@@ -283,27 +287,32 @@ Versioning is enforced by Terraform (`digitalocean_spaces_bucket.terraform_state
 in `state-bucket.tf`, DR-P2-005), so every state write keeps a previous object
 version — including the `terraform.tfstate.tflock` lock object (`use_lockfile`).
 
+The scripted procedure (DR-P3-005 / IR-P3-001) wraps the `aws s3api` calls and
+refuses to overwrite the live state object without an explicit confirmation:
+
 ```bash
-# 1. List the previous state versions (Spaces is S3-compatible)
+# 1. List the previous state versions (read-only)
 AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... \
-  aws s3api list-object-versions \
-  --bucket portal-terraform-state-development \
-  --prefix digitalocean/dev/terraform.tfstate \
-  --endpoint-url https://nyc3.digitaloceanspaces.com
+  ./scripts/terraform-state-restore.sh --env dev --list
 
-# 2. Copy the version you want back over the current object
-AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... \
-  aws s3api copy-object \
-  --bucket portal-terraform-state-development \
-  --key digitalocean/dev/terraform.tfstate \
-  --copy-source portal-terraform-state-development/digitalocean/dev/terraform.tfstate?versionId=<VERSION_ID> \
-  --endpoint-url https://nyc3.digitaloceanspaces.com
+# 2. Non-destructive check: copy the chosen version to a scratch key, then
+#    download/inspect it as printed (the live state is untouched)
+./scripts/terraform-state-restore.sh --env dev --scratch <VERSION_ID>
 
-# 3. Verify with a plan-only run before any apply
+# 3. Overwrite the live state object (destructive; requires --yes)
+./scripts/terraform-state-restore.sh --env dev --restore <VERSION_ID> --yes
+
+# 4. Verify with a plan-only run before any apply
+cd infra/terraform/digitalocean
+terraform init -reconfigure -backend-config=env/backend.dev.hcl
+terraform plan -var-file=<your-tfvars>
 ```
 
-> The state-restore drill itself is still an operator action (IR-P3-001):
-> record the run in the DR ledger when performed.
+The list/scratch/restore behavior and the `--yes` guard are tested in CI
+(`scripts/ci/test-terraform-state-restore.sh`). The live DO Spaces drill is
+still an operator action: record it in
+[`PLATFORM_FAILURE_RUNBOOKS.md`](PLATFORM_FAILURE_RUNBOOKS.md) §6 before
+claiming this path is verified.
 
 ### Resources with `prevent_destroy`
 
@@ -330,16 +339,18 @@ terraform plan -var-file=dev.tfvars -destroy -target=digitalocean_droplet.mct_po
 
 ### Prod-approval environment
 
-All production deployments reference the `prod-approval` GitHub environment:
-the Docker prod deploy (`deploy-do.yml`, `deploy` job) and the Terraform prod
-apply (`terraform-do.yml`, `terraform-apply-prod`).
+Every production-mutating job references the `prod-approval` GitHub
+environment: the Docker prod deploy (`deploy-do.yml`, `deploy` job), the
+Terraform prod apply (`terraform-do.yml`, `terraform-apply-prod`) and prod DB
+migrations (`supabase-migrations.yml` on `main`, BP-P3-003). The read-only
+`prod` environment is only used by `resolve-ip` / `terraform-plan`.
 
 **Required reviewers are a GitHub repository setting, not workflow code:**
 configure them under Settings → Environments → `prod-approval` → Required
 reviewers (add 1+). Until that list is populated there is **no working
-manual-approval gate** and a prod deploy will start without pausing. The prod
-deploy secrets/variables must also be available to `prod-approval` (scoped to
-it or repo-wide).
+manual-approval gate** and a prod deploy (or migration) will start without
+pausing. The prod deploy and migration secrets/variables must also be
+available to `prod-approval` (scoped to it or repo-wide).
 
 ## Deployment Verification
 

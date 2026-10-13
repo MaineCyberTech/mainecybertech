@@ -61,7 +61,10 @@ export async function resolveChannels(input: ResolveChannelsInput): Promise<Reso
       .from("notification_preferences")
       .select("channel, enabled")
       .eq("user_id", input.userId)
-      .eq("module_key", input.module);
+      // NOTIF-P3-005: a `module_key = 'all'` row is the global opt-out the
+      // unsubscribe endpoint writes; it suppresses the channel for every
+      // module. Read it alongside the module-specific rows.
+      .in("module_key", [input.module, "all"]);
 
     // Preferences are org-scoped. When we know the org, match it exactly;
     // otherwise fall back to any row for the user/module so a deliberate

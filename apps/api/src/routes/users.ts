@@ -17,6 +17,7 @@ import { setActiveUsers } from "../lib/metrics";
 import { assertCanAssignRole, resolveRoleKey } from "../lib/role-assignment";
 import { clearPermissionCache } from "../lib/permissions";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -60,7 +61,7 @@ router.get("/", requireAdmin, async (req, res, next) => {
       .from("profiles")
       .select(
         "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
-        { count: "exact" },
+        { count: listCountMode(req.query) },
       );
 
     let filteredQuery;

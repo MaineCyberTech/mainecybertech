@@ -1,4 +1,5 @@
 import { buildPaths, type RouteDef, pathParam, queryParam } from "./builder";
+import { API_CONTRACT_VERSION } from "../lib/api-version";
 
 /**
  * Standard success envelope (`{ success: true, data: <payload> }`). Only the
@@ -860,6 +861,13 @@ const ticketsProjects: RouteDef[] = [
     tag: "Documents",
     params: [pathParam("id"), pathParam("versionId")],
   },
+  {
+    method: "post",
+    path: "/documents/{id}/versions/{versionId}/restore",
+    summary: "Restore a document version as a new version",
+    tag: "Documents",
+    params: [pathParam("id"), pathParam("versionId")],
+  },
   { method: "post", path: "/documents/bulk/folder", summary: "Bulk folder move", tag: "Documents" },
   {
     method: "post",
@@ -899,6 +907,16 @@ const billingNotifications: RouteDef[] = [
     path: "/notifications/unread-count",
     summary: "Get unread count",
     tag: "Notifications",
+  },
+  {
+    // NOTIF-P3-005: public one-click unsubscribe; the signed token in the
+    // email is the only credential, so this is documented as unauthenticated.
+    method: "get",
+    path: "/notifications/unsubscribe",
+    summary: "One-click unsubscribe (signed token, no session)",
+    tag: "Notifications",
+    auth: false,
+    params: [queryParam("token")],
   },
   {
     method: "get",
@@ -985,6 +1003,36 @@ const billingNotifications: RouteDef[] = [
   },
 ];
 
+/** Search projections (SEARCH-P3-003). */
+const searchDocumentSchema: Record<string, unknown> = {
+  type: "object",
+  required: ["id", "name", "organization_id"],
+  properties: {
+    id: { type: "string" },
+    name: { type: "string" },
+    organization_id: { type: "string" },
+    mime_type: { type: "string", nullable: true },
+    visibility: { type: "string", nullable: true },
+  },
+};
+
+const searchEntityArray: Record<string, unknown> = {
+  type: "array",
+  items: { type: "object", additionalProperties: true },
+};
+
+const searchCountsSchema: Record<string, unknown> = {
+  type: "object",
+  required: ["users", "organizations", "tickets", "projects", "documents"],
+  properties: {
+    users: { type: "number" },
+    organizations: { type: "number" },
+    tickets: { type: "number" },
+    projects: { type: "number" },
+    documents: { type: "number" },
+  },
+};
+
 const adminAudit: RouteDef[] = [
   {
     method: "get",
@@ -1029,7 +1077,20 @@ const adminAudit: RouteDef[] = [
     path: "/search",
     summary: "Admin global search",
     tag: "Search",
-    params: [queryParam("q")],
+    params: [queryParam("q"), queryParam("limit")],
+    responseSchema: envelope({
+      type: "object",
+      required: ["users", "organizations", "tickets", "projects", "documents", "counts", "limit"],
+      properties: {
+        users: searchEntityArray,
+        organizations: searchEntityArray,
+        tickets: searchEntityArray,
+        projects: searchEntityArray,
+        documents: { type: "array", items: searchDocumentSchema },
+        counts: searchCountsSchema,
+        limit: { type: "number" },
+      },
+    }),
   },
   {
     method: "get",
@@ -1037,6 +1098,15 @@ const adminAudit: RouteDef[] = [
     summary: "Portal-scoped search",
     tag: "Search",
     params: [queryParam("q")],
+    responseSchema: envelope({
+      type: "object",
+      required: ["tickets", "projects", "documents"],
+      properties: {
+        tickets: searchEntityArray,
+        projects: searchEntityArray,
+        documents: { type: "array", items: searchDocumentSchema },
+      },
+    }),
   },
   { method: "get", path: "/api-keys", summary: "List API keys", tag: "Admin" },
   { method: "post", path: "/api-keys", summary: "Create API key", tag: "Admin" },
@@ -1658,6 +1728,32 @@ const extendedRoutes: RouteDef[] = [
     params: [queryParam("page"), queryParam("limit")],
   },
   { method: "post", path: "/admin/test-email", summary: "Send test email", tag: "Admin" },
+  {
+    method: "post",
+    path: "/admin/integration-syncs",
+    summary: "Enqueue a per-tenant Jira/JSM/M365 batch sync (super admin)",
+    tag: "Admin",
+    body: {
+      type: "object",
+      properties: {
+        task: { type: "string", enum: ["jira-sync", "jsm-sync", "m365-calendar-sync"] },
+        organizationId: { type: "string", format: "uuid" },
+        projectId: { type: "string", format: "uuid" },
+        projectKey: { type: "string" },
+        userPrincipalName: { type: "string" },
+        batchSize: { type: "integer" },
+        fullSync: { type: "boolean" },
+      },
+      required: ["task", "organizationId"],
+    },
+    responseSchema: {
+      type: "object",
+      properties: {
+        enqueued: { type: "boolean" },
+        task: { type: "string" },
+      },
+    },
+  },
 
   // ai - generated from apps/api/src/routes/ai.ts
   { method: "post", path: "/ai/triage/analyze", summary: "Analyze tickets with AI", tag: "AI" },
@@ -1681,6 +1777,29 @@ const extendedRoutes: RouteDef[] = [
     summary: "Draft AI reply for ticket",
     tag: "AI",
     params: [pathParam("ticketId")],
+  },
+  // FEAT-P2-004: documented ai_draft_outputs review gate.
+  { method: "post", path: "/ai/drafts", summary: "Persist an AI draft output", tag: "AI" },
+  {
+    method: "get",
+    path: "/ai/drafts",
+    summary: "List AI draft outputs",
+    tag: "AI",
+    params: [queryParam("page"), queryParam("limit")],
+  },
+  {
+    method: "get",
+    path: "/ai/drafts/{id}",
+    summary: "Get an AI draft output",
+    tag: "AI",
+    params: [pathParam("id")],
+  },
+  {
+    method: "post",
+    path: "/ai/drafts/{id}/review",
+    summary: "Approve or reject an AI draft output",
+    tag: "AI",
+    params: [pathParam("id")],
   },
 
   // analytics - generated from apps/api/src/routes/analytics.ts
@@ -4279,34 +4398,8 @@ const dynamicCrudCoverage: RouteDef[] = [
     tag: "Final",
     params: [pathParam("id")],
   },
-  { method: "get", path: "/final/satisfaction", summary: "List satisfaction pulses", tag: "Final" },
-  {
-    method: "get",
-    path: "/final/satisfaction/{id}",
-    summary: "Get satisfaction pulse",
-    tag: "Final",
-    params: [pathParam("id")],
-  },
-  {
-    method: "post",
-    path: "/final/satisfaction",
-    summary: "Create satisfaction pulse",
-    tag: "Final",
-  },
-  {
-    method: "patch",
-    path: "/final/satisfaction/{id}",
-    summary: "Update satisfaction pulse",
-    tag: "Final",
-    params: [pathParam("id")],
-  },
-  {
-    method: "delete",
-    path: "/final/satisfaction/{id}",
-    summary: "Delete satisfaction pulse",
-    tag: "Final",
-    params: [pathParam("id")],
-  },
+  // FEAT-P2-005: /final/satisfaction is hard-deprecated (410); the canonical
+  // satisfaction-pulse paths are listed above.
   { method: "get", path: "/final/time-entries", summary: "List time entries", tag: "Final" },
   {
     method: "get",
@@ -4424,29 +4517,8 @@ const dynamicCrudCoverage: RouteDef[] = [
   },
 
   // routes/edu-automation.ts — crud(): GET list, GET {id}, POST, PATCH {id}, DELETE {id}
-  { method: "get", path: "/edu-automation/sop", summary: "List SOPs", tag: "EduAutomation" },
-  {
-    method: "get",
-    path: "/edu-automation/sop/{id}",
-    summary: "Get SOP",
-    tag: "EduAutomation",
-    params: [pathParam("id")],
-  },
-  { method: "post", path: "/edu-automation/sop", summary: "Create SOP", tag: "EduAutomation" },
-  {
-    method: "patch",
-    path: "/edu-automation/sop/{id}",
-    summary: "Update SOP",
-    tag: "EduAutomation",
-    params: [pathParam("id")],
-  },
-  {
-    method: "delete",
-    path: "/edu-automation/sop/{id}",
-    summary: "Delete SOP",
-    tag: "EduAutomation",
-    params: [pathParam("id")],
-  },
+  // FEAT-P2-005: /edu-automation/sop is hard-deprecated (410); sop_library is
+  // canonically served by /governance/sop-library (listed above).
   {
     method: "get",
     path: "/edu-automation/compliance",
@@ -4480,39 +4552,8 @@ const dynamicCrudCoverage: RouteDef[] = [
     tag: "EduAutomation",
     params: [pathParam("id")],
   },
-  {
-    method: "get",
-    path: "/edu-automation/insurance",
-    summary: "List insurance evidence",
-    tag: "EduAutomation",
-  },
-  {
-    method: "get",
-    path: "/edu-automation/insurance/{id}",
-    summary: "Get insurance evidence",
-    tag: "EduAutomation",
-    params: [pathParam("id")],
-  },
-  {
-    method: "post",
-    path: "/edu-automation/insurance",
-    summary: "Create insurance evidence",
-    tag: "EduAutomation",
-  },
-  {
-    method: "patch",
-    path: "/edu-automation/insurance/{id}",
-    summary: "Update insurance evidence",
-    tag: "EduAutomation",
-    params: [pathParam("id")],
-  },
-  {
-    method: "delete",
-    path: "/edu-automation/insurance/{id}",
-    summary: "Delete insurance evidence",
-    tag: "EduAutomation",
-    params: [pathParam("id")],
-  },
+  // FEAT-P2-005: /edu-automation/insurance is hard-deprecated (410);
+  // insurance_evidence is canonically served by /insurance-binder.
   {
     method: "get",
     path: "/edu-automation/ai-policy",
@@ -4854,7 +4895,7 @@ export function buildSpec() {
       title: "MCT Client Portal API",
       description:
         "Maine CyberTech Client Portal API. Bearer token authentication required unless noted as public.",
-      version: "1.0.0",
+      version: API_CONTRACT_VERSION,
       contact: { name: "MCT Support", email: "support@mainecybertech.com" },
     },
     servers: [

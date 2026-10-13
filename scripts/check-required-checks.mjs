@@ -73,13 +73,20 @@ function pullRequestPathFiltered(text) {
 /** Minimal extraction of workflow `name:`, jobs, and matrix values.
  *
  * Check-run naming rules being modelled:
+ * - A job with no matrix reports as "<workflow name> / <job id>".
  * - A job with a `matrix:` and NO explicit job `name:` reports as
- *   "<workflow name> / <job id> (<matrix value>)" - one per matrix entry.
+ *   "<workflow name> / <job id> (<matrix values>)" - one per matrix entry,
+ *   with multiple keys joined ", " in definition order.
  * - A job WITH an explicit `name:` reports "<workflow name> / <name>", with
  *   any `${{ matrix.<key> }}` reference expanded per value: GitHub expands
  *   matrix variables in job names (CodeQL's live "Analyze
  *   (javascript-typescript)" check-run is the example).
- * - A job with no matrix reports as "<workflow name> / <job id>".
+ * - BP-P3-004: a job WITH an explicit `name:` that does NOT reference every
+ *   matrix key still gets the remaining values appended in parentheses -
+ *   `name: Build` + `node-version: [18.x, 20.x]` emits "Build (18.x)" and
+ *   "Build (20.x)", not a bare "Build". The old model only expanded
+ *   `${{ matrix.* }}` references, so a required context written as
+ *   "Build (20.x)" was reported as MISSING and a bare "Build" as OK.
  */
 function parseWorkflow(text) {
   const lines = text.split(/\r?\n/);
@@ -145,23 +152,42 @@ function parseWorkflow(text) {
   return { workflowName, jobs };
 }
 
+/** Cartesian product of the parsed matrix keys, one object per combination. */
+function matrixCombinations(matrix) {
+  let combos = [{}];
+  for (const { key, values } of matrix) {
+    const next = [];
+    for (const combo of combos) {
+      for (const value of values) next.push({ ...combo, [key]: value });
+    }
+    combos = next;
+  }
+  return combos;
+}
+
 /** Every check-run name a parsed job emits (see parseWorkflow rules). */
 function emittedNames(job) {
-  if (!job.name) {
-    if (!job.matrix.length) return [job.id];
-    return job.matrix[0].values.map((v) => `${job.id} (${v})`);
-  }
-  let names = [job.name];
-  for (const { key, values } of job.matrix) {
-    const ref = `\\$\\{\\{\\s*matrix\\.${key}\\s*\\}\\}`;
-    if (!names.some((n) => new RegExp(ref).test(n))) continue;
-    const expanded = [];
-    for (const n of names) {
-      for (const v of values) expanded.push(n.replace(new RegExp(ref, "g"), () => v));
+  const base = job.name ?? job.id;
+  if (!job.matrix.length) return [base];
+
+  const referenced = new Set(
+    job.matrix
+      .map(({ key }) => key)
+      .filter((key) => new RegExp(`\\$\\{\\{\\s*matrix\\.${key}\\s*\\}\\}`).test(base)),
+  );
+
+  return matrixCombinations(job.matrix).map((combo) => {
+    let name = base;
+    for (const { key } of job.matrix) {
+      if (!referenced.has(key)) continue;
+      const ref = new RegExp(`\\$\\{\\{\\s*matrix\\.${key}\\s*\\}\\}`, "g");
+      name = name.replace(ref, () => combo[key]);
     }
-    names = expanded;
-  }
-  return names;
+    const appended = job.matrix
+      .filter(({ key }) => !referenced.has(key))
+      .map(({ key }) => combo[key]);
+    return appended.length ? `${name} (${appended.join(", ")})` : name;
+  });
 }
 
 const emitted = new Map(); // check-run name -> source file

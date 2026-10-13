@@ -16,6 +16,7 @@ import {
 } from "../validators/security-ops";
 import { queryInt } from "../lib/query";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -44,7 +45,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
       const q = sb
         .from(table)
-        .select("*", { count: "exact" })
+        .select("*", { count: listCountMode(req.query) })
         .eq("organization_id", req.query.organization_id as string);
       const { data, error, count } = await q
         .order("created_at", { ascending: false })
@@ -107,19 +108,22 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.patch(`/${path}/:id`, requirePermission(path, "edit"), async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "security-ops", "write");
-      const fields: Record<string, unknown> = {};
+      // A Map keeps client-supplied keys out of the object prototype chain
+      // (`fields["__proto__"] = …` on a plain object mutates the prototype);
+      // the payload is materialised as an own-property object below.
+      const fields = new Map<string, unknown>();
       for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
         const column = snake(k);
         if (k === "organizationId" || PROTECTED_UPDATE_FIELDS.has(column)) continue;
-        if (v !== undefined) fields[column] = v;
+        if (v !== undefined) fields.set(column, v);
       }
       // DATA-P2-009: set the modification timestamp server-side (the column is
       // in PROTECTED_UPDATE_FIELDS, so the client cannot supply it); the DB
       // trigger (5302441) is the backstop for non-API writes.
-      fields.updated_at = new Date().toISOString();
+      fields.set("updated_at", new Date().toISOString());
       const { data, error } = await sb
         .from(table)
-        .update(fields as never)
+        .update(Object.fromEntries(fields) as never)
         .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .select()
@@ -181,7 +185,7 @@ router.post(
       // service-role client when security-ops is not in RLS_WRITES_ENABLED).
       const current = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "offboarding_checklists",
         String(req.params.id),
         "id, organization_id, completed_steps",

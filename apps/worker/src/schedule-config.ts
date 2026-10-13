@@ -48,6 +48,10 @@ export const scheduledScans: ScheduledScan[] = [
   { name: "orphan-cleanup", intervalMs: SCAN_INTERVAL_6H_MS, offsetMin: 76 },
   // SEC-P2-017 / ACM-P2-005: deactivate then delete expired API keys.
   { name: "api-key-prune", intervalMs: SCAN_INTERVAL_DAILY_MS, offsetMin: 83 },
+  // PRIV-P3-003: the public-interaction PII purge was previously scheduled by
+  // a bespoke setInterval in main.ts (and absent from this list, so the
+  // schedule test could not see it).
+  { name: "public-interaction-retention", intervalMs: SCAN_INTERVAL_DAILY_MS, offsetMin: 88 },
   {
     name: "scheduled-notifications",
     intervalMs: SCAN_INTERVAL_DAILY_MS,

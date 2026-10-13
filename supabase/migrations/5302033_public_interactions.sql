@@ -20,5 +20,6 @@ CREATE TABLE IF NOT EXISTS public.public_interactions (
 
 ALTER TABLE public.public_interactions ENABLE ROW LEVEL SECURITY;
 
+drop policy if exists "public_interactions_insert" on public.public_interactions;
 CREATE POLICY "public_interactions_insert" ON public.public_interactions
   FOR INSERT TO anon WITH CHECK (true);

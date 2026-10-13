@@ -48,8 +48,12 @@ Only the `main` branch (production) and `develop` (staging) are supported. Older
 - **SBOM** — two CycloneDX artifacts are produced: a **lockfile** SBOM
   (licenses, dependency graph, commit binding) generated and validated in CI,
   and a per-image **image** SBOM (Alpine OS + npm-in-image contents) bound to
-  the pushed image digest by `build-push.yml`. Neither SBOM is signed or
-  attested; see [docs/SBOM_PROCESS.md](docs/SBOM_PROCESS.md).
+  the pushed image digest by `build-push.yml` and by the deploy path
+  (`deploy-do.yml`). On the deploy path the image SBOM is **validated**
+  (non-empty components + digest binding) and **attested** with
+  `actions/attest-sbom`, pushed to the registry as an OCI referrer; the
+  lockfile SBOM remains artifact-only (not signed or attested). See
+  [docs/SBOM_PROCESS.md](docs/SBOM_PROCESS.md).
 
 ## Sensitive areas in this repository
 

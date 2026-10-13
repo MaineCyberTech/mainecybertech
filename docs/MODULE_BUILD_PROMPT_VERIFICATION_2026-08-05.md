@@ -1,5 +1,10 @@
 # MCT Portal — 60-Module Build-Prompt Verification Report
 
+> **HISTORICAL (superseded).** Snapshot of the codebase as of 2026-08-05. The P0/P1
+> items called out below were fixed in the same-day remediation and later runs; do not
+> treat the PARTIAL/MISSING statuses or bug list as current. See `AGENTS.md` /
+> `CHANGELOG.md` for present state.
+
 **Date:** 2026-08-05
 **Method:** Ran all 10 `phase-prompts` + all 60 `module-prompts` from `prompts/mct-portal-os-expanded-60-modules-deep-prompts-pack/` via 6 parallel verification workers (10 modules each). Each worker read the module build prompt, then verified its 16-item checklist (migration → validator → service → route → app.ts registration → SDK file + export → portal page(s) → components → worker → API tests → E2E → feature doc → runbook → API inventory) against the actual codebase using functional-equivalent names (the repo uses a batch naming scheme, not the prompt slugs).
 **Status key:** **COMPLETE** = all required deliverables present with real content. **PARTIAL** = exists but has missing deliverables, broken worker, missing Zod/audit, or no portal/E2E. **MISSING** = absent.

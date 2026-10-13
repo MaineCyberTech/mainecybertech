@@ -38,8 +38,6 @@ const SCOPE_MARKERS = [
   "organization_id:",
 ];
 
-const METHODS = ["get", "post", "put", "patch", "delete", "all"];
-
 /**
  * Seed allowlist (from the remediation plan) plus genuinely global / user-scoped
  * / admin-only modules. Keyed by route-file basename (without extension).

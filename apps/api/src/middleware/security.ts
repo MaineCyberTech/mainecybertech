@@ -8,7 +8,9 @@ import { logger } from "../lib/logger";
 // matched "monitor=", `url\(` matched "curl(", `-->` matched prose, `0x…`
 // matched hex/hashes), so they were removed.
 const DANGEROUS_PATTERNS = [
-  /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/i,
+  // `[^>]*` before `>` also catches browser-tolerant end tags like
+  // `</script >`, `</script\t\n bar>` and `</script foo="x">`.
+  /<script\b[^<]*(?:(?!<\/script[^>]*>)<[^<]*)*<\/script[^>]*>/i,
   /javascript:/i,
   /data:text\/html/i,
   /vbscript:/i,

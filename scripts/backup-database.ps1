@@ -76,7 +76,8 @@ else {
 Write-Host "`nStep 1: Dumping database..." -ForegroundColor Yellow
 
 if ($useDocker) {
-  docker run --rm -v "${BackupDir}:/backups" postgres:15 `
+  # DR-P3-003: keep the digest pin + major in sync with backup-database.sh.
+  docker run --rm -v "${BackupDir}:/backups" postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea `
     pg_dump "$dbUrl" --no-owner | gzip > $localPath
 }
 else {

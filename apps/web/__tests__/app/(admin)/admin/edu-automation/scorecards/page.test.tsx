@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 const mockRequireAdminAccess = jest.fn();
 jest.mock("@/lib/auth/admin", () => ({
@@ -11,6 +11,13 @@ const mockList = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
     eduAutomation: { scorecards: { list: mockList } },
+  }),
+}));
+
+const mockEvaluate = jest.fn();
+jest.mock("@/lib/client-api", () => ({
+  getClientApi: () => ({
+    eduAutomation: { scorecards: { evaluate: mockEvaluate } },
   }),
 }));
 
@@ -46,6 +53,19 @@ describe("ScorecardPage", () => {
     render(await Page());
     expect(screen.getByRole("heading", { name: "Cyber Scorecard" })).toBeInTheDocument();
     expect(screen.getByText(/Category-based cybersecurity scores/)).toBeInTheDocument();
+  });
+
+  it("labels the evaluate input and announces failures", async () => {
+    const Page = (await import("@/app/(admin)/admin/edu-automation/scorecards/page")).default;
+    render(await Page());
+
+    expect(screen.getByLabelText("Organization ID (optional)")).toBeInTheDocument();
+
+    mockEvaluate.mockRejectedValue(new Error("boom"));
+    fireEvent.click(screen.getByRole("button", { name: /assign badges/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Evaluation failed. Please try again.");
   });
 
   it("renders breadcrumbs and subnav", async () => {

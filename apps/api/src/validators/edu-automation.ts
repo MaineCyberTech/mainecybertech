@@ -1,13 +1,4 @@
 import { z } from "zod";
-export const sop = z.object({
-  organizationId: z.string().uuid(),
-  title: z.string().min(1).max(500),
-  sopNumber: z.string().max(100).optional().nullable(),
-  category: z.string().max(200).optional().nullable(),
-  version: z.string().default("1.0"),
-  framework: z.array(z.string()).optional().nullable(),
-  content: z.string().max(50000).optional().nullable(),
-});
 export const compliance = z.object({
   organizationId: z.string().uuid(),
   framework: z.string().min(1).max(200),
@@ -16,14 +7,6 @@ export const compliance = z.object({
   isCompliant: z.boolean().default(false),
   evidenceCollected: z.boolean().default(false),
   notes: z.string().max(5000).optional().nullable(),
-});
-export const insurance = z.object({
-  organizationId: z.string().uuid(),
-  category: z.string().min(1).max(200),
-  evidenceDescription: z.string().min(1).max(5000),
-  evidenceStatus: z.string().default("needed"),
-  documentReference: z.string().max(1000).optional().nullable(),
-  renewalDate: z.string().optional().nullable(),
 });
 export const aiPolicy = z.object({
   organizationId: z.string().uuid(),

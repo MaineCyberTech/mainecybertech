@@ -18,14 +18,17 @@ create index if not exists idx_phishing_targets_status on phishing_targets(statu
 
 alter table phishing_targets enable row level security;
 
+drop policy if exists "pt_select_org" on phishing_targets;
 create policy "pt_select_org" on phishing_targets
   for select using (
     organization_id in (select organization_id from memberships where user_id = auth.uid())
   );
+drop policy if exists "pt_insert_org" on phishing_targets;
 create policy "pt_insert_org" on phishing_targets
   for insert with check (
     organization_id in (select organization_id from memberships where user_id = auth.uid())
   );
+drop policy if exists "pt_delete_org" on phishing_targets;
 create policy "pt_delete_org" on phishing_targets
   for delete using (
     organization_id in (select organization_id from memberships where user_id = auth.uid())

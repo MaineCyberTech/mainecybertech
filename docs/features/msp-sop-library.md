@@ -41,7 +41,7 @@ Permission module key: `sop-library` (view / create / edit / delete)
 | DELETE                | `/api/v1/governance/sop-library/:id`            | Delete SOP                                  |
 | GET                   | `/api/v1/governance/sop-library/compliance-map` | SOP counts + control IDs by framework       |
 | GET                   | `/api/v1/governance/sop-library/framework-gaps` | Per-framework coverage % + overall score    |
-| GET/POST/PATCH/DELETE | `/api/v1/edu-automation/sop` (+ `/:id`)         | Parallel SOP CRUD via edu-automation router |
+| —                     | `/api/v1/edu-automation/sop`                    | **Hard-deprecated (410)** — canonical surface is `/api/v1/governance/sop-library` |
 
 ## Data Model
 

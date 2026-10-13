@@ -29,6 +29,16 @@ const TARGET_ALIASES: Record<string, readonly string[]> = {
     "public interaction",
     "contact form",
   ],
+  // WH-P3-009: the webhook delivery log and dead-letter queue.
+  webhook_deliveries: ["webhook_deliveries", "webhook deliveries", "webhook delivery"],
+  webhook_dead_letters: [
+    "webhook_dead_letters",
+    "webhook dead letters",
+    "webhook dead letter",
+    "dead letter",
+    "dead letters",
+    "dlq",
+  ],
 };
 
 function matchesTarget(policy: RetentionPolicyRow, target: string): boolean {

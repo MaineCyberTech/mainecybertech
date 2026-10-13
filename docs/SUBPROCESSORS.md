@@ -14,7 +14,7 @@
 | Supabase Inc. | Database, auth, file storage | Portal data store, login/sessions, uploads | Account identity, tenant content, backups | US (project region — confirm) | Supabase DPA; verify executed copy |
 | Stripe Inc. | Payments | Subscriptions, invoices, payment lifecycle | Billing email, Stripe customer/subscription ids, amounts (card data stays at Stripe) | US/EU | Stripe DPA; verify executed copy |
 | Cloudflare Inc. | Turnstile | Bot protection on public forms | Visitor IP + browser signals at form submission | Global edge | Cloudflare DPA; verify executed copy |
-| Functional Software Inc. (Sentry) | Error monitoring | API/web error triage | Error context which may include user ids/emails | US/EU | Sentry DPA; verify executed copy |
+| Functional Software Inc. (Sentry) | Error monitoring | API/web/worker error triage | Error context, scrubbed at the SDK (names/email/phone/credentials/IP redacted; `sendDefaultPii: false`; AN-P3-004) | US/EU | Sentry DPA; verify executed copy |
 | SMTP relay (`SMTP_HOST`) | Transactional email | Invitations, notifications, password resets | Recipient email, message content | Operator-selected provider | **To confirm** (name the provider and sign its DPA) |
 | Microsoft Corp. | Teams + Graph | Lead cards, calendar sync for scheduling | Lead contact data, calendar subjects | US/EU | Microsoft DPA; verify executed copy |
 | Atlassian | Jira Service Management | Ticket tracking for submitted requests | Requestor name/email, message | US/EU | Atlassian DPA; verify executed copy |

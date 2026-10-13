@@ -28,9 +28,13 @@ create index if not exists idx_service_catalog_category on service_catalog(categ
 create index if not exists idx_service_catalog_active on service_catalog(is_active);
 
 alter table service_catalog enable row level security;
+drop policy if exists "service_catalog_select_org" on service_catalog;
 create policy "service_catalog_select_org" on service_catalog for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "service_catalog_insert_auth" on service_catalog;
 create policy "service_catalog_insert_auth" on service_catalog for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "service_catalog_update_org" on service_catalog;
 create policy "service_catalog_update_org" on service_catalog for update using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "service_catalog_delete_admin" on service_catalog;
 create policy "service_catalog_delete_admin" on service_catalog for delete using (exists (select 1 from memberships m join roles r on m.role_id = r.id where m.user_id = auth.uid() and m.organization_id = service_catalog.organization_id and r.key in ('super_admin', 'admin')));
 
 commit;

@@ -104,7 +104,7 @@ router.post("/", requirePermission("api-keys", "manage"), async (req, res, next)
 router.patch("/:id", requirePermission("api-keys", "manage"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "api-keys", "write");
-    await loadOwned(req, supabase as any, "api_keys", String(req.params.id));
+    await loadOwned(req, supabase, "api_keys", String(req.params.id));
 
     const orgId = req.query.organization_id as string;
     const platformAdmin =
@@ -157,7 +157,7 @@ router.delete("/:id", requirePermission("api-keys", "manage"), async (req, res, 
   try {
     assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "api-keys", "write");
-    await loadOwned(req, supabase as any, "api_keys", String(req.params.id));
+    await loadOwned(req, supabase, "api_keys", String(req.params.id));
 
     const orgId = req.query.organization_id as string;
     const platformAdmin =

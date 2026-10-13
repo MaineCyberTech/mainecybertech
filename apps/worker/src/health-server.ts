@@ -1,11 +1,51 @@
 import * as http from "http";
+import crypto from "crypto";
 import { logger } from "./logger";
 import { getRegisteredTaskTypes } from "./task-registry";
 import { isShuttingDown } from "./shutdown";
 import { getMetrics, getMetricsContentType } from "./metrics";
 import { getWorkerQueueHealth, getWorkerQueueBackend } from "./queue-health";
 
-export function startHealthServer(port: number = 3001): http.Server {
+export interface HealthServerOptions {
+  /**
+   * ARCH-P3-005: shared token for the worker /metrics endpoint, matching the
+   * API's METRICS_TOKEN gate. When unset the endpoint fails closed (404) so an
+   * unconfigured deployment never exposes metric labels on the compose
+   * network. Prometheus sends it as `Authorization: Bearer <token>` (see
+   * infra/digitalocean/prometheus.yml).
+   *
+   * NOTE: /health intentionally stays unauthenticated — the port is not
+   * published to the host, and the container healthcheck plus the deploy
+   * health gate probe it from inside the compose network. The deploy already
+   * fails closed when METRICS_TOKEN is missing in production (deploy-do.yml),
+   * so the metrics gate cannot silently disable itself.
+   */
+  metricsToken?: string;
+}
+
+/**
+ * Fail-closed, constant-time bearer gate for /metrics. Mirrors the API's
+ * `authorizeInternalRequest` (routes/health.ts): 404 rather than 401 so the
+ * endpoint is not advertised. Only the `Authorization: Bearer` header is
+ * accepted — never a URL query parameter, which would leak into access logs.
+ */
+export function authorizeMetricsRequest(
+  req: http.IncomingMessage,
+  token: string | undefined,
+): boolean {
+  if (!token) return false;
+  const header = req.headers.authorization;
+  const provided = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
+  if (!provided) return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(token);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+export function startHealthServer(
+  port: number = 3001,
+  options: HealthServerOptions = {},
+): http.Server {
   const server = http.createServer((req, res) => {
     if (req.url === "/health") {
       const queueHealth = getWorkerQueueHealth();
@@ -34,7 +74,14 @@ export function startHealthServer(port: number = 3001): http.Server {
           queue: queueHealth,
         }),
       );
-    } else if (req.url === "/metrics") {
+    } else if (req.url === "/metrics" || req.url?.startsWith("/metrics?")) {
+      // ARCH-P3-005: parity with the API — an unauthenticated or untokened
+      // request gets 404, never metric content.
+      if (!authorizeMetricsRequest(req, options.metricsToken)) {
+        res.statusCode = 404;
+        res.end();
+        return;
+      }
       getMetrics()
         .then((data) => {
           res.statusCode = 200;

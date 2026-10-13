@@ -1,5 +1,6 @@
 // Auto-generated from supabase/migrations/*.sql — DO NOT EDIT MANUALLY
 // Run: node scripts/generate-db-types.js to regenerate
+// Source migrations digest (sha256): 157f1173a2285e68306dfc09f865ecb0bcd7b7eba65bd5670a600f5747b872e9
 export type Json =
   | string
   | number
@@ -3929,35 +3930,6 @@ export type Database = {
           { foreignKeyName: "port_maps_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };
-      portal_module_settings: {
-        Row: {
-          created_at: string;
-          id: string;
-          module_key: string;
-          organization_id: string;
-          settings: Json;
-          updated_at: string;
-        };
-        Insert: {
-          module_key: string;
-          organization_id: string;
-          created_at?: string | null;
-          id?: string | null;
-          settings?: Json | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          id?: string | null;
-          module_key?: string | null;
-          organization_id?: string | null;
-          settings?: Json | null;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          { foreignKeyName: "portal_module_settings_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
-        ];
-      };
       powershell_scripts: {
         Row: {
           approval_required: boolean | null;
@@ -4311,6 +4283,7 @@ export type Database = {
           issue_type: string | null;
           jira_last_synced_at: string | null;
           labels: string[] | null;
+          m365_event_id: string | null;
           metadata: Json;
           organization_id: string;
           owner_id: string | null;
@@ -4346,6 +4319,7 @@ export type Database = {
           issue_type?: string | null;
           jira_last_synced_at?: string | null;
           labels?: string[] | null;
+          m365_event_id?: string | null;
           metadata?: Json | null;
           owner_id?: string | null;
           parent_task_id?: string | null;
@@ -4375,6 +4349,7 @@ export type Database = {
           issue_type?: string | null;
           jira_last_synced_at?: string | null;
           labels?: string[] | null;
+          m365_event_id?: string | null;
           metadata?: Json | null;
           organization_id?: string | null;
           owner_id?: string | null;

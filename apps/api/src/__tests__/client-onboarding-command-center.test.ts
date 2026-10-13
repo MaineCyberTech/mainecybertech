@@ -408,7 +408,6 @@ describe("client-onboarding-command-center routes", () => {
   });
 
   describe("Tenant isolation (QW-1)", () => {
-    const ORG_A = "00000000-0000-0000-0000-000000000001";
     const ORG_B = "00000000-0000-0000-0000-000000000002";
     const RECORD_ID = "00000000-0000-0000-0000-000000000120";
 

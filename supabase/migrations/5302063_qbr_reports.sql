@@ -27,15 +27,19 @@ create index if not exists idx_qbr_reports_created on qbr_reports(created_at des
 
 alter table qbr_reports enable row level security;
 
+drop policy if exists "qbr_reports_select_org" on qbr_reports;
 create policy "qbr_reports_select_org" on qbr_reports for select
   using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "qbr_reports_insert_auth" on qbr_reports;
 create policy "qbr_reports_insert_auth" on qbr_reports for insert
   with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "qbr_reports_update_org" on qbr_reports;
 create policy "qbr_reports_update_org" on qbr_reports for update
   using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
+drop policy if exists "qbr_reports_delete_admin" on qbr_reports;
 create policy "qbr_reports_delete_admin" on qbr_reports for delete
   using (exists (select 1 from memberships m join roles r on m.role_id = r.id where m.user_id = auth.uid() and m.organization_id = qbr_reports.organization_id and r.key in ('super_admin', 'admin')));
 

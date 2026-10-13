@@ -66,7 +66,7 @@ export default function PackageLadder({ category }: PackageLadderProps) {
         return (
           <div
             key={key}
-            className={`flex flex-col rounded-lg border ${meta.border} bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm`}
+            className={`flex flex-col rounded-lg border ${meta.border} bg-cyber-card-subtle p-6 backdrop-blur-sm`}
           >
             <span
               className={`mb-3 inline-block w-fit rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${meta.color}`}
@@ -80,7 +80,7 @@ export default function PackageLadder({ category }: PackageLadderProps) {
             <p className="mb-6 text-sm font-semibold text-emerald-400">{product.priceRange}</p>
             <Link
               href={`/store/${product.slug}`}
-              className="mt-auto inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-3 text-center font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="mt-auto inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-3 text-center font-display text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Learn More
             </Link>

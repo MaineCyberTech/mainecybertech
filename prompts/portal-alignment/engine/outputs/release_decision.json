@@ -1,4 +1,6 @@
 ﻿{
+  "historical": true,
+  "historical_note": "EXEC-P3-001: historical alignment-engine snapshot (2026-06-30, BLOCKED at an earlier commit). Not current release evidence; the git_ref field is an abbreviated SHA with no run id. See prompts/PROVENANCE.md.",
   "version": "3.0",
   "generated_at": "2026-06-30T23:35:00Z",
   "git_ref": "380538d",

@@ -1,6 +1,6 @@
 # Service Level Objectives (SLOs) and Dashboards
 
-**Owner:** Platform/Engineering lead · **Last reviewed:** 2026-10-11 · **Review cadence:** quarterly
+**Owner:** Platform/Engineering lead · **Last reviewed:** 2026-10-12 · **Review cadence:** quarterly
 
 This document defines what "healthy" means for the MCT platform, so alert
 thresholds and capacity decisions are not ad hoc (`OBS-P2-002`). Metrics come
@@ -16,6 +16,7 @@ from `apps/api/src/lib/metrics.ts` (API) and `apps/worker/src/metrics.ts`
 | 3 | Webhook delivery success | ≥ 99% | `sum(rate(portal_webhook_deliveries_total{status="success"}[30d])) / clamp_min(sum(rate(portal_webhook_deliveries_total[30d])), 0.0001)` | webhook backlog runbook |
 | 4 | Notification delivery success (worker terminal outcomes, per channel) | ≥ 99% | `sum by (channel) (rate(worker_notification_delivery_total{status="success"}[30d])) / clamp_min(sum by (channel) (rate(worker_notification_delivery_total{status=~"success\|failed"}[30d])), 0.0001)` | `MCTNotificationDeliveryFailureRateHigh` (>5% for 30m is the fast-burn page) |
 | 5 | RLS-enforced share (rollout signal) | trend up | `sum(rate(portal_rls_enforced_total[30d])) / clamp_min(sum(rate(portal_rls_enforced_total[30d])) + sum(rate(portal_rls_bypass_total[30d])), 0.0001)` | `MCTRlsEnforcedShareCollapsed` |
+| 6 | Worker task success (per task type) | ≥ 99% | `sum by (task_type) (rate(worker_task_executions_total{status="success"}[30d])) / clamp_min(sum by (task_type) (rate(worker_task_executions_total[30d])), 0.0001)` | `MCTWorkerTaskFailures` (any failure/error/timeout/no_handler for 10m is the fast-burn page); dead letters → `MCTWorkerTaskDeadLettered` |
 
 > Notification SLO semantics (NOTIF-P2-010): the API records a successful email
 > enqueue as `portal_notification_delivery_total{status="queued"}` — a hand-off,
@@ -26,9 +27,14 @@ from `apps/api/src/lib/metrics.ts` (API) and `apps/worker/src/metrics.ts`
 > `MCTNotificationEmailSkipped` (email) and
 > `worker_push_subscriptions_revoked_total` (push) instead.
 
-> Gap: worker job success and BullMQ queue depth are not exported as metrics
-> yet, so SLOs for them are not defined here. Adding a worker counter/gauge is a
-> follow-up (open question in PATCH-013).
+> Worker metrics (OBS-P3-007): the worker exports task outcomes
+> (`worker_task_executions_total` by `task_type`/`status` and
+> `worker_task_execution_duration_seconds`) and queue state
+> (`worker_task_queue_depth`, `worker_queue_connected`, `worker_registered_tasks`)
+> — see `apps/worker/src/metrics.ts`. Queue saturation is alerted by
+> `MCTWorkerQueueBacklog` / `MCTWorkerQueueBacklogGrowing`, a lost consumer by
+> `MCTWorkerQueueDisconnected`, and permanently dropped jobs by
+> `MCTWorkerTaskDeadLettered` (`infra/digitalocean/prometheus.rules.yml`).
 
 ## Error budget policy
 

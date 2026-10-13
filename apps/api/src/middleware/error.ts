@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import * as Sentry from "@sentry/node";
+import multer from "multer";
 import { AppError, failure } from "../types";
 import { logger } from "../lib/logger";
 import { ZodError } from "zod";
@@ -24,6 +25,21 @@ export function errorHandler(
   if (bodyParserError.type === "entity.parse.failed") {
     logger.warn({ requestId, path: req.path }, "Malformed JSON body");
     res.status(400).json(failure("INVALID_JSON", "Malformed JSON body", 400));
+    return;
+  }
+
+  // FILE-P3-006: multer upload limits are client errors, not 500s. Exceeding a
+  // route's `limits.fileSize` previously fell through to the generic handler,
+  // so an oversized upload returned 500 INTERNAL_SERVER_ERROR (and Sentry
+  // noise) instead of the documented validation contract.
+  if (error instanceof multer.MulterError) {
+    const isSize = error.code === "LIMIT_FILE_SIZE";
+    const status = isSize ? 413 : 400;
+    const message = isSize
+      ? "File is too large"
+      : `Upload rejected: ${error.code.replace(/^LIMIT_/, "").toLowerCase().replace(/_/g, " ")}`;
+    logger.warn({ requestId, path: req.path, code: error.code }, "Upload validation error");
+    res.status(status).json(failure(isSize ? "PAYLOAD_TOO_LARGE" : "VALIDATION", message, status));
     return;
   }
 

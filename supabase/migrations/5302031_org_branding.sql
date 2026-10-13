@@ -12,12 +12,14 @@ values ('logos', 'logos', true)
 on conflict (id) do nothing;
 
 -- Allow all authenticated users to read public logos
+drop policy if exists "logos_select_public" on storage.objects;
 create policy "logos_select_public"
 on storage.objects for select
 to authenticated
 using (bucket_id = 'logos');
 
 -- Allow all authenticated users to upload logos (API controls access via requireAdmin)
+drop policy if exists "logos_insert_public" on storage.objects;
 create policy "logos_insert_public"
 on storage.objects for insert
 to authenticated

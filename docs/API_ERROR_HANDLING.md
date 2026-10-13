@@ -74,6 +74,7 @@ There is no 422 response in the API. Validation failures are 400.
 | 401 | `UNAUTHORIZED`, `AUTH_ERROR`, `MISSING_SIGNATURE`, `INVALID_SIGNATURE` | Missing/invalid credentials or signature |
 | 403 | `FORBIDDEN`, `MFA_REQUIRED`, `CAPTCHA_REQUIRED` | Authenticated but not allowed |
 | 404 | `NOT_FOUND` | Unknown resource |
+| 408 | `REQUEST_TIMEOUT` | Request exceeded the 30s server deadline (advisory — see below) |
 | 409 | `VERSION_CONFLICT`, `CONFLICT`, `INVALID_STATE` | Concurrency or state conflict |
 | 410 | `EXPIRED`, `GONE` | Resource expired or removed |
 | 412 | `PRECONDITION_FAILED` | `If-Match` / precondition failure |
@@ -85,6 +86,18 @@ There is no 422 response in the API. Validation failures are 400.
 Codes are plain strings supplied at the throw site. The same code can appear
 with different statuses in rare cases — always trust `error.status` over the
 table above.
+
+### Request timeout (408, advisory)
+
+`requestTimeout(30000)` (`middleware/request-timeout.ts`) answers
+`408 REQUEST_TIMEOUT` when a request exceeds the server deadline. It also
+aborts the handler's deadline signal (read it with `getRequestAbortSignal(req)`
+and pass it to outbound fetches) and closes the connection once the 408 has
+flushed. Because the timeout can race work that already committed, the 408 is
+**advisory**: clients that retry a mutation should send an `Idempotency-Key`
+(the idempotency middleware replays the stored response instead of re-running
+the write), and handlers that cannot be interrupted should check the signal
+before their commit point.
 
 ## Raising errors
 

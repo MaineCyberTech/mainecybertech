@@ -91,7 +91,7 @@ export default function MarketingHeader() {
 
         <button
           ref={hamburgerBtnRef}
-          className="flex flex-col gap-[5px] sm:hidden"
+          className="-m-3.5 flex flex-col gap-[5px] p-3.5 sm:hidden"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-expanded={menuOpen}
           aria-label="Toggle navigation menu"
@@ -136,7 +136,7 @@ export default function MarketingHeader() {
           </Link>
           <Link
             href="/login"
-            className="mt-2 rounded bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] no-underline transition hover:bg-emerald-500 sm:ml-2 sm:mt-0"
+            className="mt-2 rounded bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-cyber-base no-underline transition hover:bg-emerald-500 sm:ml-2 sm:mt-0"
           >
             Portal
           </Link>

@@ -96,7 +96,7 @@ describe("memberships routes", () => {
     });
 
     it("does not org-scope self lookups (user_id = caller)", async () => {
-      const supabase = mockAuth();
+      mockAuth();
       const builder = createMockBuilder({ data: [MEMBERSHIP], error: null });
       const eqSpy = jest.fn().mockReturnValue(builder);
       builder.eq = eqSpy;

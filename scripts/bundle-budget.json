@@ -1,0 +1,6 @@
+{
+  "comment": "Client JS budgets for apps/web/.next/static (KiB, uncompressed unless the key says gzip). Measured 2026-10-12 from the deployed standalone web image; raise a budget only in a reviewed PR that justifies the growth (PERF-P3-003).",
+  "totalKb": 5500,
+  "totalGzipKb": 1400,
+  "largestChunkKb": 2400
+}

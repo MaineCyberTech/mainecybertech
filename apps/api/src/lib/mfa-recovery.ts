@@ -11,7 +11,7 @@
  * (`N=8192`) is sufficient: a full batch miss is verified in parallel on the
  * libuv threadpool and stays well under a second.
  */
-import { randomBytes, scrypt, timingSafeEqual } from "crypto";
+import { randomBytes, randomInt, scrypt, timingSafeEqual } from "crypto";
 
 export const CODE_COUNT = 10;
 
@@ -37,11 +37,11 @@ function deriveKey(code: string, salt: string): Promise<Buffer> {
 export function generateRecoveryCodes(count = CODE_COUNT): string[] {
   const codes: string[] = [];
   for (let i = 0; i < count; i++) {
-    const bytes = randomBytes(CODE_LENGTH);
     let raw = "";
     for (let j = 0; j < CODE_LENGTH; j++) {
-      // The alphabet is 32 chars and 32 divides 256 evenly, so no modulo bias.
-      raw += CODE_ALPHABET[bytes[j] % CODE_ALPHABET.length];
+      // `randomInt` samples uniformly by rejection; a plain `%` on random
+      // bytes is only unbiased while the alphabet length divides 256.
+      raw += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)];
     }
     codes.push(`${raw.slice(0, 5)}-${raw.slice(5)}`);
   }

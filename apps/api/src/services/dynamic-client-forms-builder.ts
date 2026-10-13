@@ -1,4 +1,12 @@
+import { type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@mct/sdk/database.types";
 import { getSupabaseAdmin } from "./supabase";
+
+/**
+ * RLS-P3-007: the scoped client (when the module is allow-listed) is threaded
+ * in by the route; without it the service keeps the service-role client.
+ */
+type RlsClient = SupabaseClient<Database>;
 import { logAuditEvent } from "./audit";
 import { AppError, success } from "../types";
 import { toJson, type UpdateRow } from "../lib/db-types";
@@ -45,8 +53,9 @@ export interface FormSubmission {
 export async function listDynamicForms(
   organizationId: string,
   options: { status?: string; formType?: string; page: number; limit: number },
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
   let query = supabase
     .from("dynamic_client_forms")
     .select("*", { count: "exact" })
@@ -70,8 +79,8 @@ export async function listDynamicForms(
   });
 }
 
-export async function getDynamicForm(organizationId: string, id: string) {
-  const supabase = getSupabaseAdmin();
+export async function getDynamicForm(organizationId: string, id: string, client?: RlsClient) {
+  const supabase = client ?? getSupabaseAdmin();
   const { data, error } = await supabase
     .from("dynamic_client_forms")
     .select("*")
@@ -94,8 +103,9 @@ export async function createDynamicForm(
     settings?: Record<string, unknown>;
     closesAt?: string | null;
   },
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
   const { data, error } = await supabase
     .from("dynamic_client_forms")
     .insert({
@@ -139,8 +149,9 @@ export async function updateDynamicForm(
     settings?: Record<string, unknown>;
     closesAt?: string | null;
   },
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
   const updateData: UpdateRow<"dynamic_client_forms"> = {};
   if (input.title !== undefined) updateData.title = input.title;
   if (input.description !== undefined) updateData.description = input.description;
@@ -173,8 +184,13 @@ export async function updateDynamicForm(
   return success(data);
 }
 
-export async function deleteDynamicForm(organizationId: string, userId: string, id: string) {
-  const supabase = getSupabaseAdmin();
+export async function deleteDynamicForm(
+  organizationId: string,
+  userId: string,
+  id: string,
+  client?: RlsClient,
+) {
+  const supabase = client ?? getSupabaseAdmin();
   const { error } = await supabase
     .from("dynamic_client_forms")
     .delete()
@@ -199,8 +215,9 @@ export async function publishDynamicForm(
   userId: string,
   id: string,
   closesAt?: string | null,
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
   const updateData: UpdateRow<"dynamic_client_forms"> = {
     status: "published",
     published_at: new Date().toISOString(),
@@ -236,8 +253,9 @@ export async function submitDynamicForm(
   formId: string,
   respondentEmail: string | null,
   answers: Record<string, unknown>,
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
 
   const { data: form, error: formError } = await supabase
     .from("dynamic_client_forms")
@@ -282,8 +300,9 @@ export async function listFormSubmissions(
   organizationId: string,
   formId: string,
   options: { page: number; limit: number },
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
   const from = (options.page - 1) * options.limit;
   const to = from + options.limit - 1;
 
@@ -308,8 +327,9 @@ export async function listFormSubmissions(
 export async function exportDynamicForms(
   organizationId: string,
   options: { status?: string; formType?: string; format: "csv" | "json" },
+  client?: RlsClient,
 ) {
-  const supabase = getSupabaseAdmin();
+  const supabase = client ?? getSupabaseAdmin();
   let query = supabase
     .from("dynamic_client_forms")
     .select("*")

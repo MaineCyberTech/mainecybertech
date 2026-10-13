@@ -5,13 +5,19 @@ import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@mct/sdk/database.types";
 import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
-import { requireOrgAccess } from "../middleware/org-access";
+import {
+  assertOrgScopeMatches,
+  assertSharesActiveOrg,
+  requireOrgAccess,
+} from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 import { AppError, success, failure } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { getEnv } from "../config/env";
 import { queryInt } from "../lib/query";
+import { applyResolvedOrg } from "../lib/admin-scope";
 import { buildNotificationKey, createNotification } from "../lib/notify";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -346,12 +352,15 @@ router.get("/", async (req, res, next) => {
 
     let query = supabase
       .from("notifications")
-      .select("*", { count: "exact" })
+      .select("*", { count: listCountMode(req.query) })
       .eq("user_id", req.authUser!.userId)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (unreadOnly) query = query.eq("read", false);
+    // MT-P3-002: apply the same resolved-org predicate as the SSE stream, so
+    // an org-less row cannot surface in a scoped member's inbox.
+    query = applyResolvedOrg(req, query);
 
     const { data, error, count } = await query;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -365,11 +374,14 @@ router.get("/", async (req, res, next) => {
 router.get("/unread-count", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "notifications", "read");
-    const { count, error } = await supabase
+    let query = supabase
       .from("notifications")
       .select("*", { count: "exact", head: true })
       .eq("user_id", req.authUser!.userId)
       .eq("read", false);
+    query = applyResolvedOrg(req, query);
+
+    const { count, error } = await query;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success({ count: count ?? 0 }));
@@ -439,6 +451,14 @@ router.post("/", requireAdmin, async (req, res, next) => {
     const parsed = createNotificationSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
+    // MT-P3-002: the admin create endpoint is not a cross-tenant message drop.
+    // The recipient must share the caller's resolved org (platform admins stay
+    // cross-tenant by design), and the row must carry that org so org-less
+    // rows cannot bypass the SSE/list scope assertion.
+    await assertSharesActiveOrg(req, parsed.userId);
+    if (parsed.organizationId) assertOrgScopeMatches(req, parsed.organizationId);
+    const organizationId = parsed.organizationId ?? req.orgId ?? undefined;
+
     const notificationKey = buildNotificationKey({
       userId: parsed.userId,
       module: parsed.module,
@@ -455,7 +475,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
     // security-critical alerts.
     const result = await createNotification({
       userId: parsed.userId,
-      organizationId: parsed.organizationId,
+      organizationId,
       title: parsed.title,
       body: parsed.body,
       module: parsed.module,

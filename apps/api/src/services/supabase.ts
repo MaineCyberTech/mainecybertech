@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Request } from "express";
 import type { Database } from "@mct/sdk/database.types";
+import { SUPABASE_CLIENT_DB_TIMEOUT_MS, supabaseAuthOptions } from "@mct/config/env";
 import { getEnv } from "../config/env";
 import WebSocket from "ws";
 import { createSupabaseCircuitBreaker, CircuitBreaker } from "../lib/circuit-breaker";
@@ -52,9 +53,13 @@ async function circuitBreakingFetch(...args: Parameters<typeof fetch>): Promise<
     return fetch(...args);
   }
   const started = Date.now();
-  const labels = restLabels(args[0], args[1]);
+  const [input, init] = args;
+  const labels = restLabels(input, init);
   try {
-    return await circuitBreaker.execute(() => fetch(...args));
+    // RES-P3-007: thread the breaker's deadline into the request so a
+    // timed-out Supabase call is actually cancelled (fetch aborts), not just
+    // abandoned while it keeps running in the background.
+    return await circuitBreaker.execute((signal) => fetch(input, { ...init, signal }));
   } finally {
     if (labels) dbQueryDuration.observe(labels, (Date.now() - started) / 1000);
   }
@@ -65,12 +70,9 @@ export function getSupabaseAdmin(): SupabaseClient<Database> {
     const env = getEnv();
     _adminClient = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
       db: {
-        timeout: 30_000,
+        timeout: SUPABASE_CLIENT_DB_TIMEOUT_MS,
       },
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+      auth: supabaseAuthOptions,
       global: {
         fetch: circuitBreakingFetch,
       },
@@ -97,8 +99,8 @@ export function getSupabaseAdminNoBreaker(): SupabaseClient<Database> {
       env.SUPABASE_URL,
       env.SUPABASE_SERVICE_ROLE_KEY,
       {
-        db: { timeout: 30_000 },
-        auth: { autoRefreshToken: false, persistSession: false },
+        db: { timeout: SUPABASE_CLIENT_DB_TIMEOUT_MS },
+        auth: supabaseAuthOptions,
         realtime: { transport: WebSocket as any },
       },
     );
@@ -122,12 +124,9 @@ function buildUserClient(jwt: string): SupabaseClient<Database> {
   const env = getEnv();
   return createClient<Database>(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
     db: {
-      timeout: 30_000,
+      timeout: SUPABASE_CLIENT_DB_TIMEOUT_MS,
     },
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
+    auth: supabaseAuthOptions,
     global: {
       // Route through the same circuit breaker as getSupabaseAdmin so failing
       // Supabase calls trip the breaker instead of cascading.

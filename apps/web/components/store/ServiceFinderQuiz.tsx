@@ -98,7 +98,7 @@ export default function ServiceFinderQuiz({ questions }: ServiceFinderQuizProps)
   if (showResults) {
     return (
       <div className="animate-fadeIn">
-        <div className="glass-card rounded-2xl border border-emerald-600/20 bg-[rgba(18,30,45,0.7)] p-8 text-center backdrop-blur-xl sm:p-12">
+        <div className="glass-card rounded-2xl border border-emerald-600/20 bg-cyber-card-overlay p-8 text-center backdrop-blur-xl sm:p-12">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600/20">
             <span className="text-3xl text-emerald-400">✓</span>
           </div>
@@ -144,7 +144,7 @@ export default function ServiceFinderQuiz({ questions }: ServiceFinderQuizProps)
           <div className="mt-10 text-center">
             <Link
               href={`/store/${recommendations.quickWin.slug}`}
-              className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Start With a Quick Win
             </Link>
@@ -186,7 +186,7 @@ export default function ServiceFinderQuiz({ questions }: ServiceFinderQuizProps)
         </div>
       </div>
 
-      <div className="glass-card rounded-2xl border border-white/10 bg-[rgba(18,30,45,0.7)] p-8 backdrop-blur-xl sm:p-12">
+      <div className="glass-card rounded-2xl border border-white/10 bg-cyber-card-overlay p-8 backdrop-blur-xl sm:p-12">
         <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-50">
           {currentQuestion.label}
         </h2>
@@ -231,7 +231,7 @@ export default function ServiceFinderQuiz({ questions }: ServiceFinderQuizProps)
           className={`rounded px-8 py-3 text-sm font-bold uppercase tracking-widest transition ${
             currentQuestion.required && !selectedValue
               ? "border border-white/10 bg-white/5 text-slate-600"
-              : "border-2 border-emerald-600 bg-emerald-600 text-[#0A1118] hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              : "border-2 border-emerald-600 bg-emerald-600 text-cyber-base hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           }`}
         >
           {isLastQuestion ? "See Results →" : "Next →"}

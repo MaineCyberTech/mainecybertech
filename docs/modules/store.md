@@ -20,6 +20,25 @@ Public-facing service storefront. The catalog is **DB-first** (`store_products` 
 - Visual assets (`store_visual_assets`) admin CRUD
 - Import/export of the live DB catalog
 
+### Admin page data sources (FEAT-P3-002)
+
+The admin Store section mixes three kinds of pages. The bundled-JSON management
+surfaces render a `Preview` banner in the UI and their primary actions stay
+disabled until the corresponding Store APIs exist:
+
+- **DB-backed (live `store_*` tables via the Store API):** products (+ detail),
+  categories, promotions, campaigns, quotes, quote-requests, visuals,
+  import/export.
+- **Bundled-JSON previews (read-only; marked `Preview` in the UI):**
+  case-studies, content-audit, dependencies, faqs, fulfillment, lead-magnets,
+  lifecycle, nurture, profitability, proposals, seo-pages. They render starter
+  data from `apps/web/lib/catalog/data/*.json` (`v5-loaders`); management
+  actions are disabled.
+- **Bundled-JSON read-only views/calculators (no management claims):** store
+  dashboard, analytics, audit, bundles, bundle-calculator, ladders, quiz,
+  recommendations, comparisons, testimonials, trust-badges, portal-services,
+  leads, operations.
+
 ## Endpoints (all under `/api/v1/store`)
 
 | Method            | Path                                             | Description                                                  |

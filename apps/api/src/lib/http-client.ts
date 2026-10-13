@@ -45,7 +45,12 @@ export class HttpClient {
 
     for (let attempt = 0; attempt <= this.config.maxRetries; attempt++) {
       try {
-        const response = await this.circuitBreaker.execute(() => fetch(url, finalOptions));
+        // RES-P3-007: if the breaker's deadline fires first, abort the local
+        // request controller too so the in-flight fetch is cancelled.
+        const response = await this.circuitBreaker.execute((breakerSignal) => {
+          breakerSignal.addEventListener("abort", () => controller.abort(), { once: true });
+          return fetch(url, finalOptions);
+        });
         clearTimeout(timeoutId);
         // Retry transient server errors (5xx) and rate-limit responses.
         // 4xx are client errors - never retried.

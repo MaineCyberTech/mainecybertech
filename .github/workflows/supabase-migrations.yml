@@ -27,11 +27,15 @@ concurrency:
 jobs:
   migrate:
     runs-on: ubuntu-latest
-    # CI-004: prod runs `supabase db push` (a production mutation). The `prod`
-    # environment MUST have 1+ required reviewers configured server-side; this
-    # file cannot enforce that. See docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md
-    # (Settings -> Environments -> prod).
-    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+    timeout-minutes: 30
+    # BP-P3-003 / CI-004: prod runs `supabase db push` (a production mutation),
+    # so it attaches the same approval-gated `prod-approval` environment as the
+    # prod app deploy and Terraform apply. Required reviewers (1+) must be
+    # configured server-side; this file cannot enforce that. The migration
+    # secrets/vars (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`) must be
+    # available to `prod-approval`. See
+    # docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md (Settings -> Environments).
+    environment: ${{ github.ref == 'refs/heads/main' && 'prod-approval' || 'dev' }}
 
     steps:
       - name: Checkout

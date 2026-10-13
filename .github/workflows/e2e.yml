@@ -22,6 +22,10 @@ on:
         description: "Run the full accessibility breadth scan"
         type: boolean
         default: false
+      a11y_update_baseline:
+        description: "Regenerate apps/web/e2e/a11y-baseline.json from the full scan (requires a11y_full)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -91,6 +95,11 @@ jobs:
       - name: Apply migrations and seeds
         run: supabase db reset
 
+      - name: Run RLS allow/deny matrix
+        # RLS-P3-002: behavioral tenant-isolation checks (approved/pending
+        # members, org admin, super admin, anon) against the migration chain.
+        run: scripts/ci/check-rls-matrix.sh
+
       - name: Sync Supabase env to API
         run: |
           API_ENV="apps/api/.env.local"
@@ -149,6 +158,11 @@ jobs:
           NEXT_PUBLIC_API_URL: http://localhost:4000
           NEXT_TELEMETRY_DISABLED: 1
 
+      - name: Check web bundle budget
+        # PERF-P3-003: fails when the built client JS exceeds the committed
+        # budgets in scripts/bundle-budget.json. The analyzer stays opt-in.
+        run: node scripts/check-bundle-budget.mjs
+
       - name: Start web app
         run: |
           pnpm --filter=web start &
@@ -165,6 +179,18 @@ jobs:
           E2E_ADMIN_EMAIL: superadmin.real@mainecybertech.local
           E2E_ADMIN_PASSWORD: 1
           A11Y_FULL: ${{ inputs.a11y_full && '1' || '0' }}
+          A11Y_UPDATE_BASELINE: ${{ inputs.a11y_update_baseline && '1' || '0' }}
+
+      - name: Upload regenerated a11y baseline
+        # Only present when the caller asked to regenerate the baseline; the
+        # spec writes the file in A11Y_UPDATE_BASELINE mode (afterAll still runs
+        # when a locator fails), so `always()` keeps it uploadable either way.
+        if: ${{ always() && inputs.a11y_update_baseline }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: a11y-baseline
+          path: apps/web/e2e/a11y-baseline.json
+          if-no-files-found: error
 
       - name: E2E flake summary
         # Always runs so retry/flake counts are recorded even when the suite

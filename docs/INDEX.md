@@ -28,6 +28,8 @@
 | [adr/README.md](adr/README.md)                                                       | Architecture Decision Records (11 decisions)                       |
 | [MASTER_SYSTEM_ARCHITECTURE_REVIEW.md](MASTER_SYSTEM_ARCHITECTURE_REVIEW.md)         | 12-domain synthesis of the full system architecture                |
 | [arch/evaluation/db-package-evaluation.md](arch/evaluation/db-package-evaluation.md) | Shared DB package evaluation                                       |
+| [arch/package-extraction-plan.md](arch/package-extraction-plan.md)                   | Shared-package extraction plan (`@mct/config`, `@mct/db`, SDK build) |
+| [FEATURE_FLAGS.md](FEATURE_FLAGS.md)                                                 | Feature flag registry, targeting and change log                    |
 | [GAP_ANALYSIS.md](GAP_ANALYSIS.md)                                                   | Historical (2026-08-01, AWS-era) gap analysis — kept for reference only |
 | [ADMIN_FEATURES.md](ADMIN_FEATURES.md)                                               | Webhook management, role editor, audit export, bulk import, Sentry |
 | [ADMIN_BULK_OPERATIONS.md](ADMIN_BULK_OPERATIONS.md)                                 | Bulk admin runbook: dry-run previews, confirmations, rate limits   |
@@ -35,8 +37,15 @@
 
 ### Audits & Reviews
 
+> All documents in this section are **dated point-in-time snapshots** — they
+> describe the repo at the date in their filename and are not current state
+> (DOC-P3-001). Current state: [AGENTS.md](../AGENTS.md); the dated remediation
+> narrative lives in [HISTORY.md](HISTORY.md); committed audit runs are indexed
+> in [audits/README.md](audits/README.md).
+
 | Document                                                           | Purpose                                                         |
 | ------------------------------------------------------------------ | --------------------------------------------------------------- |
+| [HISTORY.md](HISTORY.md)                                           | Historical remediation record (moved from AGENTS.md, AI-P3-002) |
 | [FULL_SYSTEM_AUDIT_2026-06-09.md](FULL_SYSTEM_AUDIT_2026-06-09.md) | Full-system architecture review & repo health audit             |
 | [ARCHITECTURAL_ANALYSIS.md](ARCHITECTURAL_ANALYSIS.md)             | Deep-dive audit across 6 pillars with 23 critical observations  |
 | [ARCHITECTURAL_AUDIT_COMPLETE.md](ARCHITECTURAL_AUDIT_COMPLETE.md) | Full architectural & operational audit with remediation roadmap |
@@ -53,6 +62,7 @@
 | [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)                         | All env vars across all services                    |
 | [SUPABASE_MIGRATION_WORKFLOW.md](SUPABASE_MIGRATION_WORKFLOW.md)             | Migration workflow, schema vs seed, common mistakes |
 | [SUPABASE_MIGRATION_CHEATSHEET.md](SUPABASE_MIGRATION_CHEATSHEET.md)         | Quick reference for Supabase migrations             |
+| [migrations/README.md](migrations/README.md)                                 | Migration policies: baseline, no down-migrations, rollback notes |
 | [migrations/naming-guide.md](migrations/naming-guide.md)                     | Database migration naming conventions               |
 | [technical-writing/migration-guide.md](technical-writing/migration-guide.md) | Deployment and migration guide (points at the canonical workflow)   |
 | [VSCODE_GIT_QUICKSTART.md](VSCODE_GIT_QUICKSTART.md)                         | VS Code Git workflow guide                          |
@@ -61,7 +71,9 @@
 
 | Document                                                       | Purpose                                                                                                                                                                             |
 | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [API_ENDPOINT_INVENTORY.md](API_ENDPOINT_INVENTORY.md)         | Complete API endpoint inventory                                                                                                                                                     |
+| [API_ENDPOINT_INVENTORY.md](API_ENDPOINT_INVENTORY.md)         | Historical API endpoint inventory (2026-06 snapshot; superseded by the generated spec)                                                                                               |
+| [PUBLIC_ROUTES.md](PUBLIC_ROUTES.md)                           | Public (unauthenticated) API surface — generated inventory                                                                                                                          |
+| [EVENTS.md](EVENTS.md)                                         | Outbound webhook event catalog, payloads and delivery semantics                                                                                                                     |
 | [openapi.yaml](openapi.yaml)                                   | OpenAPI 3.0 spec — **generated** from `apps/api/src/openapi/generate.ts` (calls `buildSpec()` in `spec.ts`); do not hand-edit, regenerate with `pnpm --filter=api generate:openapi` |
 | [API_ERROR_HANDLING.md](API_ERROR_HANDLING.md)                 | API error handling patterns and standards                                                                                                                                           |
 | [API_RATE_LIMITING.md](API_RATE_LIMITING.md)                   | Rate limit configuration and behavior (300/15min)                                                                                                                                   |
@@ -78,6 +90,7 @@
 | [portal_admin_permissions_guide.md](portal_admin_permissions_guide.md)           | Permissions, access control, and security flow     |
 | [GITHUB_SECRETS_AND_VARIABLES_MATRIX.md](GITHUB_SECRETS_AND_VARIABLES_MATRIX.md) | Required GitHub secrets and variables              |
 | [SECRETS_ROTATION.md](SECRETS_ROTATION.md)                                       | Rotation runbook: per-class procedures, evidence log, emergency rotation |
+| [SECRET_ROTATION_RUNBOOK.md](SECRET_ROTATION_RUNBOOK.md)                         | IT break-glass access, per-credential revocation, escrow + drill record |
 | [JWT_ROTATION.md](JWT_ROTATION.md)                                               | Supabase signing-secret rotation + API verification copy |
 | [LICENSE_POLICY.md](LICENSE_POLICY.md)                                           | Allowed/denied dependency licenses + exceptions    |
 | [DEPENDENCY_POLICY.md](DEPENDENCY_POLICY.md)                                     | Vulnerability gate, overrides, update governance   |
@@ -85,6 +98,7 @@
 | [RTO_RPO.md](RTO_RPO.md)                                                         | Recovery time objective / recovery point objective |
 | [PRIVACY.md](PRIVACY.md)                                                         | Data classification, retention schedule, DSAR pointer |
 | [SUBPROCESSORS.md](SUBPROCESSORS.md)                                             | Vendor/purpose/data/region/DPA subprocessor list   |
+| [ANALYTICS_GOVERNANCE.md](ANALYTICS_GOVERNANCE.md)                               | Analytics consent model, event catalog, retention, vendors |
 
 ## Incident Response & Continuity
 
@@ -93,6 +107,8 @@
 | [INCIDENT_RESPONSE.md](INCIDENT_RESPONSE.md)                                                   | Platform incident response plan: severity, roles, phases, comms, postmortem |
 | [DATA_BREACH_RESPONSE.md](DATA_BREACH_RESPONSE.md)                                             | Data-breach response, assessment, Legal-gated notification decision |
 | [PLATFORM_FAILURE_RUNBOOKS.md](PLATFORM_FAILURE_RUNBOOKS.md)                                   | Operator runbooks for the top failure modes + drill record       |
+| [runbooks/backup-restore-drill-plan.md](runbooks/backup-restore-drill-plan.md)                 | D1–D7 backup/restore drill plan (relocated stable path, DR-P3-001) |
+| [runbooks/backup-restore-drill-ledger.md](runbooks/backup-restore-drill-ledger.md)             | Drill results ledger (planned/executed rows)                     |
 | [STATUS_AND_COMMUNICATION.md](STATUS_AND_COMMUNICATION.md)                                     | Platform status/communication surface (ntfy `portal-status`)     |
 | [INCIDENT_TABLETOP_SCENARIOS.md](INCIDENT_TABLETOP_SCENARIOS.md)                               | 12-scenario tabletop catalog + readiness inventory               |
 | [INCIDENT_TABLETOP_DRYRUN_2026-10-11.md](INCIDENT_TABLETOP_DRYRUN_2026-10-11.md)               | First recorded tabletop exercise (IR-011 desk dry-run)           |
@@ -113,6 +129,7 @@
 | [RELEASE_GATE.md](RELEASE_GATE.md)                                                             | Release-readiness gate: exit criteria, fail-closed decisions, go-live checklist |
 | [CI.md](CI.md)                                                                                 | GitHub Actions workflows: triggers, filters, gates, triage-only |
 | [RUNBOOK_EMERGENCY_MERGE.md](RUNBOOK_EMERGENCY_MERGE.md)                                       | Branch-protection break-glass: approval, time-box, record issue, post-incident review (BP-P2-002) |
+| [RUNBOOK_HOTFIX.md](RUNBOOK_HOTFIX.md)                                                         | Hotfix / emergency deploy: branch from `main`, gates, deploy, backport, review (BP-P3-001) |
 | [PERFORMANCE.md](PERFORMANCE.md)                                                               | Response caching, rate limits, DB indexes, web performance      |
 | [MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md)                                       | Monitoring strategy, alerting setup, dashboards                 |
 | [ALERT_PATH_EXERCISE.md](ALERT_PATH_EXERCISE.md)                                               | Alert-delivery / dead-man's-switch exercise + evidence (OBS-P2-014) |
@@ -180,8 +197,7 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 - [risk-register](modules/risk-register.md) — risk register
 - [roles](modules/roles.md) — roles & permissions
 - [satisfaction-pulse](modules/satisfaction-pulse.md) — satisfaction surveys
-- [scoreboard-gamification](modules/scoreboard-gamification.md) — scoreboards & gamification
-- [scoreboards-gamification](modules/scoreboards-gamification.md) — scoreboards & gamification (variant)
+- [scoreboards-gamification](modules/scoreboards-gamification.md) — scoreboards & gamification (edu-automation scorecards)
 - [search](modules/search.md) — admin global search
 - [search-portal](modules/search-portal.md) — portal-scoped search
 - [security-ops](modules/security-ops.md) — security operations (4 sub-routes)
@@ -230,7 +246,7 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 | [MODULE_SPECS_GAP_AUDIT_2026-08-05.md](MODULE_SPECS_GAP_AUDIT_2026-08-05.md)                     | Module spec gap audit                                        |
 | [MT-P0-001-RLS-remediation-design.md](MT-P0-001-RLS-remediation-design.md)                       | RLS remediation design                                       |
 | [audits/README.md](audits/README.md)                                                             | Audit output contract                                        |
-| [openapi.yaml](openapi.yaml)                                                                     | Generated OpenAPI spec (419 paths)                           |
+| [openapi.yaml](openapi.yaml)                                                                     | Generated OpenAPI spec (421 paths)                           |
 
 ## Marketing & SEO (`docs/seo/` — 10 files)
 

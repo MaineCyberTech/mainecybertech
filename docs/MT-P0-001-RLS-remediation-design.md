@@ -169,7 +169,7 @@ Land hardening of `getSupabaseUser`, the RLS coverage matrix, and the 7 missing 
 - **Do NOT edit `is_org_member` / `is_org_approved_member` / `is_super_admin` semantics** or add platform-admin RLS predicates (design §3.1) without the §3 decision. This is the exact blast-radius change `agent/mig-guards` rejected.
 - **Do NOT seed `users:manage` / `organizations:manage` / `roles:manage` permission overrides** before org predicates land — granting those without RLS predicates would widen cross-tenant write access with no backstop.
 - **Do NOT change RLS `DELETE` scope** (e.g. making deletes org-agnostic). Deletes must remain the most restrictive; admin-only delete is the intended model.
-- **Do NOT run blanket `DROP POLICY` + `CREATE POLICY` recreation** (the `agent/mig-guards` approach) — it clobbers the security fixes in `5302132` (`store_*`) and `5302135` (`profiles.encrypted_pii`) and was deleted for that reason (`AGENTS.md`, Completed Work 2026-08-28).
+- **Do NOT run blanket `DROP POLICY` + `CREATE POLICY` recreation** (the `agent/mig-guards` approach) — it clobbers the security fixes in `5302132` (`store_*`) and `5302135` (`profiles.encrypted_pii`) and was deleted for that reason (`docs/HISTORY.md`, Completed Work 2026-08-28).
 
 ---
 
@@ -186,7 +186,7 @@ Land hardening of `getSupabaseUser`, the RLS coverage matrix, and the 7 missing 
 ## 8. Consistency With Prior Decisions
 
 - **`AGENTS.md` "Known Open Issues" (P0-7):** the 8 platform-admin roles bypass tenant isolation but are *audited* via `impersonation_log` (`5302133`) + `apps/api/src/services/impersonation.ts`. This proposal **preserves and strengthens** that audit trail via `withServiceRole` (§3.2); it does not weaken it.
-- **Deleted `agent/mig-guards` branch:** `5302201` (blanket `DROP POLICY` + `CREATE POLICY` for 349 policies / 15 triggers + delete of GAP migrations `5302402`–`5302407`) was **never applied to prod and was deleted** because it would have clobbered the `5302132` (`store_*`) and `5302135` (`profiles.encrypted_pii`) security fixes (`AGENTS.md`, Completed Work 2026-08-28). This proposal therefore mandates **surgical, per-table** policy work only (the 7 missing policies, §4.3) — never mass recreation.
+- **Deleted `agent/mig-guards` branch:** `5302201` (blanket `DROP POLICY` + `CREATE POLICY` for 349 policies / 15 triggers + delete of GAP migrations `5302402`–`5302407`) was **never applied to prod and was deleted** because it would have clobbered the `5302132` (`store_*`) and `5302135` (`profiles.encrypted_pii`) security fixes (`docs/HISTORY.md`, Completed Work 2026-08-28). This proposal therefore mandates **surgical, per-table** policy work only (the 7 missing policies, §4.3) — never mass recreation.
 
 ---
 
@@ -209,7 +209,7 @@ Land hardening of `getSupabaseUser`, the RLS coverage matrix, and the 7 missing 
 | 7 policy-less tables | `document_shares`, `notifications`, `project_dependencies`, `project_milestones`, `project_phases`, `webhook_dead_letters`, `webhook_endpoints` |
 | Policy predicates (`is_org_member` etc.) | `supabase/migrations/5302026_...v3.sql:653, 668, 1034` |
 | P0-7 platform-admin audit | `AGENTS.md` Known Open Issues; `supabase/migrations/5302133`; `apps/api/src/services/impersonation.ts` |
-| `agent/mig-guards` rejection | `AGENTS.md` Completed Work 2026-08-28 (branch deleted local+remote) |
+| `agent/mig-guards` rejection | `docs/HISTORY.md` Completed Work 2026-08-28 (branch deleted local+remote) |
 
 ---
 

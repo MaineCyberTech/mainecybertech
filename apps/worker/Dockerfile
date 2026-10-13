@@ -54,7 +54,9 @@ ENV NODE_ENV=production
 ENV HEALTH_PORT=3001
 EXPOSE 3001
 
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+# CTR-P3-005: --start-period matches the compose override so bare `docker run`
+# does not mark a booting consumer unhealthy.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3001/health"]
 
 CMD ["node", "dist/main.js"]

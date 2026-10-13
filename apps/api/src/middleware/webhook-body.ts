@@ -1,6 +1,22 @@
 import express, { type RequestHandler } from "express";
 
 /**
+ * WH-P3-004 / BILL-P3-001: the raw body is the exact received byte sequence.
+ * It used to be captured as a UTF-8 string while consumers typed it as a
+ * `Buffer` and cast it — a byte-mutation or non-UTF8 payload would then verify
+ * against re-encoded bytes rather than what the provider actually signed.
+ * Express declares the property here so every webhook route reads it without
+ * a cast.
+ */
+declare global {
+  namespace Express {
+    interface Request {
+      rawBody?: Buffer;
+    }
+  }
+}
+
+/**
  * WH-P2-006: per-provider inbound webhook body limits.
  *
  * Inbound webhook routes previously shared the global 10mb JSON parser, so an
@@ -26,11 +42,12 @@ export const WEBHOOK_BODY_LIMITS: Record<string, string> = {
 const JSON_TYPES = ["application/json", "application/csp-report", "application/reports+json"];
 
 function captureRawBody(
-  req: express.Request & { rawBody?: string },
+  req: express.Request,
   _res: express.Response,
   buf: Buffer,
 ): void {
-  req.rawBody = buf.toString();
+  // Store the bytes, not a re-encoded string (WH-P3-004 / BILL-P3-001).
+  req.rawBody = buf;
 }
 
 function jsonParser(limit: string): RequestHandler {

@@ -2,6 +2,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import AdminPreviewNote from "@/components/admin/AdminPreviewNote";
 import { getLifecycleStates } from "@/lib/catalog/v5-loaders";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +51,7 @@ export default async function AdminStoreLifecyclePage() {
         </button>
       }
     >
+      <AdminPreviewNote />
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-slate-200">Lifecycle States</h2>
         <div className="flex flex-wrap items-center gap-2">

@@ -15,6 +15,7 @@ import {
 } from "../validators/security-suite";
 import { queryInt } from "../lib/query";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { listCountMode } from "../lib/pagination";
 
 type EndpointSecurity = {
   total_endpoints?: number | null;
@@ -49,7 +50,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
       const q = sb
         .from(table)
-        .select("*", { count: "exact" })
+        .select("*", { count: listCountMode(req.query) })
         .eq("organization_id", req.query.organization_id as string);
       const { data, error, count } = await q
         .order("created_at", { ascending: false })
@@ -66,7 +67,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.get(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "security-suite", "read");
-      const data = await loadOwned(req, sb as any, table, String(req.params.id));
+      const data = await loadOwned(req, sb, table, String(req.params.id));
       res.json(success(data));
     } catch (e) {
       next(e);
@@ -108,24 +109,27 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       const sb = getScopedClient(req, "security-suite", "write");
       const current = await loadOwned(
         req,
-        sb as any,
+        sb,
         table,
         String(req.params.id),
         "id, organization_id",
       );
-      const fields: Record<string, unknown> = {};
+      // A Map keeps client-supplied keys out of the object prototype chain
+      // (`fields["__proto__"] = …` on a plain object mutates the prototype);
+      // the payload is materialised as an own-property object below.
+      const fields = new Map<string, unknown>();
       for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
         const column = snake(k);
         if (k === "organizationId" || PROTECTED_UPDATE_FIELDS.has(column)) continue;
-        if (v !== undefined) fields[column] = v;
+        if (v !== undefined) fields.set(column, v);
       }
       // DATA-P2-009: set the modification timestamp server-side (the column is
       // in PROTECTED_UPDATE_FIELDS, so the client cannot supply it); the DB
       // trigger (5302441) is the backstop for non-API writes.
-      fields.updated_at = new Date().toISOString();
+      fields.set("updated_at", new Date().toISOString());
       const { data, error } = await sb
         .from(table)
-        .update(fields as never)
+        .update(Object.fromEntries(fields) as never)
         .eq("id", String(req.params.id))
         .eq("organization_id", current.organization_id as string)
         .select()
@@ -151,7 +155,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       const sb = getScopedClient(req, "security-suite", "write");
       const current = await loadOwned(
         req,
-        sb as any,
+        sb,
         table,
         String(req.params.id),
         "id, organization_id",
@@ -200,7 +204,7 @@ router.post(
         .object({ verificationPass: z.boolean(), notes: z.string().optional() })
         .parse(req.body);
       const supabase = getScopedClient(req, "security-suite", "write");
-      await loadOwned(req, supabase as any, "identity_verifications", String(req.params.id));
+      await loadOwned(req, supabase, "identity_verifications", String(req.params.id));
       const { data, error } = await supabase
         .from("identity_verifications")
         .update({
@@ -285,7 +289,7 @@ router.post(
   async (req, res, next) => {
     try {
       const supabase = getScopedClient(req, "security-suite", "write");
-      await loadOwned(req, supabase as any, "m365_hardening", String(req.params.id));
+      await loadOwned(req, supabase, "m365_hardening", String(req.params.id));
       const { data: current, error: fetchError } = await supabase
         .from("m365_hardening")
         .select("*")

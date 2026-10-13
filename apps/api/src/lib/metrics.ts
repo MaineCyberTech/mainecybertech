@@ -110,6 +110,18 @@ export const notificationSuppressedTotal = new Counter({
   registers: [register],
 });
 
+/**
+ * NOTIF-P3-007: sends dropped by the per-recipient email throttle. Kept
+ * separate from preference suppression so an operator can tell a deliberate
+ * opt-out from abuse-driven throttling.
+ */
+export const notificationThrottledTotal = new Counter({
+  name: "portal_notification_throttled_total",
+  help: "Total number of notification emails dropped by the per-recipient throttle",
+  labelNames: ["channel"],
+  registers: [register],
+});
+
 export const notificationDedupTotal = new Counter({
   name: "portal_notification_dedup_total",
   help: "Total number of notifications skipped because the dedup key already existed",
@@ -246,6 +258,11 @@ export function recordNotificationDelivery(
 /** Record that a channel was suppressed by the recipient's preferences. */
 export function recordNotificationSuppressed(channel: "in_app" | "email" | "push", module: string) {
   notificationSuppressedTotal.inc({ channel, module });
+}
+
+/** Record that a send was dropped by the per-recipient throttle (NOTIF-P3-007). */
+export function recordNotificationThrottled(channel: "in_app" | "email" | "push") {
+  notificationThrottledTotal.inc({ channel });
 }
 
 /** Record that an insert was skipped because its dedup key already existed. */

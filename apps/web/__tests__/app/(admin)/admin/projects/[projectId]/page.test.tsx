@@ -80,7 +80,6 @@ jest.mock("@/components/admin/ProjectTaskListV5", () => {
 
 jest.mock("@/app/(admin)/admin/projects/[projectId]/actions", () => ({
   reorderProjectTasks: jest.fn(),
-  updateProjectBasics: jest.fn(),
   addProjectTask: jest.fn(),
   submitProjectTaskForm: jest.fn(),
   addAdminTaskComment: jest.fn(),

@@ -34,28 +34,6 @@ function mockResponse<T>(data: T, ok = true): Promise<Response> {
   } as Response);
 }
 
-function mockStatusResponse(status: number, body: ApiResponse<unknown>): Promise<Response> {
-  return Promise.resolve({
-    ok: status >= 200 && status < 300,
-    status,
-    json: () => Promise.resolve(body),
-    headers: new Headers(),
-    redirected: false,
-    statusText: status === 502 ? "Bad Gateway" : "OK",
-    type: "basic" as ResponseType,
-    url: "",
-    clone: function () {
-      return this;
-    },
-    body: null,
-    bodyUsed: false,
-    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-    blob: () => Promise.resolve(new Blob()),
-    formData: () => Promise.resolve(new FormData()),
-    text: () => Promise.resolve(""),
-  } as Response);
-}
-
 function createClient(opts?: Partial<ClientOptions>) {
   const options: ClientOptions = {
     baseUrl: BASE_URL,
@@ -565,6 +543,26 @@ describe("MCTClient", () => {
       expect(mockFetch.mock.calls[0][1]?.method).toBe("PATCH");
     });
 
+    it("update sends If-Match and strips ifMatch from the body (USE-P3-004)", async () => {
+      mockFetch.mockResolvedValue(mockResponse(ticket));
+
+      await client.tickets.update("1", { title: "Updated", ifMatch: 7 });
+
+      const init = mockFetch.mock.calls[0][1];
+      const headers = init?.headers as Record<string, string>;
+      expect(headers["If-Match"]).toBe("7");
+      expect(JSON.parse(String(init?.body))).toEqual({ title: "Updated" });
+    });
+
+    it("update omits If-Match when no version is supplied", async () => {
+      mockFetch.mockResolvedValue(mockResponse(ticket));
+
+      await client.tickets.update("1", { title: "Updated" });
+
+      const headers = mockFetch.mock.calls[0][1]?.headers as Record<string, string>;
+      expect(headers["If-Match"]).toBeUndefined();
+    });
+
     it("listComments fetches comments", async () => {
       mockFetch.mockResolvedValue(
         mockResponse([
@@ -950,6 +948,38 @@ describe("MCTClient", () => {
       await client.documents.update("1", { name: "Updated" });
 
       expect(mockFetch.mock.calls[0][1]?.method).toBe("PATCH");
+    });
+
+    it("update sends If-Match and strips ifMatch from the body (USE-P3-004)", async () => {
+      mockFetch.mockResolvedValue(mockResponse(doc));
+
+      await client.documents.update("1", { name: "Updated", ifMatch: 4 });
+
+      const init = mockFetch.mock.calls[0][1];
+      const headers = init?.headers as Record<string, string>;
+      expect(headers["If-Match"]).toBe("4");
+      expect(JSON.parse(String(init?.body))).toEqual({ name: "Updated" });
+    });
+
+    it("createVersionSignedUrl posts to the per-version signed-url route", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({ signedUrl: "https://s3.test.com/v1", expiresIn: 3600 }),
+      );
+
+      const result = await client.documents.createVersionSignedUrl("1", "v-1");
+
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/documents/1/versions/v-1/signed-url");
+      expect(result.signedUrl).toBe("https://s3.test.com/v1");
+    });
+
+    it("restoreVersion posts to the restore route", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ ...doc, current_version: 3 }));
+
+      const result = await client.documents.restoreVersion("1", "v-1");
+
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/documents/1/versions/v-1/restore");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+      expect(result.current_version).toBe(3);
     });
 
     it("remove deletes a document", async () => {

@@ -3,6 +3,11 @@
 -- Device Profile Library schema. NOT safe to re-run against live data: the drop
 -- table below destroys the current rows before the replacement is created. The
 -- begin;/commit; wrapper keeps a fresh replay atomic (DATA-P2-002).
+--
+-- Rollback: drop this table, re-create the 5302074 shape
+-- (profile_name / device_type / os / settings / description / status /
+-- created_by) and the "dp_org" policies, then restore rows from the
+-- pre-migration backup — the drop discards them (see docs/migrations/README.md).
 
 begin;
 

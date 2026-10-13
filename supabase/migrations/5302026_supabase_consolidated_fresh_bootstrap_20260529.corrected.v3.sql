@@ -922,18 +922,21 @@ alter table public.audit_logs enable row level security;
 -- SYSTEM LOOKUP TABLE POLICIES
 -- =========================================================
 
+drop policy if exists "roles_select_authenticated" on public.roles;
 create policy "roles_select_authenticated"
 on public.roles
 for select
 to authenticated
 using (true);
 
+drop policy if exists "permissions_select_authenticated" on public.permissions;
 create policy "permissions_select_authenticated"
 on public.permissions
 for select
 to authenticated
 using (true);
 
+drop policy if exists "role_permissions_select_authenticated" on public.role_permissions;
 create policy "role_permissions_select_authenticated"
 on public.role_permissions
 for select
@@ -944,6 +947,7 @@ using (true);
 -- ORGANIZATION / MEMBERSHIP / PROFILE POLICIES
 -- =========================================================
 
+drop policy if exists "organizations_select_same_org_or_super_admin" on public.organizations;
 create policy "organizations_select_same_org_or_super_admin"
 on public.organizations
 for select
@@ -953,12 +957,14 @@ using (
   or public.is_org_approved_member(id)
 );
 
+drop policy if exists "organizations_insert_super_admin_only" on public.organizations;
 create policy "organizations_insert_super_admin_only"
 on public.organizations
 for insert
 to authenticated
 with check (public.is_super_admin());
 
+drop policy if exists "organizations_update_admin_or_super_admin" on public.organizations;
 create policy "organizations_update_admin_or_super_admin"
 on public.organizations
 for update
@@ -972,6 +978,7 @@ with check (
   or public.user_has_role(id, array['admin', 'super_admin', 'client_admin'])
 );
 
+drop policy if exists "organization_domains_select_admins" on public.organization_domains;
 create policy "organization_domains_select_admins"
 on public.organization_domains
 for select
@@ -981,6 +988,7 @@ using (
   or public.user_has_role(organization_id, array['admin', 'super_admin', 'client_admin'])
 );
 
+drop policy if exists "organization_domains_manage_admins" on public.organization_domains;
 create policy "organization_domains_manage_admins"
 on public.organization_domains
 for all
@@ -994,6 +1002,7 @@ with check (
   or public.user_has_role(organization_id, array['admin', 'super_admin'])
 );
 
+drop policy if exists "profiles_select_self_same_org_or_super_admin" on public.profiles;
 create policy "profiles_select_self_same_org_or_super_admin"
 on public.profiles
 for select
@@ -1012,6 +1021,7 @@ using (
   )
 );
 
+drop policy if exists "profiles_update_self_or_super_admin" on public.profiles;
 create policy "profiles_update_self_or_super_admin"
 on public.profiles
 for update
@@ -1025,6 +1035,7 @@ with check (
   or public.is_super_admin()
 );
 
+drop policy if exists "memberships_select_same_org_or_super_admin" on public.memberships;
 create policy "memberships_select_same_org_or_super_admin"
 on public.memberships
 for select
@@ -1034,6 +1045,7 @@ using (
   or public.is_org_member(organization_id)
 );
 
+drop policy if exists "memberships_manage_admin_or_super_admin" on public.memberships;
 create policy "memberships_manage_admin_or_super_admin"
 on public.memberships
 for all
@@ -1047,6 +1059,7 @@ with check (
   or public.user_has_role(organization_id, array['admin', 'super_admin', 'client_admin'])
 );
 
+drop policy if exists "user_permission_overrides_admin_only" on public.user_permission_overrides;
 create policy "user_permission_overrides_admin_only"
 on public.user_permission_overrides
 for all
@@ -1060,6 +1073,7 @@ with check (
   or public.user_has_role(organization_id, array['admin', 'super_admin'])
 );
 
+drop policy if exists "notification_preferences_select_self_or_admin" on public.notification_preferences;
 create policy "notification_preferences_select_self_or_admin"
 on public.notification_preferences
 for select
@@ -1071,6 +1085,7 @@ using (
   or public.user_has_role(organization_id, array['admin', 'super_admin', 'client_admin'])
 );
 
+drop policy if exists "notification_preferences_upsert_self_or_admin" on public.notification_preferences;
 create policy "notification_preferences_upsert_self_or_admin"
 on public.notification_preferences
 for all
@@ -1090,6 +1105,7 @@ with check (
 -- ONBOARDING POLICIES
 -- =========================================================
 
+drop policy if exists "onboarding_select_same_org" on public.onboarding_submissions;
 create policy "onboarding_select_same_org"
 on public.onboarding_submissions
 for select
@@ -1099,6 +1115,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "onboarding_insert_same_org" on public.onboarding_submissions;
 create policy "onboarding_insert_same_org"
 on public.onboarding_submissions
 for insert
@@ -1112,6 +1129,7 @@ with check (
   )
 );
 
+drop policy if exists "onboarding_update_same_org" on public.onboarding_submissions;
 create policy "onboarding_update_same_org"
 on public.onboarding_submissions
 for update
@@ -1129,6 +1147,7 @@ with check (
 -- TICKET POLICIES
 -- =========================================================
 
+drop policy if exists "tickets_select_same_org" on public.tickets;
 create policy "tickets_select_same_org"
 on public.tickets
 for select
@@ -1138,6 +1157,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "tickets_insert_same_org" on public.tickets;
 create policy "tickets_insert_same_org"
 on public.tickets
 for insert
@@ -1151,6 +1171,7 @@ with check (
   )
 );
 
+drop policy if exists "tickets_update_with_permission" on public.tickets;
 create policy "tickets_update_with_permission"
 on public.tickets
 for update
@@ -1164,6 +1185,7 @@ with check (
   or public.user_has_permission(organization_id, 'tickets', 'manage')
 );
 
+drop policy if exists "ticket_comments_select_same_org" on public.ticket_comments;
 create policy "ticket_comments_select_same_org"
 on public.ticket_comments
 for select
@@ -1173,6 +1195,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "ticket_comments_insert_same_org" on public.ticket_comments;
 create policy "ticket_comments_insert_same_org"
 on public.ticket_comments
 for insert
@@ -1190,6 +1213,7 @@ with check (
 -- PROJECT / TASK / COMMENT POLICIES
 -- =========================================================
 
+drop policy if exists "projects_select_same_org" on public.projects;
 create policy "projects_select_same_org"
 on public.projects
 for select
@@ -1199,6 +1223,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "projects_insert_with_permission" on public.projects;
 create policy "projects_insert_with_permission"
 on public.projects
 for insert
@@ -1211,6 +1236,7 @@ with check (
   )
 );
 
+drop policy if exists "projects_update_with_permission" on public.projects;
 create policy "projects_update_with_permission"
 on public.projects
 for update
@@ -1224,6 +1250,7 @@ with check (
   or public.user_has_permission(organization_id, 'projects', 'manage')
 );
 
+drop policy if exists "project_members_select_same_org" on public.project_members;
 create policy "project_members_select_same_org"
 on public.project_members
 for select
@@ -1238,6 +1265,7 @@ using (
   )
 );
 
+drop policy if exists "project_members_manage_with_permission" on public.project_members;
 create policy "project_members_manage_with_permission"
 on public.project_members
 for all
@@ -1261,6 +1289,7 @@ with check (
   )
 );
 
+drop policy if exists "project_tasks_select_same_org" on public.project_tasks;
 create policy "project_tasks_select_same_org"
 on public.project_tasks
 for select
@@ -1270,6 +1299,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "project_tasks_insert_with_permission" on public.project_tasks;
 create policy "project_tasks_insert_with_permission"
 on public.project_tasks
 for insert
@@ -1282,6 +1312,7 @@ with check (
   )
 );
 
+drop policy if exists "project_tasks_update_with_permission" on public.project_tasks;
 create policy "project_tasks_update_with_permission"
 on public.project_tasks
 for update
@@ -1295,6 +1326,7 @@ with check (
   or public.user_has_permission(organization_id, 'projects', 'manage')
 );
 
+drop policy if exists "comments_select_same_org" on public.comments;
 create policy "comments_select_same_org"
 on public.comments
 for select
@@ -1304,6 +1336,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "comments_insert_same_org" on public.comments;
 create policy "comments_insert_same_org"
 on public.comments
 for insert
@@ -1320,6 +1353,7 @@ with check (
 -- DOCUMENT / CONTRACT POLICIES
 -- =========================================================
 
+drop policy if exists "documents_select_same_org" on public.documents;
 create policy "documents_select_same_org"
 on public.documents
 for select
@@ -1329,6 +1363,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "documents_insert_with_permission" on public.documents;
 create policy "documents_insert_with_permission"
 on public.documents
 for insert
@@ -1341,6 +1376,7 @@ with check (
   )
 );
 
+drop policy if exists "documents_update_with_permission" on public.documents;
 create policy "documents_update_with_permission"
 on public.documents
 for update
@@ -1354,6 +1390,7 @@ with check (
   or public.user_has_permission(organization_id, 'documents', 'manage')
 );
 
+drop policy if exists "document_versions_select_same_org" on public.document_versions;
 create policy "document_versions_select_same_org"
 on public.document_versions
 for select
@@ -1368,6 +1405,7 @@ using (
   )
 );
 
+drop policy if exists "document_versions_insert_with_permission" on public.document_versions;
 create policy "document_versions_insert_with_permission"
 on public.document_versions
 for insert
@@ -1382,6 +1420,7 @@ with check (
   )
 );
 
+drop policy if exists "document_permissions_select_admins" on public.document_permissions;
 create policy "document_permissions_select_admins"
 on public.document_permissions
 for select
@@ -1396,6 +1435,7 @@ using (
   )
 );
 
+drop policy if exists "document_permissions_manage_admins" on public.document_permissions;
 create policy "document_permissions_manage_admins"
 on public.document_permissions
 for all
@@ -1419,6 +1459,7 @@ with check (
   )
 );
 
+drop policy if exists "contracts_select_same_org" on public.contracts;
 create policy "contracts_select_same_org"
 on public.contracts
 for select
@@ -1428,6 +1469,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "contracts_insert_with_permission" on public.contracts;
 create policy "contracts_insert_with_permission"
 on public.contracts
 for insert
@@ -1440,6 +1482,7 @@ with check (
   )
 );
 
+drop policy if exists "contracts_update_with_permission" on public.contracts;
 create policy "contracts_update_with_permission"
 on public.contracts
 for update
@@ -1453,6 +1496,7 @@ with check (
   or public.user_has_permission(organization_id, 'contracts', 'manage')
 );
 
+drop policy if exists "contract_signers_select_same_org" on public.contract_signers;
 create policy "contract_signers_select_same_org"
 on public.contract_signers
 for select
@@ -1467,6 +1511,7 @@ using (
   )
 );
 
+drop policy if exists "contract_signers_manage_with_permission" on public.contract_signers;
 create policy "contract_signers_manage_with_permission"
 on public.contract_signers
 for all
@@ -1494,6 +1539,7 @@ with check (
 -- APPOINTMENTS POLICIES
 -- =========================================================
 
+drop policy if exists "appointments_select_same_org" on public.appointments;
 create policy "appointments_select_same_org"
 on public.appointments
 for select
@@ -1503,6 +1549,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "appointments_insert_with_permission" on public.appointments;
 create policy "appointments_insert_with_permission"
 on public.appointments
 for insert
@@ -1515,6 +1562,7 @@ with check (
   )
 );
 
+drop policy if exists "appointments_update_with_permission" on public.appointments;
 create policy "appointments_update_with_permission"
 on public.appointments
 for update
@@ -1532,6 +1580,7 @@ with check (
 -- BILLING POLICIES
 -- =========================================================
 
+drop policy if exists "billing_customers_select_same_org" on public.billing_customers;
 create policy "billing_customers_select_same_org"
 on public.billing_customers
 for select
@@ -1541,6 +1590,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "billing_customers_manage_admins" on public.billing_customers;
 create policy "billing_customers_manage_admins"
 on public.billing_customers
 for all
@@ -1554,6 +1604,7 @@ with check (
   or public.user_has_permission(organization_id, 'billing', 'manage')
 );
 
+drop policy if exists "subscriptions_select_same_org" on public.subscriptions;
 create policy "subscriptions_select_same_org"
 on public.subscriptions
 for select
@@ -1563,6 +1614,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "subscriptions_manage_admins" on public.subscriptions;
 create policy "subscriptions_manage_admins"
 on public.subscriptions
 for all
@@ -1576,6 +1628,7 @@ with check (
   or public.user_has_permission(organization_id, 'billing', 'manage')
 );
 
+drop policy if exists "invoices_select_same_org" on public.invoices;
 create policy "invoices_select_same_org"
 on public.invoices
 for select
@@ -1585,6 +1638,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "invoices_manage_admins" on public.invoices;
 create policy "invoices_manage_admins"
 on public.invoices
 for all
@@ -1598,6 +1652,7 @@ with check (
   or public.user_has_permission(organization_id, 'billing', 'manage')
 );
 
+drop policy if exists "payments_select_same_org" on public.payments;
 create policy "payments_select_same_org"
 on public.payments
 for select
@@ -1607,6 +1662,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "payments_manage_admins" on public.payments;
 create policy "payments_manage_admins"
 on public.payments
 for all
@@ -1624,6 +1680,7 @@ with check (
 -- CHAT POLICIES
 -- =========================================================
 
+drop policy if exists "chat_threads_select_same_org" on public.chat_threads;
 create policy "chat_threads_select_same_org"
 on public.chat_threads
 for select
@@ -1633,6 +1690,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "chat_threads_insert_same_org" on public.chat_threads;
 create policy "chat_threads_insert_same_org"
 on public.chat_threads
 for insert
@@ -1645,6 +1703,7 @@ with check (
   )
 );
 
+drop policy if exists "chat_threads_update_same_org" on public.chat_threads;
 create policy "chat_threads_update_same_org"
 on public.chat_threads
 for update
@@ -1658,6 +1717,7 @@ with check (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "chat_messages_select_same_org" on public.chat_messages;
 create policy "chat_messages_select_same_org"
 on public.chat_messages
 for select
@@ -1667,6 +1727,7 @@ using (
   or public.is_org_approved_member(organization_id)
 );
 
+drop policy if exists "chat_messages_insert_same_org" on public.chat_messages;
 create policy "chat_messages_insert_same_org"
 on public.chat_messages
 for insert
@@ -1680,6 +1741,7 @@ with check (
 -- AUDIT LOG POLICIES
 -- =========================================================
 
+drop policy if exists "audit_logs_select_admins" on public.audit_logs;
 create policy "audit_logs_select_admins"
 on public.audit_logs
 for select
@@ -1689,6 +1751,7 @@ using (
   or public.user_has_role(organization_id, array['admin', 'super_admin'])
 );
 
+drop policy if exists "audit_logs_insert_server_or_admin" on public.audit_logs;
 create policy "audit_logs_insert_server_or_admin"
 on public.audit_logs
 for insert
@@ -2178,6 +2241,7 @@ alter table public.document_permissions enable row level security;
 
 drop policy if exists documents_select_same_org on public.documents;
 drop policy if exists documents_select_org on public.documents;
+drop policy if exists "documents_select_visibility_aligned" on public.documents;
 create policy documents_select_visibility_aligned
 on public.documents
 for select
@@ -2228,6 +2292,7 @@ using (
 );
 
 drop policy if exists document_versions_select_same_org on public.document_versions;
+drop policy if exists "document_versions_select_visibility_aligned" on public.document_versions;
 create policy document_versions_select_visibility_aligned
 on public.document_versions
 for select

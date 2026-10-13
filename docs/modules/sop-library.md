@@ -2,7 +2,7 @@
 
 **Category:** Governance / Edu & Automation
 **API Routes:** `apps/api/src/routes/governance.ts` (mounted at `/api/v1/governance`) + `apps/api/src/routes/edu-automation.ts` (mounted at `/api/v1/edu-automation`)
-**SDK:** `packages/sdk/src/governance.ts` (`governance.sopLibrary`) + `packages/sdk/src/edu-automation.ts` (`eduAutomation.sop`)
+**SDK:** `packages/sdk/src/governance.ts` (`governance.sopLibrary`; `eduAutomation.sop` is a compatibility alias that calls the same canonical route)
 **Table:** `sop_library` (migration `5302086_sop_library_compliance.sql`)
 
 ## Overview
@@ -15,7 +15,7 @@ Versioned SOP and procedure library mapped to compliance frameworks (NIST, ISO 2
 - Framework mapping via `compliance_framework` + `framework_control_ids`
 - `GET /sop-library/compliance-map` — SOP-to-framework control coverage
 - `GET /sop-library/framework-gaps` — per-framework coverage gaps
-- Accessible via both `/api/v1/governance/sop-library` and `/api/v1/edu-automation/sop` (same table)
+- Canonical surface: `/api/v1/governance/sop-library`. The legacy `/api/v1/edu-automation/sop` path is hard-deprecated (410 Gone) after FEAT-P2-005; `eduAutomation.sop` in the SDK now calls the canonical route.
 
 ## Endpoints
 

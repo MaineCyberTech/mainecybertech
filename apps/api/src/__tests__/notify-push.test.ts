@@ -90,6 +90,8 @@ function setEnv(vapidPublicKey?: string) {
     APP_BASE_URL: "http://localhost:3000",
     LOG_LEVEL: "silent",
     VAPID_PUBLIC_KEY: vapidPublicKey,
+    // NOTIF-P3-005: needed to sign the unsubscribe footer link.
+    SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
   });
 }
 

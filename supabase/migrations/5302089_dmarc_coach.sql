@@ -17,7 +17,11 @@ create table if not exists public.dmarc_analyses (
 );
 create index if not exists idx_dmarc_analyses_org on public.dmarc_analyses (organization_id);
 alter table public.dmarc_analyses enable row level security;
+drop policy if exists "dmarc_org_select" on public.dmarc_analyses;
 create policy "dmarc_org_select" on public.dmarc_analyses for select using (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = dmarc_analyses.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "dmarc_org_insert" on public.dmarc_analyses;
 create policy "dmarc_org_insert" on public.dmarc_analyses for insert with check (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = dmarc_analyses.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "dmarc_org_update" on public.dmarc_analyses;
 create policy "dmarc_org_update" on public.dmarc_analyses for update using (EXISTS (SELECT 1 FROM memberships WHERE memberships.organization_id = dmarc_analyses.organization_id AND memberships.user_id = auth.uid()));
+drop policy if exists "dmarc_admin_delete" on public.dmarc_analyses;
 create policy "dmarc_admin_delete" on public.dmarc_analyses for delete using (EXISTS (SELECT 1 FROM memberships m JOIN roles r ON m.role_id = r.id WHERE m.organization_id = dmarc_analyses.organization_id AND m.user_id = auth.uid() AND r.key = 'admin'));

@@ -1,5 +1,5 @@
 import { jest } from "@jest/globals";
-import { envSchema, parseEnv, type Env } from "../env";
+import { parseEnv, type Env } from "../env";
 import {
   registerTask,
   getTaskHandler,

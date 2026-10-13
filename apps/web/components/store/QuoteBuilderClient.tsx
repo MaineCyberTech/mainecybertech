@@ -387,7 +387,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
               <button
                 type="submit"
                 disabled={submitting || items.length === 0 || !consent}
-                className="w-full rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-3 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-400 disabled:shadow-none"
+                className="w-full rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-3 font-display text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-400 disabled:shadow-none"
               >
                 {submitting ? "Submitting..." : "Submit Quote Request"}
               </button>

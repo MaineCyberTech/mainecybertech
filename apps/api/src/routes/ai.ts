@@ -6,8 +6,15 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { loadOwned } from "../lib/tenant";
-import { triageInputSchema, convertTriageSchema, copilotReplyDraftSchema } from "../validators/ai";
+import {
+  triageInputSchema,
+  convertTriageSchema,
+  copilotReplyDraftSchema,
+  createAiDraftSchema,
+  reviewAiDraftSchema,
+} from "../validators/ai";
 import { queryInt } from "../lib/query";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -169,6 +176,42 @@ function analyzeDescription(text: string) {
   };
 }
 
+// FEAT-P2-004: the feature docs promise that AI outputs are stored in
+// `ai_draft_outputs` with `status = 'draft'` and only applied after human
+// review. Every AI route that produces content persists a draft row here and
+// the review endpoint below is the only path that moves a row out of `draft`.
+async function persistAiDraft(
+  supabase: ReturnType<typeof getScopedClient>,
+  input: {
+    organizationId: string;
+    moduleKey: string;
+    promptKey?: string | null;
+    promptVersion?: string | null;
+    draftContent: Record<string, unknown>;
+    sourceEntityType?: string | null;
+    sourceEntityId?: string | null;
+    userId: string;
+  },
+) {
+  const { data, error } = await supabase
+    .from("ai_draft_outputs")
+    .insert({
+      organization_id: input.organizationId,
+      module_key: input.moduleKey,
+      prompt_key: input.promptKey ?? null,
+      prompt_version: input.promptVersion ?? null,
+      draft_content: input.draftContent,
+      status: "draft",
+      source_entity_type: input.sourceEntityType ?? null,
+      source_entity_id: input.sourceEntityId ?? null,
+      created_by: input.userId,
+    } as never)
+    .select()
+    .single();
+  if (error) throw new AppError("DB_ERROR", error.message, 500);
+  return data;
+}
+
 // Portal AI triage is gated on `ai:view` (matches the route map); without a
 // guard any approved org member — including client roles — could create drafts.
 router.post("/triage/analyze", requirePermission("ai", "view"), async (req, res, next) => {
@@ -193,6 +236,17 @@ router.post("/triage/analyze", requirePermission("ai", "view"), async (req, res,
       .single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    // FEAT-P2-004: record the AI output in the documented review-gate table.
+    await persistAiDraft(supabase, {
+      organizationId: parsed.organizationId,
+      moduleKey: "ticket-triage",
+      promptKey: "triage/analyze",
+      draftContent: analysis as unknown as Record<string, unknown>,
+      sourceEntityType: "ticket_triage_draft",
+      sourceEntityId: data.id,
+      userId: req.authUser!.userId,
+    });
 
     await logAuditEvent({
       organizationId: parsed.organizationId,
@@ -270,7 +324,7 @@ router.get("/triage", async (req, res, next) => {
     const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let q = supabase.from("ticket_triage_drafts").select("*", { count: "exact" });
+    let q = supabase.from("ticket_triage_drafts").select("*", { count: listCountMode(req.query) });
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) q = q.eq("organization_id", orgId);
 
@@ -286,144 +340,293 @@ router.get("/triage", async (req, res, next) => {
   }
 });
 
-router.get("/copilot/:ticketId/summarize", async (req, res, next) => {
+// ACM-P3-007: copilot output is an AI-tool action, so it is gated like the
+// other /ai routes (summarize reads, reply-draft creates a persisted draft)
+// instead of being open to every org member.
+router.get(
+  "/copilot/:ticketId/summarize",
+  requirePermission("ai", "view"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "ai", "read");
+
+      const ticket = (await loadOwned(
+        req,
+        supabase,
+        "tickets",
+        String(req.params.ticketId),
+        "id, title, description, status, priority, category, created_at, organization_id",
+      )) as {
+        id: string;
+        title: string;
+        description: string;
+        status: string;
+        priority: string;
+        category: string;
+        created_at: string;
+        organization_id: string;
+      };
+
+      const { data: comments } = await supabase
+        .from("ticket_comments")
+        .select("body, author_id, created_at")
+        .eq("ticket_id", String(req.params.ticketId))
+        .eq("organization_id", ticket.organization_id)
+        .order("created_at", { ascending: true });
+      const commentList = comments ?? [];
+
+      const summary = {
+        ticketId: ticket.id,
+        subject: ticket.title,
+        status: ticket.status,
+        priority: ticket.priority,
+        category: ticket.category,
+        created: ticket.created_at,
+        commentCount: commentList.length,
+        lastActivity:
+          commentList.length > 0
+            ? (commentList[commentList.length - 1] as { created_at: string }).created_at
+            : ticket.created_at,
+        keyPoints: [
+          `Priority: ${ticket.priority}`,
+          `Status: ${ticket.status}`,
+          `Category: ${ticket.category}`,
+          `${commentList.length} comments in thread`,
+        ],
+        suggestedNextAction:
+          ticket.status === "resolved"
+            ? "Review resolution and close or reopen"
+            : commentList.length === 0
+              ? "No responses yet — craft initial reply"
+              : `${commentList.length} responses — review latest and follow up`,
+      };
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "copilot.summarized",
+        entityType: "ticket",
+        entityId: String(req.params.ticketId),
+      });
+
+      res.json(success(summary));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.post(
+  "/copilot/:ticketId/reply-draft",
+  requirePermission("ai", "create"),
+  async (req, res, next) => {
+    try {
+      const parsed = copilotReplyDraftSchema.parse(req.body);
+      const supabase = getScopedClient(req, "ai", "write");
+
+      // Scope to the caller's org (summarize uses loadOwned too). Without this,
+      // when `ai` is not in RLS_WRITES_ENABLED the service-role client could read
+      // another tenant's ticket.
+      const ticket = (await loadOwned(
+        req,
+        supabase,
+        "tickets",
+        String(req.params.ticketId),
+        "id, title, description, status, priority, organization_id",
+      )) as {
+        id: string;
+        title: string;
+        description: string;
+        status: string;
+        priority: string;
+        organization_id: string;
+      };
+
+      const { data: comments } = await supabase
+        .from("ticket_comments")
+        .select("body")
+        .eq("ticket_id", String(req.params.ticketId))
+        .eq("organization_id", ticket.organization_id)
+        .order("created_at", { ascending: false })
+        .limit(3);
+
+      const lastComment =
+        (comments ?? []).length > 0 ? (comments as Array<{ body: string }>)[0].body : null;
+
+      const tones: Record<string, string> = {
+        formal: "Thank you for contacting us regarding this issue.",
+        friendly: "Hi there! Thanks for reaching out — we're on it.",
+        technical:
+          "Acknowledged. We are investigating this issue and will provide technical analysis shortly.",
+        concise: "Got it. Working on this now.",
+      };
+
+      const draftReply = [
+        tones[parsed.tone],
+        "",
+        lastComment
+          ? `Regarding your latest update: "${lastComment.slice(0, 200)}${lastComment.length > 200 ? "..." : ""}"`
+          : `Regarding: ${(ticket as { title: string }).title}`,
+        "",
+        "We are reviewing this and will follow up shortly.",
+        "",
+        "Best regards,",
+        "Maine CyberTech Support",
+      ].join("\n");
+
+      // FEAT-P2-004: persist the draft for the documented human review gate.
+      await persistAiDraft(supabase, {
+        organizationId: parsed.organizationId,
+        moduleKey: "ai-copilot",
+        promptKey: "copilot/reply-draft",
+        draftContent: { draftReply, tone: parsed.tone },
+        sourceEntityType: "ticket",
+        sourceEntityId: String(req.params.ticketId),
+        userId: req.authUser!.userId,
+      });
+
+      await logAuditEvent({
+        organizationId: parsed.organizationId,
+        actorUserId: req.authUser!.userId,
+        action: "copilot.reply_drafted",
+        entityType: "ticket",
+        entityId: String(req.params.ticketId),
+      });
+
+      res.json(
+        success({
+          draftReply,
+          ticketSubject: (ticket as { title: string }).title,
+          tone: parsed.tone,
+        }),
+      );
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+// ── AI draft review gate (FEAT-P2-004) ─────────────────────────────
+//
+// `ai_draft_outputs` is the documented store for AI-generated content
+// (status 'draft') and the human review gate before it is applied. These
+// endpoints are the only write path: create persists a draft, review is the
+// only transition out of 'draft' and records reviewer identity + notes.
+
+router.post("/drafts", requirePermission("ai", "create"), async (req, res, next) => {
   try {
-    const supabase = getScopedClient(req, "ai", "read");
-
-    const ticket = (await loadOwned(
-      req,
-      supabase as any,
-      "tickets",
-      String(req.params.ticketId),
-      "id, title, description, status, priority, category, created_at, organization_id",
-    )) as {
-      id: string;
-      title: string;
-      description: string;
-      status: string;
-      priority: string;
-      category: string;
-      created_at: string;
-      organization_id: string;
-    };
-
-    const { data: comments } = await supabase
-      .from("ticket_comments")
-      .select("body, author_id, created_at")
-      .eq("ticket_id", String(req.params.ticketId))
-      .eq("organization_id", ticket.organization_id)
-      .order("created_at", { ascending: true });
-    const commentList = comments ?? [];
-
-    const summary = {
-      ticketId: ticket.id,
-      subject: ticket.title,
-      status: ticket.status,
-      priority: ticket.priority,
-      category: ticket.category,
-      created: ticket.created_at,
-      commentCount: commentList.length,
-      lastActivity:
-        commentList.length > 0
-          ? (commentList[commentList.length - 1] as { created_at: string }).created_at
-          : ticket.created_at,
-      keyPoints: [
-        `Priority: ${ticket.priority}`,
-        `Status: ${ticket.status}`,
-        `Category: ${ticket.category}`,
-        `${commentList.length} comments in thread`,
-      ],
-      suggestedNextAction:
-        ticket.status === "resolved"
-          ? "Review resolution and close or reopen"
-          : commentList.length === 0
-            ? "No responses yet — craft initial reply"
-            : `${commentList.length} responses — review latest and follow up`,
-    };
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "copilot.summarized",
-      entityType: "ticket",
-      entityId: String(req.params.ticketId),
+    const parsed = createAiDraftSchema.parse(req.body);
+    const supabase = getScopedClient(req, "ai", "write");
+    const draft = await persistAiDraft(supabase, {
+      ...parsed,
+      userId: req.authUser!.userId,
     });
-
-    res.json(success(summary));
+    await logAuditEvent({
+      organizationId: parsed.organizationId,
+      actorUserId: req.authUser!.userId,
+      action: "ai_draft.created",
+      entityType: "ai_draft_output",
+      entityId: (draft as { id: string } | null)?.id,
+      metadata: { moduleKey: parsed.moduleKey, promptKey: parsed.promptKey ?? null },
+    });
+    res.status(201).json(success(draft));
   } catch (error) {
     next(error);
   }
 });
 
-router.post("/copilot/:ticketId/reply-draft", async (req, res, next) => {
+router.get("/drafts", requirePermission("ai", "view"), async (req, res, next) => {
   try {
-    const parsed = copilotReplyDraftSchema.parse(req.body);
-    const supabase = getScopedClient(req, "ai", "write");
+    const supabase = getScopedClient(req, "ai", "read");
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
+    const offset = (page - 1) * limit;
 
-    // Scope to the caller's org (summarize uses loadOwned too). Without this,
-    // when `ai` is not in RLS_WRITES_ENABLED the service-role client could read
-    // another tenant's ticket.
-    const ticket = (await loadOwned(
-      req,
-      supabase as any,
-      "tickets",
-      String(req.params.ticketId),
-      "id, title, description, status, priority, organization_id",
-    )) as {
-      id: string;
-      title: string;
-      description: string;
-      status: string;
-      priority: string;
-      organization_id: string;
-    };
+    let q = supabase.from("ai_draft_outputs").select("*", { count: listCountMode(req.query) });
+    const orgId = req.query.organization_id as string | undefined;
+    if (orgId) q = q.eq("organization_id", orgId);
+    if (req.query.status) q = q.eq("status", req.query.status as string);
+    if (req.query.module_key) q = q.eq("module_key", req.query.module_key as string);
 
-    const { data: comments } = await supabase
-      .from("ticket_comments")
-      .select("body")
-      .eq("ticket_id", String(req.params.ticketId))
-      .eq("organization_id", ticket.organization_id)
+    const { data, error, count } = await q
       .order("created_at", { ascending: false })
-      .limit(3);
+      .range(offset, offset + limit - 1);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(
+      success({ items: data ?? [], total: count ?? 0, page, limit } as PaginatedResult<unknown>),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
 
-    const lastComment =
-      (comments ?? []).length > 0 ? (comments as Array<{ body: string }>)[0].body : null;
+router.get("/drafts/:id", requirePermission("ai", "view"), async (req, res, next) => {
+  try {
+    const supabase = getScopedClient(req, "ai", "read");
+    const { data, error } = await supabase
+      .from("ai_draft_outputs")
+      .select("*")
+      .eq("id", String(req.params.id))
+      .eq("organization_id", req.query.organization_id as string)
+      .single();
+    if (error || !data) throw new AppError("NOT_FOUND", "Draft not found", 404);
+    res.json(success(data));
+  } catch (error) {
+    next(error);
+  }
+});
 
-    const tones: Record<string, string> = {
-      formal: "Thank you for contacting us regarding this issue.",
-      friendly: "Hi there! Thanks for reaching out — we're on it.",
-      technical:
-        "Acknowledged. We are investigating this issue and will provide technical analysis shortly.",
-      concise: "Got it. Working on this now.",
-    };
+router.post("/drafts/:id/review", requirePermission("ai", "edit"), async (req, res, next) => {
+  try {
+    const parsed = reviewAiDraftSchema.parse(req.body);
+    const supabase = getScopedClient(req, "ai", "write");
+    const orgId = req.query.organization_id as string;
 
-    const draftReply = [
-      tones[parsed.tone],
-      "",
-      lastComment
-        ? `Regarding your latest update: "${lastComment.slice(0, 200)}${lastComment.length > 200 ? "..." : ""}"`
-        : `Regarding: ${(ticket as { title: string }).title}`,
-      "",
-      "We are reviewing this and will follow up shortly.",
-      "",
-      "Best regards,",
-      "Maine CyberTech Support",
-    ].join("\n");
+    const { data: current, error: fetchError } = await supabase
+      .from("ai_draft_outputs")
+      .select("*")
+      .eq("id", String(req.params.id))
+      .eq("organization_id", orgId)
+      .single();
+    if (fetchError || !current) throw new AppError("NOT_FOUND", "Draft not found", 404);
+
+    // The review gate is one-way: an output that has already been reviewed
+    // (approved/rejected) cannot be re-decided through this endpoint.
+    if ((current as { status: string }).status !== "draft") {
+      throw new AppError("CONFLICT", "Only draft outputs can be reviewed", 409);
+    }
+
+    const approvedContent =
+      parsed.decision === "approved"
+        ? (parsed.approvedContent ?? (current as { draft_content: unknown }).draft_content)
+        : null;
+
+    const { data, error } = await supabase
+      .from("ai_draft_outputs")
+      .update({
+        status: parsed.decision,
+        reviewed_by: req.authUser!.userId,
+        reviewed_at: new Date().toISOString(),
+        review_notes: parsed.reviewNotes ?? null,
+        approved_content: approvedContent,
+      } as never)
+      .eq("id", String(req.params.id))
+      .eq("organization_id", orgId)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({
-      organizationId: parsed.organizationId,
+      organizationId: orgId,
       actorUserId: req.authUser!.userId,
-      action: "copilot.reply_drafted",
-      entityType: "ticket",
-      entityId: String(req.params.ticketId),
+      action: "ai_draft.reviewed",
+      entityType: "ai_draft_output",
+      entityId: String(req.params.id),
+      metadata: {
+        decision: parsed.decision,
+        moduleKey: (current as { module_key: string }).module_key,
+      },
     });
-
-    res.json(
-      success({
-        draftReply,
-        ticketSubject: (ticket as { title: string }).title,
-        tone: parsed.tone,
-      }),
-    );
+    res.json(success(data));
   } catch (error) {
     next(error);
   }

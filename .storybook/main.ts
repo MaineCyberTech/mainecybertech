@@ -25,6 +25,10 @@ const config: StorybookConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       "@mct/ui": path.resolve(__dirname, "../packages/ui/src"),
+      // App-component stories (apps/web/components/**/*.stories.tsx) import
+      // through the web app's `@/` alias; there is no repo-root tsconfig for
+      // Storybook to read it from (apps/web/tsconfig.json owns it).
+      "@": path.resolve(__dirname, "../apps/web"),
     };
     return config;
   },

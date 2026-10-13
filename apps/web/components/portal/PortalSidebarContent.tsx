@@ -101,7 +101,6 @@ export default function PortalSidebarContent({
                   : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
               }`}
               aria-expanded={isOpen}
-              aria-haspopup="true"
               aria-controls={groupFlyoutId(group.label)}
             >
               <span>{group.label}</span>

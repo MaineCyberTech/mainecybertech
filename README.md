@@ -40,11 +40,11 @@ The platform is designed to support:
 
 ### Production-ready now
 
-- frontend / web app with complete test coverage (1,969 tests)
-- API / backend with security middleware and OpenAPI docs (1,823 tests)
-- database / RLS foundation (127 migrations)
-- SDK package with retry logic (310 tests)
-- worker framework with 28 registered task handlers (277 tests)
+- frontend / web app with complete test coverage (2,024 tests)
+- API / backend with security middleware and OpenAPI docs (1,958 tests)
+- database / RLS foundation (158 migrations)
+- SDK package with retry logic (325 tests)
+- worker framework with 28 registered task handlers (305 tests)
 - Docker images for all services (web, api, worker)
 - E2E tests with Playwright (91 spec files)
 - CI/CD pipelines (test, lint, typecheck, build, deploy, E2E)
@@ -124,7 +124,7 @@ terraform apply -var-file=env/prod.tfvars
 ## Useful Commands
 
 ```bash
-pnpm test                    # All unit tests (4,379)
+pnpm test                    # All unit tests (4,612)
 pnpm e2e                     # E2E tests (91 spec files)
 pnpm --filter=api dev        # API dev server
 pnpm --filter=web dev        # Web dev server (auto-started by Playwright)
@@ -219,7 +219,7 @@ Auth User → Profile → Membership → Role → Permission / Override → RLS 
 
 ## Testing
 
-The monorepo includes **4,379 tests** across all packages. See [AGENTS.md](AGENTS.md) for the current breakdown.
+The monorepo includes **4,612 tests** across all packages. See [AGENTS.md](AGENTS.md) for the current breakdown.
 
 ### Running tests
 
@@ -308,26 +308,36 @@ GitHub Actions workflows in `.github/workflows/`:
 
 | Workflow                  | Trigger                          | Purpose                                                                                                                                                                    |
 | ------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `validate.yml`            | workflow_call                    | Reusable gate: dependency audit + tests/coverage + lint + typecheck + OpenAPI validate + docs-counts, DB-types and RLS-hygiene guards + prompt provenance + review.md sync |
-| `test.yml`                | push/PR main,develop             | Unit/integration tests + OpenAPI validate/coverage audit + docs-counts, DB-types and RLS-hygiene guards + Trivy/secret scans                                               |
-| `lint.yml`                | push/PR main,develop             | Lint check                                                                                                                                                                 |
-| `typecheck.yml`           | push/PR main,develop             | TypeScript type checking                                                                                                                                                   |
-| `e2e.yml`                 | PR main,develop, workflow_call   | Build web, run Playwright E2E tests                                                                                                                                        |
-| `supabase-migrations.yml` | push main+develop, workflow_call | Run Supabase DB migrations                                                                                                                                                 |
-| `deploy-do.yml`           | push main+develop                | Build images, SSH deploy to DigitalOcean droplet                                                                                                                           |
-| `terraform-do.yml`        | dispatch                         | Terraform plan (manual; apply requires the `apply` input)                                                                                                                  |
-| `build-push.yml`          | workflow_dispatch                | Manual Docker image build + push to GHCR                                                                                                                                   |
-| `chromatic.yml`           | push/PR (`packages/ui/**` only)  | Visual regression (Storybook) — fails on a broken Storybook build and on visual changes once a baseline exists (not yet a required check)                                  |
-| `db-backup.yml`           | schedule/manual                  | Database backup to Spaces (encrypted; optional offsite copy)                                                                                                               |
-| `db-restore-test.yml`     | schedule/manual                  | Restore a backup into a throwaway DB with integrity/freshness assertions                                                                                                   |
-| `storage-backup.yml`      | schedule/manual                  | Mirror Supabase Storage buckets (`documents`/`avatars`/`logos`) to Spaces                                                                                                  |
-| `secret-rotation-reminder.yml` | schedule/manual             | Quarterly secret-rotation issue (deduplicated)                                                                                                                             |
-| `dependabot-triage-reminder.yml` | schedule/manual           | Weekly Dependabot backlog triage issue with the SLA and merge rules (deduplicated)                                                                                         |
-| `wireguard-endpoint.yml`  | workflow_dispatch                | DO cloud-firewall management for the lab WireGuard endpoint (list / allow UDP)                                                                                             |
-| `dependency-review.yml`   | pull_request                     | Block PRs with vulnerable dependencies                                                                                                                                     |
-| `sbom.yml`                | push/PR/weekly                   | CycloneDX SBOM artifact                                                                                                                                                    |
-| `codeql.yml`              | push/PR/weekly                   | CodeQL static analysis (SAST)                                                                                                                                              |
-| `a11y-breadth.yml`        | schedule/manual                  | Full a11y breadth scan (68 routes, WCAG 2.2) — triage-only, non-blocking                                                                                                   |
+| `test.yml` | PR | Unit tests + coverage, OpenAPI/docs/RLS guards, Trivy, secrets scan (push-side via `validate.yml`) |
+| `codeql.yml` | push/PR/weekly | CodeQL static analysis (SAST) |
+| `a11y-breadth.yml` | schedule/manual | Full a11y breadth scan (68 routes, WCAG 2.2) — scheduled gate, not required |
+| `lint.yml` | PR | ESLint (push-side via `validate.yml`) |
+| `typecheck.yml` | PR | TypeScript typecheck (push-side via `validate.yml`) |
+| `supabase-migrations.yml` | push main+dev/call | Apply Supabase migrations (prod attaches the `prod-approval` gate; post-push drift check) |
+| `e2e.yml` | PR/manual/call | Playwright E2E tests (retry budget 2 + flake summary; required on `main`) |
+| `deploy-do.yml` | push main+dev | Build images, SSH deploy to droplet (fatal API/Worker/Web health gate; `prod-approval` on prod) |
+| `terraform-do.yml` | dispatch | Terraform plan (manual; apply requires the `apply` input + `prod-approval`) |
+| `validate.yml` | workflow_call | Deploy gate (audit + test + lint + typecheck + docs/openapi/RLS/CODEOWNERS guards + prompt-provenance) |
+| `build-push.yml` | dispatch | Build/push GHCR images (manual) |
+| `chromatic.yml` | push/PR | Visual regression (Storybook) |
+| `db-backup.yml` | schedule/manual | Database backup to Spaces (encrypted, optional offsite) |
+| `db-restore-test.yml` | schedule/manual | Restore a backup into a throwaway DB with integrity/freshness assertions |
+| `storage-backup.yml` | schedule/manual | Mirror Supabase Storage buckets to Spaces |
+| `storage-restore-test.yml` | schedule/manual | Verify the newest storage archive against its manifest (no live bucket) |
+| `backup-staleness-check.yml` | schedule/manual | Fail when the newest successful backup/restore-test run is stale |
+| `secret-history-scan.yml` | schedule/manual | Full-history gitleaks scan + allowlist probe (pinned install) |
+| `secret-rotation-reminder.yml` | schedule/manual | Quarterly secret-rotation issue (deduplicated, `secret-rotation` label) |
+| `dependabot-triage-reminder.yml` | schedule/manual | Weekly Dependabot backlog triage issue with the SLA and merge rules |
+| `dependency-review.yml` | pull_request | Block PRs introducing vulnerable dependencies |
+| `dependency-rescan.yml` | schedule/manual | Report-only dependency re-scan + Trivy fs + `pnpm dedupe --check` |
+| `sbom.yml` | push/PR/weekly | CycloneDX SBOM artifact (`scripts/generate-sbom.mjs`) |
+| `third-party-image-scan.yml` | schedule/manual | Digest-pin guard + Trivy scan + SBOM for the third-party runtime images |
+| `alert-path-exercise.yml` | schedule/manual | Synthetic critical alert + ntfy check; dead-man's-switch drill (non-blocking) |
+| `branch-protection-audit.yml` | schedule/manual | Branch-protection drift + bypass audit (`[break-glass]` records) |
+| `load-test.yml` | schedule/manual | k6 load scenarios against dev/prod with committed budgets |
+| `external-uptime-probe.yml` | schedule/manual | External uptime + latency probe of the public endpoints |
+| `release.yml` | push main/manual | Tag + GitHub Release + SBOM on promotion (`v<VERSION>-<date>-<sha>`) |
+| `smoke-check.yml` | schedule/manual | API health + web login + authenticated read (dev; prod once enabled) |
 
 ## License
 

@@ -9,7 +9,9 @@ create table if not exists score_history (
 );
 create index if not exists idx_score_history_org on score_history(organization_id);
 alter table score_history enable row level security;
+drop policy if exists "sh_org" on score_history;
 create policy "sh_org" on score_history for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "sh_org_i" on score_history;
 create policy "sh_org_i" on score_history for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 create table if not exists badges_earned (
@@ -22,7 +24,9 @@ create table if not exists badges_earned (
 );
 create index if not exists idx_badges_earned_org on badges_earned(organization_id);
 alter table badges_earned enable row level security;
+drop policy if exists "be_org" on badges_earned;
 create policy "be_org" on badges_earned for select using (organization_id in (select organization_id from memberships where user_id = auth.uid()));
+drop policy if exists "be_org_i" on badges_earned;
 create policy "be_org_i" on badges_earned for insert with check (organization_id in (select organization_id from memberships where user_id = auth.uid()));
 
 commit;

@@ -54,8 +54,9 @@ USER appuser
 ENV NODE_ENV=production
 EXPOSE 4000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+# Health check (CTR-P3-005: --start-period keeps boot-time failures out of the
+# retry budget for `docker run`/non-compose orchestrators; compose sets 30s).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/health"]
 
 CMD ["node", "dist/main.js"]

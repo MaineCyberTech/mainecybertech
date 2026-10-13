@@ -32,6 +32,7 @@ jest.mock("../lib/notify", () => ({
 
 import { getSupabaseAdmin } from "../services/supabase";
 import { notifyAndEmail } from "../lib/notify";
+import { logAuditEvent } from "../services/audit";
 
 function mockAuth() {
   const supabase = { from: jest.fn(), auth: { getUser: jest.fn() }, rpc: jest.fn() };
@@ -179,6 +180,68 @@ describe("tickets routes", () => {
 
       expect(res.status).toBe(200);
     });
+
+    // FEAT-P3-006: status changes must follow the shared transition map.
+    it("allows a transition the map permits and audits it distinctly", async () => {
+      mockAuth();
+      const supabase = (getSupabaseAdmin as jest.Mock)();
+      supabase.from.mockImplementation(() =>
+        createMockBuilder({ data: { ...TICKET, status: "open" }, error: null }),
+      );
+
+      const res = await request(app)
+        .patch(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=00000000-0000-0000-0000-000000000001",
+        )
+        .set("Authorization", "Bearer token-123")
+        .send({ status: "in_progress" });
+
+      expect(res.status).toBe(200);
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "ticket.status_transition",
+          metadata: expect.objectContaining({ from: "open", to: "in_progress" }),
+        }),
+      );
+    });
+
+    it("rejects a status jump the map forbids with 409", async () => {
+      mockAuth();
+      const supabase = (getSupabaseAdmin as jest.Mock)();
+      supabase.from.mockImplementation(() =>
+        createMockBuilder({ data: { ...TICKET, status: "closed" }, error: null }),
+      );
+
+      const res = await request(app)
+        .patch(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=00000000-0000-0000-0000-000000000001",
+        )
+        .set("Authorization", "Bearer token-123")
+        .send({ status: "new" });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error?.code).toBe("INVALID_STATUS_TRANSITION");
+    });
+
+    it("treats a same-status update as a no-op", async () => {
+      mockAuth();
+      const supabase = (getSupabaseAdmin as jest.Mock)();
+      supabase.from.mockImplementation(() =>
+        createMockBuilder({ data: { ...TICKET, status: "open" }, error: null }),
+      );
+
+      const res = await request(app)
+        .patch(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=00000000-0000-0000-0000-000000000001",
+        )
+        .set("Authorization", "Bearer token-123")
+        .send({ status: "open" });
+
+      expect(res.status).toBe(200);
+      expect(logAuditEvent).not.toHaveBeenCalledWith(
+        expect.objectContaining({ action: "ticket.status_transition" }),
+      );
+    });
   });
 
   describe("GET /:id/comments", () => {
@@ -302,7 +365,7 @@ describe("tickets routes", () => {
     });
 
     it("rejects a non-author, non-admin user with 403", async () => {
-      const supabase = mockFromSequence({
+      mockFromSequence({
         ticket_comments: {
           data: {
             id: "comment-1",
@@ -355,7 +418,7 @@ describe("tickets routes", () => {
     });
 
     it("rejects edits when the caller is scoped to a different org than the comment", async () => {
-      const supabase = mockFromSequence({
+      mockFromSequence({
         ticket_comments: {
           data: {
             id: "comment-1",
@@ -585,6 +648,7 @@ describe("tickets routes", () => {
       roleKey?: string;
       memberOrgs?: string[];
       ownedIds?: string[];
+      statuses?: Record<string, string>;
     }) {
       const supabase = mockAuth();
       const builders: Record<string, ReturnType<typeof createMockBuilder>> = {};
@@ -601,7 +665,13 @@ describe("tickets routes", () => {
         } else if (table === "profiles") {
           result = { data: { is_super_admin: opts.isSuperAdmin ?? false }, error: null };
         } else if (table === "tickets") {
-          result = { data: (opts.ownedIds ?? []).map((id) => ({ id })), error: null };
+          result = {
+            data: (opts.ownedIds ?? []).map((id) => ({
+              id,
+              status: opts.statuses?.[id],
+            })),
+            error: null,
+          };
         } else {
           result = { data: null, error: null };
         }
@@ -609,10 +679,13 @@ describe("tickets routes", () => {
         builders[table] = builder;
         return builder;
       });
-      supabase.rpc.mockResolvedValue({
-        data: (opts.ownedIds ?? []).map((id) => ({ id, success: true })),
-        error: null,
-      });
+      supabase.rpc.mockImplementation(
+        (_name: string, args: { updates: { id: string }[] }) =>
+          Promise.resolve({
+            data: args.updates.map((u) => ({ id: u.id, success: true })),
+            error: null,
+          }),
+      );
       return { supabase, builders };
     }
 
@@ -679,8 +752,66 @@ describe("tickets routes", () => {
       });
       expect(res.body.data.successful).toBe(2);
       expect(res.body.data.skipped).toBe(0);
-      // An all-tenants admin needs no per-org ownership lookup.
-      expect(builders.tickets).toBeUndefined();
+      // A cross-tenant admin needs no per-org ownership filter, but the status
+      // lookup still runs so transitions can be validated (FEAT-P3-006).
+      expect(builders.tickets).toBeDefined();
+      expect(builders.tickets.in).toHaveBeenCalledWith("id", [OWNED_ID, FOREIGN_ID]);
+      expect(builders.tickets.in).not.toHaveBeenCalledWith(
+        "organization_id",
+        expect.anything(),
+      );
+    });
+
+    // FEAT-P3-006: bulk status changes obey the same transition map.
+    it("skips a bulk status change the map forbids and reports it as failed", async () => {
+      const { supabase } = mockBulk({
+        memberOrgs: [ORG],
+        ownedIds: [OWNED_ID],
+        statuses: { [OWNED_ID]: "closed" },
+      });
+
+      const res = await request(app)
+        .post("/api/v1/tickets/bulk")
+        .set("Authorization", "Bearer token-123")
+        .send({ ids: [OWNED_ID], status: "new" });
+
+      expect(res.status).toBe(200);
+      expect(supabase.rpc).toHaveBeenCalledWith("bulk_update_with_version", {
+        table_name: "tickets",
+        updates: [],
+      });
+      expect(res.body.data.successful).toBe(0);
+      expect(res.body.data.failed).toBe(1);
+      expect(res.body.data.skipped).toBe(0);
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "ticket.bulk_update",
+          metadata: expect.objectContaining({
+            invalidTransitions: [{ id: OWNED_ID, from: "closed", to: "new" }],
+          }),
+        }),
+      );
+    });
+
+    it("applies a bulk status change the map allows", async () => {
+      const { supabase } = mockBulk({
+        memberOrgs: [ORG],
+        ownedIds: [OWNED_ID],
+        statuses: { [OWNED_ID]: "open" },
+      });
+
+      const res = await request(app)
+        .post("/api/v1/tickets/bulk")
+        .set("Authorization", "Bearer token-123")
+        .send({ ids: [OWNED_ID], status: "in_progress" });
+
+      expect(res.status).toBe(200);
+      expect(supabase.rpc).toHaveBeenCalledWith("bulk_update_with_version", {
+        table_name: "tickets",
+        updates: [{ id: OWNED_ID, data: { status: "in_progress" } }],
+      });
+      expect(res.body.data.successful).toBe(1);
+      expect(res.body.data.failed).toBe(0);
     });
   });
 });

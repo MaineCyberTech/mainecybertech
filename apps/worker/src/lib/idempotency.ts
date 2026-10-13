@@ -119,6 +119,49 @@ export async function deleteIdempotencyKey(key: string): Promise<void> {
   }
 }
 
+/**
+ * NOTIF-P3-007: atomically increment a counter key (Redis INCR + EXPIRE, or
+ * the in-memory fallback) and return the post-increment value. Mirrors the API
+ * helper so the worker-side email throttle behaves like the API-side one.
+ */
+export async function incrementIdempotencyCounter(
+  key: string,
+  ttlSeconds: number,
+): Promise<number> {
+  const redis = getRedis();
+  const prefixedKey = `idempotency:${key}`;
+
+  if (redis) {
+    try {
+      const count = await redis.incr(prefixedKey);
+      if (count === 1) await redis.expire(prefixedKey, ttlSeconds);
+      return count;
+    } catch (error) {
+      recordRedisFailure("idempotency", "incr");
+      logger.warn(
+        { error: error instanceof Error ? error.message : String(error) },
+        "Redis incrementIdempotencyCounter failed, falling back to in-memory",
+      );
+    }
+  }
+
+  await acquireMemoryLock();
+  try {
+    const now = Date.now();
+    const entry = IN_MEMORY_FALLBACK.get(key);
+    if (!entry || entry.expiresAt <= now) {
+      evictInMemoryIfNeeded();
+      IN_MEMORY_FALLBACK.set(key, { value: "1", expiresAt: now + ttlSeconds * 1000 });
+      return 1;
+    }
+    const next = Number(entry.value) + 1;
+    entry.value = String(Number.isFinite(next) ? next : 1);
+    return Number(entry.value);
+  } finally {
+    // lock is released by the promise chain
+  }
+}
+
 /** Tear down the idempotency client (tests / graceful shutdown). */
 export async function closeIdempotency(): Promise<void> {
   if (client) {

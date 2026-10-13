@@ -8,7 +8,11 @@ const ACTIVE_ORG_COOKIE = "mct_active_org";
 
 export function getApiClient(): MCTClient {
   return MCTClient.create({
-    baseUrl: getClientEnv().NEXT_PUBLIC_API_URL,
+    // ARCH-P3-003: server-side code reads API_INTERNAL_URL at runtime (the
+    // compose web service sets it to http://api:4000). NEXT_PUBLIC_API_URL is
+    // inlined into the bundle at build time, so it cannot be overridden at
+    // runtime — it remains the fallback for local dev and Vercel.
+    baseUrl: process.env.API_INTERNAL_URL || getClientEnv().NEXT_PUBLIC_API_URL,
     getToken: async () => {
       const cookieStore = await cookies();
       return cookieStore.get(SESSION_COOKIE)?.value ?? null;

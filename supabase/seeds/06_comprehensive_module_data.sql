@@ -155,17 +155,6 @@ from public.permissions p where p.module_key = 'tickets' and p.action_key = 'cre
 on conflict (organization_id, user_id, permission_id) do nothing;
 
 -- =========================================================
--- 1. PORTAL MODULE SETTINGS
--- =========================================================
-insert into public.portal_module_settings (id, organization_id, module_key, settings) values
-  ('81010000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'documents', jsonb_build_object('default_visibility', 'org', 'allow_upload', true)),
-  ('81010000-0000-0000-0000-000000000002'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'tickets', jsonb_build_object('show_status_pills', true)),
-  ('81010000-0000-0000-0000-000000000003'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'documents', jsonb_build_object('default_visibility', 'org', 'allow_upload', true)),
-  ('81010000-0000-0000-0000-000000000004'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'training', jsonb_build_object('require_completion', true)),
-  ('81010000-0000-0000-0000-000000000005'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'tickets', jsonb_build_object('show_status_pills', true))
-on conflict (id) do nothing;
-
--- =========================================================
 -- 2. API KEYS (admin-managed, seeded for 3 tenants)
 -- =========================================================
 insert into public.api_keys (id, organization_id, name, key_hash, key_prefix, permissions, created_by, is_active, last_used_at) values

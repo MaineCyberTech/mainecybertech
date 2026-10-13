@@ -37,6 +37,7 @@ create index if not exists idx_proposals_valid_until on proposals(valid_until);
 
 alter table proposals enable row level security;
 
+drop policy if exists "proposals_select_org" on proposals;
 create policy "proposals_select_org" on proposals for select
   using (
     organization_id in (
@@ -44,6 +45,7 @@ create policy "proposals_select_org" on proposals for select
     )
   );
 
+drop policy if exists "proposals_insert_auth" on proposals;
 create policy "proposals_insert_auth" on proposals for insert
   with check (
     organization_id in (
@@ -51,6 +53,7 @@ create policy "proposals_insert_auth" on proposals for insert
     )
   );
 
+drop policy if exists "proposals_update_org" on proposals;
 create policy "proposals_update_org" on proposals for update
   using (
     organization_id in (
@@ -58,6 +61,7 @@ create policy "proposals_update_org" on proposals for update
     )
   );
 
+drop policy if exists "proposals_delete_admin" on proposals;
 create policy "proposals_delete_admin" on proposals for delete
   using (
     exists (
@@ -86,6 +90,7 @@ create index if not exists idx_proposal_phases_proposal on proposal_phases(propo
 
 alter table proposal_phases enable row level security;
 
+drop policy if exists "proposal_phases_select_org" on proposal_phases;
 create policy "proposal_phases_select_org" on proposal_phases for select
   using (
     proposal_id in (
@@ -95,6 +100,7 @@ create policy "proposal_phases_select_org" on proposal_phases for select
     )
   );
 
+drop policy if exists "proposal_phases_insert_auth" on proposal_phases;
 create policy "proposal_phases_insert_auth" on proposal_phases for insert
   with check (
     proposal_id in (
@@ -104,6 +110,7 @@ create policy "proposal_phases_insert_auth" on proposal_phases for insert
     )
   );
 
+drop policy if exists "proposal_phases_update_org" on proposal_phases;
 create policy "proposal_phases_update_org" on proposal_phases for update
   using (
     proposal_id in (
@@ -113,6 +120,7 @@ create policy "proposal_phases_update_org" on proposal_phases for update
     )
   );
 
+drop policy if exists "proposal_phases_delete_admin" on proposal_phases;
 create policy "proposal_phases_delete_admin" on proposal_phases for delete
   using (
     proposal_id in (
@@ -150,6 +158,7 @@ create index if not exists idx_proposal_line_items_phase on proposal_line_items(
 
 alter table proposal_line_items enable row level security;
 
+drop policy if exists "proposal_line_items_select_org" on proposal_line_items;
 create policy "proposal_line_items_select_org" on proposal_line_items for select
   using (
     proposal_id in (
@@ -159,6 +168,7 @@ create policy "proposal_line_items_select_org" on proposal_line_items for select
     )
   );
 
+drop policy if exists "proposal_line_items_insert_auth" on proposal_line_items;
 create policy "proposal_line_items_insert_auth" on proposal_line_items for insert
   with check (
     proposal_id in (
@@ -168,6 +178,7 @@ create policy "proposal_line_items_insert_auth" on proposal_line_items for inser
     )
   );
 
+drop policy if exists "proposal_line_items_update_org" on proposal_line_items;
 create policy "proposal_line_items_update_org" on proposal_line_items for update
   using (
     proposal_id in (
@@ -177,6 +188,7 @@ create policy "proposal_line_items_update_org" on proposal_line_items for update
     )
   );
 
+drop policy if exists "proposal_line_items_delete_admin" on proposal_line_items;
 create policy "proposal_line_items_delete_admin" on proposal_line_items for delete
   using (
     proposal_id in (

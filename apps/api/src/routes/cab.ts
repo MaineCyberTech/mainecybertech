@@ -13,6 +13,7 @@ import {
   updateCabAgendaItemSchema,
 } from "../validators/cab";
 import { queryInt } from "../lib/query";
+import { listCountMode } from "../lib/pagination";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -28,7 +29,7 @@ router.get("/meetings", async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("cab_meetings").select("*", { count: "exact" });
+    let query = supabase.from("cab_meetings").select("*", { count: listCountMode(req.query) });
     if (orgId) query = query.eq("organization_id", orgId);
     if (status) query = query.eq("status", status);
 
@@ -102,7 +103,7 @@ router.get("/meetings/:id", async (req, res, next) => {
     const supabase = getScopedClient(req, "cab", "read");
     const meeting = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "cab_meetings",
       String(req.params.id) as string,
     );
@@ -128,7 +129,7 @@ router.post(
       const supabase = getScopedClient(req, "cab", "write");
       const meeting = await loadOwned(
         req,
-        supabase as any,
+        supabase,
         "cab_meetings",
         String(req.params.id) as string,
         "id, organization_id",
@@ -169,7 +170,7 @@ router.patch("/agenda/:id", requirePermission("governance", "edit"), async (req,
 
     const item = await loadOwned(
       req,
-      supabase as any,
+      supabase,
       "cab_agenda_items",
       String(req.params.id) as string,
       "id, organization_id",

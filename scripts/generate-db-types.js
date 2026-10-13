@@ -5,6 +5,7 @@
  */
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const MIGRATIONS_DIR = path.join(__dirname, "..", "supabase", "migrations");
 const OUTPUT_FILE = path.join(__dirname, "..", "packages", "sdk", "src", "database.types.ts");
@@ -50,10 +51,6 @@ const TYPE_MAP = {
   timetz: "string",
   interval: "string",
   bytea: "string",
-  inet: "string",
-  cidr: "string",
-  tsvector: "string",
-  tsquery: "string",
   citext: "string",
   inet: "string",
   cidr: "string",
@@ -132,7 +129,7 @@ function parseCreateTable(sql) {
         continue;
 
       // Match column definition: column_name type [constraints]
-      const colMatch = trimmed.match(/^[""]?(\w+)[""]?\s+([\w\s().,\[\].]+?)(\s+.*)?$/i);
+      const colMatch = trimmed.match(/^["]?(\w+)["]?\s+([\w\s().,\[\]]+?)(\s+.*)?$/i);
       if (colMatch) {
         const colName = colMatch[1].toLowerCase();
         const colType = colMatch[2].trim();
@@ -203,7 +200,7 @@ function parseAlterTable(sql) {
 
       // Now parse: "if not exists col_name type [constraints]"
       const colMatch = clause.match(
-        /^(?:IF\s+NOT\s+EXISTS\s+)?["']?(\w+)["']?\s+([\w\s().,\[\].]+?)(?:\s+(?:NOT\s+NULL|NULL|DEFAULT|PRIMARY|UNIQUE|CHECK|FOREIGN|REFERENCES|CONSTRAINT|GENERATED|COLLATE)\b.*)?$/i,
+        /^(?:IF\s+NOT\s+EXISTS\s+)?["']?(\w+)["']?\s+([\w\s().,\[\]]+?)(?:\s+(?:NOT\s+NULL|NULL|DEFAULT|PRIMARY|UNIQUE|CHECK|FOREIGN|REFERENCES|CONSTRAINT|GENERATED|COLLATE)\b.*)?$/i,
       );
       if (!colMatch) continue;
 
@@ -297,6 +294,21 @@ const files = fs
   .readdirSync(MIGRATIONS_DIR)
   .filter((f) => f.endsWith(".sql"))
   .sort();
+
+// DATA-P3-006: bind the generated artifact to the exact migration corpus that
+// produced it. sha256 over `<file>\n<contents>\n` in sorted filename order
+// (CRLF normalized so a Windows checkout does not change the digest). The
+// digest is part of the output, so the existing `--check` gate asserts it.
+function computeMigrationsDigest() {
+  const hash = crypto.createHash("sha256");
+  for (const file of files) {
+    const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), "utf-8").replace(/\r\n/g, "\n");
+    hash.update(`${file}\n${sql}\n`);
+  }
+  return hash.digest("hex");
+}
+
+const MIGRATIONS_DIGEST = computeMigrationsDigest();
 
 console.log(`Processing ${files.length} migration files...`);
 
@@ -444,6 +456,7 @@ const SUPABASE_INTERNAL = new Set([
 const sortedTables = Object.keys(tables).sort();
 let output = `// Auto-generated from supabase/migrations/*.sql — DO NOT EDIT MANUALLY
 // Run: node scripts/generate-db-types.js to regenerate
+// Source migrations digest (sha256): ${MIGRATIONS_DIGEST}
 export type Json =
   | string
   | number

@@ -151,6 +151,13 @@ describe("Search API", () => {
     // ...and documents over-fetch a bounded window before the visibility filter
     // drops unreadable rows (SEARCH-P2-008): min(100, 10 * 5).
     expect(builders.documents?.[0].limit).toHaveBeenCalledWith(50);
+    // SEARCH-P2-006: the ILIKE substring predicates are OR'd with the
+    // generated `search_vector` full-text branch on the searchable entities.
+    for (const table of ["tickets", "projects", "documents"]) {
+      expect(builders[table]?.[0].or).toHaveBeenCalledWith(
+        expect.stringContaining("search_vector.wfts(english).test"),
+      );
+    }
   });
 
   it("returns 401 without auth token", async () => {

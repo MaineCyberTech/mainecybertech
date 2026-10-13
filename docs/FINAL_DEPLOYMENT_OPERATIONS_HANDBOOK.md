@@ -102,8 +102,8 @@ docker compose -p mct-portal up -d --remove-orphans
 ### Required GitHub Environments
 
 - `dev` — dev/develop deploys (no approval)
-- `prod` — prod Supabase migrations, plus read-only plan/resolve jobs. Required reviewers (1+) must be configured in GitHub because `supabase-migrations.yml` mutates production (CI-004); that setting is not in repo code.
-- `prod-approval` — prod app deploy (`deploy-do.yml` `deploy` job) and prod Terraform apply (`terraform-do.yml` `terraform-apply-prod`). Required reviewers (1+) must be configured in GitHub (Settings → Environments → `prod-approval`); that setting is **not** in repo code and is **not yet configured**, so the approval gate is not currently in force.
+- `prod` — read-only plan/resolve jobs only (`deploy-do` `resolve-ip`, `terraform-do` `terraform-plan`); nothing mutates under it, so no required reviewers.
+- `prod-approval` — the single approval gate for every prod mutation (BP-P3-003): prod app deploy (`deploy-do.yml` `deploy` job), prod Terraform apply (`terraform-do.yml` `terraform-apply-prod`) and prod Supabase migrations (`supabase-migrations.yml` on `main`). Required reviewers (1+) must be configured in GitHub (Settings → Environments → `prod-approval`); that setting is **not** in repo code and is **not yet configured**, so the approval gate is not currently in force. The migration secrets (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`) must be available to `prod-approval`.
 
 ### GitHub Environment Secrets (written to `/opt/mct-portal/.env`)
 

@@ -69,7 +69,9 @@ and commit the completed table into §8 before go-live. Until then the plan is
 - **Data integrity**: stop writes to the affected tables/jobs before restoring,
   or the restore will be overwritten.
 - **Security**: revoke the affected credentials first (see
-  [`SECRETS_ROTATION.md`](SECRETS_ROTATION.md) §Emergency Rotation), then
+  [`SECRETS_ROTATION.md`](SECRETS_ROTATION.md) §Emergency Rotation and the
+  break-glass/revocation runbook
+  [`SECRET_ROTATION_RUNBOOK.md`](SECRET_ROTATION_RUNBOOK.md)), then
   isolate. Prefer revocation over
   investigation-in-place — the audit trail survives revocation. Set the
   replacement on the **consuming** environment (not `--env prod` by reflex) and
@@ -131,7 +133,7 @@ and Legal have made the notification decision
 |---|---|---|
 | Bad deploy | Rollback workflow | `docs/ROLLBACK_PROCEDURES.md` |
 | Database corruption/loss | Freeze writes, then restore | `docs/ROLLBACK_PROCEDURES.md` §3, `docs/RTO_RPO.md` |
-| Key/token leak | Revoke, then rotate consumers | [`SECRETS_ROTATION.md`](SECRETS_ROTATION.md) §Emergency Rotation |
+| Key/token leak | Revoke, then rotate consumers | [`SECRETS_ROTATION.md`](SECRETS_ROTATION.md) §Emergency Rotation, [`SECRET_ROTATION_RUNBOOK.md`](SECRET_ROTATION_RUNBOOK.md) |
 | Suspected tenant data exposure | Contain, then breach decision | `docs/DATA_BREACH_RESPONSE.md` |
 | Full monitoring loss | Verify via the alert path / off-box heartbeat (external heartbeat not yet provisioned) | `docs/MONITORING_AND_ALERTING.md` §9, `docs/ALERT_PATH_EXERCISE.md` |
 | RLS/tenant isolation regression | Disable affected module writes, patch policy | `docs/RLS-rollout.md`, `docs/RLS-coverage-matrix.md` |
@@ -152,7 +154,9 @@ and Legal have made the notification decision
   URL is provisioned). Provision the external heartbeat and record the
   documented stop-Alertmanager drill (`docs/MONITORING_AND_ALERTING.md` §9).
   Sentry notifications still live inside the monitored path. Track the residual
-  as a P1 in the risk register.
+  as a P1 in the risk register. **Status detail:** the residual is the external
+  heartbeat URL only — the audit's original "Alertmanager not deployed" wording
+  is superseded; do not repeat it in incident notes.
 
 ## 9. Testing
 
@@ -165,4 +169,7 @@ and Legal have made the notification decision
 - Exercise the restore path on the cadence in
   [`RTO_RPO.md`](RTO_RPO.md) §Validating RPO/RTO and keep the green
   `db-restore-test` run artifact as evidence. The 5-minute PITR RPO needs a
-  dated exercise before it is claimed as achieved.
+  dated exercise before it is claimed as achieved. The drill program (D1–D7)
+  and its results ledger are
+  [`runbooks/backup-restore-drill-plan.md`](runbooks/backup-restore-drill-plan.md)
+  / [`runbooks/backup-restore-drill-ledger.md`](runbooks/backup-restore-drill-ledger.md).

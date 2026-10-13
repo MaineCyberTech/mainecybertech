@@ -4,6 +4,12 @@
 -- Destructive: the drops below discard all rows in the named tables, and a
 -- fresh replay is applied statement-by-statement (psql autocommit), so the
 -- begin;/commit; wrapper keeps it atomic (DATA-P2-002).
+--
+-- Rollback: the nine tables were dead schema (no live API/SDK/frontend
+-- readers or writers), so reversing this migration is DDL-only — re-create
+-- them from 5302026 and re-create their RLS policies. Any rows present when
+-- the drop ran are gone and require a backup/PITR restore (see
+-- docs/migrations/README.md and docs/ROLLBACK_PROCEDURES.md §3).
 
 begin;
 

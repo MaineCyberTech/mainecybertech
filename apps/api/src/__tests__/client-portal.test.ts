@@ -195,4 +195,43 @@ describe("Client Portal API", () => {
     expect(res.status).toBe(200);
     expect(res.body.data.memberships[0].enabledModules).toEqual(["dashboard"]);
   });
+
+  it("honors an all-disabled entitlement override in bootstrap (BILL-P3-005)", async () => {
+    mockAuth();
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "profiles")
+        return createMockBuilder({ data: { full_name: "Test", email: "t@x.com" }, error: null });
+      if (table === "memberships") return createMockBuilder({ data: [membership], error: null });
+      if (table === "subscriptions")
+        return createMockBuilder({
+          data: [
+            {
+              organization_id: "org-1",
+              status: "active",
+              plan_name: "Pro",
+              current_period_end: null,
+            },
+          ],
+          error: null,
+        });
+      if (table === "client_portal_entitlements")
+        return createMockBuilder({
+          data: [
+            { organization_id: "org-1", module_key: "dashboard", enabled: false },
+            { organization_id: "org-1", module_key: "findings", enabled: false },
+          ],
+          error: null,
+        });
+      return createMockBuilder({ data: null, error: null });
+    });
+
+    const res = await request(app)
+      .get("/api/v1/client-portal/bootstrap")
+      .set("Authorization", authToken);
+
+    expect(res.status).toBe(200);
+    // An explicit all-disabled override revokes every module; it must not fall
+    // back to the subscription-derived set.
+    expect(res.body.data.memberships[0].enabledModules).toEqual([]);
+  });
 });

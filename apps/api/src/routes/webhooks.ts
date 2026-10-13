@@ -20,6 +20,8 @@ import {
 } from "../lib/webhook-schemas";
 import { recordWebhookDelivery } from "../lib/metrics";
 import { notifyBillingPaymentFailure } from "../lib/billing-dunning";
+import { invoicePaidAtIso, epochSecondsToIsoOrNow } from "../lib/billing-timestamps";
+import { encryptField } from "../lib/field-encryption";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { type Row } from "../lib/db-types";
 import { timingSafeCompare } from "../lib/timing-safe";
@@ -265,13 +267,20 @@ router.post("/stripe", async (req, res, next) => {
     const stripe = new Stripe(env.STRIPE_SECRET_KEY ?? "", {
       apiVersion: "2025-03-31.basil" as any,
     });
+    // WH-P3-004 / BILL-P3-001: verify over the exact captured bytes (Buffer)
+    // rather than a string cast as a Buffer; fail closed when the raw body was
+    // not captured so re-serialized JSON is never accepted as signed input.
+    const rawBody = rawBodyBuffer(req.rawBody);
+    if (!rawBody) {
+      logger.error("Stripe webhook raw body unavailable — rejecting");
+      res
+        .status(400)
+        .json(failure("INVALID_SIGNATURE", "Webhook signature verification failed", 400));
+      return;
+    }
     let event: any;
     try {
-      event = stripe.webhooks.constructEvent(
-        (req as { rawBody?: Buffer }).rawBody as Buffer,
-        signature,
-        stripeSecret,
-      );
+      event = stripe.webhooks.constructEvent(rawBody, signature, stripeSecret);
     } catch (err) {
       logger.error({ err }, "Stripe webhook signature verification failed");
       res
@@ -344,10 +353,9 @@ router.post("/stripe", async (req, res, next) => {
                 hosted_invoice_url: inv.hosted_invoice_url,
                 invoice_pdf_url: inv.invoice_pdf,
                 due_at: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
-                paid_at:
-                  inv.status === "paid"
-                    ? new Date(inv.status_transitions?.paid_at * 1000).toISOString()
-                    : null,
+                // BILL-P3-003: tolerate a missing `status_transitions`
+                // instead of throwing on `undefined * 1000`.
+                paid_at: inv.status === "paid" ? invoicePaidAtIso(inv) : null,
               },
               { onConflict: "stripe_invoice_id" },
             );
@@ -460,13 +468,17 @@ router.post("/stripe", async (req, res, next) => {
     if (event.type === "checkout.session.completed") {
       const session = event.data?.object;
       if (session?.customer && session?.client_reference_id) {
+        // BILL-P3-002: the billing contact email is PII and must not sit in
+        // the table in plaintext; store it through the field-encryption
+        // helper (legacy plaintext rows still decrypt to themselves).
+        const billingEmail = session.customer_details?.email;
         const { error: billingCustomerWriteError } = await supabase
           .from("billing_customers")
           .upsert(
             {
               organization_id: session.client_reference_id,
               stripe_customer_id: session.customer,
-              billing_email: session.customer_details?.email ?? null,
+              billing_email: billingEmail ? encryptField(billingEmail) : null,
             },
             { onConflict: "organization_id" },
           );
@@ -519,7 +531,7 @@ router.post("/stripe", async (req, res, next) => {
                 ),
                 currency: pi.currency,
                 status: mapPaymentIntentStatus(pi.status),
-                paid_at: succeeded ? new Date((pi.created ?? 0) * 1000).toISOString() : null,
+                paid_at: succeeded ? epochSecondsToIsoOrNow(pi.created) : null,
               },
               { onConflict: "stripe_payment_intent_id" },
             );
@@ -851,7 +863,6 @@ router.get("/m365", (req, res) => {
 });
 
 router.post("/m365", async (req, res, next) => {
-  let claimedKey: string | null = null;
   try {
     // WH-P2-006: minimal shape check before clientState verification; a
     // non-object body or a non-array/empty `value` is rejected with 400.
@@ -889,48 +900,58 @@ router.post("/m365", async (req, res, next) => {
       return;
     }
 
-    const notification = value[0];
-    const resource = notification?.resource;
-    const changeType = notification?.changeType;
-    // WH-P2-001: Graph change notifications carry no event timestamp and are
-    // not signed — clientState is the authentication, so a timestamp window
-    // cannot be enforced on the payload. Replay is instead bounded by an
-    // atomic idempotency claim on a deterministic digest of the full
-    // notification, held for M365_REPLAY_WINDOW_SECONDS: an identical
-    // retransmission (Graph retry or a captured replay) is rejected, while
-    // distinct legitimate events are not suppressed.
-    const eventDigest = crypto
-      .createHash("sha256")
-      .update(JSON.stringify(notification ?? {}))
-      .digest("hex")
-      .slice(0, 16);
-    const m365Key = `m365-${resource ?? "unknown"}-${changeType ?? "unknown"}-${notification?.subscriptionExpirationDateTime ?? "no-expiry"}-${eventDigest}`;
-    claimedKey = m365Key;
-    if (await dedupWebhook(m365Key, M365_REPLAY_WINDOW_SECONDS)) {
-      res.json(success({ received: true }));
-      return;
+    // WH-P3-008 / API-P3-007: Graph batches change notifications in `value`;
+    // every notification must be authenticated, deduped, audited and logged.
+    // The handler used to process only `value[0]` while acknowledging the
+    // whole batch, silently dropping every later notification.
+    let processed = 0;
+    let duplicates = 0;
+    for (const notification of value) {
+      const resource = notification?.resource;
+      const changeType = notification?.changeType;
+      // WH-P2-001: Graph change notifications carry no event timestamp and are
+      // not signed — clientState is the authentication, so a timestamp window
+      // cannot be enforced on the payload. Replay is instead bounded by an
+      // atomic idempotency claim on a deterministic digest of the full
+      // notification, held for M365_REPLAY_WINDOW_SECONDS: an identical
+      // retransmission (Graph retry or a captured replay) is rejected, while
+      // distinct legitimate events are not suppressed.
+      const eventDigest = crypto
+        .createHash("sha256")
+        .update(JSON.stringify(notification ?? {}))
+        .digest("hex")
+        .slice(0, 16);
+      const m365Key = `m365-${resource ?? "unknown"}-${changeType ?? "unknown"}-${notification?.subscriptionExpirationDateTime ?? "no-expiry"}-${eventDigest}`;
+      if (await dedupWebhook(m365Key, M365_REPLAY_WINDOW_SECONDS)) {
+        duplicates++;
+        continue;
+      }
+
+      try {
+        const m365AuditOk = await logAuditEvent({
+          actorType: "system",
+          action: "m365.webhook",
+          entityType: "m365_event",
+          metadata: { resource, changeType, notificationCount: value.length },
+        });
+        if (m365AuditOk === false) {
+          throw new Error("audit log write failed for m365.webhook");
+        }
+
+        await logWebhookDelivery("m365.webhook", req.body, m365Key);
+        processed++;
+      } catch (notificationError) {
+        // Release only this notification's claim so Graph's retry can
+        // reprocess it without re-emitting already-processed notifications.
+        await deleteIdempotencyKey(m365Key).catch(() => undefined);
+        throw notificationError;
+      }
     }
 
-    const m365AuditOk = await logAuditEvent({
-      actorType: "system",
-      action: "m365.webhook",
-      entityType: "m365_event",
-      metadata: { resource, changeType, notificationCount: value.length },
-    });
-    if (m365AuditOk === false) {
-      throw new Error("audit log write failed for m365.webhook");
-    }
-
-    await logWebhookDelivery("m365.webhook", req.body, m365Key);
     recordWebhookDelivery("success", "m365.webhook");
 
-    res.json(success({ received: true }));
+    res.json(success({ received: true, processed, duplicates }));
   } catch (error) {
-    // Release the claim so Graph's retry can reprocess the notification
-    // (claim-before-process must not persist a "duplicate" on failure).
-    if (claimedKey) {
-      await deleteIdempotencyKey(claimedKey).catch(() => undefined);
-    }
     next(error);
   }
 });

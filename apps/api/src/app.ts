@@ -3,10 +3,11 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
-import { getEnv } from "./config/env";
+import { getEnv, hasWildcardCorsOrigin } from "./config/env";
 import { errorHandler } from "./middleware/error";
 import { notFoundHandler } from "./middleware/not-found";
 import { requestId, requestLogger } from "./middleware/request-id";
+import { deprecationMiddleware } from "./middleware/deprecation";
 import { webhookBodyParser } from "./middleware/webhook-body";
 import { logger } from "./lib/logger";
 import { rateLimitByUser, rateLimitMetrics } from "./middleware/rate-limit";
@@ -34,6 +35,7 @@ import searchPortalRouter from "./routes/search-portal";
 import docsRouter from "./routes/docs";
 import publicRouter from "./routes/public";
 import notificationsRouter from "./routes/notifications";
+import notificationUnsubscribeRouter from "./routes/notification-unsubscribe";
 import notificationPreferencesRouter from "./routes/notification-preferences";
 import pushSubscriptionsRouter from "./routes/push-subscriptions";
 import billingRouter from "./routes/billing";
@@ -94,15 +96,14 @@ export function createApp(): Express {
     .filter(Boolean);
   app.use(
     cors({
-      // For credentialed requests the browser forbids the wildcard "*", so we
-      // reflect the request's Origin instead of echoing "*". When CORS_ORIGIN
-      // is "*" we reflect any origin (intended allow-all semantics, now
-      // functional with credentials); otherwise only the configured origins
-      // are reflected. Requests without an Origin (server-to-server,
-      // same-origin) are allowed as-is.
+      // SEC-P3-006: credentials are always enabled on this API, so only the
+      // configured allowlist is reflected — never "*". getEnv() rejects a
+      // wildcard at boot; if one still reaches here (mock/override), fail
+      // closed rather than reflect every origin. Requests without an Origin
+      // (server-to-server, same-origin) are allowed as-is.
       origin: (origin, cb) => {
         if (!origin) return cb(null, true);
-        if (env.CORS_ORIGIN === "*") return cb(null, true);
+        if (hasWildcardCorsOrigin(env.CORS_ORIGIN)) return cb(null, false);
         if (allowedOriginsList.includes(origin)) return cb(null, true);
         return cb(null, false);
       },
@@ -138,6 +139,10 @@ export function createApp(): Express {
   app.use(rateLimitByUser);
   app.use(requestId);
   app.use(requestLogger);
+  // EVOL-P3-004: stamp Deprecation/Sunset/Link headers on every request to a
+  // path registered in DEPRECATIONS (middleware/deprecation.ts), including
+  // removed paths that now 404/410.
+  app.use(deprecationMiddleware());
   app.use(idempotencyMiddleware);
   app.use(csrfProtection);
   app.use(requestTimeout(30000));
@@ -179,6 +184,7 @@ export function createApp(): Express {
   app.use("/api/v1/search", searchRouter);
   app.use("/api/v1/search/portal", searchPortalRouter);
   app.use("/api/v1/public", publicRouter);
+  app.use("/api/v1/notifications/unsubscribe", notificationUnsubscribeRouter);
   app.use("/api/v1/notifications", notificationsRouter);
   app.use("/api/v1/notification-preferences", notificationPreferencesRouter);
   app.use("/api/v1/push-subscriptions", pushSubscriptionsRouter);

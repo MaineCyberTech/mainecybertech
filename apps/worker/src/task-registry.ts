@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/node";
 import { env } from "./env";
 import { logger } from "./logger";
-import { taskExecutionsTotal, taskExecutionDuration } from "./metrics";
+import { taskExecutionsTotal, taskExecutionDuration } from "./task-metrics";
 
 export interface TaskMessage {
   type: string;
@@ -11,6 +11,13 @@ export interface TaskMessage {
 export interface TaskResult {
   ok: boolean;
   error?: string;
+  /**
+   * Purge tasks report what they removed so operators can see the backlog
+   * drain (PRIV-P3-003); other tasks leave these undefined.
+   */
+  deleted?: number;
+  batches?: number;
+  truncated?: boolean;
 }
 
 /**

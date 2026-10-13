@@ -11,13 +11,17 @@ type TicketCounts = { open: number; closed: number; all: number };
 
 type Props = {
   tickets: TicketRecord[];
-  createTicketAction: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
+  createTicketAction: (
+    formData: FormData,
+  ) => Promise<{ ok: boolean; error?: string; ticketId?: string; subject?: string }>;
   // USE-P2-002: server-side pagination metadata. Optional so the component
   // still renders standalone (tests, other call sites) with page-local values.
   page?: number;
   pageSize?: number;
   total?: number;
   counts?: TicketCounts;
+  // USE-P3-001: `?create=1` deep link (dashboard CTA) opens the create form.
+  initialCreateOpen?: boolean;
 };
 
 function ticketSubject(ticket: TicketRecord) {
@@ -161,12 +165,16 @@ export default function SupportCenterClient({
   pageSize,
   total,
   counts,
+  initialCreateOpen = false,
 }: Props) {
   const [showHistory, setShowHistory] = useState(false);
-  const [openModal, setOpenModal] = useState(false);
+  const [openModal, setOpenModal] = useState(initialCreateOpen);
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, openModal);
   const [formError, setFormError] = useState<string | null>(null);
+  // USE-P3-001: closing the modal silently left users unsure the ticket was
+  // submitted; keep the created ticket so the list page can confirm it.
+  const [createdTicket, setCreatedTicket] = useState<{ id: string; subject: string } | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const visibleTickets = useMemo(
@@ -213,6 +221,22 @@ export default function SupportCenterClient({
           Submit Ticket
         </button>
       </div>
+
+      {createdTicket ? (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm text-emerald-200"
+        >
+          <span>
+            Ticket created: <span className="font-medium">{createdTicket.subject}</span>.
+          </span>
+          {createdTicket.id ? (
+            <Link href={`/portal/support/${createdTicket.id}`} className="underline">
+              View ticket
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="grid gap-3 md:grid-cols-3">
         <StatCard label="Open Tickets" value={stats.open} />
@@ -331,6 +355,12 @@ export default function SupportCenterClient({
                 startTransition(async () => {
                   const result = await createTicketAction(formData);
                   if (result.ok) {
+                    // USE-P3-001: confirm the submission with the created
+                    // ticket (and a link) instead of only closing the modal.
+                    setCreatedTicket({
+                      id: result.ticketId ?? "",
+                      subject: result.subject ?? "Submitted",
+                    });
                     setOpenModal(false);
                   } else {
                     setFormError(result.error ?? "Failed to create ticket.");

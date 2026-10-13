@@ -46,8 +46,11 @@ apps/web/e2e/
 **/*.spec.ts
 **/*.test.ts
 
-# Misc
-*.md
-*.txt
+# Docs/logs that are never build inputs (CTR-P3-002). Deliberately narrow: a
+# blanket `*.md`/`*.txt`/`*.log` would silently drop build-relevant files from
+# the context (e.g. a future apps/web/public/robots.txt or sitemap .txt) with
+# no error. Add paths here only when they cannot be a build input.
+**/README.md
+**/CHANGELOG.md
 *.log
 pnpm-debug.log*

@@ -1,4 +1,3 @@
-import { jest } from "@jest/globals";
 import express, { type Request, type Response } from "express";
 import request from "supertest";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";

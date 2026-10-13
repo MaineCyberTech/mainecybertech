@@ -5,7 +5,7 @@
 
 ## Overview
 
-Inbound webhook receivers for external service integrations. Each handler verifies the webhook signature (when configured), deduplicates via idempotency keys in Redis, processes the event, and logs the delivery. No authentication middleware — endpoints are secured by signature verification.
+Inbound webhook receivers for external service integrations. Each handler verifies the provider credential — an HMAC signature where the provider signs (Stripe, Jira, JSM) or the `clientState` for M365 — deduplicates via idempotency keys in Redis, processes the event, and logs the delivery. No authentication middleware — endpoints are secured by that provider credential.
 
 ## Key Features
 
@@ -13,10 +13,13 @@ Inbound webhook receivers for external service integrations. Each handler verifi
 - Jira webhook processing (issue status sync to `project_tasks`)
 - JSM webhook processing (issue status sync to `tickets`)
 - M365 webhook logging
-- Signature verification via HMAC (Stripe, Jira, JSM, M365)
+- Signature verification via HMAC (Stripe, Jira, JSM); M365 is authenticated with `clientState` and sends no signature
 - Idempotency deduplication via Redis
 - Webhook delivery logging to `webhook_deliveries` table
 - Audit logging on all events
+
+Outbound webhooks (the portal → customer endpoints) have their own event
+catalog and consumer contract: [`docs/WEBHOOKS.md`](../WEBHOOKS.md).
 
 ## Endpoints
 
@@ -34,9 +37,10 @@ Writes: `invoices`, `subscriptions`, `billing_customers`, `project_tasks`, `tick
 
 ## Access Control
 
-- No `requireAuth` — these are public endpoints secured by webhook signature verification
+- No `requireAuth` — these are public endpoints secured by webhook signature/secret verification
 - Stripe: `stripe-signature` header verified against `STRIPE_WEBHOOK_SECRET`
-- Jira/JSM/M365: `x-hub-signature` header verified against respective `*_WEBHOOK_SECRET`
+- Jira/JSM: `x-hub-signature` header verified against the respective `*_WEBHOOK_SECRET`
+- M365: no signature header; every notification's `clientState` must match `M365_CLIENT_STATE` (timing-safe), and the batch is replay-window checked
 
 ## Ingress hardening (WH-P2-006)
 
@@ -58,6 +62,20 @@ are shape checks, not full provider contracts — unknown fields are preserved.
 Residual: inbound webhook paths are still exempt from the global IP rate
 limiter (`app.ts`) because provider retries can burst; a dedicated per-provider
 rate limit remains a tracked follow-up.
+
+## Retention (WH-P3-009)
+
+The worker `retention` task purges both webhook tables daily in bounded
+batches (`apps/worker/src/tasks/retention.ts`):
+
+| Table | Default window | Notes |
+| ----- | -------------- | ----- |
+| `webhook_deliveries` | 90 days | delivery log/audit rows |
+| `webhook_dead_letters` | 180 days | kept longer so an operator can triage/replay |
+
+Windows are overridable through the `retention_policies` registry (longest
+matching policy wins) or a manual payload override; a purge error fails the
+task run. Indexes supporting the purge ship in migration `5302454`.
 
 ## Status Maps
 

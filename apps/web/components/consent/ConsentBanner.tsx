@@ -62,7 +62,7 @@ export default function ConsentBanner() {
           <button
             type="button"
             onClick={acceptAnalytics}
-            className="rounded border-2 border-emerald-600 bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500"
+            className="rounded border-2 border-emerald-600 bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-cyber-base transition hover:bg-transparent hover:text-emerald-500"
           >
             Accept analytics
           </button>

@@ -92,7 +92,7 @@ export default function ProductForm({
               </h2>
               <button
                 onClick={() => setOpen(false)}
-                className="text-slate-400 hover:text-white"
+                className="-m-3 rounded p-3 text-slate-400 hover:text-white"
                 aria-label="Close"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

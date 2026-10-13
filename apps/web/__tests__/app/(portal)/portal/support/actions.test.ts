@@ -22,20 +22,21 @@ jest.mock("next/cache", () => ({
 describe("createPortalTicket", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockTicketsCreate.mockResolvedValue({ id: "ticket-9", title: "Test ticket" });
   });
 
-  it("creates a ticket with all form fields", async () => {
+  it("creates a ticket from the fields the support form submits (USE-P3-001)", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
     const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
 
     const formData = new FormData();
-    formData.set("title", "Test ticket");
+    formData.set("subject", "Test ticket");
     formData.set("description", "Help needed");
     formData.set("priority", "high");
     formData.set("category", "billing");
 
-    await createPortalTicket(formData);
+    const result = await createPortalTicket(formData);
 
     expect(mockTicketsCreate).toHaveBeenCalledWith({
       organizationId: "org-1",
@@ -46,6 +47,8 @@ describe("createPortalTicket", () => {
       source: "portal",
     });
     expect(mockRevalidatePath).toHaveBeenCalledWith("/portal/support");
+    // USE-P3-001: the caller needs the created ticket for the confirmation.
+    expect(result).toEqual({ ok: true, ticketId: "ticket-9", subject: "Test ticket" });
   });
 
   it("uses default priority when not provided", async () => {
@@ -54,7 +57,7 @@ describe("createPortalTicket", () => {
     const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
 
     const formData = new FormData();
-    formData.set("title", "Test");
+    formData.set("subject", "Test");
 
     await createPortalTicket(formData);
 
@@ -67,7 +70,7 @@ describe("createPortalTicket", () => {
     const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
 
     const formData = new FormData();
-    formData.set("title", "Test");
+    formData.set("subject", "Test");
 
     await createPortalTicket(formData);
 
@@ -82,7 +85,7 @@ describe("createPortalTicket", () => {
     const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
 
     const formData = new FormData();
-    formData.set("title", "Test");
+    formData.set("subject", "Test");
 
     const result = await createPortalTicket(formData);
     expect(result.ok).toBe(false);
@@ -90,13 +93,13 @@ describe("createPortalTicket", () => {
     expect(mockTicketsCreate).not.toHaveBeenCalled();
   });
 
-  it("returns error when title is empty or whitespace", async () => {
+  it("returns error when subject is empty or whitespace", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
     const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
 
     const formData = new FormData();
-    formData.set("title", "   ");
+    formData.set("subject", "   ");
 
     const result = await createPortalTicket(formData);
     expect(result.ok).toBe(false);
@@ -104,15 +107,27 @@ describe("createPortalTicket", () => {
     expect(mockTicketsCreate).not.toHaveBeenCalled();
   });
 
-  it("returns error when title is missing from form data", async () => {
+  it("returns error when subject is missing from form data", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
     const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
 
+    const result = await createPortalTicket(new FormData());
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Title is required");
+  });
+
+  it("maps a thrown API error to a user-facing message (USE-P3-005)", async () => {
+    mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
+    mockTicketsCreate.mockRejectedValue(new Error("Request timed out after 30000ms"));
+
+    const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
+
     const formData = new FormData();
+    formData.set("subject", "Test");
 
     const result = await createPortalTicket(formData);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("Title is required");
+    expect(result.error).toMatch(/took too long/i);
   });
 });
