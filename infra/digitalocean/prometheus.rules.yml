@@ -368,6 +368,25 @@ groups:
           description: "The stripe-reconcile task found at least one mirror-vs-Stripe mismatch in the last 25 hours (subscription status, invoice count/sum, or payment count/sum). Check the worker logs for the organization and drift kind, then compare the local billing mirror with Stripe."
 
 
+  # BILL-P3-009: the API entitlement gate fails open when the billing mirror
+  # cannot be read (a transient Supabase error must not lock paying customers
+  # out). That trade-off used to be log-only, so a sustained billing-state
+  # outage silently disabled the plan boundary for every gated module; the API
+  # now emits portal_billing_lookup_failures_total{module}. Any failure in the
+  # last 15 minutes sustained for 10 is worth investigating before it becomes
+  # a fleet-wide bypass.
+  - name: mct-entitlement-enforcement
+    rules:
+      - alert: MCTBillingLookupFailures
+        expr: increase(portal_billing_lookup_failures_total[15m]) > 0
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Entitlement resolution failing open on {{ $labels.job }} ({{ $labels.module }})"
+          description: "portal_billing_lookup_failures_total increased in the last 15 minutes: the entitlement gate could not read the billing mirror for module {{ $labels.module }} and allowed the request (deliberate fail-open). A sustained outage silently disables the plan boundary for every gated module. Check Supabase/billing-mirror health and the entitlement resolution error logs."
+
   # RES-P2-008: worker queue connectivity. The worker exports
   # worker_queue_connected (1 while both its BullMQ producer Queue and consumer
   # Worker hold a ready Redis connection, 0 when either is lost). In the same
