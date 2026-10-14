@@ -98,6 +98,11 @@ test.describe("mobile viewport", () => {
   // overflow must fail the gate rather than be exempted.
   for (const route of PUBLIC_ROUTES) {
     test(`${route} has no horizontal overflow`, async ({ page }) => {
+      // The project runs with the authenticated storage state, and the
+      // middleware redirects an authenticated /login to /portal/dashboard —
+      // which made this test measure the portal, not the public route it
+      // names. Clear the session so the route under test is the one measured.
+      await page.context().clearCookies();
       await page.goto(route);
       await page.waitForLoadState("domcontentloaded");
       await page.evaluate(() => document.fonts.ready.then(() => undefined));
