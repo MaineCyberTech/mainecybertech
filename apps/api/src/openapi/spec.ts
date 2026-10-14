@@ -909,9 +909,19 @@ const billingNotifications: RouteDef[] = [
     tag: "Notifications",
   },
   {
-    // NOTIF-P3-005: public one-click unsubscribe; the signed token in the
+    // NOTIF-P3-005 / NOTIF-P2-012: public unsubscribe; the signed token in the
     // email is the only credential, so this is documented as unauthenticated.
+    // GET renders a confirmation page (no write); POST performs the opt-out
+    // and is the RFC 8058 List-Unsubscribe-Post target.
     method: "get",
+    path: "/notifications/unsubscribe",
+    summary: "Unsubscribe confirmation page (signed token, no session)",
+    tag: "Notifications",
+    auth: false,
+    params: [queryParam("token")],
+  },
+  {
+    method: "post",
     path: "/notifications/unsubscribe",
     summary: "One-click unsubscribe (signed token, no session)",
     tag: "Notifications",

@@ -7,12 +7,14 @@ type EmailOptions = {
   subject: string;
   text?: string;
   html?: string;
+  /** NOTIF-P2-012: extra MIME headers, e.g. List-Unsubscribe/-Post. */
+  headers?: Record<string, string>;
 };
 
 const MAX_ATTEMPTS = 3;
 const BASE_RETRY_MS = 1000;
 
-export async function sendEmail({ to, subject, text, html }: EmailOptions): Promise<boolean> {
+export async function sendEmail({ to, subject, text, html, headers }: EmailOptions): Promise<boolean> {
   const host = env.SMTP_HOST;
   if (!host) {
     logger.warn("SMTP_HOST not configured; skipping email send");
@@ -42,6 +44,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
         subject,
         text,
         html,
+        headers,
       });
 
       logger.info("Email sent");

@@ -14,7 +14,7 @@ import {
   notificationFooterLinks,
   renderEmailLayout,
 } from "@mct/sdk/email-template";
-import { buildUnsubscribeUrl } from "./unsubscribe-token";
+import { buildUnsubscribeUrl, buildListUnsubscribeHeaders } from "./unsubscribe-token";
 import {
   recordNotificationDelivery,
   recordNotificationDedup,
@@ -439,12 +439,16 @@ export async function notifyAndEmail(
         })
       : undefined;
   const footerLinks = notificationFooterLinks({ preferencesUrl, unsubscribeUrl });
+  // NOTIF-P2-012: advertise the RFC 8058 one-click contract to mail clients;
+  // the same URL serves the confirmation page (GET) and the action (POST).
+  const emailHeaders = unsubscribeUrl ? buildListUnsubscribeHeaders(unsubscribeUrl) : undefined;
 
   const emailPayload =
     opts.emailHtml != null
       ? {
           to: emailTo,
           subject: `${EMAIL_SUBJECT_PREFIX} ${safeOpts.title}`,
+          headers: emailHeaders,
           text: [
             safeOpts.body,
             ...(actionUrl ? [`View: ${actionUrl}`] : []),
@@ -460,6 +464,7 @@ export async function notifyAndEmail(
         }
       : {
           to: emailTo,
+          headers: emailHeaders,
           ...buildNotificationEmail({
             title: safeOpts.title,
             body: safeOpts.body,

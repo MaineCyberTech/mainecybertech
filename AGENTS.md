@@ -96,11 +96,11 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,621 tests, all passing. 517 suites.**
+**4,655 tests, all passing. 518 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,959         | 174   | Jest + supertest                  |
+| API     | 1,993         | 175   | Jest + supertest                  |
 | Web     | 2,026         | 306   | Jest + Testing Library            |
 | SDK     | 325           | 5   | Jest (mocked fetch)               |
 | Worker  | 311           | 32   | Jest (env schema + task handlers) |
@@ -170,7 +170,7 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319 | Admin 203, Portal 86, Public 29, `forbidden` 1 |
 | Web components            | 128 | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 158 | `supabase/migrations/` (latest: 5302460_drop_portal_module_settings                                                                                              |
+| SQL migrations            | 160 | `supabase/migrations/` (latest: 5302462_sop_library_status_check                                                                                              |
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 30 | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 625 | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
@@ -378,7 +378,7 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 ## RLS & schema hygiene
 
 `scripts/verify-rls.mjs` (CI: the shared unit-tests action) scans
-`supabase/migrations/` and reports **137 tables, all RLS-enabled, 1031
+`supabase/migrations/` and reports **137 tables, all RLS-enabled, 1035
 policies**. It fails on a live table without RLS, on a new migration whose
 `create policy` lacks a paired `drop policy if exists`, and on a new migration
 filename outside the `NNNNNNN_lower_snake_case.sql` convention

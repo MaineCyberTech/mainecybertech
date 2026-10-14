@@ -51,7 +51,7 @@ import { sendEmail } from "../email";
 import { insertNotification, resolveChannels } from "../notification-store";
 import { isEmailThrottled } from "../lib/notification-throttle";
 import { recordNotificationThrottled } from "../metrics";
-import { verifyUnsubscribeToken } from "../lib/unsubscribe-token";
+import { buildUnsubscribeToken, verifyUnsubscribeToken } from "../lib/unsubscribe-token";
 
 type Result = { data: unknown; error: unknown };
 
@@ -210,7 +210,11 @@ describe("scheduledNotifications org scoping + link safety (NOTIF-P3-006/008)", 
       metadata: { ticketId: "ticket-1" },
     });
 
-    const payload = (sendEmail as jest.Mock).mock.calls[0][0] as { html: string; text: string };
+    const payload = (sendEmail as jest.Mock).mock.calls[0][0] as {
+      html: string;
+      text: string;
+      headers?: Record<string, string>;
+    };
     expect(payload.html).toContain("Manage notification preferences");
     expect(payload.html).toContain("Unsubscribe from these emails");
     const match = payload.html.match(/unsubscribe\?token=([^"&]+)/);
@@ -218,6 +222,17 @@ describe("scheduledNotifications org scoping + link safety (NOTIF-P3-006/008)", 
     expect(
       verifyUnsubscribeToken(decodeURIComponent((match as RegExpMatchArray)[1]!), "service-role-key"),
     ).toEqual({ userId: "user-2", organizationId: "org-9" });
+    // NOTIF-P2-012: the worker sends the same RFC 8058 one-click headers.
+    expect(payload.headers?.["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
+    expect(payload.headers?.["List-Unsubscribe"]).toMatch(/^<.*unsubscribe\?token=/);
+
+    // ...and its token mirror enforces the same bounded expiry.
+    const expired = buildUnsubscribeToken(
+      { userId: "user-2", organizationId: "org-9" },
+      "service-role-key",
+      { ttlSeconds: 0 },
+    );
+    expect(verifyUnsubscribeToken(expired, "service-role-key")).toBeNull();
   });
 
   it("throttles the send per recipient and meters the drop (NOTIF-P3-007)", async () => {
