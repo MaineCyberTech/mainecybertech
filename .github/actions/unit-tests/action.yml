@@ -187,3 +187,19 @@ runs:
       run: |
         node scripts/check-circular-deps.mjs --self-test
         node scripts/check-circular-deps.mjs
+
+    - name: Audit corpus size budget (advisory, HYGIENE-P3-014)
+      # Reports docs/audits against the budget documented in
+      # docs/audits/README.md. Advisory by design: it prints a warning
+      # annotation when over budget but never blocks a run's publication
+      # (the corpus is historical evidence). When it warns, archive the
+      # oldest runs or raise the budget in a reviewed PR.
+      shell: bash
+      run: node scripts/check-audits-budget.mjs
+
+    - name: Verify the SBOM validator's argument handling (SBOM-P3-010)
+      # Self-test for scripts/validate-sbom.mjs: a positional SBOM path must be
+      # honored with and without --digest (the original bug silently validated
+      # ./sbom.cdx.json instead), and the default path must still work.
+      shell: bash
+      run: node scripts/ci/check-validate-sbom.mjs

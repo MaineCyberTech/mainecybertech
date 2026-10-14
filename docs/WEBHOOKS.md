@@ -53,12 +53,20 @@ constant time.
 
 ## Retries, dedup and DLQ
 
-- The first attempt is dispatched immediately (API inline path or the worker
-  `webhook-dispatcher` queue task).
-- A failed delivery (network error or HTTP ≥ 400) is retried by the worker
-  `webhook-retry` task up to **5 attempts** with exponential backoff
-  (1 min, 2 min, 4 min, 8 min). Retried payloads are byte-identical to the
-  first attempt, including the envelope `timestamp`.
+- The first attempt is dispatched immediately: through the worker
+  `webhook-dispatcher` queue task when the queue is available, or the API's
+  inline fallback path when it is not. Both carry the same `Idempotency-Key`,
+  so the two layers dedupe against each other.
+- **Inline (API fallback) path:** the API retries a transient failure (network
+  error or HTTP ≥ 500) up to **3 attempts** with short backoff (200 ms base,
+  ×2); a terminal 4xx is not retried. If all attempts fail the delivery is
+  recorded failed and dead-lettered immediately — the worker retry task ignores
+  it (`dead_letter` is set), so a delivery has a single retry owner.
+- **Worker queue path:** the queue task attempts delivery once; a failed
+  delivery is retried by the worker `webhook-retry` task up to **5 attempts**
+  with 1/2/4/8/16-minute backoff (the first retry ~5 minutes after the initial
+  attempt). Retried payloads are byte-identical to the first attempt, including
+  the envelope `timestamp`.
 - After the final failure the delivery moves to `webhook_dead_letters` for
   admin triage/replay in the admin console. Dead letters are retained 180 days;
   delivery rows 90 days (`scripts` retention task, migration `5302454`).
