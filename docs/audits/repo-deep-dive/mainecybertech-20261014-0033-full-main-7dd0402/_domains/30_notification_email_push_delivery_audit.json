@@ -1,0 +1,249 @@
+{
+  "domain": "30_notification_email_push_delivery_audit",
+  "file": "30_notification_email_push_delivery_audit.md",
+  "area": "NOTIF",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T00:52:15Z",
+  "findings": [
+    {
+      "id": "NOTIF-P1-001",
+      "severity": "P1",
+      "title": "Notification preferences are stored and displayed but never enforced on any send path",
+      "owner": "notifications/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/api/src/lib/notification-channels.ts:56-114 resolves notification_preferences (default-on, fail-safe) and both send paths consult it (notify.ts:130-140, worker notification-store.ts); the worker reminder paths pass the org (scheduled-notifications.ts:225-228,338-342,425-428); tests notification-store.test.ts + API notify tests.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P1-002",
+      "severity": "P1",
+      "title": "API-originated notifications bypass the dedup unique index",
+      "owner": "notifications/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: createNotification upserts on notification_key with ignoreDuplicates (notify.ts:100-123,161-164) and claimNotificationEmail (notify.ts:192-201) refuses the email when inApp.deduped; worker mirror at notification-store.ts:219-231.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P1-003",
+      "severity": "P1",
+      "title": "No delivery observability: email/notification failures are silent and unalerted",
+      "owner": "notifications/backend + SRE",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: alert rules MCTNotificationDeliveryFailureRateHigh and MCTNotificationEmailSkipped in infra/digitalocean/prometheus.rules.yml:257-304; terminal-outcome counters in api/lib/metrics.ts:246-253 and worker/metrics.ts; SLO #4 documented in docs/SLO.md:17-27.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P1-004",
+      "severity": "P1",
+      "title": "Notification preference writes from the web UI omit organization_id (NOT NULL) so toggles cannot persist",
+      "owner": "notifications/backend + web",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/api/src/routes/notification-preferences.ts:57-70 defaults organizationId to req.orgId/req.query and 400s when unresolvable; the UI surfaces save failures and refetches (NotificationPreferencesClient.tsx:100-112).",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P2-001",
+      "severity": "P2",
+      "title": "Web Push channel is entirely absent (no subscriptions, no VAPID, no service worker)",
+      "owner": "notifications/backend + web",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: table+RLS+enum in supabase/migrations/5302453_push_subscriptions.sql; API routes/push-subscriptions.ts (VAPID public key, owner-scoped upsert/soft revoke); worker RFC 8291/8292 sender apps/worker/src/push.ts + tasks/notification-push.ts (404/410 revoke); SW push/notificationclick handlers apps/web/public/sw.js; UI PushNotificationSettings.tsx + lib/push.ts.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P2-002",
+      "severity": "P2",
+      "title": "SMTP remains optional; email silently degrades to no-op in production",
+      "owner": "platform/ops + notifications/backend",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the silence is fixed (api/main.ts:24-33 logs an error naming missing SMTP_* keys; worker/env.ts:103-104 warns; email.ts:24-28 + worker/email.ts:16-19 meter skipped; MCTNotificationEmailSkipped alerts). Remaining: SMTP is still optional and the deploy does not gate on it (deploy-do.yml:671-674 forwards SMTP_* but never fails when unset) - provisioning is an operator decision, so email delivery stays a no-op until then.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P2-003",
+      "severity": "P2",
+      "title": "Worker lacks an `unhandledRejection` handler",
+      "owner": "worker/platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/worker/src/main.ts:35-47 handles uncaughtException and unhandledRejection (the API also handles both at apps/api/src/main.ts:94-99).",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P2-004",
+      "severity": "P2",
+      "title": "Scheduled reminder inserts and email sends are not atomic; retries can double-send",
+      "owner": "worker/platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: claimNotificationEmail uses the notification_key upsert as the atomic email claim with an idempotency-store fallback (worker notification-store.ts:212-231; scheduled-notifications.ts:344-400) and the API mirrors it (notify.ts:189-201).",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P2-005",
+      "severity": "P2",
+      "title": "Sensitive ticket content is stored and emailed verbatim with no sensitivity filter",
+      "owner": "notifications/backend + security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: redactSensitiveContent applied before storage and email in both deployables (api/lib/notification-content.ts + notify.ts:69-70,455; worker/notification-content.ts + scheduled-notifications.ts:346-348); covers credential assignments, bearer tokens, PEM blocks, provider token shapes, SSN and Luhn-valid cards.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P2-006",
+      "severity": "P2",
+      "title": "API inline email fallback has no retry and ignores the send result",
+      "owner": "notifications/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/api/src/lib/email.ts:14-63 retries 3x with linear backoff and returns a boolean; callers surface/meter the outcome.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P2-007",
+      "severity": "P2",
+      "title": "Realtime/SSE notification channel is scoped by user only, with no org assertion",
+      "owner": "API platform + security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/api/src/routes/notifications.ts:181-192 drops rows whose organization_id does not match the resolved org; the initial query applies the same predicate (:303) and mark-all-read asserts org scope (:455-460); regression test notifications-org-scope.test.ts.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P2-008",
+      "severity": "P2",
+      "title": "Backup-failure alerting is present but cannot be trusted to deliver",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: db-backup.yml:114-136 and storage-backup.yml:62-84 fail the step with ::error when neither ntfy nor Slack delivery succeeds (curl -sf + explicit error), so a swallowed notification can no longer pass as success.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P2-009",
+      "severity": "P2",
+      "title": "notifyAndEmail enqueues email even when the in-app notification was deduped",
+      "owner": "notifications/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: notifyAndEmail skips the email when inApp.deduped and falls back to the idempotency-store claim when the in-app channel was preference-suppressed (notify.ts:393-401,429-434); notify.ts:189-201.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P2-010",
+      "severity": "P2",
+      "title": "Notification delivery SLO counts a queued email hand-off as success and excludes worker send outcomes",
+      "owner": "notifications/backend + SRE",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the API records a successful enqueue as status=queued (api/lib/metrics.ts:246-253) and SLO #4 + the failure-ratio alert compute from worker terminal outcomes only (docs/SLO.md:17-27; prometheus.rules.yml:257-287).",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P2-011",
+      "severity": "P2",
+      "title": "Alertmanager\u2192ntfy critical alert delivery is optional in production and has no in-repo exercise evidence",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the off-box Watchdog URL now fails prod deploys (deploy-do.yml:845-863) and the renderer/receivers are wired (infra/digitalocean/alertmanager.tmpl.yml:78-152). Remaining: a missing ALERTMANAGER_CRITICAL_WEBHOOK_URL or missing relay credentials only warns (deploy-do.yml:865-868), and docs/MONITORING_AND_ALERTING.md:391 still records delivery as 'not yet exercised end-to-end' (OBS-P2-014) - no in-repo artifact proves a critical alert reached ntfy.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P3-001",
+      "severity": "P3",
+      "title": "No email template system; repetitive inline HTML diverges between senders",
+      "owner": "notifications/backend + web",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: shared packages/sdk/src/email-template.ts (renderEmailLayout/buildNotificationEmail/footer links) is used by the API (notify.ts:12-17,441-469) and the worker (scheduled-notifications.ts:68-70).",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P3-002",
+      "severity": "P3",
+      "title": "`sms` channel is a dead preference option; UI copy misstates enforcement",
+      "owner": "notifications/backend + web",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: both preference UIs now offer email/in_app/push only (NotificationPreferencesClient.tsx:23-27; NotificationBell.tsx:205,267) and the resolver documents sms as non-deliverable and excludes it (notification-channels.ts:16,43-44). The API enum still accepts the legacy sms value, which is inert.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P3-003",
+      "severity": "P3",
+      "title": "SSE polling fallback interval is not cleared on unmount",
+      "owner": "web",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/web/components/NotificationBell.tsx:40,97,104 stores the fallback interval in a ref and clears it on cleanup.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P3-004",
+      "severity": "P3",
+      "title": "`notification-preferences` PUT accepts a body `organizationId` without `assertOrgScopeMatches`",
+      "owner": "API platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: requireOrgAccess (mounted at notification-preferences.ts:9-10) resolves and validates req.body.organizationId via extractOrgId (middleware/org-access.ts:9-12) before the handler runs, so a body org cannot bypass membership/cross-tenant checks; the handler prefers req.orgId (notification-preferences.ts:62-64).",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P3-005",
+      "severity": "P3",
+      "title": "No unsubscribe link or global opt-out in notification emails",
+      "owner": "notifications/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: HMAC-signed unsubscribe links are embedded in every email (api/lib/unsubscribe-token.ts; notify.ts:432-441; worker scheduled-notifications.ts:16,68-70) and the public endpoint writes a module_key='all' opt-out honoured by both resolvers (routes/notification-unsubscribe.ts:24-43; notification-channels.ts:66-68).",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P3-006",
+      "severity": "P3",
+      "title": "Worker reminder preference lookups omit the organization, so any org's opt-out suppresses the channel for all",
+      "owner": "worker/platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: every resolveChannels call in the worker passes the notification's organization (scheduled-notifications.ts:225-228,338-342,425-428) and the resolver filters by org when known (notification-channels.ts:76-78).",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P3-007",
+      "severity": "P3",
+      "title": "No per-recipient send throttle on notification producers",
+      "owner": "notifications/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/api/src/lib/notification-throttle.ts (30/hour per hashed recipient, Redis INCR with per-process fallback, fail-open) is applied in notifyAndEmail (notify.ts:408-420) with a throttled metric.",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P3-008",
+      "severity": "P3",
+      "title": "Worker ticket-responded email builds the deep link from unescaped payload metadata (latent XSS-in-email)",
+      "owner": "worker/platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the ticket id is percent-encoded before becoming a path segment (scheduled-notifications.ts:392-397) and the shared template escapes the body and URL (packages/sdk/src/email-template.ts).",
+      "area": "NOTIF"
+    },
+    {
+      "id": "NOTIF-P2-012",
+      "severity": "P2",
+      "title": "One-click unsubscribe is an unauthenticated GET with no expiry or confirmation; mail-security link scanners can silently opt users out",
+      "owner": "notifications/backend",
+      "target": "this month",
+      "status": "open",
+      "note": "NEW at 7dd0402: routes/notification-unsubscribe.ts:24-58 flips the global email opt-out on the first GET of the emailed token; the token has no expiry/use-limit (lib/unsubscribe-token.ts:44-56) and no List-Unsubscribe/-Post header is sent, so enterprise link-prefetch scanners (Outlook SafeLinks, Proofpoint) can trigger it without the recipient clicking. Recommend RFC 8058 (List-Unsubscribe + List-Unsubscribe-Post, POST handler), a confirmation page for the in-body link, and a token expiry.",
+      "area": "NOTIF"
+    }
+  ]
+}

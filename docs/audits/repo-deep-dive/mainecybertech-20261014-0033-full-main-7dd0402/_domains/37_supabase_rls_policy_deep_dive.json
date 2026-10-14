@@ -1,0 +1,180 @@
+{
+  "domain": "37_supabase_rls_policy_deep_dive",
+  "file": "37_supabase_rls_policy_deep_dive.md",
+  "area": "RLS",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T01:00:48Z",
+  "findings": [
+    {
+      "id": "RLS-P1-001",
+      "severity": "P1",
+      "title": "No runtime detection or alerting for tenant-isolation (RLS) regressions",
+      "owner": "platform lead / security reviewer",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "portal_rls_bypass_total / portal_rls_enforced_total metrics (apps/api/src/lib/metrics.ts:175-207) + rules infra/digitalocean/prometheus.rules.yml:126-186; unit tests infra/digitalocean/prometheus.rules.test.yml:26-73; promtool is wired into CI (.github/workflows/validate.yml:50, test.yml:52) and both commands pass locally (docker prom/prometheus:v3.5.1: 22 rules SUCCESS + rule tests SUCCESS). Alert delivery remains unexercised and is tracked under OBS-P2-014/NOTIF-P2-011, not this finding.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P1-002",
+      "severity": "P1",
+      "title": "Approved-membership RLS predicate reintroduced six times; pending/suspended members could access tenant data",
+      "owner": "backend/data governance",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "node scripts/check-rls-predicate.mjs -> PASS (no raw status-unfiltered membership predicate in 30 migrations newer than 5302430); guard wired at .github/actions/unit-tests/action.yml:125. The one live pre-baseline exception is carried under DATA-P1-001.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P2-001",
+      "severity": "P2",
+      "title": "MSP platform-admin role keys missing from post-5302129 admin-gate RLS policies",
+      "owner": "backend/DB lead + platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "5302436_restore_platform_admin_rls_gates.sql recreates all five regressed DELETE gates with public.user_has_role(...) and asserts the qual contains user_has_role; node scripts/verify-rls.mjs reports 0 failures.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P2-002",
+      "severity": "P2",
+      "title": "webhook_dead_letters has no user-scoped DELETE policy while the API deletes via the RLS client",
+      "owner": "backend/DB lead + platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "5302452_webhook_dead_letters_delete_policy.sql adds the manage-scoped DELETE policy plus an in-migration assertion.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P2-003",
+      "severity": "P2",
+      "title": "approve_project_task / add_project_task_comment trust a caller-supplied user id and are granted to authenticated",
+      "owner": "backend/DB lead + platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "5302435 binds p_user_id to auth.uid() for end-user calls and keeps approved-membership checks + search_path pinning.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P2-004",
+      "severity": "P2",
+      "title": "API defaults to the service-role DB client (RLS bypass)",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "rls-startup-check.ts:31-58 refuses to boot in production with an empty RLS_READS_ENABLED and logs loudly for writes; getScopedClient (services/supabase.ts:197-224) still falls back to the service-role client for any module not in the allow-list, and the allow-list values live in GitHub environment secrets (docs/RLS-rollout.md:93-94; deploy-do.yml:708), so the deployed posture is not reproducible from the repo.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P2-005",
+      "severity": "P2",
+      "title": "document_versions UPDATE policy still uses the raw unfiltered membership predicate",
+      "owner": "backend/DB lead + platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "5302447 recreates dv_update with the approved-aware is_org_member + documents:edit predicate.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P2-006",
+      "severity": "P2",
+      "title": "store_quotes public INSERT policy allows arbitrary organization_id after tenant scoping",
+      "owner": "API platform / backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "5302448 replaces the blanket store_quotes INSERT with anon null-org and authenticated null-org-or-approved-member policies.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P2-007",
+      "severity": "P2",
+      "title": "Auth write endpoints call GoTrue admin APIs through the RLS-scoped client",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "auth.admin.* calls go through getSupabaseAdmin (routes/auth.ts:319,399,716,725); the user-scoped client is used only for non-admin operations.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P3-001",
+      "severity": "P3",
+      "title": "5302116 grants anon UPDATE/DELETE on every table, amplified by no RLS-off \u00d7 anon-write lint",
+      "owner": "backend/DB lead + platform",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "5302434 removes the blanket/default anon DML grant and keeps only the declared allowlist; however there is still no lint that fails a new 'grant ... to anon' (grep scripts/ and .github/ for anon grants -> only scripts/ci/rls-matrix.sql). verify-rls rule 1 covers the RLS-off half by failing any live table without RLS.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P3-002",
+      "severity": "P3",
+      "title": "No behavioral RLS allow/deny matrix test (static gate only)",
+      "owner": "backend/DB lead + platform",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "scripts/ci/rls-matrix.sql (allow/deny assertions over tickets/time_entries/audit_logs/satisfaction_pulses/module_timeline_events with approved/pending/cross-tenant/anon actors) runs via scripts/ci/check-rls-matrix.sh, wired at .github/workflows/e2e.yml:101 after db reset.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P3-003",
+      "severity": "P3",
+      "title": "storage_path_org_id trusts a client-controlled object name",
+      "owner": "backend/DB lead + platform",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "storage_path_org_id is unchanged and still name-derived (5302026:799-829); 5302439 removed the authenticated INSERT/UPDATE policies so direct writes no longer exist, and the API enforces path-org equality (documents.ts:284-287,549-556), but the SELECT/DELETE storage policies still derive the org from the client-controlled object name.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P3-004",
+      "severity": "P3",
+      "title": "Duplicate scoped-client tests and stale coverage-matrix snapshot",
+      "owner": "backend/DB lead + platform",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "both duplicate suites still exist (apps/api/src/__tests__/supabase-scoped-client.test.ts and get-scoped-client.test.ts); docs/RLS-coverage-matrix.md:5-7 is now explicitly labelled a snapshot with verify-rls.mjs as the live source, but its counts are still not guarded by check-docs-counts.mjs.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P3-005",
+      "severity": "P3",
+      "title": "RLS policies reference `manage` permissions that no role holds (dead predicates)",
+      "owner": "API platform",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "5302459 inserts the missing permission-catalog rows; node scripts/check-permission-catalog.mjs -> PASS (198 requirePermission + 46 live-policy references resolve against 338 catalog keys).",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P3-006",
+      "severity": "P3",
+      "title": "No static lint for RLS role-gate drift or policy\u2194permission-catalog drift",
+      "owner": "backend/DB lead + platform",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "verify-rls.mjs enforces role-gate drift (baseline 5302436) and policy<->catalog drift; wired at .github/actions/unit-tests/action.yml:101,109; ran -> 0 failures (1 baseline warning, see RLS-P3-008).",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P3-007",
+      "severity": "P3",
+      "title": "Scoped-client adoption is partial: several tenant modules have no RLS call sites and service helpers bypass the scoped client",
+      "owner": "API platform",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "getScopedClient is used at 417 call sites across apps/api/src/routes (grep); final CRUD/satisfaction/forms/approvals modules now have scoped call sites.",
+      "area": "RLS"
+    },
+    {
+      "id": "RLS-P3-008",
+      "severity": "P3",
+      "title": "Four live policies still hardcode partial platform-role lists (document_shares trio omits super_admin; notifications insert omits six platform keys)",
+      "owner": "backend/DB lead + platform",
+      "target": "next quarter",
+      "status": "open",
+      "note": "node scripts/verify-rls.mjs reports '[role-gate:baseline] 4 live policies created before 5302436 hardcode a partial platform-role list': notifications_insert_system_or_admin (5302057:41, omits 6 platform keys) and document_shares delete/insert/update own_org (5302129:1136,1150,1164, omit super_admin). Pre-baseline debt tolerated by the guard; the previous RLS-P2-001 note claimed no other short admin gates existed. New finding (P3).",
+      "area": "RLS"
+    }
+  ],
+  "report": "Read-only re-verification at `7dd0402`; no hosted-Supabase or local-Postgres replay. 12 of 16 previous RLS rows verified fixed, 4 partially fixed, 0 regressed, 1 new P3. Executed: `node scripts/verify-rls.mjs` (0 failures; 1 baseline role-gate warning), `node scripts/check-rls-predicate.mjs` (PASS), `node scripts/check-permission-catalog.mjs` (PASS: 198 route + 46 policy references vs 338 keys), `sh scripts/ci/check-permission-catalog.sh` (PASS + negative fixture), and `promtool check rules` + `promtool test rules` (docker prom/prometheus:v3.5.1 \u2014 22 rules SUCCESS, tests SUCCESS). Key migrations: 5302435/5302436/5302447/5302448/5302452/5302459. Residuals: service-role default + secret-defined allow-lists (RLS-P2-004), no anon-grant lint (RLS-P3-001), name-derived storage org helper (RLS-P3-003), duplicate scoped-client tests + unguarded matrix counts (RLS-P3-004). New: RLS-P3-008 (four live policies hardcode partial platform-role lists)."
+}
