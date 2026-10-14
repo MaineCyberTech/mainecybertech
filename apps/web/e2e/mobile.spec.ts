@@ -27,6 +27,39 @@ async function visibleControlFontSizes(page: Page) {
   );
 }
 
+/**
+ * MOB-P3-006: name the elements that exceed the viewport when the no-overflow
+ * assertion fails. A bare scrollWidth does not say what to fix, and the CI
+ * failure evidence (screenshots/traces) is not always available.
+ */
+async function overflowingElements(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const viewport = window.innerWidth;
+    return Array.from(document.querySelectorAll<HTMLElement>("body *"))
+      .map((el) => {
+        const rect = el.getBoundingClientRect();
+        const style = getComputedStyle(el);
+        const classes =
+          typeof el.className === "string" && el.className.trim().length > 0
+            ? "." + el.className.trim().split(/\s+/).slice(0, 3).join(".")
+            : "";
+        return {
+          selector: el.tagName.toLowerCase() + classes,
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+          position: style.position,
+        };
+      })
+      .filter(
+        (entry) => entry.width > 0 && entry.right > viewport + 1 && entry.position !== "fixed",
+      )
+      .slice(0, 8)
+      .map(
+        (entry) => `${entry.selector} right=${entry.right} width=${entry.width} pos=${entry.position}`,
+      );
+  });
+}
+
 async function expectNoControlBelow16px(page: Page, route: string) {
   const controls = await visibleControlFontSizes(page);
   expect(controls.length, `expected visible form controls on ${route}`).toBeGreaterThan(0);
@@ -72,6 +105,14 @@ test.describe("mobile viewport", () => {
         scrollWidth: document.documentElement.scrollWidth,
         innerWidth: window.innerWidth,
       }));
+      if (scrollWidth > innerWidth + 1) {
+        // Log the offenders so a CI failure names the element, not just the
+        // width (the screenshots/traces may not be uploaded).
+        const offenders = await overflowingElements(page);
+        console.log(
+          `${route} horizontal overflow offenders: ${offenders.join(" | ") || "none (fixed-position or shadow overflow)"}`,
+        );
+      }
       expect(
         scrollWidth,
         `${route} overflows horizontally (scrollWidth ${scrollWidth} > viewport ${innerWidth})`,
