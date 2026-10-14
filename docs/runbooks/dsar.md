@@ -55,9 +55,10 @@ do not export other people's data.
 
 ### 3.3 Public submissions and audit trail
 
-- Contact/quote submissions: query `public_interactions` and
-  `store_quote_requests` by the subject's email (rows older than 90 days are
-  already purged for `public_interactions` — state that in the response).
+- Contact/quote submissions: query `public_interactions` (`client_email`),
+  `store_quotes` (`email`) and `store_quote_requests` (`customer->>'email'`) by
+  the subject's email. All three are purged at 90 days (PRIV-P2-008), so rows
+  older than the window are already gone — state that in the response.
 - Audit events about the subject: `/api/v1/audit/export` (JSON/CSV), filtered
   to the subject's `actor_user_id`/`entity_id`. Remember `audit_logs.metadata`
   is key-level redacted at write time.
@@ -122,6 +123,27 @@ unavailable. Lift the ban only when the hold clears — and then complete the
 
 Record the anonymisation in the privacy register and as a manual audit note;
 do not silently skip the requester response.
+
+### 4.4 Erasure for public submitters (no account)
+
+Public quote/contact submitters have no platform account, so the §4.1 endpoint
+cannot reach their rows. After verifying control of the email on the
+submission, delete the identified rows directly (service-role SQL as the
+project owner) and record the requester, row ids and action in the privacy
+register — this path writes no API audit event.
+
+```sql
+delete from public.store_quotes
+ where lower(email) = lower('<EMAIL>');
+delete from public.store_quote_requests
+ where lower(customer->>'email') = lower('<EMAIL>');
+delete from public.public_interactions
+ where lower(client_email) = lower('<EMAIL>');
+```
+
+State the residual copies in the response: forwarded Teams/JSM copies are held
+under those providers' settings, and backup copies age out after 30 days. Rows
+already past the 90-day purge window are gone — confirm and say so.
 
 ## 5. Offboarding (staff / contractor departure)
 

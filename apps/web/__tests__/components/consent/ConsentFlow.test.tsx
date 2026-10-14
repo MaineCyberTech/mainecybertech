@@ -171,4 +171,29 @@ describe("consent-gated third-party scripts [PRIV-P2-001]", () => {
 
     delete (window as unknown as { gtag?: unknown }).gtag;
   });
+
+  it("shuts the executed Tawk.to widget down when a stored grant is rejected [AN-P3-005]", async () => {
+    writeStoredConsent("granted");
+    const hideWidget = jest.fn();
+    const shutdown = jest.fn();
+    (window as unknown as { Tawk_API?: unknown }).Tawk_API = { hideWidget, shutdown };
+    const user = userEvent.setup();
+
+    renderConsentTree();
+    await waitFor(() =>
+      expect(scriptSources()).toEqual(
+        expect.arrayContaining([expect.stringContaining("embed.tawk.to")]),
+      ),
+    );
+
+    await user.click(screen.getByRole("button", { name: /cookie settings/i }));
+    await user.click(await screen.findByRole("button", { name: /reject analytics/i }));
+
+    await waitFor(() => {
+      expect(hideWidget).toHaveBeenCalledTimes(1);
+      expect(shutdown).toHaveBeenCalledTimes(1);
+    });
+
+    delete (window as unknown as { Tawk_API?: unknown }).Tawk_API;
+  });
 });

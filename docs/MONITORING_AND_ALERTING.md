@@ -167,7 +167,7 @@ committed in [`scripts/uptime/probe-targets.json`](../scripts/uptime/probe-targe
 
 | Target | Expects | Latency budget |
 | ------ | ------- | -------------- |
-| `https://api.mainecybertech.com/health` | 200 | 2000 ms |
+| `https://app.mainecybertech.com/api/v1/store/products` | 200 | 3000 ms |
 | `https://app.mainecybertech.com/login` | 200/301/302/307 | 3000 ms |
 | `https://api.mainecybertech.us/health` | 200 | 2000 ms |
 | `https://app.mainecybertech.us/login` | 200/301/302/307 | 3000 ms |
@@ -180,10 +180,16 @@ input `targets`) or for all runs with the `UPTIME_PROBE_TARGETS` repository
 variable; set `UPTIME_PROBE_ENABLED=false` to pause the schedule during a known
 outage. Reports are uploaded as the `uptime-report` artifact.
 
-Known state at introduction: `api.mainecybertech.com` is still served by the
-legacy AWS ALB/ECS deployment and returns 404 for `/health`, so the probe
-reports that target red until the prod deploy path (CI-P1-003) lands. That is
-the probe doing its job, not a false positive.
+OBS-P2-017: the production API is served through the web host under `/api/v1/*`
+(the web app rewrites those paths to the API), so the probe checks a public API
+read there. The documented `api.mainecybertech.com` hostname still resolves to
+a retired non-droplet endpoint that answers 404 for every path (an Express
+service, not the droplet's Caddy — see `docs/PRODUCTION_VS_TESTING_DOMAINS.md`
+for the current droplet topology). Repointing that DNS record at the prod
+droplet is operator work; until it is done, the same 404 also fails the prod
+deploy's public API gate in `deploy-do.yml` (`https://$API_DOMAIN/health`),
+which is a separate residual. Once the record is fixed, add an
+`api.mainecybertech.com/health` target back to the probe list.
 
 ### Functional smoke check (TEST-P3-002)
 
