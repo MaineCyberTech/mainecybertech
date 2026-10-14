@@ -579,6 +579,34 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   MONITORING and the operator map corrected, and the endpoint inventory marked
   historical (`cb46876b`, `13e95482`).
 
+### Added (2026-10-13/14 release tail)
+
+- Fast-mode verification re-audit run
+  `mainecybertech-20261013-0126-fast-develop-905ed63` committed under
+  `docs/audits/repo-deep-dive/` (#279, `62a09bac`) and indexed in
+  `docs/audits/README.md` with its `HISTORICAL.md` marker (#282, `b44153b7`).
+
+### Security (2026-10-13/14 release tail)
+
+- `handlebars` override tightened to `>=4.7.10` (`ea427954`), clearing the
+  CRITICAL advisories in the Storybook toolchain (root `package.json`
+  `pnpm.overrides`; the lockfile resolves `handlebars@4.7.10`).
+
+### Changed (2026-10-13/14 release tail)
+
+- **Promotions:** `develop` → `main` at `9ba108b5` (PR #278 — phases 1–6
+  remediation + verification re-audit) and `7dd04023` (PR #281 — Storybook pin +
+  dependency triage); `main` now carries every `develop` commit.
+- **Storybook webpack pin (#280, `673d76cb`):** root `pnpm.overrides` pins
+  `webpack` to `5.101.2`, clearing the `SB_BUILDER-WEBPACK5_0002` build break
+  (webpack ≥ 5.101.3 vs Storybook 8.6.x, TEST-P3-001); the post-pin Chromatic
+  run builds Storybook and fails only on the visual-diff step.
+- **GitHub Actions bumps:** `actions/setup-node` 7.1.0 (#159, `694c59b5`),
+  `actions/checkout` 7.0.1 (#45, `0f716d57`), `actions/attest-sbom` 4.1.0
+  (#261, `b115af6d`).
+- **CI:** workflow-dispatch inputs are passed through `env` indirection
+  (`07e9ce09`) instead of being interpolated into the remote shell (CI-P3-013).
+
 ## 2026-09-21
 
 ### Fixed

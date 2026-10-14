@@ -6,6 +6,12 @@ what to check first.
 ## Quick checklist
 
 - [ ] PR is green: `test`, `security-scan`, `secrets-scan`, `lint`, `typecheck`, `codeql`, `e2e`.
+- [ ] Every required check has **completed** green on the promotion PR before
+      merging — never merge while checks are queued/running. A merge before the
+      checks report leaves the promoted commit with no green Test artifact
+      (TEST-P2-010, PR #281); a stuck gate goes through
+      [RUNBOOK_EMERGENCY_MERGE.md](RUNBOOK_EMERGENCY_MERGE.md), never an
+      undocumented admin override.
 - [ ] `CHANGELOG.md` `[Unreleased]` section reflects the change.
 - [ ] Schema changes are in `supabase/migrations/`.
 - [ ] The deploy run's `validate` gate is green.
@@ -180,10 +186,11 @@ first:
 - `DO_API_TOKEN` returns HTTP 401; dev falls back to the `DROPLET_IP`
   environment variable, but prod has no fallback set. Rotate the token and/or
   set `DROPLET_IP` for prod.
-- Branch state: the last promotion was PR #168 (`main` @ `8d299b8d`,
-  2026-10-11); `develop` accumulates commits until the next promotion, so the
-  branches can point in either direction between releases — compare them with
-  `git log --oneline origin/main..origin/develop` (and the reverse) instead of
+- Branch state: the last promotion is PR #281 (`main` @ `7dd04023`,
+  2026-10-14); PR #278 (`9ba108b5`, 2026-10-13) preceded it. `main` currently
+  carries every `origin/develop` commit, but the branches can point in either
+  direction between releases — compare them with
+  `git log --oneline --left-right origin/main...origin/develop` instead of
   assuming. Scheduled `db-backup`/`db-restore-test`/`sbom` runs only fire from
   the default branch, so unpromoted `develop` work is not covered by them, and
   recent backup runs have failed — verify the database secrets before relying
