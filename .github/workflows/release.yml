@@ -142,6 +142,10 @@ jobs:
           SHA: ${{ steps.identity.outputs.sha }}
         run: |
           set -euo pipefail
+          # CI-P2-011 follow-up: the runner has no git identity, so the
+          # annotated tag failed with "empty ident name ... not allowed".
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "$TAG" -m "Release $TAG ($SHA)"
           git push origin "refs/tags/$TAG"
           gh release create "$TAG" \
