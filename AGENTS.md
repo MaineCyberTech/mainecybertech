@@ -96,14 +96,14 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,612 tests, all passing. 517 suites.**
+**4,621 tests, all passing. 517 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,958         | 174   | Jest + supertest                  |
-| Web     | 2,024         | 306   | Jest + Testing Library            |
+| API     | 1,959         | 174   | Jest + supertest                  |
+| Web     | 2,026         | 306   | Jest + Testing Library            |
 | SDK     | 325           | 5   | Jest (mocked fetch)               |
-| Worker  | 305           | 32   | Jest (env schema + task handlers) |
+| Worker  | 311           | 32   | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
 
 Suite counts and the E2E spec count are counted from the tree by

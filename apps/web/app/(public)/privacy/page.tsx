@@ -202,8 +202,10 @@ export default function PrivacyPage() {
             <p className="cyber-text mt-3 leading-relaxed">
               We retain your personal information only as long as necessary to fulfill the purposes
               described in this policy, or as required by law. Contact form submissions and visitor
-              session records are purged from our systems after 90 days. Copies forwarded to
-              Microsoft Teams and Atlassian JSM for lead tracking are retained under those
+              session records are purged from our systems after 90 days. Store quote requests
+              &mdash; the name, email and phone number you submit with a quote, together with the
+              items and notes &mdash; are purged from our systems after 90 days. Copies forwarded
+              to Microsoft Teams and Atlassian JSM for lead tracking are retained under those
               providers&apos; retention settings and may persist longer. First-party store analytics
               events contain no personal information and are also purged after 90 days. Google
               Analytics data is retained in accordance with our Google Analytics property&apos;s

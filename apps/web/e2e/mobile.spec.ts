@@ -55,22 +55,19 @@ test.describe("mobile viewport", () => {
     await page.setViewportSize(PHONE_VIEWPORT);
   });
 
-  // Pre-existing layout overflows found by this spec (not introduced here):
-  // /login scrollWidth 369 vs 360, /store 372 vs 360 and /store/quote 372 vs
-  // 360 in mobile WebKit (all three share the public marketing shell; mobile
-  // Chromium passes). The /store/quote failure is also intermittent — retry #2
-  // measured <=361. Tracked as a follow-up; `fixme` keeps the rest of the
-  // matrix enforcing no-overflow.
-  const KNOWN_OVERFLOW_ROUTES = new Set(["/login", "/store", "/store/quote"]);
-
+  // MOB-P3-006: the previous fixme exempted /login, /store and /store/quote
+  // from the earlier measurements (369/372 vs 360, intermittent on
+  // /store/quote). A fresh mobile-WebKit measurement of the deployed build
+  // (2026-10-14, 360x800) shows scrollWidth == innerWidth on all three, so the
+  // exemption looked stale. next/font swaps from the fallback font, whose
+  // metrics differ, so wait for the fonts to settle before measuring — the
+  // main source of run-to-run variance — and enforce every route: a real
+  // overflow must fail the gate rather than be exempted.
   for (const route of PUBLIC_ROUTES) {
     test(`${route} has no horizontal overflow`, async ({ page }) => {
-      test.fixme(
-        KNOWN_OVERFLOW_ROUTES.has(route),
-        `pre-existing overflow on ${route} (see follow-up)`,
-      );
       await page.goto(route);
       await page.waitForLoadState("domcontentloaded");
+      await page.evaluate(() => document.fonts.ready.then(() => undefined));
       const { scrollWidth, innerWidth } = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
         innerWidth: window.innerWidth,

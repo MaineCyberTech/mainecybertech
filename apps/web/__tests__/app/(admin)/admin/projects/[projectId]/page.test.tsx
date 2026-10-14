@@ -86,8 +86,6 @@ jest.mock("@/app/(admin)/admin/projects/[projectId]/actions", () => ({
   updateAdminTaskComment: jest.fn(),
   deleteAdminTaskComment: jest.fn(),
   markProjectTaskCommentsRead: jest.fn(),
-  addProjectUpdate: jest.fn(),
-  submitProjectUpdateForm: jest.fn(),
 }));
 
 const baseProject = {
