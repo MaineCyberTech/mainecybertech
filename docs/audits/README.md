@@ -72,6 +72,23 @@ Rules:
 - Findings verified as false positives stay in the report with the reason, so
   later runs do not re-raise them.
 
+### Size budget and retention (HYGIENE-P3-014)
+
+Each re-audit commits a full corpus copy, so the directory is deliberately
+bounded instead of growing unnoticed:
+
+- **Budget:** 12 canonical run directories, 180 files, 7 MiB.
+- **Guard:** `node scripts/check-audits-budget.mjs` reports the current corpus
+  in the shared unit-tests action. It is **advisory** — it prints a warning
+  annotation when the budget is exceeded but never blocks a run's publication
+  (the corpus is historical evidence). `--strict` exits 1 for local/operator
+  use.
+- **When the budget is crossed:** archive the oldest run directories — they
+  stay recoverable from git history — or raise the budget in this document in a
+  reviewed PR, mirroring the `prompts/` budget in `prompts/PROVENANCE.md`.
+- Runs are still **never overwritten**, and every surviving run stays indexed
+  (the link guard enforces both).
+
 ### Legacy manual packs
 
 The older manual packs use a flat `YYYY-MM-DD` (or `YYYY-MM-DD-<n>`) run name

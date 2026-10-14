@@ -139,22 +139,19 @@ visible; it never applies (`CI-P2-002`).
 ## Non-required and manual jobs
 
 - **Chromatic** — no job-level `continue-on-error` (CI-P2-006). A broken
-  Storybook build (`SB_BUILDER-WEBPACK5_0002`) fails the job, and once a
-  baseline exists a visual change fails it too (`exitZeroOnChanges: false`).
-  Since UX-P3-009 the a11y addon is also asserted per story
-  (`parameters.a11y.test: "error"` in `.storybook/preview.tsx`), so Chromatic
-  runs axe as part of the same build. It is **not** a required check yet:
-  promoting it in branch protection is a repo-admin action once the build
-  failure is fixed.
-  - **Known build break (TEST-P3-001):** `SB_BUILDER-WEBPACK5_0002` is the
-    webpack ≥ 5.101.3 / Storybook 8.6.x mismatch where the builder's
-    standalone `DefinePlugin` taps parser hooks created by Next's vendored
-    webpack (upstream: `storybookjs/storybook#32301`, fixed for Storybook ≥ 9
-    in `storybookjs/storybook#32306`). The honest options, both dependency
-    changes that need a lockfile regeneration in a dedicated PR: upgrade
-    Storybook past the fix, or pin `webpack` to 5.101.2 via the root
-    `package.json` `pnpm.overrides`. Until then the red Chromatic job is the
-    visible signal — do not re-add `continue-on-error`.
+  Storybook build fails the job, and once a baseline exists a visual change
+  fails it too (`exitZeroOnChanges: false`). Since UX-P3-009 the a11y addon is
+  also asserted per story (`parameters.a11y.test: "error"` in
+  `.storybook/preview.tsx`), so Chromatic runs axe as part of the same build.
+  It is **not** a required check yet: promoting it in branch protection is a
+  repo-admin action.
+  - **Storybook webpack pin (TEST-P3-001, DOC-P3-010):** the
+    `SB_BUILDER-WEBPACK5_0002` break (webpack ≥ 5.101.3 / Storybook 8.6.x
+    mismatch; upstream `storybookjs/storybook#32301`, fixed for Storybook ≥ 9
+    in `storybookjs/storybook#32306`) is **fixed by the webpack 5.101.2 pin**
+    (#280, root `package.json` `pnpm.overrides`). The post-pin Chromatic run
+    builds Storybook and fails only at the visual-diff step — the build break is
+    no longer the signal. Do not re-add `continue-on-error`.
 - **A11y breadth** — no `continue-on-error` (the old doc claim was wrong); a
   weekly/manual 68-route WCAG 2.2 scan that fails on critical/serious
   violations not recorded in `apps/web/e2e/a11y-baseline.json` (UX-P3-010).

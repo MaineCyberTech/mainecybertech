@@ -27,21 +27,19 @@ jobs:
     timeout-minutes: 30
     # Blocking (CI-P2-006): no job-level continue-on-error. A broken Storybook
     # build fails this job instead of being masked green, and once a baseline
-    # exists a visual change fails it too. The Storybook webpack build still
-    # fails with SB_BUILDER-WEBPACK5_0002 ("Cannot read properties of undefined
-    # (reading 'tap')") - a webpack-instance/plugin mismatch that needs a
-    # dedicated fix; the red job is now the honest signal for that debt. The
-    # job is not a required check yet: promoting it in branch protection is a
-    # repo-admin action once the build failure is fixed.
+    # exists a visual change fails it too. The webpack >= 5.101.3 / Storybook
+    # 8.6.x SB_BUILDER-WEBPACK5_0002 break is fixed by the root package.json
+    # pnpm.overrides pin of webpack 5.101.2 (#280): post-pin runs build
+    # Storybook and fail only at the Chromatic diff step. The job is not a
+    # required check yet: promoting it in branch protection is a repo-admin
+    # action.
     #
     # TEST-P3-001 root cause (webpack >= 5.101.3 + Storybook 8.6.x): the
-    # builder's standalone DefinePlugin taps parser hooks created by Next's
+    # builder's standalone DefinePlugin tapped parser hooks created by Next's
     # vendored webpack (storybookjs/storybook#32301; fixed for Storybook >= 9
-    # by storybookjs/storybook#32306). Remediation, once the lockfile can be
-    # regenerated: upgrade Storybook past the fix, or pin webpack to 5.101.2
-    # via the root package.json `pnpm.overrides` (then `pnpm install`). Both
-    # are dependency changes, so they need a dedicated PR - do not hand-edit
-    # pnpm-lock.yaml. Details: docs/CI.md ("Chromatic").
+    # by storybookjs/storybook#32306). The pin is the applied remediation;
+    # upgrading Storybook past the fix remains the follow-up option. Details:
+    # docs/CI.md ("Chromatic").
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:

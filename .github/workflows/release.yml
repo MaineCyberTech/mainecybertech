@@ -97,16 +97,21 @@ jobs:
             echo
             # shellcheck disable=SC2016 # literal backticks for git's format string
             fmt='- %s (`%h`)'
+            # REL-P2-006/CI-P2-011: `git log | head` dies with SIGPIPE (exit
+            # 141) under `set -o pipefail` once head closes the pipe; use
+            # --max-count so git terminates the walk itself.
             if [ -n "$prev" ]; then
               git log --no-merges --pretty="$fmt" "${prev}..HEAD"
             else
-              git log --no-merges --pretty="$fmt" HEAD | head -100
+              git log --no-merges --max-count=100 --pretty="$fmt" HEAD
             fi
             echo
             echo "## Migrations added in this release"
             echo
             if [ -n "$prev" ]; then range="${prev}..HEAD"; else range="HEAD"; fi
-            migs=$(git log --no-merges --diff-filter=A --name-only --pretty=format: "$range" -- supabase/migrations 2>/dev/null | sed '/^$/d' | sort -u | head -25)
+            # `sort -u | head` had the same SIGPIPE exposure; sed reads the
+            # whole stream and prints only the first 25 lines instead.
+            migs=$(git log --no-merges --diff-filter=A --name-only --pretty=format: "$range" -- supabase/migrations 2>/dev/null | sed '/^$/d' | sort -u | sed -n '1,25p')
             if [ -n "$migs" ]; then
               # shellcheck disable=SC2016 # literal backticks wrap each migration path
               printf '%s\n' "$migs" | sed 's/^/- `/; s/$/`/'
