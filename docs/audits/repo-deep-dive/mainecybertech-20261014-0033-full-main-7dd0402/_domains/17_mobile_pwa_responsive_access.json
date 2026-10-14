@@ -1,0 +1,119 @@
+{
+  "domain": "17_mobile_pwa_responsive_access",
+  "file": "17_mobile_pwa_responsive_access.md",
+  "area": "MOB",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T01:01:04Z",
+  "findings": [
+    {
+      "id": "MOB-P2-001",
+      "severity": "P2",
+      "title": "Service worker apps/web/public/sw.js is never registered, so PWA/offline support is inert",
+      "owner": "@web (with product decision)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: ServiceWorkerRegistrar registers /sw.js (production only) and is mounted in the root layout (apps/web/components/ServiceWorkerRegistrar.tsx:17-28, apps/web/app/layout.tsx:59); the registration and offline fallback are asserted in apps/web/e2e/mobile.spec.ts:202-257.",
+      "area": "MOB"
+    },
+    {
+      "id": "MOB-P2-002",
+      "severity": "P2",
+      "title": "sw.js cache strategy would persist authenticated API responses and all GET 200s if registered as-is",
+      "owner": "@web + security reviewer",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the worker only intercepts same-origin static destinations, never /api/ or non-GET, skips no-store/private responses, serves navigation network-first with a precached offline HTML page, and exposes a PURGE_CACHES message (apps/web/public/sw.js:110-170); served no-cache (next.config.mjs:34-39); E2E asserts no /api/ entries in Cache Storage (mobile.spec.ts:224-234).",
+      "area": "MOB"
+    },
+    {
+      "id": "MOB-P2-003",
+      "severity": "P2",
+      "title": "No mobile-viewport E2E or accessibility coverage (Desktop Chrome only)",
+      "owner": "@web / QA",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: playwright.config.ts adds mobile-chrome (Pixel 7) and mobile-safari (iPhone 13) projects running e2e/mobile.spec.ts, and e2e.yml installs chromium+webkit (playwright.config.ts:40-66, .github/workflows/e2e.yml:67); the spec asserts no overflow, 16px controls, touch targets, dialogs, SW caching, offline fallback and the notification panel.",
+      "area": "MOB"
+    },
+    {
+      "id": "MOB-P2-004",
+      "severity": "P2",
+      "title": "About 41% of form controls render below 16px and trigger iOS Safari focus zoom",
+      "owner": "@web",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: .cyber-input now enforces a mobile 16px floor (packages/ui/src/styles.css:72-74) and the two named public funnels use text-base sm:text-sm (QuoteBuilderClient.tsx:315, IntakeFormRenderer.tsx:153), with E2E checks on /store/quote and /contact (mobile.spec.ts:85-104). Remaining: 82 ad-hoc controls still declare text-sm/text-xs (76+6) out of 360, mostly admin pages (e.g. DmarcAnalyzeForm.tsx:39-73, PromoForm.tsx:108-250, ProposalForm.tsx:26-73, QbrGenerateForm.tsx:26-73, store/products/page.tsx:127-149); no app-wide lint guard and the mobile spec does not visit admin routes.",
+      "area": "MOB"
+    },
+    {
+      "id": "MOB-P2-005",
+      "severity": "P2",
+      "title": "Several modal dialogs have no max-height or vertical scroll and clip on small screens",
+      "owner": "@web",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: same remediation as UX-P2-003 \u2014 shared Dialog max-h-[90vh] overflow-y-auto (packages/ui/src/components/Dialog.tsx:116), migrated modals (PromoForm.tsx:76, CategoryForm.tsx:64, SupportCenterClient.tsx:330, CreateDocumentModal.tsx:41), 0 remaining scroll-less dialogs in a repo scan, mobile.spec.ts:259-300 asserts dialog scroll at phone width.",
+      "area": "MOB"
+    },
+    {
+      "id": "MOB-P3-001",
+      "severity": "P3",
+      "title": "PWA manifest ships only an SVG icon and is duplicated across three sources",
+      "owner": "@web",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the single manifest source app/manifest.ts declares 192/512 PNGs plus a 512 maskable icon (apps/web/app/manifest.ts:13-38); public/manifest.json and manifest.webmanifest are deleted (git ls-files: none); icons exist under apps/web/public/icons (verified PNG dimensions).",
+      "area": "MOB"
+    },
+    {
+      "id": "MOB-P3-002",
+      "severity": "P3",
+      "title": "Icon-only controls have touch targets well below the 44x44 recommendation",
+      "owner": "@web",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the named controls now carry >=44px hit areas \u2014 marketing hamburger p-3.5 (MarketingHeader.tsx:92-106), drawer/dialog closes p-3 (SidebarShell.tsx:116-130, StoreLayoutShell.tsx:67-80, Dialog.tsx:121-128), toast/CTA dismiss p-3.5 (ToastProvider.tsx:63, StickyMobileCta.tsx:51), ProductForm close p-3, mark-all-read p-3.5 (NotificationBell.tsx:321); mobile.spec.ts:177-200 asserts 44px on five of them.",
+      "area": "MOB"
+    },
+    {
+      "id": "MOB-P3-003",
+      "severity": "P3",
+      "title": "Notification dropdown is a fixed 320px panel anchored right-0 and clips on narrow phones",
+      "owner": "@web",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: below sm the panel is fixed right-2 top-16 w-[min(20rem,calc(100vw_-_2rem))] and returns to the bell-anchored dropdown at sm+ (NotificationBell.tsx:311-314); mobile.spec.ts:156-175 asserts it stays inside the viewport.",
+      "area": "MOB"
+    },
+    {
+      "id": "MOB-P3-004",
+      "severity": "P3",
+      "title": "themeColor is declared in the deprecated metadata export, so the theme-color meta tag is not emitted",
+      "owner": "@web",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: themeColor moved to `export const viewport` (apps/web/app/layout.tsx:37-41); mobile.spec.ts:105-109 asserts the meta tag content.",
+      "area": "MOB"
+    },
+    {
+      "id": "MOB-P3-005",
+      "severity": "P3",
+      "title": "favicon.ico contains SVG bytes and no apple-touch-icon is declared",
+      "owner": "@web",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: favicon.ico is a real multi-size ICO (file: MS Windows icon resource 16x16/32x32), apple-touch-icon.png is a 180x180 PNG and declared via metadata icons.apple (apps/web/app/layout.tsx:26-33); mobile.spec.ts:137-153 asserts ICO magic bytes and PNG signature.",
+      "area": "MOB"
+    },
+    {
+      "id": "MOB-P3-006",
+      "severity": "P3",
+      "title": "Mobile-WebKit horizontal overflow on /login, /store and /store/quote is acknowledged but fixme'd out of the mobile gate",
+      "owner": "@web / QA",
+      "target": "next quarter",
+      "status": "open",
+      "note": "NEW at 7dd0402: apps/web/e2e/mobile.spec.ts:55-71 records scrollWidth 369 vs 360 on /login, 372 vs 360 on /store and /store/quote in mobile WebKit (Chromium passes; /store/quote intermittent) and marks those assertions test.fixme, so the mobile no-overflow gate does not actually enforce them. Not independently re-measured in this audit (no browser run); evidence is the in-repo measurement and the exclusion. Fix: close the overflow on the public marketing shell and remove the KNOWN_OVERFLOW_ROUTES exemptions so the mobile project enforces them.",
+      "area": "MOB"
+    }
+  ]
+}

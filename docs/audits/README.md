@@ -110,7 +110,8 @@ are not part of the canonical contract above.
 | repo-deep-dive (legacy naming)     | 20261004-0700-main-178b91c                                               | [`repo-deep-dive/20261004-0700-main-178b91c/INDEX.md`](./repo-deep-dive/20261004-0700-main-178b91c/INDEX.md)                                         |
 | repo-deep-dive (legacy naming)     | mainecybertech-20261004-full-main-9c0b88c                                | [`repo-deep-dive/mainecybertech-20261004-full-main-9c0b88c/INDEX.md`](./repo-deep-dive/mainecybertech-20261004-full-main-9c0b88c/INDEX.md)           |
 | repo-deep-dive                     | mainecybertech-20261011-0426-full-main-8d299b8                            | [`repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/INDEX.md`](./repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/INDEX.md) |
-| repo-deep-dive (fast verification) | mainecybertech-20261013-0126-fast-develop-905ed63 (latest)               | [`repo-deep-dive/mainecybertech-20261013-0126-fast-develop-905ed63/INDEX.md`](./repo-deep-dive/mainecybertech-20261013-0126-fast-develop-905ed63/INDEX.md) |
+| repo-deep-dive (fast verification) | mainecybertech-20261013-0126-fast-develop-905ed63                        | [`repo-deep-dive/mainecybertech-20261013-0126-fast-develop-905ed63/INDEX.md`](./repo-deep-dive/mainecybertech-20261013-0126-fast-develop-905ed63/INDEX.md) |
+| repo-deep-dive (full re-audit)     | mainecybertech-20261014-0033-full-main-7dd0402 (latest)                  | [`repo-deep-dive/mainecybertech-20261014-0033-full-main-7dd0402/INDEX.md`](./repo-deep-dive/mainecybertech-20261014-0033-full-main-7dd0402/INDEX.md) |
 | repo-deep-dive                     | cross-repo post-merge re-audit (2026-10-04; report, not a run directory) | [`repo-deep-dive/REAUDIT_REPORT_20261004.md`](./repo-deep-dive/REAUDIT_REPORT_20261004.md)                                                           |
 
 The live remediation status for open items lives in
