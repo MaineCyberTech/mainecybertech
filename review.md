@@ -102,11 +102,11 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,612 tests, all passing. 517 suites.**
+**4,616 tests, all passing. 518 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,958         | 174   | Jest + supertest                  |
+| API     | 1,962         | 175   | Jest + supertest                  |
 | Web     | 2,024         | 306   | Jest + Testing Library            |
 | SDK     | 325           | 5   | Jest (mocked fetch)               |
 | Worker  | 305           | 32   | Jest (env schema + task handlers) |
@@ -176,7 +176,7 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319 | Admin 203, Portal 86, Public 29, `forbidden` 1 |
 | Web components            | 128 | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 158 | `supabase/migrations/` (latest: 5302460_drop_portal_module_settings                                                                                              |
+| SQL migrations            | 159 | `supabase/migrations/` (latest: 5302463_fix_notification_key_dedup_index                                                                                              |
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 30 | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 625 | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
