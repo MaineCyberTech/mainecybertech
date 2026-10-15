@@ -262,6 +262,44 @@ services:
       - /app/apps/web/.next/cache
 
   # ===== Observability (internal only — no published ports) =====
+  # Host metrics (CPU, memory, root filesystem, load). Before this the local
+  # stack had no host signal at all: the 2026-10-15 review found the dev
+  # droplet at 98% disk (615 MB free) with every service-level rule green.
+  # Internal only — no published ports; the series are host resource data, not
+  # tenant data, so Prometheus scrapes this one without a token (unlike the
+  # API/worker /metrics endpoints).
+  node-exporter:
+    image: prom/node-exporter:v1.12.1@sha256:1b4e4438faca4dd7e001dd445d161a4a2091b0fededa84093b3a8dfeae1f1be0
+    logging: *default-logging
+    <<: *security
+    volumes:
+      # Host procfs/sysfs/rootfs, read-only. The bind-mounted procfs exposes
+      # the host's /proc/1/mounts, which is where the filesystem collector
+      # reads the real mount table from.
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro,rslave
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      # Root filesystem and real mounts only; the container runtime's overlay
+      # mounts and pseudo-filesystems would otherwise dominate the series.
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run|var/lib/docker/.+)($|/)
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    mem_limit: 64m
+    # Fork-bomb blast radius (CTR-P2-005), same as every other service.
+    pids_limit: 128
+    read_only: true
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9100/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
   prometheus:
     image: prom/prometheus:v3.5.1@sha256:4b05278adfb2e2781063781edd7ca88cc649ea5270cea1696618886a37eeb298
     logging: *default-logging

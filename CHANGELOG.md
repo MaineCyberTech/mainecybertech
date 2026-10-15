@@ -101,6 +101,15 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   gates `wcag22aa` (`target-size`, `select-name`) in addition to
   `critical`/`serious`; the seven pages fixed on 2026-10-02 were promoted from
   the breadth triage set (`43573d12`, `62861370`).
+- Host-resource monitoring for the droplet stack: a digest-pinned
+  `node-exporter` service joins `infra/digitalocean/docker-compose.yml`,
+  Prometheus scrapes it (`node-exporter:9100`, deliberately untokenised —
+  internal-only, host data), and three rules cover the host failure modes —
+  `MCTHostDiskSpaceLow` (<15% free), `MCTHostDiskSpaceCritical` (<7%) and
+  `MCTHostMemoryPressure` (>90% used) — with `promtool` unit tests
+  (`prometheus.rules.test.yml` cases 46–50). Motivated by the 2026-10-15
+  review finding the dev droplet at 98% disk with every service-level rule
+  green.
 
 ### Security
 

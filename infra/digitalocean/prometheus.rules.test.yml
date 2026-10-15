@@ -704,3 +704,91 @@ tests:
       - eval_time: 20m
         alertname: MCTRedisOperationFailures
         exp_alerts: []
+
+  # CASE 46: a root filesystem below 15% free MUST fire MCTHostDiskSpaceLow.
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4",device="/dev/vda1"}'
+        values: '10+0x40'
+      - series: 'node_filesystem_size_bytes{mountpoint="/",fstype="ext4",device="/dev/vda1"}'
+        values: '100+0x40'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: MCTHostDiskSpaceLow
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              mountpoint: "/"
+              fstype: ext4
+              device: /dev/vda1
+            exp_annotations:
+              summary: "Droplet root filesystem is below 15% free"
+              description: "The droplet's root filesystem has been below 15% free space for 15 minutes. Prune Docker images and volumes, vacuum the journal and check /tmp - a full root filesystem takes down every container on this host."
+
+  # CASE 47: a healthy root filesystem MUST stay quiet on both disk rules
+  # (the 15% warning must not imply the 7% critical).
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4",device="/dev/vda1"}'
+        values: '50+0x40'
+      - series: 'node_filesystem_size_bytes{mountpoint="/",fstype="ext4",device="/dev/vda1"}'
+        values: '100+0x40'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: MCTHostDiskSpaceLow
+        exp_alerts: []
+      - eval_time: 30m
+        alertname: MCTHostDiskSpaceCritical
+        exp_alerts: []
+
+  # CASE 48: below 7% free MUST fire MCTHostDiskSpaceCritical (critical).
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4",device="/dev/vda1"}'
+        values: '5+0x40'
+      - series: 'node_filesystem_size_bytes{mountpoint="/",fstype="ext4",device="/dev/vda1"}'
+        values: '100+0x40'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: MCTHostDiskSpaceCritical
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              team: platform
+              mountpoint: "/"
+              fstype: ext4
+              device: /dev/vda1
+            exp_annotations:
+              summary: "Droplet root filesystem is below 7% free"
+              description: "The droplet's root filesystem has been below 7% free space for 10 minutes: containers can fail to write, and Docker pulls / deploys may fail. Free space immediately (Docker prune, journal vacuum, /tmp) and follow docs/PLATFORM_FAILURE_RUNBOOKS.md."
+
+  # CASE 49: more than 90% of memory in use MUST fire MCTHostMemoryPressure.
+  - interval: 1m
+    input_series:
+      - series: 'node_memory_MemAvailable_bytes'
+        values: '50000000+0x40'
+      - series: 'node_memory_MemTotal_bytes'
+        values: '1000000000+0x40'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: MCTHostMemoryPressure
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+            exp_annotations:
+              summary: "Droplet memory pressure above 90%"
+              description: "Less than 10% of the droplet's memory has been available for 15 minutes. Check the container memory limits (docker stats), swap usage and any recent leaks; sustained pressure ends in OOM kills."
+
+  # CASE 50: healthy memory MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'node_memory_MemAvailable_bytes'
+        values: '600000000+0x40'
+      - series: 'node_memory_MemTotal_bytes'
+        values: '1000000000+0x40'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: MCTHostMemoryPressure
+        exp_alerts: []
