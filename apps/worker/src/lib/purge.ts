@@ -30,7 +30,19 @@ export interface PurgeOutcome {
   batches: number;
   /** True when MAX_BATCHES was reached before the backlog was drained. */
   truncated: boolean;
+  /** RES-P3-011: true when the task deadline signal stopped the purge early. */
+  aborted?: boolean;
   error?: string;
+}
+
+export interface PurgeOptions {
+  /**
+   * RES-P3-011: cooperative cancellation. The task registry aborts this signal
+   * when the handler exceeds WORKER_TASK_TIMEOUT_MS; checking it between
+   * batches lets a long purge stop instead of running on after the task was
+   * already failed.
+   */
+  signal?: AbortSignal;
 }
 
 /**
@@ -45,11 +57,19 @@ export async function purgeInBatches(
   supabase: SupabaseClient<any, any, any>,
   table: string,
   cutoffIso: string,
+  options: PurgeOptions = {},
 ): Promise<PurgeOutcome> {
   let deleted = 0;
   let batches = 0;
 
   while (batches < MAX_BATCHES) {
+    // Stop before starting another batch once the deadline passed: the task
+    // was already failed by the registry, and continuing would keep issuing
+    // deletes for a task nobody is waiting for (RES-P3-011).
+    if (options.signal?.aborted) {
+      return { table, deleted, batches, truncated: false, aborted: true };
+    }
+
     const { data: batch, error: selectError } = await supabase
       .from(table)
       .select("id")

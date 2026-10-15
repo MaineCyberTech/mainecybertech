@@ -1,0 +1,159 @@
+{
+  "domain": "31_search_indexing_privacy_audit",
+  "file": "31_search_indexing_privacy_audit.md",
+  "area": "SEARCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T00:52:15Z",
+  "findings": [
+    {
+      "id": "SEARCH-P1-001",
+      "severity": "P1",
+      "title": "`sanitizeSearchTerm` does not strip PostgREST `.` operator separators",
+      "owner": "search/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/api/src/lib/search.ts:26-36 strips `,().\"\\%*`, collapses whitespace and caps at 100 chars; sanitize-search.test.ts covers a.eq.b / a*b / injection strings. Residual (documented): literal dots are intentionally unsearchable.",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P1-002",
+      "severity": "P1",
+      "title": "Admin global search exposes profile PII and never tenant-scopes the organizations query",
+      "owner": "search/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: organizations are scoped to the caller's orgs unless a true super admin (apps/api/src/routes/search.ts:191-201) and the PII projection is gated to super admins (search.ts:110-115,120-140); regression tests search.test.ts, search-tenant-scope.test.ts.",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P2-001",
+      "severity": "P2",
+      "title": "Raw search terms persisted in plaintext `audit_logs.metadata`",
+      "owner": "search/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: search.ts:235-261 audits only a truncated SHA-256 queryHash, queryLength and result counts - never the raw term.",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P2-002",
+      "severity": "P2",
+      "title": "Portal search omits documents despite SDK and documentation contract",
+      "owner": "search/backend + SDK",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/api/src/routes/search-portal.ts:69-88 queries documents with the can_read_document visibility filter; SDK PortalSearchResult includes documents (packages/sdk/src/search.ts:38-42); docs/modules/search-portal.md documents it.",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P2-003",
+      "severity": "P2",
+      "title": "Admin search UI silently discards the documents result set",
+      "owner": "web team",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: AdminGlobalSearch.tsx:19-27,57-65,76 renders the documents group and counts it; PortalGlobalSearch.tsx:158-168 renders portal documents too.",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P2-004",
+      "severity": "P2",
+      "title": "No search pagination or result counts; hard 5-result ceiling",
+      "owner": "search/backend + web + SDK",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the admin route accepts ?limit (default 5, cap 25) and returns per-entity exact counts (search.ts:32-33,265-285), surfaced in the SDK (search.ts:20-40) and OpenAPI (spec.ts:1077-1095). Remaining: the portal route still uses a fixed RESULT_LIMIT=5 with no counts/offset (search-portal.ts:18,94-100), documented as fixed-5 in the SDK (search.ts:37) and docs/modules/search-portal.md.",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P2-005",
+      "severity": "P2",
+      "title": "Search query analytics metric is dead and the analytics summary RPC is missing",
+      "owner": "search/backend + SRE",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: recordSearchQuery() is called by both routes (search.ts:263, search-portal.ts:92) and get_analytics_summary is defined service-role-only in supabase/migrations/5302440_search_analytics_summary.sql:20-33.",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P2-006",
+      "severity": "P2",
+      "title": "Prefix/wildcard mismatch: no btree on prefix columns and no full-text (`tsvector`) search",
+      "owner": "data/platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: migration 5302456 adds btree + trigram indexes (organizations.slug/name, profiles.full_name, documents.name/mime_type) and stored generated tsvector columns + GIN for tickets/projects/documents; both routes OR a `search_vector.wfts(english)` branch (search.ts:54-59, search-portal.ts:35-37).",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P2-007",
+      "severity": "P2",
+      "title": "Typeahead calls full search endpoints without rate limiting or a dedicated autocomplete surface",
+      "owner": "search/backend + web",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: rateLimitSearch (60/min per user/ip, middleware/rate-limit.ts:69-77) is mounted first on both routes (search.ts:18-20, search-portal.ts:12-14).",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P2-008",
+      "severity": "P2",
+      "title": "Admin global search returns private/internal documents without applying the `can_read_document` visibility filter",
+      "owner": "search/backend + security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: admin search filters documents through filterReadableDocuments with a bounded over-fetch (search.ts:166-185,228-233) and reports the readable subset as the count for non-super-admins (search.ts:275-283); the code mirror matches the SQL helper 5302129 (lib/document-visibility.ts:186-230); tests search-document-visibility.test.ts.",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P2-009",
+      "severity": "P2",
+      "title": "Search router bypasses the org-pinned admin check, so a tenant admin can read another tenant's search results",
+      "owner": "API platform + security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the middleware order is requireAuth, requireOrgAccess, requireAdmin (search.ts:22-27) so the org-pinned admin check applies; an explicit organization narrows the search and an absent org never widens it (search.ts:101-108); regression tests search-org-pin.test.ts.",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P3-001",
+      "severity": "P3",
+      "title": "Soft-delete columns are defined but never used by queries or deletes",
+      "owner": "data/platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the unused deleted_at/deleted_by columns and indexes were dropped (supabase/migrations/5302432_drop_unused_soft_delete_columns.sql) and no runtime code reads them.",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P3-002",
+      "severity": "P3",
+      "title": "Search module documentation is stale relative to the code",
+      "owner": "search/backend (docs)",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/modules/search.md documents scoping, limit/counts, FTS, visibility filtering and the hashed audit; docs/modules/search-portal.md matches the route (fixed-5, documents, rate limit, metric).",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P3-003",
+      "severity": "P3",
+      "title": "Search SDK and OpenAPI contracts do not cover the implemented response (documents, counts, limit)",
+      "owner": "SDK/API platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: packages/sdk/src/search.ts:1-80 models SearchDocument/SearchCounts/limit and PortalSearchResult documents; apps/api/src/openapi/spec.ts:1007-1107 documents both routes' documents/counts shapes.",
+      "area": "SEARCH"
+    },
+    {
+      "id": "SEARCH-P3-004",
+      "severity": "P3",
+      "title": "Portal search queries are not audit-logged, unlike the admin search route",
+      "owner": "search/backend",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 7dd0402: apps/api/src/routes/search-portal.ts has no logAuditEvent call (contrast search.ts:243-261 which records a hashed query + result counts). Portal searches are the highest-volume data-access path and cannot be reconstructed for an incident or DSAR response. Recommend the same privacy-preserving audit event (queryHash/queryLength/resultCounts, never the raw term).",
+      "area": "SEARCH"
+    }
+  ]
+}

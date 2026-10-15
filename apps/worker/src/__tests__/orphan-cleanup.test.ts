@@ -137,6 +137,22 @@ describe("orphanCleanup task", () => {
     expect(result).toEqual({ ok: true });
   });
 
+  it("stops before listing or removing anything at the task deadline [RES-P3-011]", async () => {
+    active = mockClient({
+      filesByBucket: { documents: [{ name: "orgs/org-1/orphan.pdf" }], avatars: [] },
+    });
+    const controller = new AbortController();
+    controller.abort();
+
+    const result = await orphanCleanup({}, { signal: controller.signal });
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/aborted/);
+    // The bucket was not listed and nothing was removed.
+    expect(active.storageFrom).not.toHaveBeenCalled();
+    expect(active.removeCalls.documents ?? []).toEqual([]);
+  });
+
   it("returns { ok: true } and removes nothing when all files are referenced", async () => {
     active = mockClient({
       filesByBucket: { documents: [{ name: "doc-1.pdf" }, { name: "doc-2.pdf" }] },

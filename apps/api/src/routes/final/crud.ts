@@ -23,6 +23,13 @@ export function snake(s: string) {
   return s.replace(/[A-Z]/g, (l) => `_${l.toLowerCase()}`);
 }
 
+/**
+ * ACM-P3-008 / SEC-P3-013: the read routes carry `requirePermission(module,
+ * "view")` like every other module surface. The router-level
+ * requireAuth+requireOrgAccess only proved membership; without the view gate
+ * any approved org member (including client roles with no view grant) could
+ * read the module's rows.
+ */
 export function registerCrud(
   router: Router,
   path: string,
@@ -30,31 +37,35 @@ export function registerCrud(
   schema: z.ZodTypeAny,
   permissionModule: string = path,
 ) {
-  router.get(`/${path}`, async (req, res, next) => {
-    try {
-      const sb = getScopedClient(req, permissionModule, "read");
-      const pg = Math.max(1, queryInt(req.query.page, 1));
-      const lm = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
-      const q = sb
-        .from(table)
-        .select("*", { count: listCountMode(req.query) })
-        .eq("organization_id", req.query.organization_id as string);
-      const { data, error, count } = await q
-        .order("created_at", { ascending: false })
-        .range((pg - 1) * lm, (pg - 1) * lm + lm - 1);
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      res.json(
-        success({
-          items: data ?? [],
-          total: count ?? 0,
-          page: pg,
-          limit: lm,
-        } as PaginatedResult<unknown>),
-      );
-    } catch (e) {
-      next(e);
-    }
-  });
+  router.get(
+    `/${path}`,
+    requirePermission(permissionModule, "view"),
+    async (req, res, next) => {
+      try {
+        const sb = getScopedClient(req, permissionModule, "read");
+        const pg = Math.max(1, queryInt(req.query.page, 1));
+        const lm = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
+        const q = sb
+          .from(table)
+          .select("*", { count: listCountMode(req.query) })
+          .eq("organization_id", req.query.organization_id as string);
+        const { data, error, count } = await q
+          .order("created_at", { ascending: false })
+          .range((pg - 1) * lm, (pg - 1) * lm + lm - 1);
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        res.json(
+          success({
+            items: data ?? [],
+            total: count ?? 0,
+            page: pg,
+            limit: lm,
+          } as PaginatedResult<unknown>),
+        );
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
   router.post(`/${path}`, requirePermission(permissionModule, "create"), async (req, res, next) => {
     try {
       const p = schema.parse(req.body) as Record<string, unknown>;
@@ -83,21 +94,25 @@ export function registerCrud(
     }
   });
 
-  router.get(`/${path}/:id`, async (req, res, next) => {
-    try {
-      const sb = getScopedClient(req, permissionModule, "read");
-      const { data, error } = await sb
-        .from(table)
-        .select("*")
-        .eq("id", String(req.params.id))
-        .eq("organization_id", req.query.organization_id as string)
-        .single();
-      if (error || !data) throw new AppError("NOT_FOUND", "Record not found", 404);
-      res.json(success(data));
-    } catch (e) {
-      next(e);
-    }
-  });
+  router.get(
+    `/${path}/:id`,
+    requirePermission(permissionModule, "view"),
+    async (req, res, next) => {
+      try {
+        const sb = getScopedClient(req, permissionModule, "read");
+        const { data, error } = await sb
+          .from(table)
+          .select("*")
+          .eq("id", String(req.params.id))
+          .eq("organization_id", req.query.organization_id as string)
+          .single();
+        if (error || !data) throw new AppError("NOT_FOUND", "Record not found", 404);
+        res.json(success(data));
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
 
   router.patch(
     `/${path}/:id`,

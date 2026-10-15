@@ -21,18 +21,19 @@
 
 ## Backup Strategy
 
-- **Database**: Daily `pg_dump` to S3 (30-day retention, STANDARD_IA, AES-256-CBC encrypted when `BACKUP_ENCRYPTION_KEY` is set, optional offsite copy via `S3_OFFSITE_BUCKET`). Supabase PITR (7-day). Scheduled runs target **dev** by default — see Production backup coverage below.
+- **Database**: Daily `pg_dump` to S3 (30-day retention, `STANDARD` storage class — Spaces rejects other classes, override with `S3_STORAGE_CLASS` on real AWS S3; AES-256-CBC encrypted when `BACKUP_ENCRYPTION_KEY` is set; optional offsite copy via `S3_OFFSITE_BUCKET`). Supabase PITR (7-day). Scheduled runs target **dev** by default — see Production backup coverage below.
 - **Storage**: Daily mirror of `documents`/`avatars`/`logos` to S3/Spaces (`storage-backup.yml`, encrypted, same 30-day retention).
 - **Terraform state**: DO Spaces (S3-compatible) with versioning enabled — now enforced in code by `digitalocean_spaces_bucket.terraform_state` (`versioning { enabled = true }` in `infra/terraform/digitalocean/state-bucket.tf`, DR-P2-005), not a manual bucket setting. The S3 native lock file (`use_lockfile`) lives in the same bucket (`terraform.tfstate.tflock`), so versioning covers the state and lock objects; this backend does not use DynamoDB locking.
 - **Docker images**: GHCR with SHA-tagged immutable images. Rollback by redeploying a previous SHA tag.
 
 ### Production backup coverage (DATA-P2-010)
 
-`db-backup.yml` and `db-restore-test.yml` are prod-capable:
+All four backup/restore workflows — `db-backup.yml`, `db-restore-test.yml`,
+`storage-backup.yml` and `storage-restore-test.yml` — are prod-capable:
 
 - **Manual prod run**: dispatch `environment: prod` **from `main`**. The job attaches the approval-gated `prod-approval` environment (required reviewers must be configured in GitHub for the gate to be real).
-- **Scheduled prod run**: set the `PROD_BACKUP_ENABLED` repository variable to `true`. The daily backup / weekly restore test then attach `prod-backup` instead of `dev` (one schedule target at a time; dispatch `environment: dev` manually to keep the dev runs). Create `prod-backup` with the prod backup secrets and **no** required reviewers — an approval-gated environment would leave the unattended run waiting for a human.
-- **Operator dependency (cannot be set from the repo)**: `SUPABASE_DB_URL` (prod), `BACKUP_ENCRYPTION_KEY`, `AWS_*`/`DO_SPACES_*` and `S3_BUCKET`/`S3_PREFIX` must be provisioned in the environment the job attaches — see `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`. Until then, S3 dumps cover dev only and this section is the record of that gap.
+- **Scheduled prod run**: set the `PROD_BACKUP_ENABLED` repository variable to `true`. The daily database/storage backups and the weekly restore tests then attach `prod-backup` instead of `dev` (one schedule target at a time; dispatch `environment: dev` manually to keep the dev runs). Create `prod-backup` with the prod backup secrets and **no** required reviewers — an approval-gated environment would leave the unattended run waiting for a human.
+- **Operator dependency (cannot be set from the repo)**: `SUPABASE_DB_URL` (prod), `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` (prod storage), `BACKUP_ENCRYPTION_KEY`, `AWS_*`/`DO_SPACES_*` and `S3_BUCKET`/`S3_PREFIX` must be provisioned in the environment the job attaches — see `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`. Until then, the backups cover dev only and this section is the record of that gap (DR-P2-009 for uploaded files).
 
 ### Platform backup heartbeat (DR-P2-008)
 

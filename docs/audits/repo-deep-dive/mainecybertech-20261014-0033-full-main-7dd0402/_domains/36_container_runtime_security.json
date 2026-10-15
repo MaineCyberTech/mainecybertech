@@ -1,0 +1,179 @@
+{
+  "domain": "36_container_runtime_security",
+  "file": "36_container_runtime_security.md",
+  "area": "CTR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T01:05:00Z",
+  "findings": [
+    {
+      "id": "CTR-P1-001",
+      "severity": "P1",
+      "title": "No Container Image Vulnerability Scan in CI",
+      "owner": "platform/infrastructure",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: Trivy image scans (CRITICAL/HIGH, exit 1) in deploy-do.yml build jobs and build-push.yml; Dockerfiles also drop npm/corepack and apk-upgrade libcrypto3/libssl3.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P1-002",
+      "severity": "P1",
+      "title": "SBOM Is Lockfile-Only, Not an Image SBOM or Attestation",
+      "owner": "platform/infrastructure",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: per-image Trivy CycloneDX SBOMs bound to the pushed digest and attested (deploy-do.yml:240-274 etc.).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P1-003",
+      "severity": "P1",
+      "title": "Unsigned Images With No Provenance/Attestation",
+      "owner": "platform/infrastructure",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: build-provenance attestations per image + fail-closed verification before deploy (deploy-do.yml:430-520); docs/CI.md:60-123 documents the policy.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P2-001",
+      "severity": "P2",
+      "title": "Pinned Base-Image Digests Have No Automated Refresh",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: .github/dependabot.yml has weekly docker entries for /, /apps/api, /apps/web, /apps/worker, /infra/digitalocean, so Dockerfile + compose digest pins get PRs.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P2-002",
+      "severity": "P2",
+      "title": "Local Compose Ships Default Credentials and Repo-Wide Bind Mount",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "at 7dd0402 the e2e service is profile-gated (docker-compose.yml:64-94) and requires E2E_ADMIN_PASSWORD with no default (:86, `${E2E_ADMIN_PASSWORD:?...}`); residual: the e2e runner still bind-mounts the whole repo (.:/app, :78) - deliberate and documented (the harness reads the tree), explicit opt-in only.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P2-003",
+      "severity": "P2",
+      "title": "Redis Password Exposed on Process Argument Vector",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: infra/digitalocean/docker-compose.yml:44-71 runs redis as the redis user via redis-entrypoint.sh, passes REDIS_PASSWORD by environment only, and the healthcheck uses REDISCLI_AUTH (not -a).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P2-004",
+      "severity": "P2",
+      "title": "Deploy Health Gate Ignores Worker Health",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: worker has a compose healthcheck (:220-230) and the deploy gate asserts redis/api/worker/web/alertmanager/prometheus/caddy (deploy-do.yml:1059-1085) plus an SSH worker /health probe (:1170-1195).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P2-005",
+      "severity": "P2",
+      "title": "No Container Resource/PID Limits Beyond Memory",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: every service sets mem_limit + pids_limit (redis 48m/128; api/worker/web/prometheus 256m/256; caddy 64m/128; alertmanager 128m/128); CPU caps deliberately unset on the 1-vCPU box (documented).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P2-006",
+      "severity": "P2",
+      "title": "Deploy verifies attestations by digest but pulls and runs images by tag (TOCTOU)",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: verify-attestations outputs digests; deploy exports MCT_*_IMAGE=<repo>@sha256:... and refuses to run without them (:894-905); compose prefers the digest refs.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-001",
+      "severity": "P3",
+      "title": "Missing `--start-period` on API and Worker Healthchecks",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: start_period on api/worker/prometheus/alertmanager/caddy compose healthchecks (docker-compose.yml:156-157, :228-230, :303, :369, :399).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-002",
+      "severity": "P3",
+      "title": "Broad `.dockerignore` `*.md`/`*.txt`/`*.log` Could Mask Needed Build Files",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: .dockerignore uses explicit narrow paths (no blanket *.md/*.txt/*.log), with a comment on why.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-003",
+      "severity": "P3",
+      "title": "Caddy runs with a writable rootfs and a writable Caddyfile bind mount",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: caddy read_only:true + tmpfs /tmp, Caddyfile/certs mounted :ro, cap_add limited to NET_BIND_SERVICE (docker-compose.yml:372-408).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-004",
+      "severity": "P3",
+      "title": "Prometheus has no healthcheck and observability is outside the deploy health gate",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: prometheus /-/ready healthcheck (:298-303) and alertmanager healthcheck; both in GATED_SERVICES (deploy-do.yml:1059).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-005",
+      "severity": "P3",
+      "title": "Image-level HEALTHCHECK for api and worker lacks `--start-period`",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/api/Dockerfile, apps/worker/Dockerfile and apps/web/Dockerfile HEALTHCHECKs all carry --start-period.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-006",
+      "severity": "P3",
+      "title": "infra/digitalocean operator docs and `.env.example` drift from the deployed stack",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: infra/digitalocean/.env.example includes METRICS_TOKEN, ALERTMANAGER_* and MCT_*_IMAGE/QUEUE_BACKEND (:99-131); README.md documents the current stack, pins and refresh procedures.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-007",
+      "severity": "P3",
+      "title": "Third-party pinned images are not vulnerability-scanned in CI",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: third-party-image-scan.yml resolves the four pinned refs from compose, fails on unpinned literal refs, Trivy-scans each weekly (CRITICAL/HIGH fixable) and emits SBOMs + ntfy/Slack alert.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-008",
+      "severity": "P3",
+      "title": "No Dockerfile lint gate in CI",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: hadolint gate wired in test.yml:60 and validate.yml:62 (.github/actions/dockerfile-lint, digest-pinned image, --failure-threshold warning).",
+      "area": "CTR"
+    }
+  ]
+}

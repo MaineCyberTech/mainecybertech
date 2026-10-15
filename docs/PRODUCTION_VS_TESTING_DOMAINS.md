@@ -45,7 +45,14 @@ can validate changes without touching production:
 
 ### Verification
 
-- `curl -sSf https://api.mainecybertech.us/health` and
-  `curl -sSf https://api.mainecybertech.com/health` must return 200 with the
+- `curl -sSf https://api.mainecybertech.us/health` must return 200 with the
   expected `status`.
-- The scheduled `external-uptime-probe.yml` exercises both zones.
+- The prod API is currently only reachable through the web host:
+  `curl -sSf https://app.mainecybertech.com/api/v1/store/products` returns 200.
+  The `api.mainecybertech.com` DNS record still resolves to a retired
+  non-droplet endpoint that answers 404 for every path (OBS-P2-017); repointing
+  it at the prod droplet is operator work. Until then,
+  `curl https://api.mainecybertech.com/health` returns 404 even though the API
+  is healthy — that is a DNS/deployment-path gap, not an API outage.
+- The scheduled `external-uptime-probe.yml` exercises both zones; it targets
+  the working prod API path above until the API hostname is repointed.

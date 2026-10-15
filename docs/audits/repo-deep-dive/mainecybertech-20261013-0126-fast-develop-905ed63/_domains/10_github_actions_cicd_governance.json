@@ -1,0 +1,270 @@
+{
+  "domain": "10_github_actions_cicd_governance",
+  "file": "10_github_actions_cicd_governance.md",
+  "area": "CI",
+  "agent": "subagent",
+  "emitted_at": "2026-10-13T01:38:42Z",
+  "findings": [
+    {
+      "id": "CI-P1-001",
+      "severity": "P1",
+      "title": "Production application deploys have no working manual-approval gate",
+      "owner": "platform/CI owner",
+      "target": "this week",
+      "status": "still-open",
+      "note": "code side complete at 905ed63: prod-approval attached on deploy-do.yml:639, supabase-migrations.yml:34 (BP-P3-003), terraform-do.yml apply and load-test.yml:61; docs still state no required reviewers are configured (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:12-14) \u2014 operator provisioning required.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P1-002",
+      "severity": "P1",
+      "title": "Branch-protection-as-code has a likely-mismatched required check and permits admin bypass",
+      "owner": "platform/CI owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: branch-protection main.json (8 contexts) / develop.json (6) resolve to emitted check-runs; enforce_admins + code-owner reviews set; guards wired (unit-tests action.yml:144,154) with positive/negative fixtures.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P1-003",
+      "severity": "P1",
+      "title": "Production deploy path cannot run; prod environment lacks secrets and protection rules",
+      "owner": "@owner",
+      "target": "this week",
+      "status": "still-open",
+      "note": "prod secrets remain unprovisioned per docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:187-220 and docs/RELEASING.md:109-176; operator-gated (cannot be set from the repo).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "World-open DigitalOcean firewall mutation with no approval and unvalidated udp_port",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: no firewall/wireguard workflow exists in .github/workflows.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-002",
+      "severity": "P2",
+      "title": "Deploy-gate secret scan is a no-op on pushes to main",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: secret-scan composite uses github.event.before with a zero-SHA fallback; used by validate.yml and test.yml.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-003",
+      "severity": "P2",
+      "title": "Production approval environment documented as having no required reviewers",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: docs state the truth (matrix:12-14, RELEASING.md:109-140); the operational gap is tracked by CI-P1-001/003.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-004",
+      "severity": "P2",
+      "title": "DB restore test reports success without asserting restore integrity",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: db-restore-test.yml:197-260 fails on table/row/migration/freshness/RLS floors.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-005",
+      "severity": "P2",
+      "title": "Infrastructure changes are no longer gated in CI (terraform-do is manual-dispatch only)",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "terraform-do.yml is manual-dispatch + an approval-gated apply with world-open SSH rejection; PR/push plan triggers remain off pending DO token rotation + environment protection (documented).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-006",
+      "severity": "P2",
+      "title": "Chromatic visual-regression job is permanently non-blocking",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: chromatic.yml job-level continue-on-error removed, exitZeroOnChanges:false. Residual: the Storybook build still fails (documented webpack/Storybook debt), so the job is honest-red and not yet a required check.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-007",
+      "severity": "P2",
+      "title": "Branch protection permits admin bypass and ignores CODEOWNERS",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: both branch-protection JSONs set enforce_admins:true, require_code_owner_reviews:true, allow_force_pushes/deletions:false.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-008",
+      "severity": "P2",
+      "title": "Terraform apply is manual and drift detection is not automated",
+      "owner": "@owner",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "weekly drift schedule exists (terraform-do.yml:14-15,160-172) and fails on a non-empty plan, but the scheduled run stays dormant until the operator sets TF_DRIFT_PLAN_ENABLED (terraform-do.yml:40).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-009",
+      "severity": "P2",
+      "title": "E2E is a required check on main but path-filtered, so PRs that miss its paths can never satisfy branch protection",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: e2e.yml pull_request has no paths filter; scripts/check-required-checks.mjs fails if a required check is path-filtered (fixture self-test wired).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-010",
+      "severity": "P2",
+      "title": "Backup dispatcher duplicates the backup workflows now that they exist on the default branch",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "develop deleted backup-dispatch.yml; origin/main (the default branch, where schedules fire) still carries it, so duplicate DR runs persist until the next develop->main promotion.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "actionlint/shellcheck workflow lint issues (SC2086/SC2129/SC2002/SC2015)",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "shellcheck gate wired (test.yml:56, validate.yml:56) and no unquoted >> $GITHUB_OUTPUT appends remain; actionlint is still config-only (.github/actionlint.yaml, no CI job).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-002",
+      "severity": "P3",
+      "title": "Over-broad workflow token permissions (unused write scopes)",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: no actions: write grants remain anywhere in .github/.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-003",
+      "severity": "P3",
+      "title": "StrictHostKeyChecking=no in the deploy health check",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: deploy-do.yml:1125-1132 StrictHostKeyChecking=yes with a pinned known_hosts.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-004",
+      "severity": "P3",
+      "title": "`main` is far behind `develop`; scheduled jobs fire only from the default branch",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "regressed",
+      "note": "at 905ed63, origin/main is 311 commits behind develop; 11 new scheduled workflows (branch-protection-audit, backup-staleness-check, dependency-rescan, external-uptime-probe, release, smoke-check, third-party-image-scan, storage-restore-test, alert-path-exercise, load-test, dependabot-triage-reminder) are develop-only, so their crons cannot fire from the default branch until promotion.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-005",
+      "severity": "P3",
+      "title": "Secret scanner misses the platform's own token formats and scans diffs only",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "weekly full-history gitleaks scan present; the diff scanner still lacks the platform token formats (see SC-P3-009).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-006",
+      "severity": "P3",
+      "title": "Unused permission grants across deploy/test workflows",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: security-events:write removed from test.yml; terraform-do pull-requests grant + dead PR-comment step removed; remaining grants (dependency-review pull-requests, codeql security-events) are used by those actions.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-007",
+      "severity": "P3",
+      "title": "DB restore test uses an unpinned `postgres:16-alpine` image",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: db-restore-test.yml:177 pins postgres:16-alpine@sha256:721873c...80ea.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-008",
+      "severity": "P3",
+      "title": "No release/tagging workflow and no post-merge release artifact",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: release.yml cuts an annotated tag + GitHub Release + lockfile SBOM on main promotion (idempotent).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-009",
+      "severity": "P3",
+      "title": "e2e is required on `main` but the documented flakiness makes it an unstable hard gate",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: docs/CI.md:196-210 documents the retry budget + flake triage/quarantine policy; e2e-flake-summary.mjs reports retries.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-010",
+      "severity": "P3",
+      "title": "Missing per-job timeouts and minor workflow hygiene gaps",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: all 30 workflows carry per-job timeout-minutes where GitHub allows (validate/test/deploy-do checked job-by-job).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-011",
+      "severity": "P3",
+      "title": "Workflow documentation drift: docs list a removed workflow, omit a live one, and misstate gate behavior",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: docs/CI.md workflow table regenerated; scripts/check-docs-links.mjs fails on docs/CI.md-vs-tree drift.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-012",
+      "severity": "P3",
+      "title": "Badge/report generation is a stub and is not wired into CI",
+      "owner": "platform/CI owner",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 905ed63: badge stubs deleted; real reports documented.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-013",
+      "severity": "P3",
+      "title": "workflow_dispatch inputs are interpolated directly into run: scripts (rollback_sha/deploy_target)",
+      "owner": "platform/CI owner",
+      "target": "next quarter",
+      "status": "open",
+      "note": "new at 905ed63: deploy-do.yml:75 and :82 substitute github.event.inputs.rollback_sha/deploy_target into the shell script text before the hex validation runs; dispatch requires write access so impact is limited, but env: indirection removes the injection surface (GitHub hardening guidance). supabase-migrations/load-test/smoke-check inputs are type:choice or env-passed and are not affected.",
+      "area": "CI"
+    }
+  ],
+  "report": "# GitHub Actions, CI/CD, and Governance \u2014 re-audit verification (develop @ 905ed63)\n\nRead-only verification at `905ed63`. The workflow estate grew from 20 to 30 workflows and from 4 to 8 composite actions since the last audit. All 25 previous CI rows were re-checked; 17 are verified fixed, 5 partially fixed, 2 still open (operator-gated prod environments), 1 regressed state (develop->main promotion), plus 1 new hardening finding.\n\nKey evidence: `deploy-do.yml` (prod-approval at :639, pinned host key at :1125-1132), `supabase-migrations.yml:34` (prod migrations now attach `prod-approval`), `branch-protection/{main,develop}.json` (enforce_admins, code-owner reviews, 8/6 required contexts), `scripts/check-required-checks.mjs` + fixtures (required checks must resolve and must not be path-filtered), `scripts/check-codeowners.mjs`, `e2e.yml` (no PR paths filter), `chromatic.yml` (blocking job), `db-restore-test.yml:177` (digest-pinned postgres) and :197-260 (integrity floors), `release.yml` (annotated tag + GitHub Release + SBOM), `secret-history-scan.yml:27-39,61-80` (checksum-pinned gitleaks + failure notifier), new composite actions (`shellcheck`, `dockerfile-lint`, `prometheus-rules`, `terraform-state-restore-test`) and 11 new scheduled workflows (branch-protection audit, backup staleness, dependency re-scan, uptime probe, smoke check, third-party image scan, storage restore test, alert-path exercise, load test, Dependabot triage reminder, release).\n\nCurrent-state gaps (not code regressions): `origin/main` is 311 commits behind `develop`, so the new scheduled workflows cannot fire from the default branch until the next promotion, and `origin/main` still carries the retired `backup-dispatch.yml`. Production `prod-approval` reviewers and prod secrets remain operator provisioning items (CI-P1-001/003) \u2014 the workflow side is complete. The new finding records that `deploy-do.yml:75,82` interpolates dispatch inputs into `run:` scripts before validation; pass them via `env:` to remove the injection surface.\n"
+}

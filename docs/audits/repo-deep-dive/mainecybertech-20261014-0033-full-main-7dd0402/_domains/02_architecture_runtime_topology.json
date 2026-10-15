@@ -1,0 +1,109 @@
+{
+  "domain": "02_architecture_runtime_topology",
+  "file": "02_architecture_runtime_topology.md",
+  "area": "ARCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T00:52:15Z",
+  "findings": [
+    {
+      "id": "ARCH-P2-001",
+      "severity": "P2",
+      "title": "Single-droplet, single-instance runtime is a hard SPOF",
+      "owner": "@owner",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: topology is still one droplet with one api/worker/web instance (infra/digitalocean/docker-compose.yml; infra/terraform/digitalocean/droplet.tf) and the deploy now does a rolling per-service recreate instead of a stop-the-world down/up (deploy-do.yml:1007-1032), which removes the planned-outage part of the finding. Host loss remains a full outage; documented as an accepted single point of failure in docs/PLATFORM_FAILURE_RUNBOOKS.md:11-13. Owner/budget decision.",
+      "area": "ARCH"
+    },
+    {
+      "id": "ARCH-P2-002",
+      "severity": "P2",
+      "title": "API defaults to the service-role DB client (RLS bypass)",
+      "owner": "@owner",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: getScopedClient still returns the service-role client for modules not in the allow-list (services/supabase.ts:184-223) and the per-module rollout is owner-gated (docs/RLS-rollout.md). Mitigations verified: production refuses to boot with an empty RLS_READS_ENABLED (lib/rls-startup-check.ts:26-55, called from main.ts:14) and every bypass/enforcement is metered (metrics.ts:175-197, services/supabase.ts:223).",
+      "area": "ARCH"
+    },
+    {
+      "id": "ARCH-P2-003",
+      "severity": "P2",
+      "title": "Prometheus loads rules but has no alert routing",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: prometheus.yml alerting targets alertmanager:9093, the alertmanager service renders via infra/digitalocean/alertmanager.tmpl.yml with critical/default/ntfy receivers and an external Watchdog route, and prod deploys fail closed when the watchdog URL is unset (deploy-do.yml:845-863).",
+      "area": "ARCH"
+    },
+    {
+      "id": "ARCH-P2-004",
+      "severity": "P2",
+      "title": "API always enqueues to BullMQ while the worker backend is a separate setting with no parity check",
+      "owner": "API principal engineer + platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: both deployables read the shared QUEUE_BACKEND value (infra/digitalocean/docker-compose.yml:21; api/config/env.ts:95,156-167 refuses non-bullmq in production; worker/env.ts:32,81-91 enforces the same), the API refuses to enqueue on a mismatch even outside production (lib/task-producer.ts:100-111), and both export the resolved backend as a metric (api/lib/metrics.ts:306-318).",
+      "area": "ARCH"
+    },
+    {
+      "id": "ARCH-P2-005",
+      "severity": "P2",
+      "title": "One non-replicated Redis backs queue, cache, idempotency and scan locks; failure degrades silently",
+      "owner": "platform/backend + platform/ops",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the silence is fixed - degradation is metered (api/lib/metrics.ts:330-338, worker/redis-failures.ts) and alerted (prometheus.rules.yml:375-437 MCTWorkerQueueDisconnected + mct-redis-degradation) with a runbook (docs/PLATFORM_FAILURE_RUNBOOKS.md:55-90). Remaining: Redis is still a single non-replicated instance (48 MB cap) with no maxmemory policy, so an OOM kill loses queue/lock/idempotency state; replication/splitting is an infra decision.",
+      "area": "ARCH"
+    },
+    {
+      "id": "ARCH-P3-001",
+      "severity": "P3",
+      "title": "Web middleware gates routes on an unverified JWT `exp`",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: unchanged by design and now explicitly documented as a non-authoritative UX gate - the module docstring states a forged-but-unexpired cookie reaches only the page shell and every server component re-checks via the API (apps/web/middleware.ts:4-16). Residual accepted (the API verifies signatures); an assertion/test that no data access relies on isAuthenticated is still absent.",
+      "area": "ARCH"
+    },
+    {
+      "id": "ARCH-P3-002",
+      "severity": "P3",
+      "title": "Architecture diagram and ADR 004 contradict the as-built runtime",
+      "owner": "@docs + platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/ARCHITECTURE_DIAGRAM.md documents API_INTERNAL_URL (:77,135) and the rolling recreate (:159); docs/adr/README.md marks 004 superseded by 012 and contains the ADR 012 body (:147).",
+      "area": "ARCH"
+    },
+    {
+      "id": "ARCH-P3-003",
+      "severity": "P3",
+      "title": "`NEXT_PUBLIC_API_URL` runtime override is inert for server-side code; docs claim internal SSR routing",
+      "owner": "@web + platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: server-side code reads API_INTERNAL_URL at request time (apps/web/lib/api.ts:11-15) and compose sets it to http://api:4000 (docker-compose.yml:242); the diagram documents the same.",
+      "area": "ARCH"
+    },
+    {
+      "id": "ARCH-P3-004",
+      "severity": "P3",
+      "title": "Request timeout returns 408 but never cancels the handler",
+      "owner": "API principal engineer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: middleware/request-timeout.ts aborts a per-request AbortSignal (exported via getRequestAbortSignal) and destroys the socket after the 408 flushes; wired at app.ts:148.",
+      "area": "ARCH"
+    },
+    {
+      "id": "ARCH-P3-005",
+      "severity": "P3",
+      "title": "Worker metrics/health are unauthenticated while the API gates /metrics",
+      "owner": "worker/platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the worker /metrics endpoint enforces a constant-time bearer token and 404s when METRICS_TOKEN is unset (apps/worker/src/health-server.ts:12-40), matching the API; prometheus.yml scrapes with the token file (docker-compose.yml:270-278).",
+      "area": "ARCH"
+    }
+  ]
+}

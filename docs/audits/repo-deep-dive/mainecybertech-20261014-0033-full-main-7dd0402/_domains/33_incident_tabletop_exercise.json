@@ -1,0 +1,249 @@
+{
+  "domain": "33_incident_tabletop_exercise",
+  "file": "33_incident_tabletop_exercise.md",
+  "area": "IR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T00:45:53Z",
+  "findings": [
+    {
+      "id": "IR-P0-001",
+      "severity": "P0",
+      "title": "No platform-level incident response plan, roles, or postmortem process",
+      "owner": "platform lead",
+      "target": "immediate / release blocking",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/INCIDENT_RESPONSE.md covers scope/severity (:12-22), named roles (:26-43), declaration (:45-53), response phases incl. containment (:55-100), communication table (:110-141), postmortem via docs/templates/POSTMORTEM.md (:94) and the testing cadence (:160-175); PLATFORM_FAILURE_RUNBOOKS.md provides the operator runbooks.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P0-002",
+      "severity": "P0",
+      "title": "No data breach response / notification process",
+      "owner": "security lead + Legal",
+      "target": "immediate / release blocking",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/DATA_BREACH_RESPONSE.md remains the full breach plan (definitions, severity matrix, containment playbooks, notification decision + template, evidence handling, breach register) and its detection sources now name the deployed alert rules (:137-143).",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P0-003",
+      "severity": "P0",
+      "title": "Total loss of the monitoring/alerting path has no independent dead-man's-switch receiver",
+      "owner": "platform lead / security reviewer",
+      "target": "immediate / release blocking",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the receiver is configured and the prod deploy fails closed without the URL, but the URL is still unset — docs/INCIDENT_RESPONSE.md:148-158 and docs/DATA_BREACH_RESPONSE.md:145-156 both state ALERTMANAGER_WATCHDOG_WEBHOOK_URL is still unset and the missed-heartbeat drill is unrecorded; the 2026-10-11 IR-011 desk dry-run records 'Actual: none' for the monitoring-loss inject (gap G1). Same residual as OBS-P0-001.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P1-001",
+      "severity": "P1",
+      "title": "Rollback documentation contradicts itself on SHA-targeted rollback",
+      "owner": "platform/ops",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/ROLLBACK_PROCEDURES.md §1 and FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK rollback section both state builds are skipped for rollback_sha and the image tag must already exist in GHCR, matching deploy-do.yml:31-38,251-270; scripts/rollback.sh implements the same contract.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P1-002",
+      "severity": "P1",
+      "title": "Bad-migration recovery is manual-only with no automated reverse or staging proof",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the dry-run artifact and the fail-closed post-push drift check remain (supabase-migrations.yml:67-127), but reverse migrations are still hand-written (ROLLBACK_PROCEDURES.md:75-116) and the D4 bad-migration drill is still 'planned' with no artifact (docs/runbooks/backup-restore-drill-ledger.md:23).",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P1-003",
+      "severity": "P1",
+      "title": "Worker health failure during deploy is non-fatal",
+      "owner": "platform/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the deploy's container gate includes worker (and all healthchecked services) and exits 1 (deploy-do.yml:1056-1085), and the public worker probe exits 1 with logs on failure (:1155-1172).",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P1-004",
+      "severity": "P1",
+      "title": "Backups are not verified deeply enough to prove the documented RPO/RTO",
+      "owner": "platform/ops",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: db-restore-test.yml:196-293 asserts table/migration/row floors, audit_logs freshness (RPO canary), organization_id presence and RLS-enabled floors against committed baselines; storage restore asserts the manifest/object counts (restore-storage.sh:114-137). Residual: the assertions have never executed green (DR-P0-001).",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P1-005",
+      "severity": "P1",
+      "title": "Backup bucket configuration is inconsistent between the script, the backup workflow, and the restore test",
+      "owner": "platform/ops",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: all four paths share S3_BUCKET (name) + S3_PREFIX with the same legacy fallback and URI normalisation (db-backup.yml:85-94, db-restore-test.yml:92-126, storage-backup.yml:49-53, scripts/backup-database.sh:5-12), documented in docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:127-138.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P1-006",
+      "severity": "P1",
+      "title": "No runtime detection or alerting for tenant-isolation (RLS) regressions",
+      "owner": "API platform / security",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: portal_rls_bypass_total/portal_rls_enforced_total + MCTTenantScopeRegression/MCTRlsEnforcedShareCollapsed (prometheus.rules.yml:162-215) with promtool unit tests wired into CI (test.yml:52, validate.yml:50).",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P2-001",
+      "severity": "P2",
+      "title": "Several Prometheus metrics are declared but not wired, limiting incident diagnosis",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: all previously unwired metrics have live call sites (API + worker), and the monitoring/SLO docs were reconciled to the wired set (OBS-P3-007).",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P2-002",
+      "severity": "P2",
+      "title": "No alerting on audit-trail gaps or privileged (impersonation/admin) abuse",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: privileged abuse is covered by MCTImpersonationBurst/MCTImpersonationActivity; the audit-gap half remains log-only — apps/api/src/services/audit.ts still only logs the failure after retries and no metric/rule exists for audit writes or gaps.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P2-003",
+      "severity": "P2",
+      "title": "No alerting when webhook dead-letters accumulate or payment reconciliation drifts",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402 (the previous domain report still said open while the register said fixed — now both are satisfied): MCTWebhookDeadLettersAccumulating (prometheus.rules.yml:217-228), MCTWebhookDeliveryFailureRateHigh (:232-260) and MCTStripeReconcileDrift (:360-368) exist; stripe-reconcile.ts:190-191 emits worker_stripe_reconcile_drift_total.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P2-004",
+      "severity": "P2",
+      "title": "Secrets rotation is documented but has no exercised evidence",
+      "owner": "platform/security",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the Rotation Log now has a dated desk dry-run row (docs/SECRETS_ROTATION.md:503) and docs/SECRET_ROTATION_RUNBOOK.md §5 records the 2026-10-12 walk-through; still partially fixed because no live rotation/revocation was performed (the runbook itself says a live drill on a non-critical dev secret 'stays listed as not done').",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P2-005",
+      "severity": "P2",
+      "title": "No platform status/communication surface for MCT's own outages",
+      "owner": "platform lead",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: docs/STATUS_AND_COMMUNICATION.md defines the platform surface (ntfy portal-status topic, cadence, templates, email fallback) and INCIDENT_RESPONSE.md §7 points at it. Still partially fixed: the doc's own one-time operator action is outstanding — anonymous read of portal-status is not verified (marked NEEDS-HUMAN), so the surface is 'configured, not verified'.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P2-006",
+      "severity": "P2",
+      "title": "Migration dry-run result is discarded in CI",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: supabase-migrations.yml:67-88 tees the dry-run to migration-dry-run.txt and uploads it as a 30-day artifact before the push, and :90-127 fails the job on post-push drift.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P2-007",
+      "severity": "P2",
+      "title": "Platform IR and breach plans are stale on the deployed alerting path and reference template files that do not exist in docs/",
+      "owner": "platform lead + security",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the alerting-path text is corrected in both plans (INCIDENT_RESPONSE.md:148-158; DATA_BREACH_RESPONSE.md:145-156) and every referenced template now exists (docs/templates/INCIDENT_COMMS.md, ONCALL_ROTA.md, POSTMORTEM.md). Still partially fixed: DATA_BREACH_RESPONSE.md:158-160 still claims webhook dead-letter growth, worker health and RLS regressions 'currently have no alert', which is stale now that MCTWebhookDeadLettersAccumulating, the worker queue/health rules and MCTTenantScopeRegression exist.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P2-008",
+      "severity": "P2",
+      "title": "On-call rota and escalation contacts are unassigned, so the incident plan is not operational",
+      "owner": "platform lead",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the template exists at docs/templates/ONCALL_ROTA.md and both plans link it (INCIDENT_RESPONSE.md:41,144; DATA_BREACH_RESPONSE.md:294,477) and PLATFORM_FAILURE_RUNBOOKS.md:163-166 names the rota as the assignment source — but it is still unfilled, and every drill row remains `_unassigned_`.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P2-009",
+      "severity": "P2",
+      "title": "No tabletop exercise has been run and the scenario catalog is stale",
+      "owner": "platform lead",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the catalog is refreshed and committed with 12 scenarios incl. IR-011 monitoring-path loss (docs/INCIDENT_TABLETOP_SCENARIOS.md:64-226, readiness inventory + facilitation kit + recorded-exercise table) and the first exercise (IR-011 desk dry-run) is recorded at docs/INCIDENT_TABLETOP_DRYRUN_2026-10-11.md. Still partially fixed: it is a repo-only desk walkthrough with no human participants (reviewer placeholder) and the live missed-heartbeat drill remains blocked on IR-P0-003.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P2-010",
+      "severity": "P2",
+      "title": "Prometheus alert-rule unit tests are not wired into CI",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: .github/actions/prometheus-rules runs promtool check rules + test rules and is invoked from test.yml:48-52 and validate.yml:47-50 (IR-P2-010/OBS-P2-012).",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P3-001",
+      "severity": "P3",
+      "title": "Terraform state restore guidance lacks a tested procedure",
+      "owner": "platform/infra",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: scripts/terraform-state-restore.sh implements list/scratch/restore with a --yes guard and correct bucket/key mapping; ROLLBACK_PROCEDURES.md §4 documents it; scripts/ci/test-terraform-state-restore.sh tests it in CI. Residual: the live Spaces drill is still operator-pending (drill ledger D6 planned).",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P3-002",
+      "severity": "P3",
+      "title": "Monitoring doc and health endpoint disagree on check semantics; Redis severity undocumented in alerts",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/MONITORING_AND_ALERTING.md:82-146 documents the /health vs /health/detail split, the 503 semantics per dependency, the Redis degradation rules and the worker queue-loss 503, matching the code.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P3-003",
+      "severity": "P3",
+      "title": "Monitoring doc still reports wired metrics as 'defined, not wired' and omits the alert rules added for impersonation and RLS",
+      "owner": "platform/ops",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the metric table and alert-trigger table were reconciled to the wired metrics and the full rule set (docs/MONITORING_AND_ALERTING.md), including impersonation, RLS, dead-letter, notification, worker and backup-staleness rules.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P3-004",
+      "severity": "P3",
+      "title": "Alerting secrets are not documented in the secrets matrix or environment-variable reference",
+      "owner": "platform/ops",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: ALERTMANAGER_* and NTFY_ALERTS_* are documented with scope/purpose in docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:117-126 and docs/ENVIRONMENT_VARIABLES.md:168-187.",
+      "area": "IR"
+    },
+    {
+      "id": "IR-P3-005",
+      "severity": "P3",
+      "title": "Incident plan's first triage step points responders at a URL that currently 404s",
+      "owner": "platform lead + platform/ops",
+      "target": "this quarter",
+      "status": "open",
+      "note": "new at 7dd0402: docs/INCIDENT_RESPONSE.md:57 instructs the responder to 'Confirm the signal is real: check https://api.mainecybertech.com/health, worker health, and the Prometheus/Sentry alerts' — live check on 2026-10-14 returns 404 for that URL (the same condition that keeps the external uptime probe red, OBS-P2-017), while the API actually answers under app.mainecybertech.com/api. During an incident the first verification step would fail and could be misread as an outage; the plan should point at an endpoint that works (or the endpoint/docs should be reconciled first).",
+      "area": "IR"
+    }
+  ]
+}

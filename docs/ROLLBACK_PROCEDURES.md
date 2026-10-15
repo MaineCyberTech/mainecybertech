@@ -42,7 +42,9 @@ IMAGE_TAG=<previous-sha> docker compose -p mct-portal up -d --remove-orphans
 
 # Verify all containers are healthy
 docker compose -p mct-portal ps --format 'table {{.Name}}\t{{.Status}}\t{{.Ports}}'
-curl -sf https://api.mainecybertech.com/health
+# OBS-P2-017: the prod API is served through the web host until the
+# api.mainecybertech.com DNS record is repointed; its /health 404s today.
+curl -sf https://app.mainecybertech.com/api/v1/store/products
 curl -sf https://app.mainecybertech.com/login
 
 # Clean up old images (keep current + rollback target)
