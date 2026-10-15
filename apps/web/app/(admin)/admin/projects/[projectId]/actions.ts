@@ -172,7 +172,10 @@ export async function addProjectTask(formData: FormData): Promise<TaskMutationRe
   return { ok: true, taskId: data.id, task: task ?? undefined };
 }
 
-export async function updateProjectTask(formData: FormData): Promise<TaskMutationResult> {
+// FEAT-P3-008: internal helpers for submitProjectTaskForm. They are not
+// exported because no product code imports them directly (the page only wires
+// the submit action); an export made them look like a supported API.
+async function updateProjectTask(formData: FormData): Promise<TaskMutationResult> {
   const api = getApiClient();
   const projectId = String(formData.get("projectId") ?? "").trim();
   const taskId = String(formData.get("taskId") ?? "").trim();
@@ -203,7 +206,7 @@ export async function updateProjectTask(formData: FormData): Promise<TaskMutatio
   return { ok: true, taskId, task: task ?? undefined };
 }
 
-export async function resetProjectTaskApproval(formData: FormData): Promise<TaskMutationResult> {
+async function resetProjectTaskApproval(formData: FormData): Promise<TaskMutationResult> {
   const api = getApiClient();
   const projectId = String(formData.get("projectId") ?? "").trim();
   const taskId = String(formData.get("taskId") ?? "").trim();
@@ -216,7 +219,7 @@ export async function resetProjectTaskApproval(formData: FormData): Promise<Task
   return { ok: true, taskId, task: task ?? undefined };
 }
 
-export async function deleteProjectTask(formData: FormData): Promise<TaskMutationResult> {
+async function deleteProjectTask(formData: FormData): Promise<TaskMutationResult> {
   const api = getApiClient();
   const projectId = String(formData.get("projectId") ?? "").trim();
   const taskId = String(formData.get("taskId") ?? "").trim();
@@ -292,63 +295,4 @@ export async function submitProjectTaskForm(formData: FormData): Promise<TaskMut
   if (intent === "delete") return deleteProjectTask(formData);
   if (intent === "resetApproval") return resetProjectTaskApproval(formData);
   return updateProjectTask(formData);
-}
-
-export async function addProjectUpdate(formData: FormData) {
-  try {
-    const api = getApiClient();
-    const projectId = String(formData.get("projectId") ?? "").trim();
-    const body = String(formData.get("body") ?? "").trim();
-    const isInternal = formData.get("isInternal") === "on";
-    const isPinned = formData.get("isPinned") === "on";
-    if (!projectId || !body)
-      return { ok: false as const, error: "Project and update body are required." };
-
-    await api.projects.addUpdate(projectId, { body, isInternal, isPinned });
-    revalidatePath(`/admin/projects/${projectId}`);
-    return { ok: true as const };
-  } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Unknown error" };
-  }
-}
-
-export async function updateProjectUpdate(formData: FormData) {
-  try {
-    const api = getApiClient();
-    const projectId = String(formData.get("projectId") ?? "").trim();
-    const updateId = String(formData.get("updateId") ?? "").trim();
-    const body = String(formData.get("body") ?? "").trim();
-    const isInternal = formData.get("isInternal") === "on";
-    const isPinned = formData.get("isPinned") === "on";
-    if (!projectId || !updateId || !body)
-      return { ok: false as const, error: "Project, update, and body are required." };
-
-    await api.projects.updateUpdate(projectId, updateId, { body, isInternal, isPinned });
-    revalidatePath(`/admin/projects/${projectId}`);
-    return { ok: true as const };
-  } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Unknown error" };
-  }
-}
-
-export async function deleteProjectUpdate(formData: FormData) {
-  try {
-    const api = getApiClient();
-    const projectId = String(formData.get("projectId") ?? "").trim();
-    const updateId = String(formData.get("updateId") ?? "").trim();
-    if (!projectId || !updateId)
-      return { ok: false as const, error: "Project ID and update ID are required." };
-
-    await api.projects.removeUpdate(projectId, updateId);
-    revalidatePath(`/admin/projects/${projectId}`);
-    return { ok: true as const };
-  } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Unknown error" };
-  }
-}
-
-export async function submitProjectUpdateForm(formData: FormData) {
-  const intent = String(formData.get("intent") ?? "save").trim();
-  if (intent === "delete") return deleteProjectUpdate(formData);
-  return updateProjectUpdate(formData);
 }

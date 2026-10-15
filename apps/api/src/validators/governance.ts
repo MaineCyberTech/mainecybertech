@@ -68,6 +68,17 @@ export const createTabletopSchema = z.object({
   actionItems: z.string().max(5000).optional().nullable(),
   afterActionReport: z.string().max(10000).optional().nullable(),
 });
+/**
+ * DATA-P3-007: sop_library.status is no longer free text. The vocabulary is
+ * the one the app already uses — the admin SOP form's select offers
+ * draft/active/archived (apps/web/lib/module-config.ts), the compliance map
+ * counts active vs everything else, and the demo/seed data uses
+ * draft/published. Keeping published preserves existing rows. Mirrored by the
+ * sop_library_status_check CHECK (5302462) and asserted by
+ * catalog-parity.test.ts, so a drift between API and DB fails CI.
+ */
+export const SOP_STATUSES = ["draft", "active", "archived", "published"] as const;
+
 export const createSopSchema = z.object({
   organizationId: z.string().uuid(),
   title: z.string().min(1).max(200),
@@ -75,7 +86,7 @@ export const createSopSchema = z.object({
   sopCategory: z.string().min(1).max(100).default("general"),
   complianceFramework: z.string().max(100).optional().nullable(),
   frameworkControlIds: z.array(z.string()).optional().default([]),
-  status: z.string().default("draft"),
+  status: z.enum(SOP_STATUSES).default("draft"),
   reviewCycleDays: z.number().int().default(90),
   ownerUserId: z.string().optional().nullable(),
   documentUrl: z.string().max(500).optional().nullable(),
@@ -87,7 +98,7 @@ export const updateSopSchema = z.object({
   sopCategory: z.string().max(100).optional(),
   complianceFramework: z.string().max(100).optional().nullable(),
   frameworkControlIds: z.array(z.string()).optional(),
-  status: z.string().optional(),
+  status: z.enum(SOP_STATUSES).optional(),
   reviewCycleDays: z.number().int().optional(),
   lastReviewedAt: z.string().optional().nullable(),
   nextReviewAt: z.string().optional().nullable(),

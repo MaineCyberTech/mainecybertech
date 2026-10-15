@@ -1141,8 +1141,9 @@ describe("webhooks routes", () => {
     });
 
     it("bounds replay with the 7-day idempotency window [WH-P2-001]", async () => {
-      const { claimIdempotencyKey } = await import("../lib/idempotency");
+      const { claimIdempotencyKey, storeIdempotencyKey } = await import("../lib/idempotency");
       (claimIdempotencyKey as jest.Mock).mockClear();
+      (storeIdempotencyKey as jest.Mock).mockClear();
 
       const res = await request(app)
         .post("/api/v1/webhooks/m365")
@@ -1162,6 +1163,52 @@ describe("webhooks routes", () => {
       expect(claimIdempotencyKey).toHaveBeenCalled();
       // Third argument is the TTL in seconds: the enforced replay window.
       expect((claimIdempotencyKey as jest.Mock).mock.calls[0][2]).toBe(7 * 24 * 60 * 60);
+      // WH-P3-010: the stored completion value must use the SAME 7-day window;
+      // the 24h default would let a redelivery re-enter the handler after 24h.
+      expect(storeIdempotencyKey).toHaveBeenCalledWith(
+        expect.stringMatching(/^m365-/),
+        "done",
+        7 * 24 * 60 * 60,
+      );
+    });
+
+    it("collapses a post-TTL redelivery collision to a duplicate, not a 500 [WH-P3-010]", async () => {
+      const supabaseModule = await import("../services/supabase");
+      const supabase = {
+        from: jest.fn().mockImplementation((table: string) => {
+          const result =
+            table === "webhook_deliveries"
+              ? ({
+                  data: null,
+                  error: { code: "23505", message: "duplicate key value violates unique constraint" },
+                } as MockResult)
+              : ({ data: null, error: null } as MockResult);
+          return createMockBuilder(result);
+        }),
+      };
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const { storeIdempotencyKey } = await import("../lib/idempotency");
+      (storeIdempotencyKey as jest.Mock).mockClear();
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [
+            {
+              resource: "users/redelivery",
+              changeType: "updated",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+            },
+          ],
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toMatchObject({ received: true, processed: 0, duplicates: 1 });
+      // The collision is the already-logged delivery, so no completed value is
+      // re-stored — the fresh 7-day claim already bounds the next redelivery.
+      expect(storeIdempotencyKey).not.toHaveBeenCalled();
     });
 
     it("processes every notification in a batch, not just value[0] [WH-P3-008]", async () => {

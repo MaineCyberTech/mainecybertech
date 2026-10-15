@@ -1,0 +1,269 @@
+{
+  "domain": "32_backup_restore_drill",
+  "file": "32_backup_restore_drill.md",
+  "area": "DR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T00:45:53Z",
+  "findings": [
+    {
+      "id": "DR-P0-001",
+      "severity": "P0",
+      "title": "No successful backup has ever run: every db-backup, storage-backup and db-restore-test CI run fails",
+      "owner": "platform/ops + release owner",
+      "target": "immediate / release blocking",
+      "status": "open",
+      "note": "re-verified at 7dd0402 (public GitHub Actions API, read-only): db-backup has 0 successful runs; latest run 38389756631 (2026-10-13, main@ee252bc4, post-PR#170 code) failed at step 'Run database backup script'; storage-backup latest 38396241752 (2026-10-13) failed at 'Run storage backup script'; db-restore-test latest 38267851116 (2026-10-12) failed at 'Load restore-test baseline' on the pre-fix commit 8d299b8d. Repo-side affordances were added (AWS_*/DO_SPACES fallback and S3_BUCKET fallback in db-backup.yml:79-94, heartbeat, prod target) but the operator secrets in the attached environment are still unprovisioned; docs/RELEASE_GATE.md:69 and docs/runbooks/backup-restore-drill-ledger.md:12-15 record the same residual. Repo cannot fix this: secrets provisioning is an operator action.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P0-002",
+      "severity": "P0",
+      "title": "Scheduled backup and restore-test workflows never run because they are absent from the default branch",
+      "owner": "platform/ops",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: db-backup.yml, db-restore-test.yml, storage-backup.yml, storage-restore-test.yml and backup-staleness-check.yml are all present on main and schedules fire (runs observed 2026-10-06..2026-10-13). backup-dispatch.yml was retired (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:157).",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P0-003",
+      "severity": "P0",
+      "title": "The restore test never asserts integrity and therefore cannot fail on a bad backup",
+      "owner": "platform/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: db-restore-test.yml:196-293 asserts table/migration/row floors, audit_logs freshness (RPO canary), organization_id presence and RLS state, each with ::error + exit 1; floors are committed in .github/restore-test-baseline.env:23-27 and now load via the grep-filtered baseline step (db-restore-test.yml:80-87). Residual is reachability (DR-P0-001), not the assertions.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P1-001",
+      "severity": "P1",
+      "title": "The weekly restore test fails at baseline load (invalid GITHUB_ENV format) so no restore verification ever executes",
+      "owner": "platform/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the baseline step now filters to KEY=VALUE lines only (db-restore-test.yml:80-87, `grep -E '^[A-Za-z_][A-Za-z0-9_]*=' ... >> \"$GITHUB_ENV\"`) and fails fast if the file has none; commit 054c19cf (PR #170). Caveat: no post-fix run exists yet — the last run 38267851116 (2026-10-12) used pre-fix commit 8d299b8d and its check-run annotation still shows 'Invalid format ...' at .github line 12; the first run on the fixed code is the next scheduled Monday run, and until then the restore verification has still never executed.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P1-002",
+      "severity": "P1",
+      "title": "No backup or restore path exists for uploaded files in Supabase Storage",
+      "owner": "platform/ops",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: storage-backup.yml (daily 05:00, encryption + offsite + verify) and storage-restore-test.yml (weekly --verify-only against the newest archive) exist, with scripts/backup-storage.sh and scripts/restore-storage.sh; validate.yml:74 also runs scripts/exercise-storage-restore.sh on every run. Residual: neither workflow has a successful (or any) run yet — API shows 0 runs for storage-restore-test.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P1-003",
+      "severity": "P1",
+      "title": "Restore-test backup location contract (`S3_BACKUP_BUCKET`) is undocumented and can silently mismatch the backup script",
+      "owner": "platform/ops",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: S3_BUCKET (name) + S3_PREFIX contract documented in docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:127-138 and in the headers of backup-database.sh:5-12, restore-database.sh:7-11 and backup-storage.sh:6-9; all workflows share the same fallback (`vars.S3_BUCKET || secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups'`) and normalise a legacy s3:// URI (db-restore-test.yml:106-126).",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P1-004",
+      "severity": "P1",
+      "title": "Database backups are unencrypted and stored in a single location with no offsite copy",
+      "owner": "platform/ops",
+      "target": "this week",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: code affordance intact — backup-database.sh:80-115 (AES-256-CBC PBKDF2 + REQUIRE_BACKUP_ENCRYPTION fail-closed + S3_OFFSITE_BUCKET copy) wired from db-backup.yml:91-99; storage path mirrors it (backup-storage.sh:145-166). Remains partially fixed because no encrypted object or offsite copy has ever been produced (0 successful runs, DR-P0-001) and docs/RTO_RPO.md:52-61 still lists the operator actions as outstanding.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P1-005",
+      "severity": "P1",
+      "title": "The restore test has no failure alert",
+      "owner": "platform/ops",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: db-restore-test.yml:302-326 posts ntfy-first with Slack fallback and exits 1 when no channel is configured; observed running green on the failed 2026-10-12 run (step 'Notify on failure' -> success) and the same pattern exists in all backup workflows.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P1-006",
+      "severity": "P1",
+      "title": "No automated migration reverse/rollback and no bad-migration drill",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: supabase-migrations.yml:67-127 still captures the dry-run plan as a 30-day artifact and fails closed on post-push drift (ANSI-stripped), and ROLLBACK_PROCEDURES.md:75-116 documents reverse-migration/PITR options; no reverse-migration automation was added and the bad-migration drill D4 remains 'planned' with no evidence (docs/runbooks/backup-restore-drill-ledger.md:23).",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P1-007",
+      "severity": "P1",
+      "title": "RPO/RTO targets are documented but unvalidated, and the Postgres RPO conflates PITR with the daily dump",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: docs/RTO_RPO.md:11 separates PITR (5 min) from pg_dump (<=24 h) and :40-47 states the PITR RPO is not yet proven and requires a dated exercise; the machine checks (freshness assertion + heartbeat + staleness check) exist but have never run green (DR-P0-001), so neither RPO is validated. No 'Last real restore exercise' line exists in RTO_RPO.md (the drill plan:158-160 requires one before claiming exercised).",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P2-001",
+      "severity": "P2",
+      "title": "Storage backups can be silently partial or empty: listings are truncated at 1000 objects and a zero-object archive is accepted",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: backup-storage.sh:62-79 pages the list endpoint until a short page and walks folders; :105-117 refuses a zero-object mirror and a download/list count mismatch; :132-143 requires a readable tar with MANIFEST.txt; storage-backup.yml:57-59 sets VERIFY_BACKUP=1.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P2-002",
+      "severity": "P2",
+      "title": "Storage backups are never restore-tested and the restore script asserts nothing",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: storage-restore-test.yml:73-85 runs scripts/restore-storage.sh --verify-only against the newest archive; restore-storage.sh:114-137 asserts MANIFEST presence, object_count vs extracted count and non-empty archive, and :166-171 asserts the upload count on a real restore; validate.yml:74 exercises the assertions on every run via scripts/exercise-storage-restore.sh. Residual: the weekly workflow itself has no runs yet.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P2-003",
+      "severity": "P2",
+      "title": "No independent backup-staleness alarm; notifier delivery failures are swallowed",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: backup-staleness-check.yml:20-113 independently queries the GitHub run history for the newest successful db-backup/storage-backup/db-restore-test/storage-restore-test and fails past 30 h/200 h limits; notifier steps no longer swallow delivery errors (the no-channel branch exits 1 and run steps execute under bash -e). The check is already working: run 38422872427 (2026-10-13) failed as designed because no successful backup exists, and its 'Notify on failure' step succeeded.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P2-004",
+      "severity": "P2",
+      "title": "Backup-failure alerting is present but cannot be trusted to deliver",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: ntfy-first notifiers with Slack fallback in db-backup.yml:114-138, storage-backup.yml:62-86, db-restore-test.yml:302-326, storage-restore-test.yml:93-117 and backup-staleness-check.yml:89-113; observed success on the failed 2026-10-12/13 runs. The independent detector residual is now covered by DR-P2-003.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P2-005",
+      "severity": "P2",
+      "title": "Terraform state bucket versioning is claimed but not backed by any resource",
+      "owner": "platform/infra",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: infra/terraform/digitalocean/state-bucket.tf declares digitalocean_spaces_bucket.terraform_state with versioning { enabled = true }, an import block for the existing bucket and prevent_destroy; docs/RTO_RPO.md:33 and ROLLBACK_PROCEDURES.md:282-296 now name the backend buckets from env/backend.{dev,prod}.hcl. Residual: live setting unverified and no state-restore drill recorded (D6 planned).",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P2-006",
+      "severity": "P2",
+      "title": "The backup/DR runbook and module docs describe a client-facing product, not the platform's own recovery, and the module doc is stale",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/modules/backup-dr.md now documents the real /api/v1/final/backups* surface and backup_status schema, marks export as not implemented (DR-P3-004) and carries the DR-P2-008 scope banner pointing at the platform heartbeat; docs/runbooks/backup-disaster-recovery.md retains the product-scope banner and pointers.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P2-007",
+      "severity": "P2",
+      "title": "Manual restore has no environment guardrail and the transient dump is written unencrypted to `/tmp`",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the environment guardrail is present (restore-database.sh:54-63 refuses non-local targets unless ALLOW_PROD_RESTORE=yes); the transient plaintext copy remains — the encrypted object is decrypted to /tmp/restore.sql.gz (:97-101) and piped to psql (:115), with removal only after the restore (:118), so tenant data still lands unencrypted on the operator host.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P2-008",
+      "severity": "P2",
+      "title": "The product `backup_status` module is not wired to any real platform backup heartbeat",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: migration 5302450_platform_backup_heartbeats.sql creates public.platform_backup_heartbeats; db-backup.yml:104-112 records it via scripts/record-backup-heartbeat.sh (fail-closed); the worker's backupDrCheck now reads that table (apps/worker/src/tasks/module-tasks.ts:305-396, scheduled in schedule-config.ts:39) and fails on missing/stale rows, with unit tests in module-tasks.test.ts:205-245.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P3-001",
+      "severity": "P3",
+      "title": "Platform DR drill plan is only in a dated audit folder and the drill ledger is empty",
+      "owner": "platform/ops",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the plan and a ledger now live at stable paths (docs/runbooks/backup-restore-drill-plan.md, docs/runbooks/backup-restore-drill-ledger.md) and PLATFORM_FAILURE_RUNBOOKS.md:158-175 points at them; the ledger is still empty of executions — every D1-D7 row is 'planned' and lines 12-15 state no drill has run, blocked on DR-P0-001. So the findability half is fixed, the 'never exercised' half remains.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P3-002",
+      "severity": "P3",
+      "title": "Duplicate backup-script logic in bash and PowerShell risks drift",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: scripts/backup-database.ps1:18-24 still carries the NOT CANONICAL header but keeps the full duplicate dump/upload/prune flow with no encryption and no offsite path (drift remains; the script can never produce the CI-grade backup).",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P3-003",
+      "severity": "P3",
+      "title": "Unpinned Postgres image in the restore test; no explicit jq/aws tool pinning in the backup job",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: db-restore-test.yml:177 pins postgres:16-alpine by digest (sha256:721873c3...), backup-database.sh:51-53 uses the same digest-pinned fallback client, and both workflows record aws/jq/psql (and pg_dump) versions before running (db-backup.yml:64-71, db-restore-test.yml:61-68).",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P3-004",
+      "severity": "P3",
+      "title": "Documented backup/DR export endpoints do not exist",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/modules/backup-dr.md:21-40 now documents only the real /api/v1/final/backups* routes and explicitly states 'Export is not implemented (DR-P3-004)' with the old /api/v1/backup-dr/* list marked as never existing.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P3-005",
+      "severity": "P3",
+      "title": "Terraform state restore guidance lacks a tested procedure",
+      "owner": "platform/infra",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: scripts/terraform-state-restore.sh implements --list/--scratch/--restore with a --yes guard and the correct backend bucket/key mapping; ROLLBACK_PROCEDURES.md:276-310 documents the exact commands; scripts/ci/test-terraform-state-restore.sh exercises it in CI against a stubbed aws CLI. Residual: the live Spaces drill is still operator-pending (drill ledger D6 planned, PLATFORM_FAILURE_RUNBOOKS.md:174).",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P2-009",
+      "severity": "P2",
+      "title": "Production uploaded files have no backup or restore target: storage workflows attach the dev environment only",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "open",
+      "note": "new at 7dd0402: db-backup.yml/db-restore-test.yml were made prod-capable (PROD_BACKUP_ENABLED / environment: prod inputs; docs/RTO_RPO.md:42-49), but storage-backup.yml and storage-restore-test.yml have no dispatch inputs and hard-code `environment: dev` (storage-backup.yml:19-31, storage-restore-test.yml:20-32), and their secrets resolve from the dev environment only (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:103-104). Production (mainecybertech.com per docs/PRODUCTION_VS_TESTING_DOMAINS.md) uploads documents/avatars/logos into a project that the daily mirror never covers, so a prod storage loss is unrecoverable while the docs claim a <=24 h storage RPO for the platform.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P3-006",
+      "severity": "P3",
+      "title": "Backup staleness check still prefers the retired SCHEDULE_DISPATCH_TOKEN over GITHUB_TOKEN",
+      "owner": "platform/ops",
+      "target": "this quarter",
+      "status": "open",
+      "note": "new at 7dd0402: backup-staleness-check.yml:50 sets GH_TOKEN to `secrets.SCHEDULE_DISPATCH_TOKEN || secrets.GITHUB_TOKEN`, but the token was retired with backup-dispatch.yml and docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:157 tells operators to revoke it. GitHub secrets do not disappear on revocation, so a revoked-but-present PAT is still preferred and would make `gh run list` fail — turning the staleness detector into a false alarm (or, if the failure were swallowed, a silent gap). The workflow only needs actions: read, which GITHUB_TOKEN already has.",
+      "area": "DR"
+    },
+    {
+      "id": "DR-P3-007",
+      "severity": "P3",
+      "title": "New DR drill plan's restore dependency table still documents the legacy full-URI S3_BACKUP_BUCKET",
+      "owner": "platform/ops",
+      "target": "this quarter",
+      "status": "open",
+      "note": "new at 7dd0402: docs/runbooks/backup-restore-drill-plan.md:66 lists the restore dependency as `S3_BACKUP_BUCKET` (full s3://bucket/prefix URI) while the actual contract everywhere is S3_BUCKET (name) + S3_PREFIX (scripts/backup-database.sh:5-12, docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:127-138). A drill operator following the plan looks for a secret that is only a legacy fallback and may misjudge the destination; the plan should cite the same contract as the workflows.",
+      "area": "DR"
+    }
+  ]
+}

@@ -1,0 +1,250 @@
+{
+  "domain": "27_webhook_delivery_replay_idempotency_audit",
+  "file": "27_webhook_delivery_replay_idempotency_audit.md",
+  "area": "WH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T01:00:48Z",
+  "findings": [
+    {
+      "id": "WH-P1-001",
+      "severity": "P1",
+      "title": "Outbound webhook idempotency is non-atomic in the API and absent in the worker dispatcher",
+      "owner": "integrations/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "lib/webhook-dispatcher.ts:182-200 and worker/tasks/webhook-dispatcher.ts:104-120 claim atomically per endpoint and carry Idempotency-Key; delivery rows upsert on the key.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P1-002",
+      "severity": "P1",
+      "title": "M365 webhook auth depends on `M365_CLIENT_STATE` which the deploy pipeline does not write, while `M365_WEBHOOK_SECRET` is dead config",
+      "owner": "integrations/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "M365_CLIENT_STATE is written by deploy-do.yml envs and compose; the handler 501s when unset (webhooks.ts:869-875); M365_WEBHOOK_SECRET no longer exists in env.ts/.env.example/compose.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-001",
+      "severity": "P2",
+      "title": "M365 inbound notifications have no enforced timestamp/replay window",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "webhooks.ts:37,925 claims with a 7-day TTL, but logWebhookDelivery (webhooks.ts:64-92) then calls storeIdempotencyKey, which hardcodes the 24h IDEMPOTENCY_TTL_SECONDS (lib/idempotency.ts:50,142-145) and overwrites the key \u2014 the effective replay window is 24h; after it a duplicate collides with the delivery-row unique key (see WH-P3-010).",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-002",
+      "severity": "P2",
+      "title": "Inline dispatcher records a fixed `retry_count` and duplicates the worker's retry logic",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "retry_count records result.attempts and failed rows are marked dead_letter with the single retry owner enforced (lib/webhook-dispatcher.ts:255-290).",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-003",
+      "severity": "P2",
+      "title": "Outbound and DLQ delivery outcomes are not metered; only inbound success increments the counter",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "recordWebhookDelivery/recordWebhookDeadLetter wired on API and worker paths; mct-webhook-* alert rules consume them.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-004",
+      "severity": "P2",
+      "title": "Inbound Jira/JSM signature falls back to re-serialized JSON when `req.rawBody` is absent",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "rawBodyBuffer fails closed when req.rawBody is absent (webhooks.ts:661-667,769-775); express.json verify captures Buffer bytes.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-005",
+      "severity": "P2",
+      "title": "`webhook_dead_letters` has no DELETE policy while the API deletes via the RLS client",
+      "owner": "integrations/backend + DB/platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "5302452 adds the manage-scoped DELETE policy plus assertion.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-006",
+      "severity": "P2",
+      "title": "No per-provider payload schema or size cap on webhook ingress (global 10mb JSON limit)",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "middleware/webhook-body.ts:20-40,62-80 per-provider caps (stripe 1mb, jira/jsm 512kb, m365 256kb) + webhook-schemas.ts minimal shapes before HMAC/clientState.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-007",
+      "severity": "P2",
+      "title": "Webhook endpoint and delivery reads are available to any org member (not manage-gated)",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "routes/webhook-management.ts reads require webhooks:view (103,125,348,508) and mutations webhooks:manage.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-008",
+      "severity": "P2",
+      "title": "Webhook signing secrets are stored plaintext with no rotation or expiry",
+      "owner": "API platform + security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "5302441_webhook_endpoint_secret_metadata.sql + dispatchers decrypt via decryptSecretValue and dead-letter on decrypt failure instead of sending unsigned (lib/webhook-dispatcher.ts:210-235).",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-009",
+      "severity": "P2",
+      "title": "Webhook SSRF guard has a DNS-rebinding TOCTOU window",
+      "owner": "@owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "pinnedFetch used on all four outbound call sites (api lib/webhook-dispatcher.ts:81-98, worker webhook-dispatcher.ts:206-215, webhook-retry.ts:196-205, module-tasks.ts:611-620).",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-010",
+      "severity": "P2",
+      "title": "No alerting when webhook dead-letters accumulate or payment reconciliation drifts",
+      "owner": "platform lead / security reviewer",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "prometheus.rules.yml:219-253 (DLQ growth + failure ratio) and :348-367 (stripe reconciliation drift) with unit tests.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-011",
+      "severity": "P2",
+      "title": "Admin dead-letter retry of inline-dispatched failures no-ops and deletes the DLQ row",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "routes/webhook-management.ts:230-245 refuses summary-only dead letters with 409 and keeps the row.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-012",
+      "severity": "P2",
+      "title": "`webhook-retry` has no row claim: concurrent retry runs can double-send deliveries",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "worker/tasks/webhook-retry.ts:12-45 claims each row by moving next_retry_at (lease) before sending.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-001",
+      "severity": "P3",
+      "title": "Test endpoint generates a random idempotency key and never dedups",
+      "owner": "integrations/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "routes/webhook-management.ts:56,558-568 deterministic test-ping key + atomic claim + deduplicated response; upsert at 609-628.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-002",
+      "severity": "P3",
+      "title": "No committed event catalog or webhook documentation for consumers",
+      "owner": "integrations/backend + docs",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "docs/WEBHOOKS.md event catalog generated from the SDK catalog with a CI test (webhook-event-catalog.test.ts).",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-003",
+      "severity": "P3",
+      "title": "Worker queued webhook dispatcher inserts deliveries without an idempotency key",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "worker dispatcher derives/carries the idempotency key (worker/tasks/webhook-dispatcher.ts:47-64,104-120).",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-004",
+      "severity": "P3",
+      "title": "Webhook raw body typed as `string` but consumed as `Buffer`",
+      "owner": "billing/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "captureRawBody stores a Buffer (middleware/webhook-body.ts:41-50); Stripe verifies the captured bytes (webhooks.ts:273-283).",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-005",
+      "severity": "P3",
+      "title": "Retried deliveries replay a body without the envelope `timestamp` (payload drift)",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "retries replay the persisted request_body verbatim (worker/tasks/webhook-retry.ts:121-145).",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-006",
+      "severity": "P3",
+      "title": "Delivery inserts ignore unique-key conflicts, losing the successful-attempt record",
+      "owner": "integrations/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "persistDelivery upserts on idempotency_key (lib/webhook-dispatcher.ts:23-40).",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-007",
+      "severity": "P3",
+      "title": "Outbound webhook response bodies are read without a size cap",
+      "owner": "integrations/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "lib/pinned-fetch.ts:23-24 MAX_RESPONSE_BYTES=64KiB enforced with stream close.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-008",
+      "severity": "P3",
+      "title": "M365 handler processes only the first notification in a batch (value[0])",
+      "owner": "integrations/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "webhooks.ts:905-947 processes every notification in value[].",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-009",
+      "severity": "P3",
+      "title": "No retention/cleanup for webhook_deliveries and webhook_dead_letters",
+      "owner": "platform/backend",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "retention.ts:105-115,158-164 purges webhook_deliveries (90d) and dead letters (180d) in bounded batches; 5302454 adds created_at indexes; docs/modules/webhooks.md documents the windows.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-010",
+      "severity": "P3",
+      "title": "Provider redelivery after the dedup TTL fails permanently with 500 (unique delivery-log key not conflict-handled)",
+      "owner": "integrations/backend",
+      "target": "next quarter",
+      "status": "open",
+      "note": "webhooks.ts:64-92 logWebhookDelivery throws AppError DB_ERROR on any insert error; webhook_deliveries.idempotency_key is unique (5302053:14-25); the dedup claim expires at 24h (lib/idempotency.ts:50), so a Stripe dashboard redelivery / Graph replay 24h..90d later claims fresh, then collides on insert -> persistent 500 to the provider (claim released on every retry). Contrast: webhook-management.ts:266-270 handles 23505 for DLQ replays. New finding (P3).",
+      "area": "WH"
+    }
+  ],
+  "report": "Read-only re-verification at `7dd0402`; no live webhook traffic. 22 of 23 previous WH rows verified fixed, 1 partially fixed, 0 regressed, 1 new P3. Executed: `promtool check rules` + `test rules` against `infra/digitalocean/prometheus.rules.yml` (22 rules SUCCESS). Key code: `lib/webhook-dispatcher.ts`, `worker/tasks/{webhook-dispatcher,webhook-retry}.ts`, `routes/{webhooks,webhook-management}.ts`, `lib/idempotency.ts`, `middleware/webhook-body.ts`, `lib/webhook-schemas.ts`; migrations 5302053/5302441/5302452/5302454. Residual: the M365 7-day replay claim is re-stored with the shared 24h TTL by `logWebhookDelivery` (WH-P2-001). New: WH-P3-010 (provider redelivery after the dedup TTL collides with the unique delivery key and 500s permanently)."
+}

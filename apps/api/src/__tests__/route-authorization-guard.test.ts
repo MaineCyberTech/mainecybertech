@@ -23,6 +23,10 @@ const PUBLIC_MUTATING = new Set([
   // Public, signature/token-authenticated inbound endpoints.
   "public",
   "webhooks",
+  // NOTIF-P2-012: the RFC 8058 one-click POST is authenticated by the signed
+  // token in the URL (a mail client has no session); GET renders a
+  // confirmation page and writes nothing. See notification-unsubscribe.ts.
+  "notification-unsubscribe",
 ]);
 
 /** Session-authenticated routers that are deliberately not tenant-scoped. */

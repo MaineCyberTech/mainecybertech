@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { getSupabaseAdmin } from "../../services/supabase";
 import { AppError, success } from "../../types";
+import { requirePermission } from "../../middleware/permissions";
 import { computeBackupStats, computeBackupRisk } from "./stats-helpers";
 
 export function registerBackupRoutes(router: Router) {
-  router.get("/backups/stats", async (req, res, next) => {
+  // ACM-P3-008 / SEC-P3-013: module reads require the catalog's view grant.
+  router.get("/backups/stats", requirePermission("backup-dr", "view"), async (req, res, next) => {
     try {
       const sb = getSupabaseAdmin();
       const q = sb
@@ -19,17 +21,21 @@ export function registerBackupRoutes(router: Router) {
     }
   });
 
-  router.get("/backups/risk-analysis", async (req, res, next) => {
-    try {
-      const supabase = getSupabaseAdmin();
-      const { data, error } = await supabase
-        .from("backup_status")
-        .select("*")
-        .eq("organization_id", req.query.organization_id as string);
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      res.json(success(computeBackupRisk(data ?? [])));
-    } catch (err) {
-      next(err);
-    }
-  });
+  router.get(
+    "/backups/risk-analysis",
+    requirePermission("backup-dr", "view"),
+    async (req, res, next) => {
+      try {
+        const supabase = getSupabaseAdmin();
+        const { data, error } = await supabase
+          .from("backup_status")
+          .select("*")
+          .eq("organization_id", req.query.organization_id as string);
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        res.json(success(computeBackupRisk(data ?? [])));
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
 }

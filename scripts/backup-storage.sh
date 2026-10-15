@@ -8,6 +8,10 @@
 #   S3_PREFIX  - key prefix only, default "storage-backups"
 #   Objects:    s3://${S3_BUCKET}/${S3_PREFIX}/<timestamp>/<bucket>/<path>
 #
+# Storage class (DR-P0-001 investigation): DigitalOcean Spaces only accepts
+# STANDARD and rejects other classes, so the default is STANDARD. Real AWS S3
+# targets can override with S3_STORAGE_CLASS=STANDARD_IA.
+#
 # Why REST (not the S3 protocol): this works with the existing service-role
 # credential and needs no new Supabase S3 access keys. The service-role key is
 # only ever sent in an Authorization header and is NEVER printed.
@@ -27,6 +31,7 @@ set -euo pipefail
 
 S3_BUCKET="${S3_BUCKET:-mainecybertech-backups}"
 S3_PREFIX="${S3_PREFIX:-storage-backups}"
+S3_STORAGE_CLASS="${S3_STORAGE_CLASS:-STANDARD}"
 S3_OFFSITE_BUCKET="${S3_OFFSITE_BUCKET:-}"
 S3_OFFSITE_PREFIX="${S3_OFFSITE_PREFIX:-${S3_PREFIX}}"
 STORAGE_BUCKETS="${STORAGE_BUCKETS:-documents avatars logos}"
@@ -158,11 +163,11 @@ fi
 
 UPLOAD_NAME="$(basename "${UPLOAD_PATH}")"
 echo "Uploading to s3://${S3_BUCKET}/${S3_PREFIX}/${UPLOAD_NAME}"
-aws s3 cp "${UPLOAD_PATH}" "s3://${S3_BUCKET}/${S3_PREFIX}/${UPLOAD_NAME}" --storage-class STANDARD_IA
+aws s3 cp "${UPLOAD_PATH}" "s3://${S3_BUCKET}/${S3_PREFIX}/${UPLOAD_NAME}" --storage-class "${S3_STORAGE_CLASS}"
 
 if [ -n "${S3_OFFSITE_BUCKET}" ]; then
   echo "Copying to offsite bucket ${S3_OFFSITE_BUCKET}..."
-  aws s3 cp "${UPLOAD_PATH}" "s3://${S3_OFFSITE_BUCKET}/${S3_OFFSITE_PREFIX}/${UPLOAD_NAME}" --storage-class STANDARD_IA
+  aws s3 cp "${UPLOAD_PATH}" "s3://${S3_OFFSITE_BUCKET}/${S3_OFFSITE_PREFIX}/${UPLOAD_NAME}" --storage-class "${S3_STORAGE_CLASS}"
 fi
 
 rm -rf "${STAGE_DIR}" "${UPLOAD_PATH}"

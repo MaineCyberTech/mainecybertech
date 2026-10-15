@@ -51,6 +51,8 @@ const PRIMARY_DOCS = [
   "docs/adr/README.md",
   "docs/testing.md",
   "docs/CI.md",
+  "docs/WEBHOOKS.md",
+  "docs/EVENTS.md",
   "docs/PERFORMANCE.md",
   "docs/runbooks/README.md",
   "docs/features/README.md",

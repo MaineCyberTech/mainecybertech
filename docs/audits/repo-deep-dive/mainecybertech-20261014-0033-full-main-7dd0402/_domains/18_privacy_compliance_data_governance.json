@@ -1,0 +1,129 @@
+{
+  "domain": "18_privacy_compliance_data_governance",
+  "file": "18_privacy_compliance_data_governance.md",
+  "area": "PRIV",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T00:52:15Z",
+  "findings": [
+    {
+      "id": "PRIV-P2-001",
+      "severity": "P2",
+      "title": "Google Analytics and Tawk.to load on public pages with no cookie-consent or opt-out gate",
+      "owner": "@web (frontend lead)",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: ConsentProvider reads the stored choice before anything renders and defaults to deny (components/consent/ConsentProvider.tsx:33-58); AnalyticsScripts mounts GA/Tawk only on granted and pushes Consent Mode v2 default-deny + withdrawal (components/consent/AnalyticsScripts.tsx:17-77); the public layout wires both (app/(public)/layout.tsx:55-66); footer Cookie settings entry point exists.",
+      "area": "PRIV"
+    },
+    {
+      "id": "PRIV-P2-002",
+      "severity": "P2",
+      "title": "Consent is captured only in the browser and never recorded or enforced server-side; the store quote form collects PII with no consent at all",
+      "owner": "API platform + @web",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the public lead submit rejects without consent (routes/public.ts:177-181) and records consent_at/consent_version (public.ts:210-217); store quotes require + persist consent (routes/store/quotes.ts:94-99,111-112,137-138); schema columns in supabase/migrations/5302449_consent_recording.sql; version helper lib/consent.ts; the contact action forwards CONSENT_VERSION (app/(public)/contact/actions.ts:4-31).",
+      "area": "PRIV"
+    },
+    {
+      "id": "PRIV-P2-003",
+      "severity": "P2",
+      "title": "Published retention statement (three years) contradicts the 90-day contact-form PII purge",
+      "owner": "security lead / @web (policy owner)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the privacy page states 90-day retention for contact/visitor sessions and first-party store analytics and names the providers (app/(public)/privacy/page.tsx:176-211); docs/PRIVACY.md:44-56 carries the platform retention schedule; apps/api/src/__tests__/privacy-retention-doc.test.ts guards the policy figure against the worker constant.",
+      "area": "PRIV"
+    },
+    {
+      "id": "PRIV-P2-004",
+      "severity": "P2",
+      "title": "Audit-log PII redaction is a shallow key-name filter; person names and job titles are persisted for 365 days",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: redactAuditMetadata recurses through nested objects/arrays and matches name/title/job_title plus substring keys (services/audit.ts:12-70); applied on every write path via logAuditEvent.",
+      "area": "PRIV"
+    },
+    {
+      "id": "PRIV-P2-005",
+      "severity": "P2",
+      "title": "No data-subject access/export/erasure path or DSAR runbook; offboarding never removes profile or auth records",
+      "owner": "security lead + API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: audited export GET /users/:id/export (routes/users.ts:394-460) and erasure DELETE /users/:id that scrubs profile PII then deletes the auth user (users.ts:657-724); runbook docs/runbooks/dsar.md covers access/export/erasure incl. public submissions (dsar.md:58-60); docs/PRIVACY.md:88-97 documents the tooling.",
+      "area": "PRIV"
+    },
+    {
+      "id": "PRIV-P2-006",
+      "severity": "P2",
+      "title": "Visitor IP addresses are sent to ip-api.com over plaintext HTTP for geolocation",
+      "owner": "@web + API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the lookup runs only with consent, requires an https:// base URL at runtime (fail-closed), and requests only status/city/regionName/country (routes/public.ts:14-40); GEO_LOOKUP_URL is HTTPS-validated in env.",
+      "area": "PRIV"
+    },
+    {
+      "id": "PRIV-P2-007",
+      "severity": "P2",
+      "title": "Privacy governance documentation set is missing and the published vendor list omits processors used in code",
+      "owner": "security lead / compliance sponsor",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/PRIVACY.md (classification, retention schedule, controller/processor roles, DSAR, known gaps) and docs/SUBPROCESSORS.md (Supabase/Stripe/Cloudflare/Sentry/SMTP/Microsoft/Atlassian/Google/Tawk.to/ip-api/DigitalOcean with DPA status) exist; the public privacy page lists the same vendors.",
+      "area": "PRIV"
+    },
+    {
+      "id": "PRIV-P3-001",
+      "severity": "P3",
+      "title": "Breach-response and IR plans still claim Alertmanager is not deployed and IR-P0-003 is open",
+      "owner": "security lead (docs owner)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/INCIDENT_RESPONSE.md:148-158 records Alertmanager as deployed and IR-P0-003 as partially fixed; docs/DATA_BREACH_RESPONSE.md:139-156 supersedes the old wording.",
+      "area": "PRIV"
+    },
+    {
+      "id": "PRIV-P3-002",
+      "severity": "P3",
+      "title": "DATA_BREACH_RESPONSE claims audit_logs records source IP/user-agent; no runtime writer populates them",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/PRIVACY.md:38,104 and docs/DATA_BREACH_RESPONSE.md state the columns exist but are never populated at runtime and that platform-admin IP/UA lives in impersonation_log; services/audit.ts never writes ip_address/user_agent.",
+      "area": "PRIV"
+    },
+    {
+      "id": "PRIV-P3-003",
+      "severity": "P3",
+      "title": "public-interaction-retention performs an unbounded single-statement delete and is not covered by the DATA-P1-002 batching fix",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: tasks/public-interaction-retention.ts:38-52 purges via the shared purgeInBatches helper (lib/purge.ts, BATCH_SIZE 1000 / MAX_BATCHES 200) with truncation reporting; worker test public-interaction-retention.test.ts.",
+      "area": "PRIV"
+    },
+    {
+      "id": "PRIV-P2-008",
+      "severity": "P2",
+      "title": "Public store quote/lead PII has no automated retention or purge path and is excluded from the published retention statement",
+      "owner": "security lead + backend/data governance",
+      "target": "this month",
+      "status": "open",
+      "note": "NEW at 7dd0402: store_quotes (name/email/phone - supabase/migrations/5302105_store_quotes.sql:1-11) and store_quote_requests.customer jsonb receive public PII but no worker task or policy purges them (retention targets are only audit_logs/notifications/public_interactions/webhook_deliveries/webhook_dead_letters: tasks/retention.ts + lib/retention-policy.ts TARGET_ALIASES); docs/PRIVACY.md:54,102-104 acknowledges the gap ('No automated purge - gap', owner decision pending) and the public policy omits quote retention (app/(public)/privacy/page.tsx:200-211). Public submitters are not users, so the DSAR erasure endpoint cannot cover them (users.ts:657+). Recommend a retention window + purge task and a matching policy line.",
+      "area": "PRIV"
+    },
+    {
+      "id": "PRIV-P3-004",
+      "severity": "P3",
+      "title": "PRIVACY.md known-gaps section contradicts its own retention schedule (claims store_analytics_events has no purge)",
+      "owner": "security lead (docs owner)",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 7dd0402: docs/PRIVACY.md:48 lists store_analytics_events as 90-day enforced by the worker, and the code does purge it (apps/worker/src/tasks/retention.ts:140-160), but docs/PRIVACY.md:102-104 still lists it under 'no automated purge' alongside the genuinely un-purged stores. Recommend correcting the known-gaps entry to only store_quote_requests/store_leads/impersonation_log (see PRIV-P2-008).",
+      "area": "PRIV"
+    }
+  ]
+}

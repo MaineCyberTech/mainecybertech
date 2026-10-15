@@ -25,6 +25,8 @@ function createTestApp() {
   app.post("/test", (_req, res) => res.json({ ok: true }));
   app.put("/test", (_req, res) => res.json({ ok: true }));
   app.delete("/test", (_req, res) => res.json({ ok: true }));
+  // NOTIF-P2-012: the RFC 8058 one-click target must bypass the cookie gate.
+  app.post("/api/v1/notifications/unsubscribe", (_req, res) => res.json({ ok: true }));
   return app;
 }
 
@@ -76,6 +78,14 @@ describe("CSRF protection", () => {
   it("skips CSRF check for requests with Authorization header", async () => {
     const app = createTestApp();
     const postRes = await request(app).post("/test").set("Authorization", "Bearer test-token");
+    expect(postRes.status).toBe(200);
+  });
+
+  // NOTIF-P2-012: a mail client's one-click POST has no CSRF cookie; the
+  // signed token in the URL is the credential.
+  it("skips CSRF check for the one-click unsubscribe POST", async () => {
+    const app = createTestApp();
+    const postRes = await request(app).post("/api/v1/notifications/unsubscribe?token=x");
     expect(postRes.status).toBe(200);
   });
 

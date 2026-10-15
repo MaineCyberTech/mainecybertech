@@ -208,5 +208,8 @@ jobs:
           path: |
             .playwright-report/
             .playwright-results/
+          # The paths are dot-directories, which upload-artifact excludes by
+          # default — that is why failure evidence was never attached.
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7

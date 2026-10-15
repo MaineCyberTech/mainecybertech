@@ -37,6 +37,29 @@ function signalConsentWithdrawal(): void {
 }
 
 /**
+ * AN-P3-005: the Tawk.to widget has the same "unmount does not unload" problem
+ * as GA, but its JS API exposes a shutdown path. On withdrawal hide the widget
+ * and disconnect its socket (`Tawk_API.shutdown()`), so no chat UI or socket
+ * remains for the rest of the session. The executed script tag itself is only
+ * unloaded by a full page reload — documented in docs/PRIVACY.md §8 — but the
+ * widget stops running immediately.
+ */
+function signalTawkWithdrawal(): void {
+  const tawk = (
+    window as unknown as {
+      Tawk_API?: { hideWidget?: () => void; shutdown?: () => void };
+    }
+  ).Tawk_API;
+  if (!tawk) return;
+  try {
+    if (typeof tawk.hideWidget === "function") tawk.hideWidget();
+    if (typeof tawk.shutdown === "function") tawk.shutdown();
+  } catch {
+    // A third-party API error must never break consent withdrawal.
+  }
+}
+
+/**
  * PRIV-P2-001: Google Analytics and the Tawk.to widget are injected only after
  * the visitor has explicitly accepted them. Nothing renders before the stored
  * choice is read (see ConsentProvider), so no third-party request is made on
@@ -46,7 +69,10 @@ export default function AnalyticsScripts({ gaId, tawktoId, nonce }: AnalyticsScr
   const { choice } = useConsent();
 
   useEffect(() => {
-    if (choice === "denied") signalConsentWithdrawal();
+    if (choice === "denied") {
+      signalConsentWithdrawal();
+      signalTawkWithdrawal();
+    }
   }, [choice]);
 
   if (choice !== "granted") return null;

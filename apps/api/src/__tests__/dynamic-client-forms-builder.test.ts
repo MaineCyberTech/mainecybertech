@@ -280,15 +280,31 @@ describe("Dynamic Client Forms Builder API", () => {
       expect(res.status).toBe(401);
     });
 
-    it("exports forms", async () => {
+    it("exports forms as CSV (API-P3-008)", async () => {
       mockFrom({ data: [FORM_RECORD], error: null });
       const res = await request(app)
         .get("/api/v1/dynamic-forms/export.csv")
         .set("Authorization", "Bearer test-token")
         .query({ organizationId: "00000000-0000-0000-0000-000000000001", format: "csv" });
       expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
+      expect(res.headers["content-type"]).toContain("text/csv");
+      expect(res.headers["content-disposition"]).toContain("dynamic-forms-export-");
+      expect(res.text).toContain(
+        "id,organization_id,title,form_type,status,published_at,closes_at,created_by,created_at,updated_at",
+      );
+      expect(res.text).toContain("Client Intake Form");
       expect(logAuditEvent).toHaveBeenCalled();
+    });
+
+    it("keeps the documented format=json option", async () => {
+      mockFrom({ data: [FORM_RECORD], error: null });
+      const res = await request(app)
+        .get("/api/v1/dynamic-forms/export.csv")
+        .set("Authorization", "Bearer test-token")
+        .query({ organizationId: "00000000-0000-0000-0000-000000000001", format: "json" });
+      expect(res.status).toBe(200);
+      expect(res.headers["content-type"]).toContain("application/json");
+      expect(res.body[0].title).toBe("Client Intake Form");
     });
   });
 });

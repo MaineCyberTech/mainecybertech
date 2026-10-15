@@ -1,0 +1,109 @@
+{
+  "domain": "15_performance_scalability_cost",
+  "file": "15_performance_scalability_cost.md",
+  "area": "PERF",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T00:45:53Z",
+  "findings": [
+    {
+      "id": "PERF-P2-001",
+      "severity": "P2",
+      "title": "Request metrics label uses the raw URL path, so Prometheus cardinality grows with every resource ID",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: request-id.ts labels both HTTP metrics with routeLabel(req) — the matched Express route template (req.route.path + req.baseUrl) with a single 'unmatched' bucket for 404s — instead of req.path; commit d9911286 (OBS-P2-010/PERF-P2-001).",
+      "area": "PERF"
+    },
+    {
+      "id": "PERF-P2-002",
+      "severity": "P2",
+      "title": "Public storefront pages are force-dynamic and uncached; each page view costs two Supabase reads",
+      "owner": "web platform + API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the store pages remain force-dynamic but the cost per view is fixed at both layers — apps/web/lib/catalog/catalog-source.ts:47-80 keeps a 60s per-process snapshot (DB-backed snapshots only, tests can invalidate) and the API response-caches the public catalog routes for 60s (routes/store/catalog.ts:21-30,83-123) with a Redis-backed cache and in-memory fallback (middleware/cache.ts); commit f0df4268.",
+      "area": "PERF"
+    },
+    {
+      "id": "PERF-P2-003",
+      "severity": "P2",
+      "title": "resolveEffectivePermissions is uncached and fans out 4-6 queries per gated request",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/api/src/lib/permissions.ts:21-124 wraps resolution in a short-TTL cache keyed by userId:orgId that also dedupes concurrent resolutions (in-flight promise is cached) and never caches failures; commit f0df4268.",
+      "area": "PERF"
+    },
+    {
+      "id": "PERF-P2-004",
+      "severity": "P2",
+      "title": "Bulk invite performs 4 sequential Supabase calls per invite and cannot finish 500 invites inside the 30s request timeout",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the DB fan-out is fixed — profiles and memberships are looked up once per 100-entry chunk and memberships are inserted as one multi-row insert per chunk (bulk.ts:22,133-226; duplicates collapsed up front); commit a37b8a4d. Still partially fixed: auth accounts are still invited one at a time inside a sequential loop (bulk.ts:163-190, documented ADMIN-P2-004 rationale), so a worst-case request of 500 brand-new emails remains up to 500 sequential auth-admin calls inside the 30s request deadline (app.ts requestTimeout) — no throughput measurement exists and the per-row results would be lost if the deadline fires.",
+      "area": "PERF"
+    },
+    {
+      "id": "PERF-P2-005",
+      "severity": "P2",
+      "title": "Each SSE notification stream opens its own Supabase Realtime channel with no connection cap",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: notifications.ts:29-41 tracks active streams per process and refuses new ones past SSE_MAX_STREAMS=200 with 503 + Retry-After (:198), releasing the slot on close; commit f0df4268.",
+      "area": "PERF"
+    },
+    {
+      "id": "PERF-P2-006",
+      "severity": "P2",
+      "title": "POST /billing/sync does not paginate Stripe results",
+      "owner": "billing/API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: billing.ts:75-142 fetches every Stripe page with starting_after until has_more is false, bounded by a page cap that reports truncation; commits c735bcb4/ec01772e (BILL-P2-002, ARCH-P2-005).",
+      "area": "PERF"
+    },
+    {
+      "id": "PERF-P3-001",
+      "severity": "P3",
+      "title": "Unbounded list reads remain on compliance and time-entry endpoints; exports load up to 10k rows with select(\"*\")",
+      "owner": "API platform",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the cited unbounded reads are capped — compliance.ts:34,92 use LIST_HARD_CAP and final/time-entries.ts:6-30 caps the summary at 5000 rows and reports truncation; most exports now use EXPORT_ROW_LIMIT=5000 (pagination.ts:21-27; 8 route files). Still partially fixed: apps/api/src/routes/audit.ts:93,187 still read up to 10000 rows for the audit export, and three service reads still use limit(10000) (services/satisfaction-pulse-widget.ts:312, client-onboarding-command-center.ts:911, dynamic-client-forms-builder.ts:338), above the documented export cap.",
+      "area": "PERF"
+    },
+    {
+      "id": "PERF-P3-002",
+      "severity": "P3",
+      "title": "Every paginated list request also runs an exact row count",
+      "owner": "API platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: pagination.ts:59-69 adds listCountMode(), which defaults to PostgREST `estimated` and only uses `exact` when the caller passes ?withTotal=1; the cited tickets.ts:109 and projects.ts:104 now use it, and the 38 remaining `count: \"exact\"` call sites are aggregate/search/dashboard endpoints that genuinely need exact totals.",
+      "area": "PERF"
+    },
+    {
+      "id": "PERF-P3-003",
+      "severity": "P3",
+      "title": "No bundle-size or performance budget gate; the analyzer is opt-in only",
+      "owner": "web platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: scripts/bundle-budget.json commits total/totalGzip/largest-chunk budgets (measured 2026-10-12 from the deployed image) and scripts/check-bundle-budget.mjs runs as a gate in e2e.yml:164, so a bundle regression fails CI; commit 57dc3cc7.",
+      "area": "PERF"
+    },
+    {
+      "id": "PERF-P3-004",
+      "severity": "P3",
+      "title": "API routes broadly select all columns (`select(\"*\")`) and pagination is ad hoc",
+      "owner": "API platform",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: shared-pagination adoption grew from 4 to 43 route files (grep lib/pagination) and listCountMode bounds the count work, but the projection half is untouched — 156 `select(\"*\")` calls remain in non-test API code (was 154) and 37 route files still parse page/limit inline, so list responses keep shipping every column of every row.",
+      "area": "PERF"
+    }
+  ]
+}

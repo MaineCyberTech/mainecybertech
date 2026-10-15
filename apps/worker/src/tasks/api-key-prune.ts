@@ -1,6 +1,6 @@
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
-import type { TaskResult } from "../task-registry";
+import type { TaskExecutionContext, TaskResult } from "../task-registry";
 
 /**
  * Bounded prune path for expired API keys (SEC-P2-017 / ACM-P2-005).
@@ -31,6 +31,8 @@ const DELETE_GRACE_MS = 30 * 24 * 60 * 60 * 1000;
 interface BatchOutcome {
   processed: number;
   truncated: boolean;
+  /** RES-P3-011: true when the task deadline signal stopped the loop early. */
+  aborted?: boolean;
   error?: string;
 }
 
@@ -46,10 +48,14 @@ interface BatchError {
 async function runBatched(
   selectBatch: () => Promise<{ data: Array<{ id: string }> | null; error: BatchError | null }>,
   act: (ids: string[]) => Promise<{ error: BatchError | null }>,
+  signal?: AbortSignal,
 ): Promise<BatchOutcome> {
   let processed = 0;
 
   for (let batch = 0; batch < MAX_BATCHES; batch++) {
+    // RES-P3-011: the task registry aborts the signal at the deadline.
+    if (signal?.aborted) return { processed, truncated: false, aborted: true };
+
     const { data, error } = await selectBatch();
     if (error) return { processed, truncated: false, error: error.message };
 
@@ -66,7 +72,11 @@ async function runBatched(
   return { processed, truncated: true };
 }
 
-export async function apiKeyPrune(_payload: Record<string, unknown>): Promise<TaskResult> {
+export async function apiKeyPrune(
+  _payload: Record<string, unknown>,
+  context?: TaskExecutionContext,
+): Promise<TaskResult> {
+  const signal = context?.signal;
   try {
     const supabase = getSupabaseAdmin();
     const nowIso = new Date().toISOString();
@@ -89,6 +99,7 @@ export async function apiKeyPrune(_payload: Record<string, unknown>): Promise<Ta
           .in("id", ids);
         return { error };
       },
+      signal,
     );
 
     if (deactivation.error) {
@@ -113,6 +124,7 @@ export async function apiKeyPrune(_payload: Record<string, unknown>): Promise<Ta
         const { error } = await supabase.from("api_keys").delete().in("id", ids);
         return { error };
       },
+      signal,
     );
 
     if (deletion.error) {
@@ -121,6 +133,16 @@ export async function apiKeyPrune(_payload: Record<string, unknown>): Promise<Ta
         "API key prune: deletion phase failed",
       );
       return { ok: false, error: `delete: ${deletion.error}` };
+    }
+
+    // RES-P3-011: the deadline stopped a phase early. The registry already
+    // failed the task; do not report success.
+    if (deactivation.aborted || deletion.aborted) {
+      logger.warn(
+        { deactivated: deactivation.processed, deleted: deletion.processed },
+        "API key prune stopped at the task deadline",
+      );
+      return { ok: false, error: "task aborted before completing; prune stopped early" };
     }
 
     if (deactivation.truncated || deletion.truncated) {
