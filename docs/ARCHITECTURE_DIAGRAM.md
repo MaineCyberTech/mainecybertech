@@ -59,6 +59,7 @@ graph TB
         GHCR[GitHub Container Registry]
         PROM[Prometheus]
         AM[Alertmanager]
+        NE[Node Exporter<br/>host cpu/mem/disk]
     end
 
     subgraph "External"
@@ -115,6 +116,7 @@ graph TB
     %% Observability (internal compose network, no published ports)
     PROM -->|scrape /metrics with METRICS_TOKEN| API
     PROM -->|scrape /metrics with METRICS_TOKEN| WK
+    PROM -->|scrape node_* host metrics (no token)| NE
     PROM -->|alerts| AM
 
     %% Deploy
