@@ -74,6 +74,22 @@ jobs:
         # Matches the pin in supabase-migrations.yml / package.json.
         run: npm install -g supabase@2.107.0
 
+      - name: Log in to Docker Hub (optional)
+        # The anonymous pull limit on shared runner IPs causes intermittent
+        # `toomanyrequests` during `supabase start`. When DOCKERHUB_USERNAME /
+        # DOCKERHUB_TOKEN are provisioned the pull is authenticated (much
+        # higher limit); otherwise this is a warning and the retry loop below
+        # still applies.
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_TOKEN" ]; then
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+          else
+            echo "::warning::Docker Hub credentials not provisioned; pulls use the anonymous limit (the retry loop below applies)."
+          fi
+
       - name: Start Supabase
         # `supabase start` pulls ~13 images from Docker Hub; the shared runner
         # intermittently hits "toomanyrequests: Rate exceeded", which is
