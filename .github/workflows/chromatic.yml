@@ -67,7 +67,25 @@ jobs:
       - name: Build Storybook
         run: pnpm storybook:build
 
+      - name: Check the Chromatic token
+        # CHROMATIC_PROJECT_TOKEN is an operator provisioning item (Chromatic
+        # account). Secrets cannot be tested in a job `if:`, so surface the
+        # presence through a step output: the gate stays blocking when the
+        # token is configured and degrades to a loud warning (not a red check)
+        # until it is provisioned. See docs/CI.md.
+        id: chromatic_token
+        env:
+          CHROMATIC_PROJECT_TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+        run: |
+          if [ -n "$CHROMATIC_PROJECT_TOKEN" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::CHROMATIC_PROJECT_TOKEN is not provisioned; skipping the visual gate. Provision the secret to enable it (docs/CI.md)."
+          fi
+
       - name: Chromatic
+        if: steps.chromatic_token.outputs.configured == 'true'
         uses: chromaui/action@1cfa065cbdab28f6ca3afaeb3d761383076a35aa
         with:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
