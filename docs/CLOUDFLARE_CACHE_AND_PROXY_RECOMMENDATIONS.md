@@ -4,7 +4,7 @@
 
 Cloudflare’s Terraform provider supports `cloudflare_dns_record` and examples commonly show `proxied = true` for A or CNAME records where you want Cloudflare to sit in front of the service.
 
-This pack assumes a Cloudflare-managed DNS pattern with CNAME records for:
+This pack assumes a Cloudflare-managed DNS pattern with proxied records for:
 - `app.mainecybertech.com`
 - `api.mainecybertech.com`
 - `app.mainecybertech.us`
@@ -18,7 +18,7 @@ This pack assumes a Cloudflare-managed DNS pattern with CNAME records for:
 Reasoning for this recommendation:
 - these are public web application hostnames
 - Cloudflare proxying is the normal pattern when you want Cloudflare to sit in front of web traffic
-- Vercel custom-domain traffic is commonly connected through DNS records rather than requiring a nameserver migration
+- proxying hides the droplet's origin IP and keeps TLS/caching policy at the Cloudflare edge
 
 ### `api.*` hostnames
 **Recommended default:** start with `proxied = true` only if your API behavior is confirmed to work correctly through Cloudflare for your headers, TLS expectations, and request handling.
@@ -29,8 +29,8 @@ Reasoning for this recommendation:
 
 ### For `app.*`
 - use Cloudflare proxying
-- keep SEO/canonical hostname behavior consistent in Vercel
-- choose one canonical app hostname per zone and keep redirects intentional in Vercel
+- keep SEO/canonical hostname behavior consistent (see `apps/web/middleware.ts`)
+- choose one canonical app hostname per zone and keep the host redirects intentional
 
 ### For `api.*`
 - prioritize correctness first

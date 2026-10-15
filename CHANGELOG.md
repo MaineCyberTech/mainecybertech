@@ -102,6 +102,14 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   `critical`/`serious`; the seven pages fixed on 2026-10-02 were promoted from
   the breadth triage set (`43573d12`, `62861370`).
 
+### Changed
+
+- **Vercel build remnants removed:** `apps/web/next.config.mjs` no longer
+  branches on `process.env.VERCEL` (every environment builds the standalone
+  server behind Caddy), and the marketing/Cloudflare docs describe the
+  Cloudflare → droplet topology instead of the retired Vercel flow. Pointing
+  the `.com` zone at the production droplet is an operator DNS change.
+
 ### Security
 
 - Deploy now injects the Turnstile keys (`TURNSTILE_SECRET_KEY` into the droplet

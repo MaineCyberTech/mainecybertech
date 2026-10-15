@@ -9,7 +9,10 @@
 | `www.mainecybertech.com` | Marketing homepage + service pages | `apps/web/app/(public)/` |
 | `app.mainecybertech.com` | Portal + admin | `apps/web/app/(portal)/` + `apps/web/app/(admin)/` |
 
-Both domains point to the same Vercel project. Vercel domain routing handles which route group serves which domain via `next.config.mjs` or Vercel's domain settings.
+Both domains are served by the same web image behind the droplet's Caddy
+(`infra/digitalocean/Caddyfile.dev` / `Caddyfile.prod`). `apps/web/middleware.ts`
+routes by hostname: `app.*` serves the portal/admin/auth routes and `www.*`
+serves the marketing routes, redirecting across hosts when needed.
 
 ## Source Material
 
@@ -208,32 +211,40 @@ Each service page under `apps/web/app/(public)/services/[slug]/page.tsx`:
 
 ## Phase 3 — Domain Configuration ✅
 
-### 3a. Vercel Domain Setup
+### 3a. Hostname setup (Cloudflare → droplet Caddy)
 
-In the existing Vercel project (`vercel.tf` or Vercel dashboard):
+Both hostnames terminate at the per-environment Caddy config
+(`infra/digitalocean/Caddyfile.dev` / `Caddyfile.prod`) on the droplet:
 
 | Domain | Role |
 |--------|------|
 | `www.mainecybertech.com` | Production — serves `(public)` route group |
 | `app.mainecybertech.com` | Production — serves `(portal)` + `(admin)` route groups |
 
-**Vercel approach:** Add both domains to the same project. Vercel routes by hostname — no special config needed in `next.config.mjs`.
+No per-domain app config is needed: both hostnames proxy to the same `web:3000`
+container, and `apps/web/middleware.ts` does the host-based routing.
 
 ### 3b. Cloudflare DNS
 
-The existing `dns.cloudflare.tf` already has CNAME records for `app.mainecybertech.com` and `api.mainecybertech.com`. Add:
+Point the production records (proxied) at the `mct-portal-prod` droplet, and
+the testing-zone equivalents at `mct-portal-dev`:
 
 ```
-www.mainecybertech.com  CNAME  cname.vercel-dns.com  (proxied)
+www.mainecybertech.com  A/AAAA  <prod droplet IP>  (proxied)
+app.mainecybertech.com  A/AAAA  <prod droplet IP>  (proxied)
+api.mainecybertech.com  A/AAAA  <prod droplet IP>  (proxied)
+www.mainecybertech.us   A/AAAA  <dev droplet IP>   (proxied)
+app.mainecybertech.us   A/AAAA  <dev droplet IP>   (proxied)
+api.mainecybertech.us   A/AAAA  <dev droplet IP>   (proxied)
 ```
+
+`deploy-do.yml` refreshes the matching Caddy site blocks on the droplet; Caddy
+terminates TLS at the origin (Cloudflare Origin CA / internal).
 
 ### 3c. next.config.mjs
 
-No changes needed — both domains serve the same build. Vercel handles routing at the edge.
-
-### 3d. Terraform Update (`vercel.tf`)
-
-Add `www.mainecybertech.com` as a domain in the Vercel project resource, or add as a separate domain resource.
+No changes needed — both domains serve the same build and the middleware
+handles the host split.
 
 ## Phase 4 — Cleanup & Deployment ✅
 
@@ -253,7 +264,9 @@ Created `apps/web/e2e/marketing/` with:
 
 ### 4d. CI/CD ✅
 
-The existing `web-prod-vercel.yml` and `web-dev-vercel.yml` already deploy the web app to Vercel. No new workflows needed — both domains are from the same build.
+`deploy-do.yml` ships the same web image to the dev/prod droplets and refreshes
+Caddy; both hostnames are served from that one image. No per-domain workflow is
+needed.
 
 ## Implementation Order ✅
 
@@ -263,7 +276,7 @@ All 4 phases are complete.
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Same Vercel project or separate? | **Same project** | Simpler deployment, shared infra, cost savings; Vercel handles domain-based routing natively |
+| Same image or separate apps? | **One image, two hostnames** | Simpler deployment and CI/CD; `apps/web/middleware.ts` splits marketing (`www.*`) from portal/admin (`app.*`) by hostname |
 | Route group or separate app? | **Route group `(public)`** | Single Docker image, single CI/CD pipeline; route groups keep code isolated |
 | Static or dynamic? | **Static (SSG)** for service pages, **dynamic** for contact page form | Service pages have no user-specific content; contact form needs client-side interactivity |
 | GA + Tawk.to in layout or per-page? | **Root public layout** | These should fire on every marketing page visit |
@@ -279,5 +292,5 @@ All 4 phases are complete.
 | `apps/web/components/marketing/` | Marketing components (header, particles, cards, form) |
 | `apps/web/app/globals.css` | Marketing CSS variables |
 | `apps/web/e2e/marketing/` | E2E marketing tests |
-| `infra/terraform/vercel.tf` | Vercel project with www + app domains |
+| `infra/digitalocean/Caddyfile.prod` | Caddy ingress for `www.` + `app.` + `api.` (prod; `.dev` for the testing zone) |
 | `infra/terraform/dns.cloudflare.tf` | Cloudflare www + app + api CNAME records |
