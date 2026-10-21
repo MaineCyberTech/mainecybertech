@@ -1,20 +1,11 @@
 #!/usr/bin/env pwsh
 # Pre-commit secret scanner for Windows environments.
-# Keep the pattern list in sync with scripts/scan-secrets.sh — it matches secret
-# VALUES, not variable names (name matching blocked benign mentions and missed
-# real values; audit SECRET-P2-003).
-$Patterns = @(
-    'AKIA[0-9A-Z]{16}'
-    'ASIA[0-9A-Z]{16}'
-    'ghp_[0-9a-zA-Z]{36}'
-    'gho_[0-9a-zA-Z]{36}'
-    'ghu_[0-9a-zA-Z]{36}'
-    'github_pat_[0-9a-zA-Z_]{22,}'
-    'sk_(live|test)_[0-9a-zA-Z]{16,}'
-    'xox[baprs]-[0-9a-zA-Z-]{10,}'
-    '-----BEGIN[ A-Za-z]*PRIVATE KEY-----'
-    'eyJhbGciOi[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{20,}\.[A-Za-z0-9._-]{20,}'
-)
+# Values match against the canonical pattern list in
+# scripts/ci/secret-patterns.txt, shared with scripts/scan-secrets.sh and the CI
+# action — it matches secret VALUES, not variable names (name matching blocked
+# benign mentions and missed real values; audit SECRET-P2-003).
+$Patterns = Get-Content (Join-Path $PSScriptRoot 'ci/secret-patterns.txt') |
+    Where-Object { $_.Trim() -and -not $_.Trim().StartsWith('#') }
 
 $Staged = git diff --cached --diff-filter=ACMR --name-only 2>$null
 if (-not $Staged) { exit 0 }
