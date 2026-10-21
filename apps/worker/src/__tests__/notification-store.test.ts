@@ -194,7 +194,7 @@ describe("worker notification sensitivity filter (NOTIF-P2-005)", () => {
 
   it("derives the dedup key from the sanitized content so retries still dedupe", async () => {
     const { client, seenKeys } = fakeSupabase({ preferences: [] });
-    const raw = { ...input, body: "api_key=abcdef123456" };
+    const raw = { ...input, body: "api_key=example-test-value" };
 
     const first = await insertNotification(client, raw);
     const second = await insertNotification(client, raw);
