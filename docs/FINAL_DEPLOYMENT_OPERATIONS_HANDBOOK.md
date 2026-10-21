@@ -92,7 +92,9 @@ docker compose -p mct-portal up -d --remove-orphans
 
 ### Health check endpoints
 
-- `https://api.mainecybertech.com/health` — API health (includes Supabase connectivity)
+- `https://app.mainecybertech.com/api/v1/store/products` — Prod API reachability
+  through the web host (OBS-P2-017: `api.mainecybertech.com/health` 404s until
+  that hostname's DNS record is repointed at the prod droplet)
 - `https://api.mainecybertech.us/health` — Dev API health
 - Worker health: `curl http://localhost:3001/health` (internal, on droplet)
 - Redis health: `REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli ping` (internal, on droplet; the password stays out of the process arguments)

@@ -19,6 +19,7 @@ import {
   DEFAULT_ENABLED_MODULES,
   SUBSCRIPTION_ENABLED_MODULES,
 } from "../lib/entitlements";
+import { ANALYTICS_EVENT_NAMES } from "../lib/analytics-events";
 
 /**
  * EVOL-P3-008: roles, plan-to-module mapping and status vocabularies are
@@ -38,7 +39,21 @@ const ROLES_BOOTSTRAP = path.join(
 );
 const ROLES_EXPANSION = path.join(MIGRATIONS, "5302128_role_catalog_expansion.sql");
 const STATUS_CHECKS = path.join(MIGRATIONS, "5302457_status_check_constraints.sql");
+const SOP_STATUS_CHECK = path.join(MIGRATIONS, "5302462_sop_library_status_check.sql");
 const VALIDATORS = path.join(__dirname, "..", "validators");
+const WEB_ANALYTICS_EVENTS = path.join(
+  __dirname,
+  "..",
+  "..",
+  "..",
+  "..",
+  "apps",
+  "web",
+  "lib",
+  "catalog",
+  "data",
+  "analytics-events.json",
+);
 
 function quotedValues(block: string): string[] {
   return [...block.matchAll(/'([^']+)'/g)].map((match) => match[1]);
@@ -60,24 +75,36 @@ function catalogRoleKeys(): string[] {
   return [...keys].sort();
 }
 
-/** table -> DB status vocabulary from the CHECK-constraint migration. */
+/** table -> DB status vocabulary from the CHECK-constraint migrations. */
 function dbStatusVocabularies(): Map<string, string[]> {
-  const sql = fs.readFileSync(STATUS_CHECKS, "utf8");
   const vocab = new Map<string, string[]>();
-  for (const match of sql.matchAll(
-    /\('([a-z_]+)',\s*'[a-z_]+',\s*'status',\s*array\[([^\]]*)\]\)/g,
-  )) {
-    vocab.set(match[1], quotedValues(match[2]));
+  for (const file of [STATUS_CHECKS, SOP_STATUS_CHECK]) {
+    const sql = fs.readFileSync(file, "utf8");
+    for (const match of sql.matchAll(
+      /\('([a-z_]+)',\s*'[a-z_]+',\s*'status',\s*array\[([^\]]*)\]\)/g,
+    )) {
+      vocab.set(match[1], quotedValues(match[2]));
+    }
   }
   return vocab;
 }
 
-/** First `status: z.enum([...])` in a validator file. */
+/**
+ * First `status: z.enum([...])` in a validator file, or a `z.enum(NAME)`
+ * reference resolved against an `export const NAME = [...]` in the same file
+ * (DATA-P3-007 moved sop_library's vocabulary to a named constant).
+ */
 function validatorStatusValues(file: string): string[] {
   const src = fs.readFileSync(path.join(VALIDATORS, file), "utf8");
-  const match = src.match(/status:\s*z\.enum\(\[([^\]]*)\]\)/);
-  if (!match) throw new Error(`${file}: status z.enum not found`);
-  return quotedValues(match[1]);
+  const inline = src.match(/status:\s*z\.enum\(\[([^\]]*)\]\)/);
+  if (inline) return quotedValues(inline[1]);
+  const named = src.match(/status:\s*z\.enum\((\w+)\)/);
+  if (named) {
+    const declaration = src.match(new RegExp(`const\\s+${named[1]}\\s*=\\s*\\[([^\\]]*)\\]`));
+    if (!declaration) throw new Error(`${file}: ${named[1]} array not found`);
+    return quotedValues(declaration[1]);
+  }
+  throw new Error(`${file}: status z.enum not found`);
 }
 
 describe("catalog parity (EVOL-P3-008)", () => {
@@ -129,6 +156,9 @@ describe("catalog parity (EVOL-P3-008)", () => {
       ["qbr_reports", "qbr.ts"],
       ["approval_requests", "approvals.ts"],
       ["satisfaction_pulses", "satisfaction-pulse-widget.ts"],
+      // DATA-P3-007: the governance SOP status was free text; the validator
+      // enum and the 5302462 CHECK now share one vocabulary.
+      ["sop_library", "governance.ts"],
     ] as const;
 
     it("constrains every app-enforced status vocabulary at the DB level", () => {
@@ -140,6 +170,15 @@ describe("catalog parity (EVOL-P3-008)", () => {
         const unknown = written.filter((value) => !allowed!.includes(value));
         expect({ table, validator, unknown }).toEqual({ table, validator, unknown: [] });
       }
+    });
+  });
+
+  describe("analytics event registry", () => {
+    it("keeps the API event allowlist in sync with the web registry (AN-P3-006)", () => {
+      const web = JSON.parse(fs.readFileSync(WEB_ANALYTICS_EVENTS, "utf8")) as {
+        eventNames: string[];
+      };
+      expect([...ANALYTICS_EVENT_NAMES].sort()).toEqual([...web.eventNames].sort());
     });
   });
 });

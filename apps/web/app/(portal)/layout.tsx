@@ -157,7 +157,12 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         style={{ borderColor: `${brandColor}33` }}
       >
         <div className="mx-auto max-w-7xl px-6 py-4">
-          <div className="flex items-start justify-between gap-4">
+          {/* MOB-P3-006: at 360px the brand block and the header actions do
+              not fit on one line; without wrapping the actions row overflowed
+              the viewport by 9px (mobile-safari caught it via /login, which
+              redirects here for an authenticated session). Wrap the actions
+              onto their own line and keep them right-aligned. */}
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-2 sm:gap-3">
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -191,7 +196,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
               </div>
             </div>
 
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="ml-auto flex items-center gap-1 sm:gap-2">
               <Link href="/portal/profile">
                 <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-emerald-600/20 text-xs font-bold text-emerald-400 transition hover:bg-emerald-600/30">
                   {user?.avatarUrl ? (

@@ -284,6 +284,53 @@ describe("Governance API", () => {
     expect(r.body.data.status).toBe("open");
   });
 
+  // DATA-P3-007: sop_library.status used to be free text, so an invalid value
+  // reached the DB and (once a CHECK exists) returned a 500 instead of a 400.
+  it("rejects an SOP status outside the bounded vocabulary", async () => {
+    const s = ma();
+    const builder = createMockBuilder({ data: { id: "sop-1" }, error: null });
+    s.from.mockReturnValue(builder);
+
+    const r = await request(app)
+      .post("/api/v1/governance/sop-library")
+      .set("Authorization", auth)
+      .send({ organizationId: org, title: "Onboarding", status: "not-a-status" });
+
+    expect(r.status).toBe(400);
+    expect(r.body.error.code).toBe("VALIDATION");
+    expect(builder.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid SOP status on PATCH", async () => {
+    const s = ma();
+    const builder = createMockBuilder({ data: { id: "sop-1" }, error: null });
+    s.from.mockReturnValue(builder);
+
+    const r = await request(app)
+      .patch(`/api/v1/governance/sop-library/sop-1?organization_id=${org}`)
+      .set("Authorization", auth)
+      .send({ status: "not-a-status" });
+
+    expect(r.status).toBe(400);
+    expect(builder.update).not.toHaveBeenCalled();
+  });
+
+  it("accepts an SOP status from the bounded vocabulary", async () => {
+    const s = ma();
+    const builder = createMockBuilder({ data: { id: "sop-1", status: "active" }, error: null });
+    s.from.mockReturnValue(builder);
+
+    const r = await request(app)
+      .post("/api/v1/governance/sop-library")
+      .set("Authorization", auth)
+      .send({ organizationId: org, title: "Onboarding", status: "active" });
+
+    expect(r.status).toBe(201);
+    expect(builder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "active", organization_id: org }),
+    );
+  });
+
   it("returns 401 without auth token", async () => {
     const r = await request(app).get("/api/v1/governance/change-requests");
     expect(r.status).toBe(401);

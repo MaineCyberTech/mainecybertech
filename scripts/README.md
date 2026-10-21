@@ -86,7 +86,7 @@ self-tests in `ci/` so a broken detector cannot pass silently.
 | `ci/verify-gitleaks-config.sh` | Verify `.gitleaks.toml`: tracked tree clean under the allowlists AND a synthetic key is still detected (`secret-history-scan.yml`). |
 | `uptime/probe.mjs` | External uptime probe run by `external-uptime-probe.yml` against `uptime/probe-targets.json`. |
 | `uptime/smoke.mjs` | Functional smoke check run by `smoke-check.yml`: API `/health`, web `/login`, and an authenticated read (sign-in + `GET /api/v1/auth/me`) per enabled target (TEST-P3-002). |
-| `sync-product-catalog.mjs` | Keep `apps/api/src/data/products.json` byte-identical to the canonical `apps/web/lib/catalog/data/products.json` (HYGIENE-P2-002); `check` runs in the shared unit-tests action. |
+| `check-audits-budget.mjs` | Advisory size-budget report for the `docs/audits` corpus (HYGIENE-P3-014): warns when over the documented budget and never fails CI by default (`--strict` exits 1 for local/operator use). |
 | `ci/test-terraform-state-restore.sh` | Self-test for `terraform-state-restore.sh` against a stubbed aws CLI (list/scratch/restore guard, fail-closed credentials) — DR-P3-005 / IR-P3-001. |
 
 ## Subdirectories

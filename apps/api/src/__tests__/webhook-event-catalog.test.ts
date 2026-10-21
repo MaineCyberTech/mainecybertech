@@ -65,7 +65,7 @@ describe("webhook event catalog (EVOL-P2-002)", () => {
     expect(source).not.toContain("z.array(z.string().min(1))");
   });
 
-  it("documents every catalogued event in docs/WEBHOOKS.md (WH-P3-002)", () => {
+  it("keeps the webhook consumer docs bound to the catalog (WH-P3-002 / EVOL-P3-009)", () => {
     // The committed consumer catalog must not drift from the SDK catalog: the
     // doc is the integration contract and this guard keeps it complete.
     const doc = fs.readFileSync(
@@ -74,5 +74,17 @@ describe("webhook event catalog (EVOL-P2-002)", () => {
     );
     const undocumented = WEBHOOK_EVENTS.filter((event) => !doc.includes(event));
     expect(undocumented).toEqual([]);
+    // EVOL-P3-009: the consolidated contract must state the two-layer retry
+    // budget (3 inline attempts + 5 worker retries) so it cannot regress to a
+    // single, contradictory number.
+    expect(doc).toContain("3 attempts");
+    expect(doc).toContain("5 attempts");
+    // docs/EVENTS.md duplicated the contract and drifted on retries; it now
+    // exists only as a pointer, so a second consumer copy cannot return.
+    const pointer = fs.readFileSync(
+      path.join(__dirname, "..", "..", "..", "..", "docs", "EVENTS.md"),
+      "utf8",
+    );
+    expect(pointer).toContain("WEBHOOKS.md");
   });
 });

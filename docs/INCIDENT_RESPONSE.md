@@ -54,9 +54,15 @@ and commit the completed table into §8 before go-live. Until then the plan is
 
 ### 4.1 Detect and triage (first 15 minutes)
 
-- Confirm the signal is real: check `https://api.mainecybertech.com/health`,
-  worker health, and the Prometheus/Sentry alerts listed in
-  `docs/MONITORING_AND_ALERTING.md`.
+- Confirm the signal is real: check `https://app.mainecybertech.com/login`
+  (web, expects 200) and
+  `https://app.mainecybertech.com/api/v1/store/products` (API, expects 200 —
+  the prod API is served through the web host under `/api/v1/*` until the
+  `api.mainecybertech.com` DNS record is repointed at the prod droplet), worker
+  health, and the Prometheus/Sentry alerts listed in
+  `docs/MONITORING_AND_ALERTING.md`. The old
+  `api.mainecybertech.com/health` URL 404s (OBS-P2-017); do not read that as an
+  outage by itself.
 - Determine blast radius: single tenant, all tenants, or platform-wide.
 - Classify: availability, data integrity, or security/confidentiality.
 - If security/confidentiality is *possible*, invoke

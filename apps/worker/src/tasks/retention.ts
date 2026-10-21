@@ -4,13 +4,17 @@ import { env } from "../env";
 import { logger } from "../logger";
 import { loadActiveRetentionPolicies, resolveRetentionDays } from "../lib/retention-policy";
 import { BATCH_SIZE, MAX_BATCHES, purgeInBatches, type PurgeOutcome } from "../lib/purge";
-import type { TaskHandler, TaskResult } from "../task-registry";
+import type { TaskExecutionContext, TaskHandler, TaskResult } from "../task-registry";
 
 interface RetentionConfig {
   auditLogRetentionDays: number;
   notificationRetentionDays: number;
   /** AN-P2-004: first-party storefront analytics rows (no PII). */
   storeAnalyticsRetentionDays: number;
+  /** PRIV-P2-008: public store quote submissions (name/email/phone). */
+  storeQuoteRetentionDays: number;
+  /** PRIV-P2-008: structured quote requests whose `customer` jsonb holds PII. */
+  storeQuoteRequestRetentionDays: number;
   /** WH-P3-009: outbound/inbound delivery audit rows. */
   webhookDeliveryRetentionDays: number;
   /** WH-P3-009: dead letters are kept longer so an operator can triage. */
@@ -21,6 +25,8 @@ const DEFAULT_CONFIG: RetentionConfig = {
   auditLogRetentionDays: 365,
   notificationRetentionDays: 90,
   storeAnalyticsRetentionDays: 90,
+  storeQuoteRetentionDays: 90,
+  storeQuoteRequestRetentionDays: 90,
   webhookDeliveryRetentionDays: 90,
   webhookDeadLetterRetentionDays: 180,
 };
@@ -58,6 +64,7 @@ async function archiveAuditLogs(
 
 export const retentionTask: TaskHandler = async (
   payload?: Record<string, unknown>,
+  context?: TaskExecutionContext,
 ): Promise<TaskResult> => {
   const overrides = (payload ?? {}) as Partial<RetentionConfig>;
   const config = {
@@ -78,6 +85,8 @@ export const retentionTask: TaskHandler = async (
     ["auditLogRetentionDays", config.auditLogRetentionDays],
     ["notificationRetentionDays", config.notificationRetentionDays],
     ["storeAnalyticsRetentionDays", config.storeAnalyticsRetentionDays],
+    ["storeQuoteRetentionDays", config.storeQuoteRetentionDays],
+    ["storeQuoteRequestRetentionDays", config.storeQuoteRequestRetentionDays],
     ["webhookDeliveryRetentionDays", config.webhookDeliveryRetentionDays],
     ["webhookDeadLetterRetentionDays", config.webhookDeadLetterRetentionDays],
   ] as const) {
@@ -102,6 +111,17 @@ export const retentionTask: TaskHandler = async (
     config.notificationRetentionDays,
     policies,
   );
+  // PRIV-P2-008: public quote/lead PII had no purge path at all.
+  const storeQuoteWindow = resolveRetentionDays(
+    "store_quotes",
+    config.storeQuoteRetentionDays,
+    policies,
+  );
+  const storeQuoteRequestWindow = resolveRetentionDays(
+    "store_quote_requests",
+    config.storeQuoteRequestRetentionDays,
+    policies,
+  );
   // WH-P3-009: webhook_deliveries and webhook_dead_letters had no purge path.
   const webhookDeliveryWindow = resolveRetentionDays(
     "webhook_deliveries",
@@ -122,6 +142,14 @@ export const retentionTask: TaskHandler = async (
     typeof overrides.notificationRetentionDays === "number"
       ? overrides.notificationRetentionDays
       : notificationWindow.days;
+  const storeQuoteDays =
+    typeof overrides.storeQuoteRetentionDays === "number"
+      ? overrides.storeQuoteRetentionDays
+      : storeQuoteWindow.days;
+  const storeQuoteRequestDays =
+    typeof overrides.storeQuoteRequestRetentionDays === "number"
+      ? overrides.storeQuoteRequestRetentionDays
+      : storeQuoteRequestWindow.days;
   const webhookDeliveryDays =
     typeof overrides.webhookDeliveryRetentionDays === "number"
       ? overrides.webhookDeliveryRetentionDays
@@ -140,27 +168,63 @@ export const retentionTask: TaskHandler = async (
   const storeAnalyticsCutoff = new Date();
   storeAnalyticsCutoff.setDate(storeAnalyticsCutoff.getDate() - config.storeAnalyticsRetentionDays);
 
+  const storeQuoteCutoff = new Date();
+  storeQuoteCutoff.setDate(storeQuoteCutoff.getDate() - storeQuoteDays);
+
+  const storeQuoteRequestCutoff = new Date();
+  storeQuoteRequestCutoff.setDate(storeQuoteRequestCutoff.getDate() - storeQuoteRequestDays);
+
   const webhookDeliveryCutoff = new Date();
   webhookDeliveryCutoff.setDate(webhookDeliveryCutoff.getDate() - webhookDeliveryDays);
 
   const webhookDeadLetterCutoff = new Date();
   webhookDeadLetterCutoff.setDate(webhookDeadLetterCutoff.getDate() - webhookDeadLetterDays);
 
+  // RES-P3-011: the registry aborts this signal at the task deadline, so the
+  // bounded purge loops stop instead of continuing after the task was failed.
+  const purgeOptions = { signal: context?.signal };
   const outcomes: PurgeOutcome[] = [];
   outcomes.push(await archiveAuditLogs(supabase, auditCutoff.toISOString()));
   outcomes.push(
-    await purgeInBatches(supabase, "notifications", notificationCutoff.toISOString()),
+    await purgeInBatches(supabase, "notifications", notificationCutoff.toISOString(), purgeOptions),
   );
   // AN-P2-004: storefront events previously had no retention path.
   outcomes.push(
-    await purgeInBatches(supabase, "store_analytics_events", storeAnalyticsCutoff.toISOString()),
+    await purgeInBatches(
+      supabase,
+      "store_analytics_events",
+      storeAnalyticsCutoff.toISOString(),
+      purgeOptions,
+    ),
+  );
+  // PRIV-P2-008: public quote/lead PII now has the same bounded purge.
+  outcomes.push(
+    await purgeInBatches(supabase, "store_quotes", storeQuoteCutoff.toISOString(), purgeOptions),
+  );
+  outcomes.push(
+    await purgeInBatches(
+      supabase,
+      "store_quote_requests",
+      storeQuoteRequestCutoff.toISOString(),
+      purgeOptions,
+    ),
   );
   // WH-P3-009: bounded purges for the webhook delivery log and DLQ.
   outcomes.push(
-    await purgeInBatches(supabase, "webhook_deliveries", webhookDeliveryCutoff.toISOString()),
+    await purgeInBatches(
+      supabase,
+      "webhook_deliveries",
+      webhookDeliveryCutoff.toISOString(),
+      purgeOptions,
+    ),
   );
   outcomes.push(
-    await purgeInBatches(supabase, "webhook_dead_letters", webhookDeadLetterCutoff.toISOString()),
+    await purgeInBatches(
+      supabase,
+      "webhook_dead_letters",
+      webhookDeadLetterCutoff.toISOString(),
+      purgeOptions,
+    ),
   );
 
   const failures = outcomes.filter((o) => o.error);
@@ -196,6 +260,26 @@ export const retentionTask: TaskHandler = async (
         },
       },
       storeAnalyticsCutoff: storeAnalyticsCutoff.toISOString(),
+      storeQuoteCutoff: storeQuoteCutoff.toISOString(),
+      storeQuoteRequestCutoff: storeQuoteRequestCutoff.toISOString(),
+      storeWindows: {
+        quotes: {
+          days: storeQuoteDays,
+          source:
+            typeof overrides.storeQuoteRetentionDays === "number"
+              ? "payload"
+              : storeQuoteWindow.source,
+          matchingPolicies: storeQuoteWindow.matchingPolicies,
+        },
+        quoteRequests: {
+          days: storeQuoteRequestDays,
+          source:
+            typeof overrides.storeQuoteRequestRetentionDays === "number"
+              ? "payload"
+              : storeQuoteRequestWindow.source,
+          matchingPolicies: storeQuoteRequestWindow.matchingPolicies,
+        },
+      },
       webhookDeliveryCutoff: webhookDeliveryCutoff.toISOString(),
       webhookDeadLetterCutoff: webhookDeadLetterCutoff.toISOString(),
       webhookWindows: {
@@ -225,6 +309,15 @@ export const retentionTask: TaskHandler = async (
     return {
       ok: false,
       error: failures.map((f) => `${f.table}: ${f.error}`).join("; "),
+    };
+  }
+
+  // RES-P3-011: the deadline signal stopped at least one purge early. The
+  // registry has already failed the task, so never report success here.
+  if (outcomes.some((o) => o.aborted)) {
+    return {
+      ok: false,
+      error: "task aborted before completing; purge stopped early (next run continues)",
     };
   }
 
