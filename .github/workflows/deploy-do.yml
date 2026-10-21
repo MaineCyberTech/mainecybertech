@@ -1027,12 +1027,23 @@ jobs:
               fi
               exit 1
             fi
-            # Refresh the proxy last (a changed Caddyfile is only picked up by a
-            # recreated container) — the app services behind it are healthy.
-            docker rm -f mct-portal-caddy-1 2>/dev/null || true
-            if ! recreate_service caddy; then
-              echo "ERROR: failed to recreate caddy" >&2
-              exit 1
+            # Refresh the proxy last — the app services behind it are healthy.
+            # RES-P3-012: reload the Caddyfile through Caddy's admin API
+            # (zero downtime) instead of `docker rm -f` + recreate, which
+            # SIGKILLed the only ingress and refused :443 until the new
+            # container was up. `caddy reload` validates the config first: an
+            # invalid Caddyfile is rejected and the running config keeps
+            # serving. The Caddyfile is a bind-mounted file, so the copy above
+            # is visible to the running container without a recreate.
+            if ! docker exec mct-portal-caddy-1 caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; then
+              # Fallback when the admin API is unreachable: force-recreate in
+              # place. Compose stops the old container gracefully (no SIGKILL)
+              # and this still has a short gap, but only on this failure path.
+              echo "WARNING: caddy reload failed; recreating the proxy container" >&2
+              if ! docker compose -p mct-portal up -d --no-deps --force-recreate caddy; then
+                echo "ERROR: failed to recreate caddy" >&2
+                exit 1
+              fi
             fi
             # Bring any remaining changed services (redis, prometheus,
             # alertmanager) up to date; a no-op for unchanged ones. The exported

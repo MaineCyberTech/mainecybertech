@@ -1,0 +1,229 @@
+{
+  "domain": "13_resilience_recovery_failure_modes",
+  "file": "13_resilience_recovery_failure_modes.md",
+  "area": "RES",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T00:45:53Z",
+  "findings": [
+    {
+      "id": "RES-P2-001",
+      "severity": "P2",
+      "title": "Worker process has no `unhandledRejection` handler",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/worker/src/main.ts:48-53 logs and Sentry-captures unhandled rejections without exiting (fatal states stay on uncaughtException at :40-46); the API keeps the same semantics at apps/api/src/main.ts:93-98.",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P2-002",
+      "severity": "P2",
+      "title": "`WORKER_TIMEOUT` is not a real task timeout; generic task failures have no DLQ",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: executeTask enforces a real deadline (task-registry.ts:150-233, WORKER_TASK_TIMEOUT_MS default 600000 in env.ts:26-31) with an AbortSignal and a Promise.race that fails hung handlers; exhausted BullMQ retries are persisted to task_dead_letters via consumer-bullmq.ts:51-61 + task-dead-letters.ts; worker_task_dead_letters_total drives MCTWorkerTaskDeadLettered (prometheus.rules.yml:324-336) and MCTWorkerTaskFailures (:311-323); tests at __tests__/main.test.ts:284-307 and __tests__/consumer-bullmq.test.ts:91.",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P2-003",
+      "severity": "P2",
+      "title": "`QUEUE_BACKEND` default `inline` diverges from production and can silently stall all queued work",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: env.ts:80-88 rejects any non-bullmq backend in production (queue-backend parity contract), REDIS_URL is required for bullmq (:66-74), and the API/worker both expose portal_queue_backend_info/queueBackend for parity (worker health-server.ts:76-83).",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P2-004",
+      "severity": "P2",
+      "title": "External `fetch` calls without `AbortController` in `public.ts` and `auth.ts`",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: public.ts:81 uses AbortSignal.timeout(5_000) and auth.ts:264,292 use AbortSignal.timeout(10_000); the shared HttpClient also wires the breaker signal into its fetch controller (http-client.ts:36-49).",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P2-005",
+      "severity": "P2",
+      "title": "Availability detection lives inside the failed domain; no external dead-man's switch or alert delivery",
+      "owner": "platform lead / security reviewer",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: mechanism is complete and fail-closed (Alertmanager Watchdog receiver alertmanager.tmpl.yml:87-100,147-152; deploy refuses a prod deploy without ALERTMANAGER_WATCHDOG_WEBHOOK_URL, deploy-do.yml:856-863) and the alert-path exercise workflow now exists (alert-path-exercise.yml, monthly + dispatch). Still partially fixed because docs/INCIDENT_RESPONSE.md:150-156 states the external heartbeat URL is still unset, docs/ALERT_PATH_EXERCISE.md's evidence table has no recorded run ('none recorded yet'), and alert-path-exercise.yml has zero runs in the public API — the stop-Alertmanager drill remains unexercised.",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P2-006",
+      "severity": "P2",
+      "title": "Backup/restore recovery is configured but not evidenced as exercised, and the restore test verifies only table counts",
+      "owner": "platform/backend + platform/ops",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the 'table counts only' half is fully fixed (deep assertions in db-restore-test.yml:196-293 plus storage assertions in restore-storage.sh:114-137); the exercise half is unchanged — no backup or restore run has ever succeeded (DR-P0-001), and docs/runbooks/backup-restore-drill-ledger.md:12-26 records every drill as planned.",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P2-007",
+      "severity": "P2",
+      "title": "Inbound webhook handlers ACK 200 while ignoring persistence errors, dropping events during DB degradation",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: webhooks.ts:42-61 adds throwIfWriteFailed/throwIfReadFailed and every persistence path throws so the outer catch returns 5xx and releases the idempotency claim (e.g. Stripe :203-214, Jira :697-724, JSM :805-837, M365 :875-947); regression tests cover the fail-loud path.",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P2-008",
+      "severity": "P2",
+      "title": "Worker queue degradation is invisible to health checks and alerting",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the worker exposes producer+consumer queue connectivity (queue-health.ts:1-27, queue-state.ts) and /health returns 503 when disconnected (health-server.ts:60-84); MCTWorkerQueueDisconnected (critical, prometheus.rules.yml:381-393), MCTWorkerQueueBacklog/BacklogGrowing (:338-356,396-414) and MCTRedisOperationFailures (:426-438) provide the alerting half; deploy health gate fails on an unhealthy worker (deploy-do.yml:1056-1085,1155-1172).",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P2-009",
+      "severity": "P2",
+      "title": "Graceful shutdown is not effective in production: Redis handles are never closed and Docker's 10s stop timeout kills the worker before its 30s drain budget",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: shutdown.ts:76-78 closes scan-lock, idempotency and producer queue handles; consumer-bullmq.ts:101-118 awaits close, drains in-flight work, closes resources and exits 0; the force-exit watchdog is at shutdown.ts:28-42; infra/digitalocean/docker-compose.yml:215 sets stop_grace_period: 60s (root compose also 60s).",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P2-010",
+      "severity": "P2",
+      "title": "Deploys are stop-the-world: `docker compose down` before `up` takes the whole stack offline with no rolling replace",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: deploy-do.yml:1004-1030 recreates api -> worker -> web one at a time with `up -d --no-deps` and waits for each to become healthy, aborting the rollout (and rolling back) on failure; no `compose down` remains on the success path (down is only the documented last-resort fallback at :997-1002).",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P3-001",
+      "severity": "P3",
+      "title": "Worker graceful shutdown has no force-exit fallback",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: shutdown.ts:16-42 arms an unref'd watchdog (WORKER_SHUTDOWN_TIMEOUT_MS default 30s) that logs and exits 1 if the drain never completes; tests in __tests__/shutdown.test.ts.",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P3-002",
+      "severity": "P3",
+      "title": "Worker queued webhook dispatcher inserts deliveries without an idempotency key",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: webhook-dispatcher.ts builds a stable key (:43-63), claims it before sending (:108-126), sends it as a header (:127) and persists it on the delivery row (:146,183,238), deleting the claim only on success (:249-250); delivery rows upsert on idempotency_key (:22-36).",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P3-003",
+      "severity": "P3",
+      "title": "`AGENTS.md` documents the worker consumer incorrectly and omits the queue backend divergence",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: AGENTS.md:17 now reads 'Queue consumer (consumer-sqs.ts; BullMQ/SQS/inline)' and :218-219 name BullMQ as the deployed consumer/backend, but the Worker section at :363 still says 'Consumer: SQS-based (runWorkerTasks from consumer-sqs.ts)' with no BullMQ mention — the same stale sentence the finding targeted.",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P3-004",
+      "severity": "P3",
+      "title": "Deploy health gate treats worker unhealthiness as non-fatal",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the container gate asserts every healthchecked service (redis api worker web alertmanager prometheus caddy) and exits 1 on failure (deploy-do.yml:1056-1085), and the public worker probe exits 1 with container logs on failure (:1155-1172).",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P3-005",
+      "severity": "P3",
+      "title": "Orphan cleanup lists at most 1000 objects per bucket and cannot verify the purge shrank anything",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: pagination and the fail-closed 10k ceiling are in place (orphan-cleanup.ts:62-127; the ceiling throws so the task returns ok:false and MCTWorkerTaskFailures fires), and removal is guarded against folder-like keys (:237-255). Still partially fixed: there is no post-remove re-list/compare and no dedicated metric for a ceiling abort, so a removal that silently shrinks nothing (or only partly) is not verified.",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P3-006",
+      "severity": "P3",
+      "title": "Manual rollback script points at the wrong GHCR namespace and accepts non-2xx health codes",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: scripts/rollback.sh:32-34 uses ghcr.io/mainecybertech/mainecybertech (the pipeline prefix), the API gate requires exactly 200 (:129-140), the worker gate is fatal (:144-160), web accepts only 200/301/302/307 (:162-173), the full container set must be healthy (:105-125) and the host key must be pinned (:63-77).",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P3-007",
+      "severity": "P3",
+      "title": "Circuit breaker leaks an uncleared timer per call and does not abort the timed-out operation",
+      "owner": "API platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: circuit-breaker.ts:73-110 clears the deadline timer in `finally`, aborts the operation through an AbortController, swallows the loser of the race, and http-client.ts:36-49 propagates the breaker signal into the underlying fetch controller.",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P3-008",
+      "severity": "P3",
+      "title": "Service worker is shipped but never registered — offline capability is dead code",
+      "owner": "web platform",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/web/components/ServiceWorkerRegistrar.tsx registers /sw.js with scope / in production only, and the shell mounts it (MOB-P2-001); the worker caches static assets only and never API/HTML traffic.",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P3-009",
+      "severity": "P3",
+      "title": "Failure-injection and load tests exist but are never executed by CI",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: .github/workflows/load-test.yml runs weekly + on dispatch with committed budgets (scripts/load-testing/budgets.js) and a failure-injection negative control that must breach the error budget (load-test.yml:10-12,184-222); scripts/load-testing/fault-injector.mjs provides the injection. Residual: no run exists yet because the workflow only landed on main with this promotion.",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P3-010",
+      "severity": "P3",
+      "title": "`requestTimeout` responds 408 but does not abort the handler or close the connection",
+      "owner": "API platform",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: middleware/request-timeout.ts aborts a request-scoped AbortSignal (exposed via getRequestAbortSignal), answers 408 and destroys the socket after the response flushes, and documents that mutations should still send an Idempotency-Key.",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P3-011",
+      "severity": "P3",
+      "title": "Task deadline fails the task but does not cancel its in-flight work: no production task consumes the context signal",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "open",
+      "note": "new at 7dd0402: task-registry.ts:23-37 passes a TaskExecutionContext signal and the timeout race (…:150-233) fails the task, but a grep for context.signal consumers in apps/worker/src/tasks returns nothing — every production handler ignores it. A handler that exceeds WORKER_TASK_TIMEOUT_MS keeps running in the background while BullMQ retries the job, so expensive non-idempotent work (purges, dispatches, provider syncs) can execute concurrently; only the synthetic test handler in __tests__/main.test.ts:284-298 listens to the signal.",
+      "area": "RES"
+    },
+    {
+      "id": "RES-P3-012",
+      "severity": "P3",
+      "title": "Rolling deploy still hard-removes the Caddy ingress before recreating it, so every release has a short hard outage window",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "open",
+      "note": "new at 7dd0402: deploy-do.yml:1030-1033 runs `docker rm -f mct-portal-caddy-1` (SIGKILL of the only published ingress) and only then recreates it, and the deploy does not wait for caddy to become healthy before continuing (:1036-1043); the later gate (:1056-1085) catches a broken caddy but not the gap itself. The old stop-the-world outage is gone, but every deploy/rollback still refuses :443 connections for the recreate window instead of recreating the proxy in place or draining it.",
+      "area": "RES"
+    }
+  ]
+}

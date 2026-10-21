@@ -65,7 +65,8 @@ async function logWebhookDelivery(
   event: string,
   _reqBody: unknown,
   idempotencyKey: string,
-): Promise<void> {
+  ttlSeconds?: number,
+): Promise<"logged" | "duplicate"> {
   const supabase = getSupabaseAdmin();
   // Persist only a truncated, PII-safe summary. The raw inbound payload
   // (which can contain Stripe/JSM/M365 PII) is intentionally NOT stored.
@@ -79,6 +80,20 @@ async function logWebhookDelivery(
     idempotency_key: idempotencyKey,
   });
   if (error) {
+    // WH-P3-010: the unique delivery-log key outlives the dedup claim (rows
+    // are retained for the webhook retention window, the claim for its
+    // replay window). A provider redelivery after the claim expires claims
+    // fresh and then collides here — that is the same event already
+    // processed, not a persistence failure. Collapse it to a duplicate so
+    // the provider gets a 200 instead of a permanent 500 (contrast the DLQ
+    // replay path, which already handles 23505).
+    if ((error as SupabaseErrorLike)?.code === "23505") {
+      logger.info(
+        { event, idempotencyKey },
+        "Webhook delivery already logged; treating redelivery as duplicate",
+      );
+      return "duplicate";
+    }
     // Do not mark the event processed: the delivery record is part of the
     // processed state, so a failed insert must release the claim and let the
     // sender retry (BILL-P2-006).
@@ -88,7 +103,11 @@ async function logWebhookDelivery(
       500,
     );
   }
-  await storeIdempotencyKey(idempotencyKey, "done");
+  // Mirror the claim's window: the M365/Graph replay guard is 7 days, and a
+  // shorter stored value would let a redelivery re-enter the handler after
+  // 24h only to collide on the unique key.
+  await storeIdempotencyKey(idempotencyKey, "done", ttlSeconds);
+  return "logged";
 }
 
 async function dedupWebhook(key: string, ttlSeconds?: number): Promise<boolean> {
@@ -938,8 +957,17 @@ router.post("/m365", async (req, res, next) => {
           throw new Error("audit log write failed for m365.webhook");
         }
 
-        await logWebhookDelivery("m365.webhook", req.body, m365Key);
-        processed++;
+        // WH-P3-010: store the delivery key for the same 7-day window as the
+        // replay claim, and count a unique-key collision (a redelivery after
+        // the claim expired) as a duplicate rather than a 500.
+        const logged = await logWebhookDelivery(
+          "m365.webhook",
+          req.body,
+          m365Key,
+          M365_REPLAY_WINDOW_SECONDS,
+        );
+        if (logged === "duplicate") duplicates++;
+        else processed++;
       } catch (notificationError) {
         // Release only this notification's claim so Graph's retry can
         // reprocess it without re-emitting already-processed notifications.

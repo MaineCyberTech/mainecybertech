@@ -8,7 +8,7 @@
 > Signature-verified webhook receivers and CAPTCHA-gated public forms carry
 > no bearer-token auth but still verify a credential per request.
 
-**34 public operations.**
+**35 public operations.**
 
 ## Analytics
 
@@ -57,7 +57,8 @@
 
 | Method | Path | Summary |
 | --- | --- | --- |
-| GET | `/notifications/unsubscribe` | One-click unsubscribe (signed token, no session) |
+| GET | `/notifications/unsubscribe` | Unsubscribe confirmation page (signed token, no session) |
+| POST | `/notifications/unsubscribe` | One-click unsubscribe (signed token, no session) |
 
 ## Public
 

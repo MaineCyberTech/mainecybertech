@@ -8,6 +8,8 @@ type EmailOptions = {
   subject: string;
   text?: string;
   html?: string;
+  /** NOTIF-P2-012: extra MIME headers, e.g. List-Unsubscribe/-Post. */
+  headers?: Record<string, string>;
 };
 
 // NOTIF-P2-006: bounded in-process retry for the inline fallback (used when the
@@ -19,7 +21,7 @@ const EMAIL_RETRY_BASE_DELAY_MS = 250;
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-export async function sendEmail({ to, subject, text, html }: EmailOptions): Promise<boolean> {
+export async function sendEmail({ to, subject, text, html, headers }: EmailOptions): Promise<boolean> {
   const env = getEnv();
   if (!env.SMTP_HOST) {
     logger.warn("SMTP not configured; skipping email");
@@ -45,6 +47,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
         subject,
         text,
         html,
+        headers,
       });
 
       logger.info({ to: "***", subject, attempt }, "Email sent");

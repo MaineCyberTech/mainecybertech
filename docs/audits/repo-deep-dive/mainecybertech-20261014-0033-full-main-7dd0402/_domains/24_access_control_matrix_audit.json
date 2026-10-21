@@ -1,0 +1,189 @@
+{
+  "domain": "24_access_control_matrix_audit",
+  "file": "24_access_control_matrix_audit.md",
+  "area": "ACM",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T00:52:41Z",
+  "findings": [
+    {
+      "id": "ACM-P1-001",
+      "severity": "P1",
+      "title": "Client-onboarding mutations run without any `requirePermission` gate",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/client-onboarding-command-center.ts requirePermission on every mutation (:137,154,177,200,247); 403 regression coverage in the route suite.",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P1-002",
+      "severity": "P1",
+      "title": "`profiles.is_super_admin` is user-writable under the RLS self-update policy (forgeable super-admin flag)",
+      "owner": "API platform + DBA",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: supabase/migrations/5302437_protect_is_super_admin.sql installs a BEFORE UPDATE trigger on public.profiles that raises for authenticated/anon JWT roles when is_super_admin changes; service_role and direct SQL are unaffected.",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P2-001",
+      "severity": "P2",
+      "title": "`PLATFORM_ADMIN_KEYS` (org traversal) and `ADMIN_BYPASS_KEYS` (permission bypass) are inconsistent trust sets",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: CROSS_TENANT_KEYS vs ELEVATED_TENANT_KEYS split in @mct/sdk/role-keys; API re-exports via lib/roles.ts; catalog-parity.test.ts asserts parity with 5302128.",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P2-002",
+      "severity": "P2",
+      "title": "RLS is not a database backstop on API requests (service-role is the default client)",
+      "owner": "API platform + DBA",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd04023: rls-startup-check.ts:40-46 refuses prod boot on an empty read allow-list; getScopedClient (services/supabase.ts:197-225) still returns the service-role client for modules not listed in RLS_READS/WRITES_ENABLED and meters the bypass. Residual: deployed allow-list values and write coverage remain operator-side / per-module.",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P2-003",
+      "severity": "P2",
+      "title": "Write and state-transition actions gated by `view` permissions (action mismatch)",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd04023: a mutating-verb scan finds a single remaining view-gated mutation - apps/api/src/routes/ai.ts:217 POST /triage/analyze uses requirePermission('ai','view') (documented triage exception). Everything else now uses create/edit/delete/manage.",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P2-004",
+      "severity": "P2",
+      "title": "Webhook endpoint and delivery reads are available to any org member (not manage-gated)",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/webhook-management.ts gates reads with requirePermission('webhooks','view') (:103 list, :125 dead-letters, :348 by-id, :508 deliveries) and mutations with 'webhooks','manage'.",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P2-005",
+      "severity": "P2",
+      "title": "API keys store `expires_at` but nothing enforces or prunes expiry",
+      "owner": "API platform + ops",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: expired keys fail closed in middleware/api-key.ts:84-88 and are pruned by the scheduled api-key-prune task (worker/tasks/index.ts:51, schedule-config.ts:50; api-key-prune.test.ts).",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P2-006",
+      "severity": "P2",
+      "title": "Webhook signing secrets are stored plaintext with no rotation or expiry",
+      "owner": "API platform + security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/webhook-management.ts:35-52 encrypts signing secrets at rest (AES-256-GCM via lib/field-encryption), masks them on read (:28-31,77-78) and records secret_expires_at rotation metadata (:52,369; migration 5302441).",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P2-007",
+      "severity": "P2",
+      "title": "Profiles are enumerable by email/id for any authenticated user",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd04023: GET /profiles?email=/?ids= still enumerates profiles for any authenticated user (routes/profiles.ts:62-92) but RLS restricts selects to self/same-org/super-admin (5302026:1006-1016) and decryptProfileRow strips the encrypted_pii ciphertext from responses. Residual: the directory query remains ungated by a users/profiles permission.",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P2-008",
+      "severity": "P2",
+      "title": "API-key `permissions` are decorative: keys act with the creator's full permissions and the column is never enforced",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: middleware/permissions.ts:73-79 caps every key request to the stored scope list before creator-side resolution; api-keys.ts:43 gates the list route with api-keys:view.",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P3-001",
+      "severity": "P3",
+      "title": "Client-side permission hiding is UI-only for several module actions",
+      "owner": "Web + API platform",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd04023: server enforcement is broad and catalog-linted, and route-authorization-guard.test.ts covers router mounts; but there is still no per-route permission-guard coverage gate, and ACM-P3-008 (new) shows reads in final/* / registerCrud where UI hiding is the only 'view' control.",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P3-002",
+      "severity": "P3",
+      "title": "No catalog-lint: referenced permission keys are not checked against the `permissions` table",
+      "owner": "API platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: scripts/ci/check-permission-catalog.sh runs scripts/check-permission-catalog.mjs over requirePermission literals, live RLS user_has_permission predicates and registerCrud module keys, with a negative fixture; wired in .github/actions/unit-tests/action.yml:103-108.",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P3-003",
+      "severity": "P3",
+      "title": "Public route surface is broad and has no single documented inventory",
+      "owner": "API platform + docs",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: docs/PUBLIC_ROUTES.md is generated from the auth:false OpenAPI RouteDefs and CI runs `node scripts/public-route-inventory.mjs --check` (.github/actions/unit-tests/action.yml:113-117).",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P3-004",
+      "severity": "P3",
+      "title": "`GET /roles/:id` and `GET /me/permissions` are readable without an admin gate",
+      "owner": "API platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/roles.ts:67 GET /roles/:id now requireAdmin; GET /me/permissions is self-scoped by design (routes/me.ts:18 resolves only req.authUser.userId).",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P3-005",
+      "severity": "P3",
+      "title": "RLS policies reference `manage` permissions that no role holds (dead predicates)",
+      "owner": "DBA + API platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: supabase/migrations/5302459_dead_rls_permission_predicates.sql adds catalog rows for every historical predicate key (tickets:comment/manage, documents:manage/upload, projects:manage, contracts:*, appointments:*, onboarding:update) and the catalog guard is clean.",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P3-006",
+      "severity": "P3",
+      "title": "`GET /api-keys` lists org keys for any org member (no `api-keys:view` gate)",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/api-keys.ts:43 GET / now requires requirePermission('api-keys','view'); api-keys-list-gate.test.ts covers the denial.",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P3-007",
+      "severity": "P3",
+      "title": "AI copilot endpoints have no permission gate (any org member can run summarization and reply drafts)",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/ai.ts gates copilot routes - ai:view on triage list (:346-348), drafts list/detail (:537,562); ai:create on generate/drafts (:418-420,515); ai:edit on review (:578); ai-copilot-permission-gate.test.ts.",
+      "area": "ACM"
+    },
+    {
+      "id": "ACM-P3-008",
+      "severity": "P3",
+      "title": "ACM-P3-008",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "open",
+      "note": "NEW at 7dd04023: registerCrud reads and final/* module routes have no requirePermission gate. apps/api/src/routes/final/crud.ts:33-59 lists rows and :88-103 fetches by id with only the router-level requireAuth+requireOrgAccess (final.ts:20-21); final/sharepoint.ts:7, final/backups.ts:7,22, final/budgets.ts:7, final/time-entries.ts:11, routes/sla.ts:13 and the POST /procurement/compare compute endpoint (final/procurement.ts:8, runs on getSupabaseAdmin) are equally ungated. The permission catalog defines view actions for these modules (supabase/migrations/5302118_permission_matrix_full_catalog.sql:182-185), so any approved org member - including client roles with no view grant - can read them for their own org. No cross-tenant path (requireOrgAccess pins/injects the org), hence P3.",
+      "area": "ACM"
+    }
+  ]
+}

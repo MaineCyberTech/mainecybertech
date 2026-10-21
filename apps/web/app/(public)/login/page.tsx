@@ -31,12 +31,13 @@ export default function LoginPage() {
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
 
-  // USE-P2-009: the middleware appends ?reason=expired when it bounces a
-  // session that timed out mid-task. Read it client-side (the page is a client
-  // component) so the user gets an explanation instead of a bare login form.
+  // USE-P2-009 / USE-P3-006: the middleware appends ?reason=expired and the
+  // notification-bell SSE handler appends ?reason=session_expired when they
+  // bounce a session that timed out mid-task. Accept both (the page is a
+  // client component) so the user gets an explanation instead of a bare form.
   useEffect(() => {
     const reason = new URLSearchParams(window.location.search).get("reason");
-    if (reason === "expired") setSessionExpired(true);
+    if (reason === "expired" || reason === "session_expired") setSessionExpired(true);
   }, []);
 
   async function handleLogin(e: React.FormEvent) {

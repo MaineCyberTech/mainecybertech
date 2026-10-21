@@ -238,6 +238,29 @@ describe("requireEntitlement middleware", () => {
     expect(res.status).toBe(200);
   });
 
+  // BILL-P3-009: the fail-open path used to be log-only, so a sustained
+  // billing-state outage silently disabled the plan gate with no alertable
+  // signal. The counter is what MCTBillingLookupFailures keys on.
+  it("meters the fail-open entitlement lookup failure", async () => {
+    mockSupabase([
+      NOT_SUPER,
+      { data: [membership("client_user")], error: null },
+      ...prefixed(EMPTY, { data: null, error: { message: "boom" } }, EMPTY),
+    ]);
+
+    const { billingLookupFailuresTotal } = await import("../lib/metrics");
+    const failuresFor = async () =>
+      (await billingLookupFailuresTotal.get()).values
+        .filter((value) => value.labels.module === "findings")
+        .reduce((sum, value) => sum + value.value, 0);
+    const before = await failuresFor();
+
+    const res = await request(makeApp(requireEntitlement("findings"))).get("/api/v1/test/gated");
+    expect(res.status).toBe(200);
+
+    expect(await failuresFor()).toBe(before + 1);
+  });
+
   it("returns 401 without an authenticated user", async () => {
     mockSupabase([]);
     const app = createTestApp();
