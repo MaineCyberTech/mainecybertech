@@ -219,7 +219,7 @@
       "line": 15,
       "owner": "repo maintainer (AI readiness)",
       "target": "this week",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "re-verified at 7dd0402: residual unchanged. prompts/repo-deep-dive/prompts/ still ends at 40_release_notes_changelog_generator.md (43 files incl. 00_SHARED and MASTER_RUNNER; prompts 41-45 absent); prompts/repo-deep-dive/RUN_ORDER.md:43 ends at prompt 40; committed run manifests still list 45_exploit_chain_attack_path_audit (docs/audits/repo-deep-dive/mainecybertech-20261004-full-main-9c0b88c/audit_manifest.json and .../mainecybertech-20261011-0426-full-main-8d299b8/audit_manifest.json, scope.domains); no pack README carries a pinned-version/source banner (prompts/repo-deep-dive/README.md has none); no guard resolves manifest entries or pack-README script paths to vendored files. The drift is only documented centrally (prompts/PROVENANCE.md).",
       "area": "AI"
     },
@@ -855,7 +855,7 @@
       "line": 15,
       "owner": "platform engineering (release owner)",
       "target": "this week",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "re-verified at 7dd0402: the SBOM still binds <VERSION>+<sha> (scripts/generate-sbom.mjs:26-27) and .github/workflows/release.yml (added in a46e1e98) now computes v<VERSION>-<YYYYMMDD>-<short-sha>, builds a release body and creates an annotated tag + GitHub Release with the SBOM. But the release identity is still not effective: git ls-remote --tags origin returns 0 tags and the GitHub releases API returns [] (no tag/release has ever been created) because the workflow fails on every promotion push (new REL-P2-006); VERSION is still 0.1.0 (never bumped); the web badge still reports <branch>-<run_number> rather than VERSION (.github/workflows/build-push.yml:207, .github/workflows/deploy-do.yml:366). Release notes still cannot name a release other than by SHA.",
       "area": "REL"
     },
@@ -927,7 +927,7 @@
       "line": 17,
       "owner": "platform engineering (release owner)",
       "target": "this week",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "generated artifacts now bind <VERSION>+<commit> (generate-sbom.mjs:328-330, :459-462; reproduced locally: metadata.component.version + mct:productVersion/mct:commit), but no release tag exists (git ls-remote --tags = 0) because release.yml fails on every promotion (exit 141; live run 38490822732) - the tag half of this finding is undelivered. See CI-P2-011.",
       "area": "SBOM"
     },
@@ -3987,7 +3987,7 @@
       "line": 25,
       "owner": "supply-chain owner",
       "target": "this month",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "SBOMs are commit-bound and image SBOMs are digest-attested, but the release attachment has never happened: release.yml fails on every promotion (exit 141, run 38490822732) and origin has 0 releases. See CI-P2-011.",
       "area": "SBOM"
     },
@@ -4947,7 +4947,7 @@
       "line": 17,
       "owner": "integrations/backend",
       "target": "this month",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "webhooks.ts:37,925 claims with a 7-day TTL, but logWebhookDelivery (webhooks.ts:64-92) then calls storeIdempotencyKey, which hardcodes the 24h IDEMPOTENCY_TTL_SECONDS (lib/idempotency.ts:50,142-145) and overwrites the key — the effective replay window is 24h; after it a duplicate collides with the delivery-row unique key (see WH-P3-010).",
       "area": "WH"
     },
@@ -5403,7 +5403,7 @@
       "line": 22,
       "owner": "Implementation agent",
       "target": "this quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "X-Request-ID is emitted, but 429 is still express-rate-limit's plain-text default (middleware/rate-limit.ts:27-38 has no envelope handler) while docs/API_RATE_LIMITING.md:56-70 documents an enveloped RATE_LIMITED body; idempotency 400/409 (middleware/idempotency.ts:30,69) and timeout 408 (middleware/request-timeout.ts:37) are also non-enveloped.",
       "area": "API"
     },
@@ -5415,7 +5415,7 @@
       "line": 23,
       "owner": "Implementation agent",
       "target": "this quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "openapi-audit.js fails on MISSING (ran: 0 missing, exit 0) and EXTRA remains a warning without an allowlist; docs/openapi.yaml has no commit binding (header lines 1-4 name only the generator).",
       "area": "API"
     },
@@ -5775,7 +5775,7 @@
       "line": 33,
       "owner": "platform/CI owner",
       "target": "this quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "weekly full-history gitleaks scan exists (secret-history-scan.yml); the diff scanner pattern list still lacks platform token formats dop_v1_/sbp_/glpat_/sk-proj-/npm_ (.github/actions/secret-scan/action.yml:14; scripts/scan-secrets.sh:13).",
       "area": "CI"
     },
@@ -5811,7 +5811,7 @@
       "line": 36,
       "owner": "platform/CI owner",
       "target": "this quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "workflow implemented at 7dd0402 (release.yml: annotated tag + GitHub Release + SBOM, idempotent), but it FAILS on every promotion: live run 38490822732 (main @ 7dd0402) failed step 6 'Generate the release notes body' with exit code 141 (SIGPIPE from `git log ... | head -100` under set -o pipefail, no tags yet -> else-branch); origin has 0 tags and 0 releases (git ls-remote --tags, /releases). See new CI-P2-011.",
       "area": "CI"
     },
@@ -6003,7 +6003,7 @@
       "line": 30,
       "owner": "backend/data governance",
       "target": "next quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "counts are guarded (node scripts/check-docs-counts.mjs -> 'docs counts OK'; 158 files), but the version gaps (5302027, 5302039-5302040, 5302044-5302049, 5302084, 5302136-5302401, 5302429) are still undocumented (grep for a gap note in docs/migrations/*.md and docs/SUPABASE_MIGRATION_WORKFLOW.md -> none).",
       "area": "DATA"
     },
@@ -6111,7 +6111,7 @@
       "line": 24,
       "owner": "repo maintainer",
       "target": "this quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "re-verified at 7dd0402: the architecture table now names the divergence (AGENTS.md:17 'Queue consumer (consumer-sqs.ts; BullMQ/SQS/inline)'), but the Worker section still says 'Worker (142 lines)' and 'Consumer: SQS-based (runWorkerTasks from consumer-sqs.ts)' (AGENTS.md:361-363) while apps/worker/src/main.ts is 161 lines and consumer-sqs.ts dispatches by QUEUE_BACKEND with bullmq enforced in production (apps/worker/src/env.ts:81-86, infra/digitalocean/docker-compose.yml:21).",
       "area": "DOC"
     },
@@ -6231,7 +6231,7 @@
       "line": 34,
       "owner": "platform/backend",
       "target": "this quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "re-verified at 7dd0402: scripts/backup-database.ps1:18-24 still carries the NOT CANONICAL header but keeps the full duplicate dump/upload/prune flow with no encryption and no offsite path (drift remains; the script can never produce the CI-grade backup).",
       "area": "DR"
     },
@@ -6531,7 +6531,7 @@
       "line": 28,
       "owner": "Documentation owner",
       "target": "next quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "docs/runbooks/secure-file-request.md exists and matches the code, but docs/ORG_BRANDING.md:65 still advertises PNG/JPG/SVG with a 5MB limit (SVG is rejected) and docs/ARCHITECTURAL_ANALYSIS.md:274 still says documents 50MB/avatars 2MB.",
       "area": "FILE"
     },
@@ -6603,7 +6603,7 @@
       "line": 19,
       "owner": "repo maintainer",
       "target": "this quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "re-verified at 7dd0402: docs/GAP_ANALYSIS.md and docs/audits/repo-deep-dive/REAUDIT_REPORT_20261004.md are now clean, but docs/MT-P0-001-RLS-remediation-design.md:5 still says Repo: C:\\temp\\mainecybertech-portal (the last live-doc machine path). No guard fails on machine paths in tracked markdown.",
       "area": "HYGIENE"
     },
@@ -7335,7 +7335,7 @@
       "line": 21,
       "owner": "API platform",
       "target": "this quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "re-verified at 7dd0402: the cited unbounded reads are capped — compliance.ts:34,92 use LIST_HARD_CAP and final/time-entries.ts:6-30 caps the summary at 5000 rows and reports truncation; most exports now use EXPORT_ROW_LIMIT=5000 (pagination.ts:21-27; 8 route files). Still partially fixed: apps/api/src/routes/audit.ts:93,187 still read up to 10000 rows for the audit export, and three service reads still use limit(10000) (services/satisfaction-pulse-widget.ts:312, client-onboarding-command-center.ts:911, dynamic-client-forms-builder.ts:338), above the documented export cap.",
       "area": "PERF"
     },
@@ -7431,7 +7431,7 @@
       "line": 22,
       "owner": "platform engineering (release owner)",
       "target": "this quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "re-verified at 7dd0402: non-merge subjects are conventional (release.yml filters merges with --no-merges), but authorship is still single-human plus bots - the delta has 190 'Audit Remediation' commits plus several remediation-bot identities (remediation-agent, mct-remediation, MCT Remediation, mct-remediation-bot, opencode-agent, mct-bot, MCT Agent) and 3 dependabot commits, with no second human committer. The bus-factor item remains organizational.",
       "area": "REL"
     },
@@ -7443,7 +7443,7 @@
       "line": 23,
       "owner": "platform engineering (release owner)",
       "target": "this quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "re-verified at 7dd0402: the CHANGELOG checkbox exists (.github/PULL_REQUEST_TEMPLATE.md:23) but is honour-system only, and no versioned-artifact/versioned-output checkbox was added; nothing enforces a changelog diff, which is how the missing tail commits (REL-P2-001) merged.",
       "area": "REL"
     },
@@ -7503,7 +7503,7 @@
       "line": 27,
       "owner": "platform/backend",
       "target": "this quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "re-verified at 7dd0402: AGENTS.md:17 now reads 'Queue consumer (consumer-sqs.ts; BullMQ/SQS/inline)' and :218-219 name BullMQ as the deployed consumer/backend, but the Worker section at :363 still says 'Consumer: SQS-based (runWorkerTasks from consumer-sqs.ts)' with no BullMQ mention — the same stale sentence the finding targeted.",
       "area": "RES"
     },
@@ -7659,7 +7659,7 @@
       "line": 27,
       "owner": "backend/DB lead + platform",
       "target": "next quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "both duplicate suites still exist (apps/api/src/__tests__/supabase-scoped-client.test.ts and get-scoped-client.test.ts); docs/RLS-coverage-matrix.md:5-7 is now explicitly labelled a snapshot with verify-rls.mjs as the live source, but its counts are still not guarded by check-docs-counts.mjs.",
       "area": "RLS"
     },
@@ -7755,7 +7755,7 @@
       "line": 35,
       "owner": "@owner",
       "target": "this quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "release.yml generates the lockfile SBOM in-job and attaches it on release creation (:126-145), but the workflow fails on every promotion (exit 141, run 38490822732) and origin has 0 releases - the SBOM remains transient until the release job is fixed (CI-P2-011).",
       "area": "SBOM"
     },
@@ -7899,7 +7899,7 @@
       "line": 32,
       "owner": "supply-chain owner",
       "target": "next quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "release.yml is wired to generate and attach the lockfile SBOM (release.yml:126-145) but the workflow fails on every promotion (exit 141 at the notes step; live run 38490822732), and origin has 0 releases - so no SBOM is actually attached yet. See CI-P2-011.",
       "area": "SC"
     },
@@ -7935,7 +7935,7 @@
       "line": 35,
       "owner": "platform/CI owner",
       "target": "this quarter",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "note": "diff scanner pattern list still lacks dop_v1_/sbp_/glpat_/sk-proj-/npm_ formats at 7dd0402 (.github/actions/secret-scan/action.yml:14; scripts/scan-secrets.sh:13); the weekly full-history gitleaks scan covers history but not these formats either.",
       "area": "SC"
     },
