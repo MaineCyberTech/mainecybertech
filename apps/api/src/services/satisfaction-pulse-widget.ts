@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { toJson, asUpdate } from "../lib/db-types";
+import { EXPORT_ROW_LIMIT } from "../lib/pagination";
 
 /**
  * RLS-P3-007: the scoped client (when the module is allow-listed) is threaded
@@ -309,7 +310,7 @@ export async function exportSatisfactionPulses(
   if (options.status) query = query.eq("status", options.status);
   if (options.source) query = query.eq("source", options.source);
 
-  const { data, error } = await query.limit(10000);
+  const { data, error } = await query.limit(EXPORT_ROW_LIMIT);
   if (error) throw new AppError("DB_ERROR", error.message, 500);
 
   return success(data ?? []);

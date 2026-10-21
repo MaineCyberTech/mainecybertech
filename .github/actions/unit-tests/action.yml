@@ -73,6 +73,22 @@ runs:
       shell: bash
       run: node scripts/check-docs-links.mjs
 
+    - name: Check CHANGELOG checkbox for user-visible changes (REL-P3-002)
+      # The template checkbox was honour-system; fail the required PR test job
+      # when a PR changes product source/migrations but leaves it unchecked.
+      # Skipped outside pull_request events (there is no PR body to inspect).
+      if: github.event_name == 'pull_request'
+      shell: bash
+      env:
+        PR_BODY: ${{ github.event.pull_request.body }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      run: |
+        set -euo pipefail
+        node scripts/check-changelog-checkbox.mjs --self-test
+        git fetch --no-tags --depth=1 origin "$BASE_SHA"
+        git diff --name-only "$BASE_SHA" HEAD > "$RUNNER_TEMP/changed-files.txt"
+        node scripts/check-changelog-checkbox.mjs --files "$RUNNER_TEMP/changed-files.txt"
+
     - name: Check environment parity (SECRET-P3-005)
       # Fails when a runtime env schema key is missing from its .env.example,
       # an example key is neither in the schema nor the documented allowlist,

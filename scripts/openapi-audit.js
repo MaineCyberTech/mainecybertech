@@ -5,12 +5,15 @@
  * compares it to the RouteDef list in apps/api/src/openapi/spec.ts (the source
  * of docs/openapi.yaml). Reports:
  *   - MISSING: routes present in code but absent from the spec (fails by default)
- *   - EXTRA:   spec entries with no statically-resolvable code route (warning —
- *              dynamic registrations like the `registerCrud` factory cannot be
- *              resolved statically)
+ *   - EXTRA:   spec entries with no statically-resolvable code route. Dynamic
+ *              registrations (the `registerCrud` factory and per-module
+ *              `crudRoute` helpers) cannot be resolved statically, so every
+ *              reviewed extra is committed in
+ *              `scripts/openapi-audit-allowlist.json`; anything not listed
+ *              fails the audit (API-P3-002).
  *
  * Usage:
- *   node scripts/openapi-audit.js            # exit 1 when MISSING > 0
+ *   node scripts/openapi-audit.js            # exit 1 when MISSING/unlisted EXTRA > 0
  *   node scripts/openapi-audit.js --report   # always exit 0
  */
 const fs = require("fs");
@@ -20,6 +23,7 @@ const ROOT = path.resolve(__dirname, "..");
 const ROUTES_DIR = path.join(ROOT, "apps/api/src/routes");
 const SPEC = path.join(ROOT, "apps/api/src/openapi/spec.ts");
 const APP_TS = path.join(ROOT, "apps/api/src/app.ts");
+const EXTRA_ALLOWLIST = path.join(ROOT, "scripts/openapi-audit-allowlist.json");
 
 // --- app.ts mounts: import xRouter from "./routes/x" + app.use("/prefix", xRouter)
 const appSrc = fs.readFileSync(APP_TS, "utf8");
@@ -108,17 +112,42 @@ const specNormalized = new Set(
 const missing = [...liveNormalized].filter((r) => !specNormalized.has(r)).sort();
 const extra = [...specNormalized].filter((r) => !liveNormalized.has(r)).sort();
 
+const allowlistDoc = JSON.parse(fs.readFileSync(EXTRA_ALLOWLIST, "utf8"));
+const allowedExtras = new Set(allowlistDoc.extras ?? []);
+const unlistedExtra = extra.filter((r) => !allowedExtras.has(r));
+const staleAllowlist = [...allowedExtras].filter((r) => !extra.includes(r)).sort();
+
 console.log(`Live routes parsed:  ${liveNormalized.size}`);
 console.log(`Spec route entries:  ${specNormalized.size}`);
 console.log(`MISSING from spec (${missing.length}):`);
 for (const r of missing) console.log("  " + r);
-console.log(`Dynamic/unresolved spec entries (${extra.length}) — not statically verifiable:`);
-for (const r of extra.slice(0, 10)) console.log("  " + r);
-if (extra.length > 10) console.log(`  … and ${extra.length - 10} more`);
-
-if (missing.length > 0 && !process.argv.includes("--report")) {
-  console.error(
-    `\nOpenAPI coverage failed: ${missing.length} live route(s) missing from the spec.`,
+console.log(
+  `Dynamic/unresolved spec entries (${extra.length}, ` +
+    `${extra.length - unlistedExtra.length} allow-listed):`,
+);
+for (const r of unlistedExtra) console.log("  " + r);
+if (unlistedExtra.length === 0) {
+  console.log("  none unlisted");
+}
+if (staleAllowlist.length > 0) {
+  console.log(
+    `Stale allowlist entries (${staleAllowlist.length}) — remove from ` +
+      "scripts/openapi-audit-allowlist.json:",
   );
+  for (const r of staleAllowlist) console.log("  " + r);
+}
+
+if ((missing.length > 0 || unlistedExtra.length > 0) && !process.argv.includes("--report")) {
+  if (missing.length > 0) {
+    console.error(
+      `\nOpenAPI coverage failed: ${missing.length} live route(s) missing from the spec.`,
+    );
+  }
+  if (unlistedExtra.length > 0) {
+    console.error(
+      `\nOpenAPI coverage failed: ${unlistedExtra.length} spec route(s) have no static ` +
+        "code route and are not in scripts/openapi-audit-allowlist.json.",
+    );
+  }
   process.exit(1);
 }
