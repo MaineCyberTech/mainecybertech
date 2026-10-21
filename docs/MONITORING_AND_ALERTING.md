@@ -305,7 +305,7 @@ The `route` label on the two HTTP metrics is the matched Express route template 
 
 ### Scraping
 
-The compose `prometheus` service scrapes the API on the internal network; no public exposure. `prometheus.yml` uses a global `scrape_interval` of **15s** — 4 scrapes/min per target (`mct-api`, `mct-worker`, `prometheus`). The API's `/metrics` limiter allows **12 requests/min per source IP** (`apps/api/src/middleware/rate-limit.ts`), so a scrape plus ad-hoc debugging or a retry has headroom and the scrape cannot self-throttle (OBS-P3-006).
+The compose `prometheus` service scrapes the API on the internal network; no public exposure. `prometheus.yml` uses a global `scrape_interval` of **15s** — 4 scrapes/min per target (`mct-api`, `mct-worker`, `prometheus`, and `node-exporter` for host CPU/memory/filesystem/load). The API's `/metrics` limiter allows **12 requests/min per source IP** (`apps/api/src/middleware/rate-limit.ts`), so a scrape plus ad-hoc debugging or a retry has headroom and the scrape cannot self-throttle (OBS-P3-006). `node-exporter` is internal-only too, but its endpoint is deliberately untokenised: it exposes host resource data, never tenant data (the API/worker bearer gate exists because their metrics carry per-module and per-tenant labels).
 
 ### Alert delivery
 
@@ -429,6 +429,9 @@ dead-man's switch.
 | `MCTStripeReconcileDrift`              | warning  | any Stripe reconciliation drift in 25h                                                     |
 | `MCTApiRedisDegraded`                  | warning  | `portal_redis_connected == 0` for 5m (Redis degradation; the API stays up, §2)             |
 | `MCTRedisOperationFailures`            | warning  | any Redis fallback operation (API or worker) in 15m                                        |
+| `MCTHostDiskSpaceLow`                 | warning  | root filesystem < 15% free for 15m (`node-exporter`)                                       |
+| `MCTHostDiskSpaceCritical`            | critical | root filesystem < 7% free for 10m (`node-exporter`)                                        |
+| `MCTHostMemoryPressure`               | warning  | memory in use > 90% for 15m (`node-exporter`)                                              |
 | `Watchdog`                             | none     | always firing; heartbeat to the off-box dead-man's switch every 5m (§9)                    |
 
 ### Notification channels
