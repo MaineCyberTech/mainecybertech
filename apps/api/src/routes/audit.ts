@@ -8,7 +8,7 @@ import { rateLimitAdminOps } from "../middleware/rate-limit";
 import { logAuditEvent } from "../services/audit";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { queryInt } from "../lib/query";
-import { listCountMode } from "../lib/pagination";
+import { listCountMode, EXPORT_ROW_LIMIT } from "../lib/pagination";
 import {
   applyOrgScope,
   applyRequestedOrg,
@@ -90,7 +90,9 @@ router.get("/export", rateLimitAdminOps, async (req, res, next) => {
     const entityId = req.query.entity_id as string | undefined;
     if (entityId) query = query.eq("entity_id", entityId);
 
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(EXPORT_ROW_LIMIT);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -184,7 +186,9 @@ router.get("/impersonation/export", rateLimitAdminOps, async (req, res, next) =>
     const actorUserId = req.query.actor_user_id as string | undefined;
     if (actorUserId) query = query.eq("actor_user_id", actorUserId);
 
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(EXPORT_ROW_LIMIT);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

@@ -21,17 +21,15 @@ ARG NEXT_PUBLIC_BUILD_TIME
 ARG NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
 ARG NEXT_PUBLIC_SENTRY_DSN
-# SECRET-P3-002: fail the build when the required public API URL is absent.
-# The previous `:-http://localhost:4000` default made apps/web/lib/env.ts's
-# production check unreachable and baked a dead localhost URL into the client
-# bundle. Local compose passes the localhost value explicitly (docker-compose.yml);
-# release builds pass the real URL from deploy-do.yml / build-push.yml.
+# SECRET-P3-002: fail the build when the required public API URL is
+# absent and never bake a localhost fallback. Local compose passes the
+# localhost value explicitly (docker-compose.yml); deploy builds pass
+# the real URL from deploy-do.yml / build-push.yml.
 RUN test -n "$NEXT_PUBLIC_API_URL" || { \
       echo "ERROR: NEXT_PUBLIC_API_URL build arg is required (e.g. https://api.example.com)" >&2; \
       exit 1; \
     }
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-ENV NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION:-0.0.0-dev}
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-}ENV NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION:-0.0.0-dev}
 ENV NEXT_PUBLIC_GIT_SHA=${NEXT_PUBLIC_GIT_SHA:-local}
 ENV NEXT_PUBLIC_BUILD_TIME=${NEXT_PUBLIC_BUILD_TIME:-}
 ENV NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED=${NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED:-false}
@@ -53,11 +51,9 @@ ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-# The value is inlined into the client bundle at build time; keep the runtime
-# env aligned with the (now required) build arg instead of defaulting to
-# localhost.
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+# The value is inlined into the client bundle at build time; keep the
+# runtime env aligned with the (guarded) build arg.
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-}ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

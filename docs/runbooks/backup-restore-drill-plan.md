@@ -32,7 +32,7 @@ run by an operator on an isolated target, never against production data.
 |---|---|---|---|
 | Daily DB backup workflow | `.github/workflows/db-backup.yml` | Present and scheduled on the default branch (DR-P0-002 fixed); records a platform heartbeat (DR-P2-008) | **No green run yet** — operator backup secrets unprovisioned (DR-P0-001 residual) |
 | Backup script (bash) | `scripts/backup-database.sh` | pg_dump → gzip → S3/Spaces; encryption when `BACKUP_ENCRYPTION_KEY` is set; 30-day retention | `not exercised` |
-| Backup script (PowerShell) | `scripts/backup-database.ps1` | Legacy duplicate of the bash logic (retire/delegate: DR-P3-002) | `not exercised` |
+| Backup script (PowerShell) | — | Retired (DR-P3-002); use `scripts/backup-database.sh` via WSL/Git Bash | N/A |
 | Weekly restore test | `.github/workflows/db-restore-test.yml` | Present and scheduled; restores to a temp `postgres:16-alpine` and **asserts** structure/freshness/RLS floors (DR-P0-003, DR-P1-001 fixed) | `not exercised` (same operator residual) |
 | Storage backup | `.github/workflows/storage-backup.yml`, `scripts/backup-storage.sh` | Paginated listing, zero-object refusal, MANIFEST with `object_count`, encryption, offsite option (DR-P2-001 fixed) | `not exercised` |
 | Storage restore test | `.github/workflows/storage-restore-test.yml`, `scripts/restore-storage.sh --verify-only` | Weekly assertions: manifest present, `object_count` == extracted count, archive non-empty (DR-P1-002, DR-P2-002 fixed) | `not exercised` |

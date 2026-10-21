@@ -21,7 +21,7 @@ The final run should produce:
 - `patch_plan.md`
 - `EXECUTIVE_SUMMARY.md`
 - `RELEASE_GATE.md`
-- Domain audit reports from `00` through `40`
+- Domain audit reports from `00` through `40`, plus the cross-domain `45` attack-path report
 - Hardening companion artifacts such as access-control matrix, branch-protection recommendation, secret-rotation runbook, backup/restore drill plan, incident tabletop scenarios, release notes draft, and changelog draft
 
 ## Logical organization
@@ -43,6 +43,7 @@ The final run should produce:
 |  24 | Access Control Matrix Audit                | `prompts/24_access_control_matrix_audit.md`              | Create a complete access-control matrix across roles, permissions, routes, APIs, objects, actions, and data scopes.                    |
 |  25 | Multi-Tenant Isolation Attack Simulation   | `prompts/25_multi_tenant_isolation_attack_simulation.md` | Simulate safe code-level abuse cases for cross-tenant data access through IDs, routes, APIs, realtime, files, jobs, cache, and search. |
 |  26 | Admin Console Abuse Case Audit             | `prompts/26_admin_console_abuse_case_audit.md`           | Audit admin/operator surfaces for misuse, accidental damage, privilege escalation, unsafe bulk actions, and weak audit logging.        |
+|  45 | Exploit Chain and Attack Path Audit        | `prompts/45_exploit_chain_attack_path_audit.md`          | Compose domain findings into end-to-end attack paths with prerequisites, blast radius, detection gaps, and the single fix that breaks each chain. |
 
 ## Data, API, Integrations, and Domain Runtime
 

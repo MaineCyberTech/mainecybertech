@@ -173,7 +173,7 @@ pnpm e2e                     # Playwright E2E
 | SQL migrations            | 160 | `supabase/migrations/` (latest: 5302462_sop_library_status_check                                                                                              |
 | Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 30 | `.github/workflows/`                                                                                                                                                   |
-| AI prompt files           | 625 | `prompts/` (6 packs, 630 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
+| AI prompt files           | 626 | `prompts/` (6 packs, 624 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
 | Build/dev/utility scripts | 121 | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
 
 ## Database Types (2026-09-21)
@@ -358,9 +358,9 @@ SENTRY_DSN=
 - **Permissions:** `usePermissions()` hook, `<HasPermission>` component, `requirePermission()` server helper
 - **Error boundaries:** `error.tsx` in each route group, `global-error.tsx` at root
 
-### Worker (142 lines)
+### Worker (161 lines)
 
-- **Consumer:** SQS-based (`runWorkerTasks` from `consumer-sqs.ts`)
+- **Consumer:** `runWorkerTasks` in `consumer-sqs.ts` dispatches on `QUEUE_BACKEND`: **BullMQ in production** (`consumer-bullmq.ts`), SQS or inline for local/dev only (`env.ts` rejects non-BullMQ in production)
 - **Task registration:** `registerTask(name, handler)` in `apps/worker/src/task-registry.ts`
 - **Scans:** Domain monitors, website monitors, backup checks, patch compliance, etc.
 - **Graceful shutdown:** `inFlightTasks` tracking + drain loop
