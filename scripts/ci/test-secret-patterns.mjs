@@ -44,7 +44,8 @@ for (const fixture of fixtures.positive) {
 
 const combined = new RegExp(patterns.join("|"));
 for (const fixture of fixtures.negative) {
-  if (combined.test(fixture.value)) {
+  const value = fixture.prefix + fixture.fill.repeat(fixture.bodyLength);
+  if (combined.test(value)) {
     console.error(`FALSE POSITIVE: ${fixture.name}`);
     failed++;
   }
