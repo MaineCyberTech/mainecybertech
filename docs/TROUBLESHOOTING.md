@@ -25,10 +25,15 @@ Server components use `API_INTERNAL_URL` when set (read at runtime by
 `apps/web/lib/api.ts`; compose sets it to `http://api:4000`), and otherwise fall
 back to the inlined `NEXT_PUBLIC_API_URL`.
 **Fix:** Pass `NEXT_PUBLIC_API_URL` as a build arg for Docker builds (see
-`apps/web/Dockerfile`) and set it in `.env.local` for local dev. To point SSR
-traffic at an internal API address, set `API_INTERNAL_URL` in the web
-container's environment instead — no rebuild required. `apps/web/lib/env.ts`
-validates `NEXT_PUBLIC_API_URL` and warns in dev when missing.
+`apps/web/Dockerfile`) and set it in `.env.local` for local dev. The image
+build now **fails** when the arg is absent (SECRET-P3-002): the old
+`http://localhost:4000` default made the production check in
+`apps/web/lib/env.ts` unreachable. `docker compose build web` supplies the
+localhost value explicitly from `docker-compose.yml`, and release workflows
+pass the real API URL. To point SSR traffic at an internal API address, set
+`API_INTERNAL_URL` in the web container's environment instead — no rebuild
+required. Outside Docker, `apps/web/lib/env.ts` throws in production when
+`NEXT_PUBLIC_API_URL` is missing and warns in dev.
 
 ### Realtime notifications degrade or the bell stops updating
 The notification bell consumes `GET /api/v1/notifications/stream` (SSE). Server

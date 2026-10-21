@@ -63,7 +63,8 @@ self-tests in `ci/` so a broken detector cannot pass silently.
 | `check-rls-predicate.mjs` | Fail when a post-baseline migration reintroduces the raw unfiltered membership predicate (DATA-P1-001). |
 | `verify-rls.mjs` | RLS/migration hygiene: helper functions, policy catalog, dead-policy scan. |
 | `generate-db-types.js` | Regenerate `packages/sdk` database types; `--check` (CI + root `db:types:check`) fails on drift. |
-| `openapi-audit.js` | Fail when a statically-resolvable Express route is missing from the generated OpenAPI spec. |
+| `openapi-audit.js` | Fail when a statically-resolvable Express route is missing from the generated OpenAPI spec, or when a spec entry has no static code route and is absent from `scripts/openapi-audit-allowlist.json` (API-P3-002). |
+| `ci/test-secret-patterns.mjs` | Fixture test for the canonical diff-scanner patterns in `scripts/ci/secret-patterns.txt` (including `dop_v1_`, `sbp_`, `glpat-`, `sk-proj-`, `npm_`) — CI-P3-005 / SC-P3-009. Runs in the shared `secret-scan` action. |
 | `check-permission-catalog.mjs` | Fail when a `requirePermission` literal, a live RLS `user_has_permission` predicate, or a `registerCrud` module key references a pair absent from the permission catalog (ACM-P3-002 / EVOL-P3-002). |
 | `public-route-inventory.mjs` | Generate `docs/PUBLIC_ROUTES.md` from the `auth: false` OpenAPI RouteDefs; `--check` (CI) fails when the inventory is stale (ACM-P3-003). |
 | `check-env-parity.mjs` | Fail when a runtime env schema key is missing from its `.env.example`, an example key is neither in the schema nor the documented `EXTERNAL_KEYS` allowlist, or a key is absent from `docs/ENVIRONMENT_VARIABLES.md`; resolves the shared `@mct/config/env` shapes (SECRET-P3-005). `--self-test` proves the negative fixtures fail. |
