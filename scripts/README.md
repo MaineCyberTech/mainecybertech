@@ -1,6 +1,6 @@
 # Scripts
 
-> Automation helpers for the MCT Portal monorepo. Last updated 2026-10-12.
+> Automation helpers for the MCT Portal monorepo. Last updated 2026-10-21.
 
 ## Which platform?
 
@@ -11,7 +11,7 @@
 | Local stack test | `test-local-stack.ps1` | `test-local-seeds.sh` |
 | Dev reset & verify | `local_dev_reset_and_verify.automated.v2.ps1` | `local_dev_reset_and_verify.automated.v2.sh` |
 | Secret scan | `scan-secrets.ps1` | `scan-secrets.sh` |
-| Database backup | `backup-database.ps1` | `backup-database.sh` |
+| Database backup | — (retired, use bash) | `backup-database.sh` |
 | Database restore | — | `restore-database.sh` |
 | Storage backup | — | `backup-storage.sh` |
 | Storage restore | — | `restore-storage.sh` |
@@ -28,7 +28,7 @@
 | `sync_supabase_env.auto.v2.ps1` | Sync local Supabase env values (URL, keys) into app `.env.local` files. |
 | `start_project_with_supabase_env.ps1` | Start the project after ensuring Supabase env values are present. |
 | `scan-secrets.ps1` / `.sh` | Scan the repo for accidentally committed secrets. |
-| `backup-database.ps1` / `.sh` | Back up the Supabase/database data. |
+| `backup-database.sh` | Back up the Supabase/database data (the PowerShell duplicate was retired in DR-P3-002). |
 | `restore-database.sh` | Restore a database backup (Linux/macOS). |
 | `backup-storage.sh` | Mirror Supabase Storage buckets (`documents`/`avatars`/`logos`) to S3/Spaces. |
 | `record-backup-heartbeat.sh` | Record the platform backup heartbeat (`platform_backup_heartbeats`) after a successful backup run (DR-P2-008). |

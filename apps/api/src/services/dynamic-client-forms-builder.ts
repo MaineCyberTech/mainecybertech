@@ -10,6 +10,7 @@ type RlsClient = SupabaseClient<Database>;
 import { logAuditEvent } from "./audit";
 import { AppError, success } from "../types";
 import { toJson, type UpdateRow } from "../lib/db-types";
+import { EXPORT_ROW_LIMIT } from "../lib/pagination";
 
 export interface DynamicForm {
   id: string;
@@ -335,7 +336,7 @@ export async function exportDynamicForms(
     .select("*")
     .eq("organization_id", organizationId)
     .order("created_at", { ascending: false })
-    .limit(10000);
+    .limit(EXPORT_ROW_LIMIT);
 
   if (options.status) query = query.eq("status", options.status);
   if (options.formType) query = query.eq("form_type", options.formType);

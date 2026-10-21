@@ -87,6 +87,18 @@ pass before the deploy step:
   idempotent, and a dispatch from a non-`main` ref only uploads the notes/SBOM
   as artifacts. Bump [`VERSION`](../VERSION) when the release changes the
   product version — the tag carries whatever the file says.
+- **Release-notes scope (REL-P3-001):** the generated `Changes since …` section
+  is `git log --no-merges <prev>..HEAD` with each subject printed verbatim. It
+  does **not** group, rewrite, or filter by conventional-commit type, so bot
+  commits (dependabot/remediation agents) and non-standard types such as
+  `security:` or `a11y:` appear exactly as authored. Subject hygiene is
+  therefore advisory; the remaining single-human-author bus factor is
+  organizational, not a workflow defect.
+- **CHANGELOG checkbox (REL-P3-002):** the PR template checkbox is enforced by
+  `scripts/check-changelog-checkbox.mjs` in the required PR test job. It fails
+  when a PR touches product source or a migration but leaves the box unchecked;
+  docs/CI/test-only PRs pass without an entry. The guard checks the declaration,
+  not the `CHANGELOG.md` diff itself.
 - Each image is scanned with Trivy at build time (CRITICAL/HIGH, ignoring
   unfixed) before the deploy proceeds; a failing scan blocks the deploy jobs.
 - `CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/) and

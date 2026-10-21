@@ -41,3 +41,4 @@
 39. `22_final_risk_register_roadmap.md` - Final Risk Register, Roadmap, and Patch Plan
 40. `23_executive_summary_release_gate.md` - Executive Summary and Release Gate
 41. `40_release_notes_changelog_generator.md` - Release Notes and Changelog Generator
+42. `45_exploit_chain_attack_path_audit.md` - Exploit Chain and Attack Path Audit

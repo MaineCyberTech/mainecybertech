@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from "./supabase";
 import { logAuditEvent } from "./audit";
 import { AppError, success } from "../types";
 import { toJson, asUpdate } from "../lib/db-types";
+import { EXPORT_ROW_LIMIT } from "../lib/pagination";
 
 export interface OnboardingRecord {
   id: string;
@@ -908,7 +909,7 @@ export async function exportOnboardingRecords(
   if (options.phase) query = query.eq("phase", options.phase);
   if (options.riskLevel) query = query.eq("risk_level", options.riskLevel);
 
-  const { data, error } = await query.limit(10000);
+  const { data, error } = await query.limit(EXPORT_ROW_LIMIT);
   if (error) throw new AppError("DB_ERROR", error.message, 500);
 
   return success(data ?? []);
