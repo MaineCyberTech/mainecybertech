@@ -7,12 +7,24 @@ import { usePermissions, type ServerPermissionData } from "@/lib/use-permissions
 
 import { PORTAL_NAV_GROUPS as GROUPS } from "@/lib/navigation/portal-nav";
 
+/** Subscription/entitlement-gated modules (mirrors GATED_MODULES on the API). */
+const PLAN_GATED_MODULES = new Set([
+  "findings",
+  "security-ops",
+  "governance",
+  "training-hub",
+  "service-catalog",
+  "qbr",
+]);
+
 export default function PortalSidebarContent({
   mobile,
   permissions,
+  enabledModules,
 }: {
   mobile?: boolean;
   permissions?: ServerPermissionData | null;
+  enabledModules?: string[] | null;
 }) {
   const pathname = usePathname() ?? "";
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
@@ -37,7 +49,17 @@ export default function PortalSidebarContent({
         ...group,
         items: group.items.filter((item) => {
           if (!item.module) return true;
-          return can(item.module, "view");
+          if (!can(item.module, "view")) return false;
+          // Hide modules the org is not entitled to instead of letting the
+          // user click into a 402 from the API.
+          if (
+            enabledModules &&
+            PLAN_GATED_MODULES.has(item.module) &&
+            !enabledModules.includes(item.module)
+          ) {
+            return false;
+          }
+          return true;
         }),
       })).filter((group) => group.items.length > 0);
 

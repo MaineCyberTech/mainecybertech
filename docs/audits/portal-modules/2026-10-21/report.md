@@ -1047,7 +1047,14 @@ The first remediation batch addresses the Critical/High items that do not requir
 | User-scoped response-cache option; the documents list now keys by user+org, preventing cross-user private-document leaks | `apps/api/src/middleware/cache.ts`, `apps/api/src/routes/documents.ts`, `cache.test.ts` |
 | Billing summary query construction (verified fixed on `develop`) and sync button permission gate | `apps/api/src/routes/billing.ts`, `BillingPageClient.tsx` |
 | Admin visibility selectors for findings/assets/vendor contracts/domain monitors/file requests/service catalog | admin pages + `lib/module-actions.ts` |
+| Client request flows: approvals create + detail/comments/decision UI; change-request create + detail/submit; DNS-change request form | `portal/approvals/**`, `portal/change-requests/**`, `portal/dns-changes/**` |
+| Training course detail with lessons, self-enrollment and progress; self-enroll now allowed for client `view` roles | `portal/training-hub/**`, `routes/training-hub.ts` |
+| Knowledge-base search and article detail | `portal/client-knowledge-base/**` |
+| No-code form builder field rows (label/type/required/options/help text/reorder) replacing the raw JSON textarea; form-fill supports checkbox/date/email | `portal/dynamic-client-forms-builder/**` |
+| Onboarding checklist service now maps camelCase input to DB columns and defaults `completed_by` to the caller | `services/client-onboarding-command-center.ts` |
+| Client request forms for identity verification, employee offboarding and insurance evidence | `portal/identity-verification/**`, `portal/offboarding/**`, `portal/insurance-binder/**` |
+| Entitlement-aware portal navigation: plan-gated modules are hidden when the org's `enabledModules` does not include them | `app/(portal)/layout.tsx`, `PortalSidebarLayout.tsx`, `PortalSidebarContent.tsx` |
 
-Verification completed: API `tsc --noEmit` clean; web `tsc --noEmit` clean; SDK `tsc --noEmit` clean; 165 route tests + 27 auth tests + 41 document tests + 6 visibility unit tests + 47 portal page tests passing.
+Verification completed: API `tsc --noEmit` clean; web `tsc --noEmit` clean; SDK `tsc --noEmit` clean; targeted API suites (auth, documents, billing, cache, visibility, approvals, training, onboarding and the 11 module route suites) and 49+ portal page/action tests passing.
 
-Remaining from the roadmap (not in this batch): real client proposal decision workflow, training enrollment/progress, KB search/detail, client request forms for approvals/change/DNS/identity/offboarding/insurance, no-code form builder, interactive onboarding checklist, network diagram renderer, entitlement-aware navigation, remaining list pagination and the nav regroup.
+Remaining from the roadmap (not in this batch): real client proposal decision workflow, network diagram renderer, remaining list pagination and the nav regroup.

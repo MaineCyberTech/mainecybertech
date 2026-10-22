@@ -6,6 +6,7 @@ import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { hasPermission } from "@/lib/permissions";
 import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Offboarding - Portal - Maine CyberTech" };
@@ -25,16 +26,31 @@ export default async function PortalOffboardingPage() {
     loadFailed = true;
   }
 
+  const permissions = await Promise.resolve()
+    .then(() => api.permissions.getMyPermissions())
+    .catch(() => null);
+  const canCreate =
+    Boolean(permissions?.isSuperAdmin) || hasPermission(permissions?.keys, "offboarding", "create");
+
   return (
     <div className="space-y-6" role="region" aria-label="Offboarding">
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Offboarding" }]}
       />
-      <h1 className="text-2xl font-semibold text-slate-50">Offboarding</h1>
       {loadFailed ? <DataErrorNote what="offboarding" /> : null}
-      <p className="text-sm text-slate-400">
-        {items.length} offboarding record{items.length !== 1 ? "s" : ""} for your organization.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-50">Offboarding</h1>
+          <p className="mt-1 text-sm text-slate-400">
+            {items.length} offboarding record{items.length !== 1 ? "s" : ""} for your organization.
+          </p>
+        </div>
+        {canCreate ? (
+          <Link href="/portal/offboarding/new" className="cyber-button">
+            Start offboarding
+          </Link>
+        ) : null}
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (
           <div

@@ -91,32 +91,41 @@ const PORTAL_ROUTE_PERMISSIONS: Record<string, { module: string; action?: string
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   // Run independent calls in parallel
-  const [userResult, membershipResult, unreadCountResult, allOrgsResult, permissionsResult] =
-    await Promise.all([
-      withRetry(() => getApiClient().users.me()).catch((err) => {
-        // Only treat an explicit auth failure (401/403) as "not signed in".
-        // Transient API errors (429 rate limit, 5xx) must NOT redirect to
-        // /login — the middleware would bounce an authenticated user back
-        // to /portal/dashboard, producing an infinite redirect loop.
-        // A session that still owes its second factor steps up instead.
-        if ((err as { code?: string })?.code === "MFA_REQUIRED") {
-          redirect("/portal/profile/security?mfa=required");
-        }
-        const status = (err as { status?: number })?.status;
-        return status === 401 || status === 403 ? null : { error: true };
-      }),
-      getApprovedMembership().catch((err) => {
-        const status = (err as { status?: number })?.status;
-        return status === 401 || status === 403 ? null : Promise.reject(err);
-      }),
-      getUnreadCount().catch(() => 0),
-      getApiClient()
-        .organizations.list({ limit: 100 })
-        .catch(() => ({ items: [] as Organization[], total: 0, page: 1, limit: 100 })),
-      getApiClient()
-        .permissions.getMyPermissions()
-        .catch(() => null),
-    ]);
+  const [
+    userResult,
+    membershipResult,
+    unreadCountResult,
+    allOrgsResult,
+    permissionsResult,
+    bootstrapResult,
+  ] = await Promise.all([
+    withRetry(() => getApiClient().users.me()).catch((err) => {
+      // Only treat an explicit auth failure (401/403) as "not signed in".
+      // Transient API errors (429 rate limit, 5xx) must NOT redirect to
+      // /login — the middleware would bounce an authenticated user back
+      // to /portal/dashboard, producing an infinite redirect loop.
+      // A session that still owes its second factor steps up instead.
+      if ((err as { code?: string })?.code === "MFA_REQUIRED") {
+        redirect("/portal/profile/security?mfa=required");
+      }
+      const status = (err as { status?: number })?.status;
+      return status === 401 || status === 403 ? null : { error: true };
+    }),
+    getApprovedMembership().catch((err) => {
+      const status = (err as { status?: number })?.status;
+      return status === 401 || status === 403 ? null : Promise.reject(err);
+    }),
+    getUnreadCount().catch(() => 0),
+    getApiClient()
+      .organizations.list({ limit: 100 })
+      .catch(() => ({ items: [] as Organization[], total: 0, page: 1, limit: 100 })),
+    getApiClient()
+      .permissions.getMyPermissions()
+      .catch(() => null),
+    getApiClient()
+      .clientPortal.getBootstrap()
+      .catch(() => null),
+  ]);
 
   if (!userResult || !("userId" in userResult)) {
     if (userResult && "error" in userResult) {
@@ -133,6 +142,9 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const membership = membershipResult;
   const unreadCount = unreadCountResult;
   const allOrgs = allOrgsResult.items ?? [];
+  const enabledModules =
+    bootstrapResult?.memberships?.find((item) => item.organizationId === membership.organization_id)
+      ?.enabledModules ?? null;
 
   // Fetch org details and memberships in parallel (both depend on batch 1)
   const [org, allMemberships] = await Promise.all([
@@ -227,6 +239,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
               ? { isSuperAdmin: permissionsResult.isSuperAdmin, keys: permissionsResult.keys }
               : null
           }
+          enabledModules={enabledModules}
         >
           <RouteGuard rules={PORTAL_ROUTE_PERMISSIONS} homeHref="/portal/dashboard">
             {children}

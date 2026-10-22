@@ -42,9 +42,10 @@ export default async function PortalTrainingHubPage() {
       <p className="text-sm text-slate-400">Browse available microlearning courses.</p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((c) => (
-          <div
+          <Link
             key={String(c.id)}
-            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+            href={`/portal/training-hub/${String(c.id)}`}
+            className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
           >
             <p className="font-medium text-slate-50">{String(c.title)}</p>
             <div className="mt-2 flex items-center gap-2">
@@ -58,7 +59,7 @@ export default async function PortalTrainingHubPage() {
               </span>
               <span className="text-xs text-slate-500">{Number(c.estimated_minutes || 0)} min</span>
             </div>
-          </div>
+          </Link>
         ))}
         {!loadFailed && items.length === 0 && (
           <div className="col-span-2">

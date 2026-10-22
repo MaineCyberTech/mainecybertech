@@ -6,6 +6,7 @@ import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { hasPermission } from "@/lib/permissions";
 import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "DNS Changes - Portal - Maine CyberTech" };
@@ -25,6 +26,12 @@ export default async function DnsChangesPage() {
     loadFailed = true;
   }
 
+  const permissions = await Promise.resolve()
+    .then(() => api.permissions.getMyPermissions())
+    .catch(() => null);
+  const canCreate =
+    Boolean(permissions?.isSuperAdmin) || hasPermission(permissions?.keys, "dns-changes", "create");
+
   return (
     <div className="space-y-6" role="region" aria-label="DNS Changes">
       <Breadcrumbs
@@ -32,10 +39,19 @@ export default async function DnsChangesPage() {
       />
       <PortalSubnav current="dns-changes" />
       {loadFailed ? <DataErrorNote what="dns-changes" /> : null}
-      <h1 className="text-2xl font-semibold text-slate-50">DNS Change Requests</h1>
-      <p className="text-sm text-slate-400">
-        {items.length} change request{items.length !== 1 ? "s" : ""} for your organization.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-50">DNS Change Requests</h1>
+          <p className="mt-1 text-sm text-slate-400">
+            {items.length} change request{items.length !== 1 ? "s" : ""} for your organization.
+          </p>
+        </div>
+        {canCreate ? (
+          <Link href="/portal/dns-changes/new" className="cyber-button">
+            Request DNS change
+          </Link>
+        ) : null}
+      </div>
       <div className="space-y-3">
         {items.map((item) => (
           <div

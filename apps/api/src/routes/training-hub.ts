@@ -226,7 +226,10 @@ router.delete(
 
 router.post(
   "/courses/:id/enroll",
-  requirePermission("training-hub", "edit"),
+  // Self-enrollment: the handler writes only the caller's own enrollment and
+  // derives user_id from the session, so view access is sufficient. Requiring
+  // `edit` locked ordinary client users out of training entirely.
+  requirePermission("training-hub", "view"),
   async (req, res, next) => {
     try {
       const supabase = getScopedClient(req, "training-hub", "write");
@@ -265,7 +268,8 @@ router.post(
 
 router.post(
   "/courses/:id/progress",
-  requirePermission("training-hub", "edit"),
+  // Self-progress: writes only the caller's own enrollment.
+  requirePermission("training-hub", "view"),
   async (req, res, next) => {
     try {
       const parsed = progressSchema.parse(req.body);
