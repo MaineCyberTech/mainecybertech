@@ -10,6 +10,7 @@ import { requireEntitlement } from "../middleware/entitlement";
 import { queryInt } from "../lib/query";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { applyPublishedStatus, isPublishedForClient } from "../lib/client-visibility";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -83,10 +84,11 @@ router.get("/courses", async (req, res, next) => {
     const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    const q = supabase
+    let q = supabase
       .from("training_courses")
       .select("*", { count: listCountMode(req.query) })
       .eq("organization_id", req.query.organization_id as string);
+    ({ query: q } = await applyPublishedStatus(q, req, "status", ["published", "active"]));
 
     const { data, error, count } = await q
       .order("created_at", { ascending: false })
@@ -144,6 +146,14 @@ router.get("/courses/:id", async (req, res, next) => {
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Course not found", 404);
+    if (
+      !(await isPublishedForClient(req, data as unknown as Record<string, unknown>, "status", [
+        "published",
+        "active",
+      ]))
+    ) {
+      throw new AppError("NOT_FOUND", "Course not found", 404);
+    }
     res.json(success(data));
   } catch (error) {
     next(error);

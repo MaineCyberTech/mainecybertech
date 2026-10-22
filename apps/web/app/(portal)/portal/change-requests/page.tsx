@@ -48,8 +48,10 @@ export default async function PortalChangeRequestsPage() {
             <p className="mt-1 text-xs text-slate-400">
               Priority: {String(a.priority || "N/A")} &bull; Type: {String(a.change_type || "N/A")}
             </p>
-            {(a.scheduled_at as string | null) && (
-              <p className="mt-1 text-xs text-slate-400">Scheduled: {formatDate(a.scheduled_at)}</p>
+            {(a.implementation_date as string | null) && (
+              <p className="mt-1 text-xs text-slate-400">
+                Planned: {formatDate(a.implementation_date)}
+              </p>
             )}
           </div>
         ))}

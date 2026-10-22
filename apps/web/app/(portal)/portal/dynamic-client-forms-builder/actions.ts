@@ -61,6 +61,9 @@ export async function createFormAction(formData: FormData) {
     revalidatePath("/portal/dynamic-client-forms-builder");
     redirect(`/portal/dynamic-client-forms-builder/${created.id}`);
   } catch (e: unknown) {
+    // redirect() throws NEXT_REDIRECT; re-throw so Next performs the navigation
+    // instead of returning it as an error (and leaving a created record behind).
+    if (e instanceof Error && e.message === "NEXT_REDIRECT") throw e;
     return { ok: false as const, error: e instanceof Error ? e.message : "Failed to create" };
   }
 }

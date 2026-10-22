@@ -129,6 +129,6 @@ describe("PortalQbrPage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByText(/1 reports for your organization/)).toBeInTheDocument();
+    expect(screen.getByText(/1 report for your organization/)).toBeInTheDocument();
   });
 });

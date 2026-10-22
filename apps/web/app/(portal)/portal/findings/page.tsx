@@ -7,19 +7,34 @@ import PortalSubnav from "@/components/portal/PortalSubnav";
 import { SeverityPill } from "@/components/admin/SeverityPill";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import AdminPagination from "@/components/admin/AdminPagination";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Findings - Portal - Maine CyberTech" };
 
-export default async function PortalFindingsPage() {
+const DEFAULT_LIMIT = 25;
+
+export default async function PortalFindingsPage(
+  props: {
+    searchParams?: Promise<{ page?: string; limit?: string }>;
+  } = {},
+) {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  const sp = (await props.searchParams) ?? {};
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
   let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
+  let total = 0;
   try {
-    const r = await api.findings.list({ organizationId: orgId });
+    const r = await api.findings.list({ organizationId: orgId, page, limit });
     items = r.items as unknown as typeof items;
+    total = r.total ?? items.length;
   } catch (error) {
     console.error("[findings/page]", error);
     loadFailed = true;
@@ -49,7 +64,7 @@ export default async function PortalFindingsPage() {
         ) : null}
       </div>
       <p className="text-sm text-slate-400">
-        {items.length} findings tracked for your organization.
+        {total} finding{total !== 1 ? "s" : ""} tracked for your organization.
       </p>
       <div className="space-y-3">
         {items.map((f) => (
@@ -78,6 +93,13 @@ export default async function PortalFindingsPage() {
           <p className="text-sm text-slate-400">No findings reported.</p>
         )}
       </div>
+      <AdminPagination
+        currentPage={page}
+        totalPages={Math.ceil(total / limit)}
+        buildHref={(p) => `/portal/findings?page=${p}&limit=${limit}`}
+        total={total}
+        limit={limit}
+      />
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard
       </Link>

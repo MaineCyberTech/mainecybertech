@@ -43,13 +43,13 @@ export default async function PortalOffboardingPage() {
           >
             <div className="flex items-center justify-between">
               <p className="font-medium text-slate-50">
-                {String(a.name || a.employee || a.user || "")}
+                {String(a.employee_name || a.employee || a.name || "Employee")}
               </p>
               <StatusPill status={String(a.status || "unknown")} />
             </div>
             <p className="mt-1 text-xs text-slate-400">
               Department: {String(a.department || "N/A")} &bull; Offboard date:{" "}
-              {String(a.offboard_date ? formatDate(a.offboard_date) : "N/A")}
+              {a.offboarding_date ? formatDate(a.offboarding_date) : "N/A"}
             </p>
             {(a.completed_at as string | null) && (
               <p className="mt-1 text-xs text-slate-400">Completed: {formatDate(a.completed_at)}</p>

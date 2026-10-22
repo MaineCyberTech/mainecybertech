@@ -7,28 +7,23 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
 import DataErrorNote from "@/components/admin/DataErrorNote";
-import { AuditLog, Document, Organization, Project, Ticket } from "@mct/sdk";
+import { Document, Organization, Project, Ticket } from "@mct/sdk";
 
 export const metadata = { title: "Dashboard - Portal - Maine CyberTech" };
 
 type DashboardTicket = Ticket & { subject?: string; name?: string };
 
+type RecentItem = {
+  id: string;
+  kind: "Project" | "Ticket" | "Document";
+  label: string;
+  detail: string | null;
+  href: string;
+  at: string | null | undefined;
+};
+
 function ticketSubject(ticket: DashboardTicket) {
   return ticket.subject ?? ticket.title ?? ticket.name ?? `Ticket ${ticket.id}`;
-}
-
-function auditActionLabel(action: string) {
-  const map: Record<string, string> = {
-    "ticket.create": "Ticket created",
-    "ticket.update": "Ticket updated",
-    "document.create": "Document uploaded",
-    "document.update": "Document updated",
-    "project.create": "Project created",
-    "project.update": "Project updated",
-    "membership.invite": "Member invited",
-    "membership.update": "Member updated",
-  };
-  return map[action] ?? action.replace(/_/g, " ").replace(/\./g, " » ");
 }
 
 export default async function PortalDashboardPage() {
@@ -63,43 +58,70 @@ export default async function PortalDashboardPage() {
   let projects: Project[] = [];
   let tickets: DashboardTicket[] = [];
   let documents: Document[] = [];
-  let recentActivity: AuditLog[] = [];
   let loadFailed = false;
 
   try {
-    const [orgResult, projectsResult, ticketsResult, documentsResult, auditResult] =
-      await Promise.all([
-        api.organizations.get(membership.organization_id).catch(() => {
-          loadFailed = true;
-          return null;
-        }),
-        api.projects.list({ organizationId: membership.organization_id }).catch(() => {
-          loadFailed = true;
-          return { items: [] };
-        }),
-        api.tickets.list({ organizationId: membership.organization_id }).catch(() => {
-          loadFailed = true;
-          return { items: [] };
-        }),
-        api.documents.list({ organizationId: membership.organization_id }).catch(() => {
-          loadFailed = true;
-          return { items: [] };
-        }),
-        api.audit.list({ organizationId: membership.organization_id, limit: 10 }).catch(() => {
-          loadFailed = true;
-          return { items: [] };
-        }),
-      ]);
+    const [orgResult, projectsResult, ticketsResult, documentsResult] = await Promise.all([
+      api.organizations.get(membership.organization_id).catch(() => {
+        loadFailed = true;
+        return null;
+      }),
+      api.projects.list({ organizationId: membership.organization_id }).catch(() => {
+        loadFailed = true;
+        return { items: [] };
+      }),
+      api.tickets.list({ organizationId: membership.organization_id }).catch(() => {
+        loadFailed = true;
+        return { items: [] };
+      }),
+      api.documents.list({ organizationId: membership.organization_id }).catch(() => {
+        loadFailed = true;
+        return { items: [] };
+      }),
+    ]);
 
     organization = orgResult;
     projects = (projectsResult.items ?? []).slice(0, 5);
     tickets = (ticketsResult.items ?? []).slice(0, 5);
     documents = (documentsResult.items ?? []).slice(0, 5);
-    recentActivity = auditResult.items ?? [];
   } catch (err) {
     loadFailed = true;
     logger.error({ err }, "Failed to load dashboard data");
   }
+
+  // Client-safe activity feed: derived from data the client is already
+  // allowed to read. The org audit log is admin-only (requireAdmin), so
+  // calling it here produced a permanent "could not load" banner for every
+  // client session.
+  const recentActivity: RecentItem[] = [
+    ...projects.map((project: Project) => ({
+      id: `project-${project.id}`,
+      kind: "Project" as const,
+      label: project.name,
+      detail: project.status ?? null,
+      href: `/portal/projects/${project.id}`,
+      at: project.updated_at ?? project.created_at,
+    })),
+    ...tickets.map((ticket: DashboardTicket) => ({
+      id: `ticket-${ticket.id}`,
+      kind: "Ticket" as const,
+      label: ticketSubject(ticket),
+      detail: ticket.status ?? null,
+      href: `/portal/support/${ticket.id}`,
+      at: ticket.updated_at ?? ticket.created_at,
+    })),
+    ...documents.map((doc: Document) => ({
+      id: `document-${doc.id}`,
+      kind: "Document" as const,
+      label: doc.name,
+      detail: doc.description ?? doc.mime_type ?? null,
+      href: `/portal/documents/${doc.id}`,
+      at: doc.updated_at ?? doc.created_at,
+    })),
+  ]
+    .filter((item) => Boolean(item.at))
+    .sort((a, b) => new Date(b.at as string).getTime() - new Date(a.at as string).getTime())
+    .slice(0, 8);
 
   return (
     <div className="space-y-6">
@@ -261,24 +283,23 @@ export default async function PortalDashboardPage() {
         </div>
         <div className="mt-4 space-y-3">
           {recentActivity.length > 0 ? (
-            recentActivity.map((event: AuditLog) => (
-              <div
-                key={event.id}
-                className="flex items-start gap-4 rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+            recentActivity.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                className="flex items-start gap-4 rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
               >
                 <span className="mt-0.5 shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-300">
-                  {event.entity_type}
+                  {item.kind}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-slate-300">{auditActionLabel(event.action)}</p>
-                  <p
-                    className="mt-1 text-xs text-slate-400"
-                    title={formatDateTime(event.created_at)}
-                  >
-                    {formatRelativeTime(event.created_at)}
+                  <p className="truncate text-sm text-slate-300">{item.label}</p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {item.detail ? `${item.detail} · ` : ""}
+                    <span title={formatDateTime(item.at)}>{formatRelativeTime(item.at)}</span>
                   </p>
                 </div>
-              </div>
+              </Link>
             ))
           ) : (
             <EmptyState

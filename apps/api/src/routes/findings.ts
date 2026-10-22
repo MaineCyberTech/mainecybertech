@@ -28,6 +28,7 @@ import { toJson } from "../lib/db-types";
 import { moduleCommentSchema } from "../validators/comments";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { applyClientVisibility, isClientMember, isClientVisible } from "../lib/client-visibility";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -62,6 +63,7 @@ router.get("/export", async (req, res, next) => {
       scope,
     );
     query = applyOrgScope(query, "organization_id", scope);
+    ({ query } = await applyClientVisibility(query, req));
     const status = req.query.status as string | undefined;
     if (status) query = query.eq("status", status);
     const { data, error } = await query
@@ -98,6 +100,7 @@ router.get("/", async (req, res, next) => {
     if (source) query = query.eq("source", source);
     const search = req.query.search as string | undefined;
     if (search) query = query.ilike("title", `%${search}%`);
+    ({ query } = await applyClientVisibility(query, req));
 
     const { data, error, count } = await query
       .order("created_at", { ascending: false })
@@ -147,15 +150,21 @@ router.get("/:id", async (req, res, next) => {
     query = applyResolvedOrg(req, query);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Finding not found", 404);
+    if (!(await isClientVisible(req, data as unknown as Record<string, unknown>))) {
+      throw new AppError("NOT_FOUND", "Finding not found", 404);
+    }
+
+    const clientViewer = await isClientMember(req);
+    let commentsQuery = supabase
+      .from("module_comments")
+      .select("*")
+      .eq("module_key", "findings")
+      .eq("entity_type", "finding")
+      .eq("entity_id", String(req.params.id) as string);
+    if (clientViewer) commentsQuery = commentsQuery.eq("is_internal", false);
 
     const [{ data: comments }, { data: timeline }] = await Promise.all([
-      supabase
-        .from("module_comments")
-        .select("*")
-        .eq("module_key", "findings")
-        .eq("entity_type", "finding")
-        .eq("entity_id", String(req.params.id) as string)
-        .order("created_at", { ascending: true }),
+      commentsQuery.order("created_at", { ascending: true }),
       supabase
         .from("module_timeline_events")
         .select("*")

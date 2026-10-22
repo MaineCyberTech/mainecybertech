@@ -139,6 +139,6 @@ describe("PortalProposalsPage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByText(/1 proposals available/)).toBeInTheDocument();
+    expect(screen.getByText(/1 proposal available/)).toBeInTheDocument();
   });
 });

@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 
-export async function uploadPortalDocument(formData: FormData): Promise<{ ok: boolean; error?: string; document?: unknown }> {
+export async function uploadPortalDocument(
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string; document?: unknown }> {
   const api = getApiClient();
   const membership = await getApprovedMembership();
 
@@ -15,6 +17,11 @@ export async function uploadPortalDocument(formData: FormData): Promise<{ ok: bo
   const title = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const file = formData.get("file") as File | null;
+  const requestedVisibility = String(formData.get("visibility") ?? "org").trim();
+  const visibility =
+    requestedVisibility === "private" || requestedVisibility === "internal"
+      ? requestedVisibility
+      : "org";
 
   if (!title) {
     return { ok: false, error: "Title is required." };
@@ -31,7 +38,7 @@ export async function uploadPortalDocument(formData: FormData): Promise<{ ok: bo
       organizationId: membership.organization_id,
       name: title,
       description: description || null,
-      visibility: "org",
+      visibility,
     });
     revalidatePath("/portal/documents");
     return { ok: true, document: doc };

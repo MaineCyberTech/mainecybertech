@@ -17,6 +17,7 @@ import { toJson } from "../lib/db-types";
 import { moduleCommentSchema } from "../validators/comments";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { applyClientVisibility, isClientMember, isClientVisible } from "../lib/client-visibility";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -55,6 +56,7 @@ router.get("/export", async (req, res, next) => {
       scope,
     );
     query = applyOrgScope(query, "organization_id", scope);
+    ({ query } = await applyClientVisibility(query, req));
     const { data, error } = await query
       .order("created_at", { ascending: false })
       .limit(EXPORT_ROW_LIMIT);
@@ -89,6 +91,7 @@ router.get("/", async (req, res, next) => {
     const warrantyBefore = req.query.warranty_expiring_before as string | undefined;
     if (warrantyBefore)
       query = query.lte("warranty_expires", warrantyBefore).neq("warranty_expires", null);
+    ({ query } = await applyClientVisibility(query, req));
 
     const { data, error, count } = await query
       .order("created_at", { ascending: false })
@@ -108,6 +111,7 @@ router.get("/stats", async (req, res, next) => {
     let query = supabase.from("assets").select("status, warranty_expires, asset_type");
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
+    ({ query } = await applyClientVisibility(query, req));
     const { data, error } = await query;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -144,15 +148,21 @@ router.get("/:id", async (req, res, next) => {
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Asset not found", 404);
+    if (!(await isClientVisible(req, data as unknown as Record<string, unknown>))) {
+      throw new AppError("NOT_FOUND", "Asset not found", 404);
+    }
+
+    const clientViewer = await isClientMember(req);
+    let commentsQuery = supabase
+      .from("module_comments")
+      .select("*")
+      .eq("module_key", "assets")
+      .eq("entity_type", "asset")
+      .eq("entity_id", String(req.params.id));
+    if (clientViewer) commentsQuery = commentsQuery.eq("is_internal", false);
 
     const [{ data: comments }, { data: timeline }] = await Promise.all([
-      supabase
-        .from("module_comments")
-        .select("*")
-        .eq("module_key", "assets")
-        .eq("entity_type", "asset")
-        .eq("entity_id", String(req.params.id))
-        .order("created_at", { ascending: true }),
+      commentsQuery.order("created_at", { ascending: true }),
       supabase
         .from("module_timeline_events")
         .select("*")

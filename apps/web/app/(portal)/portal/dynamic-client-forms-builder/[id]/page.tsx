@@ -80,7 +80,7 @@ export default async function DynamicFormDetailPage({ params }: Props) {
         <div>
           <Breadcrumbs
             items={[
-              { label: "Portal", href: "/portal" },
+              { label: "Portal", href: "/portal/dashboard" },
               { label: "Dynamic Forms", href: "/portal/dynamic-client-forms-builder" },
               { label: form.title },
             ]}

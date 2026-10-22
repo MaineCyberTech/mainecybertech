@@ -26,6 +26,7 @@ import { toJson } from "../lib/db-types";
 import { moduleCommentSchema } from "../validators/comments";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { applyClientVisibility, isClientMember, isClientVisible } from "../lib/client-visibility";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -57,6 +58,7 @@ router.get("/export", async (req, res, next) => {
       scope,
     );
     query = applyOrgScope(query, "organization_id", scope);
+    ({ query } = await applyClientVisibility(query, req));
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter as never);
     const { data, error } = await query
@@ -88,6 +90,7 @@ router.get("/", async (req, res, next) => {
     if (statusFilter) query = query.eq("status", statusFilter as never);
     const searchFilter = req.query.search as string | undefined;
     if (searchFilter) query = query.ilike("title", `%${searchFilter}%`);
+    ({ query } = await applyClientVisibility(query, req));
 
     const { data, error, count } = await query
       .order("created_at", { ascending: false })
@@ -115,6 +118,14 @@ router.get("/:id", async (req, res, next) => {
     const { data, error } = await query.single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Proposal not found", 404);
+
+    // A client may only read a proposal explicitly marked client-visible.
+    // Without this check a deep link could bypass the list filter.
+    if (!(await isClientVisible(req, data as unknown as Record<string, unknown>))) {
+      throw new AppError("NOT_FOUND", "Proposal not found", 404);
+    }
+
+    const clientViewer = await isClientMember(req);
 
     const [{ data: phases }, { data: items }, { data: comments }, { data: timeline }] =
       await Promise.all([
@@ -149,7 +160,11 @@ router.get("/:id", async (req, res, next) => {
         ...data,
         phases: phases ?? [],
         items: items ?? [],
-        comments: comments ?? [],
+        // Internal account-team notes must never reach a client. The admin
+        // builder still receives the full comment thread.
+        comments: clientViewer
+          ? (comments ?? []).filter((comment) => !comment.is_internal)
+          : (comments ?? []),
         timeline: timeline ?? [],
       }),
     );
@@ -845,20 +860,25 @@ router.post("/:id/publish", requirePermission("proposals", "edit"), async (req, 
 router.get("/:id/comments", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "proposals", "read");
-    await loadOwned(
+    const proposal = await loadOwned(
       req,
       supabase,
       "proposals",
       String(req.params.id) as string,
-      "id, organization_id",
+      "id, organization_id, visibility",
     );
-    const { data, error } = await supabase
+    if (!(await isClientVisible(req, proposal as unknown as Record<string, unknown>))) {
+      throw new AppError("NOT_FOUND", "Proposal not found", 404);
+    }
+
+    let query = supabase
       .from("module_comments")
       .select("*")
       .eq("module_key", "proposals")
       .eq("entity_type", "proposal")
-      .eq("entity_id", String(req.params.id) as string)
-      .order("created_at", { ascending: true });
+      .eq("entity_id", String(req.params.id) as string);
+    if (await isClientMember(req)) query = query.eq("is_internal", false);
+    const { data, error } = await query.order("created_at", { ascending: true });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data));

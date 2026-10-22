@@ -18,6 +18,7 @@ import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { applyClientVisibility, isClientVisible } from "../lib/client-visibility";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -52,6 +53,7 @@ router.get("/export", async (req, res, next) => {
       scope,
     );
     q = applyOrgScope(q, "organization_id", scope);
+    ({ query: q } = await applyClientVisibility(q, req));
     const { data, error } = await q.order("domain", { ascending: true }).limit(EXPORT_ROW_LIMIT);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
@@ -81,6 +83,7 @@ router.get("/", async (req, res, next) => {
     if (search) q = q.ilike("domain", `%${search}%`);
     const sslBefore = req.query.ssl_expiring_before as string | undefined;
     if (sslBefore) q = q.lte("ssl_expires", sslBefore).neq("ssl_expires", null);
+    ({ query: q } = await applyClientVisibility(q, req));
 
     const { data, error, count } = await q
       .order("domain", { ascending: true })
@@ -104,6 +107,7 @@ router.get("/stats", async (req, res, next) => {
       );
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) q = q.eq("organization_id", orgId);
+    ({ query: q } = await applyClientVisibility(q, req));
     const { data, error } = await q;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -161,6 +165,9 @@ router.get("/:id", async (req, res, next) => {
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Domain monitor not found", 404);
+    if (!(await isClientVisible(req, data as unknown as Record<string, unknown>))) {
+      throw new AppError("NOT_FOUND", "Domain monitor not found", 404);
+    }
 
     const [{ data: checks }] = await Promise.all([
       supabase

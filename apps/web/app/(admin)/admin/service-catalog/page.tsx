@@ -59,6 +59,13 @@ export default async function ServiceCatalogPage() {
           { key: "basePrice", label: "Price", type: "number", required: true },
           { key: "unit", label: "Unit", required: true },
           { key: "billingModel", label: "Billing Model", required: true },
+          {
+            key: "visibility",
+            label: "Client Visibility",
+            type: "select",
+            options: ["internal", "client_visible"],
+            required: true,
+          },
         ]}
         title="New Service"
         action={createService}

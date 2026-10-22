@@ -1,10 +1,8 @@
 import { getApiClient } from "@/lib/api";
-import SubmitButton from "@/components/SubmitButton";
 import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { submitProposalAction } from "./actions";
 
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
@@ -70,7 +68,6 @@ export default async function PortalProposalDetailPage({ params }: Props) {
   if (!membership?.organization_id) notFound();
 
   const api = getApiClient();
-  const orgId = membership.organization_id as string;
 
   let proposal: ProposalDetail | null = null;
   try {
@@ -281,13 +278,15 @@ export default async function PortalProposalDetailPage({ params }: Props) {
         </section>
       )}
 
-      <div className="flex items-center justify-end gap-3">
-        {proposal.status === "sent" && (
-          <form action={submitProposalAction as unknown as (fd: FormData) => void}>
-            <input type="hidden" name="proposalId" value={id} />
-            <input type="hidden" name="organizationId" value={orgId} />
-            <SubmitButton className="cyber-button">Approve Proposal</SubmitButton>
-          </form>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {proposal.status === "approved" && (
+          <p className="text-sm text-slate-400">
+            To accept this proposal, reply to your account team or{" "}
+            <Link href="/portal/support" className="text-emerald-400 hover:text-emerald-300">
+              open a support ticket
+            </Link>
+            .
+          </p>
         )}
         <Link href="/portal/proposals" className="cyber-button-secondary">
           Back to Proposals

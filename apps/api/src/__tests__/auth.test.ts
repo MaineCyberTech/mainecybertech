@@ -331,7 +331,7 @@ describe("reset-password", () => {
     jest.clearAllMocks();
   });
 
-  it("resets password when authenticated with matching email", async () => {
+  it("resets password when authenticated with matching email and current password", async () => {
     const supabase = mockSupabase();
     supabase.auth.admin = {
       updateUserById: jest.fn().mockResolvedValue({ data: {}, error: null }),
@@ -340,10 +340,18 @@ describe("reset-password", () => {
     const res = await request(app)
       .post("/api/v1/auth/reset-password")
       .set("Authorization", "Bearer token-123")
-      .send({ email: "test@example.com", password: "StrongP@ss1" });
+      .send({
+        email: "test@example.com",
+        password: "StrongP@ss1",
+        currentPassword: "OldP@ss1",
+      });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
+    expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
+      email: "test@example.com",
+      password: "OldP@ss1",
+    });
     expect(supabase.auth.admin.updateUserById).toHaveBeenCalledWith("user-1", {
       password: "StrongP@ss1",
     });
@@ -352,13 +360,37 @@ describe("reset-password", () => {
     expect(getScopedClient).not.toHaveBeenCalled();
   });
 
+  it("returns 401 when the current password is incorrect", async () => {
+    const supabase = mockSupabase();
+    supabase.auth.signInWithPassword = jest.fn().mockResolvedValue({
+      data: { user: null, session: null },
+      error: { message: "Invalid login credentials" },
+    });
+
+    const res = await request(app)
+      .post("/api/v1/auth/reset-password")
+      .set("Authorization", "Bearer token-123")
+      .send({
+        email: "test@example.com",
+        password: "StrongP@ss1",
+        currentPassword: "WrongP@ss1",
+      });
+
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBeDefined();
+  });
+
   it("returns 403 when email does not match authenticated user", async () => {
     mockSupabase();
 
     const res = await request(app)
       .post("/api/v1/auth/reset-password")
       .set("Authorization", "Bearer token-123")
-      .send({ email: "other@example.com", password: "StrongP@ss1" });
+      .send({
+        email: "other@example.com",
+        password: "StrongP@ss1",
+        currentPassword: "OldP@ss1",
+      });
 
     expect(res.status).toBe(403);
     expect(res.body.error).toBeDefined();

@@ -5,10 +5,13 @@ import PortalSubnav from "@/components/portal/PortalSubnav";
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import AdminPagination from "@/components/admin/AdminPagination";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Proposals - Portal - Maine CyberTech" };
+
+const DEFAULT_LIMIT = 25;
 
 function statusClass(status: string): string {
   const base =
@@ -42,12 +45,18 @@ function formatRelative(value?: string | null): string {
   return formatDate(value);
 }
 
-export default async function PortalProposalsPage() {
+export default async function PortalProposalsPage(
+  props: {
+    searchParams?: Promise<{ page?: string; limit?: string }>;
+  } = {},
+) {
   const membership = await getApprovedMembership();
   if (!membership?.organization_id) {
     return (
       <div className="space-y-6">
-        <Breadcrumbs items={[{ label: "Portal", href: "/portal" }, { label: "Proposals" }]} />
+        <Breadcrumbs
+          items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Proposals" }]}
+        />
         <PortalSubnav current="proposals" />
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
           Access restricted. Please contact your administrator.
@@ -56,6 +65,12 @@ export default async function PortalProposalsPage() {
     );
   }
 
+  const sp = (await props.searchParams) ?? {};
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
   const api = getApiClient();
   let proposals: Array<{
     id: string;
@@ -65,22 +80,32 @@ export default async function PortalProposalsPage() {
     created_at: string;
     valid_until: string | null;
   }> = [];
+  let total = 0;
 
   let loadFailed = false;
   try {
-    const result = await api.proposals.list({ organizationId: membership.organization_id });
+    const result = await api.proposals.list({
+      organizationId: membership.organization_id,
+      page,
+      limit,
+    });
     proposals = result.items as typeof proposals;
+    total = result.total ?? proposals.length;
   } catch {
     loadFailed = true;
   }
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs items={[{ label: "Portal", href: "/portal" }, { label: "Proposals" }]} />
+      <Breadcrumbs
+        items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Proposals" }]}
+      />
       <PortalSubnav current="proposals" />
       <h1 className="cyber-heading text-2xl">Proposals</h1>
       {loadFailed ? <DataErrorNote what="proposals" /> : null}
-      <p className="text-sm text-slate-400">{proposals.length} proposals available.</p>
+      <p className="text-sm text-slate-400">
+        {total} proposal{total !== 1 ? "s" : ""} available.
+      </p>
 
       {proposals.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -119,6 +144,13 @@ export default async function PortalProposalsPage() {
           </div>
         )
       )}
+      <AdminPagination
+        currentPage={page}
+        totalPages={Math.ceil(total / limit)}
+        buildHref={(p) => `/portal/proposals?page=${p}&limit=${limit}`}
+        total={total}
+        limit={limit}
+      />
     </div>
   );
 }

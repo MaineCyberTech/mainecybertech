@@ -28,6 +28,7 @@ import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { applyClientVisibility, isClientMember, isClientVisible } from "../lib/client-visibility";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -65,6 +66,7 @@ router.get("/export", async (req, res, next) => {
       scope,
     );
     query = applyOrgScope(query, "organization_id", scope);
+    ({ query } = await applyClientVisibility(query, req));
 
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter as never);
@@ -137,6 +139,7 @@ router.get("/", async (req, res, next) => {
 
     const searchFilter = req.query.search as string | undefined;
     if (searchFilter) query = query.ilike("request_subject", `%${searchFilter}%`);
+    ({ query } = await applyClientVisibility(query, req));
 
     const {
       data: requests,
@@ -172,14 +175,19 @@ router.get("/:id", async (req, res, next) => {
     const { data, error } = await query.single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Approval request not found", 404);
+    if (!(await isClientVisible(req, data as unknown as Record<string, unknown>))) {
+      throw new AppError("NOT_FOUND", "Approval request not found", 404);
+    }
 
-    const { data: comments } = await supabase
+    const clientViewer = await isClientMember(req);
+    let commentsQuery = supabase
       .from("module_comments")
       .select("*")
       .eq("module_key", "approvals")
       .eq("entity_type", "approval_request")
-      .eq("entity_id", String(req.params.id) as string)
-      .order("created_at", { ascending: true });
+      .eq("entity_id", String(req.params.id) as string);
+    if (clientViewer) commentsQuery = commentsQuery.eq("is_internal", false);
+    const { data: comments } = await commentsQuery.order("created_at", { ascending: true });
 
     const { data: timeline } = await supabase
       .from("module_timeline_events")

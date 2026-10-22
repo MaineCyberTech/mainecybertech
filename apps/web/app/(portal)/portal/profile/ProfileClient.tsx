@@ -28,6 +28,7 @@ export default function ProfilePage({ initialData }: Props) {
   const [error, setError] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [pwCurrent, setPwCurrent] = useState("");
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
   const [savingPw, setSavingPw] = useState(false);
@@ -73,8 +74,16 @@ export default function ProfilePage({ initialData }: Props) {
 
   async function handlePasswordChange(e: React.FormEvent) {
     e.preventDefault();
+    if (!pwCurrent) {
+      setError("Enter your current password.");
+      return;
+    }
     if (pwNew !== pwConfirm) {
       setError("Passwords do not match.");
+      return;
+    }
+    if (pwNew.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
     setSavingPw(true);
@@ -82,7 +91,7 @@ export default function ProfilePage({ initialData }: Props) {
     setError("");
 
     try {
-      await getClientApi().auth.resetPassword(email, pwNew);
+      await getClientApi().auth.resetPassword(email, pwNew, pwCurrent);
       setMessage("Password changed successfully.");
       setPwNew("");
       setPwConfirm("");
@@ -239,6 +248,20 @@ export default function ProfilePage({ initialData }: Props) {
       </div>
 
       <form onSubmit={handlePasswordChange} className="space-y-6">
+        <div>
+          <label htmlFor="profile-pw-current" className="cyber-label">
+            Current Password
+          </label>
+          <input
+            id="profile-pw-current"
+            type="password"
+            value={pwCurrent}
+            onChange={(e) => setPwCurrent(e.target.value)}
+            required
+            autoComplete="current-password"
+            className="cyber-input"
+          />
+        </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label htmlFor="profile-pw-new" className="cyber-label">

@@ -6,6 +6,7 @@ import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
 import DataErrorNote from "@/components/admin/DataErrorNote";
 import { formatDate } from "@/lib/format";
+import { hasPermission } from "@/lib/permissions";
 
 export const metadata = { title: "Client Onboarding - Portal - Maine CyberTech" };
 export const dynamic = "force-dynamic";
@@ -49,7 +50,7 @@ export default async function ClientOnboardingPage() {
     return (
       <div className="space-y-6">
         <Breadcrumbs
-          items={[{ label: "Portal", href: "/portal" }, { label: "Client Onboarding" }]}
+          items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Client Onboarding" }]}
         />
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
           Access restricted. Please contact your administrator.
@@ -60,6 +61,12 @@ export default async function ClientOnboardingPage() {
 
   const api = getApiClient();
   const orgId = membership.organization_id as string;
+  const permissions = await Promise.resolve()
+    .then(() => api.permissions.getMyPermissions())
+    .catch(() => null);
+  const canCreate =
+    Boolean(permissions?.isSuperAdmin) ||
+    hasPermission(permissions?.keys, "client-onboarding-command-center", "create");
 
   let onboardingRecords: Array<{
     id: string;
@@ -86,7 +93,7 @@ export default async function ClientOnboardingPage() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <Breadcrumbs
-            items={[{ label: "Portal", href: "/portal" }, { label: "Client Onboarding" }]}
+            items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Client Onboarding" }]}
           />
           <h1 className="cyber-heading mt-2 text-2xl">Client Onboarding Command Center</h1>
           <p className="mt-1 text-sm text-slate-400">
@@ -94,9 +101,11 @@ export default async function ClientOnboardingPage() {
             baseline, documentation, security baseline, and support handoff.
           </p>
         </div>
-        <Link href="/portal/client-onboarding-command-center/new" className="cyber-button">
-          New Onboarding
-        </Link>
+        {canCreate ? (
+          <Link href="/portal/client-onboarding-command-center/new" className="cyber-button">
+            New Onboarding
+          </Link>
+        ) : null}
       </div>
 
       {loadFailed ? <DataErrorNote what="onboarding records" /> : null}
@@ -137,9 +146,13 @@ export default async function ClientOnboardingPage() {
             <EmptyState
               icon="🚀"
               title="No onboarding records yet"
-              description="Start your first client onboarding engagement to track discovery, M365 setup, access collection, and more."
-              actionLabel="Create Onboarding"
-              actionHref="/portal/client-onboarding-command-center/new"
+              description="Onboarding records will appear here once your account team starts an engagement."
+              {...(canCreate
+                ? {
+                    actionLabel: "Create Onboarding",
+                    actionHref: "/portal/client-onboarding-command-center/new",
+                  }
+                : {})}
             />
           </div>
         )
