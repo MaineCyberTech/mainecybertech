@@ -41,7 +41,7 @@ describe("PortalApprovalsPage", () => {
     mockList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/approvals/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByRole("heading", { name: /approvals/i })).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("PortalApprovalsPage", () => {
     mockList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/approvals/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getAllByRole("navigation").length).toBeGreaterThanOrEqual(1);
@@ -80,7 +80,7 @@ describe("PortalApprovalsPage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/approvals/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByText("New Firewall Rule")).toBeInTheDocument();
@@ -94,7 +94,7 @@ describe("PortalApprovalsPage", () => {
     mockList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/approvals/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByText("No approval requests found.")).toBeInTheDocument();
@@ -104,7 +104,7 @@ describe("PortalApprovalsPage", () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
     const { default: Page } = await import("@/app/(portal)/portal/approvals/page");
-    const element = await Page();
+    const element = await Page({});
 
     expect(element).toBeNull();
   });

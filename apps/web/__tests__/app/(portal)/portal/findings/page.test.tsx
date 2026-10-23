@@ -76,7 +76,7 @@ describe("PortalFindingsPage", () => {
       ],
     });
     const { default: Page } = await import("@/app/(portal)/portal/findings/page");
-    render(await Page());
+    render(await Page({}));
 
     const link = screen.getByText("Open RDP port").closest("a");
     expect(link).toHaveAttribute("href", "/portal/findings/f1");
@@ -85,7 +85,7 @@ describe("PortalFindingsPage", () => {
   it("shows the empty state", async () => {
     mockList.mockResolvedValue({ items: [] });
     const { default: Page } = await import("@/app/(portal)/portal/findings/page");
-    render(await Page());
+    render(await Page({}));
     expect(screen.getByText(/no findings reported/i)).toBeInTheDocument();
   });
 });
