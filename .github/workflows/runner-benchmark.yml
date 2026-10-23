@@ -1,0 +1,133 @@
+name: runner-benchmark
+
+on:
+  push:
+    branches: [bench/runner-speed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  github-hosted:
+    name: GitHub-hosted (ubuntu-latest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Host info
+        run: |
+          echo "runner=${{ runner.name }} os=${{ runner.os }} arch=${{ runner.arch }}"
+          echo "cpus=$(nproc)"
+          free -h || true
+          df -h . || true
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: CPU benchmark
+        run: |
+          start=$(date +%s%N)
+          node -e 'let x=0; for(let i=0;i<5e7;i++) x+=Math.sqrt(i); console.log(x)'
+          end=$(date +%s%N)
+          echo "cpu_ms=$(( (end - start) / 1000000 ))" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Install
+        run: |
+          start=$(date +%s)
+          pnpm install --frozen-lockfile --ignore-scripts
+          end=$(date +%s)
+          echo "install_seconds=$((end-start))" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Typecheck web
+        run: |
+          start=$(date +%s)
+          pnpm --filter=web typecheck
+          end=$(date +%s)
+          echo "typecheck_seconds=$((end-start))" | tee -a "$GITHUB_STEP_SUMMARY"
+
+  ci-runner:
+    name: Self-hosted (ci-runner)
+    runs-on: [self-hosted, lab, ci-runner]
+    timeout-minutes: 30
+    steps:
+      - name: Host info
+        run: |
+          echo "runner=${{ runner.name }} os=${{ runner.os }} arch=${{ runner.arch }}"
+          echo "cpus=$(nproc)"
+          free -h || true
+          df -h . || true
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: CPU benchmark
+        run: |
+          start=$(date +%s%N)
+          node -e 'let x=0; for(let i=0;i<5e7;i++) x+=Math.sqrt(i); console.log(x)'
+          end=$(date +%s%N)
+          echo "cpu_ms=$(( (end - start) / 1000000 ))" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Install
+        run: |
+          start=$(date +%s)
+          pnpm install --frozen-lockfile --ignore-scripts
+          end=$(date +%s)
+          echo "install_seconds=$((end-start))" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Typecheck web
+        run: |
+          start=$(date +%s)
+          pnpm --filter=web typecheck
+          end=$(date +%s)
+          echo "typecheck_seconds=$((end-start))" | tee -a "$GITHUB_STEP_SUMMARY"
+
+  lab-runner-2:
+    name: Self-hosted (lab-runner-2)
+    runs-on: [self-hosted, lab, lab-runner-2]
+    timeout-minutes: 30
+    steps:
+      - name: Host info
+        run: |
+          echo "runner=${{ runner.name }} os=${{ runner.os }} arch=${{ runner.arch }}"
+          echo "cpus=$(nproc)"
+          free -h || true
+          df -h . || true
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: CPU benchmark
+        run: |
+          start=$(date +%s%N)
+          node -e 'let x=0; for(let i=0;i<5e7;i++) x+=Math.sqrt(i); console.log(x)'
+          end=$(date +%s%N)
+          echo "cpu_ms=$(( (end - start) / 1000000 ))" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Install
+        run: |
+          start=$(date +%s)
+          pnpm install --frozen-lockfile --ignore-scripts
+          end=$(date +%s)
+          echo "install_seconds=$((end-start))" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Typecheck web
+        run: |
+          start=$(date +%s)
+          pnpm --filter=web typecheck
+          end=$(date +%s)
+          echo "typecheck_seconds=$((end-start))" | tee -a "$GITHUB_STEP_SUMMARY"
