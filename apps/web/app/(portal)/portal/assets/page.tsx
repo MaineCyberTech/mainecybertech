@@ -12,11 +12,9 @@ export const metadata = { title: "Assets - Portal - Maine CyberTech" };
 
 const DEFAULT_LIMIT = 25;
 
-export default async function PortalAssetsPage(
-  props: {
-    searchParams?: Promise<{ page?: string; limit?: string }>;
-  } = {},
-) {
+export default async function PortalAssetsPage(props: {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+}) {
   const membership = await getApprovedMembership();
   if (!membership) return null;
   const sp = (await props.searchParams) ?? {};

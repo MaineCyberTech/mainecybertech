@@ -31,11 +31,9 @@ function PriorityBadge({ priority }: { priority: string }) {
   );
 }
 
-export default async function ApprovalsPage(
-  props: {
-    searchParams?: Promise<{ page?: string; limit?: string }>;
-  } = {},
-) {
+export default async function ApprovalsPage(props: {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+}) {
   const membership = await getApprovedMembership();
   if (!membership) return null;
   const sp = (await props.searchParams) ?? {};

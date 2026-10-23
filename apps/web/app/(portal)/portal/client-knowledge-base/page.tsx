@@ -16,7 +16,7 @@ export default async function PortalKnowledgeBasePage({
   searchParams,
 }: {
   searchParams?: Promise<{ q?: string }>;
-} = {}) {
+}) {
   const sp = (await searchParams) ?? {};
   const search = String(sp.q ?? "").trim();
   let membership;

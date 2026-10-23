@@ -45,11 +45,9 @@ function formatRelative(value?: string | null): string {
   return formatDate(value);
 }
 
-export default async function PortalProposalsPage(
-  props: {
-    searchParams?: Promise<{ page?: string; limit?: string }>;
-  } = {},
-) {
+export default async function PortalProposalsPage(props: {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+}) {
   const membership = await getApprovedMembership();
   if (!membership?.organization_id) {
     return (

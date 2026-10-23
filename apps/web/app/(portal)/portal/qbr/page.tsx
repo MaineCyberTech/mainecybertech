@@ -14,11 +14,9 @@ export const metadata = { title: "QBR Reports - Portal - Maine CyberTech" };
 
 const DEFAULT_LIMIT = 25;
 
-export default async function PortalQbrPage(
-  props: {
-    searchParams?: Promise<{ page?: string; limit?: string }>;
-  } = {},
-) {
+export default async function PortalQbrPage(props: {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+}) {
   const membership = await getApprovedMembership();
   if (!membership) return null;
   const sp = (await props.searchParams) ?? {};
