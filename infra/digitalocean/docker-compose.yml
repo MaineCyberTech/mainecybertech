@@ -301,7 +301,7 @@ services:
       start_period: 10s
 
   prometheus:
-    image: prom/prometheus:v3.5.1@sha256:4729241e2306fee98bccd412798147f6d56c4d9a51c64d80992f3335bef2da5e
+    image: prom/prometheus:v3.5.1@sha256:38c3b05c3bc744ff1b0b7b4eb82196026442845e62a1e2073795565da506d7a2
     logging: *default-logging
     <<: *security
     volumes:
