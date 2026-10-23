@@ -6,6 +6,7 @@ import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { hasPermission } from "@/lib/permissions";
 import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Insurance Evidence - Portal - Maine CyberTech" };
@@ -25,6 +26,13 @@ export default async function PortalInsuranceBinderPage() {
     loadFailed = true;
   }
 
+  const permissions = await Promise.resolve()
+    .then(() => api.permissions.getMyPermissions())
+    .catch(() => null);
+  const canCreate =
+    Boolean(permissions?.isSuperAdmin) ||
+    hasPermission(permissions?.keys, "insurance-binder", "create");
+
   const statusColor = (status: string) => {
     const s = status.toLowerCase();
     if (s === "verified") return "bg-emerald-500/10 text-emerald-400";
@@ -40,10 +48,19 @@ export default async function PortalInsuranceBinderPage() {
       />
       <PortalSubnav current="insurance-binder" />
       {loadFailed ? <DataErrorNote what="insurance-binder" /> : null}
-      <h1 className="text-2xl font-semibold text-slate-50">Insurance Evidence</h1>
-      <p className="text-sm text-slate-400">
-        View evidence collected for your cyber insurance coverage.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-50">Insurance Evidence</h1>
+          <p className="mt-1 text-sm text-slate-400">
+            View evidence collected for your cyber insurance coverage.
+          </p>
+        </div>
+        {canCreate ? (
+          <Link href="/portal/insurance-binder/new" className="cyber-button">
+            Add evidence
+          </Link>
+        ) : null}
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((e) => (
           <div

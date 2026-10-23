@@ -22,18 +22,18 @@
 
 ## Architecture & Design
 
-| Document                                                                             | Purpose                                                            |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| [ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md)                                   | Mermaid system architecture diagram                                |
-| [adr/README.md](adr/README.md)                                                       | Architecture Decision Records (11 decisions)                       |
-| [MASTER_SYSTEM_ARCHITECTURE_REVIEW.md](MASTER_SYSTEM_ARCHITECTURE_REVIEW.md)         | 12-domain synthesis of the full system architecture                |
-| [arch/evaluation/db-package-evaluation.md](arch/evaluation/db-package-evaluation.md) | Shared DB package evaluation                                       |
-| [arch/package-extraction-plan.md](arch/package-extraction-plan.md)                   | Shared-package extraction plan (`@mct/config`, `@mct/db`, SDK build) |
-| [FEATURE_FLAGS.md](FEATURE_FLAGS.md)                                                 | Feature flag registry, targeting and change log                    |
+| Document                                                                             | Purpose                                                                 |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| [ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md)                                   | Mermaid system architecture diagram                                     |
+| [adr/README.md](adr/README.md)                                                       | Architecture Decision Records (11 decisions)                            |
+| [MASTER_SYSTEM_ARCHITECTURE_REVIEW.md](MASTER_SYSTEM_ARCHITECTURE_REVIEW.md)         | 12-domain synthesis of the full system architecture                     |
+| [arch/evaluation/db-package-evaluation.md](arch/evaluation/db-package-evaluation.md) | Shared DB package evaluation                                            |
+| [arch/package-extraction-plan.md](arch/package-extraction-plan.md)                   | Shared-package extraction plan (`@mct/config`, `@mct/db`, SDK build)    |
+| [FEATURE_FLAGS.md](FEATURE_FLAGS.md)                                                 | Feature flag registry, targeting and change log                         |
 | [GAP_ANALYSIS.md](GAP_ANALYSIS.md)                                                   | Historical (2026-08-01, AWS-era) gap analysis — kept for reference only |
-| [ADMIN_FEATURES.md](ADMIN_FEATURES.md)                                               | Webhook management, role editor, audit export, bulk import, Sentry |
-| [ADMIN_BULK_OPERATIONS.md](ADMIN_BULK_OPERATIONS.md)                                 | Bulk admin runbook: dry-run previews, confirmations, rate limits   |
-| [ORG_BRANDING.md](ORG_BRANDING.md)                                                   | Per-org branding: logo upload, colors, custom domains              |
+| [ADMIN_FEATURES.md](ADMIN_FEATURES.md)                                               | Webhook management, role editor, audit export, bulk import, Sentry      |
+| [ADMIN_BULK_OPERATIONS.md](ADMIN_BULK_OPERATIONS.md)                                 | Bulk admin runbook: dry-run previews, confirmations, rate limits        |
+| [ORG_BRANDING.md](ORG_BRANDING.md)                                                   | Per-org branding: logo upload, colors, custom domains                   |
 
 ### Audits & Reviews
 
@@ -55,26 +55,26 @@
 
 ## Setup & Local Development
 
-| Document                                                                     | Purpose                                             |
-| ---------------------------------------------------------------------------- | --------------------------------------------------- |
-| [README.dev.md](../README.dev.md)                                            | Developer setup, env vars, testing, architecture    |
-| [LOCAL_DEVELOPMENT_CHECKLIST.md](LOCAL_DEVELOPMENT_CHECKLIST.md)             | 12-step local dev checklist                         |
-| [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)                         | All env vars across all services                    |
-| [SUPABASE_MIGRATION_WORKFLOW.md](SUPABASE_MIGRATION_WORKFLOW.md)             | Migration workflow, schema vs seed, common mistakes |
-| [SUPABASE_MIGRATION_CHEATSHEET.md](SUPABASE_MIGRATION_CHEATSHEET.md)         | Quick reference for Supabase migrations             |
-| [migrations/README.md](migrations/README.md)                                 | Migration policies: baseline, no down-migrations, rollback notes |
-| [migrations/naming-guide.md](migrations/naming-guide.md)                     | Database migration naming conventions               |
-| [technical-writing/migration-guide.md](technical-writing/migration-guide.md) | Deployment and migration guide (points at the canonical workflow)   |
-| [VSCODE_GIT_QUICKSTART.md](VSCODE_GIT_QUICKSTART.md)                         | VS Code Git workflow guide                          |
+| Document                                                                     | Purpose                                                           |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [README.dev.md](../README.dev.md)                                            | Developer setup, env vars, testing, architecture                  |
+| [LOCAL_DEVELOPMENT_CHECKLIST.md](LOCAL_DEVELOPMENT_CHECKLIST.md)             | 12-step local dev checklist                                       |
+| [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)                         | All env vars across all services                                  |
+| [SUPABASE_MIGRATION_WORKFLOW.md](SUPABASE_MIGRATION_WORKFLOW.md)             | Migration workflow, schema vs seed, common mistakes               |
+| [SUPABASE_MIGRATION_CHEATSHEET.md](SUPABASE_MIGRATION_CHEATSHEET.md)         | Quick reference for Supabase migrations                           |
+| [migrations/README.md](migrations/README.md)                                 | Migration policies: baseline, no down-migrations, rollback notes  |
+| [migrations/naming-guide.md](migrations/naming-guide.md)                     | Database migration naming conventions                             |
+| [technical-writing/migration-guide.md](technical-writing/migration-guide.md) | Deployment and migration guide (points at the canonical workflow) |
+| [VSCODE_GIT_QUICKSTART.md](VSCODE_GIT_QUICKSTART.md)                         | VS Code Git workflow guide                                        |
 
 ## API & Integration
 
 | Document                                                       | Purpose                                                                                                                                                                             |
 | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [API_ENDPOINT_INVENTORY.md](API_ENDPOINT_INVENTORY.md)         | Historical API endpoint inventory (2026-06 snapshot; superseded by the generated spec)                                                                                               |
+| [API_ENDPOINT_INVENTORY.md](API_ENDPOINT_INVENTORY.md)         | Historical API endpoint inventory (2026-06 snapshot; superseded by the generated spec)                                                                                              |
 | [PUBLIC_ROUTES.md](PUBLIC_ROUTES.md)                           | Public (unauthenticated) API surface — generated inventory                                                                                                                          |
 | [WEBHOOKS.md](WEBHOOKS.md)                                     | Outbound webhook contract (canonical): event catalog, delivery envelope, retries/DLQ, endpoint management                                                                           |
-| [EVENTS.md](EVENTS.md)                                         | Pointer to the canonical outbound webhook contract (`WEBHOOKS.md`)                                                                                                                   |
+| [EVENTS.md](EVENTS.md)                                         | Pointer to the canonical outbound webhook contract (`WEBHOOKS.md`)                                                                                                                  |
 | [openapi.yaml](openapi.yaml)                                   | OpenAPI 3.0 spec — **generated** from `apps/api/src/openapi/generate.ts` (calls `buildSpec()` in `spec.ts`); do not hand-edit, regenerate with `pnpm --filter=api generate:openapi` |
 | [API_ERROR_HANDLING.md](API_ERROR_HANDLING.md)                 | API error handling patterns and standards                                                                                                                                           |
 | [API_RATE_LIMITING.md](API_RATE_LIMITING.md)                   | Rate limit configuration and behavior (300/15min)                                                                                                                                   |
@@ -85,58 +85,58 @@
 
 ## Security & Compliance
 
-| Document                                                                         | Purpose                                            |
-| -------------------------------------------------------------------------------- | -------------------------------------------------- |
-| [SECURITY.md](../SECURITY.md)                                                    | Security policy                                    |
-| [portal_admin_permissions_guide.md](portal_admin_permissions_guide.md)           | Permissions, access control, and security flow     |
-| [GITHUB_SECRETS_AND_VARIABLES_MATRIX.md](GITHUB_SECRETS_AND_VARIABLES_MATRIX.md) | Required GitHub secrets and variables              |
+| Document                                                                         | Purpose                                                                  |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [SECURITY.md](../SECURITY.md)                                                    | Security policy                                                          |
+| [portal_admin_permissions_guide.md](portal_admin_permissions_guide.md)           | Permissions, access control, and security flow                           |
+| [GITHUB_SECRETS_AND_VARIABLES_MATRIX.md](GITHUB_SECRETS_AND_VARIABLES_MATRIX.md) | Required GitHub secrets and variables                                    |
 | [SECRETS_ROTATION.md](SECRETS_ROTATION.md)                                       | Rotation runbook: per-class procedures, evidence log, emergency rotation |
-| [SECRET_ROTATION_RUNBOOK.md](SECRET_ROTATION_RUNBOOK.md)                         | IT break-glass access, per-credential revocation, escrow + drill record |
-| [JWT_ROTATION.md](JWT_ROTATION.md)                                               | Supabase signing-secret rotation + API verification copy |
-| [LICENSE_POLICY.md](LICENSE_POLICY.md)                                           | Allowed/denied dependency licenses + exceptions    |
-| [DEPENDENCY_POLICY.md](DEPENDENCY_POLICY.md)                                     | Vulnerability gate, overrides, update governance   |
-| [SBOM_PROCESS.md](SBOM_PROCESS.md)                                               | SBOM generation, scope, validation, verification   |
-| [RTO_RPO.md](RTO_RPO.md)                                                         | Recovery time objective / recovery point objective |
-| [PRIVACY.md](PRIVACY.md)                                                         | Data classification, retention schedule, DSAR pointer |
-| [SUBPROCESSORS.md](SUBPROCESSORS.md)                                             | Vendor/purpose/data/region/DPA subprocessor list   |
-| [ANALYTICS_GOVERNANCE.md](ANALYTICS_GOVERNANCE.md)                               | Analytics consent model, event catalog, retention, vendors |
+| [SECRET_ROTATION_RUNBOOK.md](SECRET_ROTATION_RUNBOOK.md)                         | IT break-glass access, per-credential revocation, escrow + drill record  |
+| [JWT_ROTATION.md](JWT_ROTATION.md)                                               | Supabase signing-secret rotation + API verification copy                 |
+| [LICENSE_POLICY.md](LICENSE_POLICY.md)                                           | Allowed/denied dependency licenses + exceptions                          |
+| [DEPENDENCY_POLICY.md](DEPENDENCY_POLICY.md)                                     | Vulnerability gate, overrides, update governance                         |
+| [SBOM_PROCESS.md](SBOM_PROCESS.md)                                               | SBOM generation, scope, validation, verification                         |
+| [RTO_RPO.md](RTO_RPO.md)                                                         | Recovery time objective / recovery point objective                       |
+| [PRIVACY.md](PRIVACY.md)                                                         | Data classification, retention schedule, DSAR pointer                    |
+| [SUBPROCESSORS.md](SUBPROCESSORS.md)                                             | Vendor/purpose/data/region/DPA subprocessor list                         |
+| [ANALYTICS_GOVERNANCE.md](ANALYTICS_GOVERNANCE.md)                               | Analytics consent model, event catalog, retention, vendors               |
 
 ## Incident Response & Continuity
 
-| Document | Purpose |
-| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| [INCIDENT_RESPONSE.md](INCIDENT_RESPONSE.md)                                                   | Platform incident response plan: severity, roles, phases, comms, postmortem |
-| [DATA_BREACH_RESPONSE.md](DATA_BREACH_RESPONSE.md)                                             | Data-breach response, assessment, Legal-gated notification decision |
-| [PLATFORM_FAILURE_RUNBOOKS.md](PLATFORM_FAILURE_RUNBOOKS.md)                                   | Operator runbooks for the top failure modes + drill record       |
-| [runbooks/backup-restore-drill-plan.md](runbooks/backup-restore-drill-plan.md)                 | D1–D7 backup/restore drill plan (relocated stable path, DR-P3-001) |
-| [runbooks/backup-restore-drill-ledger.md](runbooks/backup-restore-drill-ledger.md)             | Drill results ledger (planned/executed rows)                     |
-| [STATUS_AND_COMMUNICATION.md](STATUS_AND_COMMUNICATION.md)                                     | Platform status/communication surface (ntfy `portal-status`)     |
-| [INCIDENT_TABLETOP_SCENARIOS.md](INCIDENT_TABLETOP_SCENARIOS.md)                               | 12-scenario tabletop catalog + readiness inventory               |
-| [INCIDENT_TABLETOP_DRYRUN_2026-10-11.md](INCIDENT_TABLETOP_DRYRUN_2026-10-11.md)               | First recorded tabletop exercise (IR-011 desk dry-run)           |
-| [templates/ONCALL_ROTA.md](templates/ONCALL_ROTA.md)                                           | On-call rota & escalation template (fill before go-live)         |
-| [templates/INCIDENT_COMMS.md](templates/INCIDENT_COMMS.md)                                     | Incident communication templates                                 |
-| [templates/POSTMORTEM.md](templates/POSTMORTEM.md)                                             | Blameless postmortem template                                    |
+| Document                                                                           | Purpose                                                                     |
+| ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [INCIDENT_RESPONSE.md](INCIDENT_RESPONSE.md)                                       | Platform incident response plan: severity, roles, phases, comms, postmortem |
+| [DATA_BREACH_RESPONSE.md](DATA_BREACH_RESPONSE.md)                                 | Data-breach response, assessment, Legal-gated notification decision         |
+| [PLATFORM_FAILURE_RUNBOOKS.md](PLATFORM_FAILURE_RUNBOOKS.md)                       | Operator runbooks for the top failure modes + drill record                  |
+| [runbooks/backup-restore-drill-plan.md](runbooks/backup-restore-drill-plan.md)     | D1–D7 backup/restore drill plan (relocated stable path, DR-P3-001)          |
+| [runbooks/backup-restore-drill-ledger.md](runbooks/backup-restore-drill-ledger.md) | Drill results ledger (planned/executed rows)                                |
+| [STATUS_AND_COMMUNICATION.md](STATUS_AND_COMMUNICATION.md)                         | Platform status/communication surface (ntfy `portal-status`)                |
+| [INCIDENT_TABLETOP_SCENARIOS.md](INCIDENT_TABLETOP_SCENARIOS.md)                   | 12-scenario tabletop catalog + readiness inventory                          |
+| [INCIDENT_TABLETOP_DRYRUN_2026-10-11.md](INCIDENT_TABLETOP_DRYRUN_2026-10-11.md)   | First recorded tabletop exercise (IR-011 desk dry-run)                      |
+| [templates/ONCALL_ROTA.md](templates/ONCALL_ROTA.md)                               | On-call rota & escalation template (fill before go-live)                    |
+| [templates/INCIDENT_COMMS.md](templates/INCIDENT_COMMS.md)                         | Incident communication templates                                            |
+| [templates/POSTMORTEM.md](templates/POSTMORTEM.md)                                 | Blameless postmortem template                                               |
 
 ## Deployment & Operations
 
-| Document                                                                                       | Purpose                                                         |
-| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| [FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md](FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md)             | Operator manual: env model, Terraform, promotion, rollback      |
-| [FINAL_OPERATOR_MAP.md](FINAL_OPERATOR_MAP.md)                                                 | Quick reference: Terraform roots, hostnames, core infra files   |
-| [TROUBLESHOOTING.md](TROUBLESHOOTING.md)                                                       | Common issues and fixes by service (new)                        |
-| [ROLLBACK_PROCEDURES.md](ROLLBACK_PROCEDURES.md)                                               | Docker, Supabase, Terraform rollback                            |
-| [RELEASING.md](RELEASING.md)                                                                   | Branch model, quality gates, production promotion, rollback     |
-| [UPGRADE.md](UPGRADE.md)                                                                       | Breaking changes and upgrade manifest for the current migration window |
-| [RELEASE_GATE.md](RELEASE_GATE.md)                                                             | Release-readiness gate: exit criteria, fail-closed decisions, go-live checklist |
-| [CI.md](CI.md)                                                                                 | GitHub Actions workflows: triggers, filters, gates, triage-only |
+| Document                                                                                       | Purpose                                                                                           |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| [FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md](FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md)             | Operator manual: env model, Terraform, promotion, rollback                                        |
+| [FINAL_OPERATOR_MAP.md](FINAL_OPERATOR_MAP.md)                                                 | Quick reference: Terraform roots, hostnames, core infra files                                     |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md)                                                       | Common issues and fixes by service (new)                                                          |
+| [ROLLBACK_PROCEDURES.md](ROLLBACK_PROCEDURES.md)                                               | Docker, Supabase, Terraform rollback                                                              |
+| [RELEASING.md](RELEASING.md)                                                                   | Branch model, quality gates, production promotion, rollback                                       |
+| [UPGRADE.md](UPGRADE.md)                                                                       | Breaking changes and upgrade manifest for the current migration window                            |
+| [RELEASE_GATE.md](RELEASE_GATE.md)                                                             | Release-readiness gate: exit criteria, fail-closed decisions, go-live checklist                   |
+| [CI.md](CI.md)                                                                                 | GitHub Actions workflows: triggers, filters, gates, triage-only                                   |
 | [RUNBOOK_EMERGENCY_MERGE.md](RUNBOOK_EMERGENCY_MERGE.md)                                       | Branch-protection break-glass: approval, time-box, record issue, post-incident review (BP-P2-002) |
-| [RUNBOOK_HOTFIX.md](RUNBOOK_HOTFIX.md)                                                         | Hotfix / emergency deploy: branch from `main`, gates, deploy, backport, review (BP-P3-001) |
-| [PERFORMANCE.md](PERFORMANCE.md)                                                               | Response caching, rate limits, DB indexes, web performance      |
-| [MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md)                                       | Monitoring strategy, alerting setup, dashboards                 |
-| [ALERT_PATH_EXERCISE.md](ALERT_PATH_EXERCISE.md)                                               | Alert-delivery / dead-man's-switch exercise + evidence (OBS-P2-014) |
-| [DEPLOYMENT_OPTIONS_COMPARISON.md](DEPLOYMENT_OPTIONS_COMPARISON.md)                           | Cost analysis: Vercel vs AWS vs hybrid                          |
-| [PRODUCTION_VS_TESTING_DOMAINS.md](PRODUCTION_VS_TESTING_DOMAINS.md)                           | Production vs testing domain configuration                      |
-| [CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md](CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md) | Cloudflare caching and proxy configuration                      |
+| [RUNBOOK_HOTFIX.md](RUNBOOK_HOTFIX.md)                                                         | Hotfix / emergency deploy: branch from `main`, gates, deploy, backport, review (BP-P3-001)        |
+| [PERFORMANCE.md](PERFORMANCE.md)                                                               | Response caching, rate limits, DB indexes, web performance                                        |
+| [MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md)                                       | Monitoring strategy, alerting setup, dashboards                                                   |
+| [ALERT_PATH_EXERCISE.md](ALERT_PATH_EXERCISE.md)                                               | Alert-delivery / dead-man's-switch exercise + evidence (OBS-P2-014)                               |
+| [DEPLOYMENT_OPTIONS_COMPARISON.md](DEPLOYMENT_OPTIONS_COMPARISON.md)                           | Cost analysis: Vercel vs AWS vs hybrid                                                            |
+| [PRODUCTION_VS_TESTING_DOMAINS.md](PRODUCTION_VS_TESTING_DOMAINS.md)                           | Production vs testing domain configuration                                                        |
+| [CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md](CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md) | Cloudflare caching and proxy configuration                                                        |
 
 ## Module Documentation (`docs/modules/` — 75 files)
 
@@ -247,7 +247,7 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 | [MODULE_SPECS_GAP_AUDIT_2026-08-05.md](MODULE_SPECS_GAP_AUDIT_2026-08-05.md)                     | Module spec gap audit                                        |
 | [MT-P0-001-RLS-remediation-design.md](MT-P0-001-RLS-remediation-design.md)                       | RLS remediation design                                       |
 | [audits/README.md](audits/README.md)                                                             | Audit output contract                                        |
-| [openapi.yaml](openapi.yaml)                                                                     | Generated OpenAPI spec (421 paths)                           |
+| [openapi.yaml](openapi.yaml)                                                                     | Generated OpenAPI spec (422 paths)                           |
 
 ## Marketing & SEO (`docs/seo/` — 10 files)
 

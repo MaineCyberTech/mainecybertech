@@ -39,7 +39,7 @@ describe("PortalKnowledgeBasePage", () => {
     mockKbList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/client-knowledge-base/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByRole("heading", { level: 1, name: /knowledge base/i })).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe("PortalKnowledgeBasePage", () => {
     mockKbList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/client-knowledge-base/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByRole("navigation", { "aria-label": "Breadcrumb" })).toBeInTheDocument();
@@ -76,7 +76,7 @@ describe("PortalKnowledgeBasePage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/client-knowledge-base/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByText("Password Policy")).toBeInTheDocument();
@@ -89,7 +89,7 @@ describe("PortalKnowledgeBasePage", () => {
     mockKbList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/client-knowledge-base/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByText("No knowledge base articles yet.")).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe("PortalKnowledgeBasePage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/client-knowledge-base/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByText(/Published: Yes/i)).toBeInTheDocument();
@@ -119,7 +119,7 @@ describe("PortalKnowledgeBasePage", () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
     const { default: Page } = await import("@/app/(portal)/portal/client-knowledge-base/page");
-    render(await Page());
+    render(await Page({}));
 
     expect(screen.getByText(/no organization access/i)).toBeInTheDocument();
   });

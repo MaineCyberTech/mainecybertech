@@ -4,6 +4,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CabMeetingsClient from "@/components/cab/CabMeetingsClient";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { hasPermission } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Change Advisory Board - Portal - Maine CyberTech" };
@@ -52,6 +53,12 @@ export default async function PortalCabPage() {
     loadFailed = true;
   }
 
+  const permissions = await Promise.resolve()
+    .then(() => api.permissions.getMyPermissions())
+    .catch(() => null);
+  const canManageCab =
+    Boolean(permissions?.isSuperAdmin) || hasPermission(permissions?.keys, "governance", "edit");
+
   return (
     <div className="space-y-6" role="region" aria-label="Change Advisory Board">
       <Breadcrumbs
@@ -68,6 +75,7 @@ export default async function PortalCabPage() {
         organizationId={orgId}
         meetings={meetings}
         pendingChanges={pendingChanges}
+        canManageCab={canManageCab}
       />
 
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">

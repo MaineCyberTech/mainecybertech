@@ -22,7 +22,7 @@ export default async function PortalTimelinePage() {
         <Breadcrumbs
           items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Timeline" }]}
         />
-        <PortalSubnav current="projects" />
+        <PortalSubnav current="timeline" />
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
           Access restricted.
         </div>
@@ -51,7 +51,7 @@ export default async function PortalTimelinePage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Timeline" }]}
       />
-      <PortalSubnav current="projects" />
+      <PortalSubnav current="timeline" />
       {loadFailed ? <DataErrorNote what="project timeline" /> : null}
 
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">

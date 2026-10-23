@@ -42,16 +42,18 @@ export default async function PortalPhishingSimulationsPage() {
             className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
           >
             <div className="flex items-center justify-between">
-              <p className="font-medium text-slate-50">{String(a.name || a.campaign || "")}</p>
+              <p className="font-medium text-slate-50">
+                {String(a.campaign_name || a.name || "Campaign")}
+              </p>
               <StatusPill status={String(a.status || "unknown")} />
             </div>
             <p className="mt-1 text-xs text-slate-400">
-              Sent: {String(a.sent_count ?? "N/A")} &bull; Clicked:{" "}
-              {String(a.clicked_count ?? "N/A")} &bull; Reported:{" "}
-              {String(a.reported_count ?? "N/A")}
+              Targeted: {String(a.target_count ?? 0)} &bull; Opened: {String(a.opened_count ?? 0)}{" "}
+              &bull; Clicked: {String(a.clicked_count ?? 0)} &bull; Reported:{" "}
+              {String(a.reported_count ?? 0)}
             </p>
-            {(a.completed_at as string | null) && (
-              <p className="mt-1 text-xs text-slate-400">Completed: {formatDate(a.completed_at)}</p>
+            {(a.ended_at as string | null) && (
+              <p className="mt-1 text-xs text-slate-400">Ended: {formatDate(a.ended_at)}</p>
             )}
           </div>
         ))}

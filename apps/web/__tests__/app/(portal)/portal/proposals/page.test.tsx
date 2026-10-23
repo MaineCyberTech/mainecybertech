@@ -52,7 +52,7 @@ describe("PortalProposalsPage", () => {
     mockProposalsList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/proposals/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByRole("heading", { name: /proposals/i })).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe("PortalProposalsPage", () => {
     mockProposalsList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/proposals/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getAllByRole("navigation").length).toBeGreaterThanOrEqual(1);
@@ -91,7 +91,7 @@ describe("PortalProposalsPage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/proposals/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByText("Network Upgrade")).toBeInTheDocument();
@@ -104,7 +104,7 @@ describe("PortalProposalsPage", () => {
     mockProposalsList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/proposals/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByTestId("empty-state")).toBeInTheDocument();
@@ -115,7 +115,7 @@ describe("PortalProposalsPage", () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
     const { default: Page } = await import("@/app/(portal)/portal/proposals/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByText(/Access restricted/)).toBeInTheDocument();
@@ -136,9 +136,9 @@ describe("PortalProposalsPage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/proposals/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
-    expect(screen.getByText(/1 proposals available/)).toBeInTheDocument();
+    expect(screen.getByText(/1 proposal available/)).toBeInTheDocument();
   });
 });

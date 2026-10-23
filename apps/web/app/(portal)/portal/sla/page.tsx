@@ -52,7 +52,7 @@ export default async function SlaPage() {
             <p className="text-xs text-slate-400">Breached</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-amber-400">{Math.round(breachedRate * 100)}%</p>
+            <p className="text-2xl font-bold text-amber-400">{Math.round(breachedRate)}%</p>
             <p className="text-xs text-slate-400">Breach Rate</p>
           </div>
           <div>

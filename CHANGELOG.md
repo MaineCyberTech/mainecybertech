@@ -26,6 +26,14 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Added
 
+- **Client portal remediation (2026-10-21 audit):** client-visible approval,
+  change-request, DNS, identity-verification, offboarding and insurance request
+  flows; proposal accept/decline decisions; training enrollment/progress and
+  course detail; knowledge-base search/detail; no-code form-builder field
+  editor; entitlement-aware portal navigation; and an SVG network-diagram
+  renderer. Migration `5302463` grants AI triage to client roles and normalises
+  legacy visibility values.
+
 - First-class MFA login second factor: `POST /auth/sign-in` reports
   `mfaRequired` (cached `userHasVerifiedFactor()`), the login form stores a
   10-minute `mct_mfa_pending` cookie and shows a verification step that
@@ -144,6 +152,15 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   form it still used fails on pnpm 10.34.x and blocked every deploy.
 
 ### Fixed
+
+- **Portal visibility and data integrity:** role-aware filtering for proposals,
+  QBRs, approvals, findings, assets, vendor contracts, domain monitors, file
+  requests, service catalog, KB and training; internal proposal comments hidden;
+  private document uploads enforced and document lists user-scoped; password
+  change verifies the current password; onboarding checklist writes map to the
+  correct DB columns; client dashboard no longer calls admin-only audit data;
+  and SLA/phishing/offboarding/change-request field mappings corrected. Also
+  bumps Next.js to 15.5.28 for the current audit advisories.
 
 - **Remediation wave, phases 5–6 (2026-10-12, 24 PRs, audit rerun).**
   - CI/governance: Chromatic visual gate now blocking on a broken build;

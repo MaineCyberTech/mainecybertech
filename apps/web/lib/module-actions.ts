@@ -19,6 +19,7 @@ export async function createAsset(formData: FormData) {
       purchaseDate: String(formData.get("purchaseDate") || ""),
       warrantyExpires: String(formData.get("warrantyExpires") || ""),
       location: String(formData.get("location") || ""),
+      visibility: String(formData.get("visibility") || "internal"),
     });
     revalidatePath("/admin/assets");
     return { ok: true };
@@ -65,6 +66,7 @@ export async function createDomainMonitor(formData: FormData) {
       organizationId: String(formData.get("organizationId") || ""),
       domain: String(formData.get("domain") || ""),
       displayName: String(formData.get("displayName") || ""),
+      visibility: String(formData.get("visibility") || "internal"),
     });
     revalidatePath("/admin/domain-monitors");
     return { ok: true };
@@ -95,6 +97,7 @@ export async function createFileRequest(formData: FormData) {
       organizationId: String(formData.get("organizationId") || ""),
       title: String(formData.get("title") || ""),
       description: String(formData.get("description") || ""),
+      visibility: String(formData.get("visibility") || "internal"),
     });
     revalidatePath("/admin/file-requests");
     return { ok: true };
@@ -112,6 +115,7 @@ export async function createFinding(formData: FormData) {
       severity: String(formData.get("severity") || "p2"),
       source: String(formData.get("source") || "security"),
       description: String(formData.get("description") || ""),
+      visibility: String(formData.get("visibility") || "internal"),
     });
     revalidatePath("/admin/findings");
     return { ok: true };
@@ -258,6 +262,7 @@ export async function createService(formData: FormData) {
       basePrice: Number(formData.get("basePrice") || 0),
       unit: String(formData.get("unit") || "per_user"),
       billingModel: String(formData.get("billingModel") || "monthly"),
+      visibility: String(formData.get("visibility") || "internal"),
     });
     revalidatePath("/admin/service-catalog");
     return { ok: true };
@@ -291,6 +296,7 @@ export async function createVendorContract(formData: FormData) {
       serviceName: String(formData.get("serviceName") || ""),
       renewalDate: String(formData.get("renewalDate") || ""),
       contractValue: Number(formData.get("contractValue") || 0),
+      visibility: String(formData.get("visibility") || "internal"),
     });
     revalidatePath("/admin/vendor-contracts");
     return { ok: true };

@@ -8,15 +8,19 @@ import PortalSidebarContent from "./PortalSidebarContent";
 export default function PortalSidebarLayout({
   children,
   permissions,
+  enabledModules,
 }: {
   children: ReactNode;
   permissions?: ServerPermissionData | null;
+  enabledModules?: string[] | null;
 }) {
   return (
     <SidebarShell
       navLabel="Open portal navigation"
       brandLabel="Portal"
-      content={<PortalSidebarContent mobile permissions={permissions} />}
+      content={
+        <PortalSidebarContent mobile permissions={permissions} enabledModules={enabledModules} />
+      }
     >
       {children}
     </SidebarShell>

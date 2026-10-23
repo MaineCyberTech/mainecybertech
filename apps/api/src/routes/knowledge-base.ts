@@ -12,6 +12,7 @@ import {
   updateKnowledgeBaseSchema,
 } from "../validators/knowledge-base";
 import { queryInt } from "../lib/query";
+import { applyClientPublished, isPublishedForClient } from "../lib/client-visibility";
 import { sanitizeSearchTerm } from "../lib/search";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
@@ -39,6 +40,7 @@ router.get("/", async (req, res, next) => {
       const term = sanitizeSearchTerm(search);
       if (term) query = query.or(`title.ilike.%${term}%,body.ilike.%${term}%`);
     }
+    ({ query } = await applyClientPublished(query, req));
 
     const { data, error, count } = await query
       .order("created_at", { ascending: false })
@@ -62,6 +64,16 @@ router.get("/:id", async (req, res, next) => {
       "knowledge_base_articles",
       String(req.params.id) as string,
     );
+
+    if (
+      !(await isPublishedForClient(
+        req,
+        article as unknown as Record<string, unknown>,
+        "is_published",
+      ))
+    ) {
+      throw new AppError("NOT_FOUND", "Article not found", 404);
+    }
 
     res.json(success(article));
   } catch (error) {

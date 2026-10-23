@@ -72,7 +72,7 @@
       "image-size": ">=2.0.4 <3",
       "handlebars": ">=4.7.10",
       "nanoid": ">=3.3.18",
-      "next": ">=15.5.24 <16 || >=16.3.6",
+      "next": "15.5.28",
       "webpack-dev-middleware": ">=7.4.6 <8",
       "brace-expansion@<2": ">=1.1.21 <2",
       "js-yaml@>=5": ">=5.4.1",
@@ -86,10 +86,10 @@
     "packageExtensions": {
       "@storybook/nextjs": {
         "dependencies": {
-          "next": "15.5.25"
+          "next": "15.5.28"
         },
         "peerDependencies": {
-          "next": ">=15.5.24 <16"
+          "next": ">=15.5.28 <16"
         }
       }
     }

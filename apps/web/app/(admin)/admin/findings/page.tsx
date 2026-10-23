@@ -98,6 +98,13 @@ export default async function FindingsPage({ searchParams }: FindingsPageProps) 
           },
           { key: "source", label: "Source", required: true },
           { key: "description", label: "Description", type: "textarea" },
+          {
+            key: "visibility",
+            label: "Client Visibility",
+            type: "select",
+            options: ["internal", "client_visible"],
+            required: true,
+          },
         ]}
         title="New Finding"
         action={createFinding}

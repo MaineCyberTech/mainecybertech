@@ -103,6 +103,38 @@ describe("responseCache", () => {
     expect(getCallCount()).toBe(2);
   });
 
+  it("does not share cached responses between users in the same org", async () => {
+    invalidateCache();
+    const app = express();
+    let callCount = 0;
+
+    app.get(
+      "/scoped",
+      (req, _res, next) => {
+        (req as unknown as { authUser: { userId: string } }).authUser = {
+          userId: String(req.headers["x-user"] ?? "anonymous"),
+        };
+        (req as unknown as { orgId: string }).orgId = "org-1";
+        next();
+      },
+      responseCacheNoRenew(60, { userScoped: true }),
+      (_req, res) => {
+        callCount++;
+        res.json({ count: callCount });
+      },
+    );
+
+    const alice1 = await request(app).get("/scoped").set("x-user", "alice");
+    const bob1 = await request(app).get("/scoped").set("x-user", "bob");
+    const alice2 = await request(app).get("/scoped").set("x-user", "alice");
+
+    expect(alice1.body.count).toBe(1);
+    expect(bob1.body.count).toBe(2);
+    expect(alice2.body.count).toBe(1);
+    expect(alice2.headers["x-cache"]).toBe("HIT");
+    expect(bob1.headers["x-cache"]).toBe("MISS");
+  });
+
   it("does not collide cache keys across mounted routers with the same relative path", async () => {
     invalidateCache();
     const app = express();

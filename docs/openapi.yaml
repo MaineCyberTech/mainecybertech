@@ -11861,6 +11861,53 @@ paths:
           schema:
             type: "string"
           description: undefined
+  "/proposals/{id}/client-decision":
+    post:
+      tags:
+        - "Proposals"
+      summary: "Record a client accept/decline decision"
+      responses:
+        200:
+          description: "Success"
+        400:
+          description: "Bad request"
+        401:
+          description: "Unauthorized"
+        403:
+          description: "Forbidden"
+        500:
+          description: "Internal server error"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+          description: undefined
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: "object"
+              properties:
+                organizationId:
+                  type: "string"
+                  format: "uuid"
+                decision:
+                  type: "string"
+                  enum:
+                    - "accepted"
+                    - "declined"
+                notes:
+                  type:
+                    - "string"
+                    - "null"
+              required:
+                - "organizationId"
+                - "decision"
   "/proposals/{id}/submit-approval":
     post:
       tags:
