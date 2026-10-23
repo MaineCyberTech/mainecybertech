@@ -1,10 +1,10 @@
 # Client Portal Module Deep Dive — 2026-10-21
 
-**Repository:** `MaineCyberTech/mainecybertech` · **Audit snapshot:** `7478aafe` · **Rebased/re-checked against:** `develop` @ `de100712`
+**Repository:** `MaineCyberTech/mainecybertech` · **Audit snapshot:** `7478aafe` · **Rebased/re-checked against:** `develop` @ `8239c757`
 **Scope:** every client-facing portal section under `apps/web/app/(portal)/portal/**`
 **Method:** static review of the route tree, portal nav/permission map, server components, server actions, client components, SDK modules, API routes, migrations/RLS, feature docs, and the existing E2E specs, followed by live checks against the dev stack and the hosted Supabase data. Where a finding depends on seeded role data it is called out.
 
-> **Baseline reconciliation:** the first pass reviewed the docs-branch snapshot at `7478aafe`. Before remediation the patch was rebased onto `develop` (`de100712`) and every finding was re-checked. A few items had already been fixed on `develop` — user-scoped response-cache keys, the billing summary query, the billing sync button gate, onboarding redirect placement, and API-side document visibility. Those are retained as “verified fixed” notes rather than re-fixed; the remaining findings still reproduce on `develop` and on the running dev stack.
+> **Baseline reconciliation:** the first pass reviewed the docs-branch snapshot at `7478aafe`. Before remediation the patch was rebased onto `develop` (`8239c757`) and every finding was re-checked. A few items had already been fixed on `develop` — user-scoped response-cache keys, the billing summary query, the billing sync button gate, onboarding redirect placement, and API-side document visibility. Those are retained as “verified fixed” notes rather than re-fixed; the remaining findings still reproduce on `develop` and on the running dev stack.
 
 ---
 
