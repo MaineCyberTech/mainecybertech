@@ -294,7 +294,9 @@ services:
     pids_limit: 128
     read_only: true
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9100/-/healthy"]
+      # The official node-exporter image is scratch-based: there is no shell
+      # and no wget/curl. Probe the binary itself instead of the HTTP endpoint.
+      test: ["CMD", "/bin/node_exporter", "--version"]
       interval: 30s
       timeout: 5s
       retries: 3
