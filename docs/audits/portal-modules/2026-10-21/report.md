@@ -1054,8 +1054,9 @@ The first remediation batch addresses the Critical/High items that do not requir
 | Onboarding checklist service now maps camelCase input to DB columns and defaults `completed_by` to the caller | `services/client-onboarding-command-center.ts` |
 | Client request forms for identity verification, employee offboarding and insurance evidence | `portal/identity-verification/**`, `portal/offboarding/**`, `portal/insurance-binder/**` |
 | Proposal client decision: accept/decline with notes, recorded in `metadata.clientDecision`; UI only offers it on published, approved proposals | `POST /proposals/:id/client-decision`, `portal/proposals/[id]/**` |
+| Network diagram SVG renderer (deterministic grid layout + labelled connections) on the portal detail page | `components/portal/NetworkDiagramCanvas.tsx`, `portal/network-diagrams/[id]` |
 | Entitlement-aware portal navigation: plan-gated modules are hidden when the org's `enabledModules` does not include them | `app/(portal)/layout.tsx`, `PortalSidebarLayout.tsx`, `PortalSidebarContent.tsx` |
 
 Verification completed: API `tsc --noEmit` clean; web `tsc --noEmit` clean; SDK `tsc --noEmit` clean; targeted API suites (auth, documents, billing, cache, visibility, approvals, training, onboarding and the 11 module route suites) and 49+ portal page/action tests passing.
 
-Remaining from the roadmap (not in this batch): network diagram renderer, remaining list pagination and the nav regroup.
+Remaining from the roadmap (not in this batch): remaining list pagination and the nav regroup.
