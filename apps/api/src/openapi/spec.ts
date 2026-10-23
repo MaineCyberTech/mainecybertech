@@ -2972,6 +2972,14 @@ const extendedRoutes: RouteDef[] = [
     params: [pathParam("id")],
   },
   {
+    method: "post",
+    path: "/proposals/{id}/client-decision",
+    summary: "Record a client accept/decline decision",
+    tag: "Proposals",
+    params: [pathParam("id")],
+    body: true,
+  },
+  {
     method: "get",
     path: "/proposals/{id}/comments",
     summary: "List proposal comments",
