@@ -11,8 +11,8 @@ Production stack for the Maine CyberTech Portal on a single DigitalOcean droplet
 | `api`          | `ghcr.io/mainecybertech/mainecybertech/mct-api:${IMAGE_TAG}`    | Express API, port 4000                                               |
 | `web`          | `ghcr.io/mainecybertech/mainecybertech/mct-web:${IMAGE_TAG}`    | Next.js standalone, port 3000                                        |
 | `worker`       | `ghcr.io/mainecybertech/mainecybertech/mct-worker:${IMAGE_TAG}` | BullMQ consumer, health on 3001                                      |
-| `redis`        | `redis:7-alpine` (digest-pinned)                                | BullMQ backend; `REDIS_PASSWORD` required                            |
-| `caddy`        | `caddy:2-alpine` (digest-pinned)                                | TLS reverse proxy on ports 80/443                                    |
+| `redis`        | `redis:7.4.11-alpine` (digest-pinned)                           | BullMQ backend; `REDIS_PASSWORD` required                            |
+| `caddy`        | `caddy:2.11.7-alpine` (digest-pinned)                           | TLS reverse proxy on ports 80/443                                    |
 | `prometheus`   | `prom/prometheus:v3.5.1` (digest-pinned)                        | Internal-only metrics scraping (no ports)                            |
 | `alertmanager` | `prom/alertmanager:v0.28.1` (digest-pinned)                     | Internal-only alert delivery + dead-man's-switch receiver (no ports) |
 
