@@ -20,6 +20,7 @@ import {
   updateLineItemSchema,
   submitForApprovalSchema,
   publishProposalSchema,
+  clientProposalDecisionSchema,
 } from "../validators/proposals";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
@@ -787,6 +788,79 @@ router.post(
       );
 
       res.json(success({ approvalId: approval.id }));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.post(
+  "/:id/client-decision",
+  requirePermission("proposals", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = clientProposalDecisionSchema.parse(req.body);
+      const supabase = getScopedClient(req, "proposals", "write");
+      const proposal = await loadOwned(
+        req,
+        supabase as never,
+        "proposals",
+        String(req.params.id) as string,
+        "id, organization_id, title, status, visibility, metadata, version",
+      );
+
+      const visibility = String(proposal.visibility ?? "internal");
+      if (
+        (proposal.status as string) !== "approved" ||
+        !["client_visible", "client", "org", "organization"].includes(visibility)
+      ) {
+        throw new AppError(
+          "INVALID_STATE",
+          "Only a published, approved proposal can be accepted or declined",
+          400,
+        );
+      }
+
+      const metadata = {
+        ...((proposal.metadata as Record<string, unknown> | null) ?? {}),
+        clientDecision: parsed.decision,
+        clientDecidedAt: new Date().toISOString(),
+        clientDecidedBy: req.authUser!.userId,
+        clientDecisionNotes: parsed.notes ?? null,
+      };
+
+      const { data, error } = await supabase
+        .from("proposals")
+        .update({ metadata: toJson(metadata), version: (proposal.version as number) + 1 })
+        .eq("id", String(req.params.id) as string)
+        .eq("version", proposal.version as number)
+        .select()
+        .single();
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("VERSION_CONFLICT", "Proposal was modified", 409);
+
+      await logAuditEvent({
+        organizationId: proposal.organization_id as string,
+        actorUserId: req.authUser!.userId,
+        action: `proposal.client_${parsed.decision}`,
+        entityType: "proposal",
+        entityId: String(req.params.id) as string,
+        metadata: { notes: parsed.notes ?? null },
+      });
+
+      await addTimelineEvent(
+        req,
+        proposal.organization_id as string,
+        "proposals",
+        "proposal",
+        String(req.params.id) as string,
+        `client_${parsed.decision}`,
+        {},
+        req.authUser!.userId,
+      );
+
+      res.json(success(data));
     } catch (error) {
       next(error);
     }

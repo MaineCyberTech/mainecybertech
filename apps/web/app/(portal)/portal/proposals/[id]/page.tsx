@@ -8,7 +8,9 @@ import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 import CommentBody from "@/components/CommentBody";
 import { ProposalDetail, ProposalLineItem } from "@mct/sdk";
+import { hasPermission } from "@/lib/permissions";
 import { formatCurrency, formatDate } from "@/lib/format";
+import ProposalDecisionClient from "./ProposalDecisionClient";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -77,6 +79,15 @@ export default async function PortalProposalDetailPage({ params }: Props) {
     throw error;
   }
 
+  const permissions = await Promise.resolve()
+    .then(() => api.permissions.getMyPermissions())
+    .catch(() => null);
+  const canDecide =
+    Boolean(permissions?.isSuperAdmin) || hasPermission(permissions?.keys, "proposals", "edit");
+  const clientDecision =
+    (proposal.metadata?.clientDecision as string | undefined) ??
+    (proposal.metadata?.client_decision as string | undefined);
+
   const phases = proposal.phases ?? [];
   const items = proposal.items ?? [];
   const comments = proposal.comments ?? [];
@@ -110,6 +121,17 @@ export default async function PortalProposalDetailPage({ params }: Props) {
               Client Visible
             </span>
           )}
+          {clientDecision ? (
+            <span
+              className={`inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${
+                clientDecision === "accepted"
+                  ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
+                  : "border-red-500/25 bg-red-500/10 text-red-300"
+              }`}
+            >
+              {clientDecision}
+            </span>
+          ) : null}
           {proposal.valid_until && (
             <span className="inline-flex min-h-8 items-center rounded-full border border-slate-500/25 bg-slate-500/10 px-3 py-1 text-[11px] font-semibold text-slate-300">
               Valid: {formatRelative(proposal.valid_until)}
@@ -279,15 +301,17 @@ export default async function PortalProposalDetailPage({ params }: Props) {
       )}
 
       <div className="flex flex-wrap items-center justify-end gap-3">
-        {proposal.status === "approved" && (
+        {proposal.status === "approved" && isClientVisible && !clientDecision && canDecide ? (
+          <div className="w-full max-w-xl">
+            <ProposalDecisionClient proposalId={proposal.id} />
+          </div>
+        ) : null}
+        {clientDecision ? (
           <p className="text-sm text-slate-400">
-            To accept this proposal, reply to your account team or{" "}
-            <Link href="/portal/support" className="text-emerald-400 hover:text-emerald-300">
-              open a support ticket
-            </Link>
-            .
+            Your organization {clientDecision === "accepted" ? "accepted" : "declined"} this
+            proposal. Contact your account team if anything needs to change.
           </p>
-        )}
+        ) : null}
         <Link href="/portal/proposals" className="cyber-button-secondary">
           Back to Proposals
         </Link>
