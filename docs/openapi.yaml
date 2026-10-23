@@ -11892,6 +11892,22 @@ paths:
           "application/json":
             schema:
               type: "object"
+              properties:
+                organizationId:
+                  type: "string"
+                  format: "uuid"
+                decision:
+                  type: "string"
+                  enum:
+                    - "accepted"
+                    - "declined"
+                notes:
+                  type:
+                    - "string"
+                    - "null"
+              required:
+                - "organizationId"
+                - "decision"
   "/proposals/{id}/submit-approval":
     post:
       tags:

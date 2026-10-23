@@ -2977,7 +2977,15 @@ const extendedRoutes: RouteDef[] = [
     summary: "Record a client accept/decline decision",
     tag: "Proposals",
     params: [pathParam("id")],
-    body: true,
+    body: {
+      type: "object",
+      properties: {
+        organizationId: { type: "string", format: "uuid" },
+        decision: { type: "string", enum: ["accepted", "declined"] },
+        notes: { type: ["string", "null"] },
+      },
+      required: ["organizationId", "decision"],
+    },
   },
   {
     method: "get",
