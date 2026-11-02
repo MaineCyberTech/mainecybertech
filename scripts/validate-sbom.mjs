@@ -42,7 +42,7 @@ if (digestIndex !== -1 && !expectedDigest) {
 // The old `index !== digestIndex + 1` filter dropped the first positional path
 // when digestIndex was -1, silently validating ./sbom.cdx.json instead.
 const positional = args.filter((arg, index) => {
-  if (arg === "--image" || arg === "--digest") return false;
+  if (arg === "--image" || arg === "--digest" || arg === "--allow-missing-versions") return false;
   if (digestIndex !== -1 && index === digestIndex + 1) return false;
   return true;
 });
