@@ -1,4 +1,5 @@
 import { jest } from "@jest/globals";
+import crypto from "crypto";
 import request from "supertest";
 import searchPortalRouter from "../routes/search-portal";
 import { createTestApp, createMockBuilder } from "./helpers";
@@ -136,6 +137,47 @@ describe("search portal routes", () => {
         recordSearchQuery: jest.Mock;
       };
       expect(recordSearchQuery).toHaveBeenCalled();
+    });
+
+    it("audits portal searches without persisting the raw term [SEARCH-P3-004]", async () => {
+      const supabase = mockAuth();
+      const { logAuditEvent } = jest.requireMock("../services/audit") as {
+        logAuditEvent: jest.Mock;
+      };
+      logAuditEvent.mockClear();
+
+      supabase.from.mockImplementation((table: string) => {
+        let data: unknown = [];
+        if (table === "memberships") data = [{ organization_id: ORG_A }];
+        const builder = createMockBuilder({ data, error: null });
+        (builder as any).or = jest.fn(() => builder);
+        return builder;
+      });
+
+      const res = await request(app)
+        .get("/api/v1/search/portal?q=acme-secret")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(logAuditEvent).toHaveBeenCalledTimes(1);
+      const event = logAuditEvent.mock.calls[0][0] as {
+        actorUserId: string;
+        action: string;
+        entityType: string;
+        metadata: Record<string, unknown>;
+      };
+      expect(event.actorUserId).toBe("user-1");
+      expect(event.action).toBe("search.query");
+      expect(event.entityType).toBe("search");
+      expect(event.metadata.surface).toBe("portal");
+      expect(event.metadata.queryHash).toBe(
+        crypto.createHash("sha256").update("acme-secret").digest("hex").slice(0, 16),
+      );
+      expect(event.metadata.queryLength).toBe("acme-secret".length);
+      expect(event.metadata.resultCounts).toEqual({ tickets: 0, projects: 0, documents: 0 });
+      // The raw term must never reach audit_logs (SEARCH-P2-001 redaction
+      // model, now applied to the portal surface too).
+      expect(JSON.stringify(event.metadata)).not.toContain("acme-secret");
     });
 
     it("returns readable documents and hides private ones [SEARCH-P2-002]", async () => {

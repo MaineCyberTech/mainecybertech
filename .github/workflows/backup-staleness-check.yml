@@ -45,9 +45,12 @@ jobs:
     steps:
       - name: Check the newest successful runs
         env:
-          # actions: read is enough for `gh run list`; the dispatch PAT is only
-          # preferred so a restricted GITHUB_TOKEN policy cannot break the check.
-          GH_TOKEN: ${{ secrets.SCHEDULE_DISPATCH_TOKEN || secrets.GITHUB_TOKEN }}
+          # DR-P3-006: the workflow only needs `actions: read`, which the
+          # default GITHUB_TOKEN has. Do NOT prefer the retired
+          # SCHEDULE_DISPATCH_TOKEN: a revoked-but-still-present PAT would make
+          # `gh run list` fail and turn the staleness detector into a false
+          # alarm (or, if swallowed, a silent gap).
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAX_AGE_HOURS: ${{ inputs.max_age_hours || '30' }}
           MAX_AGE_HOURS_RESTORE: ${{ inputs.max_age_hours_restore || '200' }}
         run: |

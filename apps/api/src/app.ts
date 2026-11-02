@@ -10,7 +10,7 @@ import { requestId, requestLogger } from "./middleware/request-id";
 import { deprecationMiddleware } from "./middleware/deprecation";
 import { webhookBodyParser } from "./middleware/webhook-body";
 import { logger } from "./lib/logger";
-import { rateLimitByUser, rateLimitMetrics } from "./middleware/rate-limit";
+import { rateLimitByUser, rateLimitHandler, rateLimitMetrics } from "./middleware/rate-limit";
 import { inputSanitizer } from "./middleware/security";
 import { securityHeaders } from "./middleware/security-headers";
 import { csrfProtection } from "./middleware/csrf";
@@ -118,14 +118,9 @@ export function createApp(): Express {
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 300,
-    message: JSON.stringify({
-      success: false,
-      error: {
-        code: "RATE_LIMIT",
-        message: "Too many requests from this IP, please try again later.",
-        status: 429,
-      },
-    }),
+    // API-P3-001: shared JSON envelope, matching the route-level limiters and
+    // docs/API_RATE_LIMITING.md (`RATE_LIMITED`).
+    handler: rateLimitHandler("Too many requests from this IP, please try again later."),
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) =>

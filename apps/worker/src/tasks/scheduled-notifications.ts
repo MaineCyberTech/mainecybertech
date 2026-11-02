@@ -13,7 +13,7 @@ import {
 import { redactSensitiveContent } from "../notification-content";
 import { isEmailThrottled } from "../lib/notification-throttle";
 import { buildNotificationEmail } from "@mct/sdk/email-template";
-import { buildUnsubscribeUrl } from "../lib/unsubscribe-token";
+import { buildUnsubscribeUrl, buildListUnsubscribeHeaders } from "../lib/unsubscribe-token";
 import {
   recordNotificationDelivery,
   recordNotificationSuppressed,
@@ -59,24 +59,27 @@ async function sendNotificationEmail(opts: {
   }
 
   const baseUrl = appBaseUrl();
+  const unsubscribeUrl =
+    opts.organizationId && env.SUPABASE_SERVICE_ROLE_KEY
+      ? buildUnsubscribeUrl({
+          apiBaseUrl: baseUrl,
+          userId: opts.userId,
+          organizationId: opts.organizationId,
+          serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
+        })
+      : undefined;
   const email = buildNotificationEmail({
     title: opts.title,
     body: opts.body,
     actionUrl: opts.actionUrl,
     actionLabel: opts.actionLabel,
     preferencesUrl: baseUrl ? `${baseUrl}/portal/notifications/preferences` : undefined,
-    unsubscribeUrl:
-      opts.organizationId && env.SUPABASE_SERVICE_ROLE_KEY
-        ? buildUnsubscribeUrl({
-            apiBaseUrl: baseUrl,
-            userId: opts.userId,
-            organizationId: opts.organizationId,
-            serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
-          })
-        : undefined,
+    unsubscribeUrl,
   });
 
-  const sent = await sendEmail({ to: opts.to, ...email });
+  // NOTIF-P2-012: advertise the RFC 8058 one-click contract to mail clients.
+  const headers = unsubscribeUrl ? buildListUnsubscribeHeaders(unsubscribeUrl) : undefined;
+  const sent = await sendEmail({ to: opts.to, ...email, headers });
   recordNotificationDelivery("email", sent ? "success" : "failed");
   return sent;
 }

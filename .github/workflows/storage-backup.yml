@@ -2,15 +2,26 @@ name: Storage Backup
 
 # Backs up user-uploaded Supabase Storage objects (documents / avatars / logos)
 # to an S3/Spaces destination (audit finding DR-P1-001). Mirrors db-backup.yml:
-# scheduled daily, dispatched manually, Slack on failure.
+# scheduled daily, dispatched manually, ntfy/Slack on failure.
 #
-# Runs against the `dev` environment (which carries SUPABASE_URL /
-#   SUPABASE_SERVICE_ROLE_KEY). Required secrets: BACKUP_ENCRYPTION_KEY,
-#   SLACK_WEBHOOK_URL (optional); AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY fall
-#   back to the environment's DO_SPACES_ACCESS_KEY_ID/DO_SPACES_SECRET_ACCESS_KEY.
-# Required variables: S3_BUCKET (bucket NAME; falls back to the
-#   S3_BACKUP_BUCKET secret). Optional: S3_PREFIX, S3_OFFSITE_BUCKET,
-#   S3_ENDPOINT (default https://nyc3.digitaloceanspaces.com).
+# Scheduled runs target the dev buckets (the `dev` environment holds the
+# SUPABASE_*/Spaces secrets these jobs resolve).
+#
+# DR-P2-009: production uploaded files are a supported backup target:
+#   * workflow_dispatch `environment: prod` runs from `main` and attaches the
+#     approval-gated `prod-approval` environment (required reviewers must be
+#     configured in GitHub for the gate to be real).
+#   * the schedule targets prod automatically once the operator sets the
+#     `PROD_BACKUP_ENABLED` repository variable to `true`. That run attaches
+#     `prod-backup` instead of `dev` (one schedule target at a time; dispatch
+#     `environment: dev` manually to keep the dev mirror). Create `prod-backup`
+#     with the prod backup secrets and NO required reviewers: an approval-gated
+#     environment would leave an unattended scheduled backup waiting for a
+#     human instead of running.
+# Operator dependency (cannot be set from the repo): the prod backup secrets
+# (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `BACKUP_ENCRYPTION_KEY`,
+# `AWS_*`/`DO_SPACES_*`, `S3_BUCKET`/`S3_PREFIX`) must be provisioned in the
+# environment the job attaches — see docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md.
 #
 # NOTE: schedules only fire from the default branch (`main`), so this file must
 # stay on `main`. The interim backup-dispatch.yml dispatcher was retired once
@@ -20,19 +31,38 @@ on:
   schedule:
     - cron: "0 5 * * *"   # daily, one hour after the database backup
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (prod dispatch requires main + the prod-approval gate)"
+        type: choice
+        options:
+          - dev
+          - prod
+        default: dev
 
 permissions:
   contents: read
 
 jobs:
   storage-backup:
-    # Backups target the dev database/buckets; the dev environment holds
-    # the SUPABASE_*/Spaces secrets these jobs resolve.
-    environment: dev
+    # Dispatch: the selected environment (prod -> the approval-gated
+    # prod-approval). Schedule: dev normally; prod-backup once the operator has
+    # enabled the scheduled prod target.
+    environment: ${{ (github.event.inputs.environment == 'prod') && 'prod-approval' || (github.event_name == 'schedule' && vars.PROD_BACKUP_ENABLED == 'true') && 'prod-backup' || 'dev' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Restrict prod dispatch to the main branch
+        # A prod backup must run the workflow definition that is on main, not
+        # an arbitrary feature branch.
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::environment=prod can only be dispatched from the main branch (got ${GITHUB_REF}). Promote develop -> main first."
+            exit 1
+          fi
 
       - name: Run storage backup script
         env:
@@ -49,6 +79,10 @@ jobs:
           # Destination contract mirrors scripts/backup-database.sh (DR-P1-002).
           S3_BUCKET: ${{ vars.S3_BUCKET || secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
           S3_PREFIX: ${{ vars.S3_PREFIX || 'storage-backups' }}
+          # DR-P0-001 investigation: DigitalOcean Spaces only accepts STANDARD
+          # and rejects other classes, so the default is STANDARD. Override with
+          # the S3_STORAGE_CLASS variable (e.g. STANDARD_IA) on real AWS S3.
+          S3_STORAGE_CLASS: ${{ vars.S3_STORAGE_CLASS || 'STANDARD' }}
           S3_OFFSITE_BUCKET: ${{ vars.S3_OFFSITE_BUCKET }}
           S3_OFFSITE_PREFIX: ${{ vars.S3_OFFSITE_PREFIX || 'storage-backups' }}
           STORAGE_BUCKETS: ${{ vars.STORAGE_BUCKETS || 'documents avatars logos' }}

@@ -261,6 +261,57 @@ describe("retentionTask (DATA-P1-002)", () => {
     expect(createClient).not.toHaveBeenCalled();
   });
 
+  it("purges public store quote PII with the documented window [PRIV-P2-008]", async () => {
+    const state: TableState = {
+      audit_logs: [],
+      notifications: [],
+      store_quotes: [
+        { id: "q-old", created_at: daysAgo(120) },
+        { id: "q-recent", created_at: daysAgo(10) },
+      ],
+      store_quote_requests: [
+        { id: "qr-old", created_at: daysAgo(120) },
+        { id: "qr-recent", created_at: daysAgo(10) },
+      ],
+    };
+    const supabase = makeSupabase(state);
+    (createClient as unknown as jest.Mock).mockReturnValue(supabase);
+
+    const res = await retentionTask({});
+
+    expect(res.ok).toBe(true);
+    // Defaults: 90 days for both quote stores.
+    expect(state.store_quotes.map((row) => row.id)).toEqual(["q-recent"]);
+    expect(state.store_quote_requests.map((row) => row.id)).toEqual(["qr-recent"]);
+  });
+
+  it("refuses a non-positive store quote window [PRIV-P2-008]", async () => {
+    const res = await retentionTask({ storeQuoteRetentionDays: 0 });
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/storeQuoteRetentionDays must be a positive number of days/);
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("stops purging when the task deadline signal is already aborted [RES-P3-011]", async () => {
+    const state: TableState = {
+      audit_logs: [],
+      notifications: rows(10),
+      store_quotes: rows(5),
+    };
+    const supabase = makeSupabase(state);
+    (createClient as unknown as jest.Mock).mockReturnValue(supabase);
+    const controller = new AbortController();
+    controller.abort();
+
+    const res = await retentionTask({}, { signal: controller.signal });
+
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/aborted/);
+    // No batch ran after the deadline: the rows are untouched.
+    expect(state.notifications).toHaveLength(10);
+    expect(state.store_quotes).toHaveLength(5);
+  });
+
   it("returns ok:false and keeps the rows when the audit archive fails", async () => {
     const state: TableState = { audit_logs: rows(100), notifications: [] };
     const supabase = makeSupabase(state, { failRpc: "archive_audit_logs" });
@@ -459,5 +510,21 @@ describe("resolveRetentionDays (DATA-P2-006)", () => {
       },
     ];
     expect(resolveRetentionDays("public_interactions", 90, policies).days).toBe(30);
+  });
+
+  it("matches the public store quote targets [PRIV-P2-008]", () => {
+    const policies = [
+      {
+        system_name: "Store Quote Requests",
+        data_category: null,
+        retention_period_days: 30,
+      },
+    ];
+    expect(resolveRetentionDays("store_quote_requests", 90, policies)).toEqual({
+      days: 30,
+      source: "policy",
+      matchingPolicies: 1,
+    });
+    expect(resolveRetentionDays("store_quotes", 90, policies).days).toBe(90);
   });
 });

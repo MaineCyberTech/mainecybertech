@@ -347,3 +347,23 @@ export const redisConnected = new Gauge({
 export function setRedisConnected(connected: boolean) {
   redisConnected.set(connected ? 1 : 0);
 }
+
+/**
+ * BILL-P3-009: `requireEntitlement` deliberately fails OPEN when the billing
+ * mirror cannot be read — a transient Supabase error must not lock a paying
+ * customer out of modules they paid for. The trade-off was log-only, so a
+ * sustained billing-state outage silently disabled the plan boundary for
+ * every gated module. This counter makes the degradation alertable
+ * (MCTBillingLookupFailures in infra/digitalocean/prometheus.rules.yml).
+ * The label is the gated module key (a bounded catalog set), never the org.
+ */
+export const billingLookupFailuresTotal = new Counter({
+  name: "portal_billing_lookup_failures_total",
+  help: "Entitlement resolution failures that degraded to the fail-open (allow) path, by module",
+  labelNames: ["module"],
+  registers: [register],
+});
+
+export function recordBillingLookupFailure(moduleKey: string) {
+  billingLookupFailuresTotal.inc({ module: moduleKey });
+}

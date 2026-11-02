@@ -15,7 +15,7 @@
 
 | Variable                                | Required | Default                | Description                                                                                 |
 | --------------------------------------- | -------- | ---------------------- | ------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_API_URL`                   | Yes      | —                      | URL of the API server (e.g. `http://localhost:4000`)                                        |
+| `NEXT_PUBLIC_API_URL`                   | Yes      | — (local compose uses `http://localhost:4000`) | URL of the API server, inlined into the client bundle at build time; the web image build fails when the arg is absent (SECRET-P3-002) |
 | `API_INTERNAL_URL`                      | No       | —                      | Server-side SSR override for the API base URL (falls back to `NEXT_PUBLIC_API_URL`); ARCH-P3-003 |
 | `NODE_ENV`                              | No       | `development`          | Node environment                                                                            |
 | `NEXT_PUBLIC_GA_ID`                     | No       | —                      | Google Analytics measurement ID (e.g. `G-XXXXXXXXXX`)                                       |

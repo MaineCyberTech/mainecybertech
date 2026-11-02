@@ -22,7 +22,7 @@ A public Supabase storage bucket for organization logos.
 | Bucket ID | `logos` |
 | Public | `true` |
 | File limit | 5MB (API enforces) |
-| Allowed types | PNG, JPG, SVG |
+| Allowed types | PNG, JPG, WebP, GIF (SVG is rejected by the API) |
 
 ### RLS Policies
 
@@ -62,7 +62,7 @@ No portal code changes needed per org — branding is fetched from the API on ev
 
 **Route:** `/admin/organizations/:id` → "Branding" section
 
-- **Logo upload**: File input (PNG/JPG/SVG), preview with 5MB limit
+- **Logo upload**: File input (PNG/JPG/WebP/GIF), preview with 5MB limit
 - **Brand Color**: Color picker + hex input
 - **Accent Color**: Color picker + hex input
 - **Custom Domain**: Text input

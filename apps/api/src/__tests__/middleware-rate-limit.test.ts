@@ -158,6 +158,26 @@ describe("rateLimitAdminOps", () => {
       .set("Authorization", "Bearer other-admin-token");
     expect(otherUser.status).toBe(200);
   }, 30000);
+
+  it("returns the documented JSON envelope on 429 [API-P3-001]", async () => {
+    const app = createAdminOpsApp();
+    let limited;
+    for (let i = 0; i < 11; i++) {
+      limited = await request(app)
+        .get("/test")
+        .set("Authorization", "Bearer envelope-admin-token");
+    }
+    expect(limited!.status).toBe(429);
+    expect(limited!.headers["content-type"]).toMatch(/application\/json/);
+    expect(limited!.body).toEqual({
+      success: false,
+      error: {
+        code: "RATE_LIMITED",
+        message: "Too many admin operations, please try again later.",
+        status: 429,
+      },
+    });
+  }, 30000);
 });
 
 describe("userRateLimitKeyGenerator", () => {
@@ -239,16 +259,28 @@ describe("rateLimitAuth email-key normalization [SEC-P3-003]", () => {
   it("shares one bucket across case/whitespace variants", async () => {
     const app = createAuthApp();
     let limited = 0;
+    let limitedBody: Record<string, unknown> | undefined;
     // max = 10/15min. 6 + 5 requests across the variants are only capped at
     // the 11th request when both normalize to the same bucket.
     for (let i = 0; i < 6; i++) {
       const res = await request(app).post("/test").send({ email: "Victim@Example.com" });
-      if (res.status === 429) limited++;
+      if (res.status === 429) {
+        limited++;
+        limitedBody = res.body as Record<string, unknown>;
+      }
     }
     for (let i = 0; i < 5; i++) {
       const res = await request(app).post("/test").send({ email: " victim@example.com " });
-      if (res.status === 429) limited++;
+      if (res.status === 429) {
+        limited++;
+        limitedBody = res.body as Record<string, unknown>;
+      }
     }
     expect(limited).toBe(1);
+    // API-P3-001: the auth limiter uses the same JSON envelope, not text.
+    expect(limitedBody).toMatchObject({
+      success: false,
+      error: { code: "RATE_LIMITED", status: 429 },
+    });
   }, 30000);
 });

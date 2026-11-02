@@ -454,8 +454,10 @@ Every rotation ends with proof the new value reached the consumer:
 1. `gh secret list --env <consuming-env>` — confirm the secret's updated
    timestamp moved (and that the job's environment is the one you set).
 2. Trigger the consuming workflow and confirm it succeeds with the new value:
-   - App secrets → `deploy-do.yml` run is green, `https://api.mainecybertech.com/health`
-     is healthy, and the affected feature works.
+   - App secrets → `deploy-do.yml` run is green,
+     `https://app.mainecybertech.com/api/v1/store/products` is reachable (the
+     prod API path until the `api.mainecybertech.com` DNS record is repointed,
+     OBS-P2-017), and the affected feature works.
    - `BACKUP_ENCRYPTION_KEY` → `db-restore-test.yml` passes.
    - Terraform/Spaces secrets → the plan/apply run succeeds.
    - Alertmanager/ntfy → the alert-path exercise observes a notification.

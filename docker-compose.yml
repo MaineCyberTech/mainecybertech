@@ -23,6 +23,11 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      # SECRET-P3-002: the image build requires the public API URL. Local
+      # stacks keep the localhost default here instead of in the Dockerfile, so
+      # a release build cannot silently bake localhost.
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     ports:
       - "3000:3000"
     env_file:

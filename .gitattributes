@@ -10,3 +10,4 @@
 *.docx binary
 *.zip binary
 *.ico binary
+*.sh text eol=lf

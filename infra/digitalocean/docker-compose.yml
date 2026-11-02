@@ -32,7 +32,7 @@ x-logging: &default-logging
 services:
   # ===== Queue =====
   redis:
-    image: redis:7-alpine@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
+    image: redis:7-alpine@sha256:25e3ffd4fbdd6914a33acedf2bd14a98cde0080247bba13dd83cfb0910666d7a
     logging: *default-logging
     <<: *security
     read_only: false
@@ -263,7 +263,7 @@ services:
 
   # ===== Observability (internal only — no published ports) =====
   prometheus:
-    image: prom/prometheus:v3.5.1@sha256:4b05278adfb2e2781063781edd7ca88cc649ea5270cea1696618886a37eeb298
+    image: prom/prometheus:v3.5.1@sha256:4729241e2306fee98bccd412798147f6d56c4d9a51c64d80992f3335bef2da5e
     logging: *default-logging
     <<: *security
     volumes:
@@ -311,7 +311,7 @@ services:
     # TODO(ops): digest is pinned to the v0.28.1 manifest-list digest. If a newer
     # release is adopted, re-pin (`docker buildx imagetools inspect
     # prom/alertmanager:vX.Y.Z`) and update the digest here before merge.
-    image: prom/alertmanager:v0.28.1@sha256:27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba
+    image: prom/alertmanager:v0.28.1@sha256:20c01cd4233758c751269547eb41406f6352d521de17e81640819353866c65ec
     logging: *default-logging
     <<: *security
     environment:
@@ -370,7 +370,7 @@ services:
 
   # ===== Reverse Proxy =====
   caddy:
-    image: caddy:2-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
+    image: caddy:2-alpine@sha256:e4eef1388ccb5ef14f6d510b2d34ec757942d3f4694b4accde34dea1a48146b0
     logging: *default-logging
     <<: *security
     cap_add:

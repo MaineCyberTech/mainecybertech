@@ -1,0 +1,718 @@
+# Roadmap
+
+- DATA-P0-001 (P0) — Orphan cleanup can recursively delete a bucket's contents
+- DR-P0-001 (P0) — No successful backup has ever run: every db-backup, storage-backup and db-restore-test CI run fails
+- DR-P0-002 (P0) — Scheduled backup and restore-test workflows never run because they are absent from the default branch
+- DR-P0-003 (P0) — The restore test never asserts integrity and therefore cannot fail on a bad backup
+- IR-P0-001 (P0) — No platform-level incident response plan, roles, or postmortem process
+- IR-P0-002 (P0) — No data breach response / notification process
+- IR-P0-003 (P0) — Total loss of the monitoring/alerting path has no independent dead-man's-switch receiver
+- OBS-P0-001 (P0) — Total loss of the monitoring/alerting path has no independent dead-man's-switch receiver
+- ACM-P1-001 (P1) — Client-onboarding mutations run without any `requirePermission` gate
+- ACM-P1-002 (P1) — `profiles.is_super_admin` is user-writable under the RLS self-update policy (forgeable super-admin flag)
+- ADMIN-P1-001 (P1) — Org-agnostic `requireAdmin` lets a tenant admin read other tenants' admin data
+- ADMIN-P1-002 (P1) — Impersonation/cross-tenant access is logged but not reviewable or alerted
+- ADMIN-P1-003 (P1) — Role assignment paths let a delegated user-manager grant cross-tenant admin roles (self-escalation)
+- AI-P1-001 (P1) — Vendored audit prompt packs are stale and the run manifest references a prompt the pack does not contain
+- AI-P1-002 (P1) — `AGENTS.md` names a stale repository path and three developer docs state a stale accessibility gate size that no guard covers
+- BILL-P1-001 (P1) — Module entitlements are derived but not enforced server-side
+- BILL-P1-002 (P1) — `payments` table is never populated; payment history is silently empty
+- BILL-P1-003 (P1) — Missing Stripe webhook events leave refunds, void, and payment lifecycle unrecorded
+- BP-P1-001 (P1) — `main` requires a context (`Dependency Review`) that no job emits
+- BP-P1-002 (P1) — `enforce_admins:false` lets administrators bypass all required checks and reviews
+- BP-P1-003 (P1) — Production deploy path uses the unguarded `prod` environment, not `prod-approval`
+- BP-P1-004 (P1) — PR #279 merged into main with required checks pending and zero reviews - live protection does not match the committed payloads (or an unrecorded bypass)
+- CHAIN-P1-001 (P1) — Low-trust MSP role key composes into a cross-tenant read pivot
+- CHAIN-P1-002 (P1) — Caller-controlled reset redirect composes into an account-takeover assist
+- CHAIN-P1-003 (P1) — Branch-protection bypass + missing prod gate compose into unattended production change
+- CHAIN-P1-004 (P1) — Delegated user-manager self-escalation to cross-tenant admin (role-assignment policy gap)
+- CHAIN-P1-005 (P1) — Forgeable `profiles.is_super_admin` composes into full permission bypass and all-tenant RLS reads
+- CHAIN-P1-006 (P1) — Tenant-blind response cache keys compose into cross-tenant aggregate disclosure
+- CI-P1-001 (P1) — Production application deploys have no working manual-approval gate
+- CI-P1-002 (P1) — Branch-protection-as-code has a likely-mismatched required check and permits admin bypass
+- CI-P1-003 (P1) — Production deploy path cannot run; prod environment lacks secrets and protection rules
+- CI-P1-004 (P1) — NEW: published fast-mode audit run fails the docs-links gate on main (required check + deploy gate red)
+- CTR-P1-001 (P1) — No Container Image Vulnerability Scan in CI
+- CTR-P1-002 (P1) — SBOM Is Lockfile-Only, Not an Image SBOM or Attestation
+- CTR-P1-003 (P1) — Unsigned Images With No Provenance/Attestation
+- DATA-P1-001 (P1) — Approved-membership RLS predicate reintroduced six times; pending/suspended members could access tenant data
+- DATA-P1-002 (P1) — `retention` worker task performs unbounded deletes and reports success on partial failure
+- DATA-P1-003 (P1) — Soft-delete columns remain dead schema; DELETE endpoints hard-delete
+- DR-P1-001 (P1) — The weekly restore test fails at baseline load (invalid GITHUB_ENV format) so no restore verification ever executes
+- DR-P1-002 (P1) — No backup or restore path exists for uploaded files in Supabase Storage
+- DR-P1-003 (P1) — Restore-test backup location contract (`S3_BACKUP_BUCKET`) is undocumented and can silently mismatch the backup script
+- DR-P1-004 (P1) — Database backups are unencrypted and stored in a single location with no offsite copy
+- DR-P1-005 (P1) — The restore test has no failure alert
+- DR-P1-006 (P1) — No automated migration reverse/rollback and no bad-migration drill
+- DR-P1-007 (P1) — RPO/RTO targets are documented but unvalidated, and the Postgres RPO conflates PITR with the daily dump
+- FILE-P1-001 (P1) — Public file-request upload is permission-gated and unreachable for anonymous uploaders
+- FILE-P1-002 (P1) — File-request uploads have no tenant-scoped path and no download path; orphan cleanup will delete them
+- FILE-P1-003 (P1) — Document version history objects are deleted at replace and by orphan cleanup
+- INFRA-P1-001 (P1) — SSH is open to the internet on both droplets (admin_ip_ranges default 0.0.0.0/0 and CI never overrides it)
+- INFRA-P1-002 (P1) — Terraform state-locking fix is incompatible with the pinned Terraform version (use_lockfile requires >= 1.10, workflows pin 1.9)
+- IR-P1-001 (P1) — Rollback documentation contradicts itself on SHA-targeted rollback
+- IR-P1-002 (P1) — Bad-migration recovery is manual-only with no automated reverse or staging proof
+- IR-P1-003 (P1) — Worker health failure during deploy is non-fatal
+- IR-P1-004 (P1) — Backups are not verified deeply enough to prove the documented RPO/RTO
+- IR-P1-005 (P1) — Backup bucket configuration is inconsistent between the script, the backup workflow, and the restore test
+- IR-P1-006 (P1) — No runtime detection or alerting for tenant-isolation (RLS) regressions
+- MT-P1-001 (P1) — Audit log list and export are not org-scoped by default
+- MT-P1-002 (P1) — Platform dashboards expose all-tenant aggregates to any single-org admin
+- MT-P1-003 (P1) — Public file-request upload authorizes with a permission unioned across all orgs
+- MT-P1-004 (P1) — Response cache keys omit the caller's tenant scope, so all-tenant responses can be served to single-org members
+- NOTIF-P1-001 (P1) — Notification preferences are stored and displayed but never enforced on any send path
+- NOTIF-P1-002 (P1) — API-originated notifications bypass the dedup unique index
+- NOTIF-P1-003 (P1) — No delivery observability: email/notification failures are silent and unalerted
+- NOTIF-P1-004 (P1) — Notification preference writes from the web UI omit organization_id (NOT NULL) so toggles cannot persist
+- OBS-P1-001 (P1) — No runtime detection or alerting for tenant-isolation (RLS) regressions
+- ORCH-P1-001 (P1) — Published main audit run is internally inconsistent (report/register ID divergence; full-domain metadata over a one-report inventory)
+- REL-P1-001 (P1) — No version identity: no tags, no product version, no commit binding in generated artifacts
+- REL-P1-002 (P1) — Documented production deploy path is stated as non-functional and the approval gate claim is false
+- RLS-P1-001 (P1) — No runtime detection or alerting for tenant-isolation (RLS) regressions
+- RLS-P1-002 (P1) — Approved-membership RLS predicate reintroduced six times; pending/suspended members could access tenant data
+- SBOM-P1-001 (P1) — SBOM Is Lockfile-Only, Not an Image SBOM or Attestation
+- SBOM-P1-002 (P1) — Unsigned Images With No Provenance/Attestation
+- SBOM-P1-003 (P1) — No version identity: no tags, no product version, no commit binding in generated artifacts
+- SBOM-P1-004 (P1) — No license allow/deny policy in dependency review or any CI gate
+- SBOM-P1-005 (P1) — SBOM carries no license data and no dependency graph, limiting triage and license review
+- SC-P1-001 (P1) — Critical/high advisories persist in the dev dependency tree; `next` override is mis-scoped
+- SEARCH-P1-001 (P1) — `sanitizeSearchTerm` does not strip PostgREST `.` operator separators
+- SEARCH-P1-002 (P1) — Admin global search exposes profile PII and never tenant-scopes the organizations query
+- SEC-P1-001 (P1) — super_admin role can be granted through membership/onboarding/bulk-invite APIs without the /users/:id/role guard
+- SEC-P1-002 (P1) — PII field encryption silently degrades to reversible plaintext
+- SEC-P1-003 (P1) — Org-agnostic `requireAdmin` lets a tenant admin read other tenants' admin data
+- SEC-P1-004 (P1) — Impersonation/cross-tenant access is logged but not reviewable or alerted
+- SEC-P1-005 (P1) — Low-trust MSP role key composes into a cross-tenant read pivot
+- SEC-P1-006 (P1) — Caller-controlled reset redirect composes into an account-takeover assist
+- SEC-P1-007 (P1) — Client-onboarding mutations run without any `requirePermission` gate
+- SEC-P1-008 (P1) — M365 webhook secret is dead config while the real M365 auth value is undocumented and undeployed
+- SEC-P1-009 (P1) — Deploy pipeline does not write several secret-class env vars the API schema and compose reference
+- SEC-P1-010 (P1) — Public file-request upload authorizes with a permission unioned across all orgs
+- SECRET-P1-001 (P1) — M365 webhook secret is dead config while the real M365 auth value is undocumented and undeployed
+- SECRET-P1-002 (P1) — Deploy pipeline does not write several secret-class env vars the API schema and compose reference
+- SECRET-P1-003 (P1) — Rotation and emergency procedures target the wrong GitHub environment for the prod deploy and backup workflows
+- USE-P1-001 (P1) — Self-service password reset dead-ends: the email link lands on a page that cannot complete the reset
+- USE-P1-002 (P1) — Signup email-confirmation link points at the API host and 404s, blocking first login
+- USE-P1-003 (P1) — Admin approval queue cannot approve or reject memberships (roleId sent as empty string)
+- USE-P1-004 (P1) — Every SDK delete reports failure after succeeding because the client cannot parse empty 204 bodies
+- WH-P1-001 (P1) — Outbound webhook idempotency is non-atomic in the API and absent in the worker dispatcher
+- WH-P1-002 (P1) — M365 webhook auth depends on `M365_CLIENT_STATE` which the deploy pipeline does not write, while `M365_WEBHOOK_SECRET` is dead config
+- ACM-P2-001 (P2) — `PLATFORM_ADMIN_KEYS` (org traversal) and `ADMIN_BYPASS_KEYS` (permission bypass) are inconsistent trust sets
+- ACM-P2-002 (P2) — RLS is not a database backstop on API requests (service-role is the default client)
+- ACM-P2-003 (P2) — Write and state-transition actions gated by `view` permissions (action mismatch)
+- ACM-P2-004 (P2) — Webhook endpoint and delivery reads are available to any org member (not manage-gated)
+- ACM-P2-005 (P2) — API keys store `expires_at` but nothing enforces or prunes expiry
+- ACM-P2-006 (P2) — Webhook signing secrets are stored plaintext with no rotation or expiry
+- ACM-P2-007 (P2) — Profiles are enumerable by email/id for any authenticated user
+- ACM-P2-008 (P2) — API-key `permissions` are decorative: keys act with the creator's full permissions and the column is never enforced
+- ADMIN-P2-001 (P2) — Sensitive admin exports are not audit-logged
+- ADMIN-P2-002 (P2) — Destructive deletes are inconsistently confirmation-gated and org delete is unrecoverable
+- ADMIN-P2-003 (P2) — Bulk document operations apply without a per-row preview or elevation guardrail
+- ADMIN-P2-004 (P2) — Bulk invite creates pre-confirmed auth accounts (and org onboarding auto-approves admin)
+- ADMIN-P2-005 (P2) — No rate limiting specific to expensive/destructive admin operations
+- ADMIN-P2-006 (P2) — No undo/soft-delete is exercised despite the schema supporting it
+- ADMIN-P2-007 (P2) — Approval flows allow self-approval and cancellation of already-approved requests
+- ADMIN-P2-008 (P2) — Destructive deletes are not consistently audit-logged
+- ADMIN-P2-009 (P2) — Any org member can open the Stripe billing portal for their org (no billing-contact check)
+- AI-P2-001 (P2) — No machine-enforced agent guardrails: allowed paths, human-approval actions, and small-batch PR limits exist only as prose
+- AI-P2-002 (P2) — Prompt packs embed generated outputs alongside instructions without a machine-detectable not-instructions marker
+- AI-P2-003 (P2) — `.continue/` agent configuration defines models only and does not surface project rules or boundaries
+- AN-P2-001 (P2) — Google Analytics and Tawk.to load on public pages with no cookie-consent or opt-out gate
+- AN-P2-002 (P2) — Analytics API stores visitor IP and user-agent in plaintext despite the documented no-PII contract
+- AN-P2-003 (P2) — Storefront analytics capture is dead: the browser helper is never called and cannot pass the CSRF gate
+- AN-P2-004 (P2) — First-party analytics events have no retention or purge path
+- AN-P2-005 (P2) — Visitor-alert tracking collects IP/geo before consent and sends the visitor IP to ip-api.com over plaintext HTTP
+- API-P2-001 (P2) — Mutations remain unguarded by `requirePermission` in several routers (including a governance state transition)
+- API-P2-002 (P2) — External integration syncs report success while dropping items, and `jsm-sync` has no HTTP retry
+- API-P2-003 (P2) — Published error-handling contract contradicts the implementation (codes, 422, and `request_id`)
+- API-P2-004 (P2) — SDK retries unsafe requests without an `Idempotency-Key` (duplicate creates on transient failure)
+- API-P2-005 (P2) — Outbound webhook dispatcher uses a non-atomic idempotency check (duplicate deliveries under concurrency)
+- API-P2-006 (P2) — Search falls through to an unscoped cross-tenant query
+- API-P2-007 (P2) — OpenAPI schema is public and the Swagger UI is blocked by CSP
+- ARCH-P2-001 (P2) — Single-droplet, single-instance runtime is a hard SPOF
+- ARCH-P2-002 (P2) — API defaults to the service-role DB client (RLS bypass)
+- ARCH-P2-003 (P2) — Prometheus loads rules but has no alert routing
+- ARCH-P2-004 (P2) — API always enqueues to BullMQ while the worker backend is a separate setting with no parity check
+- ARCH-P2-005 (P2) — One non-replicated Redis backs queue, cache, idempotency and scan locks; failure degrades silently
+- BILL-P2-001 (P2) — No refund and incomplete trial/cancel state handling
+- BILL-P2-002 (P2) — `POST /billing/sync` does not paginate Stripe results
+- BILL-P2-003 (P2) — Reconciliation job has no drift detection, alerting, or tests
+- BILL-P2-004 (P2) — Failed payments produce no notification or dunning visibility
+- BILL-P2-005 (P2) — Subscription/invoice schema lacks trial, interval, and void-lifecycle fields
+- BILL-P2-006 (P2) — Stripe webhook DB writes ignore errors and still mark the event processed
+- BILL-P2-007 (P2) — Out-of-order or late-retried Stripe events can overwrite terminal payment states
+- BILL-P2-008 (P2) — Billing read endpoints fall back to all-tenant scope for cross-tenant roles without an admin-scope guard or audit
+- BP-P2-001 (P2) — `require_code_owner_reviews:false` makes the committed CODEOWNERS advisory only
+- BP-P2-002 (P2) — No break-glass / bypass process for branch protection, and no bypass audit trail
+- BP-P2-003 (P2) — No drift detection between committed branch-protection JSON and live GitHub settings
+- BP-P2-004 (P2) — Path-filtered required checks can leave `main`/`develop` protected by checks that never run
+- BP-P2-005 (P2) — Required-check guard is not run on pull requests or on branch-protection-only changes
+- BP-P2-006 (P2) — `deploy-do` manual dispatch can target prod from an arbitrary ref, bypassing the develop->main promotion model
+- BP-P2-007 (P2) — Security scan jobs are not required checks, so failing scans do not block merges
+- CHAIN-P2-001 (P2) — Intra-tenant capability escalation via unguarded mutations
+- CHAIN-P2-002 (P2) — Definer RPC identity trust composes into forged approvals/comments
+- CHAIN-P2-003 (P2) — RLS admin-gate regression composes with the API trust model into MSP admin denials
+- CHAIN-P2-004 (P2) — Retention + cascade compose into silent destruction of audit evidence
+- CHAIN-P2-005 (P2) — Internet-open SSH composes into service-role exfiltration and tenant takeover
+- CHAIN-P2-006 (P2) — Terraform version/lockfile conflict composes into un-gated infrastructure change
+- CHAIN-P2-007 (P2) — Silent worker failures + in-stack monitoring compose into undetected degradation
+- CHAIN-P2-008 (P2) — Decorative API-key permissions compose into over-privileged, RLS-bypassing machine credentials
+- CHAIN-P2-009 (P2) — Unclaimed webhook retries and dedup gaps compose into duplicate outbound deliveries
+- CHAIN-P2-010 (P2) — Guard-then-fetch worker monitoring composes into droplet-internal SSRF
+- CI-P2-001 (P2) — World-open DigitalOcean firewall mutation with no approval and unvalidated udp_port
+- CI-P2-002 (P2) — Deploy-gate secret scan is a no-op on pushes to main
+- CI-P2-003 (P2) — Production approval environment documented as having no required reviewers
+- CI-P2-004 (P2) — DB restore test reports success without asserting restore integrity
+- CI-P2-005 (P2) — Infrastructure changes are no longer gated in CI (terraform-do is manual-dispatch only)
+- CI-P2-006 (P2) — Chromatic visual-regression job is permanently non-blocking
+- CI-P2-007 (P2) — Branch protection permits admin bypass and ignores CODEOWNERS
+- CI-P2-008 (P2) — Terraform apply is manual and drift detection is not automated
+- CI-P2-009 (P2) — E2E is a required check on main but path-filtered, so PRs that miss its paths can never satisfy branch protection
+- CI-P2-010 (P2) — Backup dispatcher duplicates the backup workflows now that they exist on the default branch
+- CI-P2-011 (P2) — release.yml fails on every promotion (SIGPIPE exit 141), so no tag/release/SBOM attachment is produced
+- CTR-P2-001 (P2) — Pinned Base-Image Digests Have No Automated Refresh
+- CTR-P2-002 (P2) — Local Compose Ships Default Credentials and Repo-Wide Bind Mount
+- CTR-P2-003 (P2) — Redis Password Exposed on Process Argument Vector
+- CTR-P2-004 (P2) — Deploy Health Gate Ignores Worker Health
+- CTR-P2-005 (P2) — No Container Resource/PID Limits Beyond Memory
+- CTR-P2-006 (P2) — Deploy verifies attestations by digest but pulls and runs images by tag (TOCTOU)
+- DATA-P2-001 (P2) — Blanket `anon` DML grant + default privileges make every future table anon-writable unless RLS happens to stop it
+- DATA-P2-002 (P2) — Destructive table-replacement migrations are not transaction-wrapped
+- DATA-P2-003 (P2) — `orphan-cleanup` deletes storage objects based on a truncated listing
+- DATA-P2-004 (P2) — Migration CI dry-run diff is non-blocking; drift is never gated
+- DATA-P2-005 (P2) — `audit_logs` org-delete cascade destroys compliance history; 365-day purge has no archive
+- DATA-P2-006 (P2) — Several stores lack a retention policy and owner
+- DATA-P2-007 (P2) — Generated DB types / schema can drift from migration intent
+- DATA-P2-008 (P2) — Orphan cleanup reference query is unbounded in the object list
+- DATA-P2-009 (P2) — `updated_at` is frozen on 69 module tables (no trigger; generic PATCH drops it)
+- DATA-P2-010 (P2) — Scheduled database dump and restore test target the dev environment only; production long-term backup is unproven
+- DOC-P2-001 (P2) — Operations documentation contradicts the current pipeline and configuration
+- DOC-P2-002 (P2) — Rollback documentation is stale (Terraform push flow) and repeats the false approval claim
+- DOC-P2-003 (P2) — `docs/CI.md` documents the SBOM workflow as "Blocking" but it gates nothing
+- DOC-P2-004 (P2) — Incident-response and breach docs still describe the alerting dead-man's switch as undeployed and list closed gaps
+- DOC-P2-005 (P2) — docs/RELEASE_GATE.md is a stale status artifact contradicting the current verified-fixed register
+- DOC-P2-006 (P2) — Alert-delivery secrets (NTFY_ALERTS_*, ALERTMANAGER_*) are missing from the canonical secret docs, which still name Slack as the only channel
+- DOC-P2-007 (P2) — docs/GAP_ANALYSIS.md is an AWS-era historical draft presented as current
+- DOC-P2-008 (P2) — docs/technical-writing/migration-guide.md documents commands and a release process that do not exist
+- DOC-P2-009 (P2) — docs/audits/README.md omits the committed 905ed63 re-audit run, so the required Test check's docs-links guard fails at 7dd0402
+- DR-P2-001 (P2) — Storage backups can be silently partial or empty: listings are truncated at 1000 objects and a zero-object archive is accepted
+- DR-P2-002 (P2) — Storage backups are never restore-tested and the restore script asserts nothing
+- DR-P2-003 (P2) — No independent backup-staleness alarm; notifier delivery failures are swallowed
+- DR-P2-004 (P2) — Backup-failure alerting is present but cannot be trusted to deliver
+- DR-P2-005 (P2) — Terraform state bucket versioning is claimed but not backed by any resource
+- DR-P2-006 (P2) — The backup/DR runbook and module docs describe a client-facing product, not the platform's own recovery, and the module doc is stale
+- DR-P2-007 (P2) — Manual restore has no environment guardrail and the transient dump is written unencrypted to `/tmp`
+- DR-P2-008 (P2) — The product `backup_status` module is not wired to any real platform backup heartbeat
+- DR-P2-009 (P2) — Production uploaded files have no backup or restore target: storage workflows attach the dev environment only
+- EVOL-P2-001 (P2) — No module registry: module metadata is duplicated across six disconnected catalogs with no drift guard
+- EVOL-P2-002 (P2) — Webhook UI advertises 11 event types but only 2 are ever dispatched; no event catalog exists
+- FEAT-P2-001 (P2) — API keys cannot authenticate; the feature is dead
+- FEAT-P2-002 (P2) — Demo/test data can be seeded into a fresh production database
+- FEAT-P2-003 (P2) — Store analytics is unwired end-to-end: no client call sites, no admin UI consumer, and the summary RPC is undefined
+- FEAT-P2-004 (P2) — Feature docs promise AI draft review gates, but `ai_draft_outputs` has no write path
+- FEAT-P2-005 (P2) — Three tables are served by two divergent API surfaces (sop_library, insurance_evidence, satisfaction_pulses)
+- FILE-P2-001 (P2) — `avatars` bucket is used by code but declared nowhere with no storage RLS policy
+- FILE-P2-002 (P2) — Free-form `storageBucket`/`storagePath` on create/update allows signing arbitrary in-bucket objects
+- FILE-P2-003 (P2) — No content/AV scanning and no bucket-level MIME/size limits on the documents bucket
+- FILE-P2-004 (P2) — No backup or restore path for uploaded objects (durability for files)
+- FILE-P2-005 (P2) — Content sniffing does not cover Office, archive, text/JSON, or polyglot payloads
+- FILE-P2-006 (P2) — CSV exports do not neutralize formula injection and default to all rows when `organization_id` is omitted
+- FILE-P2-007 (P2) — Document download authorization bypasses the `can_read_document` visibility model
+- FILE-P2-008 (P2) — Members with `documents:create` can write objects straight to the documents bucket, bypassing upload validation
+- HYGIENE-P2-001 (P2) — Committed prompt/audit corpus bloats the repo and review surface
+- HYGIENE-P2-002 (P2) — Duplicate product catalogs have diverged
+- HYGIENE-P2-003 (P2) — 17 tracked shell scripts lack the exec bit; documented ./scripts/... commands fail
+- HYGIENE-P2-004 (P2) — AdminDocumentsCenterClient.tsx is a 2,322-line single component
+- INFRA-P2-001 (P2) — Prometheus alert rules have no delivery path (no Alertmanager)
+- INFRA-P2-002 (P2) — Dev droplet capacity is under-provisioned and the CI value drifts from dev.tfvars.example
+- INFRA-P2-003 (P2) — Operations documentation contradicts the current pipeline and configuration
+- INFRA-P2-004 (P2) — Integration/security env vars referenced by the app schema are not delivered by the deploy pipeline
+- INFRA-P2-005 (P2) — Redis container hardening was weakened and its password remains in process arguments
+- INFRA-P2-006 (P2) — Manual rollback script cannot authenticate to GHCR and defaults to the wrong image prefix
+- INFRA-P2-007 (P2) — Deploy health gate ignores the monitoring and reverse-proxy containers
+- INV-P2-001 (P2) — Committed generated artifacts drift without a gate
+- INV-P2-002 (P2) — Duplicate schema bootstrap SQL can be mistaken for the source of truth
+- IR-P2-001 (P2) — Several Prometheus metrics are declared but not wired, limiting incident diagnosis
+- IR-P2-002 (P2) — No alerting on audit-trail gaps or privileged (impersonation/admin) abuse
+- IR-P2-003 (P2) — No alerting when webhook dead-letters accumulate or payment reconciliation drifts
+- IR-P2-004 (P2) — Secrets rotation is documented but has no exercised evidence
+- IR-P2-005 (P2) — No platform status/communication surface for MCT's own outages
+- IR-P2-006 (P2) — Migration dry-run result is discarded in CI
+- IR-P2-007 (P2) — Platform IR and breach plans are stale on the deployed alerting path and reference template files that do not exist in docs/
+- IR-P2-008 (P2) — On-call rota and escalation contacts are unassigned, so the incident plan is not operational
+- IR-P2-009 (P2) — No tabletop exercise has been run and the scenario catalog is stale
+- IR-P2-010 (P2) — Prometheus alert-rule unit tests are not wired into CI
+- MOB-P2-001 (P2) — Service worker apps/web/public/sw.js is never registered, so PWA/offline support is inert
+- MOB-P2-002 (P2) — sw.js cache strategy would persist authenticated API responses and all GET 200s if registered as-is
+- MOB-P2-003 (P2) — No mobile-viewport E2E or accessibility coverage (Desktop Chrome only)
+- MOB-P2-004 (P2) — About 41% of form controls render below 16px and trigger iOS Safari focus zoom
+- MOB-P2-005 (P2) — Several modal dialogs have no max-height or vertical scroll and clip on small screens
+- MT-P2-001 (P2) — Admin global search lists all organizations and can fall through unscoped
+- MT-P2-002 (P2) — By-id org filters are conditional, so they fail open if the org gate is not reached
+- MT-P2-003 (P2) — Storage writer path and RLS org-derivation disagree (`orgs/<uuid>/` vs `<uuid>/`)
+- MT-P2-004 (P2) — Realtime/SSE notification channel is scoped by user only, with no org assertion
+- MT-P2-005 (P2) — Platform-admin cross-tenant access is role-key based, broad, and unalerted
+- MT-P2-006 (P2) — Platform-wide report generators run as service role with no tenant guard on scope inputs
+- MT-P2-007 (P2) — Client-portal entitlement routes order requireAdmin before requireOrgAccess, bypassing the org-pinned admin check
+- MT-P2-008 (P2) — Platform-wide store intake and analytics endpoints are readable by any tenant admin with no cross-tenant gate
+- NOTIF-P2-001 (P2) — Web Push channel is entirely absent (no subscriptions, no VAPID, no service worker)
+- NOTIF-P2-002 (P2) — SMTP remains optional; email silently degrades to no-op in production
+- NOTIF-P2-003 (P2) — Worker lacks an `unhandledRejection` handler
+- NOTIF-P2-004 (P2) — Scheduled reminder inserts and email sends are not atomic; retries can double-send
+- NOTIF-P2-005 (P2) — Sensitive ticket content is stored and emailed verbatim with no sensitivity filter
+- NOTIF-P2-006 (P2) — API inline email fallback has no retry and ignores the send result
+- NOTIF-P2-007 (P2) — Realtime/SSE notification channel is scoped by user only, with no org assertion
+- NOTIF-P2-008 (P2) — Backup-failure alerting is present but cannot be trusted to deliver
+- NOTIF-P2-009 (P2) — notifyAndEmail enqueues email even when the in-app notification was deduped
+- NOTIF-P2-010 (P2) — Notification delivery SLO counts a queued email hand-off as success and excludes worker send outcomes
+- NOTIF-P2-011 (P2) — Alertmanager→ntfy critical alert delivery is optional in production and has no in-repo exercise evidence
+- NOTIF-P2-012 (P2) — One-click unsubscribe is an unauthenticated GET with no expiry or confirmation; mail-security link scanners can silently opt users out
+- OBS-P2-001 (P2) — Prometheus alert rules are not routed anywhere
+- OBS-P2-002 (P2) — No committed dashboards or SLO/error-budget definitions
+- OBS-P2-003 (P2) — Backup/restore is scheduled but not verified on the deployed branch
+- OBS-P2-004 (P2) — Several Prometheus metrics are declared but not wired, limiting incident diagnosis
+- OBS-P2-005 (P2) — No alerting on audit-trail gaps or privileged (impersonation/admin) abuse
+- OBS-P2-006 (P2) — No alerting when webhook dead-letters accumulate or payment reconciliation drifts
+- OBS-P2-007 (P2) — `/health` publicly discloses provider configuration and Redis errors
+- OBS-P2-008 (P2) — Availability detection lives inside the failed domain; no external dead-man's switch or alert delivery
+- OBS-P2-009 (P2) — Most golden-signal and SLO metrics have no alert rules (latency, circuit breaker, auth failures, notification/webhook failures, worker jobs, queue depth)
+- OBS-P2-010 (P2) — HTTP metric labels use the raw request path, creating unbounded Prometheus series cardinality
+- OBS-P2-011 (P2) — Web error tracking is silently disabled in production (code reads NEXT_PUBLIC_SENTRY_DSN; deploy provides SENTRY_DSN)
+- OBS-P2-012 (P2) — Alerting configuration is not validated in CI and the deploy health gate ignores Prometheus/Alertmanager
+- OBS-P2-013 (P2) — Empty METRICS_TOKEN has no deploy guard and is documented as optional; it breaks the API scrape and fires a false service-down alert
+- OBS-P2-014 (P2) — Alert delivery and the dead-man's switch are configured but never exercised end-to-end; no monitoring-of-monitoring rules
+- OBS-P2-015 (P2) — Container logs are not persisted off-box and are destroyed by the deploy's `compose down`
+- OBS-P2-016 (P2) — No repository evidence of external uptime checks for platform endpoints; an edge/proxy failure is undetected in-stack
+- OBS-P2-017 (P2) — External uptime probe is permanently red on api.mainecybertech.com while the API answers on app.mainecybertech.com/api, and the docs disagree on why
+- ORCH-P2-001 (P2) — docs/audits/README.md documents a run contract that contradicts the pack and the actual runs, and its Runs table omits all three repo-deep-dive runs
+- PERF-P2-001 (P2) — Request metrics label uses the raw URL path, so Prometheus cardinality grows with every resource ID
+- PERF-P2-002 (P2) — Public storefront pages are force-dynamic and uncached; each page view costs two Supabase reads
+- PERF-P2-003 (P2) — resolveEffectivePermissions is uncached and fans out 4-6 queries per gated request
+- PERF-P2-004 (P2) — Bulk invite performs 4 sequential Supabase calls per invite and cannot finish 500 invites inside the 30s request timeout
+- PERF-P2-005 (P2) — Each SSE notification stream opens its own Supabase Realtime channel with no connection cap
+- PERF-P2-006 (P2) — POST /billing/sync does not paginate Stripe results
+- PRIV-P2-001 (P2) — Google Analytics and Tawk.to load on public pages with no cookie-consent or opt-out gate
+- PRIV-P2-002 (P2) — Consent is captured only in the browser and never recorded or enforced server-side; the store quote form collects PII with no consent at all
+- PRIV-P2-003 (P2) — Published retention statement (three years) contradicts the 90-day contact-form PII purge
+- PRIV-P2-004 (P2) — Audit-log PII redaction is a shallow key-name filter; person names and job titles are persisted for 365 days
+- PRIV-P2-005 (P2) — No data-subject access/export/erasure path or DSAR runbook; offboarding never removes profile or auth records
+- PRIV-P2-006 (P2) — Visitor IP addresses are sent to ip-api.com over plaintext HTTP for geolocation
+- PRIV-P2-007 (P2) — Privacy governance documentation set is missing and the published vendor list omits processors used in code
+- PRIV-P2-008 (P2) — Public store quote/lead PII has no automated retention or purge path and is excluded from the published retention statement
+- REL-P2-001 (P2) — `CHANGELOG.md` is stale relative to HEAD for the final commits in the delta
+- REL-P2-002 (P2) — No explicit Breaking Changes or upgrade manifest despite 34 migrations and RLS/entitlement behavior changes
+- REL-P2-003 (P2) — No release-notes or GitHub Release body template; release body must be authored ad hoc
+- REL-P2-004 (P2) — Rollback documentation is stale (Terraform push flow) and repeats the false approval claim
+- REL-P2-005 (P2) — Release docs claim `main` is far behind `develop`; the repo state is the opposite
+- REL-P2-006 (P2) — Release workflow fails on every promotion push, so no tag or GitHub Release is ever created
+- RES-P2-001 (P2) — Worker process has no `unhandledRejection` handler
+- RES-P2-002 (P2) — `WORKER_TIMEOUT` is not a real task timeout; generic task failures have no DLQ
+- RES-P2-003 (P2) — `QUEUE_BACKEND` default `inline` diverges from production and can silently stall all queued work
+- RES-P2-004 (P2) — External `fetch` calls without `AbortController` in `public.ts` and `auth.ts`
+- RES-P2-005 (P2) — Availability detection lives inside the failed domain; no external dead-man's switch or alert delivery
+- RES-P2-006 (P2) — Backup/restore recovery is configured but not evidenced as exercised, and the restore test verifies only table counts
+- RES-P2-007 (P2) — Inbound webhook handlers ACK 200 while ignoring persistence errors, dropping events during DB degradation
+- RES-P2-008 (P2) — Worker queue degradation is invisible to health checks and alerting
+- RES-P2-009 (P2) — Graceful shutdown is not effective in production: Redis handles are never closed and Docker's 10s stop timeout kills the worker before its 30s drain budget
+- RES-P2-010 (P2) — Deploys are stop-the-world: `docker compose down` before `up` takes the whole stack offline with no rolling replace
+- RLS-P2-001 (P2) — MSP platform-admin role keys missing from post-5302129 admin-gate RLS policies
+- RLS-P2-002 (P2) — webhook_dead_letters has no user-scoped DELETE policy while the API deletes via the RLS client
+- RLS-P2-003 (P2) — approve_project_task / add_project_task_comment trust a caller-supplied user id and are granted to authenticated
+- RLS-P2-004 (P2) — API defaults to the service-role DB client (RLS bypass)
+- RLS-P2-005 (P2) — document_versions UPDATE policy still uses the raw unfiltered membership predicate
+- RLS-P2-006 (P2) — store_quotes public INSERT policy allows arbitrary organization_id after tenant scoping
+- RLS-P2-007 (P2) — Auth write endpoints call GoTrue admin APIs through the RLS-scoped client
+- SBOM-P2-001 (P2) — SBOM is artifact-only: not release-bound, not commit-bound, not attested
+- SBOM-P2-002 (P2) — No container/image SBOM; base-image OS packages untracked
+- SBOM-P2-003 (P2) — `docs/CI.md` documents the SBOM workflow as "Blocking" but it gates nothing
+- SBOM-P2-004 (P2) — No artifact provenance, attestation, or signing; `id-token: write` requested but unused
+- SBOM-P2-005 (P2) — License policy not enforced in CI; non-OSI and LGPL licenses present
+- SBOM-P2-006 (P2) — SBOM is generated but not bound to a commit or attached to releases/images
+- SBOM-P2-007 (P2) — Dependabot PR backlog is large and not triaged; one stale update conflicts with resolved versions
+- SBOM-P2-008 (P2) — `licenses.json` is committed but unenforced and unverified
+- SBOM-P2-009 (P2) — License exceptions are matched by license string only - documented package scope and UNKNOWN fail open
+- SBOM-P2-010 (P2) — Exception `expires` dates are documentation-only and never enforced by the gates
+- SBOM-P2-011 (P2) — Deploy verifies the tag's attestation but pulls by mutable tag; the SBOM predicate is never verified
+- SBOM-P2-012 (P2) — No scheduled dependency vulnerability re-scan - advisories are only evaluated on PRs and deploys
+- SC-P2-001 (P2) — No image-level container scanning; Trivy scans filesystem only
+- SC-P2-002 (P2) — No artifact provenance, attestation, or signing; `id-token: write` requested but unused
+- SC-P2-003 (P2) — License policy not enforced in CI; non-OSI and LGPL licenses present
+- SC-P2-004 (P2) — SBOM is generated but not bound to a commit or attached to releases/images
+- SC-P2-005 (P2) — Dependabot PR backlog is large and not triaged; one stale update conflicts with resolved versions
+- SC-P2-006 (P2) — `licenses.json` is committed but unenforced and unverified
+- SC-P2-007 (P2) — Swagger UI loads an unpinned third-party script without SRI
+- SC-P2-008 (P2) — Deploy-gate secret scan is a no-op on pushes to main
+- SC-P2-009 (P2) — Secret scanning is diff-scoped only; no full-history scan artifact
+- SC-P2-010 (P2) — Produced Terraform `prod.tfvars` is tracked despite `.gitignore` intending to exclude it
+- SC-P2-011 (P2) — Scheduled full-history secret scan has no failure notification
+- SEARCH-P2-001 (P2) — Raw search terms persisted in plaintext `audit_logs.metadata`
+- SEARCH-P2-002 (P2) — Portal search omits documents despite SDK and documentation contract
+- SEARCH-P2-003 (P2) — Admin search UI silently discards the documents result set
+- SEARCH-P2-004 (P2) — No search pagination or result counts; hard 5-result ceiling
+- SEARCH-P2-005 (P2) — Search query analytics metric is dead and the analytics summary RPC is missing
+- SEARCH-P2-006 (P2) — Prefix/wildcard mismatch: no btree on prefix columns and no full-text (`tsvector`) search
+- SEARCH-P2-007 (P2) — Typeahead calls full search endpoints without rate limiting or a dedicated autocomplete surface
+- SEARCH-P2-008 (P2) — Admin global search returns private/internal documents without applying the `can_read_document` visibility filter
+- SEARCH-P2-009 (P2) — Search router bypasses the org-pinned admin check, so a tenant admin can read another tenant's search results
+- SEC-P2-001 (P2) — Worker monitoring checks are guard-then-fetch (DNS-rebinding TOCTOU); webhook path is pinned but uptime/website checks and SSL probe are not
+- SEC-P2-002 (P2) — PII field encryption is additive: plaintext profile columns remain the source of truth and are still returned
+- SEC-P2-003 (P2) — Global role catalog is mutable by any org's roles:manage holder (roles are not org-scoped)
+- SEC-P2-004 (P2) — API-key scopes are stored but never enforced; keys act with the creating user's full permissions and always bypass RLS
+- SEC-P2-005 (P2) — MFA enforcement is opt-in and the deployed default is false
+- SEC-P2-006 (P2) — Secret scanner echoes the matched secret value into CI logs
+- SEC-P2-007 (P2) — Webhook SSRF guard has a DNS-rebinding TOCTOU window
+- SEC-P2-008 (P2) — Client-onboarding mutations run without `requirePermission` (authorization outlier)
+- SEC-P2-009 (P2) — MSP platform roles are cross-tenant for org access but not for permissions (inconsistent trust model)
+- SEC-P2-010 (P2) — Forgot-password email redirect still uses attacker-controlled `Origin` header
+- SEC-P2-011 (P2) — `GET /analytics/summary` calls a `get_analytics_summary` RPC that no migration defines
+- SEC-P2-012 (P2) — RLS is bypassed on API requests by default (service-role is the default client)
+- SEC-P2-013 (P2) — CAPTCHA/Turnstile is bypassed when the secret is unset
+- SEC-P2-014 (P2) — `/health` publicly discloses provider configuration and Redis errors
+- SEC-P2-015 (P2) — Bulk invite creates pre-confirmed auth accounts (and org onboarding auto-approves admin)
+- SEC-P2-016 (P2) — `PLATFORM_ADMIN_KEYS` (org traversal) and `ADMIN_BYPASS_KEYS` (permission bypass) are inconsistent trust sets
+- SEC-P2-017 (P2) — API keys store `expires_at` but nothing enforces or prunes expiry
+- SEC-P2-018 (P2) — API keys cannot authenticate; the feature is dead
+- SECRET-P2-001 (P2) — Secret rotation inventory and GitHub matrix lag the schema/compose; seven keys uncovered
+- SECRET-P2-002 (P2) — Rotation reminder workflow referenced in docs does not exist; rotation log shows no real rotation
+- SECRET-P2-003 (P2) — Secret scanning is diff-scoped only; no full-history scan artifact
+- SECRET-P2-004 (P2) — Produced Terraform `prod.tfvars` is tracked despite `.gitignore` intending to exclude it
+- SECRET-P2-005 (P2) — Workflow-scope PAT SCHEDULE_DISPATCH_TOKEN omitted from secret inventory and rotation policy
+- SECRET-P2-006 (P2) — Secrets rotation is documented but has no exercised evidence
+- SECRET-P2-007 (P2) — Incident response points at a secret-rotation runbook that is not in docs/
+- SECRET-P2-008 (P2) — Terraform plan artifacts carry sensitive variable values off the runner
+- SECRET-P2-009 (P2) — JWT rotation runbook rotates the API verification copy, not the Supabase signing secret, and references a nonexistent JWT_EXPIRY
+- TEST-P2-001 (P2) — Accessibility gate width contradicts the code (docs say 19 pages, code scans 25)
+- TEST-P2-002 (P2) — Worker data-mutating scan tasks still lack a dedicated test suite; branch threshold is a no-op
+- TEST-P2-003 (P2) — E2E flakiness is documented but unresolved, and the prod-only gate masks it
+- TEST-P2-004 (P2) — Load tests exist but are manual-only with no enforced thresholds or failure injection
+- TEST-P2-005 (P2) — Orphan-cleanup tests model `storage.list` incorrectly, masking the data-loss bug
+- TEST-P2-006 (P2) — Route suites stub authorization middleware, so new routes can regress silently
+- TEST-P2-007 (P2) — docs/testing.md coverage-threshold table contradicts the ratcheted jest configs
+- TEST-P2-008 (P2) — Test/suite totals in AGENTS.md and README are stale and never verified against the tree
+- TEST-P2-009 (P2) — E2E is a required check on `main` but its PR path filter can leave it unreported
+- TEST-P2-010 (P2) — The promoted commit has no green Test artifact: PR #281 merged before any required check completed and its Test run is red
+- USE-P2-001 (P2) — Bulk document operations report success without per-item results (false success on partial failure)
+- USE-P2-002 (P2) — Ticket lists and dashboard counts silently stop at 25 rows (no pagination) in portal and admin
+- USE-P2-003 (P2) — Admin 'Delete Ticket' only closes the ticket; copy promises a restorable soft-delete and Restore is unreachable
+- USE-P2-004 (P2) — Ticket notification deep links 404 in the portal (/portal/tickets/* does not exist)
+- USE-P2-005 (P2) — Notification surfaces swallow failures: preferences save silently fails and a failed list load renders a false empty state
+- USE-P2-006 (P2) — NotificationBell SSE fallback leaks a 30-second polling interval per component instance
+- USE-P2-007 (P2) — Client-onboarding create swallows the redirect: success shows a cryptic error and invites duplicate records
+- USE-P2-008 (P2) — Onboarding checklist items cannot be completed anywhere in the web app
+- USE-P2-009 (P2) — Session/MFA expiry has no user-facing explanation and the ?mfa=required step-up redirect is ignored
+- USE-P2-010 (P2) — Privileged membership/approval actions lack confirmation and success feedback (suspend/reject are one click)
+- USE-P2-011 (P2) — Change Password form collects a Current Password it never checks and advertises a weaker rule than the API enforces
+- UX-P2-001 (P2) — Ticket-card bulk selection nests a checkbox and a status button inside a Link, so ticking a ticket also navigates
+- UX-P2-002 (P2) — Inline async action errors are not announced by assistive tech in ~44 components, contradicting the documented convention
+- UX-P2-003 (P2) — Several dialogs have no max-height or internal scroll, so tall forms are clipped on small viewports
+- UX-P2-004 (P2) — 89 of 319 pages have no page-specific title (79 dynamic detail pages + 10 static), so browser and AT titles are generic
+- UX-P2-005 (P2) — @mct/ui primitives are largely bypassed: 6 files import Button, 1 uses Input/Dialog/Badge, while the app hand-rolls 234 raw cyber-button* usages and four Chip copies
+- WH-P2-001 (P2) — M365 inbound notifications have no enforced timestamp/replay window
+- WH-P2-002 (P2) — Inline dispatcher records a fixed `retry_count` and duplicates the worker's retry logic
+- WH-P2-003 (P2) — Outbound and DLQ delivery outcomes are not metered; only inbound success increments the counter
+- WH-P2-004 (P2) — Inbound Jira/JSM signature falls back to re-serialized JSON when `req.rawBody` is absent
+- WH-P2-005 (P2) — `webhook_dead_letters` has no DELETE policy while the API deletes via the RLS client
+- WH-P2-006 (P2) — No per-provider payload schema or size cap on webhook ingress (global 10mb JSON limit)
+- WH-P2-007 (P2) — Webhook endpoint and delivery reads are available to any org member (not manage-gated)
+- WH-P2-008 (P2) — Webhook signing secrets are stored plaintext with no rotation or expiry
+- WH-P2-009 (P2) — Webhook SSRF guard has a DNS-rebinding TOCTOU window
+- WH-P2-010 (P2) — No alerting when webhook dead-letters accumulate or payment reconciliation drifts
+- WH-P2-011 (P2) — Admin dead-letter retry of inline-dispatched failures no-ops and deletes the DLQ row
+- WH-P2-012 (P2) — `webhook-retry` has no row claim: concurrent retry runs can double-send deliveries
+- ACM-P3-001 (P3) — Client-side permission hiding is UI-only for several module actions
+- ACM-P3-002 (P3) — No catalog-lint: referenced permission keys are not checked against the `permissions` table
+- ACM-P3-003 (P3) — Public route surface is broad and has no single documented inventory
+- ACM-P3-004 (P3) — `GET /roles/:id` and `GET /me/permissions` are readable without an admin gate
+- ACM-P3-005 (P3) — RLS policies reference `manage` permissions that no role holds (dead predicates)
+- ACM-P3-006 (P3) — `GET /api-keys` lists org keys for any org member (no `api-keys:view` gate)
+- ACM-P3-007 (P3) — AI copilot endpoints have no permission gate (any org member can run summarization and reply drafts)
+- ACM-P3-008 (P3) — ACM-P3-008
+- ADMIN-P3-001 (P3) — Web admin gate accepts a broader role set than the API `requireAdmin` (guard/API divergence)
+- ADMIN-P3-002 (P3) — Active-org cookie setter performs no server-side authorization
+- ADMIN-P3-003 (P3) — Admin global search and dashboard expose global resource names/counts to any admin
+- ADMIN-P3-004 (P3) — Global store catalog is mutable by any tenant admin
+- AI-P3-001 (P3) — Embedded repo maps and historical pack outputs still reference the pre-rename repository path
+- AI-P3-002 (P3) — `AGENTS.md` retains a large self-contradicting snapshot history that an agent must disambiguate
+- AI-P3-003 (P3) — Secrets guidance is spread across instructions without a linked canonical runbook
+- AI-P3-004 (P3) — Committed audit corpus under docs/audits/ is outside the untrusted-data boundary and has no integrity pin
+- AI-P3-005 (P3) — Audit output conventions in docs/audits/README.md are stale vs the committed runs
+- AI-P3-006 (P3) — Prompt-pack provenance verification runs only at the deploy gate, not on PRs
+- AI-P3-007 (P3) — No AI-authorship disclosure or provenance policy in contribution guidance
+- AI-P3-008 (P3) — AGENTS.md Known Debt carries a stale promotion binding and a now-false branch-direction claim
+- AN-P3-001 (P3) — Analytics has no consent-mode signalling and no documented event/retention governance
+- AN-P3-002 (P3) — Anonymous direct inserts to store_analytics_events bypass API validation, rate limits, and retention
+- AN-P3-003 (P3) — Consent is not recorded and the privacy policy omits first-party tracking stores and opt-out mechanics
+- AN-P3-004 (P3) — Error telemetry has no explicit PII scrubbing, retention, or vendor disclosure
+- AN-P3-005 (P3) — Consent withdrawal does not unload Tawk.to; the widget keeps running until the next page load
+- AN-P3-006 (P3) — Analytics track endpoint accepts arbitrary event names and unbounded metadata; the event registry's privacy rules are not enforced server-side
+- API-P3-001 (P3) — Minor contract inconsistencies (`rateLimitByUser` non-enveloped 429, capped raw-array lists, no `request_id`)
+- API-P3-002 (P3) — OpenAPI artifact is not bound to a commit and the CI audit warns (not fails) on documented-but-missing routes
+- API-P3-003 (P3) — Realtime client has no reconnect path; server emits `auth_expired` with no documented client handling
+- API-P3-004 (P3) — `/metrics` is fully public when `METRICS_TOKEN` is unset
+- API-P3-005 (P3) — Batch Jira/JSM/M365 sync tasks are registered but never dispatched (no scheduler or enqueue path)
+- API-P3-006 (P3) — M365 calendar sync recreates a calendar event for every task on each run (duplicate events, no idempotency)
+- API-P3-007 (P3) — M365 inbound webhook acknowledges but only processes the first notification of a batch
+- API-P3-008 (P3) — GET /dynamic-forms/export.csv ignores format and returns JSON, contradicting the OpenAPI contract
+- ARCH-P3-001 (P3) — Web middleware gates routes on an unverified JWT `exp`
+- ARCH-P3-002 (P3) — Architecture diagram and ADR 004 contradict the as-built runtime
+- ARCH-P3-003 (P3) — `NEXT_PUBLIC_API_URL` runtime override is inert for server-side code; docs claim internal SSR routing
+- ARCH-P3-004 (P3) — Request timeout returns 408 but never cancels the handler
+- ARCH-P3-005 (P3) — Worker metrics/health are unauthenticated while the API gates /metrics
+- BILL-P3-001 (P3) — Webhook raw body typed as `string` but consumed as `Buffer`
+- BILL-P3-002 (P3) — Billing email stored in plaintext and raw Stripe payment-method id rendered to users
+- BILL-P3-003 (P3) — `invoice.paid` paid_at handling writes epoch dates (sync) or throws when status_transitions is missing (webhook)
+- BILL-P3-004 (P3) — Payments list uses an inner join, hiding payments not linked to an invoice
+- BILL-P3-005 (P3) — Entitlement override cannot revoke all modules (all-disabled falls back to the subscription set)
+- BILL-P3-006 (P3) — Subscription mirror ignores seat quantity and the billing summary excludes trialing plans
+- BILL-P3-007 (P3) — Portal 'Sync from Stripe' button is shown to client roles that lack billing:manage
+- BILL-P3-008 (P3) — Billing docs contradict the implementation (sync gate, webhook verification, reconcile source, payment statuses)
+- BILL-P3-009 (P3) — Entitlement enforcement fails open on billing-state lookup errors with no metric or alert
+- BP-P3-001 (P3) — Hotfix and emergency-deploy documentation is a stub and partially stale
+- BP-P3-002 (P3) — Dependabot has no security-update separation or triage SLA, and PR template has no enforced link to required checks
+- BP-P3-003 (P3) — Operator checklists disagree on which prod environments need required reviewers (`prod` vs `prod-approval`)
+- BP-P3-004 (P3) — check-required-checks guard mis-models explicit job names combined with matrices
+- BP-P3-005 (P3) — No CODEOWNERS validation; invalid team handles silently disable owner-review enforcement
+- CI-P3-001 (P3) — actionlint/shellcheck workflow lint issues (SC2086/SC2129/SC2002/SC2015)
+- CI-P3-002 (P3) — Over-broad workflow token permissions (unused write scopes)
+- CI-P3-003 (P3) — StrictHostKeyChecking=no in the deploy health check
+- CI-P3-004 (P3) — `main` is far behind `develop`; scheduled jobs fire only from the default branch
+- CI-P3-005 (P3) — Secret scanner misses the platform's own token formats and scans diffs only
+- CI-P3-006 (P3) — Unused permission grants across deploy/test workflows
+- CI-P3-007 (P3) — DB restore test uses an unpinned `postgres:16-alpine` image
+- CI-P3-008 (P3) — No release/tagging workflow and no post-merge release artifact
+- CI-P3-009 (P3) — e2e is required on `main` but the documented flakiness makes it an unstable hard gate
+- CI-P3-010 (P3) — Missing per-job timeouts and minor workflow hygiene gaps
+- CI-P3-011 (P3) — Workflow documentation drift: docs list a removed workflow, omit a live one, and misstate gate behavior
+- CI-P3-012 (P3) — Badge/report generation is a stub and is not wired into CI
+- CI-P3-013 (P3) — workflow_dispatch inputs are interpolated directly into run: scripts (rollback_sha/deploy_target)
+- CI-P3-014 (P3) — NEW: Storybook webpack fix landed but CI docs/comments still describe the Chromatic build as broken
+- CTR-P3-001 (P3) — Missing `--start-period` on API and Worker Healthchecks
+- CTR-P3-002 (P3) — Broad `.dockerignore` `*.md`/`*.txt`/`*.log` Could Mask Needed Build Files
+- CTR-P3-003 (P3) — Caddy runs with a writable rootfs and a writable Caddyfile bind mount
+- CTR-P3-004 (P3) — Prometheus has no healthcheck and observability is outside the deploy health gate
+- CTR-P3-005 (P3) — Image-level HEALTHCHECK for api and worker lacks `--start-period`
+- CTR-P3-006 (P3) — infra/digitalocean operator docs and `.env.example` drift from the deployed stack
+- CTR-P3-007 (P3) — Third-party pinned images are not vulnerability-scanned in CI
+- CTR-P3-008 (P3) — No Dockerfile lint gate in CI
+- DATA-P3-001 (P3) — Pre-baseline policies created without a preceding `drop policy if exists`
+- DATA-P3-002 (P3) — Migration version gaps undocumented; brief states 141 migrations, tree has 127
+- DATA-P3-003 (P3) — Retention purge boundary behaviour is untested; the mock ignores the age cutoff and the PII purge has no tests
+- DATA-P3-004 (P3) — Status-like text columns are not constrained by CHECK/enum, so app vocabulary is not enforced by the DB
+- DATA-P3-005 (P3) — No down-migrations and destructive migrations lack rollback notes despite the repo's own naming guide
+- DATA-P3-006 (P3) — Generated DB types carry no commit/version binding
+- DATA-P3-007 (P3) — Governance CRUD accepts free-text statuses that the new CHECK constraints reject with a 500
+- DET-P3-001 (P3) — [SEC] gitleaks not installed (secret scan skipped)
+- DET-P3-002 (P3) — [SUPPLY] 3 container image(s) without a digest pin
+- DOC-P3-001 (P3) — Dated point-in-time audit reports are mixed with current runbooks with no archive/staleness marker
+- DOC-P3-002 (P3) — `AGENTS.md` documents the worker consumer incorrectly and omits the queue backend divergence
+- DOC-P3-003 (P3) — Migration/workflow/OpenAPI counts drift in README.md, docs/ONBOARDING.md and the endpoint inventory, and the count guard does not cover them
+- DOC-P3-004 (P3) — docs/MONITORING_AND_ALERTING.md contradicts the now-wired metrics and the fail-closed /metrics gate
+- DOC-P3-005 (P3) — docs/TROUBLESHOOTING.md and docs/ONBOARDING.md name wrong deploy secrets/containers and stale memory limits
+- DOC-P3-006 (P3) — docs/audits/README.md index omits the committed repo-deep-dive runs and its naming contract does not match them
+- DOC-P3-007 (P3) — scripts/README.md omits 14 scripts, including every CI guard script
+- DOC-P3-008 (P3) — AGENTS.md production compose table omits the alertmanager service
+- DOC-P3-009 (P3) — Migration naming docs contradict each other and the repo's actual 5302xxx sequence
+- DOC-P3-010 (P3) — docs/CI.md and chromatic.yml describe the Storybook webpack pin as pending work, but it is already applied
+- DR-P3-001 (P3) — Platform DR drill plan is only in a dated audit folder and the drill ledger is empty
+- DR-P3-002 (P3) — Duplicate backup-script logic in bash and PowerShell risks drift
+- DR-P3-003 (P3) — Unpinned Postgres image in the restore test; no explicit jq/aws tool pinning in the backup job
+- DR-P3-004 (P3) — Documented backup/DR export endpoints do not exist
+- DR-P3-005 (P3) — Terraform state restore guidance lacks a tested procedure
+- DR-P3-006 (P3) — Backup staleness check still prefers the retired SCHEDULE_DISPATCH_TOKEN over GITHUB_TOKEN
+- DR-P3-007 (P3) — New DR drill plan's restore dependency table still documents the legacy full-URI S3_BACKUP_BUCKET
+- EVOL-P3-001 (P3) — Feature flags are a hardcoded static map with no managed service, change log, or targeting
+- EVOL-P3-002 (P3) — No catalog-lint: referenced permission keys are not checked against the permissions table
+- EVOL-P3-003 (P3) — No committed event catalog or webhook documentation for consumers
+- EVOL-P3-004 (P3) — API versioning policy is documented but not enforced (no Sunset/Deprecation mechanism; spec version unrelated to the app version)
+- EVOL-P3-005 (P3) — Config model is duplicated per app; there is no shared env-schema package
+- EVOL-P3-006 (P3) — Shared-package extraction is deferred: @mct/sdk and @mct/ui are source-only, and DB client setup is duplicated
+- EVOL-P3-007 (P3) — Migration-strategy docs contradict each other and the tree (ISO vs sequential naming; seed.sql references)
+- EVOL-P3-008 (P3) — Roles, plan-to-module mapping, and status vocabularies are hardcoded with no parity guard
+- EVOL-P3-009 (P3) — Two overlapping outbound-webhook consumer docs (docs/EVENTS.md, docs/WEBHOOKS.md); only one is guarded and they already diverge
+- FEAT-P3-001 (P3) — OpenAPI/Swagger surface is public and its UI is blocked by the API CSP
+- FEAT-P3-002 (P3) — Eleven admin Store pages are static JSON views with disabled 'Coming soon' actions but appear as first-class admin-nav features
+- FEAT-P3-003 (P3) — Duplicate scorecard docs; one documents a nonexistent /api/v1/scoreboard API and four tables
+- FEAT-P3-004 (P3) — `portal_module_settings` is an orphaned table: per-org module configuration is never read or written
+- FEAT-P3-005 (P3) — Dead server action `updateProjectBasics` remains exported but is never imported
+- FEAT-P3-006 (P3) — Ticket status has no transition validation; any state can jump to any other
+- FEAT-P3-007 (P3) — 2026-08-05 module audit docs still list fixed bugs and dead navigation as current
+- FEAT-P3-008 (P3) — Seven server actions in the admin project detail are exported but never imported by product code
+- FILE-P3-001 (P3) — Share endpoint has no per-token rate limit
+- FILE-P3-002 (P3) — Client logo accept list still advertises SVG that the server rejects
+- FILE-P3-003 (P3) — Documentation drift on file types and size limits; no documents/upload runbook
+- FILE-P3-004 (P3) — Storage restore path exists but has never been exercised
+- FILE-P3-005 (P3) — Share revocation does not invalidate already-issued signed URLs
+- FILE-P3-006 (P3) — Oversized uploads return 500 instead of a validation error
+- FILE-P3-007 (P3) — File-domain test gaps: no upload-validation unit tests and no file-request download coverage
+- FILE-P3-008 (P3) — Previews render untrusted files inline without sandbox or disposition controls
+- HYGIENE-P3-001 (P3) — Stale and machine-specific generated documentation
+- HYGIENE-P3-002 (P3) — Generated artifacts are inconsistently tracked
+- HYGIENE-P3-003 (P3) — Dead modules and a dead component with zero references
+- HYGIENE-P3-004 (P3) — Orphaned one-off catalog scripts and their 1.2 MB content-map pipeline
+- HYGIENE-P3-005 (P3) — Committed Python bytecode and a stale build artifact are tracked
+- HYGIENE-P3-006 (P3) — Stray duplicate snippet file with local dev auth seed data
+- HYGIENE-P3-007 (P3) — Root package script `sbom:licenses` is known-broken on the pinned pnpm
+- HYGIENE-P3-008 (P3) — scripts/README.md index is stale: 14 scripts (10 active CI guards) are undocumented
+- HYGIENE-P3-009 (P3) — No circular-dependency guard; one live import cycle in the worker
+- HYGIENE-P3-010 (P3) — Explicit `any` is lint-disabled and 63 `supabase as any` casts sit at the typed-client boundary
+- HYGIENE-P3-011 (P3) — AGENTS.md (120 KB) doubles as a historical changelog and is mirrored into review.md
+- HYGIENE-P3-012 (P3) — Audit run layout contract is not met by the committed repo-deep-dive runs
+- HYGIENE-P3-013 (P3) — Two Redis client libraries coexist in apps/api
+- HYGIENE-P3-014 (P3) — docs/audits corpus grows unbounded with no size or retention policy (prompts/ is budget-guarded, audits are not)
+- HYGIENE-P3-015 (P3) — scripts/README.md lists sync-product-catalog.mjs twice
+- INFRA-P3-001 (P3) — `env/prod.tfvars` is tracked despite an ignore rule that names it
+- INFRA-P3-002 (P3) — Restore test uses a different Postgres major than the backup script and verifies only table counts
+- INFRA-P3-003 (P3) — `docs/RTO_RPO.md` claims Redis AOF persistence that compose does not enable
+- INFRA-P3-004 (P3) — `infra/terraform/README.md` references an `aws/` directory that does not exist
+- INFRA-P3-005 (P3) — Terraform is manual-dispatch only, so the "push to trigger apply" rollback runbook step is a no-op
+- INFRA-P3-006 (P3) — infra/digitalocean/.env.example omits the alerting and internal-metrics variables the compose stack reads
+- INFRA-P3-007 (P3) — Terraform tfvars generated/referenced at the module root are not covered by the .gitignore rule
+- INFRA-P3-008 (P3) — Cloud-init UFW SSH allowlist is applied only at droplet creation, so narrowed allowlists leave stale host rule
+- INFRA-P3-009 (P3) — METRICS_TOKEN has no fail-closed deploy guard; an empty token leaves the API scrape permanently down
+- INFRA-P3-010 (P3) — Prometheus alert-rule unit tests exist but are not run in CI
+- INV-P3-001 (P3) — Large committed prompt/audit corpus inflates the application repository
+- INV-P3-002 (P3) — Stale, machine-specific repo path in the agent reference
+- INV-P3-003 (P3) — Committed build artifact apps/web/public/version.json is stale and unguarded
+- INV-P3-004 (P3) — Vestigial Vercel deploy configs remain after the DigitalOcean migration
+- INV-P3-005 (P3) — Previous-run audit artifacts are amended in place without rebinding to the commit they now reflect
+- INV-P3-006 (P3) — Committed Supabase Studio scratch snippet duplicates a dev seed
+- INV-P3-007 (P3) — Service worker asset apps/web/public/sw.js is not registered anywhere
+- IR-P3-001 (P3) — Terraform state restore guidance lacks a tested procedure
+- IR-P3-002 (P3) — Monitoring doc and health endpoint disagree on check semantics; Redis severity undocumented in alerts
+- IR-P3-003 (P3) — Monitoring doc still reports wired metrics as 'defined, not wired' and omits the alert rules added for impersonation and RLS
+- IR-P3-004 (P3) — Alerting secrets are not documented in the secrets matrix or environment-variable reference
+- IR-P3-005 (P3) — Incident plan's first triage step points responders at a URL that currently 404s
+- MOB-P3-001 (P3) — PWA manifest ships only an SVG icon and is duplicated across three sources
+- MOB-P3-002 (P3) — Icon-only controls have touch targets well below the 44x44 recommendation
+- MOB-P3-003 (P3) — Notification dropdown is a fixed 320px panel anchored right-0 and clips on narrow phones
+- MOB-P3-004 (P3) — themeColor is declared in the deprecated metadata export, so the theme-color meta tag is not emitted
+- MOB-P3-005 (P3) — favicon.ico contains SVG bytes and no apple-touch-icon is declared
+- MOB-P3-006 (P3) — Mobile-WebKit horizontal overflow on /login, /store and /store/quote is acknowledged but fixme'd out of the mobile gate
+- MT-P3-001 (P3) — No automated cross-tenant isolation regression suite for application-layer scoping
+- MT-P3-002 (P3) — Admin notification create accepts an arbitrary recipient and org-less rows bypass the SSE scope assertion
+- NOTIF-P3-001 (P3) — No email template system; repetitive inline HTML diverges between senders
+- NOTIF-P3-002 (P3) — `sms` channel is a dead preference option; UI copy misstates enforcement
+- NOTIF-P3-003 (P3) — SSE polling fallback interval is not cleared on unmount
+- NOTIF-P3-004 (P3) — `notification-preferences` PUT accepts a body `organizationId` without `assertOrgScopeMatches`
+- NOTIF-P3-005 (P3) — No unsubscribe link or global opt-out in notification emails
+- NOTIF-P3-006 (P3) — Worker reminder preference lookups omit the organization, so any org's opt-out suppresses the channel for all
+- NOTIF-P3-007 (P3) — No per-recipient send throttle on notification producers
+- NOTIF-P3-008 (P3) — Worker ticket-responded email builds the deep link from unescaped payload metadata (latent XSS-in-email)
+- OBS-P3-001 (P3) — Incident runbooks/tabletop evidence is partial
+- OBS-P3-002 (P3) — Monitoring doc and health endpoint disagree on check semantics; Redis severity undocumented in alerts
+- OBS-P3-003 (P3) — `/metrics` is fully public when `METRICS_TOKEN` is unset
+- OBS-P3-004 (P3) — API/worker Sentry release markers are not delivered (no SENTRY_RELEASE/GIT_SHA)
+- OBS-P3-005 (P3) — Alertmanager secret provisioning gaps: matrix omits ALERTMANAGER_*; awk renderer breaks on '&' or backslash in values
+- OBS-P3-006 (P3) — Metrics rate limiter leaves almost no headroom for the 15s scrape (max 5/min vs 4/min)
+- OBS-P3-007 (P3) — SLO and monitoring docs drift from implemented metrics and alert rules
+- ORCH-P3-001 (P3) — Finding identity is not stable across runs (deterministic IDs reused; legacy area codes persist), so verification status does not carry
+- PERF-P3-001 (P3) — Unbounded list reads remain on compliance and time-entry endpoints; exports load up to 10k rows with select("*")
+- PERF-P3-002 (P3) — Every paginated list request also runs an exact row count
+- PERF-P3-003 (P3) — No bundle-size or performance budget gate; the analyzer is opt-in only
+- PERF-P3-004 (P3) — API routes broadly select all columns (`select("*")`) and pagination is ad hoc
+- PRIV-P3-001 (P3) — Breach-response and IR plans still claim Alertmanager is not deployed and IR-P0-003 is open
+- PRIV-P3-002 (P3) — DATA_BREACH_RESPONSE claims audit_logs records source IP/user-agent; no runtime writer populates them
+- PRIV-P3-003 (P3) — public-interaction-retention performs an unbounded single-statement delete and is not covered by the DATA-P1-002 batching fix
+- PRIV-P3-004 (P3) — PRIVACY.md known-gaps section contradicts its own retention schedule (claims store_analytics_events has no purge)
+- REL-P3-001 (P3) — Commit history contains non-conventional noise commits and a single author, reducing automated-notes quality
+- REL-P3-002 (P3) — PR template lacks changelog and versioned-artifact checkboxes
+- REL-P3-003 (P3) — CRITICAL dependency fix (handlebars override) shipped without a CHANGELOG entry
+- REL-P3-004 (P3) — Delta changelog entries are filed under `Fixed` only, mislabelling features and operator changes
+- RES-P3-001 (P3) — Worker graceful shutdown has no force-exit fallback
+- RES-P3-002 (P3) — Worker queued webhook dispatcher inserts deliveries without an idempotency key
+- RES-P3-003 (P3) — `AGENTS.md` documents the worker consumer incorrectly and omits the queue backend divergence
+- RES-P3-004 (P3) — Deploy health gate treats worker unhealthiness as non-fatal
+- RES-P3-005 (P3) — Orphan cleanup lists at most 1000 objects per bucket and cannot verify the purge shrank anything
+- RES-P3-006 (P3) — Manual rollback script points at the wrong GHCR namespace and accepts non-2xx health codes
+- RES-P3-007 (P3) — Circuit breaker leaks an uncleared timer per call and does not abort the timed-out operation
+- RES-P3-008 (P3) — Service worker is shipped but never registered — offline capability is dead code
+- RES-P3-009 (P3) — Failure-injection and load tests exist but are never executed by CI
+- RES-P3-010 (P3) — `requestTimeout` responds 408 but does not abort the handler or close the connection
+- RES-P3-011 (P3) — Task deadline fails the task but does not cancel its in-flight work: no production task consumes the context signal
+- RES-P3-012 (P3) — Rolling deploy still hard-removes the Caddy ingress before recreating it, so every release has a short hard outage window
+- RLS-P3-001 (P3) — 5302116 grants anon UPDATE/DELETE on every table, amplified by no RLS-off × anon-write lint
+- RLS-P3-002 (P3) — No behavioral RLS allow/deny matrix test (static gate only)
+- RLS-P3-003 (P3) — storage_path_org_id trusts a client-controlled object name
+- RLS-P3-004 (P3) — Duplicate scoped-client tests and stale coverage-matrix snapshot
+- RLS-P3-005 (P3) — RLS policies reference `manage` permissions that no role holds (dead predicates)
+- RLS-P3-006 (P3) — No static lint for RLS role-gate drift or policy↔permission-catalog drift
+- RLS-P3-007 (P3) — Scoped-client adoption is partial: several tenant modules have no RLS call sites and service helpers bypass the scoped client
+- RLS-P3-008 (P3) — Four live policies still hardcode partial platform-role lists (document_shares trio omits super_admin; notifications insert omits six platform keys)
+- SBOM-P3-001 (P3) — Root license is ISC with no documented rationale
+- SBOM-P3-002 (P3) — SBOM format/count not validated before upload; no regression guard
+- SBOM-P3-003 (P3) — Root package license remains "ISC"
+- SBOM-P3-004 (P3) — SBOM is produced as a transient artifact, not bound to a release
+- SBOM-P3-005 (P3) — Image SBOMs are attested but never validated (no floor or binding check)
+- SBOM-P3-006 (P3) — Runbooks and script headers still document the broken `pnpm licenses list --json` command; docs/CI.md SBOM row is stale
+- SBOM-P3-007 (P3) — Documented sharp license exception does not match the machine policy
+- SBOM-P3-008 (P3) — Shipped third-party images and GitHub Actions dependencies have no SBOM coverage
+- SBOM-P3-009 (P3) — PR license gate depends on the deprecated `deny-licenses` option and cannot fail on unknown licenses
+- SBOM-P3-010 (P3) — NEW: validate-sbom.mjs silently drops its first positional path when --digest is absent
+- SC-P3-001 (P3) — Root package license remains "ISC"
+- SC-P3-002 (P3) — e2e Docker image is not digest-pinned
+- SC-P3-003 (P3) — Secret-scanner pattern sets diverge between `.sh` and `.ps1`
+- SC-P3-004 (P3) — Unpinned container images (test/local only); production app images tag-based by design
+- SC-P3-005 (P3) — Dockerfile lint: missing WORKDIR in web runner stage and shell-form HEALTHCHECK
+- SC-P3-006 (P3) — SBOM is produced as a transient artifact, not bound to a release
+- SC-P3-007 (P3) — A secrets file exists on disk outside git (should never be committed)
+- SC-P3-008 (P3) — gitleaks generic-api-key/jwt hits are false positives (no tracked secret)
+- SC-P3-009 (P3) — Secret scanner misses the platform's own token formats and scans diffs only
+- SC-P3-010 (P3) — Dependabot has no security-update separation or triage SLA, and PR template has no enforced link to required checks
+- SC-P3-011 (P3) — Dependency and license policy `expires` dates are not enforced by the gates
+- SC-P3-012 (P3) — Docs instruct the broken `pnpm licenses list --json` workflow while CI uses collect-licenses.mjs
+- SC-P3-013 (P3) — SECURITY.md says neither SBOM is signed or attested, contradicting the attested image-SBOM process
+- SC-P3-014 (P3) — No automated unused/duplicate dependency check; lockfile carries 55 multi-version packages
+- SEARCH-P3-001 (P3) — Soft-delete columns are defined but never used by queries or deletes
+- SEARCH-P3-002 (P3) — Search module documentation is stale relative to the code
+- SEARCH-P3-003 (P3) — Search SDK and OpenAPI contracts do not cover the implemented response (documents, counts, limit)
+- SEARCH-P3-004 (P3) — Portal search queries are not audit-logged, unlike the admin search route
+- SEC-P3-001 (P3) — Sign-up confirmation redirect is built from the caller-controlled Host header and targets a non-existent API route
+- SEC-P3-002 (P3) — Analytics admin reads are not tenant-scoped and expose platform-wide event data including visitor IPs
+- SEC-P3-003 (P3) — Auth rate-limit key uses the raw email string without normalization
+- SEC-P3-004 (P3) — gitleaks generic-api-key/jwt hits are false positives (no tracked secret)
+- SEC-P3-005 (P3) — `5302116` grants anon/authenticated full DML on every public table (RLS is the only gate)
+- SEC-P3-006 (P3) — CORS reflects any origin with credentials when `CORS_ORIGIN="*"`
+- SEC-P3-007 (P3) — `notification-preferences` PUT accepts a body `organizationId` without `assertOrgScopeMatches`
+- SEC-P3-008 (P3) — `resolveEffectivePermissions` is uncached and fans out 4–6 queries per gated request
+- SEC-P3-009 (P3) — Deprecated header and broad API CSP style directive
+- SEC-P3-010 (P3) — M365 webhook `clientState` is compared non-constant-time
+- SEC-P3-011 (P3) — Active-org cookie setter performs no server-side authorization
+- SEC-P3-012 (P3) — Web middleware gates routes on an unverified JWT `exp`
+- SEC-P3-013 (P3) — SEC-P3-013
+- SECRET-P3-001 (P3) — Worker `.env.example` omits `APP_BASE_URL`
+- SECRET-P3-002 (P3) — Web runtime validator can silently fall back to a localhost API URL
+- SECRET-P3-003 (P3) — No IT-level break-glass / emergency credential revocation runbook, and no revocation drill evidence
+- SECRET-P3-004 (P3) — Secret rotation policy has no evidence any secret was ever rotated
+- SECRET-P3-005 (P3) — No automated `.env.example` <-> runtime schema <-> docs parity check
+- TEST-P3-001 (P3) — Visual regression is still non-blocking with a known-broken Storybook build
+- TEST-P3-002 (P3) — No scheduled production smoke check (health + login + critical read)
+- TEST-P3-003 (P3) — Coverage thresholds remain modest and cannot be confirmed met at this SHA
+- TEST-P3-004 (P3) — Coverage thresholds are low and E2E stability is unproven on `main`
+- TEST-P3-005 (P3) — Shared packages/ui has no test runner and no lint/typecheck script
+- USE-P3-001 (P3) — Portal ticket creation gives no success confirmation and the tested action is dead code with a mismatched field name
+- USE-P3-002 (P3) — Offline/poor-network support is absent from the running app (service worker never registered)
+- USE-P3-003 (P3) — Document version history is display-only: no per-version download/restore and it hides itself for single-version documents
+- USE-P3-004 (P3) — Web edit flows never send If-Match, so concurrent admin edits silently overwrite each other
+- USE-P3-005 (P3) — Form error handling is lossy or missing: signup can hang, onboarding errors are generic, bulk invite says 'Request failed'
+- USE-P3-006 (P3) — Notification-bell SSE session expiry redirects to /login?reason=session_expired, but /login only recognizes reason=expired
+- UX-P3-001 (P3) — Four Chip copies render a glyph-only '×' remove button with a sub-24px target size
+- UX-P3-002 (P3) — Theme is documented dark-only but ships dead light/system code paths (CSS variables, ThemeProvider, Storybook toolbar)
+- UX-P3-003 (P3) — Sidebar group toggles declare aria-haspopup='true' for a popup that is a link list, not a menu
+- UX-P3-004 (P3) — Notification bell and store drawer toggles omit aria-expanded
+- UX-P3-005 (P3) — Color-token drift: 66 files hardcode hex colors (80x #0A1118) and 45 arbitrary rgba card backgrounds instead of the design tokens
+- UX-P3-006 (P3) — Heading order skips a level on the store import/export page
+- UX-P3-007 (P3) — ScorecardsEvaluateClient renders the only programmatically unlabeled input in the app and an unannounced error
+- UX-P3-008 (P3) — Signup form inputs lack autocomplete attributes
+- UX-P3-009 (P3) — Storybook covers only the 7 @mct/ui primitives; packages/ui has no test/lint scripts and the a11y addon runs nowhere
+- UX-P3-010 (P3) — Full accessibility breadth scan (68 routes) is triage-only and not a required check
+- UX-P3-011 (P3) — The a11y gate scans only initial page loads; interactive states (dialogs, drawers, filters, bulk bars) and client-fetched content are untested
+- WH-P3-001 (P3) — Test endpoint generates a random idempotency key and never dedups
+- WH-P3-002 (P3) — No committed event catalog or webhook documentation for consumers
+- WH-P3-003 (P3) — Worker queued webhook dispatcher inserts deliveries without an idempotency key
+- WH-P3-004 (P3) — Webhook raw body typed as `string` but consumed as `Buffer`
+- WH-P3-005 (P3) — Retried deliveries replay a body without the envelope `timestamp` (payload drift)
+- WH-P3-006 (P3) — Delivery inserts ignore unique-key conflicts, losing the successful-attempt record
+- WH-P3-007 (P3) — Outbound webhook response bodies are read without a size cap
+- WH-P3-008 (P3) — M365 handler processes only the first notification in a batch (value[0])
+- WH-P3-009 (P3) — No retention/cleanup for webhook_deliveries and webhook_dead_letters
+- WH-P3-010 (P3) — Provider redelivery after the dedup TTL fails permanently with 500 (unique delivery-log key not conflict-handled)

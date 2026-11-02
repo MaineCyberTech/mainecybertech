@@ -139,13 +139,23 @@ export async function claimIdempotencyKey(
   }
 }
 
-export async function storeIdempotencyKey(key: string, value: string): Promise<void> {
+/**
+ * Store a completed value for a key. WH-P3-010: the TTL is caller-selectable so
+ * a provider with a longer replay window (M365/Graph, 7 days) can keep the
+ * claim for its whole window instead of being cut to the 24h default — the
+ * delivery-log row it mirrors lives for the table's retention window.
+ */
+export async function storeIdempotencyKey(
+  key: string,
+  value: string,
+  ttlSeconds: number = IDEMPOTENCY_TTL_SECONDS,
+): Promise<void> {
   const redis = getRedisClient();
   const prefixedKey = `idempotency:${key}`;
 
   if (redis) {
     try {
-      await redis.setex(prefixedKey, IDEMPOTENCY_TTL_SECONDS, value);
+      await redis.setex(prefixedKey, ttlSeconds, value);
       return;
     } catch (err: unknown) {
       recordRedisFailure("idempotency", "store");
@@ -161,7 +171,7 @@ export async function storeIdempotencyKey(key: string, value: string): Promise<v
     evictInMemoryIfNeeded();
     IN_MEMORY_FALLBACK.set(key, {
       value,
-      expiresAt: Date.now() + IDEMPOTENCY_TTL_SECONDS * 1000,
+      expiresAt: Date.now() + ttlSeconds * 1000,
     });
   } finally {
     // lock is released by the promise chain

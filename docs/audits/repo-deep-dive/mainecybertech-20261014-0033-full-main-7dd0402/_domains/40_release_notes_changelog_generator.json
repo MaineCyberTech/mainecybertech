@@ -1,0 +1,129 @@
+{
+  "domain": "40_release_notes_changelog_generator",
+  "file": "40_release_notes_changelog_generator.md",
+  "area": "REL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T00:55:01Z",
+  "findings": [
+    {
+      "id": "REL-P1-001",
+      "severity": "P1",
+      "title": "No version identity: no tags, no product version, no commit binding in generated artifacts",
+      "owner": "platform engineering (release owner)",
+      "target": "this week",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the SBOM still binds <VERSION>+<sha> (scripts/generate-sbom.mjs:26-27) and .github/workflows/release.yml (added in a46e1e98) now computes v<VERSION>-<YYYYMMDD>-<short-sha>, builds a release body and creates an annotated tag + GitHub Release with the SBOM. But the release identity is still not effective: git ls-remote --tags origin returns 0 tags and the GitHub releases API returns [] (no tag/release has ever been created) because the workflow fails on every promotion push (new REL-P2-006); VERSION is still 0.1.0 (never bumped); the web badge still reports <branch>-<run_number> rather than VERSION (.github/workflows/build-push.yml:207, .github/workflows/deploy-do.yml:366). Release notes still cannot name a release other than by SHA.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P1-002",
+      "severity": "P1",
+      "title": "Documented production deploy path is stated as non-functional and the approval gate claim is false",
+      "owner": "platform engineering (release owner)",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/RELEASING.md:100-115 documents the prod deploy path and states the prod-approval gate is only effective once required reviewers are configured (an operator action); docs/RELEASING.md:176 confirms reviewers are still unconfigured; deploy-do.yml:648 attaches the prod-approval environment for prod deploys; docs/ROLLBACK_PROCEDURES.md:340-350 repeats the reviewer requirement accurately. The false approval claim is gone.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P2-001",
+      "severity": "P2",
+      "title": "`CHANGELOG.md` is stale relative to HEAD for the final commits in the delta",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "regressed",
+      "note": "re-verified at 7dd0402: verified-fixed at 8d299b8, but the tail is stale again. The consolidation commit 00c447f6 ('final reconciliation + duplicate/ID map + changelog tail') predates 5 non-merge commits that are absent from CHANGELOG.md: 07e9ce09 (dispatch-input env indirection, CI-P3-013), 62a09bac (fast-mode re-audit publish), 0f716d57 and b115af6d (dependabot bumps), 673d76cb (Storybook webpack pin, #280) - grep for webpack/storybook/fast-mode/re-audit/'dispatch inputs' in CHANGELOG.md returns 0. Release notes cut from the changelog would omit the tail of the delta.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P2-002",
+      "severity": "P2",
+      "title": "No explicit Breaking Changes or upgrade manifest despite 34 migrations and RLS/entitlement behavior changes",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "regressed",
+      "note": "re-verified at 7dd0402: docs/UPGRADE.md exists but its window is stale - :9 declares 'Current window: migrations 5302420-5302446 (last reviewed 2026-10-11)' while the tree ends at 5302460, so 14 later migrations are uncovered, including behavior/security-affecting ones: 5302457 status CHECK constraints, 5302458 revokes anon inserts on analytics, 5302459 dead RLS permission predicates, 5302460 drops portal_module_settings. release.yml prints this window into the release body (release.yml:119), so an operator reading the generated notes gets an incomplete upgrade picture.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P2-003",
+      "severity": "P2",
+      "title": "No release-notes or GitHub Release body template; release body must be authored ad hoc",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: templates/RELEASE_NOTES_TEMPLATE.md exists with all required sections (Summary/Added/Changed/Fixed/Security/Breaking Changes/Migrations/Operator Actions/Known Issues/Verification) and is referenced by docs/RELEASING.md:92-96; release.yml generates a raw body to be completed from it. Residual (not this finding): the template is still unexercised because no release has ever been cut (REL-P1-001/REL-P2-006).",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P2-004",
+      "severity": "P2",
+      "title": "Rollback documentation is stale (Terraform push flow) and repeats the false approval claim",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/ROLLBACK_PROCEDURES.md:234-257 documents the manual git-revert + terraform-do dispatch flow (apply input, manual-dispatch-only) and no longer claims a push applies Terraform; :340-350 states the prod-approval reviewer requirement accurately. The false approval claim is gone.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P2-005",
+      "severity": "P2",
+      "title": "Release docs claim `main` is far behind `develop`; the repo state is the opposite",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "regressed",
+      "note": "re-verified at 7dd0402: docs/RELEASING.md:183-186 still says 'the last promotion was PR #168 (main @ 8d299b8d, 2026-10-11)' and 'develop carries later commits' - both false now. main has had two more promotions (9ba108b5, 7dd04023) and is 7 commits ahead of origin/develop (origin/develop @ adea7fe5 is an ancestor of main; develop has 0 commits not in main). AGENTS.md:124 carries the same stale binding/direction claim (see AI-P3-008). The compare instruction that follows remains correct but the stale binding misleads.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P3-001",
+      "severity": "P3",
+      "title": "Commit history contains non-conventional noise commits and a single author, reducing automated-notes quality",
+      "owner": "platform engineering (release owner)",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: non-merge subjects are conventional (release.yml filters merges with --no-merges), but authorship is still single-human plus bots - the delta has 190 'Audit Remediation' commits plus several remediation-bot identities (remediation-agent, mct-remediation, MCT Remediation, mct-remediation-bot, opencode-agent, mct-bot, MCT Agent) and 3 dependabot commits, with no second human committer. The bus-factor item remains organizational.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P3-002",
+      "severity": "P3",
+      "title": "PR template lacks changelog and versioned-artifact checkboxes",
+      "owner": "platform engineering (release owner)",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the CHANGELOG checkbox exists (.github/PULL_REQUEST_TEMPLATE.md:23) but is honour-system only, and no versioned-artifact/versioned-output checkbox was added; nothing enforces a changelog diff, which is how the missing tail commits (REL-P2-001) merged.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P3-003",
+      "severity": "P3",
+      "title": "CRITICAL dependency fix (handlebars override) shipped without a CHANGELOG entry",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "open",
+      "note": "re-verified at 7dd0402: the previous register's verified-fixed does not reproduce. The override exists (package.json:73 'handlebars': '>=4.7.10', added by ea427954) but CHANGELOG.md never names it - grep -i handlebars across CHANGELOG.md, AGENTS.md and docs/HISTORY.md returns 0 hits; the Security section (CHANGELOG.md:105-136) lists other advisories only. Release notes derived from the changelog still omit the CRITICAL handlebars event.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P3-004",
+      "severity": "P3",
+      "title": "Delta changelog entries are filed under `Fixed` only, mislabelling features and operator changes",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the consolidated wave entries are classified under the correct headings (CHANGELOG.md:12 Breaking Changes, :27 Added, :105 Security, :137 Fixed, :518 Changed) and describe features/operator changes as such. Residual: the post-consolidation tail is missing entirely rather than mislabelled (REL-P2-001).",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P2-006",
+      "severity": "P2",
+      "title": "Release workflow fails on every promotion push, so no tag or GitHub Release is ever created",
+      "owner": "platform engineering (release owner)",
+      "target": "this week",
+      "status": "open",
+      "note": "NEW at 7dd0402. .github/workflows/release.yml (added in a46e1e98) has failed on all three main pushes: GitHub Actions runs 38334758824 (9ba108b), 38334824351 (ee252bc) and 38490822732 (7dd0402) all completed=failure, each at the step 'Generate the release notes body' (job 115615331312); git ls-remote --tags origin = 0 and the releases API = [] - no tag or GitHub Release has ever been created, so the SBOM is never attached and the release notes body has no published home. Root cause reproduced locally with the step's own shell settings: the step runs under set -euo pipefail (release.yml:83) and pipes git log into head -100 (release.yml:103; the migration list does the same with sort -u | head -25 at :109). With no previous tag the pipeline is truncated by head, git exits 141 (SIGPIPE) and pipefail aborts the step (reproduced: exit 141). Impact: every promotion silently lacks a release, and REL-P1-001 cannot close. Recommendation: replace the head truncations (e.g. git log -n 100 / awk) and re-run; add a no-tags dry-run test for the notes step.",
+      "area": "REL"
+    }
+  ]
+}

@@ -1,5 +1,20 @@
 import crypto from "crypto";
+import type { Request, Response } from "express";
 import rateLimit from "express-rate-limit";
+import { failure } from "../types";
+
+/**
+ * API-P3-001: every limiter returns the documented error envelope
+ * (`{success:false,error:{code,message,status}}`) instead of
+ * express-rate-limit's plain-text default. Without this the same 429 had a
+ * JSON body on the global IP limiter and text on the auth/admin/search
+ * limiters, so SDK clients could not branch on `error.code`.
+ */
+export function rateLimitHandler(message: string) {
+  return (_req: Request, res: Response) => {
+    res.status(429).json(failure("RATE_LIMITED", message, 429));
+  };
+}
 
 /**
  * Derives a rate-limit key from a Bearer token.
@@ -27,7 +42,7 @@ export function userRateLimitKeyGenerator(
 export const rateLimitByUser = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 600,
-  message: "Too many requests from this user, please try again later.",
+  handler: rateLimitHandler("Too many requests from this user, please try again later."),
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, req.ip),
@@ -69,7 +84,7 @@ export function emailRateLimitKey(email: unknown): string | undefined {
 export const rateLimitSearch = rateLimit({
   windowMs: 60 * 1000,
   max: 60,
-  message: "Too many search requests, please try again later.",
+  handler: rateLimitHandler("Too many search requests, please try again later."),
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, req.ip),
@@ -87,7 +102,7 @@ export const rateLimitSearch = rateLimit({
 export const rateLimitAdminOps = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
-  message: "Too many admin operations, please try again later.",
+  handler: rateLimitHandler("Too many admin operations, please try again later."),
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, req.ip),
@@ -110,7 +125,7 @@ export function shareRateLimitKey(token: unknown): string {
 export const rateLimitShare = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
-  message: "Too many requests for this share link, please try again later.",
+  handler: rateLimitHandler("Too many requests for this share link, please try again later."),
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => `share:${shareRateLimitKey(req.params.token)}`,
@@ -125,7 +140,7 @@ export const rateLimitShare = rateLimit({
 export const rateLimitUnsubscribe = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
-  message: "Too many unsubscribe requests, please try again later.",
+  handler: rateLimitHandler("Too many unsubscribe requests, please try again later."),
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
@@ -138,7 +153,7 @@ export const rateLimitUnsubscribe = rateLimit({
 export const rateLimitAuth = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: "Too many authentication attempts, please try again later.",
+  handler: rateLimitHandler("Too many authentication attempts, please try again later."),
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
@@ -151,7 +166,7 @@ export const rateLimitAuth = rateLimit({
 export const rateLimitEmail = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
-  message: "Too many requests for this email, please try again later.",
+  handler: rateLimitHandler("Too many requests for this email, please try again later."),
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
@@ -171,7 +186,7 @@ export const rateLimitEmail = rateLimit({
 export const rateLimitMetrics = rateLimit({
   windowMs: 60 * 1000,
   max: 12,
-  message: "Too many requests to metrics endpoint",
+  handler: rateLimitHandler("Too many requests to metrics endpoint"),
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => `ip:${req.ip}`,

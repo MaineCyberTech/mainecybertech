@@ -1,6 +1,6 @@
 // Auto-generated from supabase/migrations/*.sql — DO NOT EDIT MANUALLY
 // Run: node scripts/generate-db-types.js to regenerate
-// Source migrations digest (sha256): 794f7452bb92f77abb064de2ef286f748a069577c0d47b74ed8ccbca475808f0
+// Source migrations digest (sha256): a5cd948eb05d79b5ea77f964500c87e171930f160f317272c8f83c986c034dcc
 export type Json =
   | string
   | number

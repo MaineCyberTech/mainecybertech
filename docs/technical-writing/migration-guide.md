@@ -141,7 +141,7 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm e2e
 gh run view <run-id> --log
 
 # Check service health
-curl -sf https://api.mainecybertech.com/health
+curl -sf https://app.mainecybertech.com/api/v1/store/products  # prod API path (OBS-P2-017)
 curl -sf -o /dev/null -w "%{http_code}" https://app.mainecybertech.com/login
 curl -sf http://localhost:3001/health    # worker, on the droplet
 

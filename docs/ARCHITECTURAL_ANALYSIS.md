@@ -271,7 +271,7 @@ Vercel:
 
 Supabase:
 ├── Project per env (dev/prod naming)
-└── Storage: documents (private, 50MB), avatars (public, 2MB)
+└── Storage: documents (private, 2MB API upload cap; 25MiB bucket cap), avatars (public, 2MB)
 
 Cloudflare:
 ├── Production zone: 4 CNAME records

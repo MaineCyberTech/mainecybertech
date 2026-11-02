@@ -29,6 +29,17 @@ const TARGET_ALIASES: Record<string, readonly string[]> = {
     "public interaction",
     "contact form",
   ],
+  // PRIV-P2-008: public store quote PII (submission + structured request).
+  // "store quote" is deliberately not an alias: as a substring it would match
+  // a "Store Quote Requests" policy and silently widen the store_quotes window.
+  store_quotes: ["store_quotes", "store quotes", "quote submissions"],
+  store_quote_requests: [
+    "store_quote_requests",
+    "store quote requests",
+    "store quote request",
+    "quote requests",
+    "quote request",
+  ],
   // WH-P3-009: the webhook delivery log and dead-letter queue.
   webhook_deliveries: ["webhook_deliveries", "webhook deliveries", "webhook delivery"],
   webhook_dead_letters: [

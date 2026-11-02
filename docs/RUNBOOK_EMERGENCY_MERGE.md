@@ -19,6 +19,14 @@ a required status check that is stuck or cannot report, a required
 review/CODEOWNERS approval that cannot be obtained, conversation resolution, or
 admin enforcement.
 
+A merge that lands before the required checks on the head SHA have **completed**
+is also a bypass (TEST-P2-010): the check suite starts after the merge, so no
+required context gated it. PR #281 (2026-10-14) merged two seconds after
+opening, before any required check reported, and its Test run failed
+afterwards — the promoted commit had no green Test artifact. Never merge while
+required checks are queued or running; an admin override that skips them
+follows this runbook and is recorded like any other bypass.
+
 Break-glass is allowed only when **all** of these hold:
 
 1. The change restores or protects production (incident response, security fix,

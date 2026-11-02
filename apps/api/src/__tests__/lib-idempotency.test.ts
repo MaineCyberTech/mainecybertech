@@ -1,5 +1,10 @@
 import { jest } from "@jest/globals";
-import { claimIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
+import {
+  claimIdempotencyKey,
+  checkIdempotencyKey,
+  deleteIdempotencyKey,
+  storeIdempotencyKey,
+} from "../lib/idempotency";
 
 jest.mock("../config/env", () => ({
   getEnv: jest.fn().mockReturnValue({
@@ -52,5 +57,22 @@ describe("claimIdempotencyKey (in-memory fallback)", () => {
     expect(await claimIdempotencyKey("test-key-1")).toBe(true);
     await deleteIdempotencyKey("test-key-1");
     expect(await claimIdempotencyKey("test-key-1")).toBe(true);
+  });
+
+  // WH-P3-010: the stored value must honour a caller-supplied TTL so the M365
+  // 7-day replay window is not silently cut to the 24h default.
+  it("honours a caller-supplied store TTL", async () => {
+    jest.useFakeTimers();
+    try {
+      jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+      await storeIdempotencyKey("ttl-key", "done", 60);
+      expect(await checkIdempotencyKey("ttl-key")).toBe("done");
+
+      jest.setSystemTime(new Date("2026-01-01T00:01:01Z"));
+      expect(await checkIdempotencyKey("ttl-key")).toBeNull();
+    } finally {
+      jest.useRealTimers();
+      await deleteIdempotencyKey("ttl-key");
+    }
   });
 });

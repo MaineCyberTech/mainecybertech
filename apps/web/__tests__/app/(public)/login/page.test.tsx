@@ -124,6 +124,16 @@ describe("LoginPage session expiry (USE-P2-009)", () => {
     ).toBeInTheDocument();
   });
 
+  it("also explains an expiry signalled by the notification-bell SSE handler [USE-P3-006]", async () => {
+    window.history.pushState({}, "", "/login?reason=session_expired");
+
+    render(<LoginPage />);
+
+    expect(
+      await screen.findByText(/your session expired\. please sign in again/i),
+    ).toBeInTheDocument();
+  });
+
   it("does not show the expiry notice for a plain visit", () => {
     render(<LoginPage />);
 

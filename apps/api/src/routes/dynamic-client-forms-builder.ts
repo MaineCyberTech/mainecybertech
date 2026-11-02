@@ -12,6 +12,7 @@ import {
   exportDynamicFormsSchema,
 } from "../validators/dynamic-client-forms-builder";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { sendExportResponse, type CsvColumn } from "../lib/csv";
 import {
   listDynamicForms,
   getDynamicForm,
@@ -30,6 +31,20 @@ const router: Router = Router();
 
 router.use(requireAuth);
 router.use(requireOrgAccess);
+
+/** API-P3-008: scalar columns of dynamic_client_forms, in export order. */
+const exportColumns: CsvColumn[] = [
+  { key: "id" },
+  { key: "organization_id" },
+  { key: "title" },
+  { key: "form_type" },
+  { key: "status" },
+  { key: "published_at" },
+  { key: "closes_at" },
+  { key: "created_by" },
+  { key: "created_at" },
+  { key: "updated_at" },
+];
 
 function getOrgId(req: Request): string {
   return req.query.organization_id as string;
@@ -81,7 +96,16 @@ router.get("/export.csv", async (req: Request, res: Response, next: NextFunction
       },
       getScopedClient(req, "dynamic-forms", "read"),
     );
-    res.json(result);
+    // API-P3-008: the route is documented (and named) as a CSV export but
+    // answered with the JSON envelope. Send real CSV through the shared
+    // export helper; ?format=json keeps the JSON option the OpenAPI schema
+    // advertises.
+    sendExportResponse(
+      res,
+      (result.data ?? []) as unknown as Record<string, unknown>[],
+      exportColumns,
+      "dynamic-forms",
+    );
   } catch (error) {
     next(error);
   }

@@ -21,10 +21,17 @@ the public policy at `apps/web/app/(public)/privacy/page.tsx`.
 ## 2. Event catalog (first-party)
 
 Source of truth: the registry at `apps/web/lib/catalog/data/analytics-events.json`
-(21 reserved names) and the ingestion route `POST /api/v1/analytics/track`
+(20 reserved names) and the ingestion route `POST /api/v1/analytics/track`
 (`apps/api/src/routes/analytics.ts`, Zod-validated). Payload fields: `event`,
 `page`, `productId`/`categoryId`/`promoId`/`quizId`/`quoteId`/`campaignId`,
 `anonymousId` (random local id), `metadata` (JSON object), `timestamp`.
+
+AN-P3-006: the API mirrors the registry in `apps/api/src/lib/analytics-events.ts`
+and rejects event names outside it, so an arbitrary caller cannot skew the
+summary RPC. Metadata is bounded server-side before insert (max 25 keys, scalar
+values truncated to 200 chars) and keys that name PII/secret-shaped fields
+(`email`, `token`, `ip`, …) are dropped; `catalog-parity.test.ts` fails CI if
+the API and web registries drift.
 
 Events **live today** (fired by `StoreAnalyticsTracker`, `ServiceFinderQuiz`,
 `QuoteBuilderClient`):
@@ -70,9 +77,11 @@ privacy page, and behind the consent gate where required.
 
 ## 5. Change process
 
-1. **New event:** add the name to the registry JSON, fire it through `track()`
-   (which is consent-gated), and extend §2 here. Metadata must not carry form
-   free text, names, emails, phone numbers or secrets.
+1. **New event:** add the name to the registry JSON and to
+   `apps/api/src/lib/analytics-events.ts` (the parity test enforces the pair),
+   fire it through `track()` (which is consent-gated), and extend §2 here.
+   Metadata must not carry form free text, names, emails, phone numbers or
+   secrets.
 2. **New payload field:** add it to `trackSchema` in
    `apps/api/src/routes/analytics.ts`, document it in §2, and keep it free of
    PII. The API deliberately never stores the caller's IP/user-agent (columns

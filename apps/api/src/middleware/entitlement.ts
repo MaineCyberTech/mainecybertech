@@ -20,7 +20,10 @@
  * briefly over-serving a tenant. Access is still bounded by authentication,
  * org-access, and RBAC; only the *billing plan* boundary is temporarily
  * relaxed. The failure is logged at error level so it is observable and
- * alertable, and the next successful resolution re-enforces.
+ * alertable, and the next successful resolution re-enforces. BILL-P3-009: the
+ * failure also increments `portal_billing_lookup_failures_total` (alerted by
+ * MCTBillingLookupFailures), so a sustained billing-state outage is visible
+ * instead of silently disabling the plan gate for every module.
  *
  * Trusted bypasses mirror `requirePermission`:
  *  - super_admin profiles
@@ -36,6 +39,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { AppError } from "../types";
 import { logger } from "../lib/logger";
+import { recordBillingLookupFailure } from "../lib/metrics";
 import { resolveEffectivePermissions, ADMIN_BYPASS_KEYS } from "../lib/permissions";
 import { resolveOrgEntitlements, GATED_MODULES } from "../lib/entitlements";
 
@@ -72,7 +76,7 @@ function extractOrgId(req: Request): string | null {
   return null;
 }
 
-async function resolveForOrg(orgId: string): Promise<EntitlementsResult> {
+async function resolveForOrg(orgId: string, moduleKey: string): Promise<EntitlementsResult> {
   const cached = entitlementCache.get(orgId);
   if (cached && cached.expires > Date.now()) return cached.result;
 
@@ -86,6 +90,9 @@ async function resolveForOrg(orgId: string): Promise<EntitlementsResult> {
     entitlementCache.set(orgId, { result, expires: Date.now() + ENTITLEMENT_TTL_MS });
     return result;
   } catch (err) {
+    // BILL-P3-009: meter the fail-open degradation so a sustained billing-state
+    // outage is alertable instead of silently disabling the plan gate.
+    recordBillingLookupFailure(moduleKey);
     logger.error(
       { err, orgId },
       "Entitlement resolution failed; failing open (allow) for plan-boundary check",
@@ -121,7 +128,7 @@ async function enforce(
   const resolved = await resolveEffectivePermissions(req.authUser.userId, orgId);
   if (resolved.isSuperAdmin || resolved.roles.some(isAdminBypassRole)) return;
 
-  const result = await resolveForOrg(orgId);
+  const result = await resolveForOrg(orgId, moduleKey);
   if (!result.ok) return; // fail-open (see module docstring)
 
   if (!predicate(result)) {

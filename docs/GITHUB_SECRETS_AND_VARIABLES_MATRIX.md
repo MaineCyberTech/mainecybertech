@@ -93,15 +93,15 @@ the consuming job does not attach is a silent no-op.
 
 ## Secrets required by the database backup / restore workflows
 
-`db-backup.yml` and `db-restore-test.yml` attach `environment: dev` for
-scheduled runs. DATA-P2-010 adds prod targets: a dispatch with
-`environment: prod` (from `main` only) attaches the approval-gated
-`prod-approval` environment, and when the operator sets the
-`PROD_BACKUP_ENABLED` variable the schedule attaches `prod-backup` instead of
-`dev` (create it with the prod rows below and **no** required reviewers — an
-approval-gated environment would leave the unattended run waiting).
-`storage-backup.yml`, `storage-restore-test.yml` and
-`backup-staleness-check.yml` still attach `environment: dev`.
+`db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` and
+`storage-restore-test.yml` attach `environment: dev` for scheduled runs.
+DATA-P2-010 / DR-P2-009 add prod targets: a dispatch with `environment: prod`
+(from `main` only) attaches the approval-gated `prod-approval` environment,
+and when the operator sets the `PROD_BACKUP_ENABLED` variable the schedule
+attaches `prod-backup` instead of `dev` (create it with the prod rows below
+and **no** required reviewers — an approval-gated environment would leave the
+unattended run waiting). `backup-staleness-check.yml` still attaches
+`environment: dev` (it only reads the GitHub run history).
 
 `operator` in the Prod column means the secret must be provisioned by an
 operator in the environment the prod job attaches before prod backups can run.
@@ -112,7 +112,8 @@ operator in the environment the prod job attaches before prod backups can run.
 | `AWS_ACCESS_KEY_ID`       | yes | operator | S3/Spaces key for backup upload and restore download; falls back to `DO_SPACES_ACCESS_KEY_ID` |
 | `AWS_SECRET_ACCESS_KEY`   | yes | operator | S3/Spaces secret for backup upload and restore; falls back to `DO_SPACES_SECRET_ACCESS_KEY` |
 | `BACKUP_ENCRYPTION_KEY`   | yes | operator | openssl passphrase encrypting/decrypting backup objects (`db-backup.yml`, `db-restore-test.yml`, storage backup) |
-| `SUPABASE_SERVICE_ROLE_KEY` | yes | —  | Supabase Storage REST access for `scripts/backup-storage.sh` |
+| `SUPABASE_SERVICE_ROLE_KEY` | yes | operator | Supabase Storage REST access for `scripts/backup-storage.sh` (prod storage backups need the prod project's key) |
+| `SUPABASE_URL`            | yes | operator | Supabase project URL for `scripts/backup-storage.sh`; provision the prod project URL in `prod-backup`/`prod-approval` |
 | `S3_BACKUP_BUCKET`        | yes | operator | **Legacy** full-URI/bucket name holding backups; prefer the `S3_BUCKET` variable. Accepted (normalised) by the restore paths for backwards compatibility |
 | `NTFY_ALERTS_URL`         | yes | operator | ntfy topic URL for backup/storage-backup/restore-test failure notifications (primary channel) |
 | `NTFY_ALERTS_USER`        | yes | operator | ntfy basic-auth user for the above (write-only relay user) |
@@ -134,11 +135,13 @@ repository **variables** (Settings → Secrets and variables → Actions →
 Variables). Optional offsite copy: `S3_OFFSITE_BUCKET` /
 `S3_OFFSITE_PREFIX`. See `docs/ROLLBACK_PROCEDURES.md` §3a.
 
-The backup/restore workflows attach the **`dev` environment**, so
+The scheduled backup/restore workflows attach the **`dev` environment**, so
 `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` resolve from it, and the `AWS_*`
 credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 `S3_ENDPOINT` (variable) overrides the default Spaces endpoint
 (`https://nyc3.digitaloceanspaces.com`) for real AWS S3 or another region.
+A prod dispatch attaches `prod-approval`, and the scheduled prod target
+attaches `prod-backup` — both must carry the prod rows above (DR-P2-009).
 
 ## Secrets required by other workflows
 
@@ -169,10 +172,11 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
 | `ALERTMANAGER_SLACK_CHANNEL`     | opt | opt  | Slack channel name for Alertmanager receivers (non-secret; e.g. `#alerts`) |
 | `S3_BUCKET`                      | —   | yes  | Backup bucket **name** (see contract above)                   |
 | `S3_PREFIX`                      | —   | yes  | Backup key prefix (default `database-backups`)                |
+| `S3_STORAGE_CLASS`               | opt | opt  | Upload storage class; default `STANDARD` because DigitalOcean Spaces rejects other classes (DR-P0-001). Set `STANDARD_IA` only for a real AWS S3 destination |
 | `S3_OFFSITE_BUCKET`              | opt | opt  | Second destination for an offsite/cross-region backup copy    |
 | `S3_OFFSITE_PREFIX`              | opt | opt  | Prefix on the offsite bucket (defaults to `S3_PREFIX`)        |
-| `PROD_BACKUP_ENABLED`            | —   | opt  | Set to `true` to point the scheduled `db-backup` / `db-restore-test` runs at production (attaches `prod-backup`; DATA-P2-010) |
-| `STORAGE_BUCKETS`                | yes | —    | Storage buckets to back up (default `documents avatars logos`) |
+| `PROD_BACKUP_ENABLED`            | —   | opt  | Set to `true` to point the scheduled `db-backup` / `db-restore-test` / `storage-backup` / `storage-restore-test` runs at production (attaches `prod-backup`; DATA-P2-010 / DR-P2-009) |
+| `STORAGE_BUCKETS`                | yes | opt  | Storage buckets to back up (default `documents avatars logos`); set the prod bucket list in `prod-backup` if it differs |
 | `LOAD_TEST_API_URL`              | opt | opt  | Override the load-test API base URL for all runs (defaults: dev `https://api.mainecybertech.us`, prod `https://api.mainecybertech.com`) |
 | `UPTIME_PROBE_TARGETS`           | opt | opt  | JSON target list overriding `scripts/uptime/probe-targets.json` for the external uptime probe |
 | `UPTIME_PROBE_ENABLED`           | opt | opt  | Set to `false` to pause the scheduled external uptime probe (manual dispatch still runs) |
@@ -193,7 +197,8 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
      start without pausing. The production deploy and migration secrets/vars
      below must be available to `prod-approval` (scoped to it or repo-wide).
    - `prod-backup` — used by the scheduled prod `db-backup` /
-     `db-restore-test` runs when `PROD_BACKUP_ENABLED=true` (DATA-P2-010).
+     `db-restore-test` / `storage-backup` / `storage-restore-test` runs when
+     `PROD_BACKUP_ENABLED=true` (DATA-P2-010 / DR-P2-009).
      Add the prod backup secrets below and **no** required reviewers: an
      unattended scheduled backup must not wait for a human. Dispatch-based prod
      runs still attach `prod-approval`, so the approval gate remains for
@@ -208,7 +213,9 @@ credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
      where the scheduled `db-backup.yml` / `db-restore-test.yml` /
      `storage-backup.yml` runs execute (DR-P0-001); also provision the prod
      copies in `prod-backup` (and make them available to `prod-approval`) to
-     activate the prod backup target (DATA-P2-010)
+     activate the prod backup target (DATA-P2-010). The prod storage backup
+     additionally needs the prod `SUPABASE_URL` /
+     `SUPABASE_SERVICE_ROLE_KEY` in the same environment (DR-P2-009)
    - `CLOUDFLARE_API_TOKEN` — from Cloudflare dashboard
    - `CLOUDFLARE_ZONE_ID` / `CLOUDFLARE_ZONE_ID_US` — from Cloudflare dashboard
    - `CI_SSH_PRIVATE_KEY` — private key (e.g. `cat ~/.ssh/id_rsa`) for droplet SSH access

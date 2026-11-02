@@ -88,6 +88,10 @@ jobs:
           # S3_BACKUP_BUCKET secret for the bucket name during transition.
           S3_BUCKET: ${{ vars.S3_BUCKET || secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
           S3_PREFIX: ${{ vars.S3_PREFIX || 'database-backups' }}
+          # DR-P0-001 investigation: DigitalOcean Spaces only accepts STANDARD
+          # and rejects other classes, so the default is STANDARD. Override with
+          # the S3_STORAGE_CLASS variable (e.g. STANDARD_IA) on real AWS S3.
+          S3_STORAGE_CLASS: ${{ vars.S3_STORAGE_CLASS || 'STANDARD' }}
           # Optional offsite/cross-region copy (audit DR-P1-003). Set the
           # S3_OFFSITE_BUCKET variable to enable a second destination.
           S3_OFFSITE_BUCKET: ${{ vars.S3_OFFSITE_BUCKET }}
