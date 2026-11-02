@@ -119,6 +119,14 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   review finding the dev droplet at 98% disk with every service-level rule
   green.
 
+### Changed
+
+- **Vercel build remnants removed:** `apps/web/next.config.mjs` no longer
+  branches on `process.env.VERCEL` (every environment builds the standalone
+  server behind Caddy), and the marketing/Cloudflare docs describe the
+  Cloudflare → droplet topology instead of the retired Vercel flow. Pointing
+  the `.com` zone at the production droplet is an operator DNS change.
+
 ### Security
 
 - Deploy now injects the Turnstile keys (`TURNSTILE_SECRET_KEY` into the droplet
