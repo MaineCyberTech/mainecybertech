@@ -42,12 +42,14 @@ export default function () {
     });
     const res = http.post(`${BASE_URL}/api/v1/auth/sign-in`, payload, {
       headers: { "Content-Type": "application/json" },
-      // 401 is the expected outcome for invalid credentials; mark it as an
-      // expected response so it does not count against the error-rate budget.
-      responseCallback: http.expectedStatuses(401),
+      // 401 is the expected outcome for invalid credentials; 429 is the auth
+      // rate limiter doing its job (the smoke loop repeats this call, and the
+      // limiter is per-IP). Both are healthy outcomes for this probe and must
+      // not count against the error-rate budget.
+      responseCallback: http.expectedStatuses(401, 429),
     });
     check(res, {
-      "invalid login returns 401": (r) => r.status === 401,
+      "invalid login is rejected (401 or 429)": (r) => r.status === 401 || r.status === 429,
     });
   });
 }

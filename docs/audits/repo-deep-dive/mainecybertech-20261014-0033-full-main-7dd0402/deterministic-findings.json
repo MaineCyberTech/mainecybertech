@@ -1,0 +1,30 @@
+{
+  "run": "mainecybertech-20261014-0033-full-main-7dd0402",
+  "generated": "2026-10-14T08:36:10Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 2
+  },
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "title": "[SEC] gitleaks not installed (secret scan skipped)",
+      "owner": "@owner",
+      "target": "DET",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the repo-side check passes. .github/workflows/secret-history-scan.yml:27-40 installs gitleaks 8.30.1 from the release tarball and verifies its SHA-256 (GITLEAKS_SHA256 551f6fc8...) before running the full-history scan (lines 42-47) and the allowlist probe scripts/ci/verify-gitleaks-config.sh:1-47; README.md:328 and docs/CI.md:28 document the pinned install. The deterministic lens still prints this row because the audit host has no gitleaks binary (tools/deterministic_checks.py:166 is environment-dependent, not a repo gap) - run output at 7dd0402 is otherwise identical to 8d299b8.",
+      "area": "DET"
+    },
+    {
+      "id": "DET-P3-002",
+      "severity": "P3",
+      "title": "[SUPPLY] 3 container image(s) without a digest pin",
+      "owner": "@owner",
+      "target": "DET",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the deployed images are digest-pinned. deploy-do.yml:897-904 refuses to deploy when API_DIGEST/WORKER_DIGEST/WEB_DIGEST are missing and exports MCT_<SERVICE>_IMAGE with @sha256 refs (attestation-verified first); third-party-image-scan.yml:51-61 fails on any literal (non-$) image ref in infra/digitalocean/docker-compose.yml without @sha256 (all four third-party images carry digests). The compose tag fallbacks (docker-compose.yml:82,160,233) remain for manual operator runs and are documented at docker-compose.yml:74-80, so the deterministic static check keeps flagging them by design; they are not used by the deploy path.",
+      "area": "DET"
+    }
+  ]
+}

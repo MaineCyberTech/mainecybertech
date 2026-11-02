@@ -1,6 +1,13 @@
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
-import type { TaskResult } from "../task-registry";
+import type { TaskExecutionContext, TaskResult } from "../task-registry";
+
+/**
+ * RES-P3-011: thrown when the task deadline signal fires mid-listing. The
+ * caller treats it as a bucket failure and never acts on a partial listing —
+ * a truncated view could otherwise look like "everything is an orphan".
+ */
+const ABORT_MESSAGE = "task aborted before completing";
 
 /**
  * Storage listing page size. `list()` is paginated: it returns at most `limit`
@@ -86,6 +93,7 @@ async function listAllFiles(
   prefix = "",
   seen = { count: 0 },
   depth = 0,
+  signal?: AbortSignal,
 ): Promise<string[]> {
   if (depth > MAX_DEPTH) {
     throw new Error(`list ${bucket} exceeded max folder depth ${MAX_DEPTH}`);
@@ -95,6 +103,10 @@ async function listAllFiles(
   let offset = 0;
 
   for (;;) {
+    // RES-P3-011: stop paging at the task deadline. The throw keeps the
+    // partial listing from being used to decide what to delete.
+    if (signal?.aborted) throw new Error(ABORT_MESSAGE);
+
     const { data, error } = await storageBucket.list(prefix, {
       limit: LIST_PAGE_SIZE,
       offset,
@@ -109,7 +121,9 @@ async function listAllFiles(
       if (!entry.name || entry.name === EMPTY_FOLDER_PLACEHOLDER) continue;
       const fullPath = prefix ? `${prefix}/${entry.name}` : entry.name;
       if (isFolderEntry(entry)) {
-        paths.push(...(await listAllFiles(storageBucket, bucket, fullPath, seen, depth + 1)));
+        paths.push(
+          ...(await listAllFiles(storageBucket, bucket, fullPath, seen, depth + 1, signal)),
+        );
       } else {
         paths.push(fullPath);
       }
@@ -129,7 +143,11 @@ async function listAllFiles(
   return paths;
 }
 
-export async function orphanCleanup(_payload: Record<string, unknown>): Promise<TaskResult> {
+export async function orphanCleanup(
+  _payload: Record<string, unknown>,
+  context?: TaskExecutionContext,
+): Promise<TaskResult> {
+  const signal = context?.signal;
   try {
     // Storage list/remove need the service role: the anon key is subject to
     // RLS and silently fails, so orphans would accumulate.
@@ -140,9 +158,22 @@ export async function orphanCleanup(_payload: Record<string, unknown>): Promise<
     const failures: string[] = [];
 
     for (const bucket of buckets) {
+      // RES-P3-011: the deadline signal stops the task between buckets.
+      if (signal?.aborted) {
+        logger.warn({ totalRemoved }, "Orphan cleanup stopped at the task deadline");
+        return { ok: false, error: ABORT_MESSAGE };
+      }
+
       let paths: string[];
       try {
-        paths = await listAllFiles(supabase.storage.from(bucket), bucket);
+        paths = await listAllFiles(
+          supabase.storage.from(bucket),
+          bucket,
+          "",
+          { count: 0 },
+          0,
+          signal,
+        );
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         logger.error({ bucket, error: message }, "Failed to list storage bucket");
@@ -171,6 +202,9 @@ export async function orphanCleanup(_payload: Record<string, unknown>): Promise<
           ): Promise<string[]> => {
             const found: string[] = [];
             for (const chunk of chunkArray(paths, IN_CHUNK_SIZE)) {
+              // RES-P3-011: an aborted reference read must skip the bucket —
+              // treating it as "no references" would delete live objects.
+              if (signal?.aborted) throw new Error(ABORT_MESSAGE);
               const { data, error } = await supabase
                 .from(table)
                 .select("storage_path")
@@ -231,6 +265,12 @@ export async function orphanCleanup(_payload: Record<string, unknown>): Promise<
         const message = `refusing to remove non-object path(s): ${unsafe.join(", ")}`;
         logger.error({ bucket, unsafe }, "Aborted orphan removal for unsafe paths");
         failures.push(`${bucket}: ${message}`);
+        continue;
+      }
+
+      // RES-P3-011: never start a removal once the deadline fired.
+      if (signal?.aborted) {
+        failures.push(`${bucket}: ${ABORT_MESSAGE}`);
         continue;
       }
 

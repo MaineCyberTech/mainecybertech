@@ -11,6 +11,10 @@
 # The restore paths read the SAME two variables (a legacy `S3_BACKUP_BUCKET`
 # full-URI secret is accepted for backwards compatibility only).
 #
+# Storage class (DR-P0-001 investigation): DigitalOcean Spaces only accepts
+# STANDARD and rejects other classes, so the default is STANDARD. Real AWS S3
+# targets can override with S3_STORAGE_CLASS=STANDARD_IA.
+#
 # Encryption (audit DR-P1-003): when BACKUP_ENCRYPTION_KEY is set the gzipped
 # dump is encrypted with openssl AES-256-CBC before upload. The key is supplied
 # only via a secret/env var and is NEVER printed or committed. Set
@@ -22,6 +26,7 @@ BACKUP_DIR="${BACKUP_DIR:-./backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-30}"
 S3_BUCKET="${S3_BUCKET:-mainecybertech-backups}"
 S3_PREFIX="${S3_PREFIX:-database-backups}"
+S3_STORAGE_CLASS="${S3_STORAGE_CLASS:-STANDARD}"
 # Optional second destination for an offsite/cross-provider copy. Bucket name
 # only; when set, the same (already encrypted) object is copied there too.
 S3_OFFSITE_BUCKET="${S3_OFFSITE_BUCKET:-}"
@@ -104,13 +109,13 @@ UPLOAD_NAME="$(basename "${UPLOAD_PATH}")"
 
 echo ""
 echo "Step 2: Uploading to S3..."
-aws s3 cp "${UPLOAD_PATH}" "s3://${S3_BUCKET}/${S3_PREFIX}/${UPLOAD_NAME}" --storage-class STANDARD_IA
+aws s3 cp "${UPLOAD_PATH}" "s3://${S3_BUCKET}/${S3_PREFIX}/${UPLOAD_NAME}" --storage-class "${S3_STORAGE_CLASS}"
 
 # --- Optional offsite/second-region copy (audit DR-P1-003) ----------------
 if [ -n "${S3_OFFSITE_BUCKET}" ]; then
   echo ""
   echo "Step 2b: Copying to offsite bucket ${S3_OFFSITE_BUCKET}..."
-  aws s3 cp "${UPLOAD_PATH}" "s3://${S3_OFFSITE_BUCKET}/${S3_OFFSITE_PREFIX}/${UPLOAD_NAME}" --storage-class STANDARD_IA
+  aws s3 cp "${UPLOAD_PATH}" "s3://${S3_OFFSITE_BUCKET}/${S3_OFFSITE_PREFIX}/${UPLOAD_NAME}" --storage-class "${S3_STORAGE_CLASS}"
   echo "Offsite copy complete"
 fi
 

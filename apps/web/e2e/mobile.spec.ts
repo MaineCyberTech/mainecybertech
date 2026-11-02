@@ -27,6 +27,39 @@ async function visibleControlFontSizes(page: Page) {
   );
 }
 
+/**
+ * MOB-P3-006: name the elements that exceed the viewport when the no-overflow
+ * assertion fails. A bare scrollWidth does not say what to fix, and the CI
+ * failure evidence (screenshots/traces) is not always available.
+ */
+async function overflowingElements(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const viewport = window.innerWidth;
+    return Array.from(document.querySelectorAll<HTMLElement>("body *"))
+      .map((el) => {
+        const rect = el.getBoundingClientRect();
+        const style = getComputedStyle(el);
+        const classes =
+          typeof el.className === "string" && el.className.trim().length > 0
+            ? "." + el.className.trim().split(/\s+/).slice(0, 3).join(".")
+            : "";
+        return {
+          selector: el.tagName.toLowerCase() + classes,
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+          position: style.position,
+        };
+      })
+      .filter(
+        (entry) => entry.width > 0 && entry.right > viewport + 1 && entry.position !== "fixed",
+      )
+      .slice(0, 8)
+      .map(
+        (entry) => `${entry.selector} right=${entry.right} width=${entry.width} pos=${entry.position}`,
+      );
+  });
+}
+
 async function expectNoControlBelow16px(page: Page, route: string) {
   const controls = await visibleControlFontSizes(page);
   expect(controls.length, `expected visible form controls on ${route}`).toBeGreaterThan(0);
@@ -55,26 +88,36 @@ test.describe("mobile viewport", () => {
     await page.setViewportSize(PHONE_VIEWPORT);
   });
 
-  // Pre-existing layout overflows found by this spec (not introduced here):
-  // /login scrollWidth 369 vs 360, /store 372 vs 360 and /store/quote 372 vs
-  // 360 in mobile WebKit (all three share the public marketing shell; mobile
-  // Chromium passes). The /store/quote failure is also intermittent — retry #2
-  // measured <=361. Tracked as a follow-up; `fixme` keeps the rest of the
-  // matrix enforcing no-overflow.
-  const KNOWN_OVERFLOW_ROUTES = new Set(["/login", "/store", "/store/quote"]);
-
+  // MOB-P3-006: the previous fixme exempted /login, /store and /store/quote
+  // from the earlier measurements (369/372 vs 360, intermittent on
+  // /store/quote). A fresh mobile-WebKit measurement of the deployed build
+  // (2026-10-14, 360x800) shows scrollWidth == innerWidth on all three, so the
+  // exemption looked stale. next/font swaps from the fallback font, whose
+  // metrics differ, so wait for the fonts to settle before measuring — the
+  // main source of run-to-run variance — and enforce every route: a real
+  // overflow must fail the gate rather than be exempted.
   for (const route of PUBLIC_ROUTES) {
     test(`${route} has no horizontal overflow`, async ({ page }) => {
-      test.fixme(
-        KNOWN_OVERFLOW_ROUTES.has(route),
-        `pre-existing overflow on ${route} (see follow-up)`,
-      );
+      // The project runs with the authenticated storage state, and the
+      // middleware redirects an authenticated /login to /portal/dashboard —
+      // which made this test measure the portal, not the public route it
+      // names. Clear the session so the route under test is the one measured.
+      await page.context().clearCookies();
       await page.goto(route);
       await page.waitForLoadState("domcontentloaded");
+      await page.evaluate(() => document.fonts.ready.then(() => undefined));
       const { scrollWidth, innerWidth } = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
         innerWidth: window.innerWidth,
       }));
+      if (scrollWidth > innerWidth + 1) {
+        // Log the offenders so a CI failure names the element, not just the
+        // width (the screenshots/traces may not be uploaded).
+        const offenders = await overflowingElements(page);
+        console.log(
+          `${route} horizontal overflow offenders: ${offenders.join(" | ") || "none (fixed-position or shadow overflow)"}`,
+        );
+      }
       expect(
         scrollWidth,
         `${route} overflows horizontally (scrollWidth ${scrollWidth} > viewport ${innerWidth})`,

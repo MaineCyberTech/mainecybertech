@@ -2,12 +2,13 @@ import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
 import { loadActiveRetentionPolicies, resolveRetentionDays } from "../lib/retention-policy";
 import { purgeInBatches } from "../lib/purge";
-import type { TaskResult } from "../task-registry";
+import type { TaskExecutionContext, TaskResult } from "../task-registry";
 
 const DEFAULT_RETENTION_DAYS = 90;
 
 export async function publicInteractionRetention(
   payload: Record<string, unknown>,
+  context?: TaskExecutionContext,
 ): Promise<TaskResult> {
   try {
     // A 0/negative/NaN payload window would set the cutoff to "now" and wipe
@@ -37,7 +38,20 @@ export async function publicInteractionRetention(
 
     // PRIV-P3-003: the PII purge deletes in bounded batches (shared helper),
     // not one unbounded statement, and reports the real count.
-    const outcome = await purgeInBatches(supabase, "public_interactions", cutoff);
+    // RES-P3-011: the task deadline signal stops the batch loop early.
+    const outcome = await purgeInBatches(supabase, "public_interactions", cutoff, {
+      signal: context?.signal,
+    });
+
+    // RES-P3-011: the registry already failed the task at the deadline; stop
+    // here rather than reporting a partial purge as success.
+    if (outcome.aborted) {
+      logger.warn(
+        { purged: outcome.deleted, batches: outcome.batches, retentionDays },
+        "Public interaction retention purge stopped at the task deadline",
+      );
+      return { ok: false, error: "task aborted before completing; purge stopped early" };
+    }
 
     if (outcome.error) {
       logger.error(

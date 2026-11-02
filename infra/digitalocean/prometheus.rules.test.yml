@@ -704,3 +704,31 @@ tests:
       - eval_time: 20m
         alertname: MCTRedisOperationFailures
         exp_alerts: []
+
+  # CASE 46: BILL-P3-009 - sustained entitlement-lookup failures MUST fire.
+  - interval: 1m
+    input_series:
+      - series: 'portal_billing_lookup_failures_total{module="findings",job="mct-api"}'
+        values: '0+1x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTBillingLookupFailures
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              job: mct-api
+              module: findings
+            exp_annotations:
+              summary: "Entitlement resolution failing open on mct-api (findings)"
+              description: "portal_billing_lookup_failures_total increased in the last 15 minutes: the entitlement gate could not read the billing mirror for module findings and allowed the request (deliberate fail-open). A sustained outage silently disables the plan boundary for every gated module. Check Supabase/billing-mirror health and the entitlement resolution error logs."
+
+  # CASE 47: a successful entitlement resolution MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'portal_billing_lookup_failures_total{module="findings",job="mct-api"}'
+        values: '0+0x30'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: MCTBillingLookupFailures
+        exp_alerts: []

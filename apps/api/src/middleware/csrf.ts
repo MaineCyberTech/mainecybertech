@@ -65,6 +65,14 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
     return next();
   }
 
+  // NOTIF-P2-012: the unsubscribe POST is an RFC 8058 one-click action whose
+  // credential is the signed token in the URL, not a session cookie — a mail
+  // client has no CSRF cookie to echo. GET was already exempt as a safe
+  // method; the POST must be too or one-click unsubscribes 403.
+  if (req.path.startsWith("/api/v1/notifications/unsubscribe")) {
+    return next();
+  }
+
   if (SAFE_METHODS.includes(req.method)) {
     const token = generateToken();
     const domain = cookieDomain(req);

@@ -6,6 +6,12 @@ what to check first.
 ## Quick checklist
 
 - [ ] PR is green: `test`, `security-scan`, `secrets-scan`, `lint`, `typecheck`, `codeql`, `e2e`.
+- [ ] Every required check has **completed** green on the promotion PR before
+      merging — never merge while checks are queued/running. A merge before the
+      checks report leaves the promoted commit with no green Test artifact
+      (TEST-P2-010, PR #281); a stuck gate goes through
+      [RUNBOOK_EMERGENCY_MERGE.md](RUNBOOK_EMERGENCY_MERGE.md), never an
+      undocumented admin override.
 - [ ] `CHANGELOG.md` `[Unreleased]` section reflects the change.
 - [ ] Schema changes are in `supabase/migrations/`.
 - [ ] The deploy run's `validate` gate is green.
@@ -81,6 +87,18 @@ pass before the deploy step:
   idempotent, and a dispatch from a non-`main` ref only uploads the notes/SBOM
   as artifacts. Bump [`VERSION`](../VERSION) when the release changes the
   product version — the tag carries whatever the file says.
+- **Release-notes scope (REL-P3-001):** the generated `Changes since …` section
+  is `git log --no-merges <prev>..HEAD` with each subject printed verbatim. It
+  does **not** group, rewrite, or filter by conventional-commit type, so bot
+  commits (dependabot/remediation agents) and non-standard types such as
+  `security:` or `a11y:` appear exactly as authored. Subject hygiene is
+  therefore advisory; the remaining single-human-author bus factor is
+  organizational, not a workflow defect.
+- **CHANGELOG checkbox (REL-P3-002):** the PR template checkbox is enforced by
+  `scripts/check-changelog-checkbox.mjs` in the required PR test job. It fails
+  when a PR touches product source or a migration but leaves the box unchecked;
+  docs/CI/test-only PRs pass without an entry. The guard checks the declaration,
+  not the `CHANGELOG.md` diff itself.
 - Each image is scanned with Trivy at build time (CRITICAL/HIGH, ignoring
   unfixed) before the deploy proceeds; a failing scan blocks the deploy jobs.
 - `CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/) and
@@ -180,10 +198,11 @@ first:
 - `DO_API_TOKEN` returns HTTP 401; dev falls back to the `DROPLET_IP`
   environment variable, but prod has no fallback set. Rotate the token and/or
   set `DROPLET_IP` for prod.
-- Branch state: the last promotion was PR #168 (`main` @ `8d299b8d`,
-  2026-10-11); `develop` accumulates commits until the next promotion, so the
-  branches can point in either direction between releases — compare them with
-  `git log --oneline origin/main..origin/develop` (and the reverse) instead of
+- Branch state: the last promotion is PR #281 (`main` @ `7dd04023`,
+  2026-10-14); PR #278 (`9ba108b5`, 2026-10-13) preceded it. `main` currently
+  carries every `origin/develop` commit, but the branches can point in either
+  direction between releases — compare them with
+  `git log --oneline --left-right origin/main...origin/develop` instead of
   assuming. Scheduled `db-backup`/`db-restore-test`/`sbom` runs only fire from
   the default branch, so unpromoted `develop` work is not covered by them, and
   recent backup runs have failed — verify the database secrets before relying

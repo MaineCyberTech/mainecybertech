@@ -1,0 +1,200 @@
+{
+  "domain": "28_file_upload_download_security_audit",
+  "file": "28_file_upload_download_security_audit.md",
+  "area": "FILE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T01:00:48Z",
+  "findings": [
+    {
+      "id": "FILE-P1-001",
+      "severity": "P1",
+      "title": "Public file-request upload is permission-gated and unreachable for anonymous uploaders",
+      "owner": "API/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "file-requests.ts:114-130 authorizes the public upload by the request token only; management routes remain permission-gated.",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P1-002",
+      "severity": "P1",
+      "title": "File-request uploads have no tenant-scoped path and no download path; orphan cleanup will delete them",
+      "owner": "API/backend + storage",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "org-prefixed path (file-requests.ts:160), file_request_uploads row (218), org-scoped list/signed-URL endpoints (343-390), orphan-cleanup reconciles file_request_uploads (orphan-cleanup.ts:169-190).",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P1-003",
+      "severity": "P1",
+      "title": "Document version history objects are deleted at replace and by orphan cleanup",
+      "owner": "API/backend + storage",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "documents.ts replace keeps the previous object (retention comment at ~:451), version signed URL at :961-1020, cleanup unions document_versions (:186-189).",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P2-001",
+      "severity": "P2",
+      "title": "`avatars` bucket is used by code but declared nowhere with no storage RLS policy",
+      "owner": "DB/RLS owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "5302433 declares the avatars bucket and owner-prefix policies.",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P2-002",
+      "severity": "P2",
+      "title": "Free-form `storageBucket`/`storagePath` on create/update allows signing arbitrary in-bucket objects",
+      "owner": "API/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "validators/document.ts:27 z.literal('documents') + path regex; documents.ts:284-287,549-556 org-prefix equality on create/update.",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P2-003",
+      "severity": "P2",
+      "title": "No content/AV scanning and no bucket-level MIME/size limits on the documents bucket",
+      "owner": "API/backend + infra",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "lib/malware-scan.ts exists and fails closed when MALWARE_SCANNER_URL is configured, but the default is a no-op and the documents bucket has file_size_limit only \u2014 allowed_mime_types is deliberately unset (5302439 comment).",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P2-004",
+      "severity": "P2",
+      "title": "No backup or restore path for uploaded objects (durability for files)",
+      "owner": "Platform/DR owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "backup-storage.sh + restore-storage.sh + storage-backup.yml + storage-restore-test.yml present; the local exercise script is wired into CI (validate.yml:74). Residual: live restore drill still pending (drill ledger).",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P2-005",
+      "severity": "P2",
+      "title": "Content sniffing does not cover Office, archive, text/JSON, or polyglot payloads",
+      "owner": "API/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "upload-validation.ts:10-18,89-148,165-200 covers OOXML/OLE2/zip/gzip/7z/rar/tar/RTF/JSON/text and rejects polyglot mismatches.",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P2-006",
+      "severity": "P2",
+      "title": "CSV exports do not neutralize formula injection and default to all rows when `organization_id` is omitted",
+      "owner": "API/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "lib/csv.ts:9-25 formula guard; sendExportResponse/rowsToCsv used by 8 routes + 2 bespoke CSV exports, all org-scoped.",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P2-007",
+      "severity": "P2",
+      "title": "Document download authorization bypasses the `can_read_document` visibility model",
+      "owner": "API/security principal engineer",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "canReadDocumentById enforced on download (documents.ts:661-663) and version signed URL (:972-983).",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P2-008",
+      "severity": "P2",
+      "title": "Members with `documents:create` can write objects straight to the documents bucket, bypassing upload validation",
+      "owner": "DB/RLS owner + API/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "5302439 drops the authenticated INSERT/UPDATE storage policies and sets the 25MiB bucket limit; API writes are service-role with validation.",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P3-001",
+      "severity": "P3",
+      "title": "Share endpoint has no per-token rate limit",
+      "owner": "API/backend",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "rateLimitShare mounted on GET /shares/:token (documents.ts:13,162).",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P3-002",
+      "severity": "P3",
+      "title": "Client logo accept list still advertises SVG that the server rejects",
+      "owner": "Web/frontend",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "OrgBrandingForm.tsx:106 accept='image/png,image/jpeg,image/webp,image/gif' matches the server map; test asserts it.",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P3-003",
+      "severity": "P3",
+      "title": "Documentation drift on file types and size limits; no documents/upload runbook",
+      "owner": "Documentation owner",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "docs/runbooks/secure-file-request.md exists and matches the code, but docs/ORG_BRANDING.md:65 still advertises PNG/JPG/SVG with a 5MB limit (SVG is rejected) and docs/ARCHITECTURAL_ANALYSIS.md:274 still says documents 50MB/avatars 2MB.",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P3-004",
+      "severity": "P3",
+      "title": "Storage restore path exists but has never been exercised",
+      "owner": "Platform/DR owner",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "bash scripts/exercise-storage-restore.sh -> PASS (6 checks: valid/no-manifest/count-mismatch/empty/encrypted-no-key/encrypted-with-key); wired at validate.yml:74.",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P3-005",
+      "severity": "P3",
+      "title": "Share revocation does not invalidate already-issued signed URLs",
+      "owner": "API/backend",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "SHARE_SIGNED_URL_TTL_SECONDS=300 + {download:true} (documents.ts:157-191).",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P3-006",
+      "severity": "P3",
+      "title": "Oversized uploads return 500 instead of a validation error",
+      "owner": "API/backend",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "middleware/error.ts:36-39 maps LIMIT_FILE_SIZE to 413 with a clear message.",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P3-007",
+      "severity": "P3",
+      "title": "File-domain test gaps: no upload-validation unit tests and no file-request download coverage",
+      "owner": "API/backend + QA",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "upload-validation.test.ts + file-requests.test.ts present (incl. cross-org 404 coverage).",
+      "area": "FILE"
+    },
+    {
+      "id": "FILE-P3-008",
+      "severity": "P3",
+      "title": "Previews render untrusted files inline without sandbox or disposition controls",
+      "owner": "Web/frontend + API",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "preview-policy.ts:17-25,55-80 denies SVG/XML/HTML inline and forces attachment; web preview iframes sandboxed.",
+      "area": "FILE"
+    }
+  ],
+  "report": "Read-only re-verification at `7dd0402`; no live Storage/bucket probing. 17 of 19 previous FILE rows verified fixed, 2 partially fixed, 0 regressed, 0 new. Executed: `bash scripts/exercise-storage-restore.sh` \u2192 PASS (6 checks). Key code: `routes/{documents,file-requests}.ts`, `lib/{upload-validation,preview-policy,malware-scan,csv,document-visibility}.ts`, `worker/tasks/orphan-cleanup.ts`; migrations 5302433/5302439. Residuals: malware scanning is an opt-in fail-closed hook (default no-op) and the documents bucket has no MIME allow-list (FILE-P2-003); `docs/ORG_BRANDING.md:65` and `docs/ARCHITECTURAL_ANALYSIS.md:274` still state stale types/sizes (FILE-P3-003)."
+}

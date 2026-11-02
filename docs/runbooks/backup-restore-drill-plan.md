@@ -32,7 +32,7 @@ run by an operator on an isolated target, never against production data.
 |---|---|---|---|
 | Daily DB backup workflow | `.github/workflows/db-backup.yml` | Present and scheduled on the default branch (DR-P0-002 fixed); records a platform heartbeat (DR-P2-008) | **No green run yet** — operator backup secrets unprovisioned (DR-P0-001 residual) |
 | Backup script (bash) | `scripts/backup-database.sh` | pg_dump → gzip → S3/Spaces; encryption when `BACKUP_ENCRYPTION_KEY` is set; 30-day retention | `not exercised` |
-| Backup script (PowerShell) | `scripts/backup-database.ps1` | Legacy duplicate of the bash logic (retire/delegate: DR-P3-002) | `not exercised` |
+| Backup script (PowerShell) | — | Retired (DR-P3-002); use `scripts/backup-database.sh` via WSL/Git Bash | N/A |
 | Weekly restore test | `.github/workflows/db-restore-test.yml` | Present and scheduled; restores to a temp `postgres:16-alpine` and **asserts** structure/freshness/RLS floors (DR-P0-003, DR-P1-001 fixed) | `not exercised` (same operator residual) |
 | Storage backup | `.github/workflows/storage-backup.yml`, `scripts/backup-storage.sh` | Paginated listing, zero-object refusal, MANIFEST with `object_count`, encryption, offsite option (DR-P2-001 fixed) | `not exercised` |
 | Storage restore test | `.github/workflows/storage-restore-test.yml`, `scripts/restore-storage.sh --verify-only` | Weekly assertions: manifest present, `object_count` == extracted count, archive non-empty (DR-P1-002, DR-P2-002 fixed) | `not exercised` |
@@ -63,8 +63,8 @@ For D1 (database restore) the following must all be available and known-good:
 |---|---|---|
 | `SUPABASE_DB_URL` (target) | GitHub secret / operator env | Restore aborts (script checks presence) |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | GitHub secret | No S3 listing / download |
-| `S3_BACKUP_BUCKET` (full `s3://bucket/prefix` URI) | GitHub secret | `aws s3 ls` returns nothing → "No backups found" |
-| Backup object name/prefix convention | `scripts/backup-database.sh` (`S3_BUCKET`/`S3_PREFIX`) | Restore test may read the wrong location (contract documented; DR-P1-003 fixed) |
+| `S3_BUCKET` (bucket **name**, no `s3://`) + `S3_PREFIX` (key prefix) | GitHub variable (legacy `S3_BACKUP_BUCKET` secret accepted as a fallback and normalised) | `aws s3 ls` returns nothing → "No backups found" |
+| Backup object name/prefix convention | `scripts/backup-database.sh` (`S3_BUCKET`/`S3_PREFIX`, DR-P1-003) | Restore test may read the wrong location (contract documented) |
 | `pg_dump`/`psql` client version | Runner / docker image | Version-mismatch restore errors |
 | Supabase project ref + service context | For PITR fork | PITR unavailable |
 | Network egress to S3/Spaces endpoint | Runner | Silent download failure |
@@ -75,7 +75,9 @@ For D1 (database restore) the following must all be available and known-good:
 
 1. **Preconditions:** read-only credentials to S3/Spaces; a throwaway Postgres container; the newest dump object identified (name + timestamp only, no secrets logged).
 2. Start target: `docker run -d --name drill-pg -e POSTGRES_PASSWORD=<throwaway> -e POSTGRES_DB=drill_restore -p 127.0.0.1:5433:5432 postgres:16-alpine`.
-3. Download: `aws s3 cp <S3_BACKUP_BUCKET>/<latest> /tmp/drill.sql.gz`.
+3. Download: `aws s3 cp "s3://${S3_BUCKET}/${S3_PREFIX}/<latest>" /tmp/drill.sql.gz`
+   (`S3_BUCKET` is a bucket name and `S3_PREFIX` a key prefix — the same
+   contract the backup workflows write with, DR-P1-003 / DR-P3-007).
 4. Restore with pipefail: `set -euo pipefail; gunzip -c /tmp/drill.sql.gz | psql "postgresql://postgres:<throwaway>@localhost:5433/drill_restore"`.
 5. Run **D3 assertions** (§6).
 6. Record: backup object name, byte size, restore wall-clock, assertion output, exit codes.

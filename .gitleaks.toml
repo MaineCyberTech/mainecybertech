@@ -40,3 +40,32 @@ id = "generic-api-key"
     description = "e2e throwaway JWT default"
     regexTarget = "line"
     regexes = ['''e2e-test-secret-32-characters-long''']
+
+    # Reviewed historical test fixtures (2026-10-21 full-history scan): the
+    # pre-sanitizer tests used a fake `api_key=abcdef123456` literal, and the
+    # e2e workflow history carried throwaway JWTs signed with the test secret.
+    # Paths are exact; the API test file no longer contains the literal (the
+    # hit is historical), so it is scoped by path only with this justification.
+    [[rules.allowlists]]
+    description = "reviewed fake api-key literals in notification tests"
+    condition = "OR"
+    paths = [
+      '''apps/worker/src/__tests__/notification-store\.test\.ts$''',
+      '''apps/api/src/__tests__/notify-enforcement\.test\.ts$''',
+    ]
+    regexTarget = "line"
+    regexes = ['''api_key=abcdef123456''', '''abcdef123456''']
+
+# The built-in `jwt` rule flags the throwaway e2e tokens in the workflow
+# history and the generated (gitignored) Playwright auth state. Both are
+# test-account material signed at CI time, never production key material.
+[[rules]]
+id = "jwt"
+
+    [[rules.allowlists]]
+    description = "historical e2e / playwright test JWTs"
+    condition = "OR"
+    paths = [
+      '''^\.github/workflows/e2e\.yml$''',
+      '''apps/web/\.playwright-auth\.json$''',
+    ]

@@ -11,7 +11,10 @@ runs:
       shell: bash
       run: |
         set -e
-        PATTERNS='AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|gho_[0-9a-zA-Z]{36}|ghu_[0-9a-zA-Z]{36}|github_pat_[0-9a-zA-Z_]{22,}|sk_(live|test)_[0-9a-zA-Z]{16,}|xox[baprs]-[0-9a-zA-Z-]{10,}|-----BEGIN [A-Za-z ]*PRIVATE KEY-----|eyJhbGciOi[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{20,}\.[A-Za-z0-9._-]{20,}'
+        # CI-P3-005 / SC-P3-009: one canonical list shared with the pre-commit
+        # scanners, including platform token formats (dop_v1_, sbp_, glpat-,
+        # sk-proj-, npm_). scripts/ci/test-secret-patterns.mjs proves each.
+        PATTERNS=$(awk 'NF && $0 !~ /^#/ { printf "%s%s", sep, $0; sep="|" }' scripts/ci/secret-patterns.txt)
         if [ "${{ github.event_name }}" = "pull_request" ]; then
           BASE="${{ github.event.pull_request.base.sha }}"
         else
@@ -39,6 +42,12 @@ runs:
           echo "::error::Secret pattern detected in diff (values redacted). Files: ${FILES:-unknown}"
           exit 1
         fi
+
+    - name: Verify scanner fixtures
+      # CI-P3-005 / SC-P3-009: fails if a known token format stops matching or
+      # a scanner stops consuming the canonical pattern list.
+      shell: bash
+      run: node scripts/ci/test-secret-patterns.mjs
 
     - name: Reject tracked local secret files
       # SUPPLY-P3-002: local Supabase runtime secrets

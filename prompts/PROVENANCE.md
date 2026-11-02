@@ -7,9 +7,13 @@
 > Embedded outputs (findings, reports, engine JSON/py artifacts) are historical
 > snapshots, not current repo state. (AI-P2-002)
 
-The `prompts/` directory contains 623 pinned files across 6 packs — prompt templates
+The `prompts/` directory contains 624 pinned files across 6 packs — prompt templates
 for AI-assisted development AND generated audit outputs (JSON/CSV/py artifacts)
-produced by running those audits. Because these files are not executable in the
+produced by running those audits. The pin covers every tracked file under
+`prompts/` except `manifest.json` itself and this file, so the tracked count is
+two higher (626) by design.
+
+Because these files are not executable in the
 application runtime, but ARE committed to the repo and could be tampered with,
 they represent a **supply-chain risk**: a malicious or accidental edit could
 inject instructions or fabricated findings that influence future AI-assisted
@@ -30,8 +34,10 @@ development or decisions.
 
 3. **CI guard.** The `validate` workflow (a deploy gate) runs
    `node scripts/verify-prompts.js verify`, which fails the pipeline on any
-   missing / added / changed file under `prompts/`. This is a deploy gate, so a
-   tampered prompt file blocks deployment.
+   missing / added / changed file under `prompts/`, and when a committed run
+   manifest under `docs/audits/` references a domain prompt the pack does not
+   contain. This is a deploy gate, so a tampered prompt file or an unvendored
+   manifest reference blocks deployment.
 
 4. **Review-before-regenerate.** Intended changes to prompt/audit files are
    reviewed via normal PR review, then the author regenerates the manifest:
@@ -42,7 +48,7 @@ development or decisions.
 5. **Size budget (HYGIENE-P2-001).** The corpus is deliberately bounded so
    historical prompt/audit material cannot grow into the repo unnoticed: CI
    (`node scripts/verify-prompts.js verify`) fails once the pinned tree exceeds
-   **640 files or 10 MiB** (currently 623 files / ~8.9 MiB). `generate` warns
+   **640 files or 10 MiB** (currently 624 files / ~8.9 MiB). `generate` warns
    when a regeneration crosses the budget. Raising it is a deliberate review
    decision recorded in the PR that adds the files — keep the pin, bound the
    bloat.
@@ -77,7 +83,7 @@ current specification.
 | `mct-full-webstore-product-catalog-pack` | 193 | 0acb00fd… | Frozen (implemented) | Webstore product catalog prompts; findings implemented 2026-09-21 |
 | `mct-portal-os-expanded-60-modules-deep-prompts-pack` | 222 | f04b6ee8… | Frozen (partially aspirational) | 60-module portal OS deep prompts; the implementation matrix points at 1-file-per-module paths that were never created — the real mapping is `docs/module-matrix-mapping.md` |
 | `portal-alignment` | 63 | 4c0d108f… | Retired upstream (vendored) | Portal alignment prompts; dashboard/trend engines partly stale and embedded outputs hardcode an old repo path |
-| `repo-deep-dive` | 53 | 57ffbb85… | **Stale vs its runs** | Repo deep-dive prompts: this snapshot ends at prompt `40_release_notes_changelog_generator.md`; later runs used prompts `41`–`45` that are not vendored here. Current outputs live in `docs/audits/repo-deep-dive/`, not in the pack |
+| `repo-deep-dive` | 54 | 9c43548e… | Base pack vendored | Repo deep-dive prompts: `00`–`40` plus the cross-domain `45_exploit_chain_attack_path_audit.md` referenced by the committed run manifests. Falcon-lab prompts `41`–`44` belong to a separate pack and are not vendored here. Current outputs live in `docs/audits/repo-deep-dive/`, not in the pack |
 | `repo_audit_prompt_pack` | 28 | 6a7c5d47… | Frozen (historical) | Repo audit prompts incl. two embedded runs |
 
 > Tree hashes above are the values as of the last `generate`. The authoritative
@@ -89,4 +95,5 @@ current specification.
 > `20260728…`–`20260806…`) were removed. Audit *outputs* belong under
 > `docs/audits/{name}/{run}/`, not inside the prompt pack; the pack retains only
 > the canonical templates and prompts. `prompts/manifest.json` is regenerated
-> accordingly (630 pinned files, down from 787; 623 after the HYGIENE-P3-005 bytecode removal).
+> accordingly (630 pinned files, down from 787; 624 after the HYGIENE-P3-005
+> bytecode removal and the AI-P1-001 prompt-45 reconciliation).

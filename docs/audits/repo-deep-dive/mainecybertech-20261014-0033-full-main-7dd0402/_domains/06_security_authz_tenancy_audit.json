@@ -1,0 +1,419 @@
+{
+  "domain": "06_security_authz_tenancy_audit",
+  "file": "06_security_authz_tenancy_audit.md",
+  "area": "SEC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T00:52:41Z",
+  "findings": [
+    {
+      "id": "SEC-P1-001",
+      "severity": "P1",
+      "title": "super_admin role can be granted through membership/onboarding/bulk-invite APIs without the /users/:id/role guard",
+      "owner": "API principal engineer / security",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: shared apps/api/src/lib/role-assignment.ts:20-43 (assertCanAssignRole) + :76 (resolveRoleKey) gates all four paths - routes/memberships.ts:90-91,151-161, routes/bulk.ts:65-66, routes/organizations.ts:93, routes/users.ts:491-492; role-assignment.test.ts covers the matrix.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P1-002",
+      "severity": "P1",
+      "title": "PII field encryption silently degrades to reversible plaintext",
+      "owner": "@owner",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: config/env.ts:172-181 refuses production boot without a 32-byte FIELD_ENCRYPTION_KEY (wired at env.ts:195-196); lib/field-encryption.ts:38-52 throws instead of the `plain:` fallback when prod.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P1-003",
+      "severity": "P1",
+      "title": "Org-agnostic `requireAdmin` lets a tenant admin read other tenants' admin data",
+      "owner": "API platform / security",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: middleware/admin.ts:22-64 pins a non-super admin to req.orgId when orgScope.explicit; lib/admin-scope.ts:29-71 requires is_super_admin AND a cross-tenant membership for allTenants.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P1-004",
+      "severity": "P1",
+      "title": "Impersonation/cross-tenant access is logged but not reviewable or alerted",
+      "owner": "API platform / security",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/audit.ts:126-158 (impersonation list) and :172-191 (export) gate on resolveAdminTenantScope().allTenants.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P1-005",
+      "severity": "P1",
+      "title": "Low-trust MSP role key composes into a cross-tenant read pivot",
+      "owner": "CTO/security lead + API team",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: lib/roles.ts re-exports the @mct/sdk/role-keys split (CROSS_TENANT_KEYS=[super_admin,admin] vs ELEVATED_TENANT_KEYS=6 MSP roles); org-access.ts/admin.ts consume isCrossTenantKey; catalog-parity.test.ts asserts parity.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P1-006",
+      "severity": "P1",
+      "title": "Caller-controlled reset redirect composes into an account-takeover assist",
+      "owner": "CTO/security lead + API team",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/auth.ts:34-61 resolveTrustedRedirectOrigin allowlists CORS_ORIGIN/APP_BASE_URL; used for reset (auth.ts:347) and signup (auth.ts:193).",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P1-007",
+      "severity": "P1",
+      "title": "Client-onboarding mutations run without any `requirePermission` gate",
+      "owner": "API platform",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/client-onboarding-command-center.ts mounts requireAuth+requireOrgAccess (:32-33) and every handler carries requirePermission (view/create/edit/delete at :50,74,115,137,154,177,200,232,247).",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P1-008",
+      "severity": "P1",
+      "title": "M365 webhook secret is dead config while the real M365 auth value is undocumented and undeployed",
+      "owner": "platform/security",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: M365_WEBHOOK_SECRET exists only as explanatory comments (config/env.ts:102-105, apps/api/.env.example:41); M365_CLIENT_STATE is written by deploy-do.yml:688,787 and documented in docs/ENVIRONMENT_VARIABLES.md:92.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P1-009",
+      "severity": "P1",
+      "title": "Deploy pipeline does not write several secret-class env vars the API schema and compose reference",
+      "owner": "platform/security",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: scripts/check-env-parity.mjs runs in .github/actions/unit-tests/action.yml:83-84; deploy-do.yml:740 lists the secret set and :787-804 printf-writes M365_CLIENT_STATE/FIELD_ENCRYPTION_KEY/TURNSTILE_SECRET_KEY.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P1-010",
+      "severity": "P1",
+      "title": "Public file-request upload authorizes with a permission unioned across all orgs",
+      "owner": "API platform / security",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/file-requests.ts public upload (:114-160) authorizes on the request token bound to data.organization_id and every write derives org from that row (:197-275); no cross-org permission union.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-001",
+      "severity": "P2",
+      "title": "Worker monitoring checks are guard-then-fetch (DNS-rebinding TOCTOU); webhook path is pinned but uptime/website checks and SSL probe are not",
+      "owner": "API/worker platform engineer",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: worker tasks/module-tasks.ts uptime/website checks call pinnedFetch after assertSafeUrl (:606-624, :656-681); fetchSslExpiry resolves once via resolvePinnedAddress and connects to the pinned IP with servername set (:34-80).",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-002",
+      "severity": "P2",
+      "title": "PII field encryption is additive: plaintext profile columns remain the source of truth and are still returned",
+      "owner": "API/backend + data governance",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd04023: reads decrypt via decryptProfileRow (lib/profile-pii.ts:39-58; routes/profiles.ts:85,92,119,210) with plaintext fallback. Residual: routes/profiles.ts:165-187 still writes the plaintext duplicate columns alongside encrypted_pii, and no migration drops/blanks full_name/email/phone/title (grep 'drop column' finds none); scripts/backfill-profile-pii.mjs remains additive-only.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-003",
+      "severity": "P2",
+      "title": "Global role catalog is mutable by any org's roles:manage holder (roles are not org-scoped)",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: assertCanManageRoleCatalog (lib/role-assignment.ts:47-72) gates every catalog mutation (routes/roles.ts:103,149,197,273) to platform super admins.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-004",
+      "severity": "P2",
+      "title": "API-key scopes are stored but never enforced; keys act with the creating user's full permissions and always bypass RLS",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: middleware/permissions.ts:73-79 denies a key request whose stored scope list lacks the requested key before any creator-side resolution or admin bypass; keys with empty scopes are denied.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-005",
+      "severity": "P2",
+      "title": "MFA enforcement is opt-in and the deployed default is false",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: lib/mfa.ts:140-152 enforces a verified second factor unconditionally for privileged (admin/super_admin) sessions via userHasPrivilegedRole (:48-74).",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-006",
+      "severity": "P2",
+      "title": "Secret scanner echoes the matched secret value into CI logs",
+      "owner": "@owner",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: scripts/scan-secrets.sh:27-32 prints only the affected file names (awk filter), never the matched line/value; the gitleaks config verifier covers CI.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-007",
+      "severity": "P2",
+      "title": "Webhook SSRF guard has a DNS-rebinding TOCTOU window",
+      "owner": "@owner",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: webhook dispatch/retry/test use pinnedFetch - worker/lib/pinned-fetch.ts:85, worker/tasks/webhook-dispatcher.ts:209, webhook-retry.ts:199, api/lib/webhook-dispatcher.ts:84 (redirects not followed, 64 KiB response cap).",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-008",
+      "severity": "P2",
+      "title": "Client-onboarding mutations run without `requirePermission` (authorization outlier)",
+      "owner": "API team / security",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: same gate as SEC-P1-007 (routes/client-onboarding-command-center.ts requirePermission on all handlers).",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-009",
+      "severity": "P2",
+      "title": "MSP platform roles are cross-tenant for org access but not for permissions (inconsistent trust model)",
+      "owner": "API team / security",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: role-key trust split in @mct/sdk/role-keys; remaining isPlatformAdminKey uses are in-org (routes/tickets.ts:201,506); catalog-parity.test.ts pins the sets.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-010",
+      "severity": "P2",
+      "title": "Forgot-password email redirect still uses attacker-controlled `Origin` header",
+      "owner": "API team / security",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/auth.ts:347 forgot-password redirectTo uses resolveTrustedRedirectOrigin + the web /auth/callback path.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-011",
+      "severity": "P2",
+      "title": "`GET /analytics/summary` calls a `get_analytics_summary` RPC that no migration defines",
+      "owner": "API team / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: migration supabase/migrations/5302440_search_analytics_summary.sql:19-36 defines get_analytics_summary and revokes it from public/anon/authenticated (service_role only); routes/analytics.ts:106 calls it; analytics-summary-rpc.test.ts asserts the definition.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-012",
+      "severity": "P2",
+      "title": "RLS is bypassed on API requests by default (service-role is the default client)",
+      "owner": "API team / security",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd04023: lib/rls-startup-check.ts:29-64 refuses production boot with an empty RLS_READS_ENABLED allow-list (main.ts:19) and logs loudly for writes; getScopedClient still falls back to service-role per module. Residual: the deployed RLS_READS/WRITES_ENABLED values are operator-side and unverifiable read-only; unlisted modules still run as service_role.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-013",
+      "severity": "P2",
+      "title": "CAPTCHA/Turnstile is bypassed when the secret is unset",
+      "owner": "@owner",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: config/env.ts:141-147 requires TURNSTILE_SECRET_KEY in production; routes/public.ts:71,185-188 fails closed when configured anywhere.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-014",
+      "severity": "P2",
+      "title": "`/health` publicly discloses provider configuration and Redis errors",
+      "owner": "@owner",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/health.ts:150-161 serves /health/detail only behind the METRICS_TOKEN gate; the public /health response stays minimal.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-015",
+      "severity": "P2",
+      "title": "Bulk invite creates pre-confirmed auth accounts (and org onboarding auto-approves admin)",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/bulk.ts:163 uses inviteUserByEmail (no email_confirm pre-confirmation); routes/organizations.ts:127-138 starts the first admin membership as status:'pending'.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-016",
+      "severity": "P2",
+      "title": "`PLATFORM_ADMIN_KEYS` (org traversal) and `ADMIN_BYPASS_KEYS` (permission bypass) are inconsistent trust sets",
+      "owner": "API team / security",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: ADMIN_BYPASS_KEYS split from PLATFORM_ADMIN_KEYS in @mct/sdk/role-keys; middleware/permissions.ts:71 consumes the bypass set; remaining isPlatformAdminKey uses are in-org.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-017",
+      "severity": "P2",
+      "title": "API keys store `expires_at` but nothing enforces or prunes expiry",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: api-key-prune task registered (worker/tasks/index.ts:51) and scheduled daily (worker/schedule-config.ts:50); middleware/api-key.ts:83-88 fails closed on revoked/expired keys.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P2-018",
+      "severity": "P2",
+      "title": "API keys cannot authenticate; the feature is dead",
+      "owner": "@owner",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: middleware/auth.ts:68-88 authenticates mct_* keys via authenticateApiKey and pins req.orgId/req.orgScope to the key's org; middleware/api-key.ts hashes + timing-safe compares; api-key-auth tests exist.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P3-001",
+      "severity": "P3",
+      "title": "Sign-up confirmation redirect is built from the caller-controlled Host header and targets a non-existent API route",
+      "owner": "API team / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/auth.ts:193 emailRedirectTo uses resolveTrustedRedirectOrigin + the web /auth/callback path.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P3-002",
+      "severity": "P3",
+      "title": "Analytics admin reads are not tenant-scoped and expose platform-wide event data including visitor IPs",
+      "owner": "API platform / security",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/analytics.ts:78-110 admin reads require resolveAdminTenantScope().allTenants; migration 5302446 removed the analytics PII columns.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P3-003",
+      "severity": "P3",
+      "title": "Auth rate-limit key uses the raw email string without normalization",
+      "owner": "API platform engineer",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: middleware/rate-limit.ts:51-58 emailRateLimitKey normalizes (trim/lowercase) and SHA-256-hashes the address before it becomes a bucket key.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P3-004",
+      "severity": "P3",
+      "title": "gitleaks generic-api-key/jwt hits are false positives (no tracked secret)",
+      "owner": "@owner",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: .gitleaks.toml scopes every allowlist to a reviewed value/file and scripts/ci/verify-gitleaks-config.sh proves a negative fixture is still detected.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P3-005",
+      "severity": "P3",
+      "title": "`5302116` grants anon/authenticated full DML on every public table (RLS is the only gate)",
+      "owner": "API team / security",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: supabase/migrations/5302434_anon_privilege_least_privilege.sql revokes the blanket anon DML grants + default privileges and re-grants only the declared public-write tables; later migrations (5302458) narrow that further.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P3-006",
+      "severity": "P3",
+      "title": "CORS reflects any origin with credentials when `CORS_ORIGIN=\"*\"`",
+      "owner": "API team / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: config/env.ts:49-54 rejects CORS_ORIGIN='*'; app.ts:94-106 fails closed on a wildcard instead of reflecting the origin with credentials.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P3-007",
+      "severity": "P3",
+      "title": "`notification-preferences` PUT accepts a body `organizationId` without `assertOrgScopeMatches`",
+      "owner": "API team / security",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: middleware/org-access.ts:162-173 assertBodyOrgMatches runs on both requireOrgAccess branches (:228,249); routes/notification-preferences.ts:64-70 defaults to the pinned req.orgId and rejects an unresolvable org.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P3-008",
+      "severity": "P3",
+      "title": "`resolveEffectivePermissions` is uncached and fans out 4–6 queries per gated request",
+      "owner": "API team / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: lib/permissions.ts:34-45 15s per-process cache keyed userId:orgId with in-flight promise sharing; clearPermissionCache on grant/catalog writes; failures are not cached.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P3-009",
+      "severity": "P3",
+      "title": "Deprecated header and broad API CSP style directive",
+      "owner": "@owner",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: middleware/security-headers.ts:7-8 drops X-XSS-Protection and :29-36 tightens style-src. Residual (cosmetic): infra/digitalocean/Caddyfile.prod:12,35 still emits X-XSS-Protection for the Caddy-served hosts - unchanged from the previous run's note.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P3-010",
+      "severity": "P3",
+      "title": "M365 webhook `clientState` is compared non-constant-time",
+      "owner": "@owner",
+      "target": "@owner",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/webhooks.ts:887 timingSafeCompare on the M365 clientState; a missing clientState fails closed (:873-890).",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P3-011",
+      "severity": "P3",
+      "title": "Active-org cookie setter performs no server-side authorization",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: apps/web/lib/org-actions.ts:21-50 setActiveOrg verifies an approved membership (or platform admin) before writing the cookie.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P3-012",
+      "severity": "P3",
+      "title": "Web middleware gates routes on an unverified JWT `exp`",
+      "owner": "@owner",
+      "target": "@owner",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd04023: apps/web/middleware.ts:1-16 still gates on an unverified JWT exp and documents the gate as non-authoritative UX only; behavior unchanged by design - the API remains the verification control.",
+      "area": "SEC"
+    },
+    {
+      "id": "SEC-P3-013",
+      "severity": "P3",
+      "title": "SEC-P3-013",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "open",
+      "note": "NEW at 7dd04023 (security lens of ACM-P3-008): the registerCrud factory and final/* module routers expose read/compute endpoints without any requirePermission gate - apps/api/src/routes/final/crud.ts:33-59 (list), :88-103 (get by id); final/procurement.ts:8 (POST /procurement/compare runs on getSupabaseAdmin with no module gate); final/sharepoint.ts:7; final/backups.ts:7,22; final/budgets.ts:7; final/time-entries.ts:11; routes/sla.ts:13. final.ts:20-21 mounts only requireAuth+requireOrgAccess, so any approved org member (incl. client_user/client-viewer) can read module data whose catalog 'view' grants they do not hold (supabase/migrations/5302118:182-185 defines the view actions). No cross-tenant path found (requireOrgAccess pins/injects the org), so severity is P3.",
+      "area": "SEC"
+    }
+  ]
+}

@@ -17,6 +17,26 @@ policies that the audit (DATA-P3-001/005) asked to keep in one place.
   replay is idempotent, and the baseline rule applies to every new file.
 - Do not renumber historical files or move the baseline.
 
+## Prefix gaps
+
+The numeric prefix is a monotonic identifier, not a contiguous count: a fresh
+checkout contains fewer files than the span to the newest prefix. The following
+ranges have no migration file in the tree. They are reserved/skipped legacy
+numbers from earlier renumbering, not missing files in the applied chain (no
+workflow, seed, or script references them):
+
+| Missing prefixes | Notes |
+| --- | --- |
+| `5302027` | single skipped number before the baseline |
+| `5302039`–`5302040` | two skipped numbers |
+| `5302044`–`5302049` | six skipped numbers |
+| `5302084` | single skipped number |
+| `5302136`–`5302401` | large reserved block before the remediation series |
+| `5302429` | single skipped number before the post-baseline series |
+
+When adding a migration, use the next number after the newest file (see
+[`naming-guide.md`](naming-guide.md)); never fill or reuse a gap.
+
 ## No down-migrations
 
 The repository has **no** down/revert migration tooling and does not plan one.

@@ -8,11 +8,14 @@ import { ZodError } from "zod";
 import { resolveAdminTenantScope } from "../lib/admin-scope";
 import { logger } from "../lib/logger";
 import { toJson } from "../lib/db-types";
+import { ANALYTICS_EVENT_NAMES, sanitizeAnalyticsMetadata } from "../lib/analytics-events";
 
 const router: ReturnType<typeof Router> = Router();
 
 const trackSchema = z.object({
-  event: z.string().min(1).max(100),
+  // AN-P3-006: the documented registry is enforced server-side; arbitrary
+  // event names are rejected instead of skewing the summary RPC.
+  event: z.enum(ANALYTICS_EVENT_NAMES),
   page: z.string().max(500).optional(),
   productId: z.string().max(200).optional(),
   categoryId: z.string().max(200).optional(),
@@ -49,7 +52,7 @@ router.post("/track", async (req, res, next) => {
       quiz_id: parsed.quizId || null,
       quote_id: parsed.quoteId || null,
       campaign_id: parsed.campaignId || null,
-      metadata: toJson(parsed.metadata || {}),
+      metadata: toJson(sanitizeAnalyticsMetadata(parsed.metadata)),
       anonymous_id: parsed.anonymousId || null,
     });
 

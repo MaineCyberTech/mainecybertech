@@ -1,5 +1,7 @@
 import { Router } from "express";
+import crypto from "crypto";
 import { getScopedClient } from "../services/supabase";
+import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { rateLimitSearch } from "../middleware/rate-limit";
@@ -90,6 +92,28 @@ router.get("/", async (req, res, next) => {
     // SEARCH-P2-005: the portal surface is the highest-volume search path and
     // was the only one not incrementing the counter.
     recordSearchQuery();
+
+    // SEARCH-P3-004: the portal path had no audit trail at all, so portal
+    // searches could not be reconstructed for an incident or a DSAR response.
+    // Mirror the admin event (search.ts, SEARCH-P2-001): a truncated SHA-256
+    // fingerprint + length, never the raw term, plus per-entity result counts.
+    // `surface` distinguishes the two entry points.
+    const queryHash = crypto.createHash("sha256").update(q).digest("hex").slice(0, 16);
+    await logAuditEvent({
+      actorUserId: user.userId,
+      action: "search.query",
+      entityType: "search",
+      metadata: {
+        surface: "portal",
+        queryHash,
+        queryLength: q.length,
+        resultCounts: {
+          tickets: tickets?.length ?? 0,
+          projects: projects?.length ?? 0,
+          documents: readableDocuments.length,
+        },
+      },
+    });
 
     res.json(
       success({

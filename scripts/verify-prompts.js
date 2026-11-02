@@ -22,6 +22,7 @@ const crypto = require("crypto");
 
 const PROMPTS_DIR = path.resolve(__dirname, "..", "prompts");
 const MANIFEST = path.join(PROMPTS_DIR, "manifest.json");
+const AUDITS_DIR = path.resolve(__dirname, "..", "docs", "audits");
 
 // Documented size budget (prompts/PROVENANCE.md). prompts/ is historical data,
 // not product code; growing the pinned corpus must be a deliberate, reviewed
@@ -76,6 +77,42 @@ function pinnedStats(files) {
   let bytes = 0;
   for (const rel of files) bytes += fs.statSync(path.join(PROMPTS_DIR, rel)).size;
   return { files: files.length, bytes };
+}
+
+/**
+ * AI-P1-001: committed run manifests name the domain prompts they executed.
+ * A manifest that references a prompt the vendored pack does not contain makes
+ * the audit non-reproducible (and is how prompt 45 drifted for three runs), so
+ * verify fails on any unresolvable domain prompt. The historical manifests are
+ * never edited; the missing prompt is vendored instead.
+ */
+function manifestPromptDrift() {
+  if (!fs.existsSync(AUDITS_DIR)) return [];
+  const problems = [];
+  for (const full of walk(AUDITS_DIR)) {
+    if (path.basename(full) !== "audit_manifest.json") continue;
+    let manifest;
+    try {
+      manifest = JSON.parse(fs.readFileSync(full, "utf8"));
+    } catch {
+      problems.push(`${path.relative(process.cwd(), full)}: invalid JSON`);
+      continue;
+    }
+    const domains = manifest?.scope?.domains;
+    if (!Array.isArray(domains)) continue;
+    const pack = manifest?.recommendedName || "repo-deep-dive";
+    for (const domain of domains) {
+      if (domain === "deterministic") continue;
+      const promptPath = path.join(PROMPTS_DIR, pack, "prompts", `${domain}.md`);
+      if (!fs.existsSync(promptPath)) {
+        problems.push(
+          `${path.relative(process.cwd(), full)}: ${domain} -> ` +
+            `missing prompts/${pack}/prompts/${domain}.md`,
+        );
+      }
+    }
+  }
+  return problems;
 }
 
 function treeHash(packDir, entries) {
@@ -180,6 +217,14 @@ function verify() {
         `${(stats.bytes / 1048576).toFixed(1)} MiB vs budget ${MAX_PINNED_FILES} files / ` +
         `${MAX_PINNED_BYTES / 1048576} MiB. prompts/ is pinned historical data; raise the ` +
         "budget in prompts/PROVENANCE.md and here in the same reviewed PR.",
+    );
+  }
+
+  const promptDrift = manifestPromptDrift();
+  if (promptDrift.length) {
+    ok = false;
+    console.error(
+      `RUN MANIFESTS REFERENCE MISSING PROMPTS (AI-P1-001):\n  ${promptDrift.join("\n  ")}`,
     );
   }
 

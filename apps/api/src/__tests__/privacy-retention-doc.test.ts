@@ -29,6 +29,14 @@ const RETENTION_TASK = path.join(
   "tasks",
   "public-interaction-retention.ts",
 );
+const MAIN_RETENTION_TASK = path.join(
+  REPO_ROOT,
+  "apps",
+  "worker",
+  "src",
+  "tasks",
+  "retention.ts",
+);
 
 describe("contact-form retention policy alignment (PRIV-P2-003)", () => {
   it("publishes the same retention window the worker enforces", () => {
@@ -48,5 +56,19 @@ describe("contact-form retention policy alignment (PRIV-P2-003)", () => {
     const page = fs.readFileSync(PRIVACY_PAGE, "utf8");
     expect(page).toContain("Microsoft Teams");
     expect(page).toContain("JSM");
+  });
+
+  it("publishes the same store-quote retention window the worker enforces (PRIV-P2-008)", () => {
+    const task = fs.readFileSync(MAIN_RETENTION_TASK, "utf8");
+    const match = task.match(/storeQuoteRetentionDays: (\d+)/);
+    if (!match) {
+      throw new Error(`storeQuoteRetentionDays not found in ${MAIN_RETENTION_TASK}`);
+    }
+    const retentionDays = Number(match[1]);
+    expect(retentionDays).toBeGreaterThan(0);
+
+    const page = fs.readFileSync(PRIVACY_PAGE, "utf8");
+    const quoteSentence = page.match(/Store quote requests[\s\S]*?after (\d+) days/);
+    expect(quoteSentence?.[1]).toBe(String(retentionDays));
   });
 });

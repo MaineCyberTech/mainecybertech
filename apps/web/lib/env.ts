@@ -82,8 +82,10 @@ export function getClientEnv(): ClientEnv {
 
   // SECRET-P3-002: a production build with no NEXT_PUBLIC_API_URL used to fall
   // back to http://localhost:4000 with only a console warning, so the deployed
-  // app silently pointed at nothing. Fail loudly instead; the deploy workflow
-  // always passes it as a build arg, so this only fires on misconfiguration.
+  // app silently pointed at nothing. Fail loudly instead. apps/web/Dockerfile
+  // also fails before `next build` when the build arg is absent, so this
+  // validator covers non-Docker builds (Vercel/CI) and the Dockerfile guard is
+  // the first line of defence for image builds.
   if (process.env.NODE_ENV === "production" && !raw.NEXT_PUBLIC_API_URL) {
     throw new Error(
       "[env] NEXT_PUBLIC_API_URL is required in production; refusing to fall back to " +

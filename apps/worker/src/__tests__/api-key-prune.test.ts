@@ -181,4 +181,18 @@ describe("apiKeyPrune (SEC-P2-017 / ACM-P2-005)", () => {
     expect(deleteCalls).toHaveLength(0);
     expect(rows).toHaveLength(2);
   });
+
+  it("stops at the task deadline instead of pruning after the task failed [RES-P3-011]", async () => {
+    const rows: Row[] = [{ id: "expired-active", is_active: true, expires_at: daysAgo(2) }];
+    makeClient(rows);
+    const controller = new AbortController();
+    controller.abort();
+
+    const res = await apiKeyPrune({}, { signal: controller.signal });
+
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/aborted/);
+    // Nothing was deactivated or deleted after the deadline.
+    expect(rows[0].is_active).toBe(true);
+  });
 });

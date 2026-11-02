@@ -1,0 +1,139 @@
+{
+  "domain": "03_feature_implementation_map",
+  "file": "03_feature_implementation_map.md",
+  "area": "FEAT",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T01:02:13Z",
+  "findings": [
+    {
+      "id": "FEAT-P2-001",
+      "severity": "P2",
+      "title": "API keys cannot authenticate; the feature is dead",
+      "owner": "@owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: authenticateApiKey resolves mct_ tokens by prefix, timing-safe compares the SHA-256 hash, rejects inactive/unparsable/expired keys and pins the key's org (apps/api/src/middleware/api-key.ts:70-112); requireAuth dispatches isApiKeyToken tokens to it (middleware/auth.ts:67-68); regression suite apps/api/src/__tests__/api-key-auth.test.ts.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P2-002",
+      "severity": "P2",
+      "title": "Demo/test data can be seeded into a fresh production database",
+      "owner": "@owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: every demo-seeding migration still returns early unless current_setting('app.seed_demo', true)='true' (7 files incl. 5302119:25, 5302120, 5302121, 5302123, 5302126, 5302128, 5302406); default is unset so a fresh prod database stays clean.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P2-003",
+      "severity": "P2",
+      "title": "Store analytics is unwired end-to-end: no client call sites, no admin UI consumer, and the summary RPC is undefined",
+      "owner": "@web + API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: get_analytics_summary now exists (supabase/migrations/5302440_search_analytics_summary.sql:19) and the admin page consumes live summary/list endpoints (apps/web/app/(admin)/admin/store/analytics/page.tsx:27-46); track() has call sites (components/store/StoreAnalyticsTracker.tsx mounted on /store, /store/[slug], /store/category/[slug]; ServiceFinderQuiz.tsx:7; QuoteBuilderClient.tsx:7).",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P2-004",
+      "severity": "P2",
+      "title": "Feature docs promise AI draft review gates, but `ai_draft_outputs` has no write path",
+      "owner": "AI/backend module owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the AI routes now create/list/get/review drafts in ai_draft_outputs with a human review gate (apps/api/src/routes/ai.ts:180-210 create, :515 POST /drafts, :537 GET /drafts, :562 GET /drafts/:id, :578 POST /drafts/:id/review; validators/ai.ts:28); OpenAPI documents it (openapi/spec.ts:1781).",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P2-005",
+      "severity": "P2",
+      "title": "Three tables are served by two divergent API surfaces (sop_library, insurance_evidence, satisfaction_pulses)",
+      "owner": "API principal engineer",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: each table has one canonical surface \u2014 sop_library under /api/v1/governance (governance.ts:547-553), insurance_evidence under /api/v1/insurance-binder (insurance-binder.ts), satisfaction_pulses under /api/v1/satisfaction-pulse; the duplicate registrations are gone and the old paths are hard-deprecated 410 stubs (edu-automation.ts:179-183,1137-1138; final.ts:25-29). A scan of crudRoute/registerCrud table registrations finds no table registered twice.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-001",
+      "severity": "P3",
+      "title": "OpenAPI/Swagger surface is public and its UI is blocked by the API CSP",
+      "owner": "@owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: both /openapi.json and /docs 404 in production (docs.ts:25-30,38) and the Swagger bootstrap script carries the per-response CSP nonce (docs.ts:43-59); openapi-audit.js runs in CI and exits 0 (453 live routes, 0 missing from spec).",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-002",
+      "severity": "P3",
+      "title": "Eleven admin Store pages are static JSON views with disabled 'Coming soon' actions but appear as first-class admin-nav features",
+      "owner": "@web + store module owner",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: all eleven bundled-JSON pages now render a visible 'Preview \u2014 read-only, actions disabled until the Store APIs land' banner via AdminPreviewNote (apps/web/components/admin/AdminPreviewNote.tsx; used by lead-magnets, seo-pages, content-audit, dependencies, fulfillment, nurture, lifecycle, profitability, case-studies, faqs, proposals).",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-003",
+      "severity": "P3",
+      "title": "Duplicate scorecard docs; one documents a nonexistent /api/v1/scoreboard API and four tables",
+      "owner": "docs owner + edu-automation module owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/modules/scoreboard-gamification.md is deleted; only scoreboards-gamification.md remains and it documents the real /api/v1/edu-automation/scorecards surface and the real tables (cyber_scorecards, score_history, badges_earned), matching apps/api/src/routes/edu-automation.ts:851-1080.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-004",
+      "severity": "P3",
+      "title": "`portal_module_settings` is an orphaned table: per-org module configuration is never read or written",
+      "owner": "API platform + data governance",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: migration 5302460_drop_portal_module_settings.sql removes the table; no application code referenced it and module enablement remains the subscription derivation (apps/api/src/lib/entitlements.ts).",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-005",
+      "severity": "P3",
+      "title": "Dead server action `updateProjectBasics` remains exported but is never imported",
+      "owner": "@web",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: updateProjectBasics no longer exists anywhere in apps/web (grep 0 matches including tests).",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-006",
+      "severity": "P3",
+      "title": "Ticket status has no transition validation; any state can jump to any other",
+      "owner": "API principal engineer + product",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: a single transition map lives in @mct/sdk/ticket-status (TICKET_STATUS_TRANSITIONS, closed\u2192in_progress reopen path) and the API rejects invalid moves with 409 (apps/api/src/routes/tickets.ts:262 single update; bulk drops invalid transitions and counts them failed at :632-636); the admin selectors offer allowed next states only.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-007",
+      "severity": "P3",
+      "title": "2026-08-05 module audit docs still list fixed bugs and dead navigation as current",
+      "owner": "docs owner + repo maintainer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/MODULE_AUDIT.md:3-8 and docs/MODULE_SPECS_GAP_AUDIT_2026-08-05.md:3-7 now carry 'HISTORICAL (superseded)' banners and the confirmed-bug table is reconciled per row; docs/INDEX.md:241 lists MODULE_AUDIT.md as the 60-module audit without claiming currency.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-008",
+      "severity": "P3",
+      "title": "Seven server actions in the admin project detail are exported but never imported by product code",
+      "owner": "@web (admin projects)",
+      "target": "next quarter",
+      "status": "open",
+      "note": "NEW at 7dd0402: apps/web/app/(admin)/admin/projects/[projectId]/actions.ts exports updateProjectTask:175, resetProjectTaskApproval:206, deleteProjectTask:219, addProjectUpdate:297, updateProjectUpdate:315, deleteProjectUpdate:334 and submitProjectUpdateForm:350, but no non-test file imports them \u2014 the page passes only 8 other actions to ProjectTaskListV5 (page.tsx:182-196) and ProjectTrackerPanels uses the SDK client directly. The mocks in page.test.tsx:90 keep them looking covered. Same class as the fixed FEAT-P3-005 (updateProjectBasics): delete the dead actions (and their test mocks) or wire them into the project detail UI.",
+      "area": "FEAT"
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+# Executive Summary
+
+- Target: `mainecybertech` @ `7dd0402` (branch `main`)
+- Run: `mainecybertech-20261014-0033-full-main-7dd0402` (full mode, full-domain)
+- Verdict: **NO-GO**
+
+## Findings
+
+- 716 total: P0 8, P1 89, P2 322, P3 297.
+- Domains covered: deterministic, 00_audit_orchestrator, 01_repository_inventory, 02_architecture_runtime_topology, 03_feature_implementation_map, 06_security_authz_tenancy_audit, 24_access_control_matrix_audit, 25_multi_tenant_isolation_attack_simulation, 26_admin_console_abuse_case_audit, 07_data_schema_migration_runtime_validation, 37_supabase_rls_policy_deep_dive, 08_api_contracts_realtime_integrations, 27_webhook_delivery_replay_idempotency_audit, 28_file_upload_download_security_audit, 29_billing_payments_reconciliation_audit, 30_notification_email_push_delivery_audit, 31_search_indexing_privacy_audit, 10_github_actions_cicd_governance, 34_branch_protection_required_checks, 11_supply_chain_dependency_secrets, 35_sbom_license_policy, 36_container_runtime_security, 38_env_secret_rotation, 12_infra_deployment_environment_drift, 09_testing_quality_release_confidence, 13_resilience_recovery_failure_modes, 32_backup_restore_drill, 33_incident_tabletop_exercise, 14_observability_monitoring_incident_readiness, 15_performance_scalability_cost, 04_usability_workflow_audit, 05_ui_ux_accessibility_audit, 17_mobile_pwa_responsive_access, 18_privacy_compliance_data_governance, 39_analytics_tracking_privacy, 16_documentation_devex_operator_readiness, 19_platform_evolution_extensibility, 20_ai_automation_agent_readiness, 21_repo_hygiene_maintainability, 45_exploit_chain_attack_path_audit, 22_final_risk_register_roadmap, 23_executive_summary_release_gate, 40_release_notes_changelog_generator.
+
+Top risks:
+
+- `DATA-P0-001` — Orphan cleanup can recursively delete a bucket's contents
+- `DR-P0-001` — No successful backup has ever run: every db-backup, storage-backup and db-restore-test CI run fails
+- `DR-P0-002` — Scheduled backup and restore-test workflows never run because they are absent from the default branch
+- `DR-P0-003` — The restore test never asserts integrity and therefore cannot fail on a bad backup
+- `IR-P0-001` — No platform-level incident response plan, roles, or postmortem process
+- `IR-P0-002` — No data breach response / notification process
+- `IR-P0-003` — Total loss of the monitoring/alerting path has no independent dead-man's-switch receiver
+- `OBS-P0-001` — Total loss of the monitoring/alerting path has no independent dead-man's-switch receiver
+- `ACM-P1-001` — Client-onboarding mutations run without any `requirePermission` gate
+- `ACM-P1-002` — `profiles.is_super_admin` is user-writable under the RLS self-update policy (forgeable super-admin flag)
+- `ADMIN-P1-001` — Org-agnostic `requireAdmin` lets a tenant admin read other tenants' admin data
+- `ADMIN-P1-002` — Impersonation/cross-tenant access is logged but not reviewable or alerted
+- `ADMIN-P1-003` — Role assignment paths let a delegated user-manager grant cross-tenant admin roles (self-escalation)
+- `AI-P1-001` — Vendored audit prompt packs are stale and the run manifest references a prompt the pack does not contain
+- `AI-P1-002` — `AGENTS.md` names a stale repository path and three developer docs state a stale accessibility gate size that no guard covers
+- `BILL-P1-001` — Module entitlements are derived but not enforced server-side
+- `BILL-P1-002` — `payments` table is never populated; payment history is silently empty
+- `BILL-P1-003` — Missing Stripe webhook events leave refunds, void, and payment lifecycle unrecorded
+- `BP-P1-001` — `main` requires a context (`Dependency Review`) that no job emits
+- `BP-P1-002` — `enforce_admins:false` lets administrators bypass all required checks and reviews
+- `BP-P1-003` — Production deploy path uses the unguarded `prod` environment, not `prod-approval`
+- `BP-P1-004` — PR #279 merged into main with required checks pending and zero reviews - live protection does not match the committed payloads (or an unrecorded bypass)
+- `CHAIN-P1-001` — Low-trust MSP role key composes into a cross-tenant read pivot
+- `CHAIN-P1-002` — Caller-controlled reset redirect composes into an account-takeover assist
+- `CHAIN-P1-003` — Branch-protection bypass + missing prod gate compose into unattended production change
+- `CHAIN-P1-004` — Delegated user-manager self-escalation to cross-tenant admin (role-assignment policy gap)
+- `CHAIN-P1-005` — Forgeable `profiles.is_super_admin` composes into full permission bypass and all-tenant RLS reads
+- `CHAIN-P1-006` — Tenant-blind response cache keys compose into cross-tenant aggregate disclosure
+- `CI-P1-001` — Production application deploys have no working manual-approval gate
+- `CI-P1-002` — Branch-protection-as-code has a likely-mismatched required check and permits admin bypass
+- `CI-P1-003` — Production deploy path cannot run; prod environment lacks secrets and protection rules
+- `CI-P1-004` — NEW: published fast-mode audit run fails the docs-links gate on main (required check + deploy gate red)
+- `CTR-P1-001` — No Container Image Vulnerability Scan in CI
+- `CTR-P1-002` — SBOM Is Lockfile-Only, Not an Image SBOM or Attestation
+- `CTR-P1-003` — Unsigned Images With No Provenance/Attestation
+- `DATA-P1-001` — Approved-membership RLS predicate reintroduced six times; pending/suspended members could access tenant data
+- `DATA-P1-002` — `retention` worker task performs unbounded deletes and reports success on partial failure
+- `DATA-P1-003` — Soft-delete columns remain dead schema; DELETE endpoints hard-delete
+- `DR-P1-001` — The weekly restore test fails at baseline load (invalid GITHUB_ENV format) so no restore verification ever executes
+- `DR-P1-002` — No backup or restore path exists for uploaded files in Supabase Storage
+- `DR-P1-003` — Restore-test backup location contract (`S3_BACKUP_BUCKET`) is undocumented and can silently mismatch the backup script
+- `DR-P1-004` — Database backups are unencrypted and stored in a single location with no offsite copy
+- `DR-P1-005` — The restore test has no failure alert
+- `DR-P1-006` — No automated migration reverse/rollback and no bad-migration drill
+- `DR-P1-007` — RPO/RTO targets are documented but unvalidated, and the Postgres RPO conflates PITR with the daily dump
+- `FILE-P1-001` — Public file-request upload is permission-gated and unreachable for anonymous uploaders
+- `FILE-P1-002` — File-request uploads have no tenant-scoped path and no download path; orphan cleanup will delete them
+- `FILE-P1-003` — Document version history objects are deleted at replace and by orphan cleanup
+- `INFRA-P1-001` — SSH is open to the internet on both droplets (admin_ip_ranges default 0.0.0.0/0 and CI never overrides it)
+- `INFRA-P1-002` — Terraform state-locking fix is incompatible with the pinned Terraform version (use_lockfile requires >= 1.10, workflows pin 1.9)
+- `IR-P1-001` — Rollback documentation contradicts itself on SHA-targeted rollback
+- `IR-P1-002` — Bad-migration recovery is manual-only with no automated reverse or staging proof
+- `IR-P1-003` — Worker health failure during deploy is non-fatal
+- `IR-P1-004` — Backups are not verified deeply enough to prove the documented RPO/RTO
+- `IR-P1-005` — Backup bucket configuration is inconsistent between the script, the backup workflow, and the restore test
+- `IR-P1-006` — No runtime detection or alerting for tenant-isolation (RLS) regressions
+- `MT-P1-001` — Audit log list and export are not org-scoped by default
+- `MT-P1-002` — Platform dashboards expose all-tenant aggregates to any single-org admin
+- `MT-P1-003` — Public file-request upload authorizes with a permission unioned across all orgs
+- `MT-P1-004` — Response cache keys omit the caller's tenant scope, so all-tenant responses can be served to single-org members
+- `NOTIF-P1-001` — Notification preferences are stored and displayed but never enforced on any send path
+- `NOTIF-P1-002` — API-originated notifications bypass the dedup unique index
+- `NOTIF-P1-003` — No delivery observability: email/notification failures are silent and unalerted
+- `NOTIF-P1-004` — Notification preference writes from the web UI omit organization_id (NOT NULL) so toggles cannot persist
+- `OBS-P1-001` — No runtime detection or alerting for tenant-isolation (RLS) regressions
+- `ORCH-P1-001` — Published main audit run is internally inconsistent (report/register ID divergence; full-domain metadata over a one-report inventory)
+- `REL-P1-001` — No version identity: no tags, no product version, no commit binding in generated artifacts
+- `REL-P1-002` — Documented production deploy path is stated as non-functional and the approval gate claim is false
+- `RLS-P1-001` — No runtime detection or alerting for tenant-isolation (RLS) regressions
+- `RLS-P1-002` — Approved-membership RLS predicate reintroduced six times; pending/suspended members could access tenant data
+- `SBOM-P1-001` — SBOM Is Lockfile-Only, Not an Image SBOM or Attestation
+- `SBOM-P1-002` — Unsigned Images With No Provenance/Attestation
+- `SBOM-P1-003` — No version identity: no tags, no product version, no commit binding in generated artifacts
+- `SBOM-P1-004` — No license allow/deny policy in dependency review or any CI gate
+- `SBOM-P1-005` — SBOM carries no license data and no dependency graph, limiting triage and license review
+- `SC-P1-001` — Critical/high advisories persist in the dev dependency tree; `next` override is mis-scoped
+- `SEARCH-P1-001` — `sanitizeSearchTerm` does not strip PostgREST `.` operator separators
+- `SEARCH-P1-002` — Admin global search exposes profile PII and never tenant-scopes the organizations query
+- `SEC-P1-001` — super_admin role can be granted through membership/onboarding/bulk-invite APIs without the /users/:id/role guard
+- `SEC-P1-002` — PII field encryption silently degrades to reversible plaintext
+- `SEC-P1-003` — Org-agnostic `requireAdmin` lets a tenant admin read other tenants' admin data
+- `SEC-P1-004` — Impersonation/cross-tenant access is logged but not reviewable or alerted
+- `SEC-P1-005` — Low-trust MSP role key composes into a cross-tenant read pivot
+- `SEC-P1-006` — Caller-controlled reset redirect composes into an account-takeover assist
+- `SEC-P1-007` — Client-onboarding mutations run without any `requirePermission` gate
+- `SEC-P1-008` — M365 webhook secret is dead config while the real M365 auth value is undocumented and undeployed
+- `SEC-P1-009` — Deploy pipeline does not write several secret-class env vars the API schema and compose reference
+- `SEC-P1-010` — Public file-request upload authorizes with a permission unioned across all orgs
+- `SECRET-P1-001` — M365 webhook secret is dead config while the real M365 auth value is undocumented and undeployed
+- `SECRET-P1-002` — Deploy pipeline does not write several secret-class env vars the API schema and compose reference
+- `SECRET-P1-003` — Rotation and emergency procedures target the wrong GitHub environment for the prod deploy and backup workflows
+- `USE-P1-001` — Self-service password reset dead-ends: the email link lands on a page that cannot complete the reset
+- `USE-P1-002` — Signup email-confirmation link points at the API host and 404s, blocking first login
+- `USE-P1-003` — Admin approval queue cannot approve or reject memberships (roleId sent as empty string)
+- `USE-P1-004` — Every SDK delete reports failure after succeeding because the client cannot parse empty 204 bodies
+- `WH-P1-001` — Outbound webhook idempotency is non-atomic in the API and absent in the worker dispatcher
+- `WH-P1-002` — M365 webhook auth depends on `M365_CLIENT_STATE` which the deploy pipeline does not write, while `M365_WEBHOOK_SECRET` is dead config
+

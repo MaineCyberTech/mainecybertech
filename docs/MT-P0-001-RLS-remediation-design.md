@@ -2,7 +2,7 @@
 
 **Status:** DRAFT / DESIGN PROPOSAL — RESEARCH ONLY. No source code was modified.
 **Audience:** Human security/architecture decision-maker (requires explicit sign-off — see §3 and §6).
-**Repo:** `C:\temp\mainecybertech-portal` (branch `develop`).
+**Repo:** `mainecybertech-portal` (branch `develop`).
 **Companion to:** `AGENTS.md` "Known Open Issues" (P0-7), and the deleted `agent/mig-guards` branch decision (blanket policy recreation was deliberately rejected).
 
 ---

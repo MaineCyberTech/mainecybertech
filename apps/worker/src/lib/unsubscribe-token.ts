@@ -6,11 +6,18 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * and cannot import API source, so the small helper is duplicated here with
  * the SAME derivation and token format; keep the two in sync.
  *
+ * NOTIF-P2-012: the token now carries an `exp` claim (90 days), matching the
+ * API verifier. Keep the TTL and payload shape identical or links minted by
+ * the worker will be rejected by the API.
+ *
  * The HMAC key is derived (domain-separated) from the service-role key both
  * deployables already hold, so no new secret must be provisioned.
  */
 
 const KEY_DERIVATION_LABEL = "mct-unsubscribe-token:v1";
+
+/** Bounded validity for emailed unsubscribe links (NOTIF-P2-012). */
+export const UNSUBSCRIBE_TOKEN_TTL_SECONDS = 90 * 24 * 60 * 60;
 
 export interface UnsubscribeTokenPayload {
   userId: string;
@@ -24,9 +31,12 @@ export function deriveUnsubscribeSecret(serviceRoleKey: string): string {
 export function buildUnsubscribeToken(
   payload: UnsubscribeTokenPayload,
   serviceRoleKey: string,
+  opts: { ttlSeconds?: number } = {},
 ): string {
+  const ttlSeconds = opts.ttlSeconds ?? UNSUBSCRIBE_TOKEN_TTL_SECONDS;
+  const expiresAt = Math.floor(Date.now() / 1000) + ttlSeconds;
   const body = Buffer.from(
-    JSON.stringify({ u: payload.userId, o: payload.organizationId }),
+    JSON.stringify({ u: payload.userId, o: payload.organizationId, e: expiresAt }),
   ).toString("base64url");
   const mac = createHmac("sha256", deriveUnsubscribeSecret(serviceRoleKey))
     .update(body)
@@ -54,13 +64,28 @@ export function verifyUnsubscribeToken(
     const parsed = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as {
       u?: unknown;
       o?: unknown;
+      e?: unknown;
     };
     if (typeof parsed.u !== "string" || typeof parsed.o !== "string") return null;
     if (!parsed.u || !parsed.o) return null;
+    // NOTIF-P2-012: an expiry claim is mandatory and must be in the future.
+    if (typeof parsed.e !== "number" || !Number.isFinite(parsed.e)) return null;
+    if (parsed.e <= Math.floor(Date.now() / 1000)) return null;
     return { userId: parsed.u, organizationId: parsed.o };
   } catch {
     return null;
   }
+}
+
+/**
+ * RFC 8058 one-click headers for notification emails (NOTIF-P2-012). Mirrors
+ * the API helper; the worker builds its own emails.
+ */
+export function buildListUnsubscribeHeaders(unsubscribeUrl: string): Record<string, string> {
+  return {
+    "List-Unsubscribe": `<${unsubscribeUrl}>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
 }
 
 export function buildUnsubscribeUrl(opts: {

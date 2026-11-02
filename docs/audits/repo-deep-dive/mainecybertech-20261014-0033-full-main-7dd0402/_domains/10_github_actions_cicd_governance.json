@@ -1,0 +1,299 @@
+{
+  "domain": "10_github_actions_cicd_governance",
+  "file": "10_github_actions_cicd_governance.md",
+  "area": "CI",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T01:05:00Z",
+  "findings": [
+    {
+      "id": "CI-P1-001",
+      "severity": "P1",
+      "title": "Production application deploys have no working manual-approval gate",
+      "owner": "platform/CI owner",
+      "target": "this week",
+      "status": "still-open",
+      "note": "code side complete at 7dd0402: prod deploy attaches prod-approval (deploy-do.yml:648), prod migrations (supabase-migrations.yml:38), terraform apply (terraform-do.yml:204), prod load test (load-test.yml:61), prod backup/restore dispatch (db-backup.yml:48, db-restore-test.yml:45), alert-path exercise (alert-path-exercise.yml:34); docs still state no required reviewers are configured (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:12-14, docs/RELEASING.md:128-133) - operator provisioning required, cannot be set from the repo.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P1-002",
+      "severity": "P1",
+      "title": "Branch-protection-as-code has a likely-mismatched required check and permits admin bypass",
+      "owner": "platform/CI owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: reproduced the guard - node scripts/check-required-checks.mjs PASS, all 8 main / 6 develop contexts resolve to emitted check-runs (incl. 'Dependency Review / review' <- dependency-review.yml job review); enforce_admins:true + require_code_owner_reviews:true in both payloads; guard + fixtures wired in the required test job (unit-tests action.yml:136-144).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P1-003",
+      "severity": "P1",
+      "title": "Production deploy path cannot run; prod environment lacks secrets and protection rules",
+      "owner": "@owner",
+      "target": "this week",
+      "status": "still-open",
+      "note": "still operator-gated at 7dd0402: docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:187-220 (prod-approval has no required reviewers; prod secrets to be provisioned) and docs/RELEASING.md:170-182 (prod-approval lacks SUPABASE_*/JWT_SECRET/migration secrets; DO_API_TOKEN returns 401 and prod has no DROPLET_IP fallback). Cannot be provisioned from the repo.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P1-004",
+      "severity": "P1",
+      "title": "NEW: published fast-mode audit run fails the docs-links gate on main (required check + deploy gate red)",
+      "owner": "platform/CI owner",
+      "target": "this week",
+      "status": "open",
+      "note": "reproduced at 7dd0402: node scripts/check-docs-links.mjs exits 1 - docs/audits/repo-deep-dive/mainecybertech-20261013-0126-fast-develop-905ed63 (audit_manifest.json present) is not referenced by docs/audits/README.md (last row :95 = 20261011 run) and lacks HISTORICAL.md. scripts/check-docs-links.mjs:128-153 (index coverage) and :155-177 (marker) both fail; the script runs in the required 'Test / test (20.x)' job (unit-tests action.yml:72-74) and in the deploy gate (validate.yml:88, and deploy-do requires validate.result == success). Live evidence: the publishing PR itself (docs/publish-reaudit @ 62a09bac, PR #279) failed the Test check in the unit-tests step (run 38334811453, job test (20.x)) and was merged anyway; the 7dd0402 promotion's deploy-do run (38490822901) was still queued at audit time and its validate gate will fail. Introduced by 62a09bac.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "World-open DigitalOcean firewall mutation with no approval and unvalidated udp_port",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: no firewall/wireguard workflow exists in .github/workflows (30 workflows inventoried); terraform-do rejects empty/world-open ADMIN_IP_RANGES before plan/apply (terraform-do.yml:102-113, :241-248).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-002",
+      "severity": "P2",
+      "title": "Deploy-gate secret scan is a no-op on pushes to main",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: secret-scan composite diffs against github.event.before with a zero-SHA -> HEAD~1 fallback (.github/actions/secret-scan/action.yml:15-28); used by test.yml:78-88 and validate.yml:98-108.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-003",
+      "severity": "P2",
+      "title": "Production approval environment documented as having no required reviewers",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs state the truth (matrix:12-14, RELEASING.md:128-133); the operational gap is tracked by CI-P1-001/003.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-004",
+      "severity": "P2",
+      "title": "DB restore test reports success without asserting restore integrity",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: db-restore-test.yml:196-330 fails on table/migration/row/freshness/RLS floors (psql counts + created_at age + rowsecurity), not just prints.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-005",
+      "severity": "P2",
+      "title": "Infrastructure changes are no longer gated in CI (terraform-do is manual-dispatch only)",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "terraform-do.yml remains manual-dispatch only (header :4-8) at 7dd0402; a weekly plan-only drift run exists (:14-15) but stays dormant until the operator sets TF_DRIFT_PLAN_ENABLED=true (:40), and PR/push plan gating stays off pending DO token rotation + environment protection.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-006",
+      "severity": "P2",
+      "title": "Chromatic visual-regression job is permanently non-blocking",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: chromatic.yml has no job-level continue-on-error and exitZeroOnChanges:false (:82); a broken Storybook build fails the job. Live evidence: pre-pin main run 38334758801 failed at 'Build Storybook' (step 6); post-pin run 38481042052 (lucide-react PR with the webpack pin) passed 'Build Storybook' and failed only at the Chromatic step (visual changes/config; logs need auth). Residual: not a required check; docs/comments stale (CI-P3-014).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-007",
+      "severity": "P2",
+      "title": "Branch protection permits admin bypass and ignores CODEOWNERS",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: both .github/branch-protection payloads set enforce_admins:true, require_code_owner_reviews:true, allow_force_pushes:false, allow_deletions:false, required_conversation_resolution:true.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-008",
+      "severity": "P2",
+      "title": "Terraform apply is manual and drift detection is not automated",
+      "owner": "@owner",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "weekly plan-only drift check wired (terraform-do.yml:14-15, fails on non-empty plan :160-172) but dormant until TF_DRIFT_PLAN_ENABLED=true (:40); apply remains manual-dispatch + approval-gated.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-009",
+      "severity": "P2",
+      "title": "E2E is a required check on main but path-filtered, so PRs that miss its paths can never satisfy branch protection",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: e2e.yml pull_request has no paths filter (:19-23); check-required-checks.mjs fails if a required check's workflow is path-filtered (fixture-tested, scripts/ci/check-required-checks.sh PASS).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-010",
+      "severity": "P2",
+      "title": "Backup dispatcher duplicates the backup workflows now that they exist on the default branch",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "fixed at 7dd0402: backup-dispatch.yml no longer exists anywhere in the tree (main now contains the develop cleanup); SCHEDULE_DISPATCH_TOKEN documented retired (matrix:157-159); only backup-staleness-check.yml:50 still reads it as an optional fallback.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "actionlint/shellcheck workflow lint issues (SC2086/SC2129/SC2002/SC2015)",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "shellcheck gate wired in both gates (test.yml:56, validate.yml:56; .github/actions/shellcheck/action.yml, --severity=warning) and the named issues are addressed; actionlint remains config-only (.github/actionlint.yaml) with no CI job.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-002",
+      "severity": "P3",
+      "title": "Over-broad workflow token permissions (unused write scopes)",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: no 'actions: write' grants remain anywhere in .github/; workflow-level permissions are contents:read except codeql (security-events), dependency-review (pull-requests), release (contents), sbom/deploy builds (packages/id-token/attestations).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-003",
+      "severity": "P3",
+      "title": "StrictHostKeyChecking=no in the deploy health check",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: deploy-do.yml:1128-1141 uses StrictHostKeyChecking=yes with a pinned known_hosts built from DO_SSH_HOST_KEY; alert-path-exercise.yml:111 and scripts/rollback.sh:61 the same (rollback requires an explicit last-resort opt-in for accept-new).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-004",
+      "severity": "P3",
+      "title": "`main` is far behind `develop`; scheduled jobs fire only from the default branch",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "fixed at 7dd0402: origin/main contains all of origin/develop (git rev-list origin/main..origin/develop = 0; main is 7 ahead), so all 11 new scheduled workflows are on the default branch and their crons can fire. (This row was 'regressed' at 905ed63.)",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-005",
+      "severity": "P3",
+      "title": "Secret scanner misses the platform's own token formats and scans diffs only",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "weekly full-history gitleaks scan exists (secret-history-scan.yml); the diff scanner pattern list still lacks platform token formats dop_v1_/sbp_/glpat_/sk-proj-/npm_ (.github/actions/secret-scan/action.yml:14; scripts/scan-secrets.sh:13).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-006",
+      "severity": "P3",
+      "title": "Unused permission grants across deploy/test workflows",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: security-events:write only in codeql.yml (which uploads SARIF); terraform-do has no pull-requests:write and no dead PR-comment step; remaining grants (dependency-review pull-requests, release contents, build packages/id-token/attestations) are all consumed.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-007",
+      "severity": "P3",
+      "title": "DB restore test uses an unpinned `postgres:16-alpine` image",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: db-restore-test.yml:177 postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-008",
+      "severity": "P3",
+      "title": "No release/tagging workflow and no post-merge release artifact",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "workflow implemented at 7dd0402 (release.yml: annotated tag + GitHub Release + SBOM, idempotent), but it FAILS on every promotion: live run 38490822732 (main @ 7dd0402) failed step 6 'Generate the release notes body' with exit code 141 (SIGPIPE from `git log ... | head -100` under set -o pipefail, no tags yet -> else-branch); origin has 0 tags and 0 releases (git ls-remote --tags, /releases). See new CI-P2-011.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-009",
+      "severity": "P3",
+      "title": "e2e is required on `main` but the documented flakiness makes it an unstable hard gate",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/CI.md:196-211 documents retry budget 2 + flake summary + quarantine policy; scripts/e2e-flake-summary.mjs reports retries; retried tests do not fail the job, failures after retries do.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-010",
+      "severity": "P3",
+      "title": "Missing per-job timeouts and minor workflow hygiene gaps",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: every job that can carry timeout-minutes does (30-workflow inventory, none missing); reusable-workflow callers document the callee carrying its own.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-011",
+      "severity": "P3",
+      "title": "Workflow documentation drift: docs list a removed workflow, omit a live one, and misstate gate behavior",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: replicated the docs/CI.md File-column vs .github/workflows comparison - exact match, 0 missing/0 stale; scripts/check-docs-links.mjs enforces it (note: the same script currently fails earlier on the audit-run index check - see CI-P1-004).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-012",
+      "severity": "P3",
+      "title": "Badge/report generation is a stub and is not wired into CI",
+      "owner": "platform/CI owner",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the badge stubs are gone (no generate_badges.py/history_logger.py under scripts/); docs/CI.md:213-226 documents the real reports (coverage-reports artifact, job summaries).",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-013",
+      "severity": "P3",
+      "title": "workflow_dispatch inputs are interpolated directly into run: scripts (rollback_sha/deploy_target)",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "fixed at 7dd0402 (commit 07e9ce09, in main): deploy-do passes rollback_sha/deploy_target/ref through env indirection (ROLLBACK_SHA_INPUT :74-84, DEPLOY_TARGET_INPUT/REF_NAME_INPUT :88-91, ROLLBACK_SHA :482, SENTRY_RELEASE :666 env block). Remaining direct interpolations are type:choice inputs (load-test scenario :167) or env-block expressions, which GitHub validates server-side.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P3-014",
+      "severity": "P3",
+      "title": "NEW: Storybook webpack fix landed but CI docs/comments still describe the Chromatic build as broken",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "open",
+      "note": "at 7dd0402 package.json pnpm.overrides pins webpack 5.101.2 (pnpm-lock.yaml:32) and commit 673d76cb states this greens the Storybook build. Live evidence: pre-pin main run 38334758801 failed at step 6 'Build Storybook'; post-pin run 38481042052 (head 6c9c6dc, pin an ancestor) passed step 6 and failed only at the Chromatic diff step - so docs/CI.md:149-157 ('Known build break ... the red Chromatic job is the visible signal') and chromatic.yml:28-43 ('still fails') are stale. Update the docs to the measured state. Underlying build fix is TEST-P3-001.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-011",
+      "severity": "P2",
+      "title": "release.yml fails on every promotion (SIGPIPE exit 141), so no tag/release/SBOM attachment is produced",
+      "owner": "platform/CI owner",
+      "target": "this week",
+      "status": "open",
+      "note": "live run 38490822732 (Release on main @ 7dd0402, 2026-10-14T00:33Z) failed step 6 'Generate the release notes body' with exit code 141 (check-run annotation); cause: release.yml:100-104 runs `git log --no-merges --pretty=\"$fmt\" HEAD | head -100` under `set -euo pipefail` with no tags (prev empty), so git log receives SIGPIPE once head closes the pipe -> 141. Consequence: origin has 0 tags and 0 releases (git ls-remote --tags; /releases), the lockfile SBOM is never attached, and every promotion shows a red Release run. Fix: use `git log -n 100` (no pipe), or drop pipefail for that pipeline, or `|| true`; then re-run the release for 7dd0402. Validation: Release run green and `git ls-remote --tags` shows v0.1.0-<date>-7dd0402.",
+      "area": "CI"
+    }
+  ]
+}

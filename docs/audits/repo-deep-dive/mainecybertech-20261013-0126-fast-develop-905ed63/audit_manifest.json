@@ -1,0 +1,51 @@
+{
+  "pack": "repo-deep-dive-full-hardening-audit-pack",
+  "profile": "base",
+  "version": "1.5.0",
+  "promptCount": 3,
+  "recommendedName": "repo-deep-dive",
+  "outputRoot": "docs/audits/{name}/{run}/",
+  "run": "mainecybertech-20261013-0126-fast-develop-905ed63",
+  "scaffolded_at": "2026-10-13T01:26:49Z",
+  "scaffolded_by": "tools/full_domain.py aggregate",
+  "mode": "fast",
+  "scope": {
+    "name": "mainecybertech",
+    "targetRepo": "",
+    "targetUrl": "https://github.com/MaineCyberTech/mainecybertech",
+    "branch": "develop",
+    "commit": "905ed633500f0674efa1555bc240eabaa7b22a2e",
+    "shortCommit": "905ed63",
+    "profile": "base",
+    "readOnly": true,
+    "secretsRedacted": true,
+    "generatedAt": "2026-10-13T01:38:45Z",
+    "domains": [
+      "deterministic",
+      "06_security_authz_tenancy_audit",
+      "10_github_actions_cicd_governance",
+      "11_supply_chain_dependency_secrets"
+    ],
+    "lenses": [
+      "DET",
+      "SEC",
+      "CI",
+      "SC"
+    ],
+    "releaseGate": "GO WITH CONDITIONS"
+  },
+  "findings": {
+    "bySeverity": {
+      "P1": 14,
+      "P2": 39,
+      "P3": 41
+    },
+    "byArea": {
+      "CI": 26,
+      "DET": 2,
+      "SC": 26,
+      "SEC": 40
+    },
+    "total": 94
+  }
+}

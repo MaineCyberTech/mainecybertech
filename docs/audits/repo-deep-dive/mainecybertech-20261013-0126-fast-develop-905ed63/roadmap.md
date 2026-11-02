@@ -1,0 +1,96 @@
+# Roadmap
+
+- CI-P1-001 (P1) — Production application deploys have no working manual-approval gate
+- CI-P1-002 (P1) — Branch-protection-as-code has a likely-mismatched required check and permits admin bypass
+- CI-P1-003 (P1) — Production deploy path cannot run; prod environment lacks secrets and protection rules
+- SC-P1-001 (P1) — Critical/high advisories persist in the dev dependency tree; `next` override is mis-scoped
+- SEC-P1-001 (P1) — super_admin role can be granted through membership/onboarding/bulk-invite APIs without the /users/:id/role guard
+- SEC-P1-002 (P1) — PII field encryption silently degrades to reversible plaintext
+- SEC-P1-003 (P1) — Org-agnostic `requireAdmin` lets a tenant admin read other tenants' admin data
+- SEC-P1-004 (P1) — Impersonation/cross-tenant access is logged but not reviewable or alerted
+- SEC-P1-005 (P1) — Low-trust MSP role key composes into a cross-tenant read pivot
+- SEC-P1-006 (P1) — Caller-controlled reset redirect composes into an account-takeover assist
+- SEC-P1-007 (P1) — Client-onboarding mutations run without any `requirePermission` gate
+- SEC-P1-008 (P1) — M365 webhook secret is dead config while the real M365 auth value is undocumented and undeployed
+- SEC-P1-009 (P1) — Deploy pipeline does not write several secret-class env vars the API schema and compose reference
+- SEC-P1-010 (P1) — Public file-request upload authorizes with a permission unioned across all orgs
+- CI-P2-001 (P2) — World-open DigitalOcean firewall mutation with no approval and unvalidated udp_port
+- CI-P2-002 (P2) — Deploy-gate secret scan is a no-op on pushes to main
+- CI-P2-003 (P2) — Production approval environment documented as having no required reviewers
+- CI-P2-004 (P2) — DB restore test reports success without asserting restore integrity
+- CI-P2-005 (P2) — Infrastructure changes are no longer gated in CI (terraform-do is manual-dispatch only)
+- CI-P2-006 (P2) — Chromatic visual-regression job is permanently non-blocking
+- CI-P2-007 (P2) — Branch protection permits admin bypass and ignores CODEOWNERS
+- CI-P2-008 (P2) — Terraform apply is manual and drift detection is not automated
+- CI-P2-009 (P2) — E2E is a required check on main but path-filtered, so PRs that miss its paths can never satisfy branch protection
+- CI-P2-010 (P2) — Backup dispatcher duplicates the backup workflows now that they exist on the default branch
+- SC-P2-001 (P2) — No image-level container scanning; Trivy scans filesystem only
+- SC-P2-002 (P2) — No artifact provenance, attestation, or signing; `id-token: write` requested but unused
+- SC-P2-003 (P2) — License policy not enforced in CI; non-OSI and LGPL licenses present
+- SC-P2-004 (P2) — SBOM is generated but not bound to a commit or attached to releases/images
+- SC-P2-005 (P2) — Dependabot PR backlog is large and not triaged; one stale update conflicts with resolved versions
+- SC-P2-006 (P2) — `licenses.json` is committed but unenforced and unverified
+- SC-P2-007 (P2) — Swagger UI loads an unpinned third-party script without SRI
+- SC-P2-008 (P2) — Deploy-gate secret scan is a no-op on pushes to main
+- SC-P2-009 (P2) — Secret scanning is diff-scoped only; no full-history scan artifact
+- SC-P2-010 (P2) — Produced Terraform `prod.tfvars` is tracked despite `.gitignore` intending to exclude it
+- SC-P2-011 (P2) — Scheduled full-history secret scan has no failure notification
+- SEC-P2-001 (P2) — Worker monitoring checks are guard-then-fetch (DNS-rebinding TOCTOU); webhook path is pinned but uptime/website checks and SSL probe are not
+- SEC-P2-002 (P2) — PII field encryption is additive: plaintext profile columns remain the source of truth and are still returned
+- SEC-P2-003 (P2) — Global role catalog is mutable by any org's roles:manage holder (roles are not org-scoped)
+- SEC-P2-004 (P2) — API-key scopes are stored but never enforced; keys act with the creating user's full permissions and always bypass RLS
+- SEC-P2-005 (P2) — MFA enforcement is opt-in and the deployed default is false
+- SEC-P2-006 (P2) — Secret scanner echoes the matched secret value into CI logs
+- SEC-P2-007 (P2) — Webhook SSRF guard has a DNS-rebinding TOCTOU window
+- SEC-P2-008 (P2) — Client-onboarding mutations run without `requirePermission` (authorization outlier)
+- SEC-P2-009 (P2) — MSP platform roles are cross-tenant for org access but not for permissions (inconsistent trust model)
+- SEC-P2-010 (P2) — Forgot-password email redirect still uses attacker-controlled `Origin` header
+- SEC-P2-011 (P2) — `GET /analytics/summary` calls a `get_analytics_summary` RPC that no migration defines
+- SEC-P2-012 (P2) — RLS is bypassed on API requests by default (service-role is the default client)
+- SEC-P2-013 (P2) — CAPTCHA/Turnstile is bypassed when the secret is unset
+- SEC-P2-014 (P2) — `/health` publicly discloses provider configuration and Redis errors
+- SEC-P2-015 (P2) — Bulk invite creates pre-confirmed auth accounts (and org onboarding auto-approves admin)
+- SEC-P2-016 (P2) — `PLATFORM_ADMIN_KEYS` (org traversal) and `ADMIN_BYPASS_KEYS` (permission bypass) are inconsistent trust sets
+- SEC-P2-017 (P2) — API keys store `expires_at` but nothing enforces or prunes expiry
+- SEC-P2-018 (P2) — API keys cannot authenticate; the feature is dead
+- CI-P3-001 (P3) — actionlint/shellcheck workflow lint issues (SC2086/SC2129/SC2002/SC2015)
+- CI-P3-002 (P3) — Over-broad workflow token permissions (unused write scopes)
+- CI-P3-003 (P3) — StrictHostKeyChecking=no in the deploy health check
+- CI-P3-004 (P3) — `main` is far behind `develop`; scheduled jobs fire only from the default branch
+- CI-P3-005 (P3) — Secret scanner misses the platform's own token formats and scans diffs only
+- CI-P3-006 (P3) — Unused permission grants across deploy/test workflows
+- CI-P3-007 (P3) — DB restore test uses an unpinned `postgres:16-alpine` image
+- CI-P3-008 (P3) — No release/tagging workflow and no post-merge release artifact
+- CI-P3-009 (P3) — e2e is required on `main` but the documented flakiness makes it an unstable hard gate
+- CI-P3-010 (P3) — Missing per-job timeouts and minor workflow hygiene gaps
+- CI-P3-011 (P3) — Workflow documentation drift: docs list a removed workflow, omit a live one, and misstate gate behavior
+- CI-P3-012 (P3) — Badge/report generation is a stub and is not wired into CI
+- CI-P3-013 (P3) — workflow_dispatch inputs are interpolated directly into run: scripts (rollback_sha/deploy_target)
+- DET-P3-001 (P3) — [SEC] gitleaks not installed (secret scan skipped)
+- DET-P3-002 (P3) — [SUPPLY] 3 container image(s) without a digest pin
+- SC-P3-001 (P3) — Root package license remains "ISC"
+- SC-P3-002 (P3) — e2e Docker image is not digest-pinned
+- SC-P3-003 (P3) — Secret-scanner pattern sets diverge between `.sh` and `.ps1`
+- SC-P3-004 (P3) — Unpinned container images (test/local only); production app images tag-based by design
+- SC-P3-005 (P3) — Dockerfile lint: missing WORKDIR in web runner stage and shell-form HEALTHCHECK
+- SC-P3-006 (P3) — SBOM is produced as a transient artifact, not bound to a release
+- SC-P3-007 (P3) — A secrets file exists on disk outside git (should never be committed)
+- SC-P3-008 (P3) — gitleaks generic-api-key/jwt hits are false positives (no tracked secret)
+- SC-P3-009 (P3) — Secret scanner misses the platform's own token formats and scans diffs only
+- SC-P3-010 (P3) — Dependabot has no security-update separation or triage SLA, and PR template has no enforced link to required checks
+- SC-P3-011 (P3) — Dependency and license policy `expires` dates are not enforced by the gates
+- SC-P3-012 (P3) — Docs instruct the broken `pnpm licenses list --json` workflow while CI uses collect-licenses.mjs
+- SC-P3-013 (P3) — SECURITY.md says neither SBOM is signed or attested, contradicting the attested image-SBOM process
+- SC-P3-014 (P3) — No automated unused/duplicate dependency check; lockfile carries 55 multi-version packages
+- SEC-P3-001 (P3) — Sign-up confirmation redirect is built from the caller-controlled Host header and targets a non-existent API route
+- SEC-P3-002 (P3) — Analytics admin reads are not tenant-scoped and expose platform-wide event data including visitor IPs
+- SEC-P3-003 (P3) — Auth rate-limit key uses the raw email string without normalization
+- SEC-P3-004 (P3) — gitleaks generic-api-key/jwt hits are false positives (no tracked secret)
+- SEC-P3-005 (P3) — `5302116` grants anon/authenticated full DML on every public table (RLS is the only gate)
+- SEC-P3-006 (P3) — CORS reflects any origin with credentials when `CORS_ORIGIN="*"`
+- SEC-P3-007 (P3) — `notification-preferences` PUT accepts a body `organizationId` without `assertOrgScopeMatches`
+- SEC-P3-008 (P3) — `resolveEffectivePermissions` is uncached and fans out 4–6 queries per gated request
+- SEC-P3-009 (P3) — Deprecated header and broad API CSP style directive
+- SEC-P3-010 (P3) — M365 webhook `clientState` is compared non-constant-time
+- SEC-P3-011 (P3) — Active-org cookie setter performs no server-side authorization
+- SEC-P3-012 (P3) — Web middleware gates routes on an unverified JWT `exp`

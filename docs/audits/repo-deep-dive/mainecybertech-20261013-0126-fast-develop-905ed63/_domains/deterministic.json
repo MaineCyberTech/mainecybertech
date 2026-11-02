@@ -1,0 +1,44 @@
+{
+  "domain": "deterministic",
+  "file": "lens_deterministic.md",
+  "area": "DET",
+  "agent": "subagent",
+  "emitted_at": "2026-10-13T01:38:41Z",
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "subcode": "SEC",
+      "title": "[SEC] gitleaks not installed (secret scan skipped)",
+      "report": "lens_deterministic.md",
+      "line": 14,
+      "detail": "Install gitleaks in CI to enable the secret scan.",
+      "evidence": [],
+      "status": "verified-fixed",
+      "owner": "@owner",
+      "target": "DET",
+      "note": "CI pins gitleaks 8.30.1 with SHA-256 verification (secret-history-scan.yml:27-39); the local machine check still emits this row because the audit host has no gitleaks binary (environmental, not a repo gap).",
+      "area": "DET"
+    },
+    {
+      "id": "DET-P3-002",
+      "severity": "P3",
+      "subcode": "SUPPLY",
+      "title": "[SUPPLY] 3 container image(s) without a digest pin",
+      "report": "lens_deterministic.md",
+      "line": 18,
+      "detail": "Pin images by digest (`image@sha256:...`) for reproducible, tamper-evident deploys.",
+      "evidence": [
+        "infra/digitalocean/docker-compose.yml:69 ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-api:${IMAGE_TAG:?IMAGE_TAG must be set}",
+        "infra/digitalocean/docker-compose.yml:131 ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:?IMAGE_TAG must be set}",
+        "infra/digitalocean/docker-compose.yml:187 ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:?IMAGE_TAG must be set}"
+      ],
+      "status": "verified-fixed",
+      "owner": "@owner",
+      "target": "DET",
+      "note": "third-party-image-scan.yml fails on any unpinned literal image ref in infra/digitalocean/docker-compose.yml; the three mct-* refs are the repo's own images (built, scanned, attested; the deploy resolves digests) and are the documented exception.",
+      "area": "DET"
+    }
+  ],
+  "report": ""
+}

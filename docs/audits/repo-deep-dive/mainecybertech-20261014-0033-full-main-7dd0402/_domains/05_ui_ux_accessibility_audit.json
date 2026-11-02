@@ -1,0 +1,169 @@
+{
+  "domain": "05_ui_ux_accessibility_audit",
+  "file": "05_ui_ux_accessibility_audit.md",
+  "area": "UX",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T01:01:04Z",
+  "findings": [
+    {
+      "id": "UX-P2-001",
+      "severity": "P2",
+      "title": "Ticket-card bulk selection nests a checkbox and a status button inside a Link, so ticking a ticket also navigates",
+      "owner": "web UI engineer (admin tickets)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: TicketCard is now a div; only the subject is a Link, the select checkbox sits outside any anchor, and the status pill stays a button (apps/web/components/admin/AdminTicketCenterClient.tsx:160-241). The interactive a11y suite exercises the bulk bar and status filter (apps/web/e2e/a11y.spec.ts:203-218).",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P2-002",
+      "severity": "P2",
+      "title": "Inline async action errors are not announced by assistive tech in ~44 components, contradicting the documented convention",
+      "owner": "web UI engineer",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: a fresh scan of 541 app/components tsx files finds only the four error-boundary files rendering an error state without role=alert/status/aria-live; every previously cited call site now uses role=alert (e.g. DmarcAnalyzeForm.tsx:93, CreateRoleForm.tsx:106, RecordDetail.tsx:166,204, UploadForm.tsx:64,72, PortalTriageClient.tsx:98, CameraCalculatorClient.tsx:148, QbrGenerateForm.tsx:82, ProposalForm.tsx:83, OrganizationOnboardingWizard.tsx:189).",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P2-003",
+      "severity": "P2",
+      "title": "Several dialogs have no max-height or internal scroll, so tall forms are clipped on small viewports",
+      "owner": "web UI engineer",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the shared Dialog panel is max-h-[90vh] overflow-y-auto (packages/ui/src/components/Dialog.tsx:116) and the ad-hoc modals were migrated (PromoForm.tsx:76, CategoryForm.tsx:64, SupportCenterClient.tsx:330, documents/CreateDocumentModal.tsx:41); a repo scan finds 0 dialogs without max-h/overflow, and mobile.spec.ts:259-300 asserts the promotion/category dialogs scroll.",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P2-004",
+      "severity": "P2",
+      "title": "89 of 319 pages have no page-specific title (79 dynamic detail pages + 10 static), so browser and AT titles are generic",
+      "owner": "web UI engineer",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: 319 page.tsx scanned, 6 have neither metadata nor generateMetadata \u2014 and all 6 render an explicit <title> (login, signup, pending, forgot-password, password-reset, test-accounts); dynamic detail routes now use generateMetadata (e.g. admin/tickets/[ticketId]/page.tsx:27, portal/support/[ticketId]/page.tsx:53, admin/assets/[id]/page.tsx:13).",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P2-005",
+      "severity": "P2",
+      "title": "@mct/ui primitives are largely bypassed: 6 files import Button, 1 uses Input/Dialog/Badge, while the app hand-rolls 234 raw cyber-button* usages and four Chip copies",
+      "owner": "design-system owner / web UI lead",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the four Chip copies are gone \u2014 one shared Chip in packages/ui (packages/ui/src/components/Chip.tsx, imported by AdminTicketCenterClient.tsx:8, AdminUsersClient.tsx:5, AdminOrganizationsClient.tsx:5, AdminProjectsClient.tsx:7), and docs/WEB_UI_CONVENTIONS.md:90-91 now names @mct/ui as the standard for shared controls. Remaining: adoption is still shallow \u2014 12 files import @mct/ui Button vs 236 raw cyber-button* usages (76 cyber-button + 157 cyber-button-secondary + 2 cyber-button-sm + 1 cyber-button-danger) and there is no lint/regex guard against new raw cyber-* controls, so the drift can return.",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P3-001",
+      "severity": "P3",
+      "title": "Four Chip copies render a glyph-only '\u00d7' remove button with a sub-24px target size",
+      "owner": "web UI engineer",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the shared Chip renders a 24x24 remove button (h-6 w-6, -my-1 -mr-1) with aria-label 'Remove <label>' and aria-hidden glyph (packages/ui/src/components/Chip.tsx:24-36); the four local copies were deleted.",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P3-002",
+      "severity": "P3",
+      "title": "Theme is documented dark-only but ships dead light/system code paths (CSS variables, ThemeProvider, Storybook toolbar)",
+      "owner": "design-system owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: use-theme.tsx is a fixed dark provider with no light/system branch (packages/ui/src/hooks/use-theme.tsx:6-14), the light CSS block is gone from styles.css, the Storybook theme toolbar is removed (.storybook/preview.tsx has no toolbar), and docs/WEB_UI_CONVENTIONS.md:98-100 matches.",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P3-003",
+      "severity": "P3",
+      "title": "Sidebar group toggles declare aria-haspopup='true' for a popup that is a link list, not a menu",
+      "owner": "web UI engineer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: no aria-haspopup remains in AdminSidebarContent.tsx or PortalSidebarContent.tsx (grep 0 matches); aria-expanded/aria-controls and keyboard handling are retained.",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P3-004",
+      "severity": "P3",
+      "title": "Notification bell and store drawer toggles omit aria-expanded",
+      "owner": "web UI engineer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: NotificationBell.tsx:285 sets aria-expanded={open}, StoreLayoutShell.tsx:36 and SidebarShell.tsx:80 set aria-expanded={drawerOpen}; the bell also closes on Escape.",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P3-005",
+      "severity": "P3",
+      "title": "Color-token drift: 66 files hardcode hex colors (80x #0A1118) and 45 arbitrary rgba card backgrounds instead of the design tokens",
+      "owner": "design-system owner",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: a fresh scan of 541 tsx files finds 6 files with hardcoded 6-digit hex (was 66; #0A1118 gone; remaining are the dev test-accounts page, three store pages, import-export and opengraph-image) and 0 arbitrary bg-[rgba(...)] card backgrounds (was 45).",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P3-006",
+      "severity": "P3",
+      "title": "Heading order skips a level on the store import/export page",
+      "owner": "web UI engineer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the five section headings are <h2> under AdminPageShell's <h1> (apps/web/app/(admin)/admin/store/import-export/ImportExportClient.tsx:168,193,220,239,259); no h1+h3-without-h2 file remains in a repo scan.",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P3-007",
+      "severity": "P3",
+      "title": "ScorecardsEvaluateClient renders the only programmatically unlabeled input in the app and an unannounced error",
+      "owner": "web UI engineer (edu-automation)",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: the input has aria-label=\"Organization ID (optional)\" and the error span has role=\"alert\" (apps/web/app/(admin)/admin/edu-automation/scorecards/ScorecardsEvaluateClient.tsx:39,50).",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P3-008",
+      "severity": "P3",
+      "title": "Signup form inputs lack autocomplete attributes",
+      "owner": "web UI engineer (auth)",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: signup sets autoComplete name/email/new-password (apps/web/app/(public)/signup/page.tsx:77,96,115).",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P3-009",
+      "severity": "P3",
+      "title": "Storybook covers only the 7 @mct/ui primitives; packages/ui has no test/lint scripts and the a11y addon runs nowhere",
+      "owner": "design-system owner / QA",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: packages/ui has lint/typecheck/test scripts plus a smoke test (packages/ui/package.json, packages/ui/src/__tests__/smoke.test.tsx) and 8 story files including Chip; app primitives now have stories (ConfirmDialog, DataErrorNote, ToastProvider, StatusPill, EmptyState, Breadcrumbs); the a11y addon is asserted per story via parameters.a11y.test:\"error\" (.storybook/preview.tsx:17-25) and Chromatic has no continue-on-error. Residual (CI-P2-006 domain): Chromatic is not a required check.",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P3-010",
+      "severity": "P3",
+      "title": "Full accessibility breadth scan (68 routes) is triage-only and not a required check",
+      "owner": "@web / platform CI owner",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the breadth run is no longer triage-only \u2014 a11y-breadth.yml calls e2e.yml with a11y_full:true and the spec fails on critical/serious violations not in a11y-baseline.json (apps/web/e2e/a11y.spec.ts:135-165, empty baseline committed), and docs/CI.md:21,158 document it without the old continue-on-error claim. Remaining: it is still not a required context in .github/branch-protection/main.json (promotion is a repo-admin action) and the default gate still covers 25 of 68 routes.",
+      "area": "UX"
+    },
+    {
+      "id": "UX-P3-011",
+      "severity": "P3",
+      "title": "The a11y gate scans only initial page loads; interactive states (dialogs, drawers, filters, bulk bars) and client-fetched content are untested",
+      "owner": "QA / web UI engineer",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: an interactive-states describe opens the admin bulk bar, applies a status filter chip, opens the store categories drawer and the create-promotion dialog, each running axe in the open state (apps/web/e2e/a11y.spec.ts:198-240).",
+      "area": "UX"
+    }
+  ]
+}

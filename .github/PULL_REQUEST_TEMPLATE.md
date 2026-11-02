@@ -20,7 +20,7 @@
 - [ ] Prompt provenance unaffected (`node scripts/verify-prompts.js verify`)
 - [ ] `review.md` mirror stays in sync (`node scripts/sync-review-md.mjs --check`)
 - [ ] Supabase migrations are idempotent and follow the naming guide (if any)
-- [ ] `CHANGELOG.md` `[Unreleased]` updated (or N/A for docs-only)
+- [ ] `CHANGELOG.md` `[Unreleased]` updated — **required** when this PR changes `apps/*/src`, `apps/web/{app,components,lib,hooks,styles,public}`, `packages/{sdk,ui}/src`, or `supabase/migrations/*.sql`; CI fails the required test job when unchecked (`scripts/check-changelog-checkbox.mjs`). Docs/CI-only PRs may leave it unchecked.
 - [ ] No secrets, credentials, or real environment values committed (if one is found, follow [`docs/SECRETS_ROTATION.md`](../docs/SECRETS_ROTATION.md))
 - [ ] Docs/`AGENTS.md` updated if counts, workflows, or architecture changed
 - [ ] Required checks green (see `branch-protection/README.md`)

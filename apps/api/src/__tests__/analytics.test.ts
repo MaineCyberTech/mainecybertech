@@ -106,7 +106,7 @@ describe("Analytics API", () => {
 
     const res = await request(app)
       .post("/api/v1/analytics/track")
-      .send({ event: "page_view", page: "/store" });
+      .send({ event: "store_view", page: "/store" });
 
     expect(res.status).toBe(200);
     expect(res.body.data.ok).toBe(true);
@@ -115,7 +115,7 @@ describe("Analytics API", () => {
     const inserted = (builder.insert as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
     expect(inserted).not.toHaveProperty("ip_address");
     expect(inserted).not.toHaveProperty("user_agent");
-    expect(inserted.event).toBe("page_view");
+    expect(inserted.event).toBe("store_view");
   });
 
   it("rejects a track payload without an event name", async () => {
@@ -123,6 +123,55 @@ describe("Analytics API", () => {
     const res = await request(app).post("/api/v1/analytics/track").send({ page: "/store" });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION");
+  });
+
+  // AN-P3-006: arbitrary event names skewed the summary RPC and bypassed the
+  // documented registry, so the server enforces the shared vocabulary.
+  it("rejects an event name outside the registry", async () => {
+    const supabase = mockAuth();
+    const builder = createMockBuilder({ data: null, error: null });
+    supabase.from.mockReturnValue(builder);
+
+    const res = await request(app)
+      .post("/api/v1/analytics/track")
+      .send({ event: "totally_made_up_event", page: "/store" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION");
+    expect(builder.insert).not.toHaveBeenCalled();
+  });
+
+  it("sanitises metadata: drops PII-shaped keys, truncates and caps values", async () => {
+    const supabase = mockAuth();
+    const builder = createMockBuilder({ data: null, error: null });
+    supabase.from.mockReturnValue(builder);
+
+    const metadata: Record<string, unknown> = {
+      email: "visitor@example.com",
+      session_token: "secret-token",
+      plan: "pro",
+      note: "x".repeat(500),
+      // Non-scalar + null values exercise the stringify/pass-through branches.
+      extra: { tier: 2 },
+      nothing: null,
+    };
+    for (let i = 0; i < 40; i++) metadata[`k${i}`] = i;
+
+    const res = await request(app)
+      .post("/api/v1/analytics/track")
+      .send({ event: "product_detail_view", metadata });
+
+    expect(res.status).toBe(200);
+    const inserted = (builder.insert as jest.Mock).mock.calls[0][0] as {
+      metadata: Record<string, unknown>;
+    };
+    expect(inserted.metadata).not.toHaveProperty("email");
+    expect(inserted.metadata).not.toHaveProperty("session_token");
+    expect(inserted.metadata.plan).toBe("pro");
+    expect(String(inserted.metadata.note)).toHaveLength(200);
+    expect(inserted.metadata.extra).toBe('{"tier":2}');
+    expect(inserted.metadata.nothing).toBeNull();
+    expect(Object.keys(inserted.metadata).length).toBeLessThanOrEqual(25);
   });
 
   it("lists events for an admin", async () => {

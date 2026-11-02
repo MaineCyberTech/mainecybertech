@@ -1,0 +1,35 @@
+# ---------------------------------------------------------------------------
+# MCT org pre-commit configuration. Copy to <repo>/.pre-commit-config.yaml
+#
+# Install:  pre-commit install  (or ./install-hooks.sh from this directory)
+# Run all:  pre-commit run --all-files
+#
+# Why a LOCAL hook for gitleaks rather than the upstream hook repo: a pinned
+# remote hook needs a tag you have verified, and a wrong pin fails open at
+# install time. A local hook uses the binary you already have, so what it scans
+# with is what you can see.
+# ---------------------------------------------------------------------------
+repos:
+  - repo: local
+    hooks:
+      - id: gitleaks-staged
+        name: gitleaks (staged changes, redacted output)
+        description: "Blocks a commit that introduces a credential. --redact prevents printing the secret."
+        entry: gitleaks protect --staged --no-banner --redact -c .gitleaks.toml
+        language: system
+        pass_filenames: false
+
+      - id: no-real-dotenv
+        name: no real .env files
+        description: "A committed .env is how this whole problem starts. .example files are fine."
+        entry: ./scripts/check-no-dotenv.sh
+        language: system
+        files: '(^|/)\.env'
+        exclude: '\.example$'
+
+      - id: no-large-binary-secrets
+        name: no key/cert containers staged
+        description: "Private keys and keystores do not belong in a repo, whatever the extension."
+        entry: bash -c 'for f in "$@"; do case "$f" in *.p12|*.pfx|*.jks|*.keystore|*.pem|*.key) if ! git check-ignore -q "$f"; then echo "refusing to stage key material: $f"; exit 1; fi;; esac; done' --
+        language: system
+        files: '\.(p12|pfx|jks|keystore|pem|key)$'

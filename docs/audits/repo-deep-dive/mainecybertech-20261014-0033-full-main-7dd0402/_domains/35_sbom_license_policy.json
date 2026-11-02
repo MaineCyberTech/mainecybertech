@@ -1,0 +1,279 @@
+{
+  "domain": "35_sbom_license_policy",
+  "file": "35_sbom_license_policy.md",
+  "area": "SBOM",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T01:05:00Z",
+  "findings": [
+    {
+      "id": "SBOM-P1-001",
+      "severity": "P1",
+      "title": "SBOM Is Lockfile-Only, Not an Image SBOM or Attestation",
+      "owner": "platform/infrastructure",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: per-image Trivy CycloneDX SBOM + validate + actions/attest-sbom on the deploy path (deploy-do.yml:240-274, :313-342, :389-418) and build-push.yml; third-party images get SBOMs too (third-party-image-scan.yml:95-121).",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P1-002",
+      "severity": "P1",
+      "title": "Unsigned Images With No Provenance/Attestation",
+      "owner": "platform/infrastructure",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: per-image actions/attest-build-provenance, and verify-attestations runs gh attestation verify (SLSA + CycloneDX predicates, signer-workflow + source-digest pinned) before deploy (:430-520).",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P1-003",
+      "severity": "P1",
+      "title": "No version identity: no tags, no product version, no commit binding in generated artifacts",
+      "owner": "platform engineering (release owner)",
+      "target": "this week",
+      "status": "partially-fixed",
+      "note": "generated artifacts now bind <VERSION>+<commit> (generate-sbom.mjs:328-330, :459-462; reproduced locally: metadata.component.version + mct:productVersion/mct:commit), but no release tag exists (git ls-remote --tags = 0) because release.yml fails on every promotion (exit 141; live run 38490822732) - the tag half of this finding is undelivered. See CI-P2-011.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P1-004",
+      "severity": "P1",
+      "title": "No license allow/deny policy in dependency review or any CI gate",
+      "owner": "supply-chain owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: dependency-review uses allow-licenses + allow-dependencies-licenses (PR diff) and license-gate.mjs enforces the full-tree allow/deny policy + exceptions (dependency-audit action.yml:19-29).",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P1-005",
+      "severity": "P1",
+      "title": "SBOM carries no license data and no dependency graph, limiting triage and license review",
+      "owner": "supply-chain owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: sbom.yml feeds collect-licenses output into generate-sbom; reproduced locally - 1446 components, 823 dependency nodes, metadata component + mct:* properties; validate-sbom floor passes.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P2-001",
+      "severity": "P2",
+      "title": "SBOM is artifact-only: not release-bound, not commit-bound, not attested",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "commit binding + attestations are fixed and exercised (dev deploys green; image SBOMs attested on deploy builds), but the release binding is wired and never delivered: release.yml fails on every promotion (run 38490822732) and origin has 0 releases. See CI-P2-011.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P2-002",
+      "severity": "P2",
+      "title": "No container/image SBOM; base-image OS packages untracked",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: Trivy cyclonedx image SBOMs (Alpine OS + npm contents) per app image on deploy + build-push; third-party images covered weekly.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P2-003",
+      "severity": "P2",
+      "title": "`docs/CI.md` documents the SBOM workflow as \"Blocking\" but it gates nothing",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/CI.md SBOM row (:31) says 'Artifact-only (not a gate)'; the deploy path gates on the validated+attested image SBOMs.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P2-004",
+      "severity": "P2",
+      "title": "No artifact provenance, attestation, or signing; `id-token: write` requested but unused",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: same as SC-P2-002 - attestations produced and consumed.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P2-005",
+      "severity": "P2",
+      "title": "License policy not enforced in CI; non-OSI and LGPL licenses present",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: same as SC-P2-003 - full-tree license gate + PR allow-list.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P2-006",
+      "severity": "P2",
+      "title": "SBOM is generated but not bound to a commit or attached to releases/images",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "SBOMs are commit-bound and image SBOMs are digest-attested, but the release attachment has never happened: release.yml fails on every promotion (exit 141, run 38490822732) and origin has 0 releases. See CI-P2-011.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P2-007",
+      "severity": "P2",
+      "title": "Dependabot PR backlog is large and not triaged; one stale update conflicts with resolved versions",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: same as SC-P2-005 - reminder workflow + SLA; live queue not inspectable read-only.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P2-008",
+      "severity": "P2",
+      "title": "`licenses.json` is committed but unenforced and unverified",
+      "owner": "@owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: same as SC-P2-006 - untracked + guarded.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P2-009",
+      "severity": "P2",
+      "title": "License exceptions are matched by license string only - documented package scope and UNKNOWN fail open",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: license-gate matches on (license, package); UNKNOWN fails unless the package is named; fixture self-test covers scope-mismatch + unlisted-UNKNOWN (dependency-audit action.yml:31-36).",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P2-010",
+      "severity": "P2",
+      "title": "Exception `expires` dates are documentation-only and never enforced by the gates",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: missing/malformed/past expires fail closed in both gates; security/license-policy.json + security/dependency-audit-policy.json carry dates; self-test asserts it.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P2-011",
+      "severity": "P2",
+      "title": "Deploy verifies the tag's attestation but pulls by mutable tag; the SBOM predicate is never verified",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: verify-attestations resolves each tag to a digest, verifies BOTH predicates (SLSA + CycloneDX) and publishes digests; deploy exports MCT_*_IMAGE=repo@sha256:... and refuses to run without digests (:430-520, :894-905); compose uses the digest refs.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P2-012",
+      "severity": "P2",
+      "title": "No scheduled dependency vulnerability re-scan - advisories are only evaluated on PRs and deploys",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: dependency-rescan.yml weekly (report-only audit-gate --report, Trivy fs, dedupe check) + artifacts.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P3-001",
+      "severity": "P3",
+      "title": "Root license is ISC with no documented rationale",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/LICENSE_POLICY.md:82-88 documents ISC as an intentional MIT-equivalent choice.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P3-002",
+      "severity": "P3",
+      "title": "SBOM format/count not validated before upload; no regression guard",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: sbom.yml:54-55 runs validate-sbom.mjs (format, unique bom-refs, dependency refs, component floor, version/commit binding) before upload; image mode floors digest-bound image SBOMs.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P3-003",
+      "severity": "P3",
+      "title": "Root package license remains \"ISC\"",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: same as SBOM-P3-001 - intentional and documented.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P3-004",
+      "severity": "P3",
+      "title": "SBOM is produced as a transient artifact, not bound to a release",
+      "owner": "@owner",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "release.yml generates the lockfile SBOM in-job and attaches it on release creation (:126-145), but the workflow fails on every promotion (exit 141, run 38490822732) and origin has 0 releases - the SBOM remains transient until the release job is fixed (CI-P2-011).",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P3-005",
+      "severity": "P3",
+      "title": "Image SBOMs are attested but never validated (no floor or binding check)",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: validate-sbom.mjs --image --digest runs before each attestation (deploy-do.yml:253-258, :323-328, :399-404) and in build-push.yml:79-82 etc.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P3-006",
+      "severity": "P3",
+      "title": "Runbooks and script headers still document the broken `pnpm licenses list --json` command; docs/CI.md SBOM row is stale",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs use collect-licenses.mjs; docs/CI.md SBOM row updated (see SBOM-P2-003).",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P3-007",
+      "severity": "P3",
+      "title": "Documented sharp license exception does not match the machine policy",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: security/license-policy.json:80-84 exception matches docs/LICENSE_POLICY.md:60 (LGPL-3.0-or-later, @img/sharp-libvips-linux-x64, dev/build-only, expires 2027-10-03).",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P3-008",
+      "severity": "P3",
+      "title": "Shipped third-party images and GitHub Actions dependencies have no SBOM coverage",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: third-party-image-scan.yml emits digest-bound CycloneDX SBOMs for redis/caddy/prometheus/alertmanager (:95-121); scripts/actions-inventory.mjs --check enumerates + pins all 125 external action refs (runs clean).",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P3-009",
+      "severity": "P3",
+      "title": "PR license gate depends on the deprecated `deny-licenses` option and cannot fail on unknown licenses",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: dependency-review.yml uses the allow-list form (license-check + allow-licenses + allow-dependencies-licenses); the full-tree license-gate is the fail-closed UNKNOWN backstop.",
+      "area": "SBOM"
+    },
+    {
+      "id": "SBOM-P3-010",
+      "severity": "P3",
+      "title": "NEW: validate-sbom.mjs silently drops its first positional path when --digest is absent",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "status": "open",
+      "note": "at 7dd0402 scripts/validate-sbom.mjs:33-36 filters args with `index !== digestIndex + 1`; with no --digest (digestIndex=-1) this drops index 0, so `node scripts/validate-sbom.mjs custom.cdx.json` validates ./sbom.cdx.json instead (reproduced: ENOENT on the default when only the custom path exists). Current CI callers are unaffected because the default filename coincides (sbom.yml:55) or --digest is passed, but the documented `[sbomPath]` usage silently validates the wrong document.",
+      "area": "SBOM"
+    }
+  ]
+}

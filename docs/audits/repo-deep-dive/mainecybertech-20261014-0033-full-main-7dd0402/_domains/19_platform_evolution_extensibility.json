@@ -1,0 +1,119 @@
+{
+  "domain": "19_platform_evolution_extensibility",
+  "file": "19_platform_evolution_extensibility.md",
+  "area": "EVOL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T00:55:01Z",
+  "findings": [
+    {
+      "id": "EVOL-P2-001",
+      "severity": "P2",
+      "title": "No module registry: module metadata is duplicated across six disconnected catalogs with no drift guard",
+      "owner": "API principal engineer + web platform lead",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the registry now exists and is guarded. packages/sdk/src/module-registry.ts:45 holds 90 modules (key/name/icon/permissions/routes/entitlement) and drives entitlements (apps/api/src/lib/entitlements.ts:24-46), MODULE_LABELS (apps/web/lib/permissions.ts:53) and the portal entitlement form (apps/web/app/(admin)/admin/client-portal/ClientPortalEntitlementsForm.tsx:13). Drift guards: apps/api/src/__tests__/module-registry.test.ts:46-90 (permission catalog 5302118 exact-match, entitlement tiers, support->tickets fixed) and apps/web/__tests__/lib/module-registry.test.ts:19-45 (labels, nav hrefs, lucide icon names). Residual unchanged: apps/api/src/app.ts:171-232 still hand-mounts 62 /api/v1 routers; packages/sdk/src/index.ts:410+ still hand-wires 55 sub-API classes; apps/web/lib/module-config.ts:25-748 remains a disconnected per-module CRUD catalog (keys such as gov-changes); no guard ties mounts or SDK wiring to the registry - module-registry.ts:24-28 concedes this scope limit.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P2-002",
+      "severity": "P2",
+      "title": "Webhook UI advertises 11 event types but only 2 are ever dispatched; no event catalog exists",
+      "owner": "API + integrations lead",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: single catalog packages/sdk/src/webhook-events.ts:29-41 (11 events); every catalogued event now has an emitter (tickets.ts:189,316,342; projects.ts:537,605; documents.ts:323,594,1121; memberships.ts:127,199; webhooks.ts:369,379); API write validation uses z.array(z.enum(WEBHOOK_EVENTS)) (apps/api/src/routes/webhook-management.ts:91,99); both UI surfaces consume the catalog (NewWebhookForm.tsx:101, WebhookDetailClient.tsx:171); apps/api/src/__tests__/webhook-event-catalog.test.ts:40-84 fails CI on emitter/catalog drift and missing docs coverage.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-001",
+      "severity": "P3",
+      "title": "Feature flags are a hardcoded static map with no managed service, change log, or targeting",
+      "owner": "@api",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the module is now a typed registry with targeting, change log and audit events (apps/api/src/lib/feature-flags.ts:45-68 registry, :135-166 env/org/percentage resolution, :247 change log + feature_flag.changed audit; docs/FEATURE_FLAGS.md; feature-flags.test.ts). Downgraded from the register's verified-fixed because the finding's second half still holds: isFeatureEnabled has zero production call sites (grep across apps/packages/scripts matches only feature-flags.ts and its test), runtime overrides are process-local and there is no managed store/admin surface, so no shipped feature is actually gated.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-002",
+      "severity": "P3",
+      "title": "No catalog-lint: referenced permission keys are not checked against the permissions table",
+      "owner": "API platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: scripts/check-permission-catalog.mjs checks requirePermission literals, live RLS user_has_permission predicates (migration replay) and registerCrud module keys against the catalog; scripts/ci/check-permission-catalog.sh runs it plus an uncatalogued-key negative fixture; wired into the shared unit-tests action (.github/actions/unit-tests/action.yml:103-109) used by test.yml (PR) and validate.yml (deploy gate).",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-003",
+      "severity": "P3",
+      "title": "No committed event catalog or webhook documentation for consumers",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/EVENTS.md and docs/WEBHOOKS.md publish the 11-event catalog, envelope, signature/idempotency headers and retry/DLQ semantics; webhook-event-catalog.test.ts:70-84 fails when a catalogued event is missing from docs/WEBHOOKS.md; docs/modules/webhooks.md:15-16,42-43 now state M365 is clientState-authenticated and sends no signature (the old HMAC claim is gone). Residual: the two consumer docs duplicate the same contract and already diverge on retry counts - raised as new EVOL-P3-009.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-004",
+      "severity": "P3",
+      "title": "API versioning policy is documented but not enforced (no Sunset/Deprecation mechanism; spec version unrelated to the app version)",
+      "owner": "API principal engineer",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: DEPRECATIONS registry + deprecationMiddleware (apps/api/src/middleware/deprecation.ts:27-104) is mounted app-wide (apps/api/src/app.ts:142-144) and stamps RFC 9745 Deprecation, RFC 8594 Sunset and RFC 8288 Link headers including on removed paths; goneRoute reuses the registry (apps/api/src/lib/deprecated-route.ts:24); tests in apps/api/src/__tests__/deprecation.test.ts; docs/API_VERSIONING.md:6-32 documents the policy and the intentionally decoupled OpenAPI contract version (apps/api/src/lib/api-version.ts:16) served at spec.ts:4898.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-005",
+      "severity": "P3",
+      "title": "Config model is duplicated per app; there is no shared env-schema package",
+      "owner": "platform engineering",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: packages/config/src/env.ts owns the shared zod fragments and client defaults; apps/api/src/config/env.ts:13 and apps/worker/src/env.ts:15 compose them; scripts/check-env-parity.mjs:29-33 parses the shared file and asserts schema <-> .env.example <-> docs/ENVIRONMENT_VARIABLES.md parity, self-tests a negative fixture and runs in the shared gate (.github/actions/unit-tests/action.yml:66-79).",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-006",
+      "severity": "P3",
+      "title": "Shared-package extraction is deferred: @mct/sdk and @mct/ui are source-only, and DB client setup is duplicated",
+      "owner": "platform engineering (package owner)",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: docs/arch/package-extraction-plan.md records the accepted incremental direction (phase 1 shared config done; @mct/db requires an ADR; sdk build and ui packaging deferred) and @mct/config/env now shares supabaseAuthOptions/SUPABASE_CLIENT_DB_TIMEOUT_MS/resolveRedisUrl. Residual: @mct/sdk and @mct/ui remain source-only with no build/publish step (packages/sdk/package.json:6-19; packages/ui/package.json:5-17), packages/db does not exist, and client construction is still per-process (apps/api/src/services/supabase.ts:69-130 vs apps/worker/src/services/supabase.ts:12-20 plus ad-hoc createClient calls in worker tasks). Downgraded from the register's verified-fixed: deferral is documented, not removed.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-007",
+      "severity": "P3",
+      "title": "Migration-strategy docs contradict each other and the tree (ISO vs sequential naming; seed.sql references)",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: docs/migrations/naming-guide.md:19,115 and docs/SUPABASE_MIGRATION_CHEATSHEET.md:9-10 now match the tree - all 158 migrations use the sequential 5302xxx prefix, ISO timestamps are explicitly not used, and the cheatsheet states there is no supabase/seed.sql (seeds live under supabase/seeds/). Residual: no automated migration-naming guard (recommendation only; scripts/ci/check-migration-transactions.sh covers transaction wrapping, not naming).",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-008",
+      "severity": "P3",
+      "title": "Roles, plan-to-module mapping, and status vocabularies are hardcoded with no parity guard",
+      "owner": "API platform + web",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/api/src/__tests__/catalog-parity.test.ts:83-160 asserts API role tiers are inside the migration catalog (5302026/5302128), cross/elevated tiers are disjoint, API and web PLATFORM_ADMIN_KEYS are equal, entitlement tiers are derived from the module registry, and 9 status vocabularies match the 5302457 CHECK constraints; module-registry.test.ts covers the plan-to-module mapping.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-009",
+      "severity": "P3",
+      "title": "Two overlapping outbound-webhook consumer docs (docs/EVENTS.md, docs/WEBHOOKS.md); only one is guarded and they already diverge",
+      "owner": "integrations/backend + docs",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 7dd0402. docs/EVENTS.md (indexed at docs/INDEX.md:76) and docs/WEBHOOKS.md both publish the same outbound event contract and already contradict each other on retries: EVENTS.md:59 says 'Up to 3 attempts per delivery' while WEBHOOKS.md:59 says the worker retries 'up to 5 attempts'; the implementation is 3 inline attempts (apps/api/src/lib/webhook-dispatcher.ts:13) plus up to 5 worker retries (apps/worker/src/tasks/webhook-retry.ts:9) - neither doc states the two-layer budget. Only WEBHOOKS.md is drift-guarded (webhook-event-catalog.test.ts:70-84 reads that file only), so EVENTS.md can rot silently. Impact: integrators get contradictory delivery semantics and no single contract. Recommendation: keep one consumer doc (make the other a pointer), state the two-layer retry budget, and extend the guard to every surviving consumer doc.",
+      "area": "EVOL"
+    }
+  ]
+}

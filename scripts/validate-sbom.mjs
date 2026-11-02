@@ -29,10 +29,19 @@ import { resolve } from "node:path";
 const args = process.argv.slice(2);
 const imageMode = args.includes("--image");
 const digestIndex = args.indexOf("--digest");
-const expectedDigest = digestIndex !== -1 ? args[digestIndex + 1] : null;
-const positional = args.filter(
-  (arg, index) => arg !== "--image" && arg !== "--digest" && index !== digestIndex + 1,
-);
+const expectedDigest = digestIndex !== -1 ? (args[digestIndex + 1] ?? null) : null;
+if (digestIndex !== -1 && !expectedDigest) {
+  console.error("--digest requires a sha256:<hex> value");
+  process.exit(2);
+}
+// SBOM-P3-010: only drop the value slot when --digest is actually present.
+// The old `index !== digestIndex + 1` filter dropped the first positional path
+// when digestIndex was -1, silently validating ./sbom.cdx.json instead.
+const positional = args.filter((arg, index) => {
+  if (arg === "--image" || arg === "--digest") return false;
+  if (digestIndex !== -1 && index === digestIndex + 1) return false;
+  return true;
+});
 const path = resolve(positional[0] ?? "sbom.cdx.json");
 const bom = JSON.parse(readFileSync(path, "utf8"));
 

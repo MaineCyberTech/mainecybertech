@@ -8,7 +8,7 @@
 > `docs/DATA_BREACH_RESPONSE.md`, the subprocessor list at
 > `docs/SUBPROCESSORS.md` and the DSAR runbook at `docs/runbooks/dsar.md`.
 >
-> Owner: security lead / compliance sponsor · Last reviewed: 2026-10-11.
+> Owner: security lead / compliance sponsor · Last reviewed: 2026-10-14.
 > Rows marked **gap** are known and owned, not promised controls.
 
 ## 1. Scope
@@ -33,7 +33,7 @@ behalf — see §5.
 | Class        | Data                                                            | Primary stores                                                                 | Protection today                                                        |
 | ------------ | --------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
 | Identity     | name, email, phone, title, avatar                               | `profiles` (+ `encrypted_pii` mirror), `memberships`, `contract_signers`       | RLS org-scoped; AES-256-GCM mirror (additive)                           |
-| Prospect/lead| name, email, phone, company, message, IP, UA                    | `public_interactions` (90-day purge), `store_quote_requests`, `store_leads`    | Insert-only by design; daily purge worker (gap: quote/lead stores)      |
+| Prospect/lead| name, email, phone, company, message, IP, UA                    | `public_interactions`, `store_quotes`, `store_quote_requests` (90-day purge), `store_leads` | Insert-only by design; daily purge worker; `store_leads` holds lead scores only (no direct PII; gap) |
 | Auth/security| email, password hash, MFA secrets, recovery code hashes, keys   | `auth.users` (Supabase-managed), `mfa_recovery_codes`, `api_keys`              | Supabase-managed; hashed codes; scoped API keys                         |
 | Activity     | actor id, action, metadata, IP, UA                              | `audit_logs` (365-day purge), `impersonation_log`, `store_analytics_events`    | Org-scoped reads; key-level PII redaction at write. `audit_logs.ip_address`/`user_agent` columns exist but the runtime writer does not populate them — platform-admin IP/UA lives in `impersonation_log` (PRIV-P3-002). |
 | Error telemetry | scrubbed error context (names/email/phone/credentials/IP redacted at the SDK) | Sentry (vendor) | `sendDefaultPii: false` + `beforeSend` scrub in all three apps (AN-P3-004); Sentry org retention setting |
@@ -50,8 +50,10 @@ behalf — see §5.
 | Backup buckets (DB + storage)    | Full platform copies                              | 30 days             | `scripts/backup-database.sh`, `scripts/backup-storage.sh`                   |
 | Google Analytics                 | Usage/cookie data                                 | GA property setting | Google Analytics (operator-owned property configuration)                    |
 | `store_analytics_events`         | Anonymous storefront events (no IP/UA)            | 90 days             | `apps/worker/src/tasks/retention.ts` (daily, batched; AN-P2-004)            |
+| `store_quotes`                   | Public quote submissions (name/email/phone/notes) | 90 days             | `apps/worker/src/tasks/retention.ts` (daily, batched; PRIV-P2-008)          |
+| `store_quote_requests`           | Structured quote requests incl. `customer` jsonb PII | 90 days          | `apps/worker/src/tasks/retention.ts` (daily, batched; PRIV-P2-008)          |
 | Sentry (vendor)                  | Scrubbed error context                            | Sentry org setting  | Sentry organization retention (operator-owned); SDK `beforeSend` scrub (AN-P3-004) |
-| `store_quote_requests`, `store_leads`, `impersonation_log` | Quote PII, impersonation trail | **No automated purge — gap** | Owner decision pending (DATA-P2-006); do not promise a window |
+| `store_leads`, `impersonation_log` | Lead scores linked to a purged quote request; impersonation trail | **No automated purge — gap** | Owner decision pending (DATA-P2-006); do not promise a window |
 
 Forwarded copies of contact-form submissions (Microsoft Teams, Atlassian JSM)
 are outside the 90-day platform purge and are retained under those providers'
@@ -95,12 +97,28 @@ export query set, erasure/anonymisation and offboarding — is
   is scrubbed, then the auth user is deleted (`user.account.erased`).
 - Tenant-content exports use the module admin surfaces; audit records are
   exportable from `/api/v1/audit/export` (itself audited).
+- **Public submitters are not platform users**, so the erasure endpoint above
+  cannot reach their quote/contact rows. Erasure for a non-user submitter is a
+  manual runbook action (`docs/runbooks/dsar.md` §4.4): identify the rows by the
+  verified email in `public_interactions`, `store_quotes` and
+  `store_quote_requests`, delete them, and record the action in the privacy
+  register.
 
 ## 8. Known gaps / decisions pending
 
-- `store_quote_requests`, `store_leads`, `store_analytics_events` and
-  `impersonation_log` have no automated purge; an owner must set a window
-  (DATA-P2-006 / AN-P2-004).
+- `store_leads` and `impersonation_log` have no automated purge; an owner must
+  set a window (DATA-P2-006). `store_leads` rows are operational lead scores
+  (no direct PII) that can outlive the quote request they reference. The public
+  quote stores (`store_quotes`, `store_quote_requests`) are purged at 90 days
+  (PRIV-P2-008); `store_analytics_events` is likewise purged at 90 days
+  (AN-P2-004).
+- Public quote/contact submitters are not platform users, so the DSAR erasure
+  endpoint cannot cover their submissions; erasure for them is the manual
+  runbook path in `docs/runbooks/dsar.md` §4.4 (PRIV-P2-008).
+- Consent withdrawal pushes a GA Consent Mode denial and shuts the Tawk.to
+  widget down via `Tawk_API` (AN-P3-005), but an already-executed third-party
+  script tag is only fully unloaded by a page reload; the widget stops running
+  immediately, the script remains loaded until then.
 - `audit_logs.ip_address` / `user_agent` are never populated at runtime, so
   breach scoping cannot rely on them (PRIV-P3-002).
 - IP/geo collection and consent gating for public visitors is tracked by

@@ -341,6 +341,7 @@ describe("shared email template (NOTIF-P3-001/005)", () => {
       subject: string;
       text: string;
       html: string;
+      headers?: Record<string, string>;
     };
     expect(payload.subject).toBe("[Maine CyberTech] New Comment on Ticket");
     expect(payload.html).toContain("Manage notification preferences");
@@ -353,6 +354,13 @@ describe("shared email template (NOTIF-P3-001/005)", () => {
       userId: "user-1",
       organizationId: "org-1",
     });
+
+    // NOTIF-P2-012: mail clients get the RFC 8058 one-click contract, pointing
+    // at the same signed URL the footer links to.
+    expect(payload.headers?.["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
+    expect(payload.headers?.["List-Unsubscribe"]).toBe(
+      `<http://localhost:3000/api/v1/notifications/unsubscribe?token=${encodeURIComponent(token)}>`,
+    );
   });
 });
 

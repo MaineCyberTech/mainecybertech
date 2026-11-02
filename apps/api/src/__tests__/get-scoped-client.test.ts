@@ -32,9 +32,18 @@ describe("getScopedClient RLS allow-list", () => {
   const originalWrites = process.env.RLS_WRITES_ENABLED;
 
   afterEach(() => {
-    process.env.RLS_READS_ENABLED = originalReads;
-    process.env.RLS_WRITES_ENABLED = originalWrites;
+    if (originalReads === undefined) delete process.env.RLS_READS_ENABLED;
+    else process.env.RLS_READS_ENABLED = originalReads;
+    if (originalWrites === undefined) delete process.env.RLS_WRITES_ENABLED;
+    else process.env.RLS_WRITES_ENABLED = originalWrites;
     createClientMock.mockClear();
+  });
+
+  it("returns the service-role client when neither allow-list is configured", () => {
+    delete process.env.RLS_READS_ENABLED;
+    delete process.env.RLS_WRITES_ENABLED;
+    const client = getScopedClient(makeReq("jwt-123") as never, "satisfaction-pulse", "read");
+    expect((client as unknown as { __key: string }).__key).toBe("service-role-key");
   });
 
   it("returns the service-role client when the module is not allow-listed", () => {
@@ -55,6 +64,13 @@ describe("getScopedClient RLS allow-list", () => {
     expect((client as unknown as { __key: string }).__key).toBe("service-role-key");
   });
 
+  it("does not switch writes when only RLS_READS_ENABLED is set", () => {
+    process.env.RLS_READS_ENABLED = "satisfaction-pulse";
+    delete process.env.RLS_WRITES_ENABLED;
+    const client = getScopedClient(makeReq("jwt-123") as never, "satisfaction-pulse", "write");
+    expect((client as unknown as { __key: string }).__key).toBe("service-role-key");
+  });
+
   it("gates writes on RLS_WRITES_ENABLED independently of reads", () => {
     process.env.RLS_READS_ENABLED = "satisfaction-pulse";
     process.env.RLS_WRITES_ENABLED = "";
@@ -68,6 +84,14 @@ describe("getScopedClient RLS allow-list", () => {
       "write",
     );
     expect((writeClient2 as unknown as { __key: string }).__key).toBe("anon-key");
+  });
+
+  it("is module-specific: an allow-listed module does not switch other modules", () => {
+    process.env.RLS_READS_ENABLED = "sla";
+    const other = getScopedClient(makeReq("jwt-123") as never, "tickets", "read");
+    expect((other as unknown as { __key: string }).__key).toBe("service-role-key");
+    const scoped = getScopedClient(makeReq("jwt-123") as never, "sla", "read");
+    expect((scoped as unknown as { __key: string }).__key).toBe("anon-key");
   });
 
   it("keeps the service-role client for a platform admin acting cross-tenant", () => {

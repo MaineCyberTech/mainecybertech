@@ -1,0 +1,169 @@
+{
+  "domain": "26_admin_console_abuse_case_audit",
+  "file": "26_admin_console_abuse_case_audit.md",
+  "area": "ADMIN",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T00:52:41Z",
+  "findings": [
+    {
+      "id": "ADMIN-P1-001",
+      "severity": "P1",
+      "title": "Org-agnostic `requireAdmin` lets a tenant admin read other tenants' admin data",
+      "owner": "API platform / security",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: middleware/admin.ts:22-64 pins non-super admins to the explicit org; lib/admin-scope.ts gates allTenants on is_super_admin + cross-tenant membership; consumers (audit/dashboard/search/store) apply the scope predicate.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P1-002",
+      "severity": "P1",
+      "title": "Impersonation/cross-tenant access is logged but not reviewable or alerted",
+      "owner": "API platform / security",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/audit.ts:126-158 review API + :172-191 export behind allTenants; services/impersonation.ts:17-56 records every cross-tenant entry; metric + Prometheus alerts (prometheus.rules.yml:98-120). Residual (separate row): the impersonation export is still un-audited - ADMIN-P2-001.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P1-003",
+      "severity": "P1",
+      "title": "Role assignment paths let a delegated user-manager grant cross-tenant admin roles (self-escalation)",
+      "owner": "API platform / security",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: shared assertCanAssignRole (lib/role-assignment.ts:20-43) blocks cross-tenant role grants and self-role-changes on all four paths (memberships.ts:90-91,151-161; bulk.ts:65-66; organizations.ts:93; users.ts:491-492); role-assignment.test.ts.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-001",
+      "severity": "P2",
+      "title": "Sensitive admin exports are not audit-logged",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd04023: a per-route scan of the 12 export handlers shows 9 now write an export audit event (approvals: approval.export; assets; audit: audit.export at :100; domain-monitors; findings; projects; proposals; tickets: ticket.export at :91; users: user.data.export at :453). Residual: 3 exports remain un-audited - routes/audit.ts:172-191 (/audit/impersonation/export, the most sensitive), routes/satisfaction-pulse-widget.ts:87, routes/dynamic-client-forms-builder.ts:71.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-002",
+      "severity": "P2",
+      "title": "Destructive deletes are inconsistently confirmation-gated and org delete is unrecoverable",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: lib/delete-confirm.ts assertDeleteConfirmed + assertOrgDeleteConfirmed (typed slug); routes/organizations.ts:427-460 requires the slug on DELETE and records a cascade summary; domain deletes require confirm (organizations.ts:604-606).",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-003",
+      "severity": "P2",
+      "title": "Bulk document operations apply without a per-row preview or elevation guardrail",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/documents.ts bulk endpoints support dryRun previews with per-field diffs (:707-775, :821-855) and visibility changes require an explicit confirm:true (:852-858); bulk ticket actions remain rate-limited + audited.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-004",
+      "severity": "P2",
+      "title": "Bulk invite creates pre-confirmed auth accounts (and org onboarding auto-approves admin)",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/bulk.ts:163 uses inviteUserByEmail (no pre-confirmed accounts); routes/organizations.ts:127-138 creates the first admin membership as pending for platform approval.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-005",
+      "severity": "P2",
+      "title": "No rate limiting specific to expensive/destructive admin operations",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: rateLimitAdminOps (middleware/rate-limit.ts:87-104) is applied to audit exports (:74,172), bulk invite (bulk.ts:44), documents bulk (documents.ts:761,822), org onboard/delete (organizations.ts:64,429) and tickets bulk (tickets.ts:613).",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-006",
+      "severity": "P2",
+      "title": "No undo/soft-delete is exercised despite the schema supporting it",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: migration 5302432_drop_unused_soft_delete_columns.sql removes the unhonoured deleted_at/deleted_by columns; docs/ADMIN_FEATURES.md:451-452 and docs/ROLLBACK_PROCEDURES.md:66-82 document the hard-delete decision and operator-only recovery.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-007",
+      "severity": "P2",
+      "title": "Approval flows allow self-approval and cancellation of already-approved requests",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: services/approvals.ts:80-84 rejects self-approval and :139-142 self-rejection; :195-202 only allows cancelling pending requests.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-008",
+      "severity": "P2",
+      "title": "Destructive deletes are not consistently audit-logged",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: the previously un-audited DELETE handlers now route through audited services (services/client-onboarding-command-center.ts:659-814, services/dynamic-client-forms-builder.ts:202) or log inline (edu-automation, license-optimizer, projects, status-page, uptime-monitor); destructive-delete-guard.test.ts fails new deletes without confirm/audit.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-009",
+      "severity": "P2",
+      "title": "Any org member can open the Stripe billing portal for their org (no billing-contact check)",
+      "owner": "Billing / API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/billing.ts:685-720 assertBillingPortalAccess requires an approved is_billing_contact membership or billing:manage (admin/super_admin bypass); enforced on POST /billing/create-portal-session (:722-740).",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P3-001",
+      "severity": "P3",
+      "title": "Web admin gate accepts a broader role set than the API `requireAdmin` (guard/API divergence)",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: apps/web/lib/auth/admin.ts uses isCrossTenantKey from the shared @mct/sdk/role-keys module (apps/web/lib/roles.ts mirror), so the web gate and API requireAdmin accept the same role set; admin-gate parity covered in the route suites.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P3-002",
+      "severity": "P3",
+      "title": "Active-org cookie setter performs no server-side authorization",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: apps/web/lib/org-actions.ts:21-50 setActiveOrg verifies an approved membership (or platform admin) before writing the cookie.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P3-003",
+      "severity": "P3",
+      "title": "Admin global search and dashboard expose global resource names/counts to any admin",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/search.ts:107-252 scopes global results to the caller's orgs for non-cross-tenant admins; routes/dashboard.ts:16-50 applies applyOrgScope to every count.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P3-004",
+      "severity": "P3",
+      "title": "Global store catalog is mutable by any tenant admin",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd04023: routes/store/catalog.ts:180-195 pins a single-org admin's catalog writes to their org (global organization_id NULL rows require a genuine cross-tenant admin); reads are org-filtered (:54-60).",
+      "area": "ADMIN"
+    }
+  ]
+}

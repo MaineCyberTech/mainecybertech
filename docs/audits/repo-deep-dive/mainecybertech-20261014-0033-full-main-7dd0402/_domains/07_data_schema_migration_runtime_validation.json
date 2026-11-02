@@ -1,0 +1,220 @@
+{
+  "domain": "07_data_schema_migration_runtime_validation",
+  "file": "07_data_schema_migration_runtime_validation.md",
+  "area": "DATA",
+  "agent": "subagent",
+  "emitted_at": "2026-10-14T01:00:48Z",
+  "findings": [
+    {
+      "id": "DATA-P0-001",
+      "severity": "P0",
+      "title": "Orphan cleanup can recursively delete a bucket's contents",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 7dd0402: apps/worker/src/tasks/orphan-cleanup.ts:52-67 rejects folder entries and folder-like paths, :111-115 recurses via explicit folder listing, :227-235 aborts the bucket on any non-object path; regression tests apps/worker/src/__tests__/orphan-cleanup.test.ts:369-445 (read; jest not executable \u2014 no node_modules).",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P1-001",
+      "severity": "P1",
+      "title": "Approved-membership RLS predicate reintroduced six times; pending/suspended members could access tenant data",
+      "owner": "backend/data governance",
+      "target": "this week",
+      "status": "partially-fixed",
+      "note": "re-verified at 7dd0402: the guard is present and passing (node scripts/check-rls-predicate.mjs -> PASS: no raw status-unfiltered membership predicate in 30 migrations newer than baseline 5302430; wired at .github/actions/unit-tests/action.yml:125), but the pre-baseline notifications INSERT policy is still the effective one: supabase/migrations/5302057_fix_bootstrap_rls_fk_indexes.sql:41-55 EXISTS branch joins memberships with no m.status='approved' filter and no later migration rewrites it (grep 'on public.notifications' -> only 5302029/5302057). A pending/suspended admin-role member can still insert notifications for the org through the anon-key+JWT path.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P1-002",
+      "severity": "P1",
+      "title": "`retention` worker task performs unbounded deletes and reports success on partial failure",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "apps/worker/src/tasks/retention.ts:35-57 archive-before-delete via RPC, :59-89 refuses non-positive windows, :149-164 bounded purgeInBatches, :224-239 returns ok:false on any table error; apps/worker/src/lib/purge.ts BATCH_SIZE/MAX_BATCHES with truncation reporting; boundary tests retention.test.ts:288-315.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P1-003",
+      "severity": "P1",
+      "title": "Soft-delete columns remain dead schema; DELETE endpoints hard-delete",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "supabase/migrations/5302432_drop_unused_soft_delete_columns.sql drops deleted_at/deleted_by on tickets/projects/documents (begin/commit); no remaining deleted_at/deleted_by app or type references; hard-delete semantics documented in docs/migrations/README.md.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-001",
+      "severity": "P2",
+      "title": "Blanket `anon` DML grant + default privileges make every future table anon-writable unless RLS happens to stop it",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "5302434 revokes select/insert/update/delete from anon on every public table plus the ALTER DEFAULT PRIVILEGES grant, then re-grants only the declared public-write allowlist; no later migration re-grants anon DML (5302458 only revokes more).",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-002",
+      "severity": "P2",
+      "title": "Destructive table-replacement migrations are not transaction-wrapped",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "scripts/ci/check-migration-transactions.sh wired at .github/actions/unit-tests/action.yml:134; ran at 7dd0402 -> PASS (158 files checked, negative fixture flagged); 5302432/5302434/5302439/5302442 etc. are begin/commit wrapped.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-003",
+      "severity": "P2",
+      "title": "`orphan-cleanup` deletes storage objects based on a truncated listing",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "orphan-cleanup.ts:10-17 LIST_PAGE_SIZE/MAX_LISTED and :97-127 paginate to a short page and refuse >10k entries; pagination test orphan-cleanup.test.ts:340-365.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-004",
+      "severity": "P2",
+      "title": "Migration CI dry-run diff is non-blocking; drift is never gated",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": ".github/workflows/supabase-migrations.yml post-push drift step strips ANSI and exits 1 on any DDL unless workflow_dispatch allow_drift=1 after review.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-005",
+      "severity": "P2",
+      "title": "`audit_logs` org-delete cascade destroys compliance history; 365-day purge has no archive",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "5302442_audit_log_archive.sql creates the append-only audit_log_archive (no FK to organizations) + archive_audit_logs/archive_org_audit_logs SECURITY DEFINER RPCs (search_path pinned, revoked from anon/authenticated); retention.ts:35-57 calls archive_audit_logs; 5302451 adds a BEFORE DELETE trigger on organizations that archives and fails closed if rows remain.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-006",
+      "severity": "P2",
+      "title": "Several stores lack a retention policy and owner",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "retention-policy.ts resolves windows from the retention_policies registry (longest match) and retention.ts consumes it, but docs/PRIVACY.md:56 still lists store_quote_requests, store_leads and impersonation_log as 'No automated purge - gap' (owner decision pending) and no worker purge targets those tables. The previous register row claimed verified-fixed; the in-repo retention schedule itself documents the residual.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-007",
+      "severity": "P2",
+      "title": "Generated DB types / schema can drift from migration intent",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "node scripts/generate-db-types.js --check -> 'database types up to date' at 7dd0402; generator handles CREATE/ALTER/DROP and embeds a migrations digest (scripts/generate-db-types.js:299-311,603-615); wired at .github/actions/unit-tests/action.yml:97.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-008",
+      "severity": "P2",
+      "title": "Orphan cleanup reference query is unbounded in the object list",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "orphan-cleanup.ts:19-35,169-190 chunk .in() at 200 keys; test orphan-cleanup.test.ts:227-248 asserts 3 chunks for 450 objects.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-009",
+      "severity": "P2",
+      "title": "`updated_at` is frozen on 69 module tables (no trigger; generic PATCH drops it)",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "5302443_module_updated_at_triggers.sql installs the set_updated_at trigger on every public base table that has updated_at and no trigger yet (idempotent, matches by function); generic PATCH also sets updated_at server-side (e.g. routes/field-services.ts:120-124).",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-010",
+      "severity": "P2",
+      "title": "Scheduled database dump and restore test target the dev environment only; production long-term backup is unproven",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": ".github/workflows/db-backup.yml:8-15,32-48 supports a prod target behind prod-approval and vars.PROD_BACKUP_ENABLED, but docs/runbooks/backup-restore-drill-ledger.md:9-13 records 'no drill has been executed yet' and the operator backup secrets are still unprovisioned (DR-P0-001 residual) \u2014 production long-term backup remains unexercised.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-001",
+      "severity": "P3",
+      "title": "Pre-baseline policies created without a preceding `drop policy if exists`",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "pre-baseline drop-policy pairing backfilled (1088 'drop policy if exists' statements across 83 files); node scripts/verify-rls.mjs rule 3 PASS; docs/migrations/README.md documents the 5302427 baseline and the backfill.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-002",
+      "severity": "P3",
+      "title": "Migration version gaps undocumented; brief states 141 migrations, tree has 127",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "counts are guarded (node scripts/check-docs-counts.mjs -> 'docs counts OK'; 158 files), but the version gaps (5302027, 5302039-5302040, 5302044-5302049, 5302084, 5302136-5302401, 5302429) are still undocumented (grep for a gap note in docs/migrations/*.md and docs/SUPABASE_MIGRATION_WORKFLOW.md -> none).",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-003",
+      "severity": "P3",
+      "title": "Retention purge boundary behaviour is untested; the mock ignores the age cutoff and the PII purge has no tests",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "retention.test.ts:288-315 keeps a row exactly at the cutoff and deletes strictly older rows with an age-aware mock; public-interaction-retention.test.ts:180-210 has the same boundary test.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-004",
+      "severity": "P3",
+      "title": "Status-like text columns are not constrained by CHECK/enum, so app vocabulary is not enforced by the DB",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "5302457_status_check_constraints.sql adds guarded CHECK ... NOT VALID constraints for 20 status columns; vocabularies are supersets of the app Zod enums (spot-checked assets/findings/proposals/qbr/cab/domain-monitors/phishing).",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-005",
+      "severity": "P3",
+      "title": "No down-migrations and destructive migrations lack rollback notes despite the repo's own naming guide",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "all six destructive migrations carry '-- Rollback:' headers (5302055:8, 5302110:16, 5302116:23, 5302406:7, 5302407:12, 5302432:17); docs/migrations/README.md documents the no-down-migration policy and the rollback-note requirement.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-006",
+      "severity": "P3",
+      "title": "Generated DB types carry no commit/version binding",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "packages/sdk/src/database.types.ts:3 carries the sha256 migrations digest and --check asserts it (ran -> up to date).",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-007",
+      "severity": "P3",
+      "title": "Governance CRUD accepts free-text statuses that the new CHECK constraints reject with a 500",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "status": "open",
+      "note": "validators/governance.ts:78,90 use z.string() for change_requests status while 5302457 adds a CHECK vocabulary; the generic crudRoute PATCH passes it through, so an invalid status now returns DB_ERROR 500 instead of a 400 validation error. Same class for any crudRoute table whose schema is free text. New finding (P3).",
+      "area": "DATA"
+    }
+  ],
+  "report": "Read-only re-verification at `7dd0402` (worktree of `origin/main`); no database access. 16 of 20 previous DATA rows are verified fixed with executed guards, 4 remain partially fixed, 0 regressed, 1 new P3. Executed evidence: `node scripts/verify-rls.mjs` (140/140 tables RLS, 1031 policies, 0 failures), `node scripts/check-rls-predicate.mjs` (PASS, 30 migrations newer than 5302430), `sh scripts/ci/check-migration-transactions.sh` (PASS, 158 files), `node scripts/generate-db-types.js --check` (up to date, digest-bound), `node scripts/check-docs-counts.mjs` (OK). Key code: `apps/worker/src/tasks/{retention,orphan-cleanup}.ts` + `lib/{purge,retention-policy}.ts`; migrations 5302432/5302434/5302442/5302443/5302451/5302457. Residuals: notifications INSERT policy still lacks `status='approved'` (5302057:41-55); `store_quote_requests`/`store_leads`/`impersonation_log` still have no purge (docs/PRIVACY.md:56); prod backup capable but unexercised (drill ledger: no drill executed); migration version gaps undocumented. New: DATA-P3-007 (free-text governance status vs new CHECK \u2192 500)."
+}
