@@ -38,7 +38,12 @@ concurrency:
 
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    # Pin the LTS image: `ubuntu-latest` moved to Ubuntu 26.04 ("resolute"),
+    # whose ICU is too new for the pinned WebKit build (MiniBrowser fails with
+    # "libicudata.so.74: cannot open shared object file"). Playwright's
+    # `--with-deps` cannot install libicu74 on 26.04. Re-evaluate when
+    # Playwright is upgraded to a WebKit build targeting the newer runners.
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
       matrix:
