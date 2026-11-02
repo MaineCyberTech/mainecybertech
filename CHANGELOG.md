@@ -161,6 +161,16 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Fixed
 
+- **In-app notification dedup (42P10):** migration `5302463` replaces the
+  partial unique index on `notifications (notification_key)` with a full unique
+  index. PostgreSQL cannot infer a partial index from a bare
+  `ON CONFLICT (notification_key)` target, so every deduped insert from
+  `apps/api/src/lib/notify.ts` and `apps/worker/src/notification-store.ts`
+  failed with "no unique or exclusion constraint matching the ON CONFLICT
+  specification" (536 failures logged on the dev environment; e.g. every
+  "Scheduled automation due" notification was never created).
+  `notification-dedup-index.test.ts` pins the index shape and both call sites.
+
 - **Portal visibility and data integrity:** role-aware filtering for proposals,
   QBRs, approvals, findings, assets, vendor contracts, domain monitors, file
   requests, service catalog, KB and training; internal proposal comments hidden;

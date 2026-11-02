@@ -102,11 +102,11 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,670 tests, all passing. 520 suites.**
+**4,670 tests, all passing. 521 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,999         | 175    | Jest + supertest                  |
+| API     | 1,999         | 176    | Jest + supertest                  |
 | Web     | 2,035         | 308    | Jest + Testing Library            |
 | SDK     | 325           | 5      | Jest (mocked fetch)               |
 | Worker  | 311           | 32     | Jest (env schema + task handlers) |
@@ -176,7 +176,7 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                                                                                                                                                     |
 | Web pages                 | 330   | Admin 203, Portal 97, Public 29, `forbidden` 1                                                                                                                                                                                                                                                     |
 | Web components            | 129   | `apps/web/components/`                                                                                                                                                                                                                                                                             |
-| SQL migrations            | 161   | `supabase/migrations/` (latest: 5302463_client_portal_ai_and_visibility                                                                                                                                                                                                                            |
+| SQL migrations            | 162   | `supabase/migrations/` (latest: 5302463_fix_notification_key_dedup_index                                                                                                                                                                                                                            |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                                                                                                                                             |
 | GitHub Actions workflows  | 30    | `.github/workflows/`                                                                                                                                                                                                                                                                               |
 | AI prompt files           | 626   | `prompts/` (6 packs, 624 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                                                                                                                                           |
