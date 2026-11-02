@@ -1,0 +1,12 @@
+# Time-boxed, upstream-blocked CVEs for the third-party compose images.
+#
+# `third-party-image-scan` fails on fixable HIGH/CRITICAL findings. The
+# entries below are fixable in the Alpine/Go package feeds but the upstream
+# image maintainers have not rebuilt the published tag yet (checked
+# 2026-11-02: caddy 2.11.7-alpine is the latest 2.x and still ships
+# brotli 1.2.0-r0 / curl 8.22.0-r0). Re-check by the expiry date and drop each
+# line once the image is rebuilt; do not add app-image CVEs here.
+#
+# Caddy 2.11.7-alpine (pinned digest e70b164d…):
+CVE-2026-111497 exp:2026-12-01  # brotli-libs 1.2.0-r0 -> 1.2.1-r0
+CVE-2026-92392 exp:2026-12-01   # curl 8.22.0-r0 -> 8.23.0-r0

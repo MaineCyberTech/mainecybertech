@@ -263,7 +263,7 @@ services:
 
   # ===== Observability (internal only — no published ports) =====
   prometheus:
-    image: prom/prometheus:v3.5.1@sha256:38c3b05c3bc744ff1b0b7b4eb82196026442845e62a1e2073795565da506d7a2
+    image: prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
     logging: *default-logging
     <<: *security
     volumes:
@@ -311,7 +311,7 @@ services:
     # TODO(ops): digest is pinned to the v0.28.1 manifest-list digest. If a newer
     # release is adopted, re-pin (`docker buildx imagetools inspect
     # prom/alertmanager:vX.Y.Z`) and update the digest here before merge.
-    image: prom/alertmanager:v0.28.1@sha256:27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba
+    image: prom/alertmanager:v0.29.0@sha256:88743b63b3e09ea6e31e140ced5bf45f4a8e82c617c2a963f78841f4995ad1d7
     logging: *default-logging
     <<: *security
     environment:

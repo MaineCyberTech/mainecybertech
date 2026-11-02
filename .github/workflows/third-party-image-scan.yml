@@ -90,6 +90,8 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: "1"
           ignore-unfixed: true
+          # Time-boxed upstream-blocked entries only; see .trivyignore.
+          trivyignores: .trivyignore
           format: table
 
       - name: Generate ${{ matrix.image }} SBOM (CycloneDX)
