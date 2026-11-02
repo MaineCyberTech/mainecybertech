@@ -7,9 +7,7 @@ const mockProjectsList = jest.fn();
 const mockTicketsList = jest.fn();
 const mockDocumentsList = jest.fn();
 const mockAuditList = jest.fn();
-const mockGetApprovedMembership = jest
-  .fn()
-  .mockResolvedValue({ organization_id: "org-1" });
+const mockGetApprovedMembership = jest.fn().mockResolvedValue({ organization_id: "org-1" });
 
 jest.mock("next/link", () => ({
   __esModule: true,
@@ -44,15 +42,12 @@ describe("PortalDashboardPage", () => {
     mockDocumentsList.mockResolvedValue({ items: [] });
     mockAuditList.mockResolvedValue({ items: [] });
 
-    const { default: PortalDashboardPage } =
-      await import("@/app/(portal)/portal/dashboard/page");
+    const { default: PortalDashboardPage } = await import("@/app/(portal)/portal/dashboard/page");
     const element = await PortalDashboardPage();
     render(element);
 
     expect(screen.getByText(/Acme Corp/)).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: /client dashboard/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /client dashboard/i })).toBeInTheDocument();
   });
 
   it("renders empty state when no projects or tickets", async () => {
@@ -62,8 +57,7 @@ describe("PortalDashboardPage", () => {
     mockDocumentsList.mockResolvedValue({ items: [] });
     mockAuditList.mockResolvedValue({ items: [] });
 
-    const { default: PortalDashboardPage } =
-      await import("@/app/(portal)/portal/dashboard/page");
+    const { default: PortalDashboardPage } = await import("@/app/(portal)/portal/dashboard/page");
     const element = await PortalDashboardPage();
     render(element);
 
@@ -95,13 +89,26 @@ describe("PortalDashboardPage", () => {
     mockDocumentsList.mockResolvedValue({ items: [] });
     mockAuditList.mockResolvedValue({ items: [] });
 
-    const { default: PortalDashboardPage } =
-      await import("@/app/(portal)/portal/dashboard/page");
+    const { default: PortalDashboardPage } = await import("@/app/(portal)/portal/dashboard/page");
     const element = await PortalDashboardPage();
     render(element);
 
-    expect(screen.getByText("Project Alpha")).toBeInTheDocument();
-    expect(screen.getByText("Login Issue")).toBeInTheDocument();
+    expect(screen.getAllByText("Project Alpha").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Login Issue").length).toBeGreaterThan(0);
+  });
+
+  it("does not surface an admin-only audit error to clients", async () => {
+    mockOrganizationsGet.mockResolvedValue({ name: "Test Org" });
+    mockProjectsList.mockResolvedValue({ items: [] });
+    mockTicketsList.mockResolvedValue({ items: [] });
+    mockDocumentsList.mockResolvedValue({ items: [] });
+
+    const { default: PortalDashboardPage } = await import("@/app/(portal)/portal/dashboard/page");
+    const element = await PortalDashboardPage();
+    render(element);
+
+    expect(screen.queryByText(/could not load dashboard data/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/no recent activity/i)).toBeInTheDocument();
   });
 
   it("renders recent documents when data exists", async () => {
@@ -120,14 +127,13 @@ describe("PortalDashboardPage", () => {
       ],
     });
 
-    const { default: PortalDashboardPage } =
-      await import("@/app/(portal)/portal/dashboard/page");
+    const { default: PortalDashboardPage } = await import("@/app/(portal)/portal/dashboard/page");
     const element = await PortalDashboardPage();
     render(element);
 
-    expect(screen.getByText("Report Q1")).toBeInTheDocument();
-    expect(screen.getByText("Security Policy")).toBeInTheDocument();
-    expect(screen.getByText("InfoSec doc")).toBeInTheDocument();
+    expect(screen.getAllByText("Report Q1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Security Policy").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("InfoSec doc").length).toBeGreaterThan(0);
   });
 
   it("falls back to title field when ticket has no subject", async () => {
@@ -145,19 +151,17 @@ describe("PortalDashboardPage", () => {
     mockDocumentsList.mockResolvedValue({ items: [] });
     mockAuditList.mockResolvedValue({ items: [] });
 
-    const { default: PortalDashboardPage } =
-      await import("@/app/(portal)/portal/dashboard/page");
+    const { default: PortalDashboardPage } = await import("@/app/(portal)/portal/dashboard/page");
     const element = await PortalDashboardPage();
     render(element);
 
-    expect(screen.getByText("Fallback Title")).toBeInTheDocument();
+    expect(screen.getAllByText("Fallback Title").length).toBeGreaterThan(0);
   });
 
   it("shows no-org message when no approved membership", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
-    const { default: PortalDashboardPage } =
-      await import("@/app/(portal)/portal/dashboard/page");
+    const { default: PortalDashboardPage } = await import("@/app/(portal)/portal/dashboard/page");
     const element = await PortalDashboardPage();
     render(element);
 

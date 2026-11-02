@@ -6,6 +6,7 @@ import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
 import DataErrorNote from "@/components/admin/DataErrorNote";
 import { formatDate } from "@/lib/format";
+import { hasPermission } from "@/lib/permissions";
 
 export const metadata = { title: "Dynamic Forms - Portal - Maine CyberTech" };
 export const dynamic = "force-dynamic";
@@ -46,7 +47,9 @@ export default async function DynamicFormsListPage() {
   if (!membership?.organization_id) {
     return (
       <div className="space-y-6">
-        <Breadcrumbs items={[{ label: "Portal", href: "/portal" }, { label: "Dynamic Forms" }]} />
+        <Breadcrumbs
+          items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Dynamic Forms" }]}
+        />
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
           Access restricted. Please contact your administrator.
         </div>
@@ -56,6 +59,12 @@ export default async function DynamicFormsListPage() {
 
   const api = getApiClient();
   const orgId = membership.organization_id as string;
+  const permissions = await Promise.resolve()
+    .then(() => api.permissions.getMyPermissions())
+    .catch(() => null);
+  const canCreate =
+    Boolean(permissions?.isSuperAdmin) ||
+    hasPermission(permissions?.keys, "dynamic-forms", "create");
 
   let forms: Array<{
     id: string;
@@ -81,16 +90,20 @@ export default async function DynamicFormsListPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <Breadcrumbs items={[{ label: "Portal", href: "/portal" }, { label: "Dynamic Forms" }]} />
+          <Breadcrumbs
+            items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Dynamic Forms" }]}
+          />
           <h1 className="cyber-heading mt-2 text-2xl">Dynamic Client Forms Builder</h1>
           <p className="mt-1 text-sm text-slate-400">
             No-code form builder for client intake forms, onboarding questionnaires, site surveys,
             access requests, and more.
           </p>
         </div>
-        <Link href="/portal/dynamic-client-forms-builder/new" className="cyber-button">
-          New Form
-        </Link>
+        {canCreate ? (
+          <Link href="/portal/dynamic-client-forms-builder/new" className="cyber-button">
+            New Form
+          </Link>
+        ) : null}
       </div>
 
       {loadFailed ? <DataErrorNote what="forms" /> : null}
@@ -134,9 +147,13 @@ export default async function DynamicFormsListPage() {
             <EmptyState
               icon="📝"
               title="No forms yet"
-              description="Create your first dynamic form to collect client intake data, site survey responses, access requests, and more."
-              actionLabel="Create Form"
-              actionHref="/portal/dynamic-client-forms-builder/new"
+              description="Forms shared with your organization will appear here."
+              {...(canCreate
+                ? {
+                    actionLabel: "Create Form",
+                    actionHref: "/portal/dynamic-client-forms-builder/new",
+                  }
+                : {})}
             />
           </div>
         )

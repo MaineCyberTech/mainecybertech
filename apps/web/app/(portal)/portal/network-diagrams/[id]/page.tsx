@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import NetworkDiagramCanvas from "@/components/portal/NetworkDiagramCanvas";
 import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +64,8 @@ export default async function PortalNetworkDiagramDetailPage({ params }: Props) 
           Updated: {formatDate(diagram.updated_at ?? diagram.created_at)}
         </p>
       </div>
+
+      <NetworkDiagramCanvas nodes={nodes} edges={edges} />
 
       <section className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-300">

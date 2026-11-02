@@ -41,7 +41,7 @@ describe("PortalQbrPage", () => {
     mockQbrList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/qbr/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByRole("heading", { level: 1, name: /qbr reports/i })).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("PortalQbrPage", () => {
     mockQbrList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/qbr/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getAllByRole("navigation").length).toBeGreaterThanOrEqual(1);
@@ -82,7 +82,7 @@ describe("PortalQbrPage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/qbr/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByText("Q1 2026 Review")).toBeInTheDocument();
@@ -97,7 +97,7 @@ describe("PortalQbrPage", () => {
     mockQbrList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/qbr/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
     expect(screen.getByText("No QBR reports found.")).toBeInTheDocument();
@@ -107,7 +107,7 @@ describe("PortalQbrPage", () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
     const { default: Page } = await import("@/app/(portal)/portal/qbr/page");
-    const element = await Page();
+    const element = await Page({});
 
     expect(element).toBeNull();
   });
@@ -126,9 +126,9 @@ describe("PortalQbrPage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/qbr/page");
-    const element = await Page();
+    const element = await Page({});
     render(element);
 
-    expect(screen.getByText(/1 reports for your organization/)).toBeInTheDocument();
+    expect(screen.getByText(/1 report for your organization/)).toBeInTheDocument();
   });
 });

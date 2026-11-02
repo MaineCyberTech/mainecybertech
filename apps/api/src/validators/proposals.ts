@@ -89,6 +89,12 @@ export const submitForApprovalSchema = z.object({
   organizationId: z.string().uuid(),
 });
 
+export const clientProposalDecisionSchema = z.object({
+  organizationId: z.string().uuid(),
+  decision: z.enum(["accepted", "declined"]),
+  notes: z.string().max(5000).optional().nullable(),
+});
+
 export const publishProposalSchema = z.object({
   organizationId: z.string().uuid(),
   validityDays: z.number().int().positive().optional().default(30),

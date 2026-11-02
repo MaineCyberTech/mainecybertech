@@ -7,9 +7,13 @@ import StatusPill from "@/components/StatusPill";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import AdminPagination from "@/components/admin/AdminPagination";
+import { hasPermission } from "@/lib/permissions";
 import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Approvals - Portal - Maine CyberTech" };
+
+const DEFAULT_LIMIT = 25;
 
 function PriorityBadge({ priority }: { priority: string }) {
   const classes =
@@ -27,20 +31,36 @@ function PriorityBadge({ priority }: { priority: string }) {
   );
 }
 
-export default async function ApprovalsPage() {
+export default async function ApprovalsPage(props: {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+}) {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  const sp = (await props.searchParams) ?? {};
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
   let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
+  let total = 0;
   try {
-    const r = await api.approvals.list({ organizationId: orgId });
+    const r = await api.approvals.list({ organizationId: orgId, page, limit });
     items = r.items as unknown as typeof items;
+    total = r.total ?? items.length;
   } catch (error) {
     console.error("[approvals/page]", error);
     loadFailed = true;
   }
+
+  const permissions = await Promise.resolve()
+    .then(() => api.permissions.getMyPermissions())
+    .catch(() => null);
+  const canCreate =
+    Boolean(permissions?.isSuperAdmin) || hasPermission(permissions?.keys, "approvals", "create");
 
   return (
     <div className="space-y-6" role="region" aria-label="Approvals">
@@ -49,15 +69,25 @@ export default async function ApprovalsPage() {
       />
       <PortalSubnav current="approvals" />
       {loadFailed ? <DataErrorNote what="approvals" /> : null}
-      <h1 className="text-2xl font-semibold text-slate-50">Approvals</h1>
-      <p className="text-sm text-slate-400">
-        {items.length} approval request{items.length !== 1 ? "s" : ""} for your organization.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-50">Approvals</h1>
+          <p className="mt-1 text-sm text-slate-400">
+            {total} approval request{total !== 1 ? "s" : ""} for your organization.
+          </p>
+        </div>
+        {canCreate ? (
+          <Link href="/portal/approvals/new" className="cyber-button">
+            New request
+          </Link>
+        ) : null}
+      </div>
       <div className="space-y-3">
         {items.map((item) => (
-          <div
+          <Link
             key={String(item.id)}
-            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+            href={`/portal/approvals/${String(item.id)}`}
+            className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
           >
             <p className="font-medium text-slate-50">
               {String(item.request_subject ?? "Untitled")}
@@ -66,15 +96,24 @@ export default async function ApprovalsPage() {
               <StatusPill status={String(item.status ?? "pending")} />
               <PriorityBadge priority={String(item.priority ?? "normal")} />
               {item.request_type != null && <span>Type: {String(item.request_type)}</span>}
-              {item.requested_by != null && <span>By: {String(item.requested_by)}</span>}
+              {item.requested_by != null && !/^[0-9a-f-]{36}$/i.test(String(item.requested_by)) ? (
+                <span>By: {String(item.requested_by)}</span>
+              ) : null}
               {item.due_at != null && <span>Due: {formatDate(item.due_at)}</span>}
             </div>
-          </div>
+          </Link>
         ))}
         {!loadFailed && items.length === 0 && (
           <EmptyState icon="✅" title="No approval requests found." />
         )}
       </div>
+      <AdminPagination
+        currentPage={page}
+        totalPages={Math.ceil(total / limit)}
+        buildHref={(p) => `/portal/approvals?page=${p}&limit=${limit}`}
+        total={total}
+        limit={limit}
+      />
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard
       </Link>

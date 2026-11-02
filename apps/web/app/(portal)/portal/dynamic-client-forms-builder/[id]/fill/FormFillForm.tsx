@@ -72,12 +72,32 @@ export default function FormFillForm({
                   </option>
                 ))}
               </select>
+            ) : type === "checkbox" ? (
+              <label className="flex items-center gap-2 text-sm text-slate-300">
+                <input
+                  id={`f_${key}`}
+                  name={`f_${key}`}
+                  type="checkbox"
+                  value="true"
+                  className="h-4 w-4 rounded accent-emerald-600"
+                />
+                Yes
+              </label>
             ) : (
               <input
                 id={`f_${key}`}
                 name={`f_${key}`}
-                type={type === "number" ? "number" : "text"}
+                type={
+                  type === "number"
+                    ? "number"
+                    : type === "date"
+                      ? "date"
+                      : type === "email"
+                        ? "email"
+                        : "text"
+                }
                 required={required}
+                placeholder={field.placeholder ?? undefined}
                 className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50"
               />
             )}
@@ -95,7 +115,11 @@ export default function FormFillForm({
           className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50"
         />
       </div>
-      {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-300">
+          {error}
+        </p>
+      )}
       <button
         type="submit"
         disabled={pending}

@@ -10,6 +10,7 @@ import { createServiceSchema, updateServiceSchema } from "../validators/service-
 import { queryInt } from "../lib/query";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { applyClientVisibility, isClientVisible } from "../lib/client-visibility";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -22,10 +23,11 @@ router.get("/", async (req, res, next) => {
     const page = Math.max(1, queryInt(req.query.page, 1));
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 50)));
     const offset = (page - 1) * limit;
-    const q = supabase
+    let q = supabase
       .from("service_catalog")
       .select("*", { count: listCountMode(req.query) })
       .eq("organization_id", req.query.organization_id as string);
+    ({ query: q } = await applyClientVisibility(q, req));
     const { data, error, count } = await q
       .order("category", { ascending: true })
       .range(offset, offset + limit - 1);
@@ -48,6 +50,9 @@ router.get("/:id", async (req, res, next) => {
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Service not found", 404);
+    if (!(await isClientVisible(req, data as unknown as Record<string, unknown>))) {
+      throw new AppError("NOT_FOUND", "Service not found", 404);
+    }
     res.json(success(data));
   } catch (err) {
     next(err);

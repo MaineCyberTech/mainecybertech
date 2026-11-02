@@ -26,6 +26,14 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Added
 
+- **Client portal remediation (2026-10-21 audit):** client-visible approval,
+  change-request, DNS, identity-verification, offboarding and insurance request
+  flows; proposal accept/decline decisions; training enrollment/progress and
+  course detail; knowledge-base search/detail; no-code form-builder field
+  editor; entitlement-aware portal navigation; and an SVG network-diagram
+  renderer. Migration `5302463` grants AI triage to client roles and normalises
+  legacy visibility values.
+
 - First-class MFA login second factor: `POST /auth/sign-in` reports
   `mfaRequired` (cached `userHasVerifiedFactor()`), the login form stores a
   10-minute `mct_mfa_pending` cookie and shows a verification step that
@@ -101,6 +109,23 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   gates `wcag22aa` (`target-size`, `select-name`) in addition to
   `critical`/`serious`; the seven pages fixed on 2026-10-02 were promoted from
   the breadth triage set (`43573d12`, `62861370`).
+- Host-resource monitoring for the droplet stack: a digest-pinned
+  `node-exporter` service joins `infra/digitalocean/docker-compose.yml`,
+  Prometheus scrapes it (`node-exporter:9100`, deliberately untokenised —
+  internal-only, host data), and three rules cover the host failure modes —
+  `MCTHostDiskSpaceLow` (<15% free), `MCTHostDiskSpaceCritical` (<7%) and
+  `MCTHostMemoryPressure` (>90% used) — with `promtool` unit tests
+  (`prometheus.rules.test.yml` cases 46–50). Motivated by the 2026-10-15
+  review finding the dev droplet at 98% disk with every service-level rule
+  green.
+
+### Changed
+
+- **Vercel build remnants removed:** `apps/web/next.config.mjs` no longer
+  branches on `process.env.VERCEL` (every environment builds the standalone
+  server behind Caddy), and the marketing/Cloudflare docs describe the
+  Cloudflare → droplet topology instead of the retired Vercel flow. Pointing
+  the `.com` zone at the production droplet is an operator DNS change.
 
 ### Security
 
@@ -145,6 +170,16 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   specification" (536 failures logged on the dev environment; e.g. every
   "Scheduled automation due" notification was never created).
   `notification-dedup-index.test.ts` pins the index shape and both call sites.
+
+- **Portal visibility and data integrity:** role-aware filtering for proposals,
+  QBRs, approvals, findings, assets, vendor contracts, domain monitors, file
+  requests, service catalog, KB and training; internal proposal comments hidden;
+  private document uploads enforced and document lists user-scoped; password
+  change verifies the current password; onboarding checklist writes map to the
+  correct DB columns; client dashboard no longer calls admin-only audit data;
+  and SLA/phishing/offboarding/change-request field mappings corrected. Also
+  bumps Next.js to 15.5.28 for the current audit advisories.
+
 - **Remediation wave, phases 5–6 (2026-10-12, 24 PRs, audit rerun).**
   - CI/governance: Chromatic visual gate now blocking on a broken build;
     secret-scan failure notification; weekly Dependabot triage reminder + SLA

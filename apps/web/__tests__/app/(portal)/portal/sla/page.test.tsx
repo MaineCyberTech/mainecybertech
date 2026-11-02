@@ -59,7 +59,7 @@ describe("PortalSlaPage", () => {
 
   it("renders summary metrics", async () => {
     mockMetrics.mockResolvedValue({
-      summary: { total: 50, breached: 3, breachedRate: 0.06, resolved: 47 },
+      summary: { total: 50, breached: 3, breachedRate: 6, resolved: 47 },
       byMetric: [],
     });
 
@@ -75,7 +75,7 @@ describe("PortalSlaPage", () => {
 
   it("renders by-metric data", async () => {
     mockMetrics.mockResolvedValue({
-      summary: { total: 10, breached: 1, breachedRate: 0.1, resolved: 9 },
+      summary: { total: 10, breached: 1, breachedRate: 10, resolved: 9 },
       byMetric: [
         { metric: "Response Time", total: 5, breached: 1, avgMinutes: 12 },
         { metric: "Resolution Time", total: 5, breached: 0, avgMinutes: 45 },

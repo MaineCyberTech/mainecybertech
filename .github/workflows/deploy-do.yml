@@ -1067,7 +1067,7 @@ jobs:
             container_health() {
               docker inspect --format '{{.State.Health.Status}}' "mct-portal-$1-1" 2>/dev/null || echo "missing"
             }
-            GATED_SERVICES="redis api worker web alertmanager prometheus caddy"
+            GATED_SERVICES="redis api worker web alertmanager prometheus node-exporter caddy"
             healthy=0
             for attempt in $(seq 1 18); do
               unhealthy=""

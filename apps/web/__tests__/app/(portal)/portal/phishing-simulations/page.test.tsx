@@ -69,21 +69,23 @@ describe("PortalPhishingSimulationsPage", () => {
       items: [
         {
           id: "p1",
-          name: "March 2026 Campaign",
+          campaign_name: "March 2026 Campaign",
           status: "completed",
-          sent_count: 500,
+          target_count: 500,
+          opened_count: 120,
           clicked_count: 23,
           reported_count: 45,
-          completed_at: new Date().toISOString(),
+          ended_at: new Date().toISOString(),
         },
         {
           id: "p2",
-          name: "April 2026 Campaign",
+          campaign_name: "April 2026 Campaign",
           status: "running",
-          sent_count: 500,
+          target_count: 500,
+          opened_count: 90,
           clicked_count: 12,
           reported_count: 30,
-          completed_at: null,
+          ended_at: null,
         },
       ],
     });
@@ -94,7 +96,7 @@ describe("PortalPhishingSimulationsPage", () => {
 
     expect(screen.getByText("March 2026 Campaign")).toBeInTheDocument();
     expect(screen.getByText("April 2026 Campaign")).toBeInTheDocument();
-    expect(screen.getAllByText(/Sent: 500/)).toHaveLength(2);
+    expect(screen.getAllByText(/Targeted: 500/)).toHaveLength(2);
     expect(screen.getByText(/Clicked: 23/)).toBeInTheDocument();
     expect(screen.getByText(/Reported: 45/)).toBeInTheDocument();
     expect(screen.getByText(/Clicked: 12/)).toBeInTheDocument();
@@ -115,9 +117,9 @@ describe("PortalPhishingSimulationsPage", () => {
       items: [
         {
           id: "p1",
-          name: "March 2026 Campaign",
+          campaign_name: "March 2026 Campaign",
           status: "completed",
-          sent_count: 500,
+          target_count: 500,
           clicked_count: 23,
           reported_count: 45,
         },

@@ -32,7 +32,7 @@ export default async function ProfilePage() {
         <Breadcrumbs
           items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Profile" }]}
         />
-        <PortalSubnav current="dashboard" />
+        <PortalSubnav current="profile" />
         <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
           Unable to load profile.
         </div>
@@ -43,7 +43,7 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Profile" }]} />
-      <PortalSubnav current="dashboard" />
+      <PortalSubnav current="profile" />
       <ProfileClient initialData={initialData} />
     </div>
   );

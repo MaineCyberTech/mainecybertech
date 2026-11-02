@@ -188,6 +188,13 @@ export interface ResponseCacheOptions {
    * that org (MT-P1-004 / CHAIN-P1-006).
    */
   scope?: CacheScopeResolver;
+  /**
+   * Include the authenticated user id in the key even when an org is resolved.
+   * Use this for responses that vary by per-user visibility (private
+   * documents, client-visible drafts, etc.). Org-only routes keep sharing
+   * entries between members of the same org.
+   */
+  userScoped?: boolean;
 }
 
 /**
@@ -219,12 +226,16 @@ async function buildCacheKey(
   // Scope keys with a SUFFIX so invalidateCache(path) can match by prefix.
   // (Previously the scope was a prefix, so invalidateCache("/api/v1/x") never
   // matched an authenticated key and mutations never evicted cached lists.)
+  // Routes whose response varies by per-user visibility (private documents,
+  // client-visible drafts) opt into a user suffix even when an org is
+  // resolved. Org-only routes keep sharing entries between members.
   const orgId = (req as Request & { orgId?: string | null }).orgId;
+  const authUser = (req as Request & { authUser?: { userId: string } }).authUser;
+  if (options.userScoped && authUser?.userId) key += `:user=${authUser.userId}`;
   if (orgId) {
     key += `:org=${orgId}`;
-  } else {
-    const authUser = (req as Request & { authUser?: { userId: string } }).authUser;
-    if (authUser?.userId) key += `:user=${authUser.userId}`;
+  } else if (!options.userScoped && authUser?.userId) {
+    key += `:user=${authUser.userId}`;
   }
 
   if (options.scope) {

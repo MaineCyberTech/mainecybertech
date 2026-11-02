@@ -7,6 +7,7 @@ import type { IdentityVerification } from "@mct/sdk";
 import StatusPill from "@/components/StatusPill";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { hasPermission } from "@/lib/permissions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Identity Verification - Portal - Maine CyberTech" };
 
@@ -25,16 +26,33 @@ export default async function PortalIdentityVerificationPage() {
     loadFailed = true;
   }
 
+  const permissions = await Promise.resolve()
+    .then(() => api.permissions.getMyPermissions())
+    .catch(() => null);
+  const canCreate =
+    Boolean(permissions?.isSuperAdmin) ||
+    hasPermission(permissions?.keys, "identity-verification", "create");
+
   return (
     <div className="space-y-6" role="region" aria-label="Identity Verification">
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Identity Verification" }]}
       />
-      <h1 className="text-2xl font-semibold text-slate-50">Identity Verification</h1>
       {loadFailed ? <DataErrorNote what="identity-verification" /> : null}
-      <p className="text-sm text-slate-400">
-        {items.length} verification request{items.length !== 1 ? "s" : ""} for your organization.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-50">Identity Verification</h1>
+          <p className="mt-1 text-sm text-slate-400">
+            {items.length} verification request{items.length !== 1 ? "s" : ""} for your
+            organization.
+          </p>
+        </div>
+        {canCreate ? (
+          <Link href="/portal/identity-verification/new" className="cyber-button">
+            Request verification
+          </Link>
+        ) : null}
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (
           <div key={a.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">

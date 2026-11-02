@@ -95,6 +95,13 @@ export default async function DomainMonitorsPage() {
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
           { key: "domain", label: "Domain", required: true },
           { key: "displayName", label: "Display Name" },
+          {
+            key: "visibility",
+            label: "Client Visibility",
+            type: "select",
+            options: ["internal", "client_visible"],
+            required: true,
+          },
         ]}
         title="New Domain Monitor"
         action={createDomainMonitor}

@@ -49,6 +49,14 @@ export default async function PortalFileRequestsPage() {
                   {String(fr.upload_count)}/{String(fr.max_files)} uploads &bull; Expires:{" "}
                   {(fr.expires_at as string | null) ? formatDate(fr.expires_at) : "N/A"}
                 </p>
+                {fr.token && fr.status === "active" ? (
+                  <a
+                    href={`/upload/${String(fr.token)}`}
+                    className="mt-2 inline-block text-xs font-medium text-emerald-400 hover:text-emerald-300"
+                  >
+                    Open upload page &rarr;
+                  </a>
+                ) : null}
               </div>
               <span
                 className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${fr.status === "active" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-white/10 bg-white/5 text-slate-300"}`}

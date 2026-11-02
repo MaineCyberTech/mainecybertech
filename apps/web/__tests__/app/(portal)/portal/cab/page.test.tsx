@@ -34,6 +34,15 @@ jest.mock("@/lib/api", () => ({
   getApiClient: jest.fn().mockReturnValue({
     cab: { list: mockList },
     governance: { changes: { list: mockChangesList } },
+    permissions: {
+      getMyPermissions: jest.fn().mockResolvedValue({
+        isSuperAdmin: true,
+        keys: [],
+        permissions: [],
+        roles: [],
+        memberships: [],
+      }),
+    },
   }),
 }));
 

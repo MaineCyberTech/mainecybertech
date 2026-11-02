@@ -370,7 +370,7 @@ router.post(
   rateLimitEmail,
   async (req, res, next) => {
     try {
-      const { email, password } = z
+      const { email, password, currentPassword } = z
         .object({
           email: z.string().email(),
           password: z
@@ -383,11 +383,48 @@ router.post(
               },
               { message: "Password is too weak" },
             ),
+          // Re-authentication: knowing the current password is required before
+          // replacing it. This prevents a stolen session from permanently
+          // taking over the account. The email-recovery flow arrives with a
+          // short-lived `recovery` AMR session instead, and is allowed without
+          // the current password (Supabase already proved inbox ownership).
+          currentPassword: z.string().min(1).optional(),
         })
         .parse(req.body);
 
       if (email !== req.authUser!.email) {
         throw new AppError("FORBIDDEN", "You can only reset your own password", 403);
+      }
+
+      const hasRecoverySession = (() => {
+        try {
+          const payload = req.userJwt?.split(".")[1];
+          if (!payload) return false;
+          const claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
+            amr?: Array<{ method?: string }>;
+          };
+          return (claims.amr ?? []).some((entry) => entry.method === "recovery");
+        } catch {
+          return false;
+        }
+      })();
+
+      if (!currentPassword && !hasRecoverySession) {
+        throw new AppError(
+          "VALIDATION",
+          "Current password is required to change your password",
+          400,
+        );
+      }
+
+      if (currentPassword) {
+        const verify = await getSupabaseAdmin().auth.signInWithPassword({
+          email,
+          password: currentPassword,
+        });
+        if (verify.error || !verify.data?.user) {
+          throw new AppError("AUTH_ERROR", "Current password is incorrect", 401);
+        }
       }
 
       const pwdCheck = validatePasswordStrength(password);

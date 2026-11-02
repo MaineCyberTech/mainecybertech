@@ -58,6 +58,13 @@ export default async function FileRequestsPage() {
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
           { key: "title", label: "Title", required: true },
           { key: "description", label: "Description", type: "textarea" },
+          {
+            key: "visibility",
+            label: "Client Visibility",
+            type: "select",
+            options: ["internal", "client_visible"],
+            required: true,
+          },
         ]}
         title="New File Request"
         action={createFileRequest}

@@ -50,9 +50,9 @@ describe("PortalProfilePage", () => {
     expect(screen.queryByDisplayValue("Test User")).not.toBeInTheDocument();
   });
 
-  it("does not render the unused current-password field", async () => {
+  it("requires the current password when changing the password", async () => {
     render(<ProfileClient initialData={initialData} />);
-    expect(screen.queryByLabelText(/current password/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/current password/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^new password$/i)).toBeInTheDocument();
   });
 
