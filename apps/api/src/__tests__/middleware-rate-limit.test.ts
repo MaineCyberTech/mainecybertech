@@ -24,8 +24,21 @@ jest.mock("../config/env", () => ({
   }),
 }));
 
+// The limiters deliberately skip loopback traffic (internal health probes).
+// Supertest connects from 127.0.0.1, so give each test app a public client IP
+// before the limiter runs; otherwise every request is skipped and headers /
+// 429s never appear.
+function withPublicClientIp(app: express.Express): express.Express {
+  app.set("trust proxy", true);
+  app.use((req, _res, next) => {
+    req.ip = "203.0.113.9";
+    next();
+  });
+  return app;
+}
+
 function createTestApp() {
-  const app = express();
+  const app = withPublicClientIp(express());
   app.use(rateLimitByUser);
   app.get("/test", (_req, res) => res.json({ ok: true }));
   return app;
@@ -52,7 +65,7 @@ describe("rateLimitByUser", () => {
   });
 
   it("skips rate limit for health endpoint", async () => {
-    const app = express();
+    const app = withPublicClientIp(express());
     app.use(rateLimitByUser);
     app.get("/health", (_req, res) => res.json({ ok: true }));
 
@@ -63,7 +76,7 @@ describe("rateLimitByUser", () => {
 
 describe("rateLimitSearch", () => {
   function createSearchApp() {
-    const app = express();
+    const app = withPublicClientIp(express());
     app.use(rateLimitSearch);
     app.get("/test", (_req, res) => res.json({ ok: true }));
     return app;
@@ -93,7 +106,7 @@ describe("rateLimitShare (FILE-P3-001)", () => {
   // Mount the limiter on the route (like the real router does) so req.params
   // is populated when the key generator runs.
   function createShareApp() {
-    const app = express();
+    const app = withPublicClientIp(express());
     app.get("/share/:token", rateLimitShare, (_req, res) => res.json({ ok: true }));
     return app;
   }
@@ -128,7 +141,7 @@ describe("rateLimitShare (FILE-P3-001)", () => {
 
 describe("rateLimitAdminOps", () => {
   function createAdminOpsApp() {
-    const app = express();
+    const app = withPublicClientIp(express());
     app.use(rateLimitAdminOps);
     app.get("/test", (_req, res) => res.json({ ok: true }));
     return app;
@@ -249,7 +262,7 @@ describe("emailRateLimitKey [SEC-P3-003]", () => {
 
 describe("rateLimitAuth email-key normalization [SEC-P3-003]", () => {
   function createAuthApp() {
-    const app = express();
+    const app = withPublicClientIp(express());
     app.use(express.json());
     app.use(rateLimitAuth);
     app.post("/test", (_req, res) => res.json({ ok: true }));
