@@ -106,7 +106,7 @@ what it can; the rest are review gates.
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,991         | 174   | Jest + supertest                  |
+| API     | 1,991         | 175   | Jest + supertest                  |
 | Web     | 2,026         | 306   | Jest + Testing Library            |
 | SDK     | 325           | 5   | Jest (mocked fetch)               |
 | Worker  | 311           | 32   | Jest (env schema + task handlers) |
