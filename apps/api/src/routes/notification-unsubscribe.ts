@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { getEnv } from "../config/env";
 import { rateLimitUnsubscribe } from "../middleware/rate-limit";
 import { logger } from "../lib/logger";
+import { logAuditEvent } from "../services/audit";
 import { AppError } from "../types";
 
 /**
@@ -131,6 +132,24 @@ router.post("/", rateLimitUnsubscribe, async (req, res, next) => {
       { onConflict: "organization_id,user_id,module_key,channel" },
     );
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    // NOTIF-P3-009: this is a security-relevant preference change made without
+    // a session (leaked-link/forged opt-out risk), so record it like the
+    // authenticated PUT does. The raw unsubscribe token is deliberately not
+    // logged; the signed payload only supplies the user/org identity.
+    await logAuditEvent({
+      organizationId: payload.organizationId,
+      actorUserId: payload.userId,
+      actorType: "system",
+      action: "notification_preference.unsubscribe",
+      entityType: "notification_preference",
+      metadata: {
+        moduleKey: "all",
+        channel: "email",
+        enabled: false,
+        surface: "unsubscribe",
+      },
+    });
 
     logger.info(
       { userId: payload.userId, organizationId: payload.organizationId },

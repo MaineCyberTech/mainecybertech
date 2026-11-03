@@ -62,3 +62,36 @@ export async function requireAdmin(req: Request, _res: Response, next: NextFunct
     next(error);
   }
 }
+
+/**
+ * Platform-level gate for tenant-lifecycle operations (organization create and
+ * onboarding). ADMIN-P3-005: `requireAdmin` accepts any cross-tenant admin role
+ * in any org, but creating a tenant or assigning its first admin is a platform
+ * super-admin action as documented in docs/ADMIN_BULK_OPERATIONS.md. Check the
+ * `profiles.is_super_admin` flag explicitly so a delegated tenant admin cannot
+ * mint organizations (or invite their own admin into one).
+ */
+export async function requirePlatformSuperAdmin(req: Request, _res: Response, next: NextFunction) {
+  try {
+    if (!req.authUser) {
+      throw new AppError("UNAUTHORIZED", "Authentication required", 401);
+    }
+
+    const { data: profile, error } = await getSupabaseAdmin()
+      .from("profiles")
+      .select("is_super_admin")
+      .eq("id", req.authUser.userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new AppError("DB_ERROR", error.message, 500);
+    }
+    if (profile?.is_super_admin !== true) {
+      throw new AppError("FORBIDDEN", "Platform super admin access required", 403);
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+}

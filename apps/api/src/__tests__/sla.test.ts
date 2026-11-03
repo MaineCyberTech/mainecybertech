@@ -1,6 +1,6 @@
 ﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
+import { createTestApp, createMockBuilder, tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 import { invalidateCache } from "../middleware/cache";
 
@@ -48,7 +48,9 @@ const authToken = "Bearer test-token";
 
 function mockAuth() {
   const supabase = {
-    from: jest.fn().mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 }))),
+    from: jest
+      .fn()
+      .mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 }))),
     auth: {
       getUser: jest.fn().mockResolvedValue({
         data: { user: { id: "user-1", email: "test@example.com" } },
@@ -105,7 +107,9 @@ describe("SLA API", () => {
         created_at: new Date().toISOString(),
       },
     ];
-    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: logs, error: null, count: 3 })));
+    supabase.from.mockImplementation(
+      tableAwareFrom(createMockBuilder({ data: logs, error: null, count: 3 })),
+    );
     const res = await request(app).get("/api/v1/sla/metrics").set("Authorization", authToken);
     expect(res.status).toBe(200);
     expect(res.body.data.summary).toHaveProperty("total");
@@ -113,6 +117,29 @@ describe("SLA API", () => {
     expect(res.body.data.summary.breached).toBe(1);
     expect(res.body.data.summary.resolved).toBe(2);
     expect(res.body.data.recent).toHaveLength(3);
+  });
+
+  it("caps the row read and reports truncation (PERF-P3-005)", async () => {
+    const supabase = mockAuth();
+    const logs = Array.from({ length: 1001 }, (_, index) => ({
+      metric: index % 2 === 0 ? "first_response" : "resolution",
+      breached: false,
+      actual_minutes: 10,
+      resolved_at: null,
+      created_at: new Date().toISOString(),
+    }));
+    const builder = createMockBuilder({ data: logs, error: null, count: logs.length });
+    supabase.from.mockImplementation(tableAwareFrom(builder));
+
+    const res = await request(app).get("/api/v1/sla/metrics").set("Authorization", authToken);
+
+    expect(res.status).toBe(200);
+    expect(builder.limit).toHaveBeenCalledWith(1001);
+    expect(builder.select).toHaveBeenCalledWith(expect.not.stringContaining("*"));
+    expect(res.body.data.truncated).toBe(true);
+    expect(res.body.data.covered).toBe(1000);
+    expect(res.body.data.summary.total).toBe(1000);
+    expect(res.body.data.recent).toHaveLength(20);
   });
 
   it("clamps days parameter", async () => {

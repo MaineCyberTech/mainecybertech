@@ -1084,13 +1084,15 @@ jobs:
             # also takes prometheus down via depends_on), a broken caddy
             # config or a dead redis used to deploy green with the alerting
             # and reverse-proxy path silently gone.
-            # OBS-P3-008: node-exporter has no meaningful container healthcheck
-            # (scratch image, binary-only probe); its liveness is the
-            # MCTNodeExporterDown/MCTServiceDown Prometheus rules instead.
+            # OBS-P3-008 / CTR-P3-009: node-exporter itself is scratch-based
+            # (no shell/HTTP client), so it cannot healthcheck its endpoint.
+            # node-exporter-probe scrapes :9100 and asserts a real
+            # node_filesystem_size_bytes{mountpoint="/"} series, which catches
+            # both a wedged listener and broken /host mounts.
             container_health() {
               docker inspect --format '{{.State.Health.Status}}' "mct-portal-$1-1" 2>/dev/null || echo "missing"
             }
-            GATED_SERVICES="redis api worker web alertmanager prometheus caddy"
+            GATED_SERVICES="redis api worker web alertmanager prometheus caddy node-exporter-probe"
             healthy=0
             for attempt in $(seq 1 18); do
               unhealthy=""

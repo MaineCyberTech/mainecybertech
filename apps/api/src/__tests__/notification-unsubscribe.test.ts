@@ -24,7 +24,10 @@ jest.mock("../lib/logger", () => ({
   logger: { warn: jest.fn(), info: jest.fn(), error: jest.fn(), debug: jest.fn() },
 }));
 
+jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
+
 import { getSupabaseAdmin } from "../services/supabase";
+import { logAuditEvent } from "../services/audit";
 import unsubscribeRouter from "../routes/notification-unsubscribe";
 
 const app = createTestApp();
@@ -56,7 +59,7 @@ describe("notification unsubscribe (NOTIF-P3-005 / NOTIF-P2-012)", () => {
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toContain("text/html");
     expect(res.text).toContain("Unsubscribe from notification emails");
-    expect(res.text).toContain("<form method=\"post\"");
+    expect(res.text).toContain('<form method="post"');
     // NOTIF-P2-012: prefetching scanners must not opt the recipient out.
     expect(supabase.from).not.toHaveBeenCalled();
   });
@@ -79,6 +82,16 @@ describe("notification unsubscribe (NOTIF-P3-005 / NOTIF-P2-012)", () => {
       channel: "email",
       enabled: false,
     });
+    // NOTIF-P3-009: the unauthenticated opt-out leaves an audit trail.
+    expect(logAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId: "org-1",
+        actorUserId: "user-1",
+        actorType: "system",
+        action: "notification_preference.unsubscribe",
+        metadata: expect.objectContaining({ surface: "unsubscribe", moduleKey: "all" }),
+      }),
+    );
   });
 
   it("POST accepts the RFC 8058 one-click body with the token in the query", async () => {

@@ -331,7 +331,9 @@ router.post("/triage/convert", requirePermission("tickets", "create"), async (re
   }
 });
 
-router.get("/triage", async (req, res, next) => {
+// SEC-P3-015: draft rows carry raw ticket descriptions, so listing them is an
+// AI-tool read and must carry the same `ai:view` gate as the other AI routes.
+router.get("/triage", requirePermission("ai", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "ai", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));

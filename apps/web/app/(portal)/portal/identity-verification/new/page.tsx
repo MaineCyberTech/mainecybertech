@@ -1,7 +1,9 @@
 import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import SubmitButton from "@/components/SubmitButton";
 import { requestIdentityVerificationAction } from "../actions";
+import PortalRequestForm from "@/components/portal/PortalRequestForm";
 
 export const metadata = { title: "Request Identity Verification - Portal - Maine CyberTech" };
 
@@ -15,6 +17,7 @@ export default function NewIdentityVerificationPage() {
           { label: "New request" },
         ]}
       />
+      <PortalSubnav current="identity-verification" />
       <div>
         <h1 className="cyber-heading text-2xl">Request identity verification</h1>
         <p className="mt-2 text-sm text-slate-400">
@@ -23,7 +26,10 @@ export default function NewIdentityVerificationPage() {
         </p>
       </div>
 
-      <form action={requestIdentityVerificationAction} className="cyber-panel space-y-4">
+      <PortalRequestForm
+        action={requestIdentityVerificationAction}
+        className="cyber-panel space-y-4"
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="idv-name" className="cyber-label">
@@ -75,7 +81,7 @@ export default function NewIdentityVerificationPage() {
             Cancel
           </Link>
         </div>
-      </form>
+      </PortalRequestForm>
     </div>
   );
 }

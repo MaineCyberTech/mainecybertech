@@ -29,6 +29,11 @@ jest.mock("@/components/Breadcrumbs", () => ({
   default: () => React.createElement("nav", { "aria-label": "Breadcrumb" }),
 }));
 
+jest.mock("@/components/portal/PortalSubnav", () => ({
+  __esModule: true,
+  default: () => React.createElement("div"),
+}));
+
 describe("PortalKnowledgeBasePage", () => {
   beforeEach(() => {
     jest.clearAllMocks();

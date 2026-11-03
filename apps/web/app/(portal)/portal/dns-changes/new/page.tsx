@@ -1,7 +1,9 @@
 import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import SubmitButton from "@/components/SubmitButton";
 import { createDnsChangeAction } from "../actions";
+import PortalRequestForm from "@/components/portal/PortalRequestForm";
 
 export const metadata = { title: "New DNS Change - Portal - Maine CyberTech" };
 
@@ -15,6 +17,7 @@ export default function NewDnsChangePage() {
           { label: "New request" },
         ]}
       />
+      <PortalSubnav current="dns-changes" />
       <div>
         <h1 className="cyber-heading text-2xl">Request a DNS change</h1>
         <p className="mt-2 text-sm text-slate-400">
@@ -22,7 +25,7 @@ export default function NewDnsChangePage() {
         </p>
       </div>
 
-      <form action={createDnsChangeAction} className="cyber-panel space-y-4">
+      <PortalRequestForm action={createDnsChangeAction} className="cyber-panel space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="dns-domain" className="cyber-label">
@@ -84,7 +87,7 @@ export default function NewDnsChangePage() {
             Cancel
           </Link>
         </div>
-      </form>
+      </PortalRequestForm>
     </div>
   );
 }

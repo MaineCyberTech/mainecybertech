@@ -4,6 +4,7 @@ import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { withRetry } from "@/lib/retry";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import StatusPill from "@/components/StatusPill";
 import { formatDate } from "@/lib/format";
 import TrainingEnrollmentClient from "./TrainingEnrollmentClient";
@@ -68,6 +69,7 @@ export default async function TrainingCoursePage({ params }: { params: Promise<{
           { label: course.title },
         ]}
       />
+      <PortalSubnav current="training-hub" />
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>

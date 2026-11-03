@@ -204,6 +204,23 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Fixed
 
+- **Nov 3 re-audit P3 batch:** organization create/onboarding now requires the
+  platform super-admin flag for every role key and plain create is rate-limited
+  (ADMIN-P3-005); the Node engine floor is 20.11 for `import.meta.dirname`
+  (CI-P3-015); a node-exporter probe sidecar scrapes `:9100` and asserts a real
+  root-filesystem series before the deploy gate passes (CTR-P3-009);
+  restore-test discovery distinguishes an unreachable bucket/credentials from
+  an empty prefix with an actionable error plus a negative fixture
+  (DR-P3-008); one-click unsubscribe writes an audit event
+  (NOTIF-P3-009); `/sla/metrics` selects only summary columns and caps the scan
+  at `LIST_HARD_CAP` with a `truncated` flag (PERF-P3-005); the SBOM process doc
+  names all five images and the `--allow-missing-versions` validator flag
+  (SBOM-P3-011); client-visibility fails closed on membership lookup errors
+  while documenting the API-key/system exemption (SEC-P3-014); `GET /ai/triage`
+  carries `ai:view` (SEC-P3-015); every portal page now renders `PortalSubnav`
+  (USE-P3-007); and the six request-creation actions return inline errors
+  instead of throwing into the portal error boundary (USE-P3-008).
+
 - **Nov 3 re-audit CI/docs batch:** E2E's Supabase image cache is keyed to
   CLI 2.122.1 with a fresh v2 seed and fails loudly on a partial archive
   (TEST-P2-011); `PSF-2.0` is allowed by the PR dependency-review gate and
@@ -217,7 +234,6 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   2.122.1 (EVOL-P3-010); and `scripts/preflight-check.sh` no longer aborts on
   its first check and runs in the shared test job, so duplicate migration
   timestamps gate PRs (DATA-P2-011).
-
 
 - **SBOM validator hardening:** third-party image SBOMs accept version-less
   components (`b72dd68b`), and the `--allow-missing-versions` flag is no longer

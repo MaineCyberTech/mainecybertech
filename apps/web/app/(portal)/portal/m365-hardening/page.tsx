@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
 import type { M365HardeningRecord } from "@mct/sdk";
 import StatusPill from "@/components/StatusPill";
@@ -30,6 +31,7 @@ export default async function PortalM365HardeningPage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "M365 Security" }]}
       />
+      <PortalSubnav current="m365-hardening" />
       <h1 className="text-2xl font-semibold text-slate-50">M365 Security</h1>
       {loadFailed ? <DataErrorNote what="m365-hardening" /> : null}
       <p className="text-sm text-slate-400">

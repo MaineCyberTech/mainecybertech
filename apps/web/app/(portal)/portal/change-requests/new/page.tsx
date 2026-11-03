@@ -1,7 +1,9 @@
 import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import SubmitButton from "@/components/SubmitButton";
 import { createChangeRequestAction } from "../actions";
+import PortalRequestForm from "@/components/portal/PortalRequestForm";
 
 export const metadata = { title: "New Change Request - Portal - Maine CyberTech" };
 
@@ -15,6 +17,7 @@ export default function NewChangeRequestPage() {
           { label: "New request" },
         ]}
       />
+      <PortalSubnav current="change-requests" />
       <div>
         <h1 className="cyber-heading text-2xl">New change request</h1>
         <p className="mt-2 text-sm text-slate-400">
@@ -23,7 +26,7 @@ export default function NewChangeRequestPage() {
         </p>
       </div>
 
-      <form action={createChangeRequestAction} className="cyber-panel space-y-4">
+      <PortalRequestForm action={createChangeRequestAction} className="cyber-panel space-y-4">
         <div>
           <label htmlFor="change-title" className="cyber-label">
             Title
@@ -124,7 +127,7 @@ export default function NewChangeRequestPage() {
             Cancel
           </Link>
         </div>
-      </form>
+      </PortalRequestForm>
     </div>
   );
 }

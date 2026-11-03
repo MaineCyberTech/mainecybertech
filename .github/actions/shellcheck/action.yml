@@ -23,5 +23,13 @@ runs:
           scripts/restore-database.sh \
           scripts/restore-storage.sh \
           scripts/terraform-state-restore.sh \
+          scripts/ci/find-latest-backup.sh \
+          scripts/ci/test-find-latest-backup.sh \
           scripts/ci/test-terraform-state-restore.sh \
           scripts/exercise-storage-restore.sh
+
+    - name: Exercise restore backup discovery diagnostics
+      shell: bash
+      # DR-P3-008: negative fixture for a failing `aws s3 ls` (exit 254), an
+      # empty reachable prefix and a successful newest-object pick.
+      run: scripts/ci/test-find-latest-backup.sh

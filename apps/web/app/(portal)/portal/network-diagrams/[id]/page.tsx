@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import NetworkDiagramCanvas from "@/components/portal/NetworkDiagramCanvas";
 import { formatDate } from "@/lib/format";
 
@@ -55,6 +56,7 @@ export default async function PortalNetworkDiagramDetailPage({ params }: Props) 
           { label: diagram.name },
         ]}
       />
+      <PortalSubnav current="network-diagrams" />
       <div>
         <h1 className="text-2xl font-semibold text-slate-50">{diagram.name}</h1>
         {diagram.description ? (

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
 
@@ -30,6 +31,7 @@ export default async function PortalPatchCompliancePage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Patch Compliance" }]}
       />
+      <PortalSubnav current="patch-compliance" />
       <h1 className="text-2xl font-semibold text-slate-50">Patch Compliance</h1>
       {loadFailed ? <DataErrorNote what="patch-compliance" /> : null}
       <p className="text-sm text-slate-400">

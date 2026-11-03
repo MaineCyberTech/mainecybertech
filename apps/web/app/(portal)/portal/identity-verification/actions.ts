@@ -5,12 +5,16 @@ import { redirect } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 
-export async function requestIdentityVerificationAction(formData: FormData): Promise<void> {
+export async function requestIdentityVerificationAction(
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string }> {
   const membership = await getApprovedMembership();
-  if (!membership?.organization_id) throw new Error("No approved organization membership.");
+  if (!membership?.organization_id) {
+    return { ok: false, error: "No approved organization membership." };
+  }
 
   const requestorName = String(formData.get("requestorName") ?? "").trim();
-  if (!requestorName) throw new Error("Requestor name is required.");
+  if (!requestorName) return { ok: false, error: "Requestor name is required." };
 
   try {
     await getApiClient().securitySuite.idVerify.create({
@@ -20,10 +24,13 @@ export async function requestIdentityVerificationAction(formData: FormData): Pro
       verificationMethod: String(formData.get("verificationMethod") ?? "callback"),
       actionAuthorized: String(formData.get("actionAuthorized") ?? "").trim() || null,
     });
-    revalidatePath("/portal/identity-verification");
-    redirect("/portal/identity-verification");
   } catch (error) {
-    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
-    throw error;
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to request identity verification",
+    };
   }
+
+  revalidatePath("/portal/identity-verification");
+  redirect("/portal/identity-verification");
 }

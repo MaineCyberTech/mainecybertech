@@ -1,7 +1,9 @@
 import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import SubmitButton from "@/components/SubmitButton";
 import { addInsuranceEvidenceAction } from "../actions";
+import PortalRequestForm from "@/components/portal/PortalRequestForm";
 
 export const metadata = { title: "Add Insurance Evidence - Portal - Maine CyberTech" };
 
@@ -15,6 +17,7 @@ export default function NewInsuranceEvidencePage() {
           { label: "Add evidence" },
         ]}
       />
+      <PortalSubnav current="insurance-binder" />
       <div>
         <h1 className="cyber-heading text-2xl">Add insurance evidence</h1>
         <p className="mt-2 text-sm text-slate-400">
@@ -23,7 +26,7 @@ export default function NewInsuranceEvidencePage() {
         </p>
       </div>
 
-      <form action={addInsuranceEvidenceAction} className="cyber-panel space-y-4">
+      <PortalRequestForm action={addInsuranceEvidenceAction} className="cyber-panel space-y-4">
         <div>
           <label htmlFor="ins-title" className="cyber-label">
             Title
@@ -83,7 +86,7 @@ export default function NewInsuranceEvidencePage() {
             Cancel
           </Link>
         </div>
-      </form>
+      </PortalRequestForm>
     </div>
   );
 }

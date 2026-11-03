@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
 import type { IncidentRecord } from "@mct/sdk";
 import StatusPill from "@/components/StatusPill";
@@ -31,6 +32,7 @@ export default async function PortalIncidentResponsePage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Incident Response" }]}
       />
+      <PortalSubnav current="incident-response" />
       <h1 className="text-2xl font-semibold text-slate-50">Incident Response</h1>
       {loadFailed ? <DataErrorNote what="incident-response" /> : null}
       <p className="text-sm text-slate-400">

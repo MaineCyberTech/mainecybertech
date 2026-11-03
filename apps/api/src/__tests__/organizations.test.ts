@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import organizationsRouter, { resolveImageUpload } from "../routes/organizations";
-import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
+import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
 import { AppError } from "../types";
 
@@ -19,7 +19,9 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
 }));
 
 jest.mock("../services/audit", () => ({
@@ -51,7 +53,7 @@ function mockStorage(supabase: ReturnType<typeof mockAuth>) {
   });
 }
 
-function mockAdmin() {
+function mockAdmin({ platformSuperAdmin = false }: { platformSuperAdmin?: boolean } = {}) {
   const supabase = mockAuth();
   supabase.from.mockReturnValueOnce(
     createMockBuilder({
@@ -59,6 +61,11 @@ function mockAdmin() {
       error: null,
     }),
   );
+  if (platformSuperAdmin) {
+    supabase.from.mockReturnValueOnce(
+      createMockBuilder({ data: { is_super_admin: true }, error: null }),
+    );
+  }
   return supabase;
 }
 
@@ -95,18 +102,13 @@ jest.mock("../middleware/org-access", () => ({
   requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
   requireOrgAccessByParam: (req: any, _res: unknown, next: (e?: unknown) => void) => {
     if (!mockAllowedOrgParams.has(req.params?.id)) {
-      return next(
-        new AppError("FORBIDDEN", "You do not have access to this organization", 403),
-      );
+      return next(new AppError("FORBIDDEN", "You do not have access to this organization", 403));
     }
     next();
   },
 }));
 jest.mock("../middleware/permissions", () => ({
-  requirePermission:
-    () =>
-    (_req: unknown, _res: unknown, next: () => void) =>
-      next(),
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 const app = createTestApp();
 app.use("/api/v1/organizations", organizationsRouter);
@@ -206,7 +208,10 @@ describe("organizations routes", () => {
           }),
         )
         .mockReturnValueOnce(
-          createMockBuilder({ data: { id: "platform-admin-user", is_super_admin: true }, error: null }),
+          createMockBuilder({
+            data: { id: "platform-admin-user", is_super_admin: true },
+            error: null,
+          }),
         )
         .mockReturnValueOnce(
           createMockBuilder({
@@ -280,8 +285,8 @@ describe("organizations routes", () => {
   });
 
   describe("POST /", () => {
-    it("creates an organization (admin only)", async () => {
-      const supabase = mockAdmin();
+    it("creates an organization for a platform super admin", async () => {
+      const supabase = mockAdmin({ platformSuperAdmin: true });
       supabase.from.mockReturnValue(createMockBuilder({ data: ORG, error: null }));
 
       const res = await request(app)
@@ -290,6 +295,20 @@ describe("organizations routes", () => {
         .send({ name: "Test Org", slug: "test-org" });
 
       expect(res.status).toBe(201);
+    });
+
+    it("rejects a cross-tenant admin without the platform super-admin flag (ADMIN-P3-005)", async () => {
+      const supabase = mockAdmin();
+      supabase.from
+        .mockReturnValueOnce(createMockBuilder({ data: { is_super_admin: false }, error: null }))
+        .mockReturnValue(createMockBuilder({ data: ORG, error: null }));
+
+      const res = await request(app)
+        .post("/api/v1/organizations")
+        .set("Authorization", "Bearer token-123")
+        .send({ name: "Test Org", slug: "test-org" });
+
+      expect(res.status).toBe(403);
     });
   });
 
@@ -305,12 +324,12 @@ describe("organizations routes", () => {
         .mockReturnValueOnce(
           createMockBuilder({ data: [{ roles: { id: "role-admin", key: "admin" } }], error: null }),
         )
+        // requirePlatformSuperAdmin → profiles.is_super_admin
+        .mockReturnValueOnce(createMockBuilder({ data: { is_super_admin: true }, error: null }))
         // organizations insert
         .mockReturnValueOnce(createMockBuilder({ data: ORG, error: null }))
         // roles lookup by key
         .mockReturnValueOnce(createMockBuilder({ data: { id: "role-1" }, error: null }))
-        // assertCanAssignRole → profiles.is_super_admin
-        .mockReturnValueOnce(createMockBuilder({ data: { is_super_admin: true }, error: null }))
         // existing profile lookup by email
         .mockReturnValueOnce(createMockBuilder({ data: null, error: null }))
         // profiles upsert for the invited admin
@@ -343,6 +362,30 @@ describe("organizations routes", () => {
           status: "pending",
         }),
       );
+    });
+
+    it("rejects onboarding without the platform super-admin flag (ADMIN-P3-005)", async () => {
+      const supabase = mockAuth();
+      supabase.from
+        // requireAdmin → memberships query
+        .mockReturnValueOnce(
+          createMockBuilder({ data: [{ roles: { id: "role-admin", key: "admin" } }], error: null }),
+        )
+        // requirePlatformSuperAdmin → profiles.is_super_admin
+        .mockReturnValueOnce(createMockBuilder({ data: { is_super_admin: false }, error: null }));
+
+      const res = await request(app)
+        .post("/api/v1/organizations/onboard")
+        .set("Authorization", "Bearer token-123")
+        .send({
+          name: "New Org",
+          slug: "new-org",
+          adminEmail: "admin@new.example",
+          adminRoleKey: "client_admin",
+        });
+
+      expect(res.status).toBe(403);
+      expect(supabase.auth.admin.inviteUserByEmail).not.toHaveBeenCalled();
     });
   });
 
@@ -530,7 +573,8 @@ describe("organizations routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/organizations/org-1/domains/dom-1")
-        .set("Authorization", "Bearer token-123").send({ confirm: true });
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
@@ -686,11 +730,15 @@ describe("organizations routes", () => {
       });
 
       it("maps image/webp -> webp", () => {
-        expect(resolveImageUpload({ originalname: "x.webp", mimetype: "image/webp" }, "Logo").extension).toBe("webp");
+        expect(
+          resolveImageUpload({ originalname: "x.webp", mimetype: "image/webp" }, "Logo").extension,
+        ).toBe("webp");
       });
 
       it("rejects image/svg+xml via the mimetype allowlist", () => {
-        expect(() => resolveImageUpload({ originalname: "evil.svg", mimetype: "image/svg+xml" }, "Logo")).toThrow();
+        expect(() =>
+          resolveImageUpload({ originalname: "evil.svg", mimetype: "image/svg+xml" }, "Logo"),
+        ).toThrow();
       });
     });
 

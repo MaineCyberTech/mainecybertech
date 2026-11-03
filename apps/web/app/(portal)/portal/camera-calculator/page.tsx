@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import CameraCalculatorClient from "./CameraCalculatorClient";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
@@ -31,6 +32,7 @@ export default async function PortalCameraCalculatorPage() {
           { label: "Camera Storage Calculator" },
         ]}
       />
+      <PortalSubnav current="camera-calculator" />
       <h1 className="text-2xl font-semibold text-slate-50">Camera Storage Calculator</h1>
       {loadFailed ? <DataErrorNote what="camera-calculator" /> : null}
       <p className="text-sm text-slate-400">

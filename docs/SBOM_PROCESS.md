@@ -1,6 +1,6 @@
 # SBOM Process
 
-Owner: Platform Engineering. Last updated 2026-10-02.
+Owner: Platform Engineering. Last updated 2026-11-03.
 
 How the portal's software bill of materials is produced, what it covers, and how
 to retrieve and verify it. There are **two** distinct CycloneDX artifacts — a
@@ -8,9 +8,9 @@ lockfile SBOM and per-image SBOMs — with different scope and binding.
 
 ## What we generate
 
-| Artifact | Producer | Covers | Bound to |
-| --- | --- | --- | --- |
-| **Lockfile SBOM** (`sbom.cdx.json`) | `.github/workflows/sbom.yml` → `scripts/generate-sbom.mjs` | npm dependencies resolved from `pnpm-lock.yaml` | `<VERSION>+<commit SHA>` (`metadata.component.version`, `mct:commit`) |
+| Artifact                                           | Producer                                                                                                           | Covers                                                                | Bound to                                                                                                                                                                      |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Lockfile SBOM** (`sbom.cdx.json`)                | `.github/workflows/sbom.yml` → `scripts/generate-sbom.mjs`                                                         | npm dependencies resolved from `pnpm-lock.yaml`                       | `<VERSION>+<commit SHA>` (`metadata.component.version`, `mct:commit`)                                                                                                         |
 | **Image SBOM** (`image-sbom-mct-<image>.cdx.json`) | `.github/workflows/build-push.yml` and `.github/workflows/deploy-do.yml` (per image) → `aquasecurity/trivy-action` | The built OCI image: Alpine OS packages **and** npm-in-image contents | The pushed image **digest** (`metadata.component.purl`/`name` = `...@sha256:...`); on the deploy path it is also **attested** (`actions/attest-sbom`, pushed to the registry) |
 
 ### Lockfile SBOM
@@ -102,8 +102,13 @@ the SHA-pinned GitHub Actions the workflows execute. Coverage status as of
 - **Third-party images:** `third-party-image-scan.yml` resolves the
   digest-pinned refs straight from `infra/digitalocean/docker-compose.yml` on
   the weekly schedule, scans them and emits a digest-bound CycloneDX image
-  SBOM per ref (validated with `--image --digest`, uploaded as a 30-day
-  artifact). This is artifact-only, not a gate (CTR-P3-007 / SBOM-P3-008).
+  SBOM per ref (validated with `--image --allow-missing-versions --digest`,
+  uploaded as a 30-day artifact). The third-party refs are the five images
+  listed above; `--allow-missing-versions` lets Trivy's image SBOM omit a
+  version for components such as the image's own scratch-entrypoint binary
+  while the validator still enforces the CycloneDX shape, component floor and
+  exact digest binding. This is artifact-only, not a gate (CTR-P3-007 /
+  SBOM-P3-008).
 - **Actions dependencies:** `scripts/actions-inventory.mjs` emits a
   machine-readable inventory (name, pinned SHA, version comment, source file),
   uploaded as the `actions-inventory` artifact by `sbom.yml`; its `--check`
@@ -211,7 +216,7 @@ jq '.metadata.component.purl' image-sbom-mct-api.cdx.json
     different signing workflow, so its images would fail the `--signer-workflow`
     pin (it is manual-dispatch only and not on the deploy path).
   - **Rollback exception:** a `rollback_sha` dispatch may deploy an image built
-    before attestation existed. A *present-but-invalid* attestation always fails
+    before attestation existed. A _present-but-invalid_ attestation always fails
     the job; an image without a verifiable attestation is only tolerated when
     its digest is named in the reviewed `LEGACY_MCT_*` allow-list, with a warning
     and an explicit job-summary stamp. The rollback still runs by its resolved

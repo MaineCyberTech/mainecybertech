@@ -32,7 +32,7 @@ name: Storage Restore Test
 
 on:
   schedule:
-    - cron: "0 7 * * 1"   # Every Monday at 7 AM UTC, after the database test
+    - cron: "0 7 * * 1" # Every Monday at 7 AM UTC, after the database test
   workflow_dispatch:
     inputs:
       environment:
@@ -72,7 +72,7 @@ jobs:
         env:
           # Destination contract mirrors scripts/backup-storage.sh (DR-P1-002):
           # S3_BUCKET is a bucket NAME and S3_PREFIX a key prefix. A legacy
-          # full-URI S3_BACKUP_BUCKET is accepted and normalised below.
+          # full-URI S3_BACKUP_BUCKET is accepted and normalised by the helper.
           S3_BUCKET: ${{ vars.S3_BUCKET || secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
           S3_PREFIX: ${{ vars.S3_PREFIX || 'storage-backups' }}
           # Prefer dedicated AWS_* secrets; fall back to the Spaces keys the
@@ -83,24 +83,10 @@ jobs:
           AWS_ENDPOINT_URL: ${{ vars.S3_ENDPOINT || 'https://nyc3.digitaloceanspaces.com' }}
         run: |
           set -euo pipefail
-          # Accept both "bucket" and "s3://bucket[/prefix]" shapes, then always
-          # build a canonical s3://bucket/prefix/ path.
-          RAW_BUCKET="${S3_BUCKET#s3://}"
-          RAW_BUCKET="${RAW_BUCKET%/}"
-          S3_PATH="s3://${RAW_BUCKET}/${S3_PREFIX}/"
-          echo "Resolved backup location: ${S3_PATH}"
-          LATEST=$(aws s3 ls "${S3_PATH}" --recursive \
-            | sort | tail -1 | awk '{print $4}')
-          if [ -z "${LATEST}" ]; then
-            echo "::error::No storage backups found under ${S3_PATH} — nothing to restore-test"
-            exit 1
-          fi
-          # `aws s3 ls --recursive` returns the FULL key (including the prefix).
-          # Strip it if present and rebuild the URI once so the object path can
-          # never be double-prefixed.
-          REL="${LATEST#"${S3_PREFIX}/"}"
-          echo "backup_file=${LATEST}" >> "$GITHUB_OUTPUT"
-          echo "backup_uri=s3://${RAW_BUCKET}/${S3_PREFIX}/${REL}" >> "$GITHUB_OUTPUT"
+          # DR-P3-008: same discovery helper as db-restore-test.yml, so a
+          # credentials/endpoint failure is distinguishable from an empty
+          # bucket and names the location + credential state.
+          bash scripts/ci/find-latest-backup.sh storage >> "$GITHUB_OUTPUT"
 
       - name: Verify archive against its manifest
         env:

@@ -114,4 +114,47 @@ describe("portal request actions preserve NEXT_REDIRECT", () => {
       expect.objectContaining({ organizationId: "org-1", title: "Cyber policy" }),
     );
   });
+
+  it("returns a friendly error instead of throwing on API failure (USE-P3-008)", async () => {
+    const cases: Array<{
+      mock: jest.Mock;
+      action: (fd: FormData) => Promise<{ ok: boolean; error?: string }>;
+      values: Record<string, string>;
+    }> = [
+      {
+        mock: createApproval,
+        action: createApprovalAction,
+        values: { requestSubject: "Need access" },
+      },
+      {
+        mock: createChange,
+        action: createChangeRequestAction,
+        values: { title: "Firewall change" },
+      },
+      { mock: createDns, action: createDnsChangeAction, values: { domain: "example.com" } },
+      {
+        mock: createIdentity,
+        action: requestIdentityVerificationAction,
+        values: { requestorName: "Alex" },
+      },
+      {
+        mock: createOffboarding,
+        action: requestOffboardingAction,
+        values: { employeeName: "Sam Lee" },
+      },
+      {
+        mock: createInsurance,
+        action: addInsuranceEvidenceAction,
+        values: { title: "Cyber policy" },
+      },
+    ];
+
+    for (const { mock, action, values } of cases) {
+      mock.mockRejectedValueOnce(new Error("API unavailable"));
+      await expect(action(formData(values))).resolves.toEqual({
+        ok: false,
+        error: "API unavailable",
+      });
+    }
+  });
 });

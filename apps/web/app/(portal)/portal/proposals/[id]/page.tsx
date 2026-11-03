@@ -3,6 +3,7 @@ import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
@@ -17,6 +18,20 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: `Proposal Details (${id.slice(0, 8)}) - Portal - Maine CyberTech` };
 }
 export const dynamic = "force-dynamic";
+
+type ProposalComment = {
+  id: string;
+  body: string;
+  is_internal?: boolean;
+  created_at?: string | null;
+  author?: { full_name?: string | null; email?: string | null } | null;
+};
+
+type ProposalTimelineEvent = {
+  id: string;
+  event_type: string;
+  created_at?: string | null;
+};
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -90,8 +105,8 @@ export default async function PortalProposalDetailPage({ params }: Props) {
 
   const phases = proposal.phases ?? [];
   const items = proposal.items ?? [];
-  const comments = proposal.comments ?? [];
-  const timeline = proposal.timeline ?? [];
+  const comments = (proposal.comments ?? []) as ProposalComment[];
+  const timeline = (proposal.timeline ?? []) as ProposalTimelineEvent[];
 
   const isClientVisible = proposal.visibility === "client_visible";
 
@@ -106,6 +121,7 @@ export default async function PortalProposalDetailPage({ params }: Props) {
               { label: proposal.title },
             ]}
           />
+          <PortalSubnav current="proposals" />
           <h1 className="cyber-heading mt-2 text-2xl">{proposal.title}</h1>
           <p className="mt-1 text-sm text-slate-400">
             {formatCurrency(proposal.grand_total ?? 0)} total
@@ -151,7 +167,7 @@ export default async function PortalProposalDetailPage({ params }: Props) {
         <h2 className="cyber-heading text-lg">Phases & Line Items</h2>
         <div className="mt-6 space-y-6">
           {phases.length > 0 ? (
-            phases.map((phase: any) => (
+            phases.map((phase) => (
               <div
                 key={phase.id}
                 className="rounded-lg border border-white/10 bg-cyber-base/60 p-5"
@@ -261,7 +277,7 @@ export default async function PortalProposalDetailPage({ params }: Props) {
         <section className="cyber-panel">
           <h2 className="cyber-heading text-lg">Comments</h2>
           <div className="mt-6 space-y-4">
-            {comments.map((comment: any) => (
+            {comments.map((comment) => (
               <div
                 key={comment.id}
                 className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
@@ -282,7 +298,7 @@ export default async function PortalProposalDetailPage({ params }: Props) {
         <section className="cyber-panel">
           <h2 className="cyber-heading text-lg">Activity Timeline</h2>
           <div className="mt-6 space-y-3">
-            {timeline.slice(0, 20).map((event: any) => (
+            {timeline.slice(0, 20).map((event) => (
               <div
                 key={event.id}
                 className="flex items-start gap-3 rounded-lg border border-white/5 bg-cyber-base/60 px-4 py-3"

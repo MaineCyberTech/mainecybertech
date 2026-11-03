@@ -3,6 +3,7 @@ import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import Link from "next/link";
 import StatusPill from "@/components/StatusPill";
 import { DynamicFormRecord } from "@mct/sdk";
@@ -85,6 +86,7 @@ export default async function DynamicFormDetailPage({ params }: Props) {
               { label: form.title },
             ]}
           />
+          <PortalSubnav current="dynamic-client-forms-builder" />
           <h1 className="cyber-heading mt-2 text-2xl">{form.title}</h1>
           <p className="mt-1 text-sm text-slate-400">
             {form.form_type.replace(/_/g, " ")}

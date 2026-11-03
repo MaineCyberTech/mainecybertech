@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
@@ -28,6 +29,7 @@ export default async function PortalNetworkPortMapsPage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Network Port Maps" }]}
       />
+      <PortalSubnav current="network-port-maps" />
       <h1 className="text-2xl font-semibold text-slate-50">Network Port Maps</h1>
       {loadFailed ? <DataErrorNote what="network-port-maps" /> : null}
       <p className="text-sm text-slate-400">
