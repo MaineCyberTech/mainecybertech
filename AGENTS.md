@@ -12,7 +12,7 @@ Turborepo monorepo: 3 apps + 3 packages.
 
 | Service | Entry                       | Port | Purpose                                                                  |
 | ------- | --------------------------- | ---- | ------------------------------------------------------------------------ |
-| API     | `apps/api/src/main.ts`      | 2003 | Express server, Supabase Admin for DB/auth                               |
+| API     | `apps/api/src/main.ts`      | 4000 | Express server, Supabase Admin for DB/auth                               |
 | Web     | `apps/web/app/layout.tsx`   | 3000 | Next.js App Router, server components + actions                          |
 | Worker  | `apps/worker/src/main.ts`   | 3001 | Queue consumer (`consumer-sqs.ts`; BullMQ/SQS/inline)                    |
 | SDK     | `packages/sdk/src/index.ts` | —    | Typed API client factory (`MCTClient.create()`)                          |
@@ -96,11 +96,11 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,670 tests, all passing. 4674 suites.**
+**4,674 tests, all passing. 521 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,999         | 176    | Jest + supertest                  |
+| API     | 2,003         | 176    | Jest + supertest                  |
 | Web     | 2,035         | 308    | Jest + Testing Library            |
 | SDK     | 325           | 5      | Jest (mocked fetch)               |
 | Worker  | 311           | 32     | Jest (env schema + task handlers) |
