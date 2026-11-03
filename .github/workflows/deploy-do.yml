@@ -621,7 +621,18 @@ jobs:
     secrets: inherit
 
   deploy:
-    needs: [setup, resolve-ip, validate, e2e-gate, migrate-gate, build-api, build-worker, build-web, verify-attestations]
+    needs:
+      [
+        setup,
+        resolve-ip,
+        validate,
+        e2e-gate,
+        migrate-gate,
+        build-api,
+        build-worker,
+        build-web,
+        verify-attestations,
+      ]
     # Fail closed. Do NOT use `always() && !failure()` here: `failure()` is false
     # when a needed job was merely *skipped*, so that pattern can let a deploy run
     # when a gate did not actually pass. Require every job that ran to have
@@ -1073,10 +1084,13 @@ jobs:
             # also takes prometheus down via depends_on), a broken caddy
             # config or a dead redis used to deploy green with the alerting
             # and reverse-proxy path silently gone.
+            # OBS-P3-008: node-exporter has no meaningful container healthcheck
+            # (scratch image, binary-only probe); its liveness is the
+            # MCTNodeExporterDown/MCTServiceDown Prometheus rules instead.
             container_health() {
               docker inspect --format '{{.State.Health.Status}}' "mct-portal-$1-1" 2>/dev/null || echo "missing"
             }
-            GATED_SERVICES="redis api worker web alertmanager prometheus node-exporter caddy"
+            GATED_SERVICES="redis api worker web alertmanager prometheus caddy"
             healthy=0
             for attempt in $(seq 1 18); do
               unhealthy=""

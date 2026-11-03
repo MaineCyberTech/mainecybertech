@@ -5,20 +5,33 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import AdminPagination from "@/components/admin/AdminPagination";
 import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "File Requests - Portal - Maine CyberTech" };
 
-export default async function PortalFileRequestsPage() {
+const DEFAULT_LIMIT = 25;
+
+export default async function PortalFileRequestsPage(props: {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+}) {
   const membership = await getApprovedMembership();
   if (!membership) return null;
   let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
+  let total = 0;
+  const sp = (await props.searchParams) ?? {};
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
   try {
-    const r = await api.fileRequests.list({ organizationId: orgId });
+    const r = await api.fileRequests.list({ organizationId: orgId, page, limit });
     items = r.items as unknown as typeof items;
+    total = r.total ?? items.length;
   } catch (error) {
     console.error("[file-requests/page]", error);
     loadFailed = true;
@@ -32,7 +45,9 @@ export default async function PortalFileRequestsPage() {
       <PortalSubnav current="file-requests" />
       {loadFailed ? <DataErrorNote what="file-requests" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Secure File Requests</h1>
-      <p className="text-sm text-slate-400">{items.length} file request links available.</p>
+      <p className="text-sm text-slate-400">
+        {total} file request link{total !== 1 ? "s" : ""} available.
+      </p>
       <div className="space-y-3">
         {items.map((fr) => (
           <div
@@ -70,6 +85,13 @@ export default async function PortalFileRequestsPage() {
           <p className="text-sm text-slate-400">No active file request links.</p>
         )}
       </div>
+      <AdminPagination
+        currentPage={page}
+        totalPages={Math.ceil(total / limit)}
+        buildHref={(p) => `/portal/file-requests?page=${p}&limit=${limit}`}
+        total={total}
+        limit={limit}
+      />
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard
       </Link>

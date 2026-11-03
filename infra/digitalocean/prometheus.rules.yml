@@ -9,7 +9,10 @@ groups:
   - name: mct-service-availability
     rules:
       - alert: MCTServiceDown
-        expr: up{job=~"mct-api|mct-worker"} == 0
+        # ARCH-P3-006 / OBS-P3-008: node-exporter is the only host-metric
+        # source; losing it must page like a dead service, not silently remove
+        # the disk/memory alerts.
+        expr: up{job=~"mct-api|mct-worker|node-exporter"} == 0
         for: 2m
         labels:
           severity: critical
@@ -17,6 +20,18 @@ groups:
         annotations:
           summary: "MCT service {{ $labels.job }} is down"
           description: "Prometheus cannot scrape {{ $labels.job }} (target {{ $labels.instance }}) for more than 2 minutes."
+
+      # ARCH-P3-006: dedicated liveness rule so the host-metrics signal has an
+      # explicit, searchable alert even if the service regex changes.
+      - alert: MCTNodeExporterDown
+        expr: up{job="node-exporter"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Droplet node-exporter is down"
+          description: "Prometheus has failed to scrape node-exporter for 5 minutes. Host disk/memory alerts are blind until it recovers; check the container, its compose health and the scrape target."
 
       - alert: MCTHighRequestErrorRate
         expr: |
@@ -366,7 +381,6 @@ groups:
         annotations:
           summary: "Stripe reconciliation detected billing drift"
           description: "The stripe-reconcile task found at least one mirror-vs-Stripe mismatch in the last 25 hours (subscription status, invoice count/sum, or payment count/sum). Check the worker logs for the organization and drift kind, then compare the local billing mirror with Stripe."
-
 
   # BILL-P3-009: the API entitlement gate fails open when the billing mirror
   # cannot be read (a transient Supabase error must not lock paying customers

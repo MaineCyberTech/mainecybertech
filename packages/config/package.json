@@ -7,7 +7,8 @@
     "./eslint": "./eslint.mjs",
     "./typescript": "./tsconfig.json",
     "./date": "./src/date.ts",
-    "./env": "./src/env.ts"
+    "./env": "./src/env.ts",
+    "./subscription": "./src/subscription.ts"
   },
   "dependencies": {
     "zod": "^3.24.1"

@@ -10,6 +10,7 @@ import EmptyState from "@/components/EmptyState";
 import CommentBody from "@/components/CommentBody";
 import type { ProposalDetail } from "@mct/sdk";
 import { formatCurrency, formatDate } from "@/lib/format";
+import ResetClientDecisionButton from "./ResetClientDecisionButton";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -111,6 +112,35 @@ export default async function AdminProposalDetailPage({ params }: Props) {
         </Link>
       }
     >
+      {(() => {
+        const metadata =
+          proposal.metadata && typeof proposal.metadata === "object"
+            ? (proposal.metadata as Record<string, unknown>)
+            : null;
+        const clientDecision = metadata?.clientDecision;
+        if (!clientDecision) return null;
+        return (
+          <section className="cyber-panel">
+            <h2 className="cyber-heading text-lg">Client Decision</h2>
+            <p className="mt-3 text-sm text-slate-300">
+              The client recorded <strong>{String(clientDecision)}</strong>
+              {metadata?.clientDecidedAt
+                ? ` on ${formatDateTime(String(metadata.clientDecidedAt))}`
+                : ""}
+              .
+            </p>
+            {metadata?.clientDecisionNotes ? (
+              <p className="mt-2 text-sm text-slate-400">
+                Notes: {String(metadata.clientDecisionNotes)}
+              </p>
+            ) : null}
+            <div className="mt-4">
+              <ResetClientDecisionButton proposalId={proposal.id} />
+            </div>
+          </section>
+        );
+      })()}
+
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Proposal Details</h2>
         <dl className="mt-6 grid grid-cols-[auto_1fr] gap-x-4 gap-y-3 text-sm">

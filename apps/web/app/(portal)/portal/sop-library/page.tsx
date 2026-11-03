@@ -33,8 +33,8 @@ export default async function PortalSopLibraryPage() {
       <h1 className="text-2xl font-semibold text-slate-50">SOP Library</h1>
       {loadFailed ? <DataErrorNote what="sop-library" /> : null}
       <p className="text-sm text-slate-400">
-        {items.length} standard operating procedure{items.length !== 1 ? "s" : ""} for your
-        organization.
+        {items.length} standard operating procedure{items.length !== 1 ? "s" : ""} in this view
+        (most recent first).
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (

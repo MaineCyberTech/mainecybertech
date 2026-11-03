@@ -69,8 +69,7 @@ export default async function PortalHardwareStagingPage({
       ) : (
         <>
           <p className="text-sm text-slate-400">
-            {items.length} hardware staging item{items.length !== 1 ? "s" : ""} for your
-            organization.
+            {total} hardware staging item{total !== 1 ? "s" : ""} for your organization.
           </p>
           <div className="grid gap-4 md:grid-cols-2">
             {items.map((a) => (

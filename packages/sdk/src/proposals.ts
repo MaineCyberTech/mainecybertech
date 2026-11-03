@@ -224,6 +224,10 @@ export class ProposalsApi {
     return this.client.post<Proposal>(`/api/v1/proposals/${proposalId}/client-decision`, data);
   }
 
+  resetClientDecision(proposalId: string) {
+    return this.client.post<Proposal>(`/api/v1/proposals/${proposalId}/client-decision/reset`);
+  }
+
   publish(proposalId: string, data: { organizationId: string; validityDays?: number }) {
     return this.client.post<Proposal>(`/api/v1/proposals/${proposalId}/publish`, data);
   }

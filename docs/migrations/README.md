@@ -25,14 +25,14 @@ ranges have no migration file in the tree. They are reserved/skipped legacy
 numbers from earlier renumbering, not missing files in the applied chain (no
 workflow, seed, or script references them):
 
-| Missing prefixes | Notes |
-| --- | --- |
-| `5302027` | single skipped number before the baseline |
-| `5302039`–`5302040` | two skipped numbers |
-| `5302044`–`5302049` | six skipped numbers |
-| `5302084` | single skipped number |
-| `5302136`–`5302401` | large reserved block before the remediation series |
-| `5302429` | single skipped number before the post-baseline series |
+| Missing prefixes    | Notes                                                 |
+| ------------------- | ----------------------------------------------------- |
+| `5302027`           | single skipped number before the baseline             |
+| `5302039`–`5302040` | two skipped numbers                                   |
+| `5302044`–`5302049` | six skipped numbers                                   |
+| `5302084`           | single skipped number                                 |
+| `5302136`–`5302401` | large reserved block before the remediation series    |
+| `5302429`           | single skipped number before the post-baseline series |
 
 When adding a migration, use the next number after the newest file (see
 [`naming-guide.md`](naming-guide.md)); never fill or reuse a gap.
@@ -61,14 +61,15 @@ A migration that drops tables/columns or rewrites privileges must carry a
 Rollback notes document the manual path — they are not executable down
 migrations. Current destructive migrations and their notes:
 
-| Migration | What the note covers |
-| --- | --- |
-| `5302055_cleanup_dead_tables.sql` | re-create the nine dropped tables + policies |
-| `5302110_restore_document_permissions.sql` | re-drop the restored objects (revert as a pair with 5302055) |
-| `5302116_grant_table_privileges.sql` | revoke the re-granted privileges |
-| `5302406_device_profiles.sql` | re-create the 5302074 shape + restore rows from backup |
-| `5302407_network_diagrams.sql` | re-create the 5302072 shape + restore rows from backup |
-| `5302432_drop_unused_soft_delete_columns.sql` | re-add the dropped columns/indexes (values were NULL) |
+| Migration                                     | What the note covers                                                                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `5302055_cleanup_dead_tables.sql`             | re-create the nine dropped tables + policies                                                     |
+| `5302110_restore_document_permissions.sql`    | re-drop the restored objects (revert as a pair with 5302055)                                     |
+| `5302116_grant_table_privileges.sql`          | revoke the re-granted privileges                                                                 |
+| `5302406_device_profiles.sql`                 | re-create the 5302074 shape + restore rows from backup                                           |
+| `5302407_network_diagrams.sql`                | re-create the 5302072 shape + restore rows from backup                                           |
+| `5302432_drop_unused_soft_delete_columns.sql` | re-add the dropped columns/indexes (values were NULL)                                            |
+| `5302460_drop_portal_module_settings.sql`     | re-create the 5302058 table + 5302058/5302112/5302129 policies and restore rows from backup/PITR |
 
 ## Fresh-replay hardening in old files
 

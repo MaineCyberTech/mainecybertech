@@ -65,7 +65,7 @@ services:
     pids_limit: 128
     healthcheck:
       # Authenticate via REDISCLI_AUTH (env), not `-a <password>` (argv).
-      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping"]
+      test: ["CMD-SHELL", 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -293,14 +293,11 @@ services:
     # Fork-bomb blast radius (CTR-P2-005), same as every other service.
     pids_limit: 128
     read_only: true
-    healthcheck:
-      # The official node-exporter image is scratch-based: there is no shell
-      # and no wget/curl. Probe the binary itself instead of the HTTP endpoint.
-      test: ["CMD", "/bin/node_exporter", "--version"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+    # OBS-P3-008: the official image is scratch-based (no shell/wget/curl), so
+    # a Docker healthcheck can only re-run the binary and would stay "healthy"
+    # with a wedged HTTP listener. Liveness is covered by the Prometheus
+    # MCTNodeExporterDown / MCTServiceDown rules; deploy-do therefore does not
+    # gate on a node-exporter healthcheck.
 
   prometheus:
     image: prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
@@ -432,7 +429,8 @@ services:
     healthcheck:
       # `caddy validate` catches a broken Caddyfile deterministically; probing
       # HTTP would flap on the 80 -> 443 redirect (self-signed/TLS internal).
-      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+      test:
+        ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
       interval: 30s
       timeout: 5s
       retries: 3

@@ -55,7 +55,8 @@ async function overflowingElements(page: Page): Promise<string[]> {
       )
       .slice(0, 8)
       .map(
-        (entry) => `${entry.selector} right=${entry.right} width=${entry.width} pos=${entry.position}`,
+        (entry) =>
+          `${entry.selector} right=${entry.right} width=${entry.width} pos=${entry.position}`,
       );
   });
 }
@@ -189,7 +190,11 @@ test.describe("mobile viewport", () => {
     // needs the 180x180 apple-touch icon.
     const ico = await request.get("/favicon.ico");
     expect(ico.ok()).toBe(true);
-    expect(Buffer.from(await ico.body()).subarray(0, 4).toString("hex")).toBe("00000100");
+    expect(
+      Buffer.from(await ico.body())
+        .subarray(0, 4)
+        .toString("hex"),
+    ).toBe("00000100");
 
     const apple = await request.get("/apple-touch-icon.png");
     expect(apple.ok()).toBe(true);
@@ -225,7 +230,10 @@ test.describe("mobile viewport", () => {
     );
 
     await page.getByRole("button", { name: "Browse categories" }).click();
-    await expectMinTouchTarget(page.getByRole("button", { name: "Close menu" }), "store drawer close");
+    await expectMinTouchTarget(
+      page.getByRole("button", { name: "Close menu" }),
+      "store drawer close",
+    );
     await page.getByRole("button", { name: "Close menu" }).click();
 
     await gotoApp(page, "/portal/dashboard");
@@ -343,5 +351,79 @@ test.describe("mobile viewport", () => {
     const submit = dialog.getByRole("button", { name: /^create$/i });
     await submit.scrollIntoViewIfNeeded();
     await expect(submit).toBeInViewport();
+  });
+});
+
+/**
+ * MOB-P3-007: the client-request flows added in this window were desktop-only
+ * specs. Exercise their create forms (and one data-backed detail page) at the
+ * phone viewport so an overflow or sub-16px control is caught before release.
+ */
+test.describe("new client request flows at phone width", () => {
+  const REQUEST_ROUTES = [
+    "/portal/approvals/new",
+    "/portal/change-requests/new",
+    "/portal/dns-changes/new",
+    "/portal/identity-verification/new",
+    "/portal/insurance-binder/new",
+    "/portal/offboarding/new",
+  ];
+
+  for (const route of REQUEST_ROUTES) {
+    test(`${route} has no horizontal overflow`, async ({ page }) => {
+      await gotoApp(page, route);
+      await page.evaluate(() => document.fonts.ready.then(() => undefined));
+      const { scrollWidth, innerWidth } = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        innerWidth: window.innerWidth,
+      }));
+      if (scrollWidth > innerWidth + 1) {
+        const offenders = await overflowingElements(page);
+        console.log(
+          `${route} horizontal overflow offenders: ${offenders.join(" | ") || "none (fixed-position or shadow overflow)"}`,
+        );
+      }
+      expect(
+        scrollWidth,
+        `${route} overflows horizontally (scrollWidth ${scrollWidth} > viewport ${innerWidth})`,
+      ).toBeLessThanOrEqual(innerWidth + 1);
+    });
+  }
+
+  test("approval create form controls render at 16px or larger", async ({ page }) => {
+    await gotoApp(page, "/portal/approvals/new");
+    await page
+      .locator("input:visible, select:visible, textarea:visible")
+      .first()
+      .waitFor({ state: "visible", timeout: 15_000 });
+    await expectNoControlBelow16px(page, "/portal/approvals/new");
+  });
+
+  test("change-request create form controls render at 16px or larger", async ({ page }) => {
+    await gotoApp(page, "/portal/change-requests/new");
+    await page
+      .locator("input:visible, select:visible, textarea:visible")
+      .first()
+      .waitFor({ state: "visible", timeout: 15_000 });
+    await expectNoControlBelow16px(page, "/portal/change-requests/new");
+  });
+
+  test("a change-request detail page stays within the phone viewport", async ({ page }) => {
+    await gotoApp(page, "/portal/change-requests");
+    const firstDetail = page.locator('a[href^="/portal/change-requests/"]').first();
+    if ((await firstDetail.count()) === 0 || !(await firstDetail.isVisible())) {
+      test.skip(true, "no seeded change request to open");
+      return;
+    }
+    await firstDetail.click();
+    await page.waitForLoadState("domcontentloaded");
+    const { scrollWidth, innerWidth } = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+    }));
+    expect(
+      scrollWidth,
+      `change-request detail overflows horizontally (scrollWidth ${scrollWidth} > viewport ${innerWidth})`,
+    ).toBeLessThanOrEqual(innerWidth + 1);
   });
 });

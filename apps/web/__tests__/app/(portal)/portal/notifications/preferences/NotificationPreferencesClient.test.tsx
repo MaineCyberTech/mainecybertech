@@ -64,4 +64,35 @@ describe("NotificationPreferencesClient", () => {
       await screen.findByText(/changes take effect when you click save preferences/i),
     ).toBeInTheDocument();
   });
+
+  it("surfaces and clears the global email opt-out (NOTIF-P2-013)", async () => {
+    mockListPreferences.mockResolvedValue({
+      preferences: [{ id: "all-1", module_key: "all", channel: "email", enabled: false }],
+      modules: ["tickets", "projects", "documents", "billing", "system"],
+      globalModule: "all",
+      channels: ["email", "in_app", "push"],
+    });
+    mockUpdatePreferences.mockResolvedValue({ updated: 16 });
+
+    render(<NotificationPreferencesClient />);
+
+    const globalSwitch = await screen.findByRole("switch", {
+      name: /email notifications for all modules/i,
+    });
+    expect(globalSwitch).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByText(/email is paused for every module/i)).toBeInTheDocument();
+
+    fireEvent.click(globalSwitch);
+    fireEvent.click(screen.getByRole("button", { name: /save preferences/i }));
+
+    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledTimes(1));
+    const payload = mockUpdatePreferences.mock.calls[0][0] as {
+      preferences: Array<{ moduleKey: string; channel: string; enabled: boolean }>;
+    };
+    expect(payload.preferences).toContainEqual({
+      moduleKey: "all",
+      channel: "email",
+      enabled: true,
+    });
+  });
 });

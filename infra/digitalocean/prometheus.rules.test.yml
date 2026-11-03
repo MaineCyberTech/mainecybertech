@@ -24,9 +24,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_rls_bypass_total{module="tickets",kind="read",org_resolved="true"}'
-        values: '0+60x120'
+        values: "0+60x120"
       - series: 'portal_rls_bypass_total{module="tickets",kind="read",org_resolved="false"}'
-        values: '0+60x120'
+        values: "0+60x120"
     alert_rule_test:
       - eval_time: 40m
         alertname: MCTTenantScopeRegression
@@ -43,9 +43,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_rls_bypass_total{module="tickets",kind="read",org_resolved="true"}'
-        values: '0+60x120'
+        values: "0+60x120"
       - series: 'portal_rls_bypass_total{module="tickets",kind="read",org_resolved="false"}'
-        values: '0+0x120'
+        values: "0+0x120"
     alert_rule_test:
       - eval_time: 40m
         alertname: MCTTenantScopeRegression
@@ -55,9 +55,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_rls_bypass_total{module="tickets",kind="read",org_resolved="true"}'
-        values: '0+60x120'
+        values: "0+60x120"
       - series: 'portal_rls_bypass_total{module="tickets",kind="read",org_resolved="false"}'
-        values: '0+10x120'
+        values: "0+10x120"
     alert_rule_test:
       - eval_time: 40m
         alertname: MCTTenantScopeRegression
@@ -69,9 +69,9 @@ tests:
     input_series:
       # enforcing until t=300m, then flat
       - series: 'portal_rls_enforced_total{module="documents",kind="read"}'
-        values: '0+60x300 18000+0x300'
+        values: "0+60x300 18000+0x300"
       - series: 'portal_rls_bypass_total{module="documents",kind="read",org_resolved="true"}'
-        values: '0+60x600'
+        values: "0+60x600"
     alert_rule_test:
       - eval_time: 9h
         alertname: MCTRlsEnforcedShareCollapsed
@@ -88,9 +88,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_rls_enforced_total{module="neverrls",kind="read"}'
-        values: '0+0x1800'
+        values: "0+0x1800"
       - series: 'portal_rls_bypass_total{module="neverrls",kind="read",org_resolved="true"}'
-        values: '0+60x1800'
+        values: "0+60x1800"
     alert_rule_test:
       - eval_time: 29h
         alertname: MCTRlsEnforcedShareCollapsed
@@ -101,13 +101,13 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_http_request_duration_seconds_bucket{le="1"}'
-        values: '0+0x60'
+        values: "0+0x60"
       - series: 'portal_http_request_duration_seconds_bucket{le="2"}'
-        values: '0+0x60'
+        values: "0+0x60"
       - series: 'portal_http_request_duration_seconds_bucket{le="5"}'
-        values: '0+6000x60'
+        values: "0+6000x60"
       - series: 'portal_http_request_duration_seconds_bucket{le="+Inf"}'
-        values: '0+6000x60'
+        values: "0+6000x60"
     alert_rule_test:
       - eval_time: 30m
         alertname: MCTHighRequestLatency
@@ -123,13 +123,13 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_http_request_duration_seconds_bucket{le="1"}'
-        values: '0+0x60'
+        values: "0+0x60"
       - series: 'portal_http_request_duration_seconds_bucket{le="2"}'
-        values: '0+6000x60'
+        values: "0+6000x60"
       - series: 'portal_http_request_duration_seconds_bucket{le="5"}'
-        values: '0+6000x60'
+        values: "0+6000x60"
       - series: 'portal_http_request_duration_seconds_bucket{le="+Inf"}'
-        values: '0+6000x60'
+        values: "0+6000x60"
     alert_rule_test:
       - eval_time: 30m
         alertname: MCTHighRequestLatency
@@ -139,7 +139,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_circuit_breaker_status{name="supabase"}'
-        values: '2+0x30'
+        values: "2+0x30"
     alert_rule_test:
       - eval_time: 10m
         alertname: MCTCircuitBreakerOpen
@@ -156,7 +156,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_circuit_breaker_status{name="supabase"}'
-        values: '1+0x30'
+        values: "1+0x30"
     alert_rule_test:
       - eval_time: 10m
         alertname: MCTCircuitBreakerOpen
@@ -167,9 +167,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_auth_attempts_total{result="success"}'
-        values: '0+1x120'
+        values: "0+1x120"
       - series: 'portal_auth_attempts_total{result="failure"}'
-        values: '0+4x120'
+        values: "0+4x120"
     alert_rule_test:
       - eval_time: 25m
         alertname: MCTAuthFailureRateHigh
@@ -185,9 +185,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_auth_attempts_total{result="success"}'
-        values: '0+10x120'
+        values: "0+10x120"
       - series: 'portal_auth_attempts_total{result="failure"}'
-        values: '0+1x120'
+        values: "0+1x120"
     alert_rule_test:
       - eval_time: 25m
         alertname: MCTAuthFailureRateHigh
@@ -199,7 +199,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_impersonation_events_total{actor_role_key="admin",source="api"}'
-        values: '0+1x20'
+        values: "0+1x20"
     alert_rule_test:
       - eval_time: 5m
         alertname: MCTImpersonationActivity
@@ -217,7 +217,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_impersonation_events_total{actor_role_key="admin",source="api"}'
-        values: '0+0x20'
+        values: "0+0x20"
     alert_rule_test:
       - eval_time: 5m
         alertname: MCTImpersonationActivity
@@ -228,7 +228,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_webhook_dead_letters_total{event="ticket.created",job="mct-api"}'
-        values: '0+1x120'
+        values: "0+1x120"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTWebhookDeadLettersAccumulating
@@ -246,7 +246,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_webhook_dead_letters_total{event="invoice.paid",job="mct-worker"}'
-        values: '0+1x120'
+        values: "0+1x120"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTWebhookDeadLettersAccumulating
@@ -264,7 +264,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_webhook_dead_letters_total{event="ticket.created",job="mct-api"}'
-        values: '0+0x120'
+        values: "0+0x120"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTWebhookDeadLettersAccumulating
@@ -275,9 +275,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_webhook_deliveries_total{status="success",event="ticket.created",job="mct-api"}'
-        values: '0+1x120'
+        values: "0+1x120"
       - series: 'portal_webhook_deliveries_total{status="failed",event="ticket.created",job="mct-api"}'
-        values: '0+2x120'
+        values: "0+2x120"
     alert_rule_test:
       - eval_time: 25m
         alertname: MCTWebhookDeliveryFailureRateHigh
@@ -294,9 +294,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_webhook_deliveries_total{status="success",event="invoice.paid",job="mct-worker"}'
-        values: '0+1x120'
+        values: "0+1x120"
       - series: 'worker_webhook_deliveries_total{status="failed",event="invoice.paid",job="mct-worker"}'
-        values: '0+2x120'
+        values: "0+2x120"
     alert_rule_test:
       - eval_time: 25m
         alertname: MCTWebhookDeliveryFailureRateHigh
@@ -313,9 +313,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_webhook_deliveries_total{status="success",event="ticket.created",job="mct-api"}'
-        values: '0+10x120'
+        values: "0+10x120"
       - series: 'portal_webhook_deliveries_total{status="failed",event="ticket.created",job="mct-api"}'
-        values: '0+1x120'
+        values: "0+1x120"
     alert_rule_test:
       - eval_time: 25m
         alertname: MCTWebhookDeliveryFailureRateHigh
@@ -326,9 +326,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_notification_delivery_total{channel="email",status="success",job="mct-worker"}'
-        values: '0+9x180'
+        values: "0+9x180"
       - series: 'worker_notification_delivery_total{channel="email",status="failed",job="mct-worker"}'
-        values: '0+1x180'
+        values: "0+1x180"
     alert_rule_test:
       - eval_time: 45m
         alertname: MCTNotificationDeliveryFailureRateHigh
@@ -346,9 +346,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_notification_delivery_total{channel="in_app",status="success",job="mct-api"}'
-        values: '0+9x180'
+        values: "0+9x180"
       - series: 'portal_notification_delivery_total{channel="in_app",status="failed",job="mct-api"}'
-        values: '0+1x180'
+        values: "0+1x180"
     alert_rule_test:
       - eval_time: 45m
         alertname: MCTNotificationDeliveryFailureRateHigh
@@ -366,9 +366,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_notification_delivery_total{channel="email",status="success",job="mct-worker"}'
-        values: '0+100x180'
+        values: "0+100x180"
       - series: 'worker_notification_delivery_total{channel="email",status="failed",job="mct-worker"}'
-        values: '0+1x180'
+        values: "0+1x180"
     alert_rule_test:
       - eval_time: 45m
         alertname: MCTNotificationDeliveryFailureRateHigh
@@ -379,7 +379,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_notification_delivery_total{channel="email",status="skipped",job="mct-api"}'
-        values: '0+1x120'
+        values: "0+1x120"
     alert_rule_test:
       - eval_time: 30m
         alertname: MCTNotificationEmailSkipped
@@ -398,7 +398,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_notification_delivery_total{channel="email",status="success",job="mct-api"}'
-        values: '0+10x120'
+        values: "0+10x120"
     alert_rule_test:
       - eval_time: 30m
         alertname: MCTNotificationEmailSkipped
@@ -408,7 +408,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_task_executions_total{task_type="send-email",status="failure"}'
-        values: '0+1x60'
+        values: "0+1x60"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTWorkerTaskFailures
@@ -425,7 +425,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_task_executions_total{task_type="unknown.task",status="no_handler"}'
-        values: '0+1x60'
+        values: "0+1x60"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTWorkerTaskFailures
@@ -442,7 +442,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_task_executions_total{task_type="send-email",status="success"}'
-        values: '0+10x60'
+        values: "0+10x60"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTWorkerTaskFailures
@@ -452,7 +452,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_task_queue_depth{queue="mct-tasks"}'
-        values: '80+0x120'
+        values: "80+0x120"
     alert_rule_test:
       - eval_time: 30m
         alertname: MCTWorkerQueueBacklog
@@ -469,7 +469,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_task_queue_depth{queue="mct-tasks"}'
-        values: '5+0x120'
+        values: "5+0x120"
     alert_rule_test:
       - eval_time: 30m
         alertname: MCTWorkerQueueBacklog
@@ -481,7 +481,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_task_queue_depth{queue="unavailable"}'
-        values: '0+0x120'
+        values: "0+0x120"
     alert_rule_test:
       - eval_time: 30m
         alertname: MCTWorkerQueueBacklog
@@ -491,7 +491,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_stripe_reconcile_drift_total{kind="subscription_status"}'
-        values: '0+1x60'
+        values: "0+1x60"
     alert_rule_test:
       - eval_time: 10m
         alertname: MCTStripeReconcileDrift
@@ -508,7 +508,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_stripe_reconcile_drift_total{kind="subscription_status"}'
-        values: '0+0x60'
+        values: "0+0x60"
     alert_rule_test:
       - eval_time: 10m
         alertname: MCTStripeReconcileDrift
@@ -517,8 +517,8 @@ tests:
   # CASE 33: a queue that stays disconnected MUST fire MCTWorkerQueueDisconnected.
   - interval: 1m
     input_series:
-      - series: 'worker_queue_connected'
-        values: '0+0x60'
+      - series: "worker_queue_connected"
+        values: "0+0x60"
     alert_rule_test:
       - eval_time: 10m
         alertname: MCTWorkerQueueDisconnected
@@ -533,8 +533,8 @@ tests:
   # CASE 34: a connected queue MUST stay quiet.
   - interval: 1m
     input_series:
-      - series: 'worker_queue_connected'
-        values: '1+0x60'
+      - series: "worker_queue_connected"
+        values: "1+0x60"
     alert_rule_test:
       - eval_time: 10m
         alertname: MCTWorkerQueueDisconnected
@@ -546,7 +546,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_task_queue_depth{queue="mct-tasks"}'
-        values: '0+5x60'
+        values: "0+5x60"
     alert_rule_test:
       - eval_time: 25m
         alertname: MCTWorkerQueueBacklogGrowing
@@ -564,7 +564,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_task_queue_depth{queue="mct-tasks"}'
-        values: '150+0x60'
+        values: "150+0x60"
     alert_rule_test:
       - eval_time: 25m
         alertname: MCTWorkerQueueBacklogGrowing
@@ -574,7 +574,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_task_queue_depth{queue="mct-tasks"}'
-        values: '5+0x60'
+        values: "5+0x60"
     alert_rule_test:
       - eval_time: 25m
         alertname: MCTWorkerQueueBacklogGrowing
@@ -584,7 +584,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_task_executions_total{task_type="retention",status="timeout"}'
-        values: '0+1x60'
+        values: "0+1x60"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTWorkerTaskFailures
@@ -601,7 +601,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_task_dead_letters_total{task_type="retention"}'
-        values: '0+1x60'
+        values: "0+1x60"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTWorkerTaskDeadLettered
@@ -618,7 +618,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_task_dead_letters_total{task_type="retention"}'
-        values: '0+0x60'
+        values: "0+0x60"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTWorkerTaskDeadLettered
@@ -630,7 +630,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_redis_connected{job="mct-api"}'
-        values: '0+0x60'
+        values: "0+0x60"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTApiRedisDegraded
@@ -647,7 +647,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_redis_connected{job="mct-api"}'
-        values: '1+0x60'
+        values: "1+0x60"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTApiRedisDegraded
@@ -658,7 +658,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_redis_failures_total{component="cache",operation="get",job="mct-api"}'
-        values: '0+1x30'
+        values: "0+1x30"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTRedisOperationFailures
@@ -678,7 +678,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'worker_redis_failures_total{component="scan_lock",operation="claim",job="mct-worker"}'
-        values: '0+1x30'
+        values: "0+1x30"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTRedisOperationFailures
@@ -697,9 +697,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_redis_failures_total{component="cache",operation="get",job="mct-api"}'
-        values: '0+0x30'
+        values: "0+0x30"
       - series: 'worker_redis_failures_total{component="scan_lock",operation="claim",job="mct-worker"}'
-        values: '0+0x30'
+        values: "0+0x30"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTRedisOperationFailures
@@ -709,9 +709,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4",device="/dev/vda1"}'
-        values: '10+0x40'
+        values: "10+0x40"
       - series: 'node_filesystem_size_bytes{mountpoint="/",fstype="ext4",device="/dev/vda1"}'
-        values: '100+0x40'
+        values: "100+0x40"
     alert_rule_test:
       - eval_time: 30m
         alertname: MCTHostDiskSpaceLow
@@ -731,9 +731,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4",device="/dev/vda1"}'
-        values: '50+0x40'
+        values: "50+0x40"
       - series: 'node_filesystem_size_bytes{mountpoint="/",fstype="ext4",device="/dev/vda1"}'
-        values: '100+0x40'
+        values: "100+0x40"
     alert_rule_test:
       - eval_time: 30m
         alertname: MCTHostDiskSpaceLow
@@ -746,9 +746,9 @@ tests:
   - interval: 1m
     input_series:
       - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4",device="/dev/vda1"}'
-        values: '5+0x40'
+        values: "5+0x40"
       - series: 'node_filesystem_size_bytes{mountpoint="/",fstype="ext4",device="/dev/vda1"}'
-        values: '100+0x40'
+        values: "100+0x40"
     alert_rule_test:
       - eval_time: 30m
         alertname: MCTHostDiskSpaceCritical
@@ -766,10 +766,10 @@ tests:
   # CASE 49: more than 90% of memory in use MUST fire MCTHostMemoryPressure.
   - interval: 1m
     input_series:
-      - series: 'node_memory_MemAvailable_bytes'
-        values: '50000000+0x40'
-      - series: 'node_memory_MemTotal_bytes'
-        values: '1000000000+0x40'
+      - series: "node_memory_MemAvailable_bytes"
+        values: "50000000+0x40"
+      - series: "node_memory_MemTotal_bytes"
+        values: "1000000000+0x40"
     alert_rule_test:
       - eval_time: 30m
         alertname: MCTHostMemoryPressure
@@ -784,10 +784,10 @@ tests:
   # CASE 50: healthy memory MUST stay quiet.
   - interval: 1m
     input_series:
-      - series: 'node_memory_MemAvailable_bytes'
-        values: '600000000+0x40'
-      - series: 'node_memory_MemTotal_bytes'
-        values: '1000000000+0x40'
+      - series: "node_memory_MemAvailable_bytes"
+        values: "600000000+0x40"
+      - series: "node_memory_MemTotal_bytes"
+        values: "1000000000+0x40"
     alert_rule_test:
       - eval_time: 30m
         alertname: MCTHostMemoryPressure
@@ -797,7 +797,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_billing_lookup_failures_total{module="findings",job="mct-api"}'
-        values: '0+1x30'
+        values: "0+1x30"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTBillingLookupFailures
@@ -815,8 +815,51 @@ tests:
   - interval: 1m
     input_series:
       - series: 'portal_billing_lookup_failures_total{module="findings",job="mct-api"}'
-        values: '0+0x30'
+        values: "0+0x30"
     alert_rule_test:
       - eval_time: 20m
         alertname: MCTBillingLookupFailures
+        exp_alerts: []
+
+  # CASE 53: ARCH-P3-006 / OBS-P3-008 - a dead node-exporter MUST page via both
+  # the shared service-down rule and the dedicated liveness rule.
+  - interval: 1m
+    input_series:
+      - series: 'up{job="node-exporter",instance="node-exporter:9100"}'
+        values: "0+0x15"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: MCTServiceDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              team: platform
+              job: node-exporter
+              instance: node-exporter:9100
+            exp_annotations:
+              summary: "MCT service node-exporter is down"
+              description: "Prometheus cannot scrape node-exporter (target node-exporter:9100) for more than 2 minutes."
+      - eval_time: 6m
+        alertname: MCTNodeExporterDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              team: platform
+              job: node-exporter
+              instance: node-exporter:9100
+            exp_annotations:
+              summary: "Droplet node-exporter is down"
+              description: "Prometheus has failed to scrape node-exporter for 5 minutes. Host disk/memory alerts are blind until it recovers; check the container, its compose health and the scrape target."
+
+  # CASE 54: a healthy node-exporter MUST stay quiet on both rules.
+  - interval: 1m
+    input_series:
+      - series: 'up{job="node-exporter",instance="node-exporter:9100"}'
+        values: "1+0x15"
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: MCTServiceDown
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: MCTNodeExporterDown
         exp_alerts: []
