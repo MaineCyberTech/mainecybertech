@@ -179,7 +179,12 @@ jobs:
         # step only runs on a successful job, so a later Playwright/a11y
         # failure would throw away the freshly pulled tar and every run would
         # miss forever (TEST-P2-011).
+        #
+        # A concurrent miss/upload can make save fail because the key was
+        # reserved by another run; the cache is an optimization, so do not
+        # turn that race into an E2E failure.
         if: steps.save_supabase_images.outcome == 'success'
+        continue-on-error: true
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/supabase-images.tar
