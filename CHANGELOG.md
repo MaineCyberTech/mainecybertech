@@ -175,7 +175,7 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   its first check and runs in the shared test job, so duplicate migration
   timestamps gate PRs (DATA-P2-011).
 
-- **In-app notification dedup (42P10):** migration `5302463` replaces the
+- **In-app notification dedup (42P10):** migration `5302464` replaces the
   partial unique index on `notifications (notification_key)` with a full unique
   index. PostgreSQL cannot infer a partial index from a bare
   `ON CONFLICT (notification_key)` target, so every deduped insert from
