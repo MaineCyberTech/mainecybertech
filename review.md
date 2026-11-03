@@ -384,7 +384,7 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 ## RLS & schema hygiene
 
 `scripts/verify-rls.mjs` (CI: the shared unit-tests action) scans
-`supabase/migrations/` and reports **137 tables, all RLS-enabled, 1036
+`supabase/migrations/` and reports **137 tables, all RLS-enabled, 1035
 policies**. It fails on a live table without RLS, on a new migration whose
 `create policy` lacks a paired `drop policy if exists`, and on a new migration
 filename outside the `NNNNNNN_lower_snake_case.sql` convention
