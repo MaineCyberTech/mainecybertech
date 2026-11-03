@@ -203,6 +203,8 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   loopback skip no longer bypasses every limiter (`c934ed4d`), and the Express 5
   `req.ip` prototype getter is overridden safely (`6d747551`).
 - **In-app notification dedup (42P10):** migration `5302463` replaces the
+
+- **In-app notification dedup (42P10):** migration `5302464` replaces the
   partial unique index on `notifications (notification_key)` with a full unique
   index. PostgreSQL cannot infer a partial index from a bare
   `ON CONFLICT (notification_key)` target, so every deduped insert from
