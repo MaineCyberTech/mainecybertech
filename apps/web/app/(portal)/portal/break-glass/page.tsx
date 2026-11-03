@@ -32,7 +32,8 @@ export default async function PortalBreakGlassPage() {
       <h1 className="text-2xl font-semibold text-slate-50">Break Glass Accounts</h1>
       {loadFailed ? <DataErrorNote what="break-glass" /> : null}
       <p className="text-sm text-slate-400">
-        {items.length} break glass account{items.length !== 1 ? "s" : ""} for your organization.
+        {items.length} break glass account{items.length !== 1 ? "s" : ""} in this view (most recent
+        first).
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (

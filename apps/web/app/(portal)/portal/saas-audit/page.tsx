@@ -34,7 +34,8 @@ export default async function SaasAuditPage() {
       {loadFailed ? <DataErrorNote what="saas-audit" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">SaaS Subscription Audit</h1>
       <p className="text-sm text-slate-400">
-        {items.length} subscription{items.length !== 1 ? "s" : ""} tracked for your organization.
+        {items.length} subscription{items.length !== 1 ? "s" : ""} tracked in this view (most recent
+        first).
       </p>
       <div className="space-y-3">
         {items.map((item) => (

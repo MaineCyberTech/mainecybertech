@@ -2,6 +2,7 @@ import { env } from "../env";
 import { wsTransport } from "../services/supabase";
 import { logger } from "../logger";
 import { recordStripeReconcileDrift } from "../metrics";
+import { summarizeSubscriptionItems } from "@mct/config/subscription";
 import type { TaskHandler, TaskResult } from "../task-registry";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -25,6 +26,8 @@ interface StripeSubscription {
       quantity?: number | null;
       price: {
         id: string;
+        nickname?: string | null;
+        product?: string | { id?: string | null; name?: string | null } | null;
         unit_amount: number;
         currency: string;
         recurring?: { interval?: string | null } | null;
@@ -180,10 +183,7 @@ async function detectInvoiceDrift(
 
   let drift = 0;
   const mirrorCount = mirrorInvoices?.length ?? 0;
-  const mirrorSum = (mirrorInvoices ?? []).reduce(
-    (sum, row) => sum + (row.total_cents ?? 0),
-    0,
-  );
+  const mirrorSum = (mirrorInvoices ?? []).reduce((sum, row) => sum + (row.total_cents ?? 0), 0);
   const stripeSum = stripeInvoices.items.reduce((sum, inv) => sum + Math.round(inv.total ?? 0), 0);
 
   if (mirrorCount !== stripeInvoices.items.length) {
@@ -309,7 +309,7 @@ export const stripeReconcile: TaskHandler = async (payload): Promise<TaskResult>
     for (const customer of billingCustomers) {
       const { data: subscriptions, error: subError } = await supabase
         .from("subscriptions")
-        .select("stripe_subscription_id, status, created_at")
+        .select("stripe_subscription_id, status, created_at, amount_cents, quantity")
         .eq("organization_id", customer.organization_id)
         .order("created_at", { ascending: false });
 
@@ -361,28 +361,46 @@ export const stripeReconcile: TaskHandler = async (payload): Promise<TaskResult>
         );
       }
 
+      // BILL-P3-010: compare the mirrored amount too. The old write path only
+      // stored items.data[0], so a base plan + add-on understated the mirror
+      // and nothing ever flagged it.
+      const stripeSummary = summarizeSubscriptionItems(stripeSub.items?.data);
+      const mirrorAmount = (sub as { amount_cents?: number | null }).amount_cents ?? 0;
+      if (stripeSummary.amountCents !== mirrorAmount) {
+        drift++;
+        recordStripeReconcileDrift("subscription_amount");
+        logger.warn(
+          {
+            organizationId: customer.organization_id,
+            subscriptionId: stripeSub.id,
+            mirrorAmount,
+            stripeAmount: stripeSummary.amountCents,
+          },
+          "Subscription amount drift detected",
+        );
+      }
+
       // Write the fetched Stripe state back to the mirror (never under
       // dryRun) so the local copy converges even when a webhook was missed.
       // BILL-P2-001/P2-005: the trial, interval and cancellation lifecycle is
       // mirrored too, so the mirror can answer trial-window / cancel-at-period-
       // end / seat questions without a live Stripe call.
       if (!dryRun) {
-        const item = stripeSub.items?.data?.[0];
-        const price = item?.price;
         const { error: writeBackError } = await supabase
           .from("subscriptions")
           .update({
+            plan_name: stripeSummary.planName,
             status: stripeSub.status,
             current_period_start: toIsoOrNull(stripeSub.current_period_start),
             current_period_end: toIsoOrNull(stripeSub.current_period_end),
-            amount_cents: price?.unit_amount ?? 0,
-            currency: price?.currency ?? "usd",
-            interval: price?.recurring?.interval ?? null,
+            amount_cents: stripeSummary.amountCents,
+            currency: stripeSummary.currency,
+            interval: stripeSummary.interval,
             trial_start: toIsoOrNull(stripeSub.trial_start),
             trial_end: toIsoOrNull(stripeSub.trial_end),
             cancel_at_period_end: stripeSub.cancel_at_period_end ?? false,
             canceled_at: toIsoOrNull(stripeSub.canceled_at),
-            quantity: item?.quantity ?? null,
+            quantity: stripeSummary.quantity,
           })
           .eq("stripe_subscription_id", stripeSub.id);
 

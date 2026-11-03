@@ -10,6 +10,11 @@
 --
 -- The table carried RLS policies (5302058 / 5302112 / 5302129); dropping the
 -- table removes them with it. The seed inserts were removed in the same change.
+--
+-- Rollback: re-create the 5302058 shape (id, organization_id, module_key,
+-- enabled, created_at/updated_at) and its 5302058/5302112/5302129 RLS policies,
+-- then restore rows from backup/PITR — the dropped rows are gone. The table was
+-- orphaned in application code, so no code change is needed for the restore.
 -- =========================================================
 
 begin;

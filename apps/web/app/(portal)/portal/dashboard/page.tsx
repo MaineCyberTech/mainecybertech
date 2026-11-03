@@ -173,7 +173,7 @@ export default async function PortalDashboardPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="cyber-panel">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="cyber-heading text-lg">Recent Project Activity</h3>
+            <h2 className="cyber-heading text-lg">Recent Project Activity</h2>
             <Link href="/portal/projects" className="cyber-button-secondary">
               View Projects
             </Link>
@@ -207,7 +207,7 @@ export default async function PortalDashboardPage() {
 
         <section className="cyber-panel">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="cyber-heading text-lg">Recent Support Activity</h3>
+            <h2 className="cyber-heading text-lg">Recent Support Activity</h2>
             <Link href="/portal/support" className="cyber-button-secondary">
               View Support
             </Link>
@@ -242,7 +242,7 @@ export default async function PortalDashboardPage() {
 
       <section className="cyber-panel">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="cyber-heading text-lg">Recent Documents</h3>
+          <h2 className="cyber-heading text-lg">Recent Documents</h2>
           <Link href="/portal/documents" className="cyber-button-secondary">
             View Documents
           </Link>
@@ -279,7 +279,7 @@ export default async function PortalDashboardPage() {
 
       <section className="cyber-panel">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="cyber-heading text-lg">Recent Activity</h3>
+          <h2 className="cyber-heading text-lg">Recent Activity</h2>
         </div>
         <div className="mt-4 space-y-3">
           {recentActivity.length > 0 ? (

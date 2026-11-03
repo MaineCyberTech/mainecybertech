@@ -34,7 +34,8 @@ export default async function PortalIncidentResponsePage() {
       <h1 className="text-2xl font-semibold text-slate-50">Incident Response</h1>
       {loadFailed ? <DataErrorNote what="incident-response" /> : null}
       <p className="text-sm text-slate-400">
-        {items.length} incident{items.length !== 1 ? "s" : ""} tracked for your organization.
+        {items.length} incident{items.length !== 1 ? "s" : ""} tracked in this view (most recent
+        first).
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (

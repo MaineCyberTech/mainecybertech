@@ -2,6 +2,11 @@
 
 **Category:** Compliance
 **API Routes:** `apps/api/src/routes/insurance-binder.ts`
+
+> **One-way request:** this portal module exposes create/list only. Status
+> changes and history are handled by the account team (FEAT-P3-010); the API
+> still exposes detail/update/lifecycle for staff tooling.
+
 **SDK:** `packages/sdk/src/insurance-binder.ts`
 
 ## Overview

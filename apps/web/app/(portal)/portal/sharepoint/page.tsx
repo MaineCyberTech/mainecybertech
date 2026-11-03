@@ -34,7 +34,8 @@ export default async function SharePointPage() {
       {loadFailed ? <DataErrorNote what="sharepoint" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">SharePoint &amp; Teams</h1>
       <p className="text-sm text-slate-400">
-        {items.length} configuration{items.length !== 1 ? "s" : ""} for your organization.
+        {items.length} configuration{items.length !== 1 ? "s" : ""} in this view (most recent
+        first).
       </p>
       <div className="space-y-3">
         {items.map((item) => (

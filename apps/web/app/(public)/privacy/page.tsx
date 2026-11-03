@@ -130,16 +130,16 @@ export default function PrivacyPage() {
               Cookies, Analytics &amp; Your Choices
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
-              Non-essential third-party scripts are loaded only after you accept them in the
-              consent banner. Until then, no analytics or live-chat script is loaded and no IP
-              address or location is sent to third parties. We also send Google&apos;s Consent Mode
-              v2 signals: all storage is denied by default, analytics storage is granted only after
-              you accept, and withdrawing your choice sends a denied update immediately. Your
-              choice is stored in your browser and recorded in our systems together with the
-              version of this policy and a timestamp. You can change or withdraw your choice at
-              any time using the &ldquo;Cookie settings&rdquo; link in the footer; the change takes
-              effect immediately for scripts that have not yet loaded and on your next page load
-              for scripts already loaded.
+              Non-essential third-party scripts are loaded only after you accept them in the consent
+              banner. Until then, no analytics or live-chat script is loaded and no IP address or
+              location is sent to third parties. We also send Google&apos;s Consent Mode v2 signals:
+              all storage is denied by default, analytics storage is granted only after you accept,
+              and withdrawing your choice sends a denied update immediately. Your choice is stored
+              in your browser and recorded in our systems together with the version of this policy
+              and a timestamp. You can change or withdraw your choice at any time using the
+              &ldquo;Cookie settings&rdquo; link in the footer; the change takes effect immediately
+              for scripts that have not yet loaded and on your next page load for scripts already
+              loaded.
             </p>
             <div className="mt-4 overflow-x-auto">
               <table className="cyber-text w-full min-w-[640px] border-collapse text-left text-sm">
@@ -181,10 +181,10 @@ export default function PrivacyPage() {
               <li>
                 <strong className="text-slate-200">Visitor sessions</strong> &mdash; the{" "}
                 <code className="font-mono text-xs">public_interactions</code> record created for
-                our contact and intake forms. It stores the referring page and browser platform
-                for every visitor; your IP address, approximate location and browser details are
-                added only after you accept analytics, together with the timestamp and version of
-                the policy you accepted.
+                our contact and intake forms. It stores the referring page and browser platform for
+                every visitor; your IP address, approximate location and browser details are added
+                only after you accept analytics, together with the timestamp and version of the
+                policy you accepted.
               </li>
               <li>
                 <strong className="text-slate-200">Storefront analytics</strong> &mdash; anonymous{" "}
@@ -204,13 +204,13 @@ export default function PrivacyPage() {
               described in this policy, or as required by law. Contact form submissions and visitor
               session records are purged from our systems after 90 days. Store quote requests
               &mdash; the name, email and phone number you submit with a quote, together with the
-              items and notes &mdash; are purged from our systems after 90 days. Copies forwarded
-              to Microsoft Teams and Atlassian JSM for lead tracking are retained under those
-              providers&apos; retention settings and may persist longer. First-party store analytics
-              events contain no personal information and are also purged after 90 days. Google
-              Analytics data is retained in accordance with our Google Analytics property&apos;s
-              data-retention setting, and error telemetry sent to Sentry is retained according to
-              our Sentry organization&apos;s retention setting.
+              items and notes, and any generated proposal draft &mdash; are purged from our systems
+              after 90 days. Copies forwarded to Microsoft Teams and Atlassian JSM for lead tracking
+              are retained under those providers&apos; retention settings and may persist longer.
+              First-party store analytics events contain no personal information and are also purged
+              after 90 days. Google Analytics data is retained in accordance with our Google
+              Analytics property&apos;s data-retention setting, and error telemetry sent to Sentry
+              is retained according to our Sentry organization&apos;s retention setting.
             </p>
           </section>
 

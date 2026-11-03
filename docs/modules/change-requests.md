@@ -20,17 +20,17 @@ Lightweight Change Advisory Board (CAB) tool for small MSP teams. Manages change
 
 ## Endpoints
 
-| Method | Path                                  | Description                                                          |
-| ------ | ------------------------------------- | -------------------------------------------------------------------- |
-| GET    | /api/v1/change-requests               | List change requests (paginated, filterable by org/type/risk/status) |
-| POST   | /api/v1/change-requests               | Submit change request                                                |
-| GET    | /api/v1/change-requests/:id           | Get change with votes, implementation, PIR                           |
-| PATCH  | /api/v1/change-requests/:id           | Update change metadata                                               |
-| DELETE | /api/v1/change-requests/:id           | Cancel/delete change request                                         |
-| POST   | /api/v1/change-requests/:id/vote      | Cast CAB vote                                                        |
-| POST   | /api/v1/change-requests/:id/implement | Mark implementation started                                          |
-| POST   | /api/v1/change-requests/:id/pir       | Submit post-implementation review                                    |
-| GET    | /api/v1/change-requests/export        | Export change history as CSV                                         |
+| Method | Path                                             | Description                                                          |
+| ------ | ------------------------------------------------ | -------------------------------------------------------------------- |
+| GET    | /api/v1/governance/change-requests               | List change requests (paginated, filterable by org/type/risk/status) |
+| POST   | /api/v1/governance/change-requests               | Submit change request                                                |
+| GET    | /api/v1/governance/change-requests/:id           | Get change with votes, implementation, PIR                           |
+| PATCH  | /api/v1/governance/change-requests/:id           | Update change metadata                                               |
+| DELETE | /api/v1/governance/change-requests/:id           | Cancel/delete change request                                         |
+| POST   | /api/v1/governance/change-requests/:id/vote      | Cast CAB vote                                                        |
+| POST   | /api/v1/governance/change-requests/:id/implement | Mark implementation started                                          |
+| POST   | /api/v1/governance/change-requests/:id/pir       | Submit post-implementation review                                    |
+| GET    | /api/v1/governance/change-requests/export        | Export change history as CSV                                         |
 
 ## Data Model
 

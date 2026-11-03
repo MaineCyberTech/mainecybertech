@@ -19,6 +19,7 @@ type SortKey = "updated" | "name" | "type";
 
 type Props = {
   documents: DocumentRecord[];
+  total?: number;
   organizationId: string;
   uploadAction: (
     formData: FormData,
@@ -58,6 +59,7 @@ function docExtension(filename?: string | null) {
 
 export default function PortalDocumentsCenterClient({
   documents,
+  total,
   organizationId,
   uploadAction,
   bulkFolderAction,
@@ -268,7 +270,11 @@ export default function PortalDocumentsCenterClient({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h2 className="cyber-heading text-lg">Document Library</h2>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400">{sorted.length} documents</span>
+            <span className="text-xs text-slate-400">
+              {sorted.length}
+              {typeof total === "number" && total > documents.length ? ` of ${total}` : ""}{" "}
+              documents
+            </span>
             <div className="flex overflow-hidden rounded-lg border border-white/10">
               {(["list", "table", "grid"] as ViewMode[]).map((mode) => (
                 <button

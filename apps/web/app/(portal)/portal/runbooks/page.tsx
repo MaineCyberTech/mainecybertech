@@ -33,7 +33,7 @@ export default async function PortalRunbooksPage() {
       <PortalSubnav current="runbooks" />
       {loadFailed ? <DataErrorNote what="runbooks" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Runbooks</h1>
-      <p className="text-sm text-slate-400">{items.length} runbooks for your organization.</p>
+      <p className="text-sm text-slate-400">Showing the most recent {items.length} runbooks.</p>
       <div className="space-y-3">
         {items.map((item) => (
           <Link
