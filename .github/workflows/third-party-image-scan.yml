@@ -90,6 +90,8 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: "1"
           ignore-unfixed: true
+          # Time-boxed upstream-blocked entries only; see .trivyignore.
+          trivyignores: .trivyignore
           format: table
 
       - name: Generate ${{ matrix.image }} SBOM (CycloneDX)
@@ -111,7 +113,7 @@ jobs:
           IMAGE_REF: ${{ matrix.image }}
         run: |
           digest="sha256:${IMAGE_REF##*@sha256:}"
-          node scripts/validate-sbom.mjs --image --digest "$digest" third-party-sbom.cdx.json
+          node scripts/validate-sbom.mjs --image --allow-missing-versions --digest "$digest" third-party-sbom.cdx.json
 
       - name: Upload the SBOM
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

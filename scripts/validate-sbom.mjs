@@ -21,13 +21,17 @@
  *
  * Usage:
  *   node scripts/validate-sbom.mjs [sbomPath]
- *   node scripts/validate-sbom.mjs --image [--digest sha256:...] image-sbom.cdx.json
+ *   node scripts/validate-sbom.mjs --image [--digest sha256:...] [--allow-missing-versions] image-sbom.cdx.json
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const args = process.argv.slice(2);
 const imageMode = args.includes("--image");
+// Third-party images (Trivy-generated SBOMs) legitimately contain components
+// without a version (e.g. the image's own binary). Keep the first-party check
+// strict; allow the version gap only when explicitly requested.
+const allowMissingComponentVersions = args.includes("--allow-missing-versions");
 const digestIndex = args.indexOf("--digest");
 const expectedDigest = digestIndex !== -1 ? (args[digestIndex + 1] ?? null) : null;
 if (digestIndex !== -1 && !expectedDigest) {
@@ -38,7 +42,7 @@ if (digestIndex !== -1 && !expectedDigest) {
 // The old `index !== digestIndex + 1` filter dropped the first positional path
 // when digestIndex was -1, silently validating ./sbom.cdx.json instead.
 const positional = args.filter((arg, index) => {
-  if (arg === "--image" || arg === "--digest") return false;
+  if (arg === "--image" || arg === "--digest" || arg === "--allow-missing-versions") return false;
   if (digestIndex !== -1 && index === digestIndex + 1) return false;
   return true;
 });
@@ -59,7 +63,9 @@ const seen = new Set();
 for (const component of components) {
   check(Boolean(component["bom-ref"]), "component missing bom-ref");
   check(Boolean(component.name), `component ${component["bom-ref"] ?? "?"} missing name`);
-  check(Boolean(component.version), `component ${component["bom-ref"] ?? "?"} missing version`);
+  if (!allowMissingComponentVersions) {
+    check(Boolean(component.version), `component ${component["bom-ref"] ?? "?"} missing version`);
+  }
   if (seen.has(component["bom-ref"])) {
     errors.push(`duplicate bom-ref: ${component["bom-ref"]}`);
   }
