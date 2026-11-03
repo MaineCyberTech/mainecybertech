@@ -13,8 +13,9 @@ Production stack for the Maine CyberTech Portal on a single DigitalOcean droplet
 | `worker`       | `ghcr.io/mainecybertech/mainecybertech/mct-worker:${IMAGE_TAG}` | BullMQ consumer, health on 3001                                      |
 | `redis`        | `redis:7.4.11-alpine` (digest-pinned)                           | BullMQ backend; `REDIS_PASSWORD` required                            |
 | `caddy`        | `caddy:2.11.7-alpine` (digest-pinned)                           | TLS reverse proxy on ports 80/443                                    |
-| `prometheus`   | `prom/prometheus:v3.5.1` (digest-pinned)                        | Internal-only metrics scraping (no ports)                            |
-| `alertmanager` | `prom/alertmanager:v0.28.1` (digest-pinned)                     | Internal-only alert delivery + dead-man's-switch receiver (no ports) |
+| `prometheus`   | `prom/prometheus:v3.15.1` (digest-pinned)                       | Internal-only metrics scraping (no ports)                            |
+| `alertmanager` | `prom/alertmanager:v0.29.0` (digest-pinned)                     | Internal-only alert delivery + dead-man's-switch receiver (no ports) |
+| `node-exporter` | `prom/node-exporter:v1.12.1` (digest-pinned)                    | Internal-only host CPU/memory/filesystem/load metrics (no ports)     |
 
 `GHCR_IMAGE_PREFIX` overrides the image prefix (default
 `ghcr.io/mainecybertech/mainecybertech`).

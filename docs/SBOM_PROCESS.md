@@ -94,9 +94,10 @@ registry, or the deploy host.
 
 ### Third-party runtime images and Actions dependencies (SBOM-P3-008)
 
-The compose stack also runs four digest-pinned third-party images — `redis`,
-`prom/prometheus`, `prom/alertmanager` and `caddy` — plus the SHA-pinned GitHub
-Actions the workflows execute. Coverage status as of 2026-10-12:
+The compose stack also runs five digest-pinned third-party images — `redis`,
+`prom/prometheus`, `prom/alertmanager`, `caddy` and `prom/node-exporter` — plus
+the SHA-pinned GitHub Actions the workflows execute. Coverage status as of
+2026-11-03:
 
 - **Third-party images:** `third-party-image-scan.yml` resolves the
   digest-pinned refs straight from `infra/digitalocean/docker-compose.yml` on

@@ -149,6 +149,14 @@ runs:
       shell: bash
       run: scripts/ci/check-migration-transactions.sh
 
+    - name: Run pre-deployment preflight checks (DATA-P2-011)
+      # The duplicate-timestamp assertion used to abort on its first passing
+      # check (`((PASS++))` returns 1 under `set -e`) and no workflow ran the
+      # script, so a duplicate migration version shipped. Run it in the shared
+      # PR/deploy test job so the check is a real gate.
+      shell: bash
+      run: bash scripts/preflight-check.sh
+
     - name: Verify required branch-protection checks resolve (BP-P2-005)
       # Every required context in .github/branch-protection/*.json must be a
       # check-run name some workflow emits, and the emitting workflow's

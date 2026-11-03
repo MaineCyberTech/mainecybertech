@@ -50,6 +50,7 @@ jobs:
       name: ${{ steps.env.outputs.name }}
       app_domain: ${{ steps.env.outputs.app_domain }}
       api_domain: ${{ steps.env.outputs.api_domain }}
+      public_api_check_url: ${{ steps.env.outputs.public_api_check_url }}
       www_domain: ${{ steps.env.outputs.www_domain }}
       deploy_host: ${{ steps.env.outputs.deploy_host }}
       cors_origin: ${{ steps.env.outputs.cors_origin }}
@@ -94,12 +95,19 @@ jobs:
             WWW_DOMAIN=www.mainecybertech.com
             ENV_NAME=prod
             DROPLET_NAME=mct-portal-prod
+            # OBS-P1-002: api.mainecybertech.com resolves to a retired
+            # non-droplet endpoint that answers 404, so the public readiness
+            # check uses the same app-host API read as the uptime probe
+            # (scripts/uptime/probe-targets.json). The authoritative API health
+            # gate is still the container healthcheck in `deploy`.
+            PUBLIC_API_CHECK_URL="https://$APP_DOMAIN/api/v1/store/products"
           else
             APP_DOMAIN=app.mainecybertech.us
             API_DOMAIN=api.mainecybertech.us
             WWW_DOMAIN=www.mainecybertech.us
             ENV_NAME=dev
             DROPLET_NAME=mct-portal-dev
+            PUBLIC_API_CHECK_URL="https://$API_DOMAIN/health"
           fi
           # Test accounts page is enabled on dev only
           if [ "$ENV_NAME" = "dev" ]; then
@@ -110,6 +118,7 @@ jobs:
           echo "name=$ENV_NAME" >> $GITHUB_OUTPUT
           echo "app_domain=$APP_DOMAIN" >> $GITHUB_OUTPUT
           echo "api_domain=$API_DOMAIN" >> $GITHUB_OUTPUT
+          echo "public_api_check_url=$PUBLIC_API_CHECK_URL" >> $GITHUB_OUTPUT
           echo "www_domain=$WWW_DOMAIN" >> $GITHUB_OUTPUT
           echo "deploy_host=$DROPLET_NAME" >> $GITHUB_OUTPUT
           echo "cors_origin=https://$APP_DOMAIN,https://$WWW_DOMAIN" >> $GITHUB_OUTPUT
@@ -1129,8 +1138,9 @@ jobs:
 
       - name: Health check
         env:
-          API_DOMAIN: ${{ needs.setup.outputs.api_domain }}
           APP_DOMAIN: ${{ needs.setup.outputs.app_domain }}
+          PUBLIC_API_CHECK_URL: ${{ needs.setup.outputs.public_api_check_url }}
+          ENV_NAME: ${{ needs.setup.outputs.name }}
           DROPLET_IP: ${{ needs.resolve-ip.outputs.droplet_ip }}
           CI_SSH_PRIVATE_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           DO_SSH_HOST_KEY: ${{ secrets.DO_SSH_HOST_KEY }}
@@ -1152,9 +1162,15 @@ jobs:
           SSH="ssh -i $KEY_FILE -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$KNOWN_HOSTS -o ConnectTimeout=10 root@$DROPLET_IP"
           api_ok=""
           for i in $(seq 1 30); do
-            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$API_DOMAIN/health" 2>/dev/null | tr -d '\r\n' || echo "000")
-            if [ "$CODE" = "200" ]; then echo "API ready after $((i*4))s (HTTP 200)"; api_ok=1; break; fi
-            echo "Attempt $i/30: $CODE"; sleep 4
+            # OBS-P1-002: in prod this is the app-host API read the uptime
+            # probe uses, not the retired api.mainecybertech.com/health host.
+            # Assert the expected JSON body, not just a 200 (a web-host 200
+            # for an unrelated route must not pass the API gate).
+            CODE=$(curl -sS -o /tmp/api-health-body -w "%{http_code}" --connect-timeout 5 --max-time 10 "$PUBLIC_API_CHECK_URL" 2>/dev/null | tr -d '\r\n' || echo "000")
+            if [ "$CODE" = "200" ] && { [ "$ENV_NAME" != "prod" ] || jq -e '.success == true' /tmp/api-health-body >/dev/null 2>&1; }; then
+              echo "API ready after $((i*4))s ($PUBLIC_API_CHECK_URL, HTTP 200)"; api_ok=1; break
+            fi
+            echo "Attempt $i/30: $CODE ($PUBLIC_API_CHECK_URL)"; sleep 4
           done
           if [ -z "$api_ok" ]; then
             echo "===== API CONTAINER LOGS START ====="

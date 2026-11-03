@@ -34,7 +34,7 @@
 | `record-backup-heartbeat.sh` | Record the platform backup heartbeat (`platform_backup_heartbeats`) after a successful backup run (DR-P2-008). |
 | `restore-storage.sh` | Restore uploaded files from a storage backup archive (Linux/macOS). |
 | `dev-setup.sh` | One-shot developer environment setup (Linux/macOS). |
-| `preflight-check.sh` | Pre-deploy sanity checks (env files, tool versions). |
+| `preflight-check.sh` | Pre-deploy sanity checks (Dockerfiles, env files, duplicate migration timestamps, workflow files); runs in the shared PR/deploy test job. |
 | `rollback.sh` | Roll back the last deployment on the droplet (Linux/macOS). |
 | `terraform-state-restore.sh` | Emergency Terraform state restore from the versioned DO Spaces backend (`--list`/`--scratch`/`--restore`; DR-P3-005 / IR-P3-001). |
 | `validate-terraform-env.sh` | Validate Terraform env files before plan/apply (scans `env/` and the module root, INFRA-P3-007). |

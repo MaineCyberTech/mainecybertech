@@ -2,7 +2,7 @@
 # IR-P2-010, NOTIF-P1-003, OBS-P2-005/006/009/012, MT-P2-005, WH-P2-010).
 #
 # Run from the repo root (CI does this in .github/actions/prometheus-rules):
-#   PROM_IMAGE=prom/prometheus:v3.5.1@sha256:4b05278adfb2e2781063781edd7ca88cc649ea5270cea1696618886a37eeb298
+#   PROM_IMAGE=prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
 #   docker run --rm -v "$PWD/infra/digitalocean:/cfg:ro" --entrypoint /bin/promtool \
 #     "$PROM_IMAGE" check rules /cfg/prometheus.rules.yml
 #   docker run --rm -v "$PWD/infra/digitalocean:/cfg:ro" --entrypoint /bin/promtool \

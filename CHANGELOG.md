@@ -161,6 +161,20 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Fixed
 
+- **Nov 3 re-audit CI/docs batch:** E2E's Supabase image cache is keyed to
+  CLI 2.122.1 with a fresh v2 seed and fails loudly on a partial archive
+  (TEST-P2-011); `PSF-2.0` is allowed by the PR dependency-review gate and
+  documented (SBOM-P1-006); the prod deploy readiness gate uses the app-host API
+  read instead of the retired `api.mainecybertech.com/health` host
+  (OBS-P1-002); third-party Trivy exceptions are per-image under
+  `.trivyignore.d/` instead of one global file (CTR-P2-007); operator docs,
+  monitoring tables and the image-scan header match the deployed five-image
+  stack (CTR-P3-006 / INFRA-P2-003 / DET-P3-003); promtool runs the deployed
+  Prometheus v3.15.1 (INFRA-P3-011); CI installs the lockfile's Supabase CLI
+  2.122.1 (EVOL-P3-010); and `scripts/preflight-check.sh` no longer aborts on
+  its first check and runs in the shared test job, so duplicate migration
+  timestamps gate PRs (DATA-P2-011).
+
 - **In-app notification dedup (42P10):** migration `5302463` replaces the
   partial unique index on `notifications (notification_key)` with a full unique
   index. PostgreSQL cannot infer a partial index from a bare

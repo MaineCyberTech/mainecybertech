@@ -186,10 +186,12 @@ read there. The documented `api.mainecybertech.com` hostname still resolves to
 a retired non-droplet endpoint that answers 404 for every path (an Express
 service, not the droplet's Caddy — see `docs/PRODUCTION_VS_TESTING_DOMAINS.md`
 for the current droplet topology). Repointing that DNS record at the prod
-droplet is operator work; until it is done, the same 404 also fails the prod
-deploy's public API gate in `deploy-do.yml` (`https://$API_DOMAIN/health`),
-which is a separate residual. Once the record is fixed, add an
-`api.mainecybertech.com/health` target back to the probe list.
+droplet is operator work. The prod deploy's public API readiness gate uses the
+same app-host API read (`https://app.mainecybertech.com/api/v1/store/products`,
+asserting the JSON success envelope) instead of the dead `/health` host
+(OBS-P1-002); the container healthchecks remain the authoritative gate. Once the
+record is fixed, add an `api.mainecybertech.com/health` target back to the probe
+list.
 
 ### Functional smoke check (TEST-P3-002)
 
@@ -227,6 +229,7 @@ override it), each with its own interval:
 | **web**          | `wget --spider http://127.0.0.1:3000` (Dockerfile)                      | 30s (40s start period) | 3       |
 | **prometheus**   | `wget --spider -q http://localhost:9090/-/ready`                        | 30s (15s start period) | 3       |
 | **alertmanager** | `wget --spider -q http://localhost:9093/-/healthy`                      | 30s (10s start period) | 3       |
+| **node-exporter** | `/bin/node_exporter --version` (scratch image: no shell/HTTP client)    | 30s (10s start period) | 3       |
 | **caddy**        | `caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile`      | 30s (20s start period) | 3       |
 
 Unhealthy containers are automatically restarted via `restart: unless-stopped`.
@@ -235,7 +238,7 @@ Unhealthy containers are automatically restarted via `restart: unless-stopped`.
 
 ## 4. Prometheus Metrics (implemented)
 
-`GET /metrics` (`apps/api/src/app.ts`) exposes Prometheus-formatted counters and histograms behind a **fail-closed shared-token gate**: it returns **404 unless `METRICS_TOKEN` is configured and the caller presents it as a bearer token** (an unset token disables the endpoint rather than exposing metric labels). `infra/digitalocean/docker-compose.yml` runs a `prometheus` service (`prom/prometheus:v3.5.1`) that scrapes it using `prometheus.yml` + `prometheus.rules.yml`, authenticating the API scrape with the `METRICS_TOKEN` bearer credential from the deploy-written `metrics-token` credentials file (mode 400, owned by the container user so the scrape can read it). In production Caddy returns 404 for `/metrics`, so scraping is internal to the compose network.
+`GET /metrics` (`apps/api/src/app.ts`) exposes Prometheus-formatted counters and histograms behind a **fail-closed shared-token gate**: it returns **404 unless `METRICS_TOKEN` is configured and the caller presents it as a bearer token** (an unset token disables the endpoint rather than exposing metric labels). `infra/digitalocean/docker-compose.yml` runs a `prometheus` service (`prom/prometheus:v3.15.1`) that scrapes it using `prometheus.yml` + `prometheus.rules.yml`, authenticating the API scrape with the `METRICS_TOKEN` bearer credential from the deploy-written `metrics-token` credentials file (mode 400, owned by the container user so the scrape can read it). In production Caddy returns 404 for `/metrics`, so scraping is internal to the compose network.
 
 ### Custom metrics
 

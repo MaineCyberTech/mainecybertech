@@ -13,13 +13,13 @@ check() {
   local label="$1" result="$2"
   if [ "$result" = "pass" ]; then
     echo "  ✅ $label"
-    ((PASS++))
+    PASS=$((PASS + 1))
   elif [ "$result" = "skip" ]; then
     echo "  ⏭️  $label"
-    ((SKIP++))
+    SKIP=$((SKIP + 1))
   else
     echo "  ❌ $label"
-    ((FAIL++))
+    FAIL=$((FAIL + 1))
   fi
 }
 
@@ -31,9 +31,9 @@ echo "--- Dockerfile checks ---"
 check "apps/api/Dockerfile exists"                 "$([ -f apps/api/Dockerfile ] && echo pass || echo fail)"
 check "apps/web/Dockerfile exists"                 "$([ -f apps/web/Dockerfile ] && echo pass || echo fail)"
 check "apps/worker/Dockerfile exists"              "$([ -f apps/worker/Dockerfile ] && echo pass || echo fail)"
-API_DISTRO=$(head -1 apps/api/Dockerfile 2>/dev/null | grep -c "node:20-alpine" && echo pass || echo fail)
+API_DISTRO=$(if head -1 apps/api/Dockerfile 2>/dev/null | grep -q "node:20-alpine"; then echo pass; else echo fail; fi)
 check "API uses node:20-alpine (not :latest)"      "$API_DISTRO"
-WORKER_DISTRO=$(head -1 apps/worker/Dockerfile 2>/dev/null | grep -c "node:20-alpine" && echo pass || echo fail)
+WORKER_DISTRO=$(if head -1 apps/worker/Dockerfile 2>/dev/null | grep -q "node:20-alpine"; then echo pass; else echo fail; fi)
 check "Worker uses node:20-alpine (not :latest)"   "$WORKER_DISTRO"
 
 # --- docker-compose ---
@@ -47,7 +47,7 @@ echo ""
 echo "--- Migration checks ---"
 MIGRATIONS=$(find supabase/migrations -name "*.sql" 2>/dev/null | wc -l)
 check "Supabase migrations exist (>= 1)"           "$([ "$MIGRATIONS" -ge 1 ] && echo pass || echo fail)"
-MIGRATION_DUPES=$(find supabase/migrations -name "*.sql" 2>/dev/null | sed 's|.*/||' | cut -d_ -f1 | sort | uniq -d)
+MIGRATION_DUPES=$(find supabase/migrations -name "*.sql" 2>/dev/null | sed 's|.*/||' | cut -d_ -f1 | sort | uniq -d || true)
 check "No duplicate migration timestamps"          "$([ -z "$MIGRATION_DUPES" ] && echo pass || echo fail)"
 
 # --- Environment ---
