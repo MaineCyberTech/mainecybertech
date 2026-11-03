@@ -857,10 +857,14 @@ export async function updateChecklistItem(
 
   if (currentError) throw new AppError("NOT_FOUND", "Checklist item not found", 404);
 
-  const updateData: Record<string, unknown> = { ...input };
+  // Map the camelCase input onto the snake_case columns; the previous spread
+  // wrote `isCompleted`/`completedBy` (non-existent columns) and failed.
+  const updateData: Record<string, unknown> = {};
+  if (input.isCompleted !== undefined) updateData.is_completed = input.isCompleted;
+  if (input.notes !== undefined) updateData.notes = input.notes;
   if (input.isCompleted && !current.is_completed) {
     updateData.completed_at = new Date().toISOString();
-    updateData.completed_by = input.completedBy;
+    updateData.completed_by = input.completedBy ?? userId;
   } else if (!input.isCompleted && current.is_completed) {
     updateData.completed_at = null;
     updateData.completed_by = null;

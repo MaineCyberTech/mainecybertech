@@ -111,6 +111,13 @@ export default async function AssetsPage({ searchParams }: AssetsPageProps) {
           { key: "purchaseDate", label: "Purchase Date", type: "date" },
           { key: "warrantyExpires", label: "Warranty Expires", type: "date" },
           { key: "location", label: "Location" },
+          {
+            key: "visibility",
+            label: "Client Visibility",
+            type: "select",
+            options: ["internal", "client_visible"],
+            required: true,
+          },
         ]}
         title="New Asset"
         action={createAsset}

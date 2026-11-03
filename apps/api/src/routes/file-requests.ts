@@ -15,6 +15,7 @@ import { scanUploadForMalware } from "../lib/malware-scan";
 import { signedUrlDisposition } from "../lib/preview-policy";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { applyClientVisibility, isClientVisible } from "../lib/client-visibility";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -308,6 +309,7 @@ router.get("/", async (req, res, next) => {
       .eq("organization_id", req.query.organization_id as string);
     const status = req.query.status as string | undefined;
     if (status) q = q.eq("status", status);
+    ({ query: q } = await applyClientVisibility(q, req));
 
     const { data, error, count } = await q
       .order("created_at", { ascending: false })
@@ -331,6 +333,9 @@ router.get("/:id", async (req, res, next) => {
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "File request not found", 404);
+    if (!(await isClientVisible(req, data as unknown as Record<string, unknown>))) {
+      throw new AppError("NOT_FOUND", "File request not found", 404);
+    }
     res.json(success(data));
   } catch (error) {
     next(error);
@@ -396,7 +401,11 @@ router.get("/:id/uploads/:uploadId/signed-url", async (req, res, next) => {
     // disposition so they cannot render inline from the storage origin.
     const { data: signedUrl, error: urlError } = await supabase.storage
       .from(upload.storage_bucket)
-      .createSignedUrl(upload.storage_path, 3600, signedUrlDisposition(upload.mime_type, upload.file_name));
+      .createSignedUrl(
+        upload.storage_path,
+        3600,
+        signedUrlDisposition(upload.mime_type, upload.file_name),
+      );
     if (urlError || !signedUrl)
       throw new AppError("STORAGE_ERROR", "Failed to create signed URL", 500);
 

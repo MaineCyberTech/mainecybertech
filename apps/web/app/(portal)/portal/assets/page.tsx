@@ -5,20 +5,33 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import AdminPagination from "@/components/admin/AdminPagination";
 import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Assets - Portal - Maine CyberTech" };
 
-export default async function PortalAssetsPage() {
+const DEFAULT_LIMIT = 25;
+
+export default async function PortalAssetsPage(props: {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+}) {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  const sp = (await props.searchParams) ?? {};
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
   let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
+  let total = 0;
   try {
-    const r = await api.assets.list({ organizationId: orgId });
+    const r = await api.assets.list({ organizationId: orgId, page, limit });
     items = r.items as unknown as typeof items;
+    total = r.total ?? items.length;
   } catch (error) {
     console.error("[assets/page]", error);
     loadFailed = true;
@@ -31,7 +44,7 @@ export default async function PortalAssetsPage() {
       {loadFailed ? <DataErrorNote what="assets" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Assets</h1>
       <p className="text-sm text-slate-400">
-        {items.length} hardware assets registered for your organization.
+        {total} hardware asset{total !== 1 ? "s" : ""} registered for your organization.
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (
@@ -55,6 +68,13 @@ export default async function PortalAssetsPage() {
           <p className="col-span-2 text-sm text-slate-400">No assets registered.</p>
         )}
       </div>
+      <AdminPagination
+        currentPage={page}
+        totalPages={Math.ceil(total / limit)}
+        buildHref={(p) => `/portal/assets?page=${p}&limit=${limit}`}
+        total={total}
+        limit={limit}
+      />
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard
       </Link>

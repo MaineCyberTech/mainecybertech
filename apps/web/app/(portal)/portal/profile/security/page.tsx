@@ -56,7 +56,7 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
           { label: "Security" },
         ]}
       />
-      <PortalSubnav current="dashboard" />
+      <PortalSubnav current="profile" />
       {loadError ? (
         <div
           role="alert"

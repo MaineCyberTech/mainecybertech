@@ -454,3 +454,52 @@ groups:
         annotations:
           summary: "Redis operations failing on {{ $labels.job }} ({{ $labels.component }})"
           description: "Redis {{ $labels.operation }} operations for {{ $labels.component }} on {{ $labels.job }} fell back to a degraded path in the last 15 minutes (in-memory idempotency, memory cache, or a scan running without its lock). Check the redis container and the fallback logs; duplicate side effects and lost scan dedup become possible."
+
+  # Host-resource alarms (2026-10-15). The local stack previously scraped only
+  # the API and worker, so a droplet could run out of disk or memory with every
+  # rule green — the dev droplet was found at 98% disk (615 MB free) with no
+  # alert anywhere in this stack. These read the node-exporter job added in
+  # prometheus.yml; the single-root-filesystem thresholds fit the 24 GB droplet
+  # (warning gives ~3.6 GB free, critical ~1.7 GB).
+  - name: mct-host-resources
+    rules:
+      - alert: MCTHostDiskSpaceLow
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/"}
+            /
+            node_filesystem_size_bytes{mountpoint="/"}
+          ) < 0.15
+        for: 15m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Droplet root filesystem is below 15% free"
+          description: "The droplet's root filesystem has been below 15% free space for 15 minutes. Prune Docker images and volumes, vacuum the journal and check /tmp - a full root filesystem takes down every container on this host."
+
+      - alert: MCTHostDiskSpaceCritical
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/"}
+            /
+            node_filesystem_size_bytes{mountpoint="/"}
+          ) < 0.07
+        for: 10m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Droplet root filesystem is below 7% free"
+          description: "The droplet's root filesystem has been below 7% free space for 10 minutes: containers can fail to write, and Docker pulls / deploys may fail. Free space immediately (Docker prune, journal vacuum, /tmp) and follow docs/PLATFORM_FAILURE_RUNBOOKS.md."
+
+      - alert: MCTHostMemoryPressure
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.9
+        for: 15m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Droplet memory pressure above 90%"
+          description: "Less than 10% of the droplet's memory has been available for 15 minutes. Check the container memory limits (docker stats), swap usage and any recent leaks; sustained pressure ends in OOM kills."

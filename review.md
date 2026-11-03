@@ -102,14 +102,14 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,653 tests, all passing. 517 suites.**
+**4,674 tests, all passing. 521 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,991         | 174   | Jest + supertest                  |
-| Web     | 2,026         | 306   | Jest + Testing Library            |
-| SDK     | 325           | 5   | Jest (mocked fetch)               |
-| Worker  | 311           | 32   | Jest (env schema + task handlers) |
+| API     | 2,003         | 176    | Jest + supertest                  |
+| Web     | 2,035         | 308    | Jest + Testing Library            |
+| SDK     | 325           | 5      | Jest (mocked fetch)               |
+| Worker  | 311           | 32     | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
 
 Suite counts and the E2E spec count are counted from the tree by
@@ -127,7 +127,7 @@ the `.jest-results.json` each package writes during `test:coverage` (CI sets
 - **`webhook_dead_letters` RLS writes (open, low):** the table has RLS but no user-scoped `DELETE` policy; the dead-letter API uses the service-role client for deletes, so it is safe today. If `webhook-management` is ever added to `RLS_WRITES_ENABLED`, add a delete policy (or keep the admin-client path) — noted in `apps/api/src/routes/webhook-management.ts`.
 - **UI consistency (closed 2026-09-27; extended 2026-09-29):** toasts use `components/ui/ToastProvider` + `useToast()` (error toasts persist until dismissed, `aria-atomic` regions), page-level empties use `EmptyState`, every status badge uses `StatusPill` (with a `tone`/`label` escape hatch) and all money/date formatting goes through `lib/format.ts` — the four legacy store badge helpers, the UTC/timeline `toLocale*` exceptions and the duplicated `formatRelativeTime`/null-safe `formatDateTime` wrappers were all consolidated. Nested section/sub-list empty notes stay inline by design. See `docs/WEB_UI_CONVENTIONS.md`.
 - **Axe automation (breadth green 2026-10-02):** the default PR gate now scans **25 pages** with `critical`/`serious` filtering and `wcag22aa` tags (so `target-size`/`select-name` are gated too). The seven pages fixed on 2026-10-02 (admin tickets/findings/assets/licenses/service-catalog, portal notifications/knowledge base) were promoted out of the triage set into it. The remaining 43-page `FULL_PAGES` set (68 total) still runs behind `A11Y_FULL=1` in the non-blocking `a11y-breadth.yml` (last full scan green on `b6b6421`); keep it green and promote pages before adding new tags to the default list.
-- **Infra/ops (open, needs GitHub credentials):** the `prod-approval` environment has no `SUPABASE_*`/`JWT_SECRET`/migration secrets or vars, so the prod deploy and prod migration paths cannot succeed; the last promotion is PR #281 (`main` @ `7dd04023`, 2026-10-14; PR #278 at `9ba108b5` preceded it) and `main` currently carries every `origin/develop` commit, so compare the branches with `git log --oneline --left-right origin/main...origin/develop` rather than assuming which is ahead (scheduled `db-backup`/`db-restore-test`/`sbom` only fire from the default branch, and the last backup runs failed); the prod `deploy` job, `terraform-apply-prod` and prod DB migrations (`supabase-migrations.yml` on `main`) all attach `prod-approval` (BP-P3-003), but **`prod-approval` has no required reviewers configured**, so the manual-approval gate is not yet in force — required reviewers are a GitHub setting (Settings → Environments → `prod-approval`), not repo code; the read-only `prod` environment (plan/resolve) needs none; `DROPLET_IP` is the dev fallback only. **`terraform-do` is manual-dispatch only (2026-09-29)** — automatic push/PR runs failed on the invalid `DO_API_TOKEN` and a develop push could reach dev apply without review; the `apply` input now gates both apply jobs, and a stale queued `terraform-apply-dev` run from 2026-06-08 was cancelled. Re-enable push/PR triggers once the `DO_API_TOKEN` is rotated and `prod-approval` has required reviewers. (`terraform-do` plan masking was fixed 2026-09-27 with `set -o pipefail`.)
+- **Infra/ops (open, needs operator action):** the `prod` / `prod-approval` environments are still not provisioned for a DO deploy — `prod` has no variables at all (needs at least `TF_VAR_FILE=env/prod.tfvars`, `SUPABASE_PROJECT_REF`, `SUPABASE_URL`, a prod `DROPLET_IP`, `SENTRY_DSN` and the `.com` Cloudflare zone id) and `prod-approval` carries only the Alertmanager webhook secrets, so the prod deploy/migration paths cannot succeed yet. `prod-approval` **now has a required reviewer** (verified 2026-10-15), so the manual-approval gate is in force; the read-only `prod` environment (plan/resolve) needs none; `DROPLET_IP` remains the dev fallback. **`main` now carries 26 commits that `develop` does not** — the re-audit wave landed directly on `main` — so compare with `git log --oneline --left-right origin/main...origin/develop` rather than assuming which side is ahead; `develop` needs a back-merge. There are still **no successful `main` `deploy-do` runs**, and the newest (2026-10-14 08:35, Merge PR #285) has sat `pending` for over 20 h with zero jobs instantiated (cancel/re-run is operator action; its prod-only E2E/migration gates also need the prod env above). `app.mainecybertech.com` currently serves the **legacy Vercel deployment** built from `main` with the dev API URL in its client bundle (server-side flows work; browser calls to the `.us` API are CORS-blocked) — repointing the `.com` zone at the prod droplet and disconnecting the Vercel project are operator/DNS actions, not repo changes. The scheduled `db-backup` fails on `SUPABASE_DB_URL` not being set (and `BACKUP_ENCRYPTION_KEY` is unset), while `storage-backup` correctly refuses to record an empty backup — the dev buckets are empty (checked 2026-10-15); `db-restore-test`/`sbom` only fire from the default branch. **`terraform-do` is manual-dispatch only (2026-09-29)** — automatic push/PR runs failed on the invalid `DO_API_TOKEN` and a develop push could reach dev apply without review; the `apply` input now gates both apply jobs, and a stale queued `terraform-apply-dev` run from 2026-06-08 was cancelled. Re-enable push/PR triggers once the `DO_API_TOKEN` is rotated. (`terraform-do` plan masking was fixed 2026-09-27 with `set -o pipefail`.)
 - **Store/portal write surfaces left unguarded by design:** `field-services` camera-calc (portal lets clients save calculations), `client-onboarding-command-center` (clients complete their own onboarding), and `billing/create-portal-session` (customer self-service portal; `billing:manage` is not granted to client roles). Each carries a code comment.
 - **`client_portal_entitlements` RLS — FIXED 2026-09-27:** migration `5302428` aligns the insert/update policies with the API gate (platform `admin`/`super_admin` only, `client_admin` dropped, `with check` added to update). The API writes with the service role, so no code path depended on the wider policy.
 - **repo-deep-dive audit remediation (2026-10-02/03):** the audit run at `docs/audits/repo-deep-dive/20261002-0344-develop-6286137/` produced 269 findings (5 P0, 56 P1, 132 P2, 76 P3). Remediation shipped as two stacked PRs. Judge against `develop` only — there is no prod environment or infrastructure yet, so no finding is a `develop` blocker, and prod-only gaps are recorded as operator actions rather than defects.
@@ -136,7 +136,7 @@ the `.jest-results.json` each package writes during `test:coverage` (CI sets
   - **Migration order resolved:** #30 shipped `5302430`–`5302432`; #32 ships `5302433`–`5302436`. The rebase kept both sets; no renumbering is needed.
   - **Deliberately NOT fixed:** SEC-P2-005 / ACM-P2-003 (RLS bypassed because `getScopedClient` defaults to the service role). That is the documented incremental rollout via `RLS_READS_ENABLED`/`RLS_WRITES_ENABLED`, not a defect; flipping it wholesale is a product decision and is left as an operator action.
   - **CI status (2026-10-03):** #32's first run was red on TypeCheck and E2E (a scope error — `updateMetadataAction` referenced an `organizationId` that only exists in the create action — which also broke the web build) and on the `review.md` mirror check. Both were fixed; the rebased head is expected green. Docs-only follow-ups (#33–#37) are separate PRs.
-  - Operator actions that still gate a real deploy (none block `develop`): `BACKUP_ENCRYPTION_KEY`, `ADMIN_IP_RANGES`, `ALERTMANAGER_WATCHDOG_WEBHOOK_URL`, `prod-approval` reviewers, and applying migrations `5302430`–`5302437`.
+  - Operator actions that still gate a real deploy (none block `develop`): `SUPABASE_DB_URL` + `BACKUP_ENCRYPTION_KEY` (backups), `ADMIN_IP_RANGES`, `ALERTMANAGER_WATCHDOG_WEBHOOK_URL`, the prod environment secrets/variables above, the stuck `deploy-do` run, and applying migrations `5302430`–`5302437`.
 
 ### Test patterns
 
@@ -169,18 +169,18 @@ pnpm e2e                     # Playwright E2E
 
 ## File Counts (2026-09-21 Verified)
 
-| Category                  | Count | Notes                                                                                                                                                                  |
-| ------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API route files           | 64    | `apps/api/src/routes/*.ts` (77 incl. `routes/final/` + `routes/store/`)                                                                                                |
-| API SDK modules           | 65    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
-| Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
-| Web pages                 | 319 | Admin 203, Portal 86, Public 29, `forbidden` 1 |
-| Web components            | 128 | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 160 | `supabase/migrations/` (latest: 5302462_sop_library_status_check                                                                                              |
-| Seed files                | 9 | `supabase/seeds/*.sql`                                                                                                                                                 |
-| GitHub Actions workflows  | 30 | `.github/workflows/`                                                                                                                                                   |
-| AI prompt files           | 626 | `prompts/` (6 packs, 624 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                               |
-| Build/dev/utility scripts | 121 | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
+| Category                  | Count | Notes                                                                                                                                                                                                                                                                                              |
+| ------------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API route files           | 64    | `apps/api/src/routes/*.ts` (77 incl. `routes/final/` + `routes/store/`)                                                                                                                                                                                                                            |
+| API SDK modules           | 65    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                                                                                                                                                        |
+| Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                                                                                                                                                     |
+| Web pages                 | 330   | Admin 203, Portal 97, Public 29, `forbidden` 1                                                                                                                                                                                                                                                     |
+| Web components            | 129   | `apps/web/components/`                                                                                                                                                                                                                                                                             |
+| SQL migrations            | 162   | `supabase/migrations/` (latest: 5302463_fix_notification_key_dedup_index                                                                                                                                                                                                                            |
+| Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                                                                                                                                             |
+| GitHub Actions workflows  | 30    | `.github/workflows/`                                                                                                                                                                                                                                                                               |
+| AI prompt files           | 626   | `prompts/` (6 packs, 624 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                                                                                                                                           |
+| Build/dev/utility scripts | 121   | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
 
 ## Database Types (2026-09-21)
 
@@ -217,15 +217,15 @@ returned 500/404 at runtime. Fixed 2026-08-26.
 
 See `infra/digitalocean/docker-compose.yml` — runs on a single DO droplet behind Caddy:
 
-| Service    | Image (GHCR)                                     | Port     | Notes                                       |
-| ---------- | ------------------------------------------------ | -------- | ------------------------------------------- |
-| api        | ghcr.io/mainecybertech/mainecybertech/mct-api    | 4000     | Express API                                 |
-| web        | ghcr.io/mainecybertech/mainecybertech/mct-web    | 3000     | Next.js standalone                          |
-| worker     | ghcr.io/mainecybertech/mainecybertech/mct-worker | 3001     | BullMQ consumer (health)                    |
-| redis      | redis:7-alpine                                   | 6379     | BullMQ backend                              |
-| caddy      | caddy:2-alpine                                   | 80/443   | TLS reverse proxy                           |
-| prometheus | prom/prometheus:v3.5.1                           | internal | Metrics scraping (`prometheus.yml` + rules) |
-| alertmanager | prom/alertmanager:v0.28.1                      | internal (9093) | Alert routing + watchdog (ntfy webhook); rendered from `alertmanager.tmpl.yml` |
+| Service      | Image (GHCR)                                     | Port            | Notes                                                                          |
+| ------------ | ------------------------------------------------ | --------------- | ------------------------------------------------------------------------------ |
+| api          | ghcr.io/mainecybertech/mainecybertech/mct-api    | 4000            | Express API                                                                    |
+| web          | ghcr.io/mainecybertech/mainecybertech/mct-web    | 3000            | Next.js standalone                                                             |
+| worker       | ghcr.io/mainecybertech/mainecybertech/mct-worker | 3001            | BullMQ consumer (health)                                                       |
+| redis        | redis:7-alpine                                   | 6379            | BullMQ backend                                                                 |
+| caddy        | caddy:2-alpine                                   | 80/443          | TLS reverse proxy                                                              |
+| prometheus   | prom/prometheus:v3.5.1                           | internal        | Metrics scraping (`prometheus.yml` + rules)                                    |
+| alertmanager | prom/alertmanager:v0.28.1                        | internal (9093) | Alert routing + watchdog (ntfy webhook); rendered from `alertmanager.tmpl.yml` |
 
 Supabase is **hosted** (cloud.supabase.com) — not self-hosted in docker-compose.
 
@@ -309,38 +309,38 @@ SENTRY_DSN=
 
 **30 GitHub Actions workflows** in `.github/workflows/`:
 
-| Workflow                | Trigger            | Purpose                                                                                     |
-| ----------------------- | ------------------ | ------------------------------------------------------------------------------------------- |
-| test.yml | PR | Unit tests + coverage, OpenAPI/docs/RLS guards, Trivy, secrets scan (push-side via `validate.yml`) |
-| codeql.yml | push/PR/weekly | CodeQL static analysis (SAST) |
-| a11y-breadth.yml | schedule/manual | Full a11y breadth scan (68 routes, WCAG 2.2) — scheduled gate, not required |
-| lint.yml | PR | ESLint (push-side via `validate.yml`) |
-| typecheck.yml | PR | TypeScript typecheck (push-side via `validate.yml`) |
-| supabase-migrations.yml | push main+dev/call | Apply Supabase migrations (prod attaches the `prod-approval` gate; post-push drift check) |
-| e2e.yml | PR/manual/call | Playwright E2E tests (retry budget 2 + flake summary; required on `main`) |
-| deploy-do.yml | push main+dev | Build images, SSH deploy to droplet (fatal API/Worker/Web health gate; `prod-approval` on prod) |
-| terraform-do.yml | dispatch | Terraform plan (manual; apply requires the `apply` input + `prod-approval`) |
-| validate.yml | workflow_call | Deploy gate (audit + test + lint + typecheck + docs/openapi/RLS/CODEOWNERS guards + prompt-provenance) |
-| build-push.yml | dispatch | Build/push GHCR images (manual) |
-| chromatic.yml | push/PR | Visual regression (Storybook) |
-| db-backup.yml | schedule/manual | Database backup to Spaces (encrypted, optional offsite) |
-| db-restore-test.yml | schedule/manual | Restore a backup into a throwaway DB with integrity/freshness assertions |
-| storage-backup.yml | schedule/manual | Mirror Supabase Storage buckets to Spaces |
-| storage-restore-test.yml | schedule/manual | Verify the newest storage archive against its manifest (no live bucket) |
-| backup-staleness-check.yml | schedule/manual | Fail when the newest successful backup/restore-test run is stale |
-| secret-history-scan.yml | schedule/manual | Full-history gitleaks scan + allowlist probe (pinned install) |
-| secret-rotation-reminder.yml | schedule/manual | Quarterly secret-rotation issue (deduplicated, `secret-rotation` label) |
-| dependabot-triage-reminder.yml | schedule/manual | Weekly Dependabot backlog triage issue with the SLA and merge rules |
-| dependency-review.yml | pull_request | Block PRs introducing vulnerable dependencies |
-| dependency-rescan.yml | schedule/manual | Report-only dependency re-scan + Trivy fs + `pnpm dedupe --check` |
-| sbom.yml | push/PR/weekly | CycloneDX SBOM artifact (`scripts/generate-sbom.mjs`) |
-| third-party-image-scan.yml | schedule/manual | Digest-pin guard + Trivy scan + SBOM for the third-party runtime images |
-| alert-path-exercise.yml | schedule/manual | Synthetic critical alert + ntfy check; dead-man's-switch drill (non-blocking) |
-| branch-protection-audit.yml | schedule/manual | Branch-protection drift + bypass audit (`[break-glass]` records) |
-| load-test.yml | schedule/manual | k6 load scenarios against dev/prod with committed budgets |
-| external-uptime-probe.yml | schedule/manual | External uptime + latency probe of the public endpoints |
-| release.yml | push main/manual | Tag + GitHub Release + SBOM on promotion (`v<VERSION>-<date>-<sha>`) |
-| smoke-check.yml | schedule/manual | API health + web login + authenticated read (dev; prod once enabled) |
+| Workflow                       | Trigger            | Purpose                                                                                                |
+| ------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------ |
+| test.yml                       | PR                 | Unit tests + coverage, OpenAPI/docs/RLS guards, Trivy, secrets scan (push-side via `validate.yml`)     |
+| codeql.yml                     | push/PR/weekly     | CodeQL static analysis (SAST)                                                                          |
+| a11y-breadth.yml               | schedule/manual    | Full a11y breadth scan (68 routes, WCAG 2.2) — scheduled gate, not required                            |
+| lint.yml                       | PR                 | ESLint (push-side via `validate.yml`)                                                                  |
+| typecheck.yml                  | PR                 | TypeScript typecheck (push-side via `validate.yml`)                                                    |
+| supabase-migrations.yml        | push main+dev/call | Apply Supabase migrations (prod attaches the `prod-approval` gate; post-push drift check)              |
+| e2e.yml                        | PR/manual/call     | Playwright E2E tests (retry budget 2 + flake summary; required on `main`)                              |
+| deploy-do.yml                  | push main+dev      | Build images, SSH deploy to droplet (fatal API/Worker/Web health gate; `prod-approval` on prod)        |
+| terraform-do.yml               | dispatch           | Terraform plan (manual; apply requires the `apply` input + `prod-approval`)                            |
+| validate.yml                   | workflow_call      | Deploy gate (audit + test + lint + typecheck + docs/openapi/RLS/CODEOWNERS guards + prompt-provenance) |
+| build-push.yml                 | dispatch           | Build/push GHCR images (manual)                                                                        |
+| chromatic.yml                  | push/PR            | Visual regression (Storybook)                                                                          |
+| db-backup.yml                  | schedule/manual    | Database backup to Spaces (encrypted, optional offsite)                                                |
+| db-restore-test.yml            | schedule/manual    | Restore a backup into a throwaway DB with integrity/freshness assertions                               |
+| storage-backup.yml             | schedule/manual    | Mirror Supabase Storage buckets to Spaces                                                              |
+| storage-restore-test.yml       | schedule/manual    | Verify the newest storage archive against its manifest (no live bucket)                                |
+| backup-staleness-check.yml     | schedule/manual    | Fail when the newest successful backup/restore-test run is stale                                       |
+| secret-history-scan.yml        | schedule/manual    | Full-history gitleaks scan + allowlist probe (pinned install)                                          |
+| secret-rotation-reminder.yml   | schedule/manual    | Quarterly secret-rotation issue (deduplicated, `secret-rotation` label)                                |
+| dependabot-triage-reminder.yml | schedule/manual    | Weekly Dependabot backlog triage issue with the SLA and merge rules                                    |
+| dependency-review.yml          | pull_request       | Block PRs introducing vulnerable dependencies                                                          |
+| dependency-rescan.yml          | schedule/manual    | Report-only dependency re-scan + Trivy fs + `pnpm dedupe --check`                                      |
+| sbom.yml                       | push/PR/weekly     | CycloneDX SBOM artifact (`scripts/generate-sbom.mjs`)                                                  |
+| third-party-image-scan.yml     | schedule/manual    | Digest-pin guard + Trivy scan + SBOM for the third-party runtime images                                |
+| alert-path-exercise.yml        | schedule/manual    | Synthetic critical alert + ntfy check; dead-man's-switch drill (non-blocking)                          |
+| branch-protection-audit.yml    | schedule/manual    | Branch-protection drift + bypass audit (`[break-glass]` records)                                       |
+| load-test.yml                  | schedule/manual    | k6 load scenarios against dev/prod with committed budgets                                              |
+| external-uptime-probe.yml      | schedule/manual    | External uptime + latency probe of the public endpoints                                                |
+| release.yml                    | push main/manual   | Tag + GitHub Release + SBOM on promotion (`v<VERSION>-<date>-<sha>`)                                   |
+| smoke-check.yml                | schedule/manual    | API health + web login + authenticated read (dev; prod once enabled)                                   |
 
 **Deploy pipeline:** `setup` → (`build api/worker/web` ∥ `validate`) → (`e2e-gate` + `migrate-gate`, **prod-only**) → `deploy` via SSH (Caddy auto-restarts).
 

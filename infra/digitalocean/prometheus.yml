@@ -44,6 +44,15 @@ scrape_configs:
         labels:
           service: worker
 
+  # Host metrics (CPU, memory, root filesystem, load) from the node-exporter
+  # service. Deliberately unauthenticated: it is internal-only (no published
+  # ports) and exposes host resource data, not tenant data.
+  - job_name: node-exporter
+    static_configs:
+      - targets: ["node-exporter:9100"]
+        labels:
+          service: host
+
   - job_name: prometheus
     metrics_path: /metrics
     static_configs:

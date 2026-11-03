@@ -51,7 +51,8 @@ export default async function PortalDmarcCoachPage() {
               <div>
                 <p className="font-medium text-slate-50">{String(d.domain)}</p>
                 <p className="mt-1 text-xs text-slate-400">
-                  {Number(d.issues_count || 0)} issues found
+                  {Array.isArray(d.issues) ? d.issues.length : Number(d.issues_count || 0)} issues
+                  found
                 </p>
               </div>
               <span

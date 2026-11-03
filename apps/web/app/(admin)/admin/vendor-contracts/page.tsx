@@ -69,6 +69,13 @@ export default async function VendorContractsPage() {
           { key: "serviceName", label: "Service", required: true },
           { key: "renewalDate", label: "Renewal Date", type: "date" },
           { key: "contractValue", label: "Value", type: "number" },
+          {
+            key: "visibility",
+            label: "Client Visibility",
+            type: "select",
+            options: ["internal", "client_visible"],
+            required: true,
+          },
         ]}
         title="New Vendor Contract"
         action={createVendorContract}

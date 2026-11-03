@@ -78,8 +78,19 @@ export class AuthApi {
     return this.client.post<{ ok: boolean }>("/api/v1/auth/forgot-password", { email });
   }
 
-  resetPassword(email: string, password: string) {
-    return this.client.post<{ ok: boolean }>("/api/v1/auth/reset-password", { email, password });
+  /**
+   * Change the signed-in user's password.
+   *
+   * `currentPassword` is required for a normal session. The email-recovery
+   * flow may omit it; the API accepts the omission only for a `recovery` AMR
+   * session (inbox ownership already proven by Supabase).
+   */
+  resetPassword(email: string, password: string, currentPassword?: string) {
+    return this.client.post<{ ok: boolean }>("/api/v1/auth/reset-password", {
+      email,
+      password,
+      ...(currentPassword ? { currentPassword } : {}),
+    });
   }
 
   exchangeCode(authCode: string, codeVerifier: string) {

@@ -5,16 +5,12 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const isVercel = !!process.env.VERCEL;
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  ...(isVercel
-    ? {}
-    : {
-        output: "standalone",
-        outputFileTracingRoot: path.join(__dirname, "../.."),
-      }),
+  // Every environment builds the standalone server (the dev/prod droplets run
+  // it behind Caddy); there is no Vercel build path anymore.
+  output: "standalone",
+  outputFileTracingRoot: path.join(__dirname, "../.."),
   experimental: {
     serverActions: {
       bodySizeLimit: "25mb",

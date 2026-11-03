@@ -69,9 +69,28 @@ export default async function PortalStagingDetailPage({ params }: PortalStagingD
           <p className="text-xs text-slate-400">
             {item.asset_tag ? `Tag: ${item.asset_tag}` : "No asset tag"}
           </p>
-          <ul className="list-inside list-disc text-sm text-slate-300">
+          <ul className="list-inside list-disc space-y-1 text-sm text-slate-300">
             {(Array.isArray(item.checklist) ? item.checklist : []).length > 0 ? (
-              (item.checklist as unknown[]).map((c, i) => <li key={i}>{JSON.stringify(c)}</li>)
+              (item.checklist as unknown[]).map((c, i) => {
+                if (c && typeof c === "object") {
+                  const entry = c as Record<string, unknown>;
+                  const label =
+                    entry.label ?? entry.name ?? entry.task ?? entry.item ?? `Step ${i + 1}`;
+                  const done = entry.done ?? entry.completed ?? entry.is_completed;
+                  return (
+                    <li key={i}>
+                      {String(label)}
+                      {done != null ? (
+                        <span className={done ? "text-emerald-400" : "text-slate-500"}>
+                          {" "}
+                          — {done ? "Done" : "Pending"}
+                        </span>
+                      ) : null}
+                    </li>
+                  );
+                }
+                return <li key={i}>{String(c)}</li>;
+              })
             ) : (
               <li className="text-slate-500">No checklist items</li>
             )}

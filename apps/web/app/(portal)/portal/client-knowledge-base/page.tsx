@@ -12,7 +12,13 @@ import { hasPermission } from "@/lib/permissions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Knowledge Base - Portal - Maine CyberTech" };
 
-export default async function PortalKnowledgeBasePage() {
+export default async function PortalKnowledgeBasePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ q?: string }>;
+}) {
+  const sp = (await searchParams) ?? {};
+  const search = String(sp.q ?? "").trim();
   let membership;
   try {
     membership = await getApprovedMembership();
@@ -26,7 +32,10 @@ export default async function PortalKnowledgeBasePage() {
   let loadFailed = false;
   try {
     if (orgId) {
-      const r = await api.knowledgeBase.list({ organizationId: orgId });
+      const r = await api.knowledgeBase.list({
+        organizationId: orgId,
+        search: search || undefined,
+      });
       items = Array.isArray(r?.items) ? (r.items as unknown as Array<Record<string, unknown>>) : [];
     }
   } catch (error) {
@@ -105,11 +114,38 @@ export default async function PortalKnowledgeBasePage() {
             </form>
           ) : null}
 
+          <form
+            action="/portal/client-knowledge-base"
+            method="get"
+            className="flex flex-wrap items-center gap-3"
+          >
+            <input
+              type="search"
+              name="q"
+              defaultValue={search}
+              placeholder="Search articles..."
+              aria-label="Search knowledge base"
+              className="cyber-input min-w-[220px] flex-1"
+            />
+            <button type="submit" className="cyber-button-secondary">
+              Search
+            </button>
+            {search ? (
+              <Link
+                href="/portal/client-knowledge-base"
+                className="text-xs text-slate-400 hover:text-slate-200"
+              >
+                Clear
+              </Link>
+            ) : null}
+          </form>
+
           <div className="grid gap-4 md:grid-cols-2">
             {items.map((a) => (
-              <div
+              <Link
                 key={String(a.id)}
-                className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+                href={`/portal/client-knowledge-base/${String(a.id)}`}
+                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
               >
                 <p className="font-medium text-slate-50">{String(a.title || "Article")}</p>
                 <p className="mt-1 text-xs text-slate-400">
@@ -121,7 +157,7 @@ export default async function PortalKnowledgeBasePage() {
                     {String((a.body as string) || (a.content as string))}
                   </p>
                 )}
-              </div>
+              </Link>
             ))}
             {!loadFailed && items.length === 0 && (
               <div className="col-span-2">

@@ -15,6 +15,14 @@
       "scope": "dev",
       "reason": "No patched version exists (<0.0.0). Reached only through @storybook/nextjs > node-polyfill-webpack-plugin > crypto-browserify > browserify-sign > elliptic and is never shipped in the production images. Tracked in docs/DEPENDENCY_POLICY.md; remove once upstream publishes a fix or Storybook drops the polyfill chain.",
       "expires": "2027-01-01"
+    },
+    {
+      "id": "GHSA-mrhx-c7xc-m3w5",
+      "package": "zod",
+      "severity": "high",
+      "scope": "prod",
+      "reason": "Fixed only in zod 4.6.6; the API's validators are written against zod 3 and the 3->4 migration is a breaking change (error shapes, coercion, parser APIs). Tracked as a dedicated migration; remove this entry when the upgrade lands.",
+      "expires": "2026-12-15"
     }
   ]
 }

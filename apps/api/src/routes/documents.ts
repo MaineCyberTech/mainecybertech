@@ -224,7 +224,7 @@ router.get("/shares/:token", rateLimitShare, async (req, res, next) => {
 router.use(requireAuth);
 router.use(requireOrgAccess);
 
-router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
+router.get("/", responseCacheNoRenew(30, { userScoped: true }), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "documents", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));

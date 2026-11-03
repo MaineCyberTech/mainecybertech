@@ -12,6 +12,7 @@ import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { applyClientVisibility, isClientVisible } from "../lib/client-visibility";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -29,6 +30,7 @@ router.get("/", async (req, res, next) => {
     // explicit org instead of querying across tenants.
     let q = supabase.from("qbr_reports").select("*", { count: listCountMode(req.query) });
     q = applyResolvedOrg(req, q);
+    ({ query: q } = await applyClientVisibility(q, req));
 
     const { data, error, count } = await q
       .order("created_at", { ascending: false })
@@ -49,6 +51,9 @@ router.get("/:id", async (req, res, next) => {
     query = applyResolvedOrg(req, query);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Report not found", 404);
+    if (!(await isClientVisible(req, data as unknown as Record<string, unknown>))) {
+      throw new AppError("NOT_FOUND", "Report not found", 404);
+    }
     res.json(success(data));
   } catch (error) {
     next(error);

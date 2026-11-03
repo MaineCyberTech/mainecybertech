@@ -238,7 +238,7 @@ export default async function ClientOnboardingDetailPage({ params }: Props) {
         <div>
           <Breadcrumbs
             items={[
-              { label: "Portal", href: "/portal" },
+              { label: "Portal", href: "/portal/dashboard" },
               { label: "Client Onboarding", href: "/portal/client-onboarding-command-center" },
               { label: record.client_name },
             ]}

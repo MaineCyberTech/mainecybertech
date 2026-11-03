@@ -14,6 +14,7 @@ import {
 import { queryInt } from "../lib/query";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { applyClientVisibility, isClientVisible } from "../lib/client-visibility";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -41,6 +42,10 @@ function crudEndpoints(
       const search = req.query.search as string | undefined;
       if (search)
         q = q.ilike(table === "vendor_contracts" ? "vendor_name" : "vendor_name", `%${search}%`);
+      // vendor_contacts has no visibility column; contracts do.
+      if (table === "vendor_contracts") {
+        ({ query: q } = await applyClientVisibility(q, req));
+      }
 
       const { data, error, count } = await q
         .order("created_at", { ascending: false })
@@ -64,6 +69,12 @@ function crudEndpoints(
         .eq("organization_id", req.query.organization_id as string)
         .single();
       if (error || !data) throw new AppError("NOT_FOUND", `${resource} not found`, 404);
+      if (
+        table === "vendor_contracts" &&
+        !(await isClientVisible(req, data as unknown as Record<string, unknown>))
+      ) {
+        throw new AppError("NOT_FOUND", `${resource} not found`, 404);
+      }
       res.json(success(data));
     } catch (err) {
       next(err);
