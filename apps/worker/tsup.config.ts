@@ -10,5 +10,5 @@ export default defineConfig({
    * externalized workspace imports cannot fail at runtime. Their `zod` imports
    * stay external (regular worker dependencies present in the image).
    */
-  noExternal: [/^@mct\/config\/env$/, /^@mct\/sdk\/email-template$/],
+  noExternal: [/^@mct\/config\//, /^@mct\/sdk\/email-template$/],
 });

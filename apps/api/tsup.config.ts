@@ -12,6 +12,6 @@ export default defineConfig({
    */
   noExternal: [
     /^@mct\/sdk\/(module-registry|role-keys|ticket-status|webhook-events|email-template)$/,
-    /^@mct\/config\/env$/,
+    /^@mct\/config\//,
   ],
 });
