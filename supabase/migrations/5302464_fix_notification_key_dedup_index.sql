@@ -1,5 +1,5 @@
 -- =========================================================
--- 5302463: make the notifications dedup index usable as an ON CONFLICT
+-- 5302464: make the notifications dedup index usable as an ON CONFLICT
 --          target (PostgreSQL 42P10)
 --
 -- 5302107 created the dedup index with a predicate:
