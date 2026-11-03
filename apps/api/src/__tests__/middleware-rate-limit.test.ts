@@ -31,7 +31,9 @@ jest.mock("../config/env", () => ({
 function withPublicClientIp(app: express.Express): express.Express {
   app.set("trust proxy", true);
   app.use((req, _res, next) => {
-    req.ip = "203.0.113.9";
+    // Express 5 exposes `req.ip` as a prototype getter; assigning it throws.
+    // Define an own property for the limiter's skip/key checks.
+    Object.defineProperty(req, "ip", { value: "203.0.113.9", configurable: true });
     next();
   });
   return app;
