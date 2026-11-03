@@ -5,12 +5,16 @@ import { redirect } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 
-export async function createDnsChangeAction(formData: FormData): Promise<void> {
+export async function createDnsChangeAction(
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string }> {
   const membership = await getApprovedMembership();
-  if (!membership?.organization_id) throw new Error("No approved organization.");
+  if (!membership?.organization_id) {
+    return { ok: false, error: "No approved organization." };
+  }
 
   const domain = String(formData.get("domain") ?? "").trim();
-  if (!domain) throw new Error("Domain is required.");
+  if (!domain) return { ok: false, error: "Domain is required." };
 
   try {
     await getApiClient().final.dnsChanges.create({
@@ -21,10 +25,13 @@ export async function createDnsChangeAction(formData: FormData): Promise<void> {
       proposedValue: String(formData.get("proposedValue") ?? "").trim() || null,
       currentValue: String(formData.get("currentValue") ?? "").trim() || null,
     });
-    revalidatePath("/portal/dns-changes");
-    redirect("/portal/dns-changes");
   } catch (error) {
-    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
-    throw error;
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to create DNS change request",
+    };
   }
+
+  revalidatePath("/portal/dns-changes");
+  redirect("/portal/dns-changes");
 }

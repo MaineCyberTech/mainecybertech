@@ -5,15 +5,20 @@ import { redirect } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 
-export async function createChangeRequestAction(formData: FormData): Promise<void> {
+export async function createChangeRequestAction(
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string }> {
   const membership = await getApprovedMembership();
-  if (!membership?.organization_id) throw new Error("No approved organization.");
+  if (!membership?.organization_id) {
+    return { ok: false, error: "No approved organization." };
+  }
 
   const title = String(formData.get("title") ?? "").trim();
-  if (!title) throw new Error("Title is required.");
+  if (!title) return { ok: false, error: "Title is required." };
 
+  let created: { id: string };
   try {
-    const created = (await getApiClient().governance.changes.create({
+    created = (await getApiClient().governance.changes.create({
       organizationId: membership.organization_id,
       title,
       description: String(formData.get("description") ?? "").trim() || null,
@@ -23,13 +28,17 @@ export async function createChangeRequestAction(formData: FormData): Promise<voi
       implementationDate: String(formData.get("implementationDate") ?? "").trim() || null,
       verificationSteps: String(formData.get("verificationSteps") ?? "").trim() || null,
     })) as { id: string };
-
-    revalidatePath("/portal/change-requests");
-    redirect(`/portal/change-requests/${created.id}`);
   } catch (error) {
-    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
-    throw error;
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to create change request",
+    };
   }
+
+  // Redirect outside the try/catch so NEXT_REDIRECT is never converted into an
+  // inline error (USE-P2-007 / USE-P3-008).
+  revalidatePath("/portal/change-requests");
+  redirect(`/portal/change-requests/${created.id}`);
 }
 
 export type ChangeActionResult = { ok: boolean; error?: string };

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import CabMeetingsClient from "@/components/cab/CabMeetingsClient";
 import DataErrorNote from "@/components/admin/DataErrorNote";
 import { hasPermission } from "@/lib/permissions";
@@ -64,6 +65,7 @@ export default async function PortalCabPage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Change Advisory Board" }]}
       />
+      <PortalSubnav current="cab" />
       <h1 className="text-2xl font-semibold text-slate-50">Change Advisory Board</h1>
       {loadFailed ? <DataErrorNote what="CAB data" /> : null}
       <p className="text-sm text-slate-400">

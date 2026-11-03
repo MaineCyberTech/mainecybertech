@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import StatusPill from "@/components/StatusPill";
 import AdminPagination from "@/components/admin/AdminPagination";
 import DataErrorNote from "@/components/admin/DataErrorNote";
@@ -56,6 +57,7 @@ export default async function PortalHardwareStagingPage({
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Hardware Staging" }]}
       />
+      <PortalSubnav current="hardware-staging" />
       <h1 className="text-2xl font-semibold text-slate-50">Hardware Staging</h1>
       {loadFailed ? <DataErrorNote what="hardware staging items" /> : null}
       {!orgId ? (

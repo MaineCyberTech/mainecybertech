@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
 
@@ -37,6 +38,7 @@ export default async function PortalOffboardingPage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Offboarding" }]}
       />
+      <PortalSubnav current="offboarding" />
       {loadFailed ? <DataErrorNote what="offboarding" /> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>

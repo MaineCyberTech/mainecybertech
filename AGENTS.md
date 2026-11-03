@@ -169,12 +169,12 @@ pnpm e2e                     # Playwright E2E
 | API SDK modules           | 65    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                                                                                                                                                        |
 | Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                                                                                                                                                     |
 | Web pages                 | 331   | Admin 204, Portal 97, Public 29, `forbidden` 1                                                                                                                                                                                                                                                     |
-| Web components            | 129   | `apps/web/components/`                                                                                                                                                                                                                                                                             |
-| SQL migrations            | 164   | `supabase/migrations/` (latest: 5302466_notifications_insert_membership_scope                                                                                                                                                                                                                            |
+| Web components            | 130   | `apps/web/components/`                                                                                                                                                                                                                                                                             |
+| SQL migrations            | 164   | `supabase/migrations/` (latest: 5302466_notifications_insert_membership_scope                                                                                                                                                                                                                      |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                                                                                                                                             |
 | GitHub Actions workflows  | 30    | `.github/workflows/`                                                                                                                                                                                                                                                                               |
 | AI prompt files           | 626   | `prompts/` (6 packs, 624 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                                                                                                                                           |
-| Build/dev/utility scripts | 121   | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
+| Build/dev/utility scripts | 123   | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
 
 ## Database Types (2026-09-21)
 
@@ -211,16 +211,17 @@ returned 500/404 at runtime. Fixed 2026-08-26.
 
 See `infra/digitalocean/docker-compose.yml` — runs on a single DO droplet behind Caddy:
 
-| Service      | Image (GHCR)                                     | Port            | Notes                                                                          |
-| ------------ | ------------------------------------------------ | --------------- | ------------------------------------------------------------------------------ |
-| api          | ghcr.io/mainecybertech/mainecybertech/mct-api    | 4000            | Express API                                                                    |
-| web          | ghcr.io/mainecybertech/mainecybertech/mct-web    | 3000            | Next.js standalone                                                             |
-| worker       | ghcr.io/mainecybertech/mainecybertech/mct-worker | 3001            | BullMQ consumer (health)                                                       |
-| redis        | redis:7-alpine                                   | 6379            | BullMQ backend                                                                 |
-| caddy        | caddy:2-alpine                                   | 80/443          | TLS reverse proxy                                                              |
-| prometheus   | prom/prometheus:v3.15.1                          | internal        | Metrics scraping (`prometheus.yml` + rules)                                    |
-| alertmanager | prom/alertmanager:v0.29.0                        | internal (9093) | Alert routing + watchdog (ntfy webhook); rendered from `alertmanager.tmpl.yml` |
-| node-exporter | prom/node-exporter:v1.12.1                       | internal (9100) | Host CPU/memory/filesystem/load metrics for Prometheus                         |
+| Service             | Image (GHCR)                                     | Port            | Notes                                                                               |
+| ------------------- | ------------------------------------------------ | --------------- | ----------------------------------------------------------------------------------- |
+| api                 | ghcr.io/mainecybertech/mainecybertech/mct-api    | 4000            | Express API                                                                         |
+| web                 | ghcr.io/mainecybertech/mainecybertech/mct-web    | 3000            | Next.js standalone                                                                  |
+| worker              | ghcr.io/mainecybertech/mainecybertech/mct-worker | 3001            | BullMQ consumer (health)                                                            |
+| redis               | redis:7-alpine                                   | 6379            | BullMQ backend                                                                      |
+| caddy               | caddy:2-alpine                                   | 80/443          | TLS reverse proxy                                                                   |
+| prometheus          | prom/prometheus:v3.15.1                          | internal        | Metrics scraping (`prometheus.yml` + rules)                                         |
+| alertmanager        | prom/alertmanager:v0.29.0                        | internal (9093) | Alert routing + watchdog (ntfy webhook); rendered from `alertmanager.tmpl.yml`      |
+| node-exporter       | prom/node-exporter:v1.12.1                       | internal (9100) | Host CPU/memory/filesystem/load metrics for Prometheus                              |
+| node-exporter-probe | redis:7-alpine                                   | internal        | Scrapes node-exporter and fails the deploy gate if metrics/rootfs mounts are broken |
 
 Supabase is **hosted** (cloud.supabase.com) — not self-hosted in docker-compose.
 

@@ -1,6 +1,7 @@
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
@@ -50,6 +51,7 @@ export default async function DynamicFormsListPage() {
         <Breadcrumbs
           items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Dynamic Forms" }]}
         />
+        <PortalSubnav current="dynamic-client-forms-builder" />
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
           Access restricted. Please contact your administrator.
         </div>

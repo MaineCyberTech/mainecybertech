@@ -2,6 +2,7 @@ import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
 import { formatDate } from "@/lib/format";
@@ -243,6 +244,7 @@ export default async function ClientOnboardingDetailPage({ params }: Props) {
               { label: record.client_name },
             ]}
           />
+          <PortalSubnav current="client-onboarding-command-center" />
           <h1 className="cyber-heading mt-2 text-2xl">{record.client_name}</h1>
           <p className="mt-1 text-sm text-slate-400">
             {record.client_domain && <span>{record.client_domain} • </span>}

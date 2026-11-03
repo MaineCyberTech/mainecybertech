@@ -1,7 +1,8 @@
 # Onboarding Guide — Maine CyberTech Portal
 
 > **Purpose:** Help new developers understand the architecture, development workflow, and key patterns in this monorepo.
-> **Prerequisites:** Node 20+, pnpm 10, Docker, Supabase CLI, VS Code
+> **Prerequisites:** Node 20.11+ (`import.meta.dirname` is used by the CI
+> scripts), pnpm 10, Docker, Supabase CLI, VS Code
 
 ---
 

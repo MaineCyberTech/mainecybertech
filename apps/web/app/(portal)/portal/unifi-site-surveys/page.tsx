@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
 
@@ -30,6 +31,7 @@ export default async function PortalUnifiSurveysPage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "UniFi Site Surveys" }]}
       />
+      <PortalSubnav current="unifi-site-surveys" />
       <h1 className="text-2xl font-semibold text-slate-50">UniFi Site Surveys</h1>
       {loadFailed ? <DataErrorNote what="unifi-site-surveys" /> : null}
       <p className="text-sm text-slate-400">

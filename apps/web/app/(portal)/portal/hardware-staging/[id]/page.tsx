@@ -4,6 +4,7 @@ import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import StatusPill from "@/components/StatusPill";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +58,7 @@ export default async function PortalStagingDetailPage({ params }: PortalStagingD
           { label: item?.device_name ?? "Detail" },
         ]}
       />
+      <PortalSubnav current="hardware-staging" />
       <h1 className="text-2xl font-semibold text-slate-50">
         {item?.device_name ?? "Staging Detail"}
       </h1>

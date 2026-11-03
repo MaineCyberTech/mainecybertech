@@ -22,10 +22,15 @@ jest.mock("@/lib/auth/membership", () => ({
 }));
 
 jest.mock("@/components/Breadcrumbs", () => {
-  return function MockBreadcrumbs({ items }: any) {
+  return function MockBreadcrumbs({ items }: { items: unknown[] }) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
 });
+
+jest.mock("@/components/portal/PortalSubnav", () => ({
+  __esModule: true,
+  default: () => React.createElement("div"),
+}));
 
 describe("PortalNetworkDiagramsPage", () => {
   beforeEach(() => {

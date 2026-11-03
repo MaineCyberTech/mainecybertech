@@ -40,6 +40,11 @@ jest.mock(
   { virtual: true },
 );
 
+jest.mock("@/components/portal/PortalSubnav", () => ({
+  __esModule: true,
+  default: () => React.createElement("div"),
+}));
+
 describe("PortalComplianceReadinessPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -66,7 +71,12 @@ describe("PortalComplianceReadinessPage", () => {
 
   it("renders frameworks and controls when data exists", async () => {
     mockListFrameworks.mockResolvedValue([
-      { id: "f1", name: "SOC 2", description: "Security framework", created_at: "2026-01-01T00:00:00Z" },
+      {
+        id: "f1",
+        name: "SOC 2",
+        description: "Security framework",
+        created_at: "2026-01-01T00:00:00Z",
+      },
     ]);
     mockListControls.mockResolvedValue([
       {

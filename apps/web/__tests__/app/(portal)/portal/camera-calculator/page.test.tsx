@@ -52,6 +52,11 @@ jest.mock(
   { virtual: true },
 );
 
+jest.mock("@/components/portal/PortalSubnav", () => ({
+  __esModule: true,
+  default: () => React.createElement("div"),
+}));
+
 describe("PortalCameraCalculatorPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();

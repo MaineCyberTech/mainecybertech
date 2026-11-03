@@ -37,6 +37,11 @@ jest.mock("@/components/admin/AdminPagination", () => ({
   default: () => React.createElement("nav", { "data-testid": "pagination" }),
 }));
 
+jest.mock("@/components/portal/PortalSubnav", () => ({
+  __esModule: true,
+  default: () => React.createElement("div"),
+}));
+
 describe("PortalHardwareStagingPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();

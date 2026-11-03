@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
 import { createArticle } from "./actions";
 import { logger } from "@/lib/logger";
@@ -54,6 +55,7 @@ export default async function PortalKnowledgeBasePage({
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Knowledge Base" }]}
       />
+      <PortalSubnav current="client-knowledge-base" />
       <h1 className="text-2xl font-semibold text-slate-50">Knowledge Base</h1>
       {loadFailed ? <DataErrorNote what="knowledge base articles" /> : null}
       {!membership?.organization_id ? (

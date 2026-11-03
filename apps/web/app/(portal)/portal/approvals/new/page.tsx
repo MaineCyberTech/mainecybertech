@@ -2,6 +2,7 @@ import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import { createApprovalAction } from "../actions";
+import PortalRequestForm from "@/components/portal/PortalRequestForm";
 import SubmitButton from "@/components/SubmitButton";
 
 export const metadata = { title: "New Approval Request - Portal - Maine CyberTech" };
@@ -33,7 +34,7 @@ export default function NewApprovalPage() {
         </p>
       </div>
 
-      <form action={createApprovalAction} className="cyber-panel space-y-4">
+      <PortalRequestForm action={createApprovalAction} className="cyber-panel space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="approval-type" className="cyber-label">
@@ -110,7 +111,7 @@ export default function NewApprovalPage() {
             Cancel
           </Link>
         </div>
-      </form>
+      </PortalRequestForm>
     </div>
   );
 }

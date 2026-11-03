@@ -72,14 +72,24 @@ export async function isClientMember(req: Request): Promise<boolean> {
   const userId = req.authUser?.userId;
   const orgId = activeOrgId(req);
 
-  if (!userId || !orgId || req.apiKey) {
+  if (!userId || !orgId) {
+    (req as RequestWithCache)[CLIENT_MEMBER_CACHE] = false;
+    return false;
+  }
+
+  // SEC-P3-014: API-key requests are a system/integration path, not a client
+  // session. Keys are minted through the admin-only `api-keys:manage`
+  // permission and carry no portal membership, so they keep the staff view.
+  // If client-scoped API keys are ever introduced this exemption must be
+  // replaced with the key's own role/tenant scope.
+  if (req.apiKey) {
     (req as RequestWithCache)[CLIENT_MEMBER_CACHE] = false;
     return false;
   }
 
   let result = false;
   try {
-    const { data } = await getSupabaseAdmin()
+    const { data, error } = await getSupabaseAdmin()
       .from("memberships")
       .select("roles!inner(key)")
       .eq("user_id", userId)
@@ -87,14 +97,16 @@ export async function isClientMember(req: Request): Promise<boolean> {
       .eq("status", "approved")
       .maybeSingle();
 
+    if (error) throw error;
+
     const roleKey = roleKeyOf((data as { roles?: unknown } | null)?.roles);
     result = roleKey != null && (CLIENT_ROLE_KEYS as readonly string[]).includes(roleKey);
   } catch (err) {
-    // A membership lookup failure must not 500 every portal read. Fail open to
-    // the staff view (the caller is already authenticated and org-scoped) and
-    // log it so the visibility regression is observable.
+    // SEC-P3-014: fail CLOSED. A transient membership-lookup failure must not
+    // silently promote an unknown caller to the staff view; treat the role as
+    // client-scoped (visibility filter applied) and log the regression.
     logger.warn({ err, userId, orgId }, "client-visibility membership lookup failed");
-    result = false;
+    result = true;
   }
 
   (req as RequestWithCache)[CLIENT_MEMBER_CACHE] = result;

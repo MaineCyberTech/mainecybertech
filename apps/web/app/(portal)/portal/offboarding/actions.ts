@@ -5,12 +5,16 @@ import { redirect } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 
-export async function requestOffboardingAction(formData: FormData): Promise<void> {
+export async function requestOffboardingAction(
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string }> {
   const membership = await getApprovedMembership();
-  if (!membership?.organization_id) throw new Error("No approved organization membership.");
+  if (!membership?.organization_id) {
+    return { ok: false, error: "No approved organization membership." };
+  }
 
   const employeeName = String(formData.get("employeeName") ?? "").trim();
-  if (!employeeName) throw new Error("Employee name is required.");
+  if (!employeeName) return { ok: false, error: "Employee name is required." };
 
   try {
     await getApiClient().securityOps.offboarding.create({
@@ -21,10 +25,13 @@ export async function requestOffboardingAction(formData: FormData): Promise<void
       offboardingDate: String(formData.get("offboardingDate") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,
     });
-    revalidatePath("/portal/offboarding");
-    redirect("/portal/offboarding");
   } catch (error) {
-    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
-    throw error;
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to request offboarding",
+    };
   }
+
+  revalidatePath("/portal/offboarding");
+  redirect("/portal/offboarding");
 }
