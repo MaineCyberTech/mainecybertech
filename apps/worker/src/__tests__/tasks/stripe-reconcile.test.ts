@@ -206,6 +206,7 @@ function baseState(overrides: Partial<MockState> = {}): MockState {
         organization_id: ORG,
         stripe_subscription_id: "sub_test",
         status: "active",
+        amount_cents: 9900,
         created_at: "2026-01-01T00:00:00.000Z",
       },
     ],
