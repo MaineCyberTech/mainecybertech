@@ -1,0 +1,67 @@
+# Time-boxed exceptions for the third-party compose images.
+#
+# `third-party-image-scan` fails on fixable HIGH/CRITICAL findings. Every entry
+# below is present in the *current* upstream image (the latest published tag,
+# verified 2026-11-02) but not yet fixed: the images are either pinned to the
+# newest release (caddy 2.11.7-alpine, prometheus v3.15.1, alertmanager
+# v0.29.0) or the fix requires an upstream rebuild with a newer Go/Alpine
+# toolchain. The repo cannot remediate these without building its own images.
+#
+# Re-review by the expiry date and drop each line once the upstream image is
+# rebuilt. Do NOT add first-party (mct-*) image findings here; those are gated
+# separately by the build-push scans.
+#
+# Exception list reviewed: 2026-11-02. Next review: 2026-12-01.
+
+# --- caddy 2.11.7-alpine: Alpine package fixes awaiting an image rebuild ---
+CVE-2026-111497 exp:2026-12-01  # brotli-libs 1.2.0-r0 -> 1.2.1-r0
+CVE-2026-92392 exp:2026-12-01   # curl 8.22.0-r0 -> 8.23.0-r0
+
+# --- Go toolchain / module CVEs in caddy, prometheus, alertmanager ---
+# All require the upstream image to be rebuilt with Go >= 1.26.10 (or the
+# named module versions). One line per CVE, shared across the three images.
+CVE-2025-61726 exp:2026-12-01
+CVE-2025-61729 exp:2026-12-01
+CVE-2025-68121 exp:2026-12-01
+CVE-2026-111943 exp:2026-12-01
+CVE-2026-116587 exp:2026-12-01
+CVE-2026-25679 exp:2026-12-01
+CVE-2026-25681 exp:2026-12-01
+CVE-2026-27136 exp:2026-12-01
+CVE-2026-27145 exp:2026-12-01
+CVE-2026-29181 exp:2026-12-01
+CVE-2026-32280 exp:2026-12-01
+CVE-2026-32281 exp:2026-12-01
+CVE-2026-32283 exp:2026-12-01
+CVE-2026-33811 exp:2026-12-01
+CVE-2026-33814 exp:2026-12-01
+CVE-2026-33818 exp:2026-12-01
+CVE-2026-39820 exp:2026-12-01
+CVE-2026-39821 exp:2026-12-01
+CVE-2026-39822 exp:2026-12-01
+CVE-2026-39828 exp:2026-12-01
+CVE-2026-39829 exp:2026-12-01
+CVE-2026-39830 exp:2026-12-01
+CVE-2026-39831 exp:2026-12-01
+CVE-2026-39832 exp:2026-12-01
+CVE-2026-39835 exp:2026-12-01
+CVE-2026-39836 exp:2026-12-01
+CVE-2026-42499 exp:2026-12-01
+CVE-2026-42504 exp:2026-12-01
+CVE-2026-42508 exp:2026-12-01
+CVE-2026-46595 exp:2026-12-01
+CVE-2026-46597 exp:2026-12-01
+CVE-2026-46600 exp:2026-12-01
+CVE-2026-56851 exp:2026-12-01
+CVE-2026-56852 exp:2026-12-01
+CVE-2026-56853 exp:2026-12-01
+CVE-2026-56854 exp:2026-12-01
+CVE-2026-56858 exp:2026-12-01
+CVE-2026-56859 exp:2026-12-01
+CVE-2026-56860 exp:2026-12-01
+CVE-2026-56862 exp:2026-12-01
+CVE-2026-56864 exp:2026-12-01
+CVE-2026-56865 exp:2026-12-01
+CVE-2026-78667 exp:2026-12-01
+CVE-2026-78669 exp:2026-12-01
+CVE-2026-97031 exp:2026-12-01
