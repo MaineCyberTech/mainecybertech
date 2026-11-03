@@ -125,28 +125,38 @@ async function resolveDefaultOrgId(
     }
   }
 
-  const { data: memberships } = await supabase
-    .from("memberships")
-    .select("organization_id, roles!inner(id, key)")
-    .eq("user_id", userId)
-    .eq("status", "approved")
-    .order("created_at", { ascending: true })
-    .limit(50);
+  const [{ data: memberships }, { data: profile }] = await Promise.all([
+    supabase
+      .from("memberships")
+      .select("organization_id, roles!inner(id, key)")
+      .eq("user_id", userId)
+      .eq("status", "approved")
+      .order("created_at", { ascending: true })
+      .limit(50),
+    supabase.from("profiles").select("is_super_admin").eq("id", userId).maybeSingle(),
+  ]);
 
   if (!memberships || memberships.length === 0) {
     return { orgId: null, platformAdmin: false, impersonation: false };
   }
 
-  const isPlatformAdmin = memberships.some((row) => {
-    return isCrossTenantKey(roleKeyOf(row.roles));
-  });
+  const adminMemberships = memberships.filter((row) => isCrossTenantKey(roleKeyOf(row.roles)));
+  // Only a genuine platform admin (super-admin profile flag AND a cross-tenant
+  // role) is org-agnostic when no org is selected. A tenant `admin` who is also
+  // a client/member of another org must NOT inherit that org's admin scope
+  // (MT-P1-005): pin admin requests to an org where the caller actually holds
+  // the admin role.
+  const isGenuinePlatformAdmin =
+    (profile as { is_super_admin?: boolean } | null)?.is_super_admin === true &&
+    adminMemberships.length > 0;
 
-  // Cross-tenant roles are org-agnostic: without an explicit org they see
-  // all tenants, so do NOT pin them to the first membership's org.
-  if (isPlatformAdmin) return { orgId: null, platformAdmin: true, impersonation: false };
+  if (isGenuinePlatformAdmin) {
+    return { orgId: null, platformAdmin: true, impersonation: false };
+  }
 
+  const pinnedMembership = adminMemberships[0] ?? memberships[0];
   return {
-    orgId: memberships[0].organization_id as string,
+    orgId: pinnedMembership.organization_id as string,
     platformAdmin: false,
     impersonation: false,
   };

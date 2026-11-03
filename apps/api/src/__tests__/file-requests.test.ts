@@ -71,7 +71,12 @@ function mockSupabase(opts: { storage?: StorageMock; claim?: number | null } = {
       data:
         opts.claim === null
           ? []
-          : [{ upload_count: opts.claim === undefined ? 1 : opts.claim, slot_token: "slot-token-1" }],
+          : [
+              {
+                upload_count: opts.claim === undefined ? 1 : opts.claim,
+                slot_token: "slot-token-1",
+              },
+            ],
       error: null,
     }),
     storage:
@@ -102,10 +107,7 @@ jest.mock("../middleware/org-access", () => ({
 // public upload endpoint does NOT use requirePermission anymore, so this stub
 // no longer masks the anonymous-upload authorization path.
 jest.mock("../middleware/permissions", () => ({
-  requirePermission:
-    () =>
-    (_req: unknown, _res: unknown, next: () => void) =>
-      next(),
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
 import fileRequestsRouter from "../routes/file-requests";
@@ -140,7 +142,9 @@ describe("File Requests API", () => {
   it("returns empty list", async () => {
     const supabase = mockSupabase();
     supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
-    const res = await request(app).get("/api/v1/file-requests").set("Authorization", "Bearer test-token");
+    const res = await request(app)
+      .get("/api/v1/file-requests")
+      .set("Authorization", "Bearer test-token");
     expect(res.status).toBe(200);
     expect(res.body.data.items).toEqual([]);
   });
@@ -190,14 +194,19 @@ describe("File Requests API", () => {
       claim: number | null = (requestRow.upload_count as number) + 1,
     ) {
       const requestBuilder = createMockBuilder({ data: requestRow, error: null } as MockResult);
-      const uploadInsert = createMockBuilder({ data: { id: "upload-1" }, error: null } as MockResult);
+      const uploadInsert = createMockBuilder({
+        data: { id: "upload-1" },
+        error: null,
+      } as MockResult);
       const deleteBuilder = createMockBuilder({ data: null, error: null } as MockResult);
 
       const storage: StorageMock = {
         from: jest.fn().mockReturnThis(),
         upload: jest.fn().mockResolvedValue({ data: { path: "x" }, error: null }),
         remove: jest.fn().mockResolvedValue({ data: null, error: null }),
-        createSignedUrl: jest.fn().mockResolvedValue({ data: { signedUrl: "https://signed" }, error: null }),
+        createSignedUrl: jest
+          .fn()
+          .mockResolvedValue({ data: { signedUrl: "https://signed" }, error: null }),
       };
 
       const supabase = mockSupabase({ storage, claim });
@@ -312,9 +321,9 @@ describe("File Requests API", () => {
         p_slot_token: "slot-token-1",
       });
       // ...and no absolute upload_count write was issued.
-      const absoluteWrites = (
-        supabase.from.mock.calls as unknown as [string][]
-      ).filter(([t]) => t === "file_requests").length;
+      const absoluteWrites = (supabase.from.mock.calls as unknown as [string][]).filter(
+        ([t]) => t === "file_requests",
+      ).length;
       expect(absoluteWrites).toBeLessThanOrEqual(1); // the token lookup only
       expect(storage.remove).toHaveBeenCalled();
     });
@@ -347,6 +356,20 @@ describe("File Requests API", () => {
 
       expect(res.status).toBe(410);
       expect(storage.upload).not.toHaveBeenCalled();
+    });
+
+    it("validates the token before requiring or buffering a file body (FILE-P2-009)", async () => {
+      const supabase = mockSupabase();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: { message: "missing" } }),
+      );
+
+      // Deliberately no multipart body: the old flow ran multer first and
+      // returned 400 "No file provided", proving the token was never checked.
+      const res = await request(app).post("/api/v1/file-requests/public/not-a-real-token/upload");
+
+      expect(res.status).toBe(404);
+      expect(supabase.storage.upload).not.toHaveBeenCalled();
     });
 
     it("rejects markup content even when the declared MIME is allowed", async () => {
@@ -438,6 +461,67 @@ describe("File Requests API", () => {
       expect(createSignedUrl).not.toHaveBeenCalled();
     });
 
+    function asClientViewer(supabase: ReturnType<typeof mockSupabase>) {
+      const original = supabase.from.getMockImplementation();
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "memberships") {
+          return createMockBuilder({
+            data: { roles: { key: "client_user" } },
+            error: null,
+          });
+        }
+        return original!(table);
+      });
+    }
+
+    it("hides uploads for an internal parent request from client roles (SEC-P2-019)", async () => {
+      const { supabase, createSignedUrl } = mockUploadsFlow({
+        requestRow: { id: "fr-1", visibility: "internal" },
+      });
+      asClientViewer(supabase);
+
+      const res = await request(app)
+        .get(`/api/v1/file-requests/fr-1/uploads?organization_id=${orgA}`)
+        .set("Authorization", "Bearer test-token");
+
+      expect(res.status).toBe(404);
+      expect(createSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it("hides signed URLs for an internal parent request from client roles (SEC-P2-019)", async () => {
+      const { supabase, createSignedUrl } = mockUploadsFlow({
+        requestRow: { id: "fr-1", visibility: "internal" },
+        firstUpload: "row",
+        uploadRow: {
+          storage_bucket: "documents",
+          storage_path: `${orgA}/requests/tok/invoice.pdf`,
+          mime_type: "application/pdf",
+          file_name: "invoice.pdf",
+        },
+      });
+      asClientViewer(supabase);
+
+      const res = await request(app)
+        .get(`/api/v1/file-requests/fr-1/uploads/upload-1/signed-url?organization_id=${orgA}`)
+        .set("Authorization", "Bearer test-token");
+
+      expect(res.status).toBe(404);
+      expect(createSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it("allows client roles to list uploads for a client-visible parent (SEC-P2-019)", async () => {
+      const { supabase } = mockUploadsFlow({
+        requestRow: { id: "fr-1", visibility: "client_visible" },
+      });
+      asClientViewer(supabase);
+
+      const res = await request(app)
+        .get(`/api/v1/file-requests/fr-1/uploads?organization_id=${orgA}`)
+        .set("Authorization", "Bearer test-token");
+
+      expect(res.status).toBe(200);
+    });
+
     it("mints a signed URL for an upload in the caller's org", async () => {
       const { createSignedUrl } = mockUploadsFlow({
         requestRow: { id: "fr-1" },
@@ -481,11 +565,9 @@ describe("File Requests API", () => {
         .set("Authorization", "Bearer test-token");
 
       expect(res.status).toBe(200);
-      expect(createSignedUrl).toHaveBeenCalledWith(
-        `${orgA}/requests/tok/contract.docx`,
-        3600,
-        { download: true },
-      );
+      expect(createSignedUrl).toHaveBeenCalledWith(`${orgA}/requests/tok/contract.docx`, 3600, {
+        download: true,
+      });
     });
 
     it("returns 404 for an upload row outside the caller's org", async () => {

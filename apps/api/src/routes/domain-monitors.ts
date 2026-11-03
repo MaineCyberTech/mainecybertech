@@ -38,7 +38,7 @@ const exportColumns: CsvColumn[] = [
   { key: "last_checked_at" },
 ];
 
-router.get("/export", async (req, res, next) => {
+router.get("/export", requirePermission("domain-monitors", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "domain-monitors", "read");
     let q = supabase.from("domain_monitors").select("*");
@@ -67,7 +67,7 @@ router.get("/export", async (req, res, next) => {
   }
 });
 
-router.get("/", async (req, res, next) => {
+router.get("/", requirePermission("domain-monitors", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "domain-monitors", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));
@@ -97,7 +97,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.get("/stats", async (req, res, next) => {
+router.get("/stats", requirePermission("domain-monitors", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "domain-monitors", "read");
     let q = supabase
@@ -154,7 +154,7 @@ router.get("/stats", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requirePermission("domain-monitors", "view"), async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "domain-monitors", "read");

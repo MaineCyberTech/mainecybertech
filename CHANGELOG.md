@@ -129,6 +129,14 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Security
 
+- **Nov 3 re-audit security batch:** client roles can no longer read internal
+  comments/timeline through sibling endpoints, see internal file-request
+  attachments or AI drafts, or record proposal client decisions; a tenant
+  `admin` with a client membership elsewhere no longer inherits that org's
+  admin scope; primary module reads now enforce `:view`; migration `5302465`
+  revokes the anon `store_quotes` INSERT grant and migration `5302466` scopes
+  self-addressed notification inserts to approved orgs. Public file-request
+  uploads validate the token before buffering and are capped per token.
 - Deploy now injects the Turnstile keys (`TURNSTILE_SECRET_KEY` into the droplet
   `.env`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as the web build arg) so the
   production contact form is captcha-protected (`e6bb073`).

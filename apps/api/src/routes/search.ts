@@ -78,17 +78,16 @@ router.get("/", async (req, res, next) => {
     ]);
 
     const adminOrgIds = (memberships ?? [])
+      .filter((m) => isCrossTenantKey(roleKeyOf((m as { roles?: unknown }).roles)))
       .map((m) => m.organization_id as string)
       .filter(Boolean);
 
     // Cross-tenant reach requires BOTH a cross-tenant role key (the shared
     // helper) AND the super_admin profile flag. A plain tenant `admin` is
-    // scoped to their own orgs exactly like every other entity below.
-    // `.some`, NOT `.find`: the memberships query is unordered, so picking the
-    // first role key made this depend on row order for multi-org users.
-    const holdsCrossTenantRole = (memberships ?? []).some((m) =>
-      isCrossTenantKey(roleKeyOf((m as { roles?: unknown }).roles)),
-    );
+    // scoped to the orgs where they hold the admin role, never every org they
+    // merely belong to (`admin` in A + `client_user` in B must not search B;
+    // MT-P1-005).
+    const holdsCrossTenantRole = adminOrgIds.length > 0;
     // `.maybeSingle()` yields an object on the real client but tests may stub
     // it as a one-element array; accept either shape.
     const callerIsSuperAdmin = Array.isArray(callerProfile)
@@ -119,13 +118,13 @@ router.get("/", async (req, res, next) => {
     // their org list is empty.
     const scopedUserIds = allTenants
       ? null
-      : (
+      : ((
           await supabase
             .from("memberships")
             .select("user_id")
             .in("organization_id", scopedOrgIds.length > 0 ? scopedOrgIds : ["__none__"])
             .eq("status", "approved")
-        ).data?.map((m) => m.user_id as string) ?? [];
+        ).data?.map((m) => m.user_id as string) ?? []);
 
     let userQuery = supabase
       .from("profiles")
@@ -133,10 +132,7 @@ router.get("/", async (req, res, next) => {
       .or(`full_name.ilike.${searchTerm},email.ilike.${wildcardTerm}`)
       .limit(limit);
     if (scopedUserIds) {
-      userQuery = userQuery.in(
-        "id",
-        scopedUserIds.length > 0 ? scopedUserIds : ["__no_match__"],
-      );
+      userQuery = userQuery.in("id", scopedUserIds.length > 0 ? scopedUserIds : ["__no_match__"]);
     }
 
     let ticketQuery = supabase
@@ -206,13 +202,7 @@ router.get("/", async (req, res, next) => {
       { data: tickets, error: tErr, count: tCount },
       { data: projects, error: pErr, count: pCount },
       { data: documents, error: dErr, count: dCount },
-    ] = await Promise.all([
-      userQuery,
-      organizationQuery,
-      ticketQuery,
-      projectQuery,
-      documentQuery,
-    ]);
+    ] = await Promise.all([userQuery, organizationQuery, ticketQuery, projectQuery, documentQuery]);
 
     if (uErr) throw new AppError("DB_ERROR", uErr.message, 500);
     if (oErr) throw new AppError("DB_ERROR", oErr.message, 500);
