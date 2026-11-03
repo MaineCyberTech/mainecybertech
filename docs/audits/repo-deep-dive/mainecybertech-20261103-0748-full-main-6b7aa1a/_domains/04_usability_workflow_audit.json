@@ -1,0 +1,259 @@
+{
+  "domain": "04_usability_workflow_audit",
+  "file": "04_usability_workflow_audit.md",
+  "area": "USE",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T09:29:24Z",
+  "findings": [
+    {
+      "id": "USE-P1-001",
+      "severity": "P1",
+      "title": "Self-service password reset dead-ends: the email link lands on a page that cannot complete the reset",
+      "owner": "Web + API auth owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: forgot-password builds redirectTo `${resolveTrustedRedirectOrigin()}/auth/callback?next=/password-reset` (apps/api/src/routes/auth.ts:347); /auth/callback exchanges the PKCE code, sets the session cookie and honours next via resolvePostAuthRedirect (apps/web/app/auth/callback/route.ts:8-44, apps/web/lib/auth/callback-redirect.ts:14-28). Regression tests: apps/api/src/__tests__/auth.test.ts:301, apps/web/__tests__/lib/auth/callback-redirect.test.ts. Residual: the recovery-AMR bypass in reset-password (auth.ts:396-430) has no test that exercises a recovery token without currentPassword; see open question in the report.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P1-002",
+      "severity": "P1",
+      "title": "Signup email-confirmation link points at the API host and 404s, blocking first login",
+      "owner": "API auth owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: sign-up sets emailRedirectTo from resolveTrustedRedirectOrigin() so the link targets the web /auth/callback, never the API host (apps/api/src/routes/auth.ts:189-193); auth.test.ts:236-296 asserts the web-origin redirect.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P1-003",
+      "severity": "P1",
+      "title": "Admin approval queue cannot approve or reject memberships (roleId sent as empty string)",
+      "owner": "API platform + web admin",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: approvals/actions.ts sends status-only payloads (apps/web/app/(admin)/admin/approvals/actions.ts:52,66); updateMembershipSchema.roleId is optional (apps/api/src/validators/membership.ts:9-14); MembershipApprovalActions renders API errors inline.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P1-004",
+      "severity": "P1",
+      "title": "Every SDK delete reports failure after succeeding because the client cannot parse empty 204 bodies",
+      "owner": "SDK/API contracts owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: executeFetch clones the response, treats a genuinely empty body as null and still throws on malformed JSON (packages/sdk/src/client.ts:107-152); tests packages/sdk/src/__tests__/client-fetch.test.ts:149-215.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P2-001",
+      "severity": "P2",
+      "title": "Bulk document operations report success without per-item results (false success on partial failure)",
+      "owner": "Web admin + API documents",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: bulk visibility/delete return per-item succeeded/failed (apps/web/app/(admin)/admin/documents/page.tsx:439-520) via summarizeBulkUpdate (apps/web/lib/bulk-results.ts:19-49); the UI renders X of Y removed / Z failed with failed ids (components/admin/documents/useAdminDocumentActions.ts:347-393, AdminDocumentsBulkControls.tsx:69-153); portal bulk-actions return failed ids; SDK BulkUpdateResult carries results/successful/failed/skipped.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P2-002",
+      "severity": "P2",
+      "title": "Ticket lists and dashboard counts silently stop at 25 rows (no pagination) in portal and admin",
+      "owner": "Web platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: portal support paginates with server totals and limit=1 counts (apps/web/app/(portal)/portal/support/page.tsx:28-42) with pager (SupportCenterClient.tsx:201-210,284-306); admin loads 100/page and Show more fetches further pages (admin/tickets/page.tsx:121-155, AdminTicketCenterClient.tsx:402-418,747-755). The same truncation class on other portal lists is filed as new USE-P2-012.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P2-003",
+      "severity": "P2",
+      "title": "Admin 'Delete Ticket' only closes the ticket; copy promises a restorable soft-delete and Restore is unreachable",
+      "owner": "Web admin tickets",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: deleteTicketAction calls api.tickets.remove (hard DELETE) with typed DELETE confirmation (apps/web/app/(admin)/admin/tickets/[ticketId]/actions.ts:79-104); copy says 'permanently deletes ... cannot be undone' (page.tsx:259-262); no Restore control exists.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P2-004",
+      "severity": "P2",
+      "title": "Ticket notification deep links 404 in the portal (/portal/tickets/* does not exist)",
+      "owner": "Web platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: notificationHref maps portal tickets to /portal/support/<id> and admin to /admin/tickets/<id> (apps/web/lib/notification-links.ts:13-25), used by NotificationBell.tsx and NotificationsPageClient.tsx; covered by apps/web/__tests__/lib/notification-links.test.ts.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P2-005",
+      "severity": "P2",
+      "title": "Notification surfaces swallow failures: preferences save silently fails and a failed list load renders a false empty state",
+      "owner": "Web portal",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: preference load/save failures render role=alert with retry/reload (NotificationPreferencesClient.tsx:53-60,106-152); the notifications list distinguishes loadError from empty (apps/web/components/NotificationsPageClient.tsx:63-74,171-178); bell toggle reverts and shows role=alert (NotificationBell.tsx:264-276,437).",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P2-006",
+      "severity": "P2",
+      "title": "NotificationBell SSE fallback leaks a 30-second polling interval per component instance",
+      "owner": "Web platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the fallback interval id lives in fallbackPollRef, started/stopped idempotently and cleared on cleanup (NotificationBell.tsx:96-110,185-195); reconnect uses bounded backoff and auth_expired is terminal.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P2-007",
+      "severity": "P2",
+      "title": "Client-onboarding create swallows the redirect: success shows a cryptic error and invites duplicate records",
+      "owner": "Web portal",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: redirect() runs outside the try/catch after the create succeeds (apps/web/app/(portal)/portal/client-onboarding-command-center/actions.ts:36-40); only the create is guarded.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P2-008",
+      "severity": "P2",
+      "title": "Onboarding checklist items cannot be completed anywhere in the web app",
+      "owner": "Web portal + API",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: ChecklistItemToggle wires the checkbox to toggleChecklistItemAction with optimistic revert on failure (apps/web/app/(portal)/portal/client-onboarding-command-center/[id]/ChecklistItemToggle.tsx; ./actions.ts:16-40; page.tsx:99).",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P2-009",
+      "severity": "P2",
+      "title": "Session/MFA expiry has no user-facing explanation and the ?mfa=required step-up redirect is ignored",
+      "owner": "Web auth UX",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: middleware appends ?reason=expired on a session bounce (apps/web/middleware.ts:135-140); /login accepts both expired and session_expired (apps/web/app/(public)/login/page.tsx:34-40); the security page reads ?mfa=required and shows a Verify-to-continue step-up (security/page.tsx:19-21; MfaSettingsClient.tsx:235-280). The bell path is now included (USE-P3-006).",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P2-010",
+      "severity": "P2",
+      "title": "Privileged membership/approval actions lack confirmation and success feedback (suspend/reject are one click)",
+      "owner": "Web admin",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: reject/deny paths go through ConfirmDialog and both outcomes render role=status/role=alert (MembershipApprovalActions.tsx:69-83, OrgApprovalActions.tsx:74-88); the user-detail MembershipForm confirms access-removing status changes (MembershipForm.tsx:14,153).",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P2-011",
+      "severity": "P2",
+      "title": "Change Password form collects a Current Password it never checks and advertises a weaker rule than the API enforces",
+      "owner": "Web auth UX",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: ProfileClient requires and sends currentPassword (apps/web/app/(portal)/portal/profile/ProfileClient.tsx:74-98); the API verifies it via signInWithPassword and rejects a wrong one (apps/api/src/routes/auth.ts:430-443); PasswordPolicyHint states the zxcvbn>=3 rule.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P3-001",
+      "severity": "P3",
+      "title": "Portal ticket creation gives no success confirmation and the tested action is dead code with a mismatched field name",
+      "owner": "Web portal",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the live action reads subject and returns the created ticket (apps/web/app/(portal)/portal/support/actions.ts:25-44); the modal shows a role=status confirmation with a View ticket link (SupportCenterClient.tsx:227-243,355-365); the dashboard CTA deep-links ?create=1.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P3-002",
+      "severity": "P3",
+      "title": "Offline/poor-network support is absent from the running app (service worker never registered)",
+      "owner": "Web platform / PWA",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: ServiceWorkerRegistrar registers /sw.js in production and is mounted in the root layout (apps/web/components/ServiceWorkerRegistrar.tsx:17-28, apps/web/app/layout.tsx:59); sw.js precaches an offline HTML page and is served no-cache (next.config.mjs:31-39); covered by apps/web/e2e/mobile.spec.ts:245-300.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P3-003",
+      "severity": "P3",
+      "title": "Document version history is display-only: no per-version download/restore and it hides itself for single-version documents",
+      "owner": "Web portal + SDK",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: per-version download (createVersionSignedUrl) and restore actions exist with role=alert/status feedback and Retry on load failure; the section renders for single-version docs (apps/web/components/portal/DocumentVersionsClient.tsx:33-38,50-105,156); SDK methods in packages/sdk/src/documents.ts:176-193.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P3-004",
+      "severity": "P3",
+      "title": "Web edit flows never send If-Match, so concurrent admin edits silently overwrite each other",
+      "owner": "Web admin + SDK",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: SDK sends If-Match and strips ifMatch from bodies (packages/sdk/src/client.ts:209-210; tickets.ts:50-55; documents.ts:75-80); ticket edit/inline actions read the row version (admin/tickets/[ticketId]/actions.ts:22-33,130) and documents resolve it; 409 renders 'modified by someone else' (apps/web/lib/api-error.ts:8-25).",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P3-005",
+      "severity": "P3",
+      "title": "Form error handling is lossy or missing: signup can hang, onboarding errors are generic, bulk invite says 'Request failed'",
+      "owner": "Web platform",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: signup wraps the action in try/catch/finally and preserves NEXT_REDIRECT (apps/web/app/(public)/signup/page.tsx:22-46); onboarding wizard and bulk invite keep the API message via formErrorMessage (OrganizationOnboardingWizard.tsx:130-137; BulkInviteForm.tsx:44-52). The new request actions do not follow this pattern - see new USE-P3-008.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P3-006",
+      "severity": "P3",
+      "title": "Notification-bell SSE session expiry redirects to /login?reason=session_expired, but /login only recognizes reason=expired",
+      "owner": "Web platform",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: NotificationBell still navigates to /login?reason=session_expired (apps/web/components/NotificationBell.tsx:159), but /login now accepts both values and shows the expired banner (apps/web/app/(public)/login/page.tsx:34-40); the bell test still asserts the URL (apps/web/__tests__/components/NotificationBell.test.tsx:177).",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P2-012",
+      "severity": "P2",
+      "title": "45 portal list pages fetch only the API default 25 rows and show no pager; 32 label the page length as the organization total",
+      "owner": "Web platform",
+      "target": "this month",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: a scan of apps/web/app/(portal)/portal/**/page.tsx finds 45 list pages that call list() with no page/limit and render no pagination, e.g. automation/page.tsx:39, backup-dr/page.tsx:21, budgets/page.tsx:21, governance/page.tsx:21, service-catalog/page.tsx:20, time-entries/page.tsx:21, vendor-contracts/page.tsx:22. API defaults are 25 (governance.ts:51, final/crud.ts:35, security-ops.ts:45, training-hub.ts:84). 32 of them print `{items.length} ... for your organization` as if it were the total (e.g. automation:54, backup-dr:36, dns-changes:46, offboarding:22, client-knowledge-base:70), and change-requests:23 fetches 25 while :48 prints the API total with no pager, so the displayed total can exceed the rendered rows (e.g. 60 vs 25). Same class as fixed USE-P2-002; the 2026-10-21 portal-modules audit ranked it High (#9, docs/audits/portal-modules/2026-10-21/report.md:40). Fix: adopt the approvals/qbr pattern (searchParams + limit + AdminPagination + API total) on every portal list.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P2-013",
+      "severity": "P2",
+      "title": "Client proposal accept/decline is a one-click irreversible decision with no confirmation",
+      "owner": "Web portal + product",
+      "target": "this month",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: ProposalDecisionClient runs decide() directly on click and renders Accept proposal / Decline with no ConfirmDialog (apps/web/app/(portal)/portal/proposals/[id]/ProposalDecisionClient.tsx:14-60); the page hides the decision UI once metadata.clientDecision is set (page.tsx:304-311), and the API records the choice but offers no client-side undo (apps/api/src/routes/proposals.ts:798-861). An accidental click commits the organization to a commercial proposal. Fix: confirm with the proposal title/total, and either allow re-decision or expose a staff reset with audit.",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P3-007",
+      "severity": "P3",
+      "title": "40 of 97 portal pages omit PortalSubnav, including every new request flow",
+      "owner": "Web platform",
+      "target": "next quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: 40 portal page.tsx files do not import PortalSubnav, e.g. change-requests/page.tsx, change-requests/new/page.tsx, client-knowledge-base/page.tsx, identity-verification/page.tsx, offboarding/page.tsx, qbr/[id]/page.tsx. The component renders contextual sibling tabs (apps/web/components/portal/PortalSubnav.tsx:12-40) and the 2026-10-21 portal-modules audit flagged the same inconsistency (#20, docs/audits/portal-modules/2026-10-21/report.md:252). Impact: navigation is inconsistent between modules; new flows are discoverable only from the sidebar. Fix: add the subnav to module-level list/detail pages (or make the layout render it centrally).",
+      "area": "USE"
+    },
+    {
+      "id": "USE-P3-008",
+      "severity": "P3",
+      "title": "Six new request-creation actions throw on API failure, replacing the form with the generic portal error boundary",
+      "owner": "Web platform",
+      "target": "next quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: createApprovalAction, createChangeRequestAction, createDnsChangeAction, requestIdentityVerificationAction, addInsuranceEvidenceAction and requestOffboardingAction rethrow every non-redirect error (approvals/actions.ts:36-37; change-requests/actions.ts:30-31; dns-changes/actions.ts:27-28; identity-verification/actions.ts:26-27; insurance-binder/actions.ts:29-30; offboarding/actions.ts:27-28), and their forms are void `action={...}` forms with no inline error state. A 400/402/403/429/network error therefore lands on apps/web/app/(portal)/error.tsx:36-45 ('Something went wrong', Try again resets the route) and the typed values are lost. Fix: return {ok:false,error} and render an inline role=alert like createOnboardingAction / createFormAction.",
+      "area": "USE"
+    }
+  ]
+}

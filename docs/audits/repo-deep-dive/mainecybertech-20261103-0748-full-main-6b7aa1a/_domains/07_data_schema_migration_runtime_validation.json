@@ -1,0 +1,240 @@
+{
+  "domain": "07_data_schema_migration_runtime_validation",
+  "file": "07_data_schema_migration_runtime_validation.md",
+  "area": "DATA",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T08:30:00Z",
+  "findings": [
+    {
+      "id": "DATA-P0-001",
+      "severity": "P0",
+      "title": "Orphan cleanup can recursively delete a bucket's contents",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/worker/src/tasks/orphan-cleanup.ts:59-61 treats null/undefined ids as folders, :70-76 rejects folder-like paths, :108/:120-135 paginates and recurses only into folder entries, :262-266 drops folder-like paths before remove(); the new task-deadline signal (:108,:272) aborts instead of acting on a partial listing. Regression tests remain in apps/worker/src/__tests__/orphan-cleanup.test.ts (jest not executable: no node_modules).",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P1-001",
+      "severity": "P1",
+      "title": "Approved-membership RLS predicate reintroduced six times; pending/suspended members could access tenant data",
+      "owner": "backend/data governance",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: supabase/migrations/5302461_full_platform_role_gates_and_approved_predicates.sql:29-37 recreates notifications_insert_system_or_admin with public.user_has_role(...), whose body filters m.status='approved' (5302026:684-700), replacing the pre-baseline policy at 5302057:41-55. node scripts/check-rls-predicate.mjs -> PASS (no raw status-unfiltered predicate in 34 migrations newer than 5302430); node scripts/verify-rls.mjs -> 0 failures / 0 warnings.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P1-002",
+      "severity": "P1",
+      "title": "`retention` worker task performs unbounded deletes and reports success on partial failure",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: retention.ts:189-230 bounds every purge (notifications, store analytics, store quotes/requests, webhook deliveries/DLQ) through purgeInBatches; apps/worker/src/lib/purge.ts:65-100 enforces BATCH_SIZE=1000/MAX_BATCHES=200; retention.ts:308-321 returns ok:false on any table error or deadline abort. Boundary tests retention.test.ts:339-362 and public-interaction-retention.test.ts:9-10,47-79 remain.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P1-003",
+      "severity": "P1",
+      "title": "Soft-delete columns remain dead schema; DELETE endpoints hard-delete",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: supabase/migrations/5302432_drop_unused_soft_delete_columns.sql:23-31 drops deleted_at/deleted_by plus the indexes on tickets/projects/documents; grep finds no remaining application/type references and docs/migrations/README.md:45-47 records hard-delete semantics.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P1-004",
+      "severity": "P1",
+      "title": "Two migrations share numeric version 5302463, so `supabase db push` fails and the notification dedup-index fix is never recorded",
+      "owner": "backend/data governance",
+      "target": "this week",
+      "status": "open",
+      "note": "NEW at 6b7aa1a5 (same defect as INV-P1-001): supabase/migrations/5302463_client_portal_ai_and_visibility.sql and supabase/migrations/5302463_fix_notification_key_dedup_index.sql share version 5302463. Reproduced with Supabase CLI 2.107.0 against a throwaway Postgres 16: `supabase db push --db-url ... --include-all` lists both, applies the client-portal file, then fails on the second with `ERROR: duplicate key value violates unique constraint \"schema_migrations_pkey\" ... Key (version)=(5302463) already exists` (SQLSTATE 23505), exits 1, and only the first file is recorded. A rerun skips version 5302463, so 5302463_fix_notification_key_dedup_index.sql (the 42P10 ON CONFLICT fix) is never applied. A throwaway-DB check confirmed only t_one from the first file survived.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-001",
+      "severity": "P2",
+      "title": "Blanket `anon` DML grant + default privileges make every future table anon-writable unless RLS happens to stop it",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: 5302434_anon_privilege_least_privilege.sql revokes select/insert/update/delete from anon on every public table and the ALTER DEFAULT PRIVILEGES grant, then re-grants only the declared public-write allowlist; 5302458 only revokes more (store_analytics_events) and 5302448 grants anon INSERT on store_quotes with organization_id is null. No later migration re-grants anon DML.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-002",
+      "severity": "P2",
+      "title": "Destructive table-replacement migrations are not transaction-wrapped",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: sh scripts/ci/check-migration-transactions.sh -> PASS (162 migration files checked; negative fixture flagged); 5302460/5302463 pair are begin/commit wrapped (the duplicate-version defect is tracked separately as DATA-P1-004).",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-003",
+      "severity": "P2",
+      "title": "`orphan-cleanup` deletes storage objects based on a truncated listing",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: orphan-cleanup.ts:10-24 LIST_PAGE_SIZE=100/MAX_LISTED=10_000, :108-147 pages to a short page and throws at the 10k ceiling; the deadline signal also throws rather than returning a partial list. Pagination test remains at orphan-cleanup.test.ts:340-365.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-004",
+      "severity": "P2",
+      "title": "Migration CI dry-run diff is non-blocking; drift is never gated",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: .github/workflows/supabase-migrations.yml:96-133 runs `supabase db diff --linked --schema public` after the push, strips ANSI, and exits 1 on any DDL unless workflow_dispatch allow_drift=1.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-005",
+      "severity": "P2",
+      "title": "`audit_logs` org-delete cascade destroys compliance history; 365-day purge has no archive",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: 5302442_audit_log_archive.sql creates the append-only audit_log_archive plus archive_audit_logs/archive_org_audit_logs SECURITY DEFINER RPCs (search_path pinned, revoked from anon/authenticated); 5302451_audit_logs_org_delete_guard.sql adds the BEFORE DELETE trigger that archives and fails closed; retention.ts:167-189 calls archive_audit_logs before purge.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-006",
+      "severity": "P2",
+      "title": "Several stores lack a retention policy and owner",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: store_quotes and store_quote_requests now have 90-day bounded purges (retention.ts:202-210; retention-policy.ts:32-44) and are listed in docs/PRIVACY.md:53-54. Residual: store_leads and impersonation_log still have no purge and are explicitly documented as a gap (docs/PRIVACY.md:56,109-112); additionally task_dead_letters (5302445) stores arbitrary task payloads (including notification-email `to` addresses) with no retention/owner and is absent from the privacy schedule.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-007",
+      "severity": "P2",
+      "title": "Generated DB types / schema can drift from migration intent",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: node scripts/generate-db-types.js --check -> 'Processing 162 migration files... database types up to date'; the generator embeds the sha256 migrations digest (scripts/generate-db-types.js:300-311,457-459) and is wired at .github/actions/unit-tests/action.yml.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-008",
+      "severity": "P2",
+      "title": "Orphan cleanup reference query is unbounded in the object list",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: orphan-cleanup.ts:33 IN_CHUNK_SIZE=200 and :204-209 chunks the document/document_versions/file_request_uploads references; test orphan-cleanup.test.ts:227-248 asserts 3 chunks for 450 objects.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-009",
+      "severity": "P2",
+      "title": "`updated_at` is frozen on 69 module tables (no trigger; generic PATCH drops it)",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: 5302443_module_updated_at_triggers.sql installs set_updated_at on every public base table that has updated_at and no trigger yet (idempotent, matches by function); generic PATCH writes updated_at server-side (e.g. routes/governance.ts:134-136, routes/final/crud.ts).",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-010",
+      "severity": "P2",
+      "title": "Scheduled database dump and restore test target the dev environment only; production long-term backup is unproven",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: .github/workflows/db-backup.yml:8-15,32-48 supports a prod target behind prod-approval and vars.PROD_BACKUP_ENABLED, but docs/runbooks/backup-restore-drill-ledger.md:9-13 still records 'no drill has been executed yet' and the operator backup secrets remain unprovisioned (DR-P0-001 residual); production long-term backup is capable but unexercised.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P2-011",
+      "severity": "P2",
+      "title": "Preflight script aborts on its first check, so the duplicate-migration gate never runs and is not wired to CI",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "open",
+      "note": "NEW at 6b7aa1a5: scripts/preflight-check.sh:2 `set -euo pipefail` plus :16 `((PASS++))` exits after the first passing check because PASS=0 makes the arithmetic expression return 1; `bash scripts/preflight-check.sh` stops after the first Dockerfile line. The only duplicate-version assertion (:50-51) is therefore unreachable, the script is referenced by no workflow (grep .github -> none), and the Dockerfile predicates at :34-37 emit \"1\\npass\" (grep -c plus echo), so they would fail even after the set -e fix. This is why the 5302463 collision in DATA-P1-004 passed every repository gate.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-001",
+      "severity": "P3",
+      "title": "Pre-baseline policies created without a preceding `drop policy if exists`",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: node scripts/verify-rls.mjs -> 140/140 tables RLS-enabled, 1035 policies, 0 failures, 0 warnings; pre-baseline drop-policy pairing remains backfilled and docs/migrations/README.md documents the 5302427 baseline.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-002",
+      "severity": "P3",
+      "title": "Migration version gaps undocumented; brief states 141 migrations, tree has 127",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: docs/migrations/README.md:22-37 now documents all six gap ranges (5302027, 5302039-5302040, 5302044-5302049, 5302084, 5302136-5302401, 5302429) and the never-reuse rule; node scripts/check-docs-counts.mjs -> 'docs counts OK' (162 files).",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-003",
+      "severity": "P3",
+      "title": "Retention purge boundary behaviour is untested; the mock ignores the age cutoff and the PII purge has no tests",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: retention.test.ts:339-362 keeps a row exactly at the cutoff and deletes only strictly older rows with an age-aware mock; public-interaction-retention.test.ts:9-10,47-79 does the same for the PII purge.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-004",
+      "severity": "P3",
+      "title": "Status-like text columns are not constrained by CHECK/enum, so app vocabulary is not enforced by the DB",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: 5302457_status_check_constraints.sql adds guarded CHECK ... NOT VALID constraints for 20 status columns; 5302462_sop_library_status_check.sql adds the 21st; validators/governance.ts:77-102 mirrors the SOP vocabulary and catalog-parity.test.ts asserts it.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-005",
+      "severity": "P3",
+      "title": "No down-migrations and destructive migrations lack rollback notes despite the repo's own naming guide",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "status": "regressed",
+      "note": "REGRESSED at 6b7aa1a5: the six previously verified destructive files still carry '-- Rollback:' headers, but the new supabase/migrations/5302460_drop_portal_module_settings.sql drops public.portal_module_settings (:17, cascade) and contains no rollback header (grep -c 'Rollback:' -> 0), violating docs/migrations/README.md:53-62. The docs' destructive-migration table still lists only the six old files.",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-006",
+      "severity": "P3",
+      "title": "Generated DB types carry no commit/version binding",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: packages/sdk/src/database.types.ts:3 carries the sha256 migrations digest and scripts/generate-db-types.js --check asserts it (ran -> up to date).",
+      "area": "DATA"
+    },
+    {
+      "id": "DATA-P3-007",
+      "severity": "P3",
+      "title": "Governance CRUD accepts free-text statuses that the new CHECK constraints reject with a 500",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: validators/governance.ts:77-102 replaces z.string() with SOP_STATUSES for create/update SOP (status enum draft/active/archived/published); 5302462 adds the matching sop_library CHECK and catalog-parity.test.ts asserts the two vocabularies stay in step. change_requests status is excluded from its update schema entirely (validators/governance.ts:17-26).",
+      "area": "DATA"
+    }
+  ],
+  "report": "Read-only re-verification at 6b7aa1a5 (worktree of origin/main); no hosted database access. 18 of 21 previous DATA rows verified fixed, 2 partially fixed, 1 regressed (P3-005: new 5302460 drop has no rollback note), and 2 new open findings: P1-004 duplicate migration version 5302463 (reproduced with Supabase CLI 2.107.0: push applies the first file, then fails with schema_migrations_pkey 23505 and never records the notification dedup-index fix) and P2-011 the preflight script aborts on its first check so the duplicate gate never runs. Executed evidence: sh scripts/ci/check-migration-transactions.sh (PASS, 162 files), node scripts/verify-rls.mjs (140/140 tables, 1035 policies, 0 failures/0 warnings), node scripts/check-rls-predicate.mjs (PASS, 34 migrations), node scripts/generate-db-types.js --check (up to date), node scripts/check-docs-counts.mjs (OK), node scripts/check-permission-catalog.mjs (PASS). Key migrations: 5302432/5302434/5302442/5302443/5302451/5302457/5302461/5302462. Residuals: store_leads + impersonation_log + task_dead_letters have no purge (docs/PRIVACY.md:56); prod backup capable but unexercised (drill ledger); 5302460 rollback-note gap."
+}

@@ -1,0 +1,259 @@
+{
+  "domain": "16_documentation_devex_operator_readiness",
+  "file": "16_documentation_devex_operator_readiness.md",
+  "area": "DOC",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T09:29:24Z",
+  "findings": [
+    {
+      "id": "DOC-P2-001",
+      "severity": "P2",
+      "title": "Operations documentation contradicts the current pipeline and configuration",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the handbook still states cancel-in-progress:false/queued semantics (FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:54 vs deploy-do.yml:40-43), the manual-dispatch terraform model (line 238 vs terraform-do.yml header), 13 variables and the real firewall (lines 144-146 vs infra/terraform/digitalocean/variables.tf, firewall.tf:22-57, no 2376), and printf-based .env delivery with the metrics-token file (line 112).",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P2-002",
+      "severity": "P2",
+      "title": "Rollback documentation is stale (Terraform push flow) and repeats the false approval claim",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: ROLLBACK_PROCEDURES.md:238-251 documents the manual-dispatch path ('a push does NOT apply Terraform'; Actions -> terraform-do -> Run workflow) and :350-353 states required reviewers are not configured rather than claiming a working gate. (The reviewer-status claim itself now conflicts with AGENTS.md - see new DOC-P2-010.)",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P2-003",
+      "severity": "P2",
+      "title": "`docs/CI.md` documents the SBOM workflow as \"Blocking\" but it gates nothing",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the SBOM row reads 'Artifact-only (not a gate)' (docs/CI.md:31) and no SBOM context appears in .github/branch-protection/main.json (8 contexts); scripts/check-required-checks.mjs passes ('all required checks match a workflow job').",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P2-004",
+      "severity": "P2",
+      "title": "Incident-response and breach docs still describe the alerting dead-man's switch as undeployed and list closed gaps",
+      "owner": "platform lead / security reviewer",
+      "target": "this week",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: the alerting wording is corrected - INCIDENT_RESPONSE.md:148-165 states Alertmanager is deployed and delivering and that only ALERTMANAGER_WATCHDOG_WEBHOOK_URL is unset. Remaining: DATA_BREACH_RESPONSE.md:473 still lists 'DR-P0-001, DR-P0-002, IR-P1-004, IR-P1-005' as gaps, but the 7dd0402 register marks DR-P0-002, IR-P1-004 and IR-P1-005 verified-fixed; only DR-P0-001 remains partially-fixed. The list mixes closed old-register IDs with the live residual.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P2-005",
+      "severity": "P2",
+      "title": "docs/RELEASE_GATE.md is a stale status artifact contradicting the current verified-fixed register",
+      "owner": "release owner",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: the unreachable-commit defect is gone - RELEASE_GATE.md is bound to the 2026-10-11 run 8d299b8, declares the register the status source with 'register wins', and carries reconciled NO-GO statuses (docs/RELEASE_GATE.md:4-16,37-41). Residual: it has not been rebound after the 2026-10-14 full re-audit (7dd0402) or the 2026-10-21 portal-modules run, both published in docs/audits, so the top-level gate still reports the 2026-10-11 counts and rows even though the doc says to review after every audit re-run.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P2-006",
+      "severity": "P2",
+      "title": "Alert-delivery secrets (NTFY_ALERTS_*, ALERTMANAGER_*) are missing from the canonical secret docs, which still name Slack as the only channel",
+      "owner": "platform/security + docs",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the matrix lists the seven ALERTMANAGER_* secrets (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:84-89,228-230) and NTFY_ALERTS_URL/USER/PASS (lines 118-120), and SECRETS_ROTATION.md:101-109 carries all nine in the rotation inventory; backup rows say 'ntfy/Slack alert'.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P2-007",
+      "severity": "P2",
+      "title": "docs/GAP_ANALYSIS.md is an AWS-era historical draft presented as current",
+      "owner": "docs",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the file opens with a 'Historical snapshot (2026-08-01) - AWS-era draft, not current' banner pointing at the live sources (docs/GAP_ANALYSIS.md:3-9); docs/INDEX.md labels it historical; the machine-path guard (check-docs-links) passes.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P2-008",
+      "severity": "P2",
+      "title": "docs/technical-writing/migration-guide.md documents commands and a release process that do not exist",
+      "owner": "docs + platform engineering",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the guide is reconciled against the current workflow - 5302NNN naming with a pointer to the naming guide, no `pnpm supabase:reset:auto`, no app-host /api/health curl, and RELEASING.md/UPGRADE.md named as canonical for promotion (docs/technical-writing/migration-guide.md:1-35); scripts/dev-setup.sh no longer calls the missing script.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-001",
+      "severity": "P3",
+      "title": "Dated point-in-time audit reports are mixed with current runbooks with no archive/staleness marker",
+      "owner": "docs owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: every run directory under docs/audits carries HISTORICAL.md (including 905ed63, 7dd0402 and portal-modules/2026-10-21), docs/audits/README.md:1-20 marks the corpus historical, and `node scripts/check-docs-links.mjs` passes the historical-marker and machine-path checks.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-002",
+      "severity": "P3",
+      "title": "`AGENTS.md` documents the worker consumer incorrectly and omits the queue backend divergence",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: AGENTS.md:361-364 now says 'Worker (161 lines)' (actual 161) and documents runWorkerTasks in consumer-sqs.ts dispatching on QUEUE_BACKEND with BullMQ enforced in production (consumer-bullmq.ts; apps/worker/src/env.ts:81-86). The architecture table at :17 also names the BullMQ/SQS/inline divergence.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-003",
+      "severity": "P3",
+      "title": "Migration/workflow/OpenAPI counts drift in README.md, docs/ONBOARDING.md and the endpoint inventory, and the count guard does not cover them",
+      "owner": "docs / repo maintainer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: README.md:45 says 162 migrations (actual 162), ONBOARDING.md says 30 workflows (actual 30), docs/INDEX.md and docs/API_ENDPOINT_INVENTORY.md are guarded against docs/openapi.yaml, and `node scripts/check-docs-counts.mjs` prints 'docs counts OK'.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-004",
+      "severity": "P3",
+      "title": "docs/MONITORING_AND_ALERTING.md contradicts the now-wired metrics and the fail-closed /metrics gate",
+      "owner": "platform/observability",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the doc still describes the fail-closed bearer gate ('404 unless METRICS_TOKEN is configured and presented', docs/MONITORING_AND_ALERTING.md:238,98-99) and the memory table matches compose (api/worker/prometheus 256m, web 512m, redis 48m, caddy 64m, alertmanager 128m vs infra/digitalocean/docker-compose.yml:61,138,203,257,292,330,401). The image-version strings are stale - filed as new DOC-P3-013.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-005",
+      "severity": "P3",
+      "title": "docs/TROUBLESHOOTING.md and docs/ONBOARDING.md name wrong deploy secrets/containers and stale memory limits",
+      "owner": "docs / platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: TROUBLESHOOTING.md:59 names CI_SSH_PRIVATE_KEY and the correct prune-after-health-gate order, :70-76 says the web container is 512MB with the mct-portal-web-1 log target; ONBOARDING.md:286 uses mct-portal-api-1 and the other mct-portal-* names.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-006",
+      "severity": "P3",
+      "title": "docs/audits/README.md index omits the committed repo-deep-dive runs and its naming contract does not match them",
+      "owner": "docs",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the Run contract matches the pack naming and the Runs table lists all six repo-deep-dive runs plus the manual portal-modules run (docs/audits/README.md:93-115); the 905ed63 and 7dd0402 rows are present and '(latest)' points at 7dd0402. `node scripts/check-docs-links.mjs` passes.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-007",
+      "severity": "P3",
+      "title": "scripts/README.md omits 14 scripts, including every CI guard script",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: 53 of 58 files in scripts/ are indexed (was 52 of 55), including the CI guards (check-docs-links.mjs, check-docs-counts.mjs, check-required-checks.mjs, verify-rls.mjs, etc.; scripts/README.md 'Last updated 2026-10-21'). Remaining 5 unlisted: bundle-budget.json, check-bundle-budget.mjs (run by .github/workflows/e2e.yml:211), exercise-storage-restore.sh (run by validate.yml:74 and the shellcheck action), and the two new guards check-changelog-checkbox.mjs (unit-tests action:87-90) and check-no-dotenv.sh. No guard enforces index coverage.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-008",
+      "severity": "P3",
+      "title": "AGENTS.md production compose table omits the alertmanager service",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the compose table has an alertmanager row (internal 9093, rendered from alertmanager.tmpl.yml; AGENTS.md:222). The version cell is stale (v0.28.1 vs compose v0.29.0) - filed as new DOC-P3-013.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-009",
+      "severity": "P3",
+      "title": "Migration naming docs contradict each other and the repo's actual 5302xxx sequence",
+      "owner": "backend/DB lead + docs",
+      "target": "this quarter",
+      "status": "regressed",
+      "note": "REGRESSED at 6b7aa1a: docs/migrations/naming-guide.md:5-40 and docs/SUPABASE_MIGRATION_WORKFLOW.md:30-31 mandate a unique sequential 5302NNN prefix ('Duplicate prefixes are not allowed'), but the tree now has two migrations with prefix 5302463 (5302463_client_portal_ai_and_visibility.sql and 5302463_fix_notification_key_dedup_index.sql), and the first one's header comment says '5302437' (line 2), the wrong number. The workflow doc also still names 5302458 as the newest example while the newest file is 5302463. Ordering between the two same-prefix files is lexicographic by filename rather than the documented sequence. Fix: renumber the later file to 5302464+, correct the header comment, update the example, and add a duplicate-prefix guard to the migration checks.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P2-009",
+      "severity": "P2",
+      "title": "docs/audits/README.md omits the committed 905ed63 re-audit run, so the required Test check's docs-links guard fails at 7dd0402",
+      "owner": "docs owner + release owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the 905ed63 run is now in the Runs table (docs/audits/README.md:113), it carries HISTORICAL.md, and '(latest)' points at 7dd0402 (:114). `node scripts/check-docs-links.mjs` exits 0 ('docs links OK'), so the required Test check's guard is green.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-010",
+      "severity": "P3",
+      "title": "docs/CI.md and chromatic.yml describe the Storybook webpack pin as pending work, but it is already applied",
+      "owner": "CI/docs owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: docs/CI.md:148-155 records the webpack 5.101.2 pin as the applied remediation (root package.json:84 pnpm.overrides, pnpm-lock.yaml resolves webpack@5.101.2 for Storybook) and the chromatic workflow comment says post-pin runs build Storybook and fail only at the visual-diff step (.github/workflows/chromatic.yml:30-43).",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P2-010",
+      "severity": "P2",
+      "title": "AGENTS.md Known Debt contradicts the ops docs on the prod-approval reviewer gate and on main/develop divergence",
+      "owner": "repo maintainer + release owner",
+      "target": "this week",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: AGENTS.md:124 says prod-approval 'now has a required reviewer (verified 2026-10-15), so the manual-approval gate is in force', but docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:108, docs/ROLLBACK_PROCEDURES.md:350-353 and docs/RELEASING.md:190-195 all say required reviewers are still not configured / there is no working gate. The same AGENTS bullet says 'main now carries 26 commits that develop does not', while the audited tree is `git rev-list --left-right --count origin/main...origin/develop` = 1 0. The heading is still dated 'Known Debt (2026-08-29)' although the content was refreshed 2026-10-15 (PR #293). The repo cannot verify GitHub environment settings, so at least one of these current-state claims is wrong. Fix: pick one verified source, date it, and make AGENTS/FINAL/ROLLBACK/RELEASING agree; re-check the branch-divergence sentence at each promotion.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-011",
+      "severity": "P3",
+      "title": "docs/RELEASING.md still records PR #281 @ 7dd04023 as the last promotion; main is now 6b7aa1a (2026-11-03)",
+      "owner": "release owner",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: docs/RELEASING.md:201-205 says 'the last promotion is PR #281 (main @ 7dd04023, 2026-10-14)'. The audited main is 6b7aa1a5505d4f75b334b36e9e87737cd98e589c ('Promote develop -> main (Nov 3)', tag v0.1.0-20261103-6b7aa1a), and the branch now carries only that one commit ahead of develop. The before-promotion checklist still tells operators to compare against a stale baseline. Fix: update the branch-state paragraph as part of the release/promotion checklist (or derive it from `git describe`/the latest tag).",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-012",
+      "severity": "P3",
+      "title": "docs/modules/change-requests.md documents a nonexistent /api/v1/change-requests base path",
+      "owner": "docs + governance module owner",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: the module doc's endpoint table lists GET/POST /api/v1/change-requests and /api/v1/change-requests/:id (docs/modules/change-requests.md:25-35), but the router is mounted only at /api/v1/governance (apps/api/src/app.ts:207) and the SDK calls /api/v1/governance/change-requests (packages/sdk/src/governance.ts:81-96). An operator or client following the doc gets 404s. Fix: correct every path in the table (or add a deprecation alias deliberately).",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-013",
+      "severity": "P3",
+      "title": "Monitoring docs and AGENTS.md still pin prometheus v3.5.1 / alertmanager v0.28.1 after the compose bump to v3.15.1 / v0.29.0",
+      "owner": "platform/observability + docs",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: the recent image bump (ca567f93) moved infra/digitalocean/docker-compose.yml to prom/prometheus:v3.15.1 (:306) and prom/alertmanager:v0.29.0 (:354), but docs/MONITORING_AND_ALERTING.md:238 still says prom/prometheus:v3.5.1 and AGENTS.md:221-222 still list prometheus:v3.5.1 / alertmanager:v0.28.1. An operator debugging a rules/feature difference is looking at the wrong version. Fix: update both references (and any promtool image example) to the pinned digests; add the image versions to the docs-counts guard if feasible.",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-014",
+      "severity": "P3",
+      "title": "docs/LICENSE_POLICY.md allowed-license list omits PSF-2.0, which security/license-policy.json now allows",
+      "owner": "supply-chain owner + docs",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: commit 6d747551 added 'PSF-2.0' to security/license-policy.json:20, but the canonical narrative list in docs/LICENSE_POLICY.md:20-26 still ends at Python-2.0/Artistic-2.0 and does not mention PSF-2.0. A maintainer reading the policy doc would reject a Python-licensed dependency that the gate now accepts, and the two artifacts disagree. Fix: add PSF-2.0 to the doc list (or point the doc at the JSON as the single source).",
+      "area": "DOC"
+    },
+    {
+      "id": "DOC-P3-015",
+      "severity": "P3",
+      "title": "docs/API_ERROR_HANDLING.md names the 429 code as FULL, while the rate-limit middleware and docs/API_RATE_LIMITING.md return RATE_LIMITED",
+      "owner": "API docs owner",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: the recent JSON-429 change makes every limiter return failure('RATE_LIMITED', ..., 429) (apps/api/src/middleware/rate-limit.ts:13-16), and docs/API_RATE_LIMITING.md:60-67 documents code RATE_LIMITED. docs/API_ERROR_HANDLING.md:81 still says '429 | FULL (and rate-limit middleware)', so client code following the error-handling table branches on a code that rate-limited requests never carry. Fix: replace FULL with RATE_LIMITED (and note FULL is the capacity code) in the table.",
+      "area": "DOC"
+    }
+  ]
+}

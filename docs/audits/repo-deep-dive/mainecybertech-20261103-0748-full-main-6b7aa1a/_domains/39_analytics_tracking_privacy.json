@@ -1,0 +1,140 @@
+{
+  "domain": "39_analytics_tracking_privacy",
+  "file": "39_analytics_tracking_privacy.md",
+  "area": "AN",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T08:45:00Z",
+  "findings": [
+    {
+      "id": "AN-P2-001",
+      "severity": "P2",
+      "title": "Google Analytics and Tawk.to load on public pages with no cookie-consent or opt-out gate",
+      "owner": "web/frontend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: default-deny ConsentProvider + granted-only script injection with Consent Mode v2 default/update (components/consent/ConsentProvider.tsx:33-58, AnalyticsScripts.tsx:60-120); layout wiring app/(public)/layout.tsx:58-68.",
+      "area": "AN"
+    },
+    {
+      "id": "AN-P2-002",
+      "severity": "P2",
+      "title": "Analytics API stores visitor IP and user-agent in plaintext despite the documented no-PII contract",
+      "owner": "api/analytics",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: the track route never writes ip/user-agent (routes/analytics.ts:40-58) and supabase/migrations/5302446_remove_analytics_pii_columns.sql:21-22 drops both columns; docs/modules/analytics.md:31 documents the contract.",
+      "area": "AN"
+    },
+    {
+      "id": "AN-P2-003",
+      "severity": "P2",
+      "title": "Storefront analytics capture is dead: the browser helper is never called and cannot pass the CSRF gate",
+      "owner": "web/store + api",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: track() is called by StoreAnalyticsTracker.tsx:25, ServiceFinderQuiz.tsx:68 and QuoteBuilderClient.tsx:208; the helper bootstraps and retries the double-submit CSRF token (lib/catalog/analytics.ts:19-70) against GET /api/v1/analytics/csrf (analytics.ts:29-34).",
+      "area": "AN"
+    },
+    {
+      "id": "AN-P2-004",
+      "severity": "P2",
+      "title": "First-party analytics events have no retention or purge path",
+      "owner": "worker/data",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: the retention task purges store_analytics_events in bounded batches (tasks/retention.ts:190-199) and docs/PRIVACY.md:48 documents the 90-day window; the cutoff still uses the hardcoded default (see new AN-P3-007).",
+      "area": "AN"
+    },
+    {
+      "id": "AN-P2-005",
+      "severity": "P2",
+      "title": "Visitor-alert tracking collects IP/geo before consent and sends the visitor IP to ip-api.com over plaintext HTTP",
+      "owner": "api/public + web",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: default-deny consent gate - IP/UA/location are stored only when consent=granted, the geo lookup runs only with consent, the Teams visitor alert is consent-gated and never contains the IP, and a non-HTTPS GEO_LOOKUP_URL is refused (routes/public.ts:104-160).",
+      "area": "AN"
+    },
+    {
+      "id": "AN-P3-001",
+      "severity": "P3",
+      "title": "Analytics has no consent-mode signalling and no documented event/retention governance",
+      "owner": "web + api/docs",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: Consent Mode v2 default-deny + withdrawal signalling in AnalyticsScripts.tsx:22-58; event registry apps/web/lib/catalog/data/analytics-events.json; retention documented in docs/PRIVACY.md:48 and docs/ANALYTICS_GOVERNANCE.md §3 (the withdrawal sentence is stale - new AN-P3-008).",
+      "area": "AN"
+    },
+    {
+      "id": "AN-P3-002",
+      "severity": "P3",
+      "title": "Anonymous direct inserts to store_analytics_events bypass API validation, rate limits, and retention",
+      "owner": "data/platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: migration 5302458_close_analytics_anon_insert.sql drops the anon policy, revokes INSERT and fails loudly if either survives; writes stay on POST /analytics/track.",
+      "area": "AN"
+    },
+    {
+      "id": "AN-P3-003",
+      "severity": "P3",
+      "title": "Consent is not recorded and the privacy policy omits first-party tracking stores and opt-out mechanics",
+      "owner": "web + compliance",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: consent_at/consent_version recorded server-side (public.ts:123-124,217-234; migration 5302449); the policy documents the first-party stores, the cookie table and the Cookie settings opt-out (app/(public)/privacy/page.tsx:160-213).",
+      "area": "AN"
+    },
+    {
+      "id": "AN-P3-004",
+      "severity": "P3",
+      "title": "Error telemetry has no explicit PII scrubbing, retention, or vendor disclosure",
+      "owner": "api/web + compliance",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: beforeSend scrubbers in api/lib/sentry-scrub.ts and web/lib/sentry-scrub.ts are wired in the client/server/edge configs (sendDefaultPii:false); vendor + retention disclosed in docs/SUBPROCESSORS.md:17 and docs/PRIVACY.md:49.",
+      "area": "AN"
+    },
+    {
+      "id": "AN-P3-005",
+      "severity": "P3",
+      "title": "Consent withdrawal does not unload Tawk.to; the widget keeps running until the next page load",
+      "owner": "web/frontend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5, now closed: the denial effect calls Tawk_API.hideWidget() and Tawk_API.shutdown() (AnalyticsScripts.tsx:32-57,78-84) in addition to the GA Consent Mode update, and docs/PRIVACY.md:118-121 documents that the widget stops immediately while the executed script tag is only unloaded on reload.",
+      "area": "AN"
+    },
+    {
+      "id": "AN-P3-006",
+      "severity": "P3",
+      "title": "Analytics track endpoint accepts arbitrary event names and unbounded metadata; the event registry's privacy rules are not enforced server-side",
+      "owner": "api/analytics",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5, partially fixed: POST /analytics/track now rejects event names outside the server mirror (routes/analytics.ts:15-27; lib/analytics-events.ts:16-31) and bounds metadata to 25 keys/200-char values while dropping PII-named keys (lib/analytics-events.ts:33-69); catalog-parity.test.ts guards name drift. Residual: values are not pattern-scanned and keys are not restricted to a per-event allowlist, so a caller can still store `{\"note\":\"john@example.com\"}` under a non-PII key (privacy rule 2 in the web registry is still prose-only).",
+      "area": "AN"
+    },
+    {
+      "id": "AN-P3-007",
+      "severity": "P3",
+      "title": "store_analytics_events is the only purge target that ignores the retention_policies registry",
+      "owner": "worker/data platform",
+      "target": "next quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a5: tasks/retention.ts:168-170 derives the store-analytics cutoff directly from config.storeAnalyticsRetentionDays (default 90, :27) and never calls resolveRetentionDays; TARGET_ALIASES in lib/retention-policy.ts:30-44 has no store_analytics_events alias, while audit/notifications/store_quotes/store_quote_requests/webhook targets all resolve registry windows. A retention_policies row therefore cannot govern analytics retention, and docs/ANALYTICS_GOVERNANCE.md §3 documents only the worker constant. Low impact because the store is anonymous (no PII), but it is inconsistent with DATA-P2-006's registry-driven retention.",
+      "area": "AN"
+    },
+    {
+      "id": "AN-P3-008",
+      "severity": "P3",
+      "title": "Analytics governance doc still says Tawk.to stops only on the next page load",
+      "owner": "web/data governance",
+      "target": "next quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a5: docs/ANALYTICS_GOVERNANCE.md:18 says withdrawal leaves 'already-loaded third-party scripts' running and 'Tawk.to/GA stop collecting on the next page load', but the code now calls Tawk_API.hideWidget()/shutdown() immediately on denial (AnalyticsScripts.tsx:32-57,78-84) and docs/PRIVACY.md:118-121 states the widget stops immediately (the script tag unloads on reload). Update §1 so consent/withdrawal documentation matches the implementation; the stale wording also understates the control for DSAR/incident reviewers.",
+      "area": "AN"
+    }
+  ],
+  "report": "Read-only re-verification at 6b7aa1a5. 10/11 previous AN findings are verified fixed, 1 partially fixed (AN-P3-006), 0 regressed. AN-P3-005 closed: consent withdrawal now hides and shuts down the Tawk.to widget immediately (the executed script tag still unloads only on reload, documented). AN-P3-006 only partially closed: event names are now allowlisted and metadata is bounded/key-filtered, but metadata values are not pattern-scanned and keys are not restricted per event, so PII can still be parked under a harmless-looking key. Two new P3s: the store-analytics purge is the only target that bypasses the retention_policies registry (AN-P3-007), and ANALYTICS_GOVERNANCE.md still describes the pre-fix Tawk.to behaviour (AN-P3-008). Executed: read the consent components, public tracking routes, analytics registry/sanitizer, retention task/policy code and the storefront callers."
+}

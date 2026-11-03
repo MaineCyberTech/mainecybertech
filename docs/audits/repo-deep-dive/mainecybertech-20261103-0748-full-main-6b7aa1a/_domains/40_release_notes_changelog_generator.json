@@ -1,0 +1,139 @@
+{
+  "domain": "40_release_notes_changelog_generator",
+  "file": "40_release_notes_changelog_generator.md",
+  "area": "REL",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T09:43:35Z",
+  "findings": [
+    {
+      "id": "REL-P1-001",
+      "severity": "P1",
+      "title": "No version identity: no tags, no product version, no commit binding in generated artifacts",
+      "owner": "platform engineering (release owner)",
+      "target": "this week",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: the tag/GitHub Release half is now fixed - release.yml runs successfully (the SIGPIPE fix at :99-112) and origin has 18 annotated tags plus matching GitHub Releases, latest v0.1.0-20261103-6b7aa1a (atom feed confirms the release body includes the commit SHA and images). The SBOM still binds <VERSION>+<sha> (scripts/generate-sbom.mjs) and the release body names the commit. Residual: VERSION is still 0.1.0 (VERSION:1) after 18 releases spanning many features, and the web app still reports <branch>-<run_number> rather than VERSION (.github/workflows/build-push.yml:207, .github/workflows/deploy-do.yml:366). The product version is therefore a constant, not a release identity.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P1-002",
+      "severity": "P1",
+      "title": "Documented production deploy path is stated as non-functional and the approval gate claim is false",
+      "owner": "platform engineering (release owner)",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: docs/RELEASING.md:127-131 documents the prod deploy path and states the prod-approval gate is only effective once required reviewers are configured; :138-156 documents the approval gate and operator action; :190-195 repeats the known environment caveats accurately; deploy-do.yml:648 attaches the prod-approval environment for prod deploys; docs/ROLLBACK_PROCEDURES.md:342-355 repeats the reviewer requirement accurately. The false approval claim is gone.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P2-001",
+      "severity": "P2",
+      "title": "`CHANGELOG.md` is stale relative to HEAD for the final commits in the delta",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "regressed",
+      "note": "re-verified at 6b7aa1a: fixed once by f3256de0, stale again. The last CHANGELOG-touching commit is a58fb004 (2026-11-02 19:58); 42 commits (18 non-merge) landed after it and none are in CHANGELOG.md. Examples: cde79fad 'clear the three HIGH prod advisories' (grep 'HIGH prod advisories' = 0), 6d747551 'allow PSF-2.0 + fix the rate-limit test ip override' (grep 'PSF-2.0' = 0), d32e5ac7 'use the real registry digests for the third-party images' (grep 'real registry digests' = 0), b2fd32a9 'exclude the allow-missing-versions flag from the SBOM path args'. Release notes cut from the changelog would omit the tail of the delta again.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P2-002",
+      "severity": "P2",
+      "title": "No explicit Breaking Changes or upgrade manifest despite 34 migrations and RLS/entitlement behavior changes",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: docs/UPGRADE.md:9 now declares 'Current window: migrations 5302420-5302460 (last reviewed 2026-10-14)', improved from 5302446 but still short of the tree. There are 162 migrations and the highest version is 5302463 (two files), so 5302461 (full platform role gates/approved predicates), 5302462 (SOP library status check) and both 5302463 files are uncovered. release.yml:120 still prints only this window line into the release body, so an operator reading generated notes gets an incomplete upgrade picture.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P2-003",
+      "severity": "P2",
+      "title": "No release-notes or GitHub Release body template; release body must be authored ad hoc",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: templates/RELEASE_NOTES_TEMPLATE.md exists with all required sections (Summary/Added/Changed/Fixed/Security/Breaking Changes/Migrations/Operator Actions/Known Issues/Verification) and is referenced by docs/RELEASING.md:92-96; release.yml generates a raw body to be completed from it. Residual (not this finding): published releases still carry the raw 'Fill ... before announcing' block, and no release has a human-completed template body.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P2-004",
+      "severity": "P2",
+      "title": "Rollback documentation is stale (Terraform push flow) and repeats the false approval claim",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: docs/ROLLBACK_PROCEDURES.md:238-262 documents the manual git-revert + terraform-do dispatch flow (apply input, manual-dispatch-only) and no longer claims a push applies Terraform; :342-355 states the prod-approval reviewer requirement accurately. The false approval claim is gone.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P2-005",
+      "severity": "P2",
+      "title": "Release docs claim `main` is far behind `develop`; the repo state is the opposite",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: docs/RELEASING.md:201-205 no longer claims main is behind - it says main currently carries every origin/develop commit and tells the reader to compare with git log --oneline --left-right origin/main...origin/develop rather than assuming. git rev-list --left-right --count origin/main...origin/develop = 1 0, so the direction claim is correct. Residual: the same paragraph still hardcodes 'the last promotion is PR #281 (main @ 7dd04023, 2026-10-14)', which is stale after many later promotions (tracked with AI-P3-008).",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P3-001",
+      "severity": "P3",
+      "title": "Commit history contains non-conventional noise commits and a single author, reducing automated-notes quality",
+      "owner": "platform engineering (release owner)",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: non-merge subjects are conventional (release.yml filters merges with --no-merges; :104-112), but authorship is still single-human plus bots - the 7dd0402..HEAD delta has 57 'Audit Remediation' commits, 6 'OpenCode Agent', 1 'build-agent' and 8 dependabot[bot], with no second human committer. The release-notes scope note (docs/RELEASING.md:90-97) now states this explicitly; the bus-factor item remains organizational.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P3-002",
+      "severity": "P3",
+      "title": "PR template lacks changelog and versioned-artifact checkboxes",
+      "owner": "platform engineering (release owner)",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: the CHANGELOG checkbox is now enforced, not honour-system - .github/PULL_REQUEST_TEMPLATE.md:23 requires it and scripts/check-changelog-checkbox.mjs runs in the required PR test job (.github/actions/unit-tests/action.yml:87-90; self-test 13 path cases). Residual: no versioned-artifact/versioned-output checkbox was added, and the guard checks the declaration, not the CHANGELOG diff itself (documented in docs/RELEASING.md:98-103).",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P3-003",
+      "severity": "P3",
+      "title": "CRITICAL dependency fix (handlebars override) shipped without a CHANGELOG entry",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: CHANGELOG.md:633-637 now records the handlebars override ('handlebars override tightened to >=4.7.10 (ea427954), clearing the CRITICAL advisories in the Storybook toolchain'), including the root pnpm.overrides and the resolved 4.7.10 lockfile version.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P3-004",
+      "severity": "P3",
+      "title": "Delta changelog entries are filed under `Fixed` only, mislabelling features and operator changes",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the consolidated wave entries are classified under the correct headings (CHANGELOG.md:12 Breaking Changes, :27 Added, :122 Changed, :130 Security, :162 Fixed) and describe features/operator changes as such. Residual: the post-consolidation tail is missing entirely rather than mislabelled (REL-P2-001).",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P2-006",
+      "severity": "P2",
+      "title": "Release workflow fails on every promotion push, so no tag or GitHub Release is ever created",
+      "owner": "platform engineering (release owner)",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the SIGPIPE root cause is fixed - release.yml:99-112 replaces `git log | head` with `git log --max-count=100` and `sort -u | head` with sed, under the same pipefail shell. The workflow now succeeds: origin has 18 annotated tags (v0.1.0-20261014-b9a7a7c through v0.1.0-20261103-6b7aa1a) with matching GitHub Releases, and the latest release body contains the commit SHA, image refs, commit list and migration section. No tag/release gap remains.",
+      "area": "REL"
+    },
+    {
+      "id": "REL-P3-005",
+      "severity": "P3",
+      "title": "Release tag includes the workflow run date, so same-day-only idempotence can mint a second tag/release for one commit",
+      "owner": "platform engineering (release owner)",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a. release.yml:56 computes `date=$(date -u +%Y%m%d)` at run time and :62 builds `tag=v<VERSION>-<date>-<short-sha>`; the idempotence check at :65-77 only tests whether that exact date-bearing tag exists, then :149-151 creates the tag and GitHub Release. Re-running the workflow for the same commit on a later date (a retry after an outage, a manual dispatch, or a queued run that crosses midnight) therefore produces a different tag and a second release/SBOM for the same commit, contradicting docs/RELEASING.md:86-88 ('Re-runs of the same commit are idempotent'). Impact: duplicate releases and split artifact history; no current duplicate exists yet because each commit has been tagged once. Recommendation: derive the date from the commit (`git show -s --format=%cs HEAD`) or drop the date from the tag, and check for an existing release/tag by SHA before creating one.",
+      "area": "REL"
+    }
+  ]
+}

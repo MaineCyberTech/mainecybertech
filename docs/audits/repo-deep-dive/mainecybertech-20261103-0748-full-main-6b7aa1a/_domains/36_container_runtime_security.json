@@ -1,0 +1,199 @@
+{
+  "domain": "36_container_runtime_security",
+  "file": "36_container_runtime_security.md",
+  "area": "CTR",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T08:57:21Z",
+  "findings": [
+    {
+      "id": "CTR-P1-001",
+      "severity": "P1",
+      "title": "No Container Image Vulnerability Scan in CI",
+      "owner": "platform/infrastructure",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: Trivy image scans still run in deploy-do.yml build jobs and build-push.yml; note the new third-party exception blind spot in CTR-P2-007.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P1-002",
+      "severity": "P1",
+      "title": "SBOM Is Lockfile-Only, Not an Image SBOM or Attestation",
+      "owner": "platform/infrastructure",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: per-image Trivy CycloneDX SBOMs bound to the pushed digest and attested (deploy-do.yml:240-274 etc.).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P1-003",
+      "severity": "P1",
+      "title": "Unsigned Images With No Provenance/Attestation",
+      "owner": "platform/infrastructure",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: build-provenance attestations per image + fail-closed verification before deploy (deploy-do.yml:430-520); docs/CI.md:60-123 documents the policy.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P2-001",
+      "severity": "P2",
+      "title": "Pinned Base-Image Digests Have No Automated Refresh",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: .github/dependabot.yml has weekly docker entries for /, /apps/api, /apps/web, /apps/worker, /infra/digitalocean, so Dockerfile + compose digest pins get PRs.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P2-002",
+      "severity": "P2",
+      "title": "Local Compose Ships Default Credentials and Repo-Wide Bind Mount",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "at 6b7aa1a the e2e service is profile-gated and requires E2E_ADMIN_PASSWORD with no default (docker-compose.yml:73,91); residual: the e2e runner still bind-mounts the whole repo (.:/app, :83) - deliberate, documented, explicit opt-in only.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P2-003",
+      "severity": "P2",
+      "title": "Redis Password Exposed on Process Argument Vector",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: infra/digitalocean/docker-compose.yml:35-80 runs redis as the redis user via redis-entrypoint.sh, passes REDIS_PASSWORD by environment only, and the healthcheck uses REDISCLI_AUTH (not -a).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P2-004",
+      "severity": "P2",
+      "title": "Deploy Health Gate Ignores Worker Health",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: worker has a compose healthcheck (docker-compose.yml:220-230) and the deploy gate asserts the full GATED_SERVICES list including worker (deploy-do.yml:1070-1085) plus an SSH worker /health probe (:1170-1195).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P2-005",
+      "severity": "P2",
+      "title": "No Container Resource/PID Limits Beyond Memory",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: every service sets mem_limit + pids_limit (redis 48m/128; api/worker/web/prometheus 256m/256; caddy 64m/128; alertmanager 128m/128); CPU caps deliberately unset on the 1-vCPU box (documented).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P2-006",
+      "severity": "P2",
+      "title": "Deploy verifies attestations by digest but pulls and runs images by tag (TOCTOU)",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: verify-attestations outputs digests; deploy exports MCT_*_IMAGE=<repo>@sha256:... and refuses to run without them (:894-905); compose prefers the digest refs.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-001",
+      "severity": "P3",
+      "title": "Missing `--start-period` on API and Worker Healthchecks",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: start_period is set on api/worker/node-exporter/prometheus/alertmanager/caddy compose healthchecks (docker-compose.yml:157, :230, :303, :343, :409, :439).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-002",
+      "severity": "P3",
+      "title": "Broad `.dockerignore` `*.md`/`*.txt`/`*.log` Could Mask Needed Build Files",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: .dockerignore uses explicit narrow paths (no blanket *.md/*.txt/*.log), with a comment on why.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-003",
+      "severity": "P3",
+      "title": "Caddy runs with a writable rootfs and a writable Caddyfile bind mount",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: caddy read_only:true + tmpfs /tmp, Caddyfile/certs mounted :ro, cap_add limited to NET_BIND_SERVICE (docker-compose.yml:412-451).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-004",
+      "severity": "P3",
+      "title": "Prometheus has no healthcheck and observability is outside the deploy health gate",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: prometheus /-/ready healthcheck (:337-343) and alertmanager healthcheck (:404-409); both are in GATED_SERVICES (deploy-do.yml:1070).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-005",
+      "severity": "P3",
+      "title": "Image-level HEALTHCHECK for api and worker lacks `--start-period`",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: apps/api/Dockerfile, apps/worker/Dockerfile and apps/web/Dockerfile HEALTHCHECKs all carry --start-period.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-006",
+      "severity": "P3",
+      "title": "infra/digitalocean operator docs and `.env.example` drift from the deployed stack",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "regressed",
+      "note": "regressed at 6b7aa1a by the Nov 2-3 infra bumps: infra/digitalocean/README.md:16-17 still lists prom/prometheus v3.5.1 / prom/alertmanager v0.28.1 while compose runs v3.15.1 / v0.29.0 (docker-compose.yml:306,354), and the service table omits node-exporter (:271). The .env.example side remains correct (METRICS_TOKEN :111, ALERTMANAGER_* block), but the operator README no longer documents the deployed stack; same drift as INFRA-P2-003.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-007",
+      "severity": "P3",
+      "title": "Third-party pinned images are not vulnerability-scanned in CI",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: third-party-image-scan.yml resolves every literal digest-pinned ref from infra/digitalocean/docker-compose.yml (now five, including node-exporter), fails on any unpinned literal ref (:50-63), Trivy-scans each weekly and emits SBOMs + ntfy/Slack alert. See CTR-P2-007 for the .trivyignore over-breadth on node-exporter.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-008",
+      "severity": "P3",
+      "title": "No Dockerfile lint gate in CI",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: hadolint gate wired in test.yml:60 and validate.yml:62 (.github/actions/dockerfile-lint, digest-pinned image, --failure-threshold warning).",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P2-007",
+      "severity": "P2",
+      "title": "NEW: global .trivyignore suppresses fixable HIGH CVEs in the new node-exporter image",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: infra/digitalocean/docker-compose.yml:271-272 adds prom/node-exporter v1.12.1 (built with Go 1.26.5). .trivyignore:20-67 is passed to every matrix image (third-party-image-scan.yml:90-94) and its Go block says 'shared across the three images' (caddy/prometheus/alertmanager). Reproduced with the pinned image: Trivy without .trivyignore reports 15 HIGH (0 critical) fixable findings across 14 unique CVEs, all 14 present in .trivyignore; with .trivyignore Trivy reports 0. The new fifth image's weekly scan is therefore green while its HIGH findings are suppressed.",
+      "area": "CTR"
+    },
+    {
+      "id": "CTR-P3-009",
+      "severity": "P3",
+      "title": "NEW: node-exporter healthcheck only runs --version, not a real scrape probe",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: node-exporter's compose healthcheck is ['CMD','/bin/node_exporter','--version'] (docker-compose.yml:296-301), which only proves the binary executes; it does not bind :9100, read /host/proc|/sys|/rootfs, or scrape. The deploy gate treats 'healthy' as the gate (deploy-do.yml:1070-1080), so a running exporter with broken mounts/metrics passes. Reproduced: --version exits 0 without starting the server.",
+      "area": "CTR"
+    }
+  ]
+}

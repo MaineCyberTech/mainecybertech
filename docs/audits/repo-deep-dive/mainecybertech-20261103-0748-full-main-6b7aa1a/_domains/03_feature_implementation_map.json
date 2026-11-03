@@ -1,0 +1,159 @@
+{
+  "domain": "03_feature_implementation_map",
+  "file": "03_feature_implementation_map.md",
+  "area": "FEAT",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T09:29:24Z",
+  "findings": [
+    {
+      "id": "FEAT-P2-001",
+      "severity": "P2",
+      "title": "API keys cannot authenticate; the feature is dead",
+      "owner": "@owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: authenticateApiKey resolves mct_ tokens by prefix, timing-safe compares the SHA-256 hash, rejects inactive/unparsable/expired keys and pins the key's org (apps/api/src/middleware/api-key.ts:70-112); requireAuth dispatches isApiKeyToken tokens to it (middleware/auth.ts:67-71); regression suite apps/api/src/__tests__/api-key-auth.test.ts.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P2-002",
+      "severity": "P2",
+      "title": "Demo/test data can be seeded into a fresh production database",
+      "owner": "@owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: every demo-seeding migration still returns early unless current_setting('app.seed_demo', true)='true' (5302119_demo_test_data.sql:25, 5302120_demo_module_data.sql:27, 5302121_demo_permission_edge_cases.sql, 5302123_demo_expanded_test_data.sql:31, 5302126_demo_worker_admin_coverage.sql:30, 5302406_device_profiles.sql:66); 5302128 only references the flag for role grants. Default is unset so a fresh prod database stays clean.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P2-003",
+      "severity": "P2",
+      "title": "Store analytics is unwired end-to-end: no client call sites, no admin UI consumer, and the summary RPC is undefined",
+      "owner": "@web + API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: get_analytics_summary exists (supabase/migrations/5302440_search_analytics_summary.sql:19) and the admin page consumes live summary/list endpoints (apps/web/app/(admin)/admin/store/analytics/page.tsx:26-41). track() call sites: apps/web/components/store/StoreAnalyticsTracker.tsx:25 mounted on /store, /store/[slug], /store/category/[slug]; ServiceFinderQuiz.tsx:68; QuoteBuilderClient.tsx:208.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P2-004",
+      "severity": "P2",
+      "title": "Feature docs promise AI draft review gates, but `ai_draft_outputs` has no write path",
+      "owner": "AI/backend module owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the AI routes create/list/get/review drafts in ai_draft_outputs with a one-way human review gate (apps/api/src/routes/ai.ts:515 create, :537 list, :562 get, :578 review, persisted by persistAiDraft:183; validators/ai.ts:33 createAiDraftSchema, :43 reviewAiDraftSchema); OpenAPI documents all four (openapi/spec.ts:1792-1812) and ai.test.ts:200-270 covers create/list/review. Residual consumer gap is filed as new FEAT-P3-009.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P2-005",
+      "severity": "P2",
+      "title": "Three tables are served by two divergent API surfaces (sop_library, insurance_evidence, satisfaction_pulses)",
+      "owner": "API principal engineer",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: each table has one canonical surface - sop_library under /api/v1/governance (governance.ts:549, mounted app.ts:207), insurance_evidence under /api/v1/insurance-binder (app.ts:218), satisfaction_pulses under /api/v1/satisfaction-pulse (app.ts:213). Old paths are hard-deprecated 410 stubs (edu-automation.ts:179-183,1133; final.ts:25-29). node scripts/openapi-audit.js: 455 live routes, 0 missing from spec, exit 0.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-001",
+      "severity": "P3",
+      "title": "OpenAPI/Swagger surface is public and its UI is blocked by the API CSP",
+      "owner": "@owner",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: /openapi.json and /docs return 404 when NODE_ENV=production (apps/api/src/routes/docs.ts:25-30,38) and the Swagger bootstrap script carries the per-response CSP nonce (docs.ts:43-59); node scripts/openapi-audit.js runs clean (455 live routes, 0 missing).",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-002",
+      "severity": "P3",
+      "title": "Eleven admin Store pages are static JSON views with disabled 'Coming soon' actions but appear as first-class admin-nav features",
+      "owner": "@web + store module owner",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: all eleven bundled-JSON pages render the shared 'Preview - read-only, actions disabled until the Store APIs land' banner via AdminPreviewNote (apps/web/components/admin/AdminPreviewNote.tsx:9; used by lead-magnets, seo-pages, content-audit, dependencies, fulfillment, nurture, lifecycle, profitability, case-studies, faqs, proposals - 11 files).",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-003",
+      "severity": "P3",
+      "title": "Duplicate scorecard docs; one documents a nonexistent /api/v1/scoreboard API and four tables",
+      "owner": "docs owner + edu-automation module owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: docs/modules/scoreboard-gamification.md is deleted; only scoreboards-gamification.md remains and documents the real /api/v1/edu-automation/scorecards surface and the real tables (cyber_scorecards, score_history, badges_earned), matching apps/api/src/routes/edu-automation.ts:851-1080 and docs/INDEX.md:201.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-004",
+      "severity": "P3",
+      "title": "`portal_module_settings` is an orphaned table: per-org module configuration is never read or written",
+      "owner": "API platform + data governance",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: migration 5302460_drop_portal_module_settings.sql:17 drops the table; no application code reads it (the only remaining references are the historical demo-insert migrations that run before the drop). Module enablement is the subscription/entitlement derivation (apps/api/src/lib/entitlements.ts, client-portal bootstrap).",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-005",
+      "severity": "P3",
+      "title": "Dead server action `updateProjectBasics` remains exported but is never imported",
+      "owner": "@web",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: updateProjectBasics no longer exists anywhere under apps/web (grep 0 matches including tests).",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-006",
+      "severity": "P3",
+      "title": "Ticket status has no transition validation; any state can jump to any other",
+      "owner": "API principal engineer + product",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the shared map lives in packages/sdk/src/ticket-status.ts:29-67 (closed->in_progress reopen path); the API rejects invalid moves with 409 INVALID_STATUS_TRANSITION (apps/api/src/routes/tickets.ts:262-269) and bulk drops invalid transitions, counting them failed (:628-664); admin selectors offer allowed next states.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-007",
+      "severity": "P3",
+      "title": "2026-08-05 module audit docs still list fixed bugs and dead navigation as current",
+      "owner": "docs owner + repo maintainer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: docs/MODULE_AUDIT.md:3 and docs/MODULE_SPECS_GAP_AUDIT_2026-08-05.md:3 carry 'HISTORICAL (superseded)' banners and the confirmed-bug table is reconciled per row; docs/INDEX.md lists MODULE_AUDIT.md as a historical snapshot.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-008",
+      "severity": "P3",
+      "title": "Seven server actions in the admin project detail are exported but never imported by product code",
+      "owner": "@web (admin projects)",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the four dead update actions were deleted and updateProjectTask/resetProjectTaskApproval/deleteProjectTask are now internal helpers for submitProjectTaskForm (apps/web/app/(admin)/admin/projects/[projectId]/actions.ts:175-296; only seven exports remain, all passed to ProjectTaskListV5 from page.tsx:182-196); the stale test mocks were removed.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-009",
+      "severity": "P3",
+      "title": "AI draft review gate has API, OpenAPI and tests but no SDK method or UI consumer",
+      "owner": "AI/backend + web admin",
+      "target": "next quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: POST/GET /ai/drafts and POST /ai/drafts/:id/review exist with a one-way review gate (apps/api/src/routes/ai.ts:515-620; validators/ai.ts:33,43; openapi/spec.ts:1792-1812; ai.test.ts:200-270) and docs/modules/ai-tools.md:5,18,28-31 present them as a supported feature with an SDK. packages/sdk/src/ai.ts only implements triage/copilot (33-71; no drafts methods), and the admin AI page only calls api.ai.triageList (apps/web/app/(admin)/admin/ai/page.tsx:30); grep ai/drafts finds no apps/web or packages/sdk consumer. The documented human review gate is therefore unreachable from the product UI. Fix: add AiApi.drafts create/list/get/review plus an admin review queue, or document the endpoints as API-only.",
+      "area": "FEAT"
+    },
+    {
+      "id": "FEAT-P3-010",
+      "severity": "P3",
+      "title": "Four new client request modules are create-only: no detail route, so the client cannot reopen the record they submitted",
+      "owner": "@web (portal)",
+      "target": "next quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a: dns-changes, identity-verification, insurance-binder and offboarding each ship page.tsx + new/ + actions.ts with no [id] route (ls apps/web/app/(portal)/portal/<module>); their list rows are non-linked divs (e.g. dns-changes/page.tsx:57-60; offboarding/page.tsx:58-70) while the API/SDK expose detail/update/lifecycle (final/dns-changes.ts, security-ops.ts:169-210). The 2026-10-21 portal-modules audit rated these C for the same reason (docs/audits/portal-modules/2026-10-21/report.md:431,955); the create form fixed half the gap, the status/history half remains. Fix: add a detail page per module (status, timeline, notes) and link the list rows, or state explicitly that these are one-way requests.",
+      "area": "FEAT"
+    }
+  ]
+}

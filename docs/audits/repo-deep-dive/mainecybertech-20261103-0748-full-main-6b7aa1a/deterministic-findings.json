@@ -1,0 +1,40 @@
+{
+  "run": "mainecybertech-20261103-0748-full-main-6b7aa1a",
+  "generated": "2026-11-03T14:02:22Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 3
+  },
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "title": "[SEC] gitleaks not installed (secret scan skipped)",
+      "owner": "@owner",
+      "target": "DET",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the repo-side pin is intact and exact. .github/workflows/secret-history-scan.yml:27-40 installs gitleaks 8.30.1 from the release tarball, verifies GITLEAKS_SHA256 551f6fc8... with sha256sum -c (the value matches the published v8.30.1 checksums file), runs the full-history scan (:44-48) and the allowlist negative probe scripts/ci/verify-gitleaks-config.sh:1-54. README.md:328 and docs/CI.md:28 still document the pinned install. The deterministic lens row remains because the audit host has no gitleaks binary (tools/deterministic_checks.py:166 is environment-dependent), not because of a repo gap; the tool run at 6b7aa1a produced the same two DET rows as 7dd0402.",
+      "area": "DET"
+    },
+    {
+      "id": "DET-P3-002",
+      "severity": "P3",
+      "title": "[SUPPLY] 3 container image(s) without a digest pin",
+      "owner": "@owner",
+      "target": "DET",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the deployed app images are digest-pinned. deploy-do.yml:897-904 fails closed when API_DIGEST/WORKER_DIGEST/WEB_DIGEST are missing and exports MCT_<SERVICE>_IMAGE as @sha256 refs after attestation verification; third-party-image-scan.yml:51-61 fails on any literal (non-$) image ref in infra/digitalocean/docker-compose.yml without @sha256. All five third-party images now carry digests: redis :35, node-exporter :272 (new since 7dd0402, prom/node-exporter:v1.12.1@sha256:1b4e4438...), prometheus :306, alertmanager :354, caddy :413. Each digest was resolved against the Docker Hub tag API and matches the published tag digest. The three mct-* compose tag fallbacks (:82,160,233) remain the documented manual-operator exception (docker-compose.yml:74-80), so the static lens keeps flagging them by design; they are never used by the deploy path.",
+      "area": "DET"
+    },
+    {
+      "id": "DET-P3-003",
+      "severity": "P3",
+      "title": "[SUPPLY] third-party image scan header still says four images and omits node-exporter",
+      "owner": "@platform/supply-chain",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a. .github/workflows/third-party-image-scan.yml:3-4 still says 'the four digest-pinned third-party images in the droplet compose (redis, caddy, prometheus, alertmanager)', but the compose now runs five third-party images: node-exporter was added at infra/digitalocean/docker-compose.yml:271-272 (prom/node-exporter:v1.12.1@sha256:1b4e4438...). Functional coverage is correct because the resolver greps every literal image ref from the compose (:51-61), so node-exporter is scanned; only the header/coverage description is stale. Impact: a reviewer reading the workflow comment believes host metrics are outside the scan and may not notice if the dynamic resolver is narrowed later. Recommendation: update the header to five images and add node-exporter to the list (or derive the list from the resolver output in a comment-free form).",
+      "area": "DET"
+    }
+  ]
+}
