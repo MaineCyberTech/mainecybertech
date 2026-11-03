@@ -41,7 +41,7 @@ const exportColumns: CsvColumn[] = [
   { key: "created_at" },
 ];
 
-router.get("/export", async (req, res, next) => {
+router.get("/export", requirePermission("assets", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "assets", "read");
     let query = supabase.from("assets").select("*");
@@ -72,7 +72,7 @@ router.get("/export", async (req, res, next) => {
   }
 });
 
-router.get("/", async (req, res, next) => {
+router.get("/", requirePermission("assets", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "assets", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));
@@ -105,7 +105,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.get("/stats", async (req, res, next) => {
+router.get("/stats", requirePermission("assets", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "assets", "read");
     let query = supabase.from("assets").select("status, warranty_expires, asset_type");
@@ -140,7 +140,7 @@ router.get("/stats", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requirePermission("assets", "view"), async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "assets", "read");
@@ -348,24 +348,28 @@ router.delete("/:id", requirePermission("assets", "delete"), async (req, res, ne
   }
 });
 
-router.get("/:id/comments", async (req, res, next) => {
+router.get("/:id/comments", requirePermission("assets", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "assets", "read");
     const { data: asset, error: assetError } = await supabase
       .from("assets")
-      .select("organization_id")
+      .select("organization_id, visibility")
       .eq("id", String(req.params.id))
       .maybeSingle();
     if (assetError) throw new AppError("DB_ERROR", assetError.message, 500);
     assertResourceOrg(req, (asset as { organization_id?: string } | null)?.organization_id);
+    if (!(await isClientVisible(req, asset as Record<string, unknown> | null))) {
+      throw new AppError("NOT_FOUND", "Asset not found", 404);
+    }
 
-    const { data, error } = await supabase
+    let commentsQuery = supabase
       .from("module_comments")
       .select("*")
       .eq("module_key", "assets")
       .eq("entity_type", "asset")
-      .eq("entity_id", String(req.params.id))
-      .order("created_at", { ascending: true });
+      .eq("entity_id", String(req.params.id));
+    if (await isClientMember(req)) commentsQuery = commentsQuery.eq("is_internal", false);
+    const { data, error } = await commentsQuery.order("created_at", { ascending: true });
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data));
   } catch (error) {
@@ -413,16 +417,19 @@ router.post("/:id/comments", async (req, res, next) => {
   }
 });
 
-router.get("/:id/timeline", async (req, res, next) => {
+router.get("/:id/timeline", requirePermission("assets", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "assets", "read");
     const { data: asset, error: assetError } = await supabase
       .from("assets")
-      .select("organization_id")
+      .select("organization_id, visibility")
       .eq("id", String(req.params.id))
       .maybeSingle();
     if (assetError) throw new AppError("DB_ERROR", assetError.message, 500);
     assertResourceOrg(req, (asset as { organization_id?: string } | null)?.organization_id);
+    if (!(await isClientVisible(req, asset as Record<string, unknown> | null))) {
+      throw new AppError("NOT_FOUND", "Asset not found", 404);
+    }
 
     const { data, error } = await supabase
       .from("module_timeline_events")

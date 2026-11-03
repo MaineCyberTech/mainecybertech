@@ -119,7 +119,11 @@ export const rateLimitAdminOps = rateLimit({
  * while staying far below the global budget.
  */
 export function shareRateLimitKey(token: unknown): string {
-  return crypto.createHash("sha256").update(String(token ?? "")).digest("hex").slice(0, 32);
+  return crypto
+    .createHash("sha256")
+    .update(String(token ?? ""))
+    .digest("hex")
+    .slice(0, 32);
 }
 
 export const rateLimitShare = rateLimit({
@@ -129,6 +133,26 @@ export const rateLimitShare = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => `share:${shareRateLimitKey(req.params.token)}`,
+  skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
+});
+
+/**
+ * FILE-P2-009: per-token limiter for anonymous file-request uploads.
+ *
+ * The token is the only authorization on this endpoint, so a leaked (or even
+ * valid) token must not be able to spend the global per-IP budget on 25 MiB
+ * multipart bodies. Key by sha256(token) — never the raw token — and cap at
+ * 30 uploads per minute: high enough for a 100-file request, far below the
+ * global 300/15 min ceiling, and shared across IPs so rotating source
+ * addresses cannot multiply the token's budget.
+ */
+export const rateLimitPublicFileUpload = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  handler: rateLimitHandler("Too many uploads for this file request, please try again later."),
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `file-upload:${shareRateLimitKey(req.params.token)}`,
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
 

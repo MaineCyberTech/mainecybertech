@@ -137,9 +137,7 @@ describe("Search tenant scope (API-P2-001)", () => {
     // Non-super-admin with no approved memberships and no explicit org scope.
     const builders = mockSupabase({ isSuperAdmin: false, memberships: [] });
 
-    const res = await request(app)
-      .get("/api/v1/search?q=acme")
-      .set("Authorization", authToken);
+    const res = await request(app).get("/api/v1/search?q=acme").set("Authorization", authToken);
 
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual({
@@ -190,15 +188,38 @@ describe("Search tenant scope (API-P2-001)", () => {
     expect(call.metadata.allTenants).toBe(false);
   });
 
+  it("does not include an org where a tenant admin is only a client (MT-P1-005)", async () => {
+    mockOrgScope.current = {
+      orgId: ORG_A,
+      explicit: false,
+      platformAdmin: false,
+      impersonation: false,
+    };
+    const builders = mockSupabase({
+      isSuperAdmin: false,
+      memberships: [
+        { organization_id: ORG_A, roles: [{ id: "r1", key: "admin" }] },
+        { organization_id: ORG_B, roles: [{ id: "r2", key: "client_user" }] },
+      ],
+    });
+
+    const res = await request(app).get("/api/v1/search?q=acme").set("Authorization", authToken);
+
+    expect(res.status).toBe(200);
+    const orgBuilder = builders.organizations?.[0];
+    expect(orgBuilder).toBeDefined();
+    expect(orgBuilder.in).toHaveBeenCalledWith("id", [ORG_A]);
+    expect(orgBuilder.in).not.toHaveBeenCalledWith("id", [ORG_B]);
+    expect(orgBuilder.in).not.toHaveBeenCalledWith("id", [ORG_A, ORG_B]);
+  });
+
   it("allows and audits the all-tenants path for a super admin with no explicit org", async () => {
     const builders = mockSupabase({
       isSuperAdmin: true,
       memberships: [{ organization_id: ORG_A, roles: [{ id: "r1", key: "super_admin" }] }],
     });
 
-    const res = await request(app)
-      .get("/api/v1/search?q=acme")
-      .set("Authorization", authToken);
+    const res = await request(app).get("/api/v1/search?q=acme").set("Authorization", authToken);
 
     expect(res.status).toBe(200);
     const orgBuilder = builders.organizations?.[0];
@@ -214,9 +235,7 @@ describe("Search tenant scope (API-P2-001)", () => {
   it("fails closed when a super admin's membership list is empty", async () => {
     const builders = mockSupabase({ isSuperAdmin: true, memberships: [] });
 
-    const res = await request(app)
-      .get("/api/v1/search?q=acme")
-      .set("Authorization", authToken);
+    const res = await request(app).get("/api/v1/search?q=acme").set("Authorization", authToken);
 
     expect(res.status).toBe(200);
     expect(res.body.data.organizations).toEqual([]);

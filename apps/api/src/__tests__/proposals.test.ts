@@ -42,8 +42,13 @@ jest.mock("../services/supabase", () => ({
 jest.mock("../services/audit", () => ({
   logAuditEvent: jest.fn(),
 }));
+jest.mock("../lib/client-visibility", () => ({
+  ...jest.requireActual("../lib/client-visibility"),
+  isClientMember: jest.fn().mockResolvedValue(false),
+}));
 
 import { getSupabaseAdmin } from "../services/supabase";
+import { isClientMember } from "../lib/client-visibility";
 import proposalsRouter from "../routes/proposals";
 
 const authToken = "Bearer test-token";
@@ -77,7 +82,6 @@ jest.mock("../middleware/permissions", () => ({
 const app = createTestApp();
 app.use("/api/v1/proposals", proposalsRouter);
 app.use(errorHandler);
-
 
 jest.mock("../lib/admin-scope", () => ({
   ...jest.requireActual("../lib/admin-scope"),
@@ -235,7 +239,8 @@ describe("Proposal tenant isolation (QW-1)", () => {
     mockProposal(ORG_A);
     const res = await request(app)
       .delete(`/api/v1/proposals/${PROPOSAL_ID}`)
-      .set("Authorization", authToken).send({ confirm: true });
+      .set("Authorization", authToken)
+      .send({ confirm: true });
     expect(res.status).toBe(204);
   });
 
@@ -243,7 +248,8 @@ describe("Proposal tenant isolation (QW-1)", () => {
     mockProposal(ORG_B);
     const res = await request(app)
       .delete(`/api/v1/proposals/${PROPOSAL_ID}`)
-      .set("Authorization", authToken).send({ confirm: true });
+      .set("Authorization", authToken)
+      .send({ confirm: true });
     expect(res.status).toBe(404);
   });
 
@@ -278,7 +284,8 @@ describe("Proposal tenant isolation (QW-1)", () => {
     mockProposal(ORG_B);
     const res = await request(app)
       .delete(`/api/v1/proposals/${PROPOSAL_ID}/phases/00000000-0000-0000-0000-0000000000p1`)
-      .set("Authorization", authToken).send({ confirm: true });
+      .set("Authorization", authToken)
+      .send({ confirm: true });
     expect(res.status).toBe(404);
   });
 
@@ -328,7 +335,8 @@ describe("Proposal tenant isolation (QW-1)", () => {
     mockProposal(ORG_B);
     const res = await request(app)
       .delete(`/api/v1/proposals/${PROPOSAL_ID}/items/00000000-0000-0000-0000-0000000000i1`)
-      .set("Authorization", authToken).send({ confirm: true });
+      .set("Authorization", authToken)
+      .send({ confirm: true });
     expect(res.status).toBe(404);
   });
 
@@ -355,6 +363,55 @@ describe("Proposal tenant isolation (QW-1)", () => {
       .get(`/api/v1/proposals/${PROPOSAL_ID}/timeline`)
       .set("Authorization", authToken);
     expect(res.status).toBe(404);
+  });
+
+  it("rejects an internal staff client-decision (ADMIN-P2-010)", async () => {
+    const supabase = mockProposal(ORG_A, {
+      status: "approved",
+      visibility: "client_visible",
+      metadata: {},
+    });
+
+    const res = await request(app)
+      .post(`/api/v1/proposals/${PROPOSAL_ID}/client-decision`)
+      .set("Authorization", authToken)
+      .send({ organizationId: ORG_A, decision: "accepted" });
+
+    expect(res.status).toBe(403);
+    const proposalBuilder = supabase.from.mock.results[0].value as { update: jest.Mock };
+    expect(proposalBuilder.update).not.toHaveBeenCalled();
+  });
+
+  it("allows a client member to record the first client-decision (ADMIN-P2-010)", async () => {
+    (isClientMember as jest.Mock).mockResolvedValueOnce(true);
+    mockProposal(ORG_A, {
+      status: "approved",
+      visibility: "client_visible",
+      metadata: {},
+    });
+
+    const res = await request(app)
+      .post(`/api/v1/proposals/${PROPOSAL_ID}/client-decision`)
+      .set("Authorization", authToken)
+      .send({ organizationId: ORG_A, decision: "accepted", notes: "Looks good" });
+
+    expect(res.status).toBe(200);
+  });
+
+  it("refuses to overwrite an existing client-decision (ADMIN-P2-010)", async () => {
+    (isClientMember as jest.Mock).mockResolvedValueOnce(true);
+    mockProposal(ORG_A, {
+      status: "approved",
+      visibility: "client_visible",
+      metadata: { clientDecision: "accepted" },
+    });
+
+    const res = await request(app)
+      .post(`/api/v1/proposals/${PROPOSAL_ID}/client-decision`)
+      .set("Authorization", authToken)
+      .send({ organizationId: ORG_A, decision: "declined" });
+
+    expect(res.status).toBe(409);
   });
 
   it("POST /:id/submit-approval returns 404 when the proposal is in another org", async () => {

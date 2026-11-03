@@ -26,7 +26,7 @@ function crudEndpoints(
   createSchema: typeof createVendorContractSchema,
   updateSchema: typeof updateVendorContractSchema,
 ) {
-  router.get(`/${resource}`, async (req, res, next) => {
+  router.get(`/${resource}`, requirePermission(resource, "view"), async (req, res, next) => {
     try {
       const supabase = getScopedClient(req, "vendors", "read");
       const page = Math.max(1, queryInt(req.query.page, 1));
@@ -59,7 +59,7 @@ function crudEndpoints(
     }
   });
 
-  router.get(`/${resource}/:id`, async (req, res, next) => {
+  router.get(`/${resource}/:id`, requirePermission(resource, "view"), async (req, res, next) => {
     try {
       const supabase = getScopedClient(req, "vendors", "read");
       const { data, error } = await supabase
@@ -180,25 +180,29 @@ function snakeCase(str: string): string {
 // Static sub-routes must be registered before `/:id` (Express matches the
 // first registered route — `/vendor-contracts/renewals` was previously
 // shadowed by `/vendor-contracts/:id` with id="renewals").
-router.get("/vendor-contracts/renewals", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "vendors", "read");
-    const ninetyDays = new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10);
-    let q = supabase
-      .from("vendor_contracts")
-      .select("*")
-      .lte("renewal_date", ninetyDays)
-      .gte("renewal_date", new Date().toISOString().slice(0, 10))
-      .eq("status", "active")
-      .order("renewal_date", { ascending: true });
-    q = q.eq("organization_id", req.query.organization_id as string);
-    const { data, error } = await q;
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success({ items: data ?? [], total: (data ?? []).length }));
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  "/vendor-contracts/renewals",
+  requirePermission("vendor-contracts", "view"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "vendors", "read");
+      const ninetyDays = new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10);
+      let q = supabase
+        .from("vendor_contracts")
+        .select("*")
+        .lte("renewal_date", ninetyDays)
+        .gte("renewal_date", new Date().toISOString().slice(0, 10))
+        .eq("status", "active")
+        .order("renewal_date", { ascending: true });
+      q = q.eq("organization_id", req.query.organization_id as string);
+      const { data, error } = await q;
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.json(success({ items: data ?? [], total: (data ?? []).length }));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 crudEndpoints(
   "vendor-contracts",

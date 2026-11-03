@@ -45,7 +45,7 @@ const exportColumns: CsvColumn[] = [
   { key: "updated_at" },
 ];
 
-router.get("/export", async (req, res, next) => {
+router.get("/export", requirePermission("proposals", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "proposals", "read");
     let query = supabase.from("proposals").select("*");
@@ -78,7 +78,7 @@ router.get("/export", async (req, res, next) => {
   }
 });
 
-router.get("/", async (req, res, next) => {
+router.get("/", requirePermission("proposals", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "proposals", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));
@@ -108,7 +108,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requirePermission("proposals", "view"), async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "proposals", "read");
@@ -822,8 +822,20 @@ router.post(
         );
       }
 
+      // ADMIN-P2-010: a client decision is a client assertion, not an internal
+      // status update. Internal staff holding proposals:edit must not be able
+      // to record (or overwrite) acceptance/decline on the client's behalf.
+      if (!(await isClientMember(req))) {
+        throw new AppError("FORBIDDEN", "Only a client contact can record a client decision", 403);
+      }
+
+      const existingMetadata = (proposal.metadata as Record<string, unknown> | null) ?? {};
+      if (existingMetadata.clientDecision) {
+        throw new AppError("CONFLICT", "A client decision has already been recorded", 409);
+      }
+
       const metadata = {
-        ...((proposal.metadata as Record<string, unknown> | null) ?? {}),
+        ...existingMetadata,
         clientDecision: parsed.decision,
         clientDecidedAt: new Date().toISOString(),
         clientDecidedBy: req.authUser!.userId,
@@ -990,7 +1002,7 @@ router.post("/:id/publish", requirePermission("proposals", "edit"), async (req, 
   }
 });
 
-router.get("/:id/comments", async (req, res, next) => {
+router.get("/:id/comments", requirePermission("proposals", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "proposals", "read");
     const proposal = await loadOwned(
@@ -1064,16 +1076,19 @@ router.post("/:id/comments", requirePermission("proposals", "create"), async (re
   }
 });
 
-router.get("/:id/timeline", async (req, res, next) => {
+router.get("/:id/timeline", requirePermission("proposals", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "proposals", "read");
-    await loadOwned(
+    const proposal = await loadOwned(
       req,
       supabase,
       "proposals",
       String(req.params.id) as string,
-      "id, organization_id",
+      "id, organization_id, visibility",
     );
+    if (!(await isClientVisible(req, proposal))) {
+      throw new AppError("NOT_FOUND", "Proposal not found", 404);
+    }
     const { data, error } = await supabase
       .from("module_timeline_events")
       .select("*")

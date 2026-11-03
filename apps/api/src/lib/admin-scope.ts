@@ -13,9 +13,12 @@ import { isCrossTenantKey, roleKeyOf } from "./roles";
  * is the fix for audit MT-P1-001 / MT-P1-002 / ADMIN-P1-001 (and mirrors the
  * hardened `routes/search.ts`).
  *
- * `orgIds` is the caller's approved organization list. Callers must apply it
- * as a mandatory predicate and never let a caller-supplied `organization_id`
- * widen beyond it.
+ * `orgIds` is the caller's authoritative tenant list. For a caller without an
+ * admin role it is their approved membership list; for an admin it is the org
+ * resolved for this request, or the orgs where they actually hold
+ * `admin`/`super_admin` when unpinned — never every org they merely belong to.
+ * Callers must apply it as a mandatory predicate and never let a
+ * caller-supplied `organization_id` widen beyond it.
  */
 export interface AdminTenantScope {
   allTenants: boolean;
@@ -60,18 +63,40 @@ async function computeAdminTenantScope(req: Request): Promise<AdminTenantScope> 
     roles?: unknown;
   }>;
 
-  const orgIds = rows.map((m) => m.organization_id).filter((id): id is string => Boolean(id));
-  // `.some`, NOT `.find`: the memberships query has no ORDER BY, so picking the
-  // first non-null role key made `allTenants` depend on row order for a user
-  // with several memberships (e.g. `admin` in one org, `member` in another).
-  // `some` asks the order-independent question we actually mean: does this user
-  // hold a cross-tenant role ANYWHERE.
-  const holdsCrossTenantRole = rows.some((m) => isCrossTenantKey(roleKeyOf(m.roles)));
+  const allOrgIds = rows.map((m) => m.organization_id).filter((id): id is string => Boolean(id));
+  // Admin scope is the set of orgs where the caller actually holds an
+  // admin/super_admin role — never every org they merely belong to. Otherwise
+  // `admin` in org A plus `client_user` in org B let an unpinned admin request
+  // read/write B's audit trail, dashboard and tickets (MT-P1-005).
+  const adminOrgIds = rows
+    .filter((m) => isCrossTenantKey(roleKeyOf(m.roles)))
+    .map((m) => m.organization_id)
+    .filter((id): id is string => Boolean(id));
+  const holdsCrossTenantRole = adminOrgIds.length > 0;
   const allTenants =
     (profile as { is_super_admin?: boolean } | null)?.is_super_admin === true &&
     holdsCrossTenantRole;
 
-  return { allTenants, orgIds };
+  if (allTenants) {
+    return { allTenants: true, orgIds: allOrgIds };
+  }
+
+  // A caller with an admin role is confined to the org resolved for THIS
+  // request (or to their admin orgs when the request is unpinned). A user who
+  // is `admin` in A and `client_user` in B must be able to act in B only when
+  // B is explicitly selected, and never inherits B from an unpinned admin
+  // request (MT-P1-005).
+  if (holdsCrossTenantRole) {
+    const pinnedOrgId = req.orgScope?.orgId ?? req.orgId ?? null;
+    return {
+      allTenants: false,
+      orgIds: pinnedOrgId ? [pinnedOrgId] : adminOrgIds,
+    };
+  }
+
+  // Non-admin callers keep the legacy "all approved orgs" scope used by
+  // exports and other tenant reads; only admin scope was over-wide.
+  return { allTenants: false, orgIds: allOrgIds };
 }
 
 /**

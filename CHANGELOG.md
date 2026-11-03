@@ -158,6 +158,15 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Security
 
+- **Nov 3 re-audit security batch:** client roles can no longer read internal
+  comments/timeline through sibling endpoints, see internal file-request
+  attachments or AI drafts, or record proposal client decisions; a tenant
+  `admin` with a client membership elsewhere no longer inherits that org's
+  admin scope; primary module reads now enforce `:view`; migration `5302465`
+  revokes the anon `store_quotes` INSERT grant and migration `5302466` scopes
+  self-addressed notification inserts to approved orgs. Public file-request
+  uploads validate the token before buffering and are capped per token.
+
 - **Cleared the three HIGH production advisories** (`cde79fad`):
   `body-parser` 2.4.0 (GHSA-27r3-jxmh-p828), `multer` ≥2.5.0
   (GHSA-q7qp-rjg7-q26m), and a time-boxed `zod` <4.6.6 exception

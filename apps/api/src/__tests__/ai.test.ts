@@ -35,8 +35,12 @@ jest.mock("../services/supabase", () => ({
   ),
 }));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
+jest.mock("../lib/client-visibility", () => ({
+  isClientMember: jest.fn().mockResolvedValue(false),
+}));
 
 import { getSupabaseAdmin } from "../services/supabase";
+import { isClientMember } from "../lib/client-visibility";
 import aiRouter from "../routes/ai";
 
 const authToken = "Bearer test-token";
@@ -227,6 +231,26 @@ describe("AI API", () => {
       expect(res.status).toBe(200);
       expect(res.body.data.items).toEqual([]);
       expect(res.body.data.total).toBe(0);
+    });
+
+    it("denies the draft list to client roles holding ai:view (SEC-P2-020)", async () => {
+      mockAuth();
+      (isClientMember as jest.Mock).mockResolvedValueOnce(true);
+
+      const res = await request(app).get("/api/v1/ai/drafts").set("Authorization", authToken);
+
+      expect(res.status).toBe(403);
+    });
+
+    it("denies draft detail to client roles holding ai:view (SEC-P2-020)", async () => {
+      mockAuth();
+      (isClientMember as jest.Mock).mockResolvedValueOnce(true);
+
+      const res = await request(app)
+        .get(`/api/v1/ai/drafts/draft-1?organization_id=${testOrgId}`)
+        .set("Authorization", authToken);
+
+      expect(res.status).toBe(403);
     });
 
     it("approves a draft and records the reviewer", async () => {

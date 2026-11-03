@@ -102,11 +102,11 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,683 tests, all passing. 521 suites.**
+**4,683 tests, all passing. 523 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 2,007         | 176    | Jest + supertest                  |
+| API     | 2,007         | 178    | Jest + supertest                  |
 | Web     | 2,036         | 308    | Jest + Testing Library            |
 | SDK     | 327           | 5      | Jest (mocked fetch)               |
 | Worker  | 313           | 32     | Jest (env schema + task handlers) |
@@ -176,7 +176,7 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                                                                                                                                                     |
 | Web pages                 | 331   | Admin 204, Portal 97, Public 29, `forbidden` 1                                                                                                                                                                                                                                                     |
 | Web components            | 129   | `apps/web/components/`                                                                                                                                                                                                                                                                             |
-| SQL migrations            | 162   | `supabase/migrations/` (latest: 5302464_fix_notification_key_dedup_index                                                                                                                                                                                                                            |
+| SQL migrations            | 164   | `supabase/migrations/` (latest: 5302466_notifications_insert_membership_scope                                                                                                                                                                                                                            |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                                                                                                                                             |
 | GitHub Actions workflows  | 30    | `.github/workflows/`                                                                                                                                                                                                                                                                               |
 | AI prompt files           | 626   | `prompts/` (6 packs, 624 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                                                                                                                                           |
@@ -384,7 +384,7 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 ## RLS & schema hygiene
 
 `scripts/verify-rls.mjs` (CI: the shared unit-tests action) scans
-`supabase/migrations/` and reports **137 tables, all RLS-enabled, 1035
+`supabase/migrations/` and reports **137 tables, all RLS-enabled, 1036
 policies**. It fails on a live table without RLS, on a new migration whose
 `create policy` lacks a paired `drop policy if exists`, and on a new migration
 filename outside the `NNNNNNN_lower_snake_case.sql` convention

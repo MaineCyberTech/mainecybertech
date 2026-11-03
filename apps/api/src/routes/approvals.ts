@@ -49,7 +49,7 @@ const exportColumns: CsvColumn[] = [
   { key: "updated_at" },
 ];
 
-router.get("/export", async (req, res, next) => {
+router.get("/export", requirePermission("approvals", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "approvals", "read");
 
@@ -92,7 +92,7 @@ router.get("/export", async (req, res, next) => {
   }
 });
 
-router.get("/stats", async (req, res, next) => {
+router.get("/stats", requirePermission("approvals", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "approvals", "read");
 
@@ -119,7 +119,7 @@ router.get("/stats", async (req, res, next) => {
   }
 });
 
-router.get("/", async (req, res, next) => {
+router.get("/", requirePermission("approvals", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "approvals", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));
@@ -162,7 +162,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requirePermission("approvals", "view"), async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "approvals", "read");
@@ -452,24 +452,29 @@ router.post("/:id/cancel", requirePermission("approvals", "edit"), async (req, r
   }
 });
 
-router.get("/:id/comments", async (req, res, next) => {
+router.get("/:id/comments", requirePermission("approvals", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "approvals", "read");
-    await loadOwned(
+    const approval = await loadOwned(
       req,
       supabase,
       "approval_requests",
       String(req.params.id) as string,
-      "id, organization_id",
+      "id, organization_id, visibility",
     );
+    if (!(await isClientVisible(req, approval))) {
+      throw new AppError("NOT_FOUND", "Approval request not found", 404);
+    }
 
-    const { data, error } = await supabase
+    let commentsQuery = supabase
       .from("module_comments")
       .select("*")
       .eq("module_key", "approvals")
       .eq("entity_type", "approval_request")
-      .eq("entity_id", String(req.params.id) as string)
-      .order("created_at", { ascending: true });
+      .eq("entity_id", String(req.params.id) as string);
+    if (await isClientMember(req)) commentsQuery = commentsQuery.eq("is_internal", false);
+
+    const { data, error } = await commentsQuery.order("created_at", { ascending: true });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data));
@@ -521,16 +526,19 @@ router.post("/:id/comments", requirePermission("approvals", "edit"), async (req,
   }
 });
 
-router.get("/:id/timeline", async (req, res, next) => {
+router.get("/:id/timeline", requirePermission("approvals", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "approvals", "read");
-    await loadOwned(
+    const approval = await loadOwned(
       req,
       supabase,
       "approval_requests",
       String(req.params.id) as string,
-      "id, organization_id",
+      "id, organization_id, visibility",
     );
+    if (!(await isClientVisible(req, approval))) {
+      throw new AppError("NOT_FOUND", "Approval request not found", 404);
+    }
 
     const { data, error } = await supabase
       .from("module_timeline_events")

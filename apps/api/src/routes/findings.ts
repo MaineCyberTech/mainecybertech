@@ -48,7 +48,7 @@ const exportColumns: CsvColumn[] = [
   { key: "updated_at" },
 ];
 
-router.get("/export", async (req, res, next) => {
+router.get("/export", requirePermission("findings", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "findings", "read");
     let query = supabase.from("findings").select("*");
@@ -81,7 +81,7 @@ router.get("/export", async (req, res, next) => {
   }
 });
 
-router.get("/", async (req, res, next) => {
+router.get("/", requirePermission("findings", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "findings", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));
@@ -115,7 +115,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.get("/stats", async (req, res, next) => {
+router.get("/stats", requirePermission("findings", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "findings", "read");
     let query = supabase.from("findings").select("severity, status");
@@ -140,7 +140,7 @@ router.get("/stats", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requirePermission("findings", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "findings", "read");
     let query = supabase
@@ -451,23 +451,27 @@ router.post("/:id/resolve", requirePermission("findings", "edit"), async (req, r
   }
 });
 
-router.get("/:id/comments", async (req, res, next) => {
+router.get("/:id/comments", requirePermission("findings", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "findings", "read");
-    await loadOwned(
+    const finding = await loadOwned(
       req,
       supabase,
       "findings",
       String(req.params.id) as string,
-      "id, organization_id",
+      "id, organization_id, visibility",
     );
-    const { data, error } = await supabase
+    if (!(await isClientVisible(req, finding))) {
+      throw new AppError("NOT_FOUND", "Finding not found", 404);
+    }
+    let commentsQuery = supabase
       .from("module_comments")
       .select("*")
       .eq("module_key", "findings")
       .eq("entity_type", "finding")
-      .eq("entity_id", String(req.params.id) as string)
-      .order("created_at", { ascending: true });
+      .eq("entity_id", String(req.params.id) as string);
+    if (await isClientMember(req)) commentsQuery = commentsQuery.eq("is_internal", false);
+    const { data, error } = await commentsQuery.order("created_at", { ascending: true });
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data));
   } catch (error) {
@@ -519,16 +523,19 @@ router.post("/:id/comments", async (req, res, next) => {
   }
 });
 
-router.get("/:id/timeline", async (req, res, next) => {
+router.get("/:id/timeline", requirePermission("findings", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "findings", "read");
-    await loadOwned(
+    const finding = await loadOwned(
       req,
       supabase,
       "findings",
       String(req.params.id) as string,
-      "id, organization_id",
+      "id, organization_id, visibility",
     );
+    if (!(await isClientVisible(req, finding))) {
+      throw new AppError("NOT_FOUND", "Finding not found", 404);
+    }
     const { data, error } = await supabase
       .from("module_timeline_events")
       .select("*")

@@ -17,7 +17,7 @@ router.use(requireAuth);
 router.use(requireOrgAccess);
 router.use(requireEntitlement("service-catalog"));
 
-router.get("/", async (req, res, next) => {
+router.get("/", requirePermission("service-catalog", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "service-catalog", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));
@@ -40,7 +40,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requirePermission("service-catalog", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "service-catalog", "read");
     const { data, error } = await supabase
