@@ -120,6 +120,6 @@ describe("PortalRunbooksPage", () => {
     const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
-    expect(screen.getByText(/2 runbooks for your organization/)).toBeInTheDocument();
+    expect(screen.getByText(/Showing the most recent 2 runbooks\./)).toBeInTheDocument();
   });
 });
