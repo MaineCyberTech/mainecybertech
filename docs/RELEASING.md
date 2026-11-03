@@ -78,7 +78,10 @@ pass before the deploy step:
 - **Release tagging (CI-P3-008):** every promotion push to `main` makes
   [`release.yml`](../.github/workflows/release.yml) cut an annotated tag and a
   GitHub Release named `v<VERSION>-<YYYYMMDD>-<short-sha>` (e.g.
-  `v0.1.0-20261013-3a4e62a`). The release body is generated from the commits
+  `v0.1.0-20261013-3a4e62a`); the date is the **commit** date
+  (`git show -s --format=%cs HEAD`), not the workflow run date, so a retry on a
+  later day cannot mint a second tag/release for the same commit (REL-P3-005).
+  The release body is generated from the commits
   since the previous tag, the migrations added in the range and the current
   [`UPGRADE.md`](UPGRADE.md) window, with the human-authored Breaking
   Changes/Operator Actions sections to be filled from
@@ -198,15 +201,16 @@ first:
 - `DO_API_TOKEN` returns HTTP 401; dev falls back to the `DROPLET_IP`
   environment variable, but prod has no fallback set. Rotate the token and/or
   set `DROPLET_IP` for prod.
-- Branch state: the last promotion is PR #281 (`main` @ `7dd04023`,
-  2026-10-14); PR #278 (`9ba108b5`, 2026-10-13) preceded it. `main` currently
-  carries every `origin/develop` commit, but the branches can point in either
-  direction between releases — compare them with
-  `git log --oneline --left-right origin/main...origin/develop` instead of
-  assuming. Scheduled `db-backup`/`db-restore-test`/`sbom` runs only fire from
-  the default branch, so unpromoted `develop` work is not covered by them, and
-  recent backup runs have failed — verify the database secrets before relying
-  on them.
+- Branch state: the last promotion is `6b7aa1a5` (`main` @ 2026-11-03, tag
+  `v0.1.0-20261103-6b7aa1a`); at that point `main` was one promotion commit
+  ahead of `develop` (`git rev-list --left-right --count origin/main...origin/develop`
+  = `1 0`). The branches can point in either direction between releases —
+  compare them with `git log --oneline --left-right origin/main...origin/develop`
+  instead of assuming, and re-record this paragraph as part of the promotion
+  checklist (DOC-P3-011). Scheduled `db-backup`/`db-restore-test`/`sbom` runs
+  only fire from the default branch, so unpromoted `develop` work is not
+  covered by them, and recent backup runs have failed — verify the database
+  secrets before relying on them.
 - E2E has known run-to-run flakiness on data-dependent tests under CI/Supabase
   contention. CI retries a failed test up to 2 times; a test that only passes
   on retry is reported in the job's flake summary and does **not** fail the

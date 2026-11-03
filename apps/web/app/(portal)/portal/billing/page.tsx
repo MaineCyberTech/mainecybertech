@@ -4,12 +4,17 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import BillingPageClient from "./BillingPageClient";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import AdminPagination from "@/components/admin/AdminPagination";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Billing - Portal - Maine CyberTech" };
 
-export default async function PortalBillingPage() {
+const DEFAULT_LIMIT = 25;
+
+export default async function PortalBillingPage(props: {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+}) {
   const api = getApiClient();
   const membership = await getApprovedMembership();
 
@@ -27,6 +32,12 @@ export default async function PortalBillingPage() {
     );
   }
 
+  const sp = (await props.searchParams) ?? {};
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
   let loadFailed = false;
   const [summary, subscriptions, invoices, customer] = await Promise.all([
     api.billing.summary({ organizationId: membership.organization_id }).catch(() => {
@@ -38,7 +49,7 @@ export default async function PortalBillingPage() {
       return [];
     }),
     api.billing
-      .listInvoices({ organizationId: membership.organization_id, limit: 50 })
+      .listInvoices({ organizationId: membership.organization_id, page, limit })
       .catch(() => {
         loadFailed = true;
         return null;
@@ -68,6 +79,13 @@ export default async function PortalBillingPage() {
         subscriptions={subscriptions}
         invoices={invoices?.items ?? []}
         customer={customer}
+      />
+      <AdminPagination
+        currentPage={page}
+        totalPages={Math.ceil((invoices?.total ?? 0) / limit)}
+        buildHref={(p) => `/portal/billing?page=${p}&limit=${limit}`}
+        total={invoices?.total ?? 0}
+        limit={limit}
       />
     </div>
   );

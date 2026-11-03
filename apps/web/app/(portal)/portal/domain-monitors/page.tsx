@@ -48,7 +48,7 @@ export default async function DomainMonitorsPage() {
       {loadFailed ? <DataErrorNote what="domain-monitors" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Domain Monitors</h1>
       <p className="text-sm text-slate-400">
-        {items.length} monitor{items.length !== 1 ? "s" : ""} for your organization.
+        {items.length} monitor{items.length !== 1 ? "s" : ""} in this view (most recent first).
       </p>
       <div className="space-y-3">
         {items.map((item) => (

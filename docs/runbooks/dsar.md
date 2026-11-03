@@ -91,13 +91,13 @@ Response is `204 No Content`.
 
 ### 4.2 What remains after erasure
 
-| Store | Outcome |
-| ----- | ------- |
-| `profiles`, `memberships`, `user_permission_overrides`, auth/MFA | Deleted (cascade) |
-| `audit_logs` | Retained up to 365 days; `actor_user_id` is set null by FK, `metadata` is PII-redacted |
-| Backup buckets | Age out after 30 days |
-| Microsoft Teams / Atlassian JSM copies of submissions | Retained under vendor settings — request deletion with the vendor if the subject asks |
-| Tenant business records authored by the person | Per tenant decision (controller); do not erase without the tenant's instruction |
+| Store                                                            | Outcome                                                                                |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `profiles`, `memberships`, `user_permission_overrides`, auth/MFA | Deleted (cascade)                                                                      |
+| `audit_logs`                                                     | Retained up to 365 days; `actor_user_id` is set null by FK, `metadata` is PII-redacted |
+| Backup buckets                                                   | Age out after 30 days                                                                  |
+| Microsoft Teams / Atlassian JSM copies of submissions            | Retained under vendor settings — request deletion with the vendor if the subject asks  |
+| Tenant business records authored by the person                   | Per tenant decision (controller); do not erase without the tenant's instruction        |
 
 State the residual copies in the response.
 
@@ -135,6 +135,15 @@ register — this path writes no API audit event.
 ```sql
 delete from public.store_quotes
  where lower(email) = lower('<EMAIL>');
+-- PRIV-P2-009: the proposal generator copies the submitter name and free-text
+-- notes into sections, and the table has no FK cascade to the quote request.
+-- Delete the drafts first; the subquery needs store_quote_requests still present.
+delete from public.store_proposal_drafts
+ where quote_request_id in (
+   select id from public.store_quote_requests
+   where lower(customer->>'email') = lower('<EMAIL>')
+ )
+ or lower(sections::text) like lower('%' || '<EMAIL>' || '%');
 delete from public.store_quote_requests
  where lower(customer->>'email') = lower('<EMAIL>');
 delete from public.public_interactions
@@ -167,9 +176,9 @@ already past the 90-day purge window are gone — confirm and say so.
 
 ## 7. Escalation
 
-| Situation | Action |
-| --------- | ------ |
-| Identity cannot be verified | Security lead; do not disclose |
-| Request conflicts with legal hold / tenant instruction | Counsel + compliance sponsor |
-| Erasure endpoint fails partway | Profile is scrubbed first; retry the auth delete, then verify with the §3.1 export |
-| Suspected breach alongside the request | Follow `docs/DATA_BREACH_RESPONSE.md` first |
+| Situation                                              | Action                                                                             |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Identity cannot be verified                            | Security lead; do not disclose                                                     |
+| Request conflicts with legal hold / tenant instruction | Counsel + compliance sponsor                                                       |
+| Erasure endpoint fails partway                         | Profile is scrubbed first; retry the auth delete, then verify with the §3.1 export |
+| Suspected breach alongside the request                 | Follow `docs/DATA_BREACH_RESPONSE.md` first                                        |

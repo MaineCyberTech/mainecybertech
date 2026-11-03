@@ -93,8 +93,14 @@ dialog and re-submits the form with the button as submitter on confirm.
   the adoption plan in [ui-kit.md](ui-kit.md#adoption-plan).
 - Colours come from the design tokens (`cyber-*`, `slate-*`, `emerald-*`,
   `amber-*`, `red-*` utilities, and `@mct/ui/tokens` for JS/inline-style
-  values): do not add new hardcoded hex/rgba colours. Gradient stops and glow
-  shadows with no token equivalent are the only accepted literals.
+  values): do not add new hardcoded hex/rgba colours. The topology canvas
+  palette lives under `colors.network` in `@mct/ui/tokens` (UX-P3-005).
+- **Intentional literal tail (UX-P3-005):** the remaining hex values are data,
+  not theme. `app/(public)/test-accounts/page.tsx` carries role badge colours
+  from the test-account matrix; the store category/product/visual/import-export
+  pages use a `#0D1622` gradient stop and a `#050B12` code-preview background
+  with no token equivalent; `app/opengraph-image.tsx` mixes logo stops. Do not
+  copy these into new components — add a token instead.
 - The theme is dark-only: `ThemeProvider` exposes a fixed dark theme (no
   light/system branch and no user-facing toggle). Do not add `dark:` variants
   or a theme switcher.

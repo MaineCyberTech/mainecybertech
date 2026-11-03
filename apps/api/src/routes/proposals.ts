@@ -7,6 +7,7 @@ import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
+import { requireAdmin } from "../middleware/admin";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { EXPORT_ROW_LIMIT } from "../lib/pagination";
@@ -878,6 +879,64 @@ router.post(
     }
   },
 );
+
+// USE-P2-013: an accidental client decision is irreversible from the portal.
+// Staff (a tenant admin or super_admin, via requireAdmin) can clear it with an
+// audited reset; the client can then decide again.
+router.post("/:id/client-decision/reset", requireAdmin, async (req, res, next) => {
+  try {
+    const supabase = getScopedClient(req, "proposals", "write");
+    const proposal = await loadOwned(
+      req,
+      supabase as never,
+      "proposals",
+      String(req.params.id) as string,
+      "id, organization_id, title, metadata, version",
+    );
+
+    const metadata = { ...((proposal.metadata as Record<string, unknown> | null) ?? {}) };
+    const previousDecision = metadata.clientDecision ?? null;
+    delete metadata.clientDecision;
+    delete metadata.clientDecidedAt;
+    delete metadata.clientDecidedBy;
+    delete metadata.clientDecisionNotes;
+
+    const { data, error } = await supabase
+      .from("proposals")
+      .update({ metadata: toJson(metadata), version: (proposal.version as number) + 1 })
+      .eq("id", String(req.params.id) as string)
+      .eq("version", proposal.version as number)
+      .select()
+      .single();
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (!data) throw new AppError("VERSION_CONFLICT", "Proposal was modified", 409);
+
+    await logAuditEvent({
+      organizationId: proposal.organization_id as string,
+      actorUserId: req.authUser!.userId,
+      action: "proposal.client_decision_reset",
+      entityType: "proposal",
+      entityId: String(req.params.id) as string,
+      metadata: { previousDecision },
+    });
+
+    await addTimelineEvent(
+      req,
+      proposal.organization_id as string,
+      "proposals",
+      "proposal",
+      String(req.params.id) as string,
+      "client_decision_reset",
+      { previousDecision },
+      req.authUser!.userId,
+    );
+
+    res.json(success(data));
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.post("/:id/publish", requirePermission("proposals", "edit"), async (req, res, next) => {
   try {

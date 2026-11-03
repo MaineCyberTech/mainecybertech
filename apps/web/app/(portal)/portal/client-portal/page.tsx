@@ -59,9 +59,9 @@ export default async function ClientPortalOverviewPage() {
           <section key={m.organizationId} className="cyber-panel">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h3 className="cyber-heading text-lg">
+                <h2 className="cyber-heading text-lg">
                   {m.organizationName ?? "Unknown Organization"}
-                </h3>
+                </h2>
                 <p className="mt-2 text-sm text-slate-300">
                   Role: {m.roleName ?? m.roleKey ?? "—"} · Status: {m.status}
                 </p>
@@ -70,9 +70,9 @@ export default async function ClientPortalOverviewPage() {
             </div>
 
             <div className="mt-4">
-              <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
                 Enabled Modules
-              </h4>
+              </h3>
               {m.enabledModules.length > 0 ? (
                 <ul className="mt-2 flex flex-wrap gap-2">
                   {m.enabledModules.map((mod) => (

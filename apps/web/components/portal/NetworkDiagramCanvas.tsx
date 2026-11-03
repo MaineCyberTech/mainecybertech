@@ -1,3 +1,5 @@
+import { colors } from "@mct/ui/tokens";
+
 type Node = { id?: string; label?: string; type?: string; [key: string]: unknown };
 type Edge = { from?: string; to?: string; label?: string; [key: string]: unknown };
 
@@ -6,15 +8,16 @@ type Props = {
   edges: Edge[];
 };
 
+// UX-P3-005: every colour comes from @mct/ui/tokens, not a component literal.
 const NODE_COLORS: Record<string, string> = {
-  switch: "#34d399",
-  router: "#60a5fa",
-  firewall: "#f87171",
-  ap: "#a78bfa",
-  server: "#fbbf24",
-  camera: "#f472b6",
-  internet: "#38bdf8",
-  default: "#94a3b8",
+  switch: colors.network.switch,
+  router: colors.network.router,
+  firewall: colors.network.firewall,
+  ap: colors.network.ap,
+  server: colors.network.server,
+  camera: colors.network.camera,
+  internet: colors.network.internet,
+  default: colors.network.default,
 };
 
 const WIDTH = 900;
@@ -68,7 +71,7 @@ export default function NetworkDiagramCanvas({ nodes, edges }: Props) {
             markerHeight="6"
             orient="auto-start-reverse"
           >
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+            <path d="M 0 0 L 10 5 L 0 10 z" fill={colors.network.edge} />
           </marker>
         </defs>
 
@@ -83,7 +86,7 @@ export default function NetworkDiagramCanvas({ nodes, edges }: Props) {
                 y1={from.y}
                 x2={to.x}
                 y2={to.y}
-                stroke="#64748b"
+                stroke={colors.network.edge}
                 strokeWidth={1.5}
                 markerEnd={`url(#${markerId})`}
               />
@@ -91,7 +94,7 @@ export default function NetworkDiagramCanvas({ nodes, edges }: Props) {
                 <text
                   x={(from.x + to.x) / 2}
                   y={(from.y + to.y) / 2 - 6}
-                  fill="#94a3b8"
+                  fill={colors.network.label}
                   fontSize={11}
                   textAnchor="middle"
                 >
@@ -115,14 +118,14 @@ export default function NetworkDiagramCanvas({ nodes, edges }: Props) {
                 width={NODE_W}
                 height={NODE_H}
                 rx={10}
-                fill="#0f172a"
+                fill={colors.network.nodeFill}
                 stroke={color}
                 strokeWidth={2}
               />
               <text
                 x={position.x}
                 y={position.y - 4}
-                fill="#f1f5f9"
+                fill={colors.network.nodeText}
                 fontSize={12}
                 fontWeight={600}
                 textAnchor="middle"

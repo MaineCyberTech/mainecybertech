@@ -22,7 +22,7 @@ These permissive licenses are approved for all dependency scopes:
 ```
 MIT, MIT-0, ISC, Apache-2.0, Apache-1.1, BSD-2-Clause, BSD-3-Clause,
 BSD-3-Clause-Clear, BSD-4-Clause, 0BSD, BlueOak-1.0.0, Unlicense, CC0-1.0,
-CC-BY-4.0, CC-BY-3.0, Python-2.0, Artistic-2.0, WTFPL, Zlib, BSL-1.0,
+CC-BY-4.0, CC-BY-3.0, Python-2.0, PSF-2.0, Artistic-2.0, WTFPL, Zlib, BSL-1.0,
 PostgreSQL, OpenSSL, X11, NCSA, MS-PL, UPL-1.0
 ```
 
@@ -43,7 +43,7 @@ CC-BY-NC-4.0, CC-BY-NC-SA-4.0, EUPL-1.1, EUPL-1.2, OSL-3.0, RPL-1.5
 
 These restricted licenses are already present in the resolved tree and are
 explicitly accepted. Each entry is matched on **(license, package)**: it covers
-only the packages named in its `packages` list — a *different* package with the
+only the packages named in its `packages` list — a _different_ package with the
 same license still fails the gate. `UNKNOWN` is not a blanket allowance either:
 a package whose license cannot be determined fails unless that exact package is
 listed.
@@ -54,15 +54,15 @@ each package relying on it is reported as `EXPIRED-EXCEPTION` and fails the
 gate. Renewing means re-reviewing the exception and moving the date (and this
 table) forward in the same PR.
 
-| License | Packages | Why accepted | Review by |
-| --- | --- | --- | --- |
-| `MPL-2.0` | `axe-core`, `@axe-core/playwright` | Test-only accessibility checker reached through Playwright/a11y tooling. Weak file-level copyleft; we do not modify or redistribute its files, and it is not in production images. | 2027-10-02 |
-| `LGPL-3.0-or-later` | `@img/sharp-libvips-linux-x64` | libvips prebuilt binary pulled in on Linux by sharp, reached only through `@storybook/nextjs` (dev/build-time); no app declares sharp as a runtime dependency and production images build with `--prod`. LGPL attaches to the unmodified binary. | 2027-10-03 |
-| `FSL-1.1-MIT` | `@sentry/cli`, `@sentry/cli-win32-x64`, `@sentry/cli-linux-x64` | Build/CI/observability CLI tooling, not linked into or redistributed with the product. FSL is source-available (not OSI) and converts to MIT after its change date. | 2027-10-02 |
-| `UNKNOWN` | `browser-assert` | Dev-only Storybook transitive dependency whose published `package.json` declares no license field; never present in production images or shipped artifacts. | 2027-10-02 |
+| License             | Packages                                                        | Why accepted                                                                                                                                                                                                                                     | Review by  |
+| ------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| `MPL-2.0`           | `axe-core`, `@axe-core/playwright`                              | Test-only accessibility checker reached through Playwright/a11y tooling. Weak file-level copyleft; we do not modify or redistribute its files, and it is not in production images.                                                               | 2027-10-02 |
+| `LGPL-3.0-or-later` | `@img/sharp-libvips-linux-x64`                                  | libvips prebuilt binary pulled in on Linux by sharp, reached only through `@storybook/nextjs` (dev/build-time); no app declares sharp as a runtime dependency and production images build with `--prod`. LGPL attaches to the unmodified binary. | 2027-10-03 |
+| `FSL-1.1-MIT`       | `@sentry/cli`, `@sentry/cli-win32-x64`, `@sentry/cli-linux-x64` | Build/CI/observability CLI tooling, not linked into or redistributed with the product. FSL is source-available (not OSI) and converts to MIT after its change date.                                                                              | 2027-10-02 |
+| `UNKNOWN`           | `browser-assert`                                                | Dev-only Storybook transitive dependency whose published `package.json` declares no license field; never present in production images or shipped artifacts.                                                                                      | 2027-10-02 |
 
 `MPL-2.0` is not on the deny list, so the PR gate does not flag it; it is listed
-here because the full-tree gate treats *only* the allowed list and exceptions as
+here because the full-tree gate treats _only_ the allowed list and exceptions as
 passing.
 
 ## Adding, changing, or removing a dependency
@@ -96,10 +96,10 @@ Generated supply-chain/legal aggregates are **ignored and regenerated**, never
 committed. This is a single policy for every such artifact so a stale committed
 copy cannot drift from the lockfile:
 
-| Artifact | Producer | Consumer | Tracking |
-| --- | --- | --- | --- |
-| `licenses.json` | `node scripts/collect-licenses.mjs --out licenses.json` | `scripts/license-gate.mjs`, `scripts/generate-sbom.mjs` | `.gitignore`d; regenerated in CI |
-| `sbom.cdx.json`, `sbom.spdx.json` | `node scripts/generate-sbom.mjs` (`.github/workflows/sbom.yml`) | uploaded as an artifact, bound to the commit SHA | `.gitignore`d; regenerated in CI |
+| Artifact                          | Producer                                                        | Consumer                                                | Tracking                         |
+| --------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------- |
+| `licenses.json`                   | `node scripts/collect-licenses.mjs --out licenses.json`         | `scripts/license-gate.mjs`, `scripts/generate-sbom.mjs` | `.gitignore`d; regenerated in CI |
+| `sbom.cdx.json`, `sbom.spdx.json` | `node scripts/generate-sbom.mjs` (`.github/workflows/sbom.yml`) | uploaded as an artifact, bound to the commit SHA        | `.gitignore`d; regenerated in CI |
 
 CI enforces the policy from both directions:
 

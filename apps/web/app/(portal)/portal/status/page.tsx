@@ -66,7 +66,7 @@ export default async function PortalStatusPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-2xl">
               &#10003;
             </div>
-            <h3 className="font-display font-semibold text-slate-50">All Systems Operational</h3>
+            <h2 className="font-display font-semibold text-slate-50">All Systems Operational</h2>
             <p className="mt-2 text-sm text-slate-400">
               No active incidents or scheduled maintenance.
             </p>

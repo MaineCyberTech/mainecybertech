@@ -585,6 +585,28 @@ describe("SDK modules — expanded coverage", () => {
       const result = await client.ai.copilotSummarize("t-1");
       expect(result.ticketId).toBe("t-1");
     });
+    it("creates a draft through the review gate", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({ id: "d-1", module_key: "tickets", status: "draft" }),
+      );
+      const result = await client.ai.drafts.create({
+        organizationId: "org-1",
+        moduleKey: "tickets",
+        draftContent: { body: "Draft" },
+      });
+      expect(result.status).toBe("draft");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+    });
+    it("lists and reviews drafts", async () => {
+      mockFetch.mockResolvedValue(mockResponse(paginated([{ id: "d-1", status: "draft" }])));
+      const listed = await client.ai.drafts.list({ organizationId: "org-1", status: "draft" });
+      expect(listed.items).toHaveLength(1);
+
+      mockFetch.mockResolvedValue(mockResponse({ id: "d-1", status: "approved" }));
+      const reviewed = await client.ai.drafts.review("d-1", "org-1", { decision: "approved" });
+      expect(reviewed.status).toBe("approved");
+      expect(mockFetch.mock.calls[1][0]).toContain("organization_id=org-1");
+    });
   });
 
   describe("ApprovalsApi", () => {

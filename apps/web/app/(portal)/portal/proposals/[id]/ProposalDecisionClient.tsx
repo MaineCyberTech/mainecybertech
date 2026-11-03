@@ -2,14 +2,29 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { formatCurrency } from "@/lib/format";
 import { decideProposalAction } from "./actions";
 
-export default function ProposalDecisionClient({ proposalId }: { proposalId: string }) {
+type Props = {
+  proposalId: string;
+  proposalTitle?: string | null;
+  proposalTotal?: number | null;
+};
+
+export default function ProposalDecisionClient({
+  proposalId,
+  proposalTitle,
+  proposalTotal,
+}: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  // USE-P2-013: accepting/declining commits the organization commercially, so
+  // the click opens a confirmation naming the proposal and its total.
+  const [pendingDecision, setPendingDecision] = useState<"accepted" | "declined" | null>(null);
 
   const decide = (decision: "accepted" | "declined") => {
     setError(null);
@@ -25,6 +40,9 @@ export default function ProposalDecisionClient({ proposalId }: { proposalId: str
       router.refresh();
     });
   };
+
+  const totalLabel =
+    typeof proposalTotal === "number" ? ` for ${formatCurrency(proposalTotal)}` : "";
 
   return (
     <div className="space-y-3 rounded-lg border border-white/10 bg-cyber-base/60 p-4">
@@ -44,7 +62,7 @@ export default function ProposalDecisionClient({ proposalId }: { proposalId: str
         <button
           type="button"
           disabled={pending}
-          onClick={() => decide("accepted")}
+          onClick={() => setPendingDecision("accepted")}
           className="cyber-button"
         >
           {pending ? "Saving…" : "Accept proposal"}
@@ -52,7 +70,7 @@ export default function ProposalDecisionClient({ proposalId }: { proposalId: str
         <button
           type="button"
           disabled={pending}
-          onClick={() => decide("declined")}
+          onClick={() => setPendingDecision("declined")}
           className="cyber-button-secondary"
         >
           Decline
@@ -68,6 +86,23 @@ export default function ProposalDecisionClient({ proposalId }: { proposalId: str
           {error}
         </p>
       ) : null}
+      <ConfirmDialog
+        open={pendingDecision !== null}
+        title={pendingDecision === "accepted" ? "Accept this proposal?" : "Decline this proposal?"}
+        body={`${proposalTitle ?? "This proposal"}${totalLabel}. ${
+          pendingDecision === "accepted"
+            ? "Accepting records your organization's decision; this cannot be undone from the portal."
+            : "Declining records your organization's decision; this cannot be undone from the portal."
+        }`}
+        confirmLabel={pendingDecision === "accepted" ? "Accept proposal" : "Decline proposal"}
+        danger={pendingDecision === "declined"}
+        onClose={() => setPendingDecision(null)}
+        onConfirm={() => {
+          const decision = pendingDecision;
+          setPendingDecision(null);
+          if (decision) decide(decision);
+        }}
+      />
     </div>
   );
 }

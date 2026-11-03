@@ -49,3 +49,18 @@ export async function updateProposalAction(id: string, formData: FormData) {
     return { ok: false as const, error: e instanceof Error ? e.message : "Failed to update" };
   }
 }
+
+/** USE-P2-013: clear an accidental client accept/decline (audited by the API). */
+export async function resetClientDecisionAction(id: string) {
+  const api = getApiClient();
+  try {
+    await api.proposals.resetClientDecision(id);
+    revalidatePath(`/admin/proposals/${id}`);
+    return { ok: true as const };
+  } catch (e: unknown) {
+    return {
+      ok: false as const,
+      error: e instanceof Error ? e.message : "Failed to reset the client decision",
+    };
+  }
+}

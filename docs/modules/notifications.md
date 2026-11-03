@@ -20,15 +20,15 @@ In-app notification system with real-time SSE streaming, unread counts, and org-
 
 ## Endpoints
 
-| Method | Path                                | Description                                |
-| ------ | ----------------------------------- | ------------------------------------------ |
-| GET    | /api/v1/notifications/stream        | SSE stream for real-time notifications     |
-| GET    | /api/v1/notifications               | List notifications (paginated, filterable) |
-| GET    | /api/v1/notifications/unread-count  | Get unread notification count              |
-| POST   | /api/v1/notifications/:id/read      | Mark single notification as read           |
-| POST   | /api/v1/notifications/mark-all-read | Mark all notifications read (org-scoped)   |
-| POST   | /api/v1/notifications               | Create a notification (admin only)         |
-| DELETE | /api/v1/notifications/:id           | Delete a notification                      |
+| Method | Path                                | Description                                               |
+| ------ | ----------------------------------- | --------------------------------------------------------- |
+| GET    | /api/v1/notifications/stream        | SSE stream for real-time notifications                    |
+| GET    | /api/v1/notifications               | List notifications (paginated, filterable)                |
+| GET    | /api/v1/notifications/unread-count  | Get unread notification count                             |
+| POST   | /api/v1/notifications/:id/read      | Mark single notification as read                          |
+| POST   | /api/v1/notifications/mark-all-read | Mark all notifications read (org-scoped)                  |
+| POST   | /api/v1/notifications               | Create a notification (admin only)                        |
+| DELETE | /api/v1/notifications/:id           | Delete a notification                                     |
 | GET    | /api/v1/notifications/unsubscribe   | One-click global email opt-out (signed token, no session) |
 
 ## Data Model
@@ -77,7 +77,10 @@ key via HKDF — no extra secret to provision); `GET
 /api/v1/notifications/unsubscribe?token=…` writes a `module_key = 'all'` row in
 `notification_preferences`, which both the API and worker resolvers honour for
 every module. In-app notifications are not affected. The token is per
-organization; a user in several orgs unsubscribes per org.
+organization; a user in several orgs unsubscribes per org. Since NOTIF-P2-013
+the `all` row is visible in both preference UIs as **All email**, and
+`PUT /api/v1/notification-preferences` accepts `moduleKey: "all"` so the user
+can re-enable email without operator action.
 
 ## Preference scoping (NOTIF-P3-006)
 

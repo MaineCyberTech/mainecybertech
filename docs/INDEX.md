@@ -25,7 +25,7 @@
 | Document                                                                             | Purpose                                                                 |
 | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
 | [ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md)                                   | Mermaid system architecture diagram                                     |
-| [adr/README.md](adr/README.md)                                                       | Architecture Decision Records (11 decisions)                            |
+| [adr/README.md](adr/README.md)                                                       | Architecture Decision Records (12 decisions)                            |
 | [MASTER_SYSTEM_ARCHITECTURE_REVIEW.md](MASTER_SYSTEM_ARCHITECTURE_REVIEW.md)         | 12-domain synthesis of the full system architecture                     |
 | [arch/evaluation/db-package-evaluation.md](arch/evaluation/db-package-evaluation.md) | Shared DB package evaluation                                            |
 | [arch/package-extraction-plan.md](arch/package-extraction-plan.md)                   | Shared-package extraction plan (`@mct/config`, `@mct/db`, SDK build)    |
@@ -138,7 +138,7 @@
 | [PRODUCTION_VS_TESTING_DOMAINS.md](PRODUCTION_VS_TESTING_DOMAINS.md)                           | Production vs testing domain configuration                                                        |
 | [CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md](CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md) | Cloudflare caching and proxy configuration                                                        |
 
-## Module Documentation (`docs/modules/` — 75 files)
+## Module Documentation (`docs/modules/` — 74 files)
 
 API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module:
 
@@ -247,7 +247,7 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 | [MODULE_SPECS_GAP_AUDIT_2026-08-05.md](MODULE_SPECS_GAP_AUDIT_2026-08-05.md)                     | Module spec gap audit                                        |
 | [MT-P0-001-RLS-remediation-design.md](MT-P0-001-RLS-remediation-design.md)                       | RLS remediation design                                       |
 | [audits/README.md](audits/README.md)                                                             | Audit output contract                                        |
-| [openapi.yaml](openapi.yaml)                                                                     | Generated OpenAPI spec (422 paths)                           |
+| [openapi.yaml](openapi.yaml)                                                                     | Generated OpenAPI spec (424 paths)                           |
 
 ## Marketing & SEO (`docs/seo/` — 10 files)
 

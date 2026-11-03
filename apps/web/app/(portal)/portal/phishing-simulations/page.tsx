@@ -33,7 +33,7 @@ export default async function PortalPhishingSimulationsPage() {
       <h1 className="text-2xl font-semibold text-slate-50">Phishing Simulations</h1>
       {loadFailed ? <DataErrorNote what="phishing-simulations" /> : null}
       <p className="text-sm text-slate-400">
-        {items.length} simulation{items.length !== 1 ? "s" : ""} for your organization.
+        {items.length} simulation{items.length !== 1 ? "s" : ""} in this view (most recent first).
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (

@@ -7,12 +7,12 @@ code never had — 422 validation responses, `*_PREFIXED` code families, and a
 
 Source of truth:
 
-| Concern | File |
-| --- | --- |
-| Envelope + `AppError` | `apps/api/src/types/index.ts` |
-| Central handler | `apps/api/src/middleware/error.ts` |
-| Request ids | `apps/api/src/middleware/request-id.ts` |
-| SDK client error | `packages/sdk/src/client.ts` (`ApiError`) |
+| Concern               | File                                      |
+| --------------------- | ----------------------------------------- |
+| Envelope + `AppError` | `apps/api/src/types/index.ts`             |
+| Central handler       | `apps/api/src/middleware/error.ts`        |
+| Request ids           | `apps/api/src/middleware/request-id.ts`   |
+| SDK client error      | `packages/sdk/src/client.ts` (`ApiError`) |
 
 ## Error response format
 
@@ -68,20 +68,20 @@ There is no 422 response in the API. Validation failures are 400.
 
 ## Status codes in use
 
-| Status | Typical codes | Meaning |
-| --- | --- | --- |
-| 400 | `VALIDATION`, `BAD_REQUEST`, `INVALID_INPUT`, `WEAK_PASSWORD`, `INVALID_RECOVERY_CODE`, `CAPTCHA_FAILED` | Malformed request or failed validation |
-| 401 | `UNAUTHORIZED`, `AUTH_ERROR`, `MISSING_SIGNATURE`, `INVALID_SIGNATURE` | Missing/invalid credentials or signature |
-| 403 | `FORBIDDEN`, `MFA_REQUIRED`, `CAPTCHA_REQUIRED` | Authenticated but not allowed |
-| 404 | `NOT_FOUND` | Unknown resource |
-| 408 | `REQUEST_TIMEOUT` | Request exceeded the 30s server deadline (advisory — see below) |
-| 409 | `VERSION_CONFLICT`, `CONFLICT`, `INVALID_STATE` | Concurrency or state conflict |
-| 410 | `EXPIRED`, `GONE` | Resource expired or removed |
-| 412 | `PRECONDITION_FAILED` | `If-Match` / precondition failure |
-| 429 | `FULL` (and rate-limit middleware) | Capacity or rate limit |
-| 500 | `DB_ERROR`, `STORAGE_ERROR`, `INTERNAL`, `CONFIG`, `CONFIG_ERROR` | Server-side failure |
-| 501 | `NOT_IMPLEMENTED` | Endpoint not implemented |
-| 502 | `STRIPE_ERROR`, `SMTP_ERROR` | Upstream provider failure |
+| Status | Typical codes                                                                                            | Meaning                                                         |
+| ------ | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| 400    | `VALIDATION`, `BAD_REQUEST`, `INVALID_INPUT`, `WEAK_PASSWORD`, `INVALID_RECOVERY_CODE`, `CAPTCHA_FAILED` | Malformed request or failed validation                          |
+| 401    | `UNAUTHORIZED`, `AUTH_ERROR`, `MISSING_SIGNATURE`, `INVALID_SIGNATURE`                                   | Missing/invalid credentials or signature                        |
+| 403    | `FORBIDDEN`, `MFA_REQUIRED`, `CAPTCHA_REQUIRED`                                                          | Authenticated but not allowed                                   |
+| 404    | `NOT_FOUND`                                                                                              | Unknown resource                                                |
+| 408    | `REQUEST_TIMEOUT`                                                                                        | Request exceeded the 30s server deadline (advisory — see below) |
+| 409    | `VERSION_CONFLICT`, `CONFLICT`, `INVALID_STATE`                                                          | Concurrency or state conflict                                   |
+| 410    | `EXPIRED`, `GONE`                                                                                        | Resource expired or removed                                     |
+| 412    | `PRECONDITION_FAILED`                                                                                    | `If-Match` / precondition failure                               |
+| 429    | `RATE_LIMITED` (capacity limiters may also use `FULL`)                                                   | Rate limit or capacity cap                                      |
+| 500    | `DB_ERROR`, `STORAGE_ERROR`, `INTERNAL`, `CONFIG`, `CONFIG_ERROR`                                        | Server-side failure                                             |
+| 501    | `NOT_IMPLEMENTED`                                                                                        | Endpoint not implemented                                        |
+| 502    | `STRIPE_ERROR`, `SMTP_ERROR`                                                                             | Upstream provider failure                                       |
 
 Codes are plain strings supplied at the throw site. The same code can appear
 with different statuses in rare cases — always trust `error.status` over the
@@ -149,12 +149,12 @@ Track 4xx vs 5xx ratios per endpoint and auth/validation failure rates; error
 responses include `error.status` and the `X-Request-ID` header for correlation
 with logs and Sentry.
 
-| Metric | Warning | Critical |
-| --- | --- | --- |
-| 5xx error rate | > 1% | > 5% |
-| 4xx error rate | > 10% | > 25% |
-| Auth error rate | > 5% | > 20% |
-| Validation error rate | > 15% | > 30% |
+| Metric                | Warning | Critical |
+| --------------------- | ------- | -------- |
+| 5xx error rate        | > 1%    | > 5%     |
+| 4xx error rate        | > 10%   | > 25%    |
+| Auth error rate       | > 5%    | > 20%    |
+| Validation error rate | > 15%   | > 30%    |
 
 ## Best practices
 
@@ -168,4 +168,4 @@ with logs and Sentry.
 
 ---
 
-*Last updated: 2026-10-10 (API-P2-003: aligned with the implemented contract)*
+_Last updated: 2026-10-10 (API-P2-003: aligned with the implemented contract)_

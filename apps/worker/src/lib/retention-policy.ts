@@ -29,6 +29,13 @@ const TARGET_ALIASES: Record<string, readonly string[]> = {
     "public interaction",
     "contact form",
   ],
+  // AN-P3-007: anonymous storefront events (no PII, but still registry-driven).
+  store_analytics_events: [
+    "store_analytics_events",
+    "store analytics",
+    "store analytics events",
+    "analytics events",
+  ],
   // PRIV-P2-008: public store quote PII (submission + structured request).
   // "store quote" is deliberately not an alias: as a substring it would match
   // a "Store Quote Requests" policy and silently widen the store_quotes window.
@@ -39,6 +46,14 @@ const TARGET_ALIASES: Record<string, readonly string[]> = {
     "store quote request",
     "quote requests",
     "quote request",
+  ],
+  // PRIV-P2-009: generated proposal drafts copy the submitter name + notes.
+  store_proposal_drafts: [
+    "store_proposal_drafts",
+    "store proposal drafts",
+    "store proposal draft",
+    "proposal drafts",
+    "proposal draft",
   ],
   // WH-P3-009: the webhook delivery log and dead-letter queue.
   webhook_deliveries: ["webhook_deliveries", "webhook deliveries", "webhook delivery"],

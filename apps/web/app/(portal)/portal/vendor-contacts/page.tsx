@@ -6,19 +6,32 @@ import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import AdminPagination from "@/components/admin/AdminPagination";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendor Contacts - Portal - Maine CyberTech" };
 
-export default async function PortalVendorContactsPage() {
+const DEFAULT_LIMIT = 25;
+
+export default async function PortalVendorContactsPage(props: {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+}) {
   const membership = await getApprovedMembership();
   if (!membership) return null;
   let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
+  let total = 0;
+  const sp = (await props.searchParams) ?? {};
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
   try {
-    const r = await api.vendors.contacts.list({ organizationId: orgId });
+    const r = await api.vendors.contacts.list({ organizationId: orgId, page, limit });
     items = r.items as unknown as typeof items;
+    total = r.total ?? items.length;
   } catch (error) {
     console.error("[vendor-contacts/page]", error);
     loadFailed = true;
@@ -32,7 +45,9 @@ export default async function PortalVendorContactsPage() {
       <PortalSubnav current="vendor-contacts" />
       {loadFailed ? <DataErrorNote what="vendor-contacts" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Vendor Contacts</h1>
-      <p className="text-sm text-slate-400">{items.length} contacts for your organization.</p>
+      <p className="text-sm text-slate-400">
+        {total} contact{total !== 1 ? "s" : ""} for your organization.
+      </p>
       <div className="space-y-3">
         {items.map((item) => (
           <div
@@ -85,6 +100,13 @@ export default async function PortalVendorContactsPage() {
           <EmptyState icon="📞" title="No vendor contacts found." />
         )}
       </div>
+      <AdminPagination
+        currentPage={page}
+        totalPages={Math.ceil(total / limit)}
+        buildHref={(p) => `/portal/vendor-contacts?page=${p}&limit=${limit}`}
+        total={total}
+        limit={limit}
+      />
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard
       </Link>

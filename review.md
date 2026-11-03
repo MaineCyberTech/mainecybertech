@@ -102,14 +102,14 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,706 tests, all passing. 523 suites.**
+**4,683 tests, all passing. 523 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 2,035         | 178    | Jest + supertest                  |
-| Web     | 2,035         | 308    | Jest + Testing Library            |
-| SDK     | 325           | 5      | Jest (mocked fetch)               |
-| Worker  | 311           | 32     | Jest (env schema + task handlers) |
+| API     | 2,007         | 178    | Jest + supertest                  |
+| Web     | 2,036         | 308    | Jest + Testing Library            |
+| SDK     | 327           | 5      | Jest (mocked fetch)               |
+| Worker  | 313           | 32     | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
 
 Suite counts and the E2E spec count are counted from the tree by
@@ -174,7 +174,7 @@ pnpm e2e                     # Playwright E2E
 | API route files           | 64    | `apps/api/src/routes/*.ts` (77 incl. `routes/final/` + `routes/store/`)                                                                                                                                                                                                                            |
 | API SDK modules           | 65    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                                                                                                                                                        |
 | Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                                                                                                                                                     |
-| Web pages                 | 330   | Admin 203, Portal 97, Public 29, `forbidden` 1                                                                                                                                                                                                                                                     |
+| Web pages                 | 331   | Admin 204, Portal 97, Public 29, `forbidden` 1                                                                                                                                                                                                                                                     |
 | Web components            | 129   | `apps/web/components/`                                                                                                                                                                                                                                                                             |
 | SQL migrations            | 164   | `supabase/migrations/` (latest: 5302466_notifications_insert_membership_scope                                                                                                                                                                                                                            |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                                                                                                                                             |

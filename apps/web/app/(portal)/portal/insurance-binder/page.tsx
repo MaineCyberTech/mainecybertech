@@ -54,6 +54,10 @@ export default async function PortalInsuranceBinderPage() {
           <p className="mt-1 text-sm text-slate-400">
             View evidence collected for your cyber insurance coverage.
           </p>
+          <p className="mt-2 text-xs text-slate-400">
+            One-way request: your account team owns status updates and history. Contact them to
+            reopen or change a submitted request.
+          </p>
         </div>
         {canCreate ? (
           <Link href="/portal/insurance-binder/new" className="cyber-button">

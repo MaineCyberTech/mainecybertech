@@ -303,7 +303,11 @@ export default async function PortalProposalDetailPage({ params }: Props) {
       <div className="flex flex-wrap items-center justify-end gap-3">
         {proposal.status === "approved" && isClientVisible && !clientDecision && canDecide ? (
           <div className="w-full max-w-xl">
-            <ProposalDecisionClient proposalId={proposal.id} />
+            <ProposalDecisionClient
+              proposalId={proposal.id}
+              proposalTitle={proposal.title}
+              proposalTotal={proposal.grand_total}
+            />
           </div>
         ) : null}
         {clientDecision ? (

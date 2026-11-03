@@ -54,7 +54,7 @@ export default async function PortalBudgetsPage() {
       <PortalSubnav current="budgets" />
       {loadFailed ? <DataErrorNote what="budgets" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Budget Roadmap</h1>
-      <p className="text-sm text-slate-400">{items.length} budget items for your organization.</p>
+      <p className="text-sm text-slate-400">Showing the most recent {items.length} budget items.</p>
       <div className="space-y-3">
         {items.map((item) => (
           <div

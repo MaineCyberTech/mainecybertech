@@ -119,9 +119,9 @@ export default async function PortalProjectsPage() {
                   className="block rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="font-display text-lg uppercase tracking-[0.12em] text-slate-50">
+                    <h2 className="font-display text-lg uppercase tracking-[0.12em] text-slate-50">
                       {project.name}
-                    </h3>
+                    </h2>
                     <div className="flex flex-wrap gap-2">
                       <span className={projectStatusClass(project.status)}>{project.status}</span>
                       <span className={priorityClass(project.priority)}>{project.priority}</span>
