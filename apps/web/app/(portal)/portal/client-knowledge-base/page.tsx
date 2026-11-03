@@ -67,7 +67,8 @@ export default async function PortalKnowledgeBasePage({
       ) : (
         <>
           <p className="text-sm text-slate-400">
-            {items.length} article{items.length !== 1 ? "s" : ""} available for your organization.
+            {items.length} article{items.length !== 1 ? "s" : ""} available in this view (most
+            recent first).
           </p>
 
           {canCreate ? (

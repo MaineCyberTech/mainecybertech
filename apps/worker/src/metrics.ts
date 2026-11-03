@@ -210,6 +210,7 @@ export const stripeReconcileDriftTotal = new promClient.Counter({
 
 export type StripeReconcileDriftKind =
   | "subscription_status"
+  | "subscription_amount"
   | "invoice_count"
   | "invoice_sum"
   | "payment_count"

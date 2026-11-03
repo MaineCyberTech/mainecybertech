@@ -15,6 +15,8 @@ interface RetentionConfig {
   storeQuoteRetentionDays: number;
   /** PRIV-P2-008: structured quote requests whose `customer` jsonb holds PII. */
   storeQuoteRequestRetentionDays: number;
+  /** PRIV-P2-009: generated proposal drafts copy the submitter name/notes. */
+  storeProposalDraftRetentionDays: number;
   /** WH-P3-009: outbound/inbound delivery audit rows. */
   webhookDeliveryRetentionDays: number;
   /** WH-P3-009: dead letters are kept longer so an operator can triage. */
@@ -27,6 +29,7 @@ const DEFAULT_CONFIG: RetentionConfig = {
   storeAnalyticsRetentionDays: 90,
   storeQuoteRetentionDays: 90,
   storeQuoteRequestRetentionDays: 90,
+  storeProposalDraftRetentionDays: 90,
   webhookDeliveryRetentionDays: 90,
   webhookDeadLetterRetentionDays: 180,
 };
@@ -87,6 +90,7 @@ export const retentionTask: TaskHandler = async (
     ["storeAnalyticsRetentionDays", config.storeAnalyticsRetentionDays],
     ["storeQuoteRetentionDays", config.storeQuoteRetentionDays],
     ["storeQuoteRequestRetentionDays", config.storeQuoteRequestRetentionDays],
+    ["storeProposalDraftRetentionDays", config.storeProposalDraftRetentionDays],
     ["webhookDeliveryRetentionDays", config.webhookDeliveryRetentionDays],
     ["webhookDeadLetterRetentionDays", config.webhookDeadLetterRetentionDays],
   ] as const) {
@@ -111,6 +115,12 @@ export const retentionTask: TaskHandler = async (
     config.notificationRetentionDays,
     policies,
   );
+  // AN-P3-007: store analytics was the only target that ignored the registry.
+  const storeAnalyticsWindow = resolveRetentionDays(
+    "store_analytics_events",
+    config.storeAnalyticsRetentionDays,
+    policies,
+  );
   // PRIV-P2-008: public quote/lead PII had no purge path at all.
   const storeQuoteWindow = resolveRetentionDays(
     "store_quotes",
@@ -120,6 +130,13 @@ export const retentionTask: TaskHandler = async (
   const storeQuoteRequestWindow = resolveRetentionDays(
     "store_quote_requests",
     config.storeQuoteRequestRetentionDays,
+    policies,
+  );
+  // PRIV-P2-009: the generator copies the submitter name and free-text notes
+  // into the draft, so the draft needs the same registry-driven window.
+  const storeProposalDraftWindow = resolveRetentionDays(
+    "store_proposal_drafts",
+    config.storeProposalDraftRetentionDays,
     policies,
   );
   // WH-P3-009: webhook_deliveries and webhook_dead_letters had no purge path.
@@ -142,6 +159,10 @@ export const retentionTask: TaskHandler = async (
     typeof overrides.notificationRetentionDays === "number"
       ? overrides.notificationRetentionDays
       : notificationWindow.days;
+  const storeAnalyticsDays =
+    typeof overrides.storeAnalyticsRetentionDays === "number"
+      ? overrides.storeAnalyticsRetentionDays
+      : storeAnalyticsWindow.days;
   const storeQuoteDays =
     typeof overrides.storeQuoteRetentionDays === "number"
       ? overrides.storeQuoteRetentionDays
@@ -150,6 +171,10 @@ export const retentionTask: TaskHandler = async (
     typeof overrides.storeQuoteRequestRetentionDays === "number"
       ? overrides.storeQuoteRequestRetentionDays
       : storeQuoteRequestWindow.days;
+  const storeProposalDraftDays =
+    typeof overrides.storeProposalDraftRetentionDays === "number"
+      ? overrides.storeProposalDraftRetentionDays
+      : storeProposalDraftWindow.days;
   const webhookDeliveryDays =
     typeof overrides.webhookDeliveryRetentionDays === "number"
       ? overrides.webhookDeliveryRetentionDays
@@ -166,13 +191,16 @@ export const retentionTask: TaskHandler = async (
   notificationCutoff.setDate(notificationCutoff.getDate() - notificationDays);
 
   const storeAnalyticsCutoff = new Date();
-  storeAnalyticsCutoff.setDate(storeAnalyticsCutoff.getDate() - config.storeAnalyticsRetentionDays);
+  storeAnalyticsCutoff.setDate(storeAnalyticsCutoff.getDate() - storeAnalyticsDays);
 
   const storeQuoteCutoff = new Date();
   storeQuoteCutoff.setDate(storeQuoteCutoff.getDate() - storeQuoteDays);
 
   const storeQuoteRequestCutoff = new Date();
   storeQuoteRequestCutoff.setDate(storeQuoteRequestCutoff.getDate() - storeQuoteRequestDays);
+
+  const storeProposalDraftCutoff = new Date();
+  storeProposalDraftCutoff.setDate(storeProposalDraftCutoff.getDate() - storeProposalDraftDays);
 
   const webhookDeliveryCutoff = new Date();
   webhookDeliveryCutoff.setDate(webhookDeliveryCutoff.getDate() - webhookDeliveryDays);
@@ -206,6 +234,16 @@ export const retentionTask: TaskHandler = async (
       supabase,
       "store_quote_requests",
       storeQuoteRequestCutoff.toISOString(),
+      purgeOptions,
+    ),
+  );
+  // PRIV-P2-009: drafts carry the submitter name + free-text notes, so they
+  // must age out with the quote data they were generated from.
+  outcomes.push(
+    await purgeInBatches(
+      supabase,
+      "store_proposal_drafts",
+      storeProposalDraftCutoff.toISOString(),
       purgeOptions,
     ),
   );
@@ -262,7 +300,16 @@ export const retentionTask: TaskHandler = async (
       storeAnalyticsCutoff: storeAnalyticsCutoff.toISOString(),
       storeQuoteCutoff: storeQuoteCutoff.toISOString(),
       storeQuoteRequestCutoff: storeQuoteRequestCutoff.toISOString(),
+      storeProposalDraftCutoff: storeProposalDraftCutoff.toISOString(),
       storeWindows: {
+        analytics: {
+          days: storeAnalyticsDays,
+          source:
+            typeof overrides.storeAnalyticsRetentionDays === "number"
+              ? "payload"
+              : storeAnalyticsWindow.source,
+          matchingPolicies: storeAnalyticsWindow.matchingPolicies,
+        },
         quotes: {
           days: storeQuoteDays,
           source:
@@ -278,6 +325,14 @@ export const retentionTask: TaskHandler = async (
               ? "payload"
               : storeQuoteRequestWindow.source,
           matchingPolicies: storeQuoteRequestWindow.matchingPolicies,
+        },
+        proposalDrafts: {
+          days: storeProposalDraftDays,
+          source:
+            typeof overrides.storeProposalDraftRetentionDays === "number"
+              ? "payload"
+              : storeProposalDraftWindow.source,
+          matchingPolicies: storeProposalDraftWindow.matchingPolicies,
         },
       },
       webhookDeliveryCutoff: webhookDeliveryCutoff.toISOString(),

@@ -105,27 +105,27 @@ docker compose -p mct-portal up -d --remove-orphans
 
 - `dev` — dev/develop deploys (no approval)
 - `prod` — read-only plan/resolve jobs only (`deploy-do` `resolve-ip`, `terraform-do` `terraform-plan`); nothing mutates under it, so no required reviewers.
-- `prod-approval` — the single approval gate for every prod mutation (BP-P3-003): prod app deploy (`deploy-do.yml` `deploy` job), prod Terraform apply (`terraform-do.yml` `terraform-apply-prod`) and prod Supabase migrations (`supabase-migrations.yml` on `main`). Required reviewers (1+) must be configured in GitHub (Settings → Environments → `prod-approval`); that setting is **not** in repo code and is **not yet configured**, so the approval gate is not currently in force. The migration secrets (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`) must be available to `prod-approval`.
+- `prod-approval` — the single approval gate for every prod mutation (BP-P3-003): prod app deploy (`deploy-do.yml` `deploy` job), prod Terraform apply (`terraform-do.yml` `terraform-apply-prod`) and prod Supabase migrations (`supabase-migrations.yml` on `main`). Required reviewers (1+) must be configured in GitHub (Settings → Environments → `prod-approval`); that setting is **not** in repo code and is **not yet configured (verified 2026-11-03)**, so the approval gate is not currently in force. The migration secrets (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`) must be available to `prod-approval`.
 
 ### GitHub Environment Secrets (written to `/opt/mct-portal/.env`)
 
 The deploy workflow writes the environment's secrets to `.env` on the droplet with `printf '%s'` (values are written literally and are never re-expanded by the shell), plus a `metrics-token` file (0400) for the authenticated Prometheus scrape. Key secrets:
 
-| Secret                              | Purpose                               |
-| ----------------------------------- | ------------------------------------- |
-| SUPABASE_URL                        | Hosted Supabase project URL           |
-| SUPABASE_ANON_KEY                   | Supabase anon key                     |
-| SUPABASE_SERVICE_ROLE_KEY           | Supabase service role key             |
-| JWT_SECRET                          | API JWT verification copy (Supabase signs) |
-| STRIPE_SECRET_KEY                   | Stripe API key                        |
-| STRIPE_WEBHOOK_SECRET               | Stripe webhook signing secret         |
-| SENTRY_DSN                          | Sentry error tracking                 |
-| SMTP_HOST/PASS                      | Email (password reset, notifications) |
+| Secret                              | Purpose                                                                                                            |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| SUPABASE_URL                        | Hosted Supabase project URL                                                                                        |
+| SUPABASE_ANON_KEY                   | Supabase anon key                                                                                                  |
+| SUPABASE_SERVICE_ROLE_KEY           | Supabase service role key                                                                                          |
+| JWT_SECRET                          | API JWT verification copy (Supabase signs)                                                                         |
+| STRIPE_SECRET_KEY                   | Stripe API key                                                                                                     |
+| STRIPE_WEBHOOK_SECRET               | Stripe webhook signing secret                                                                                      |
+| SENTRY_DSN                          | Sentry error tracking                                                                                              |
+| SMTP_HOST/PASS                      | Email (password reset, notifications)                                                                              |
 | VAPID_PUBLIC/PRIVATE_KEY + SUBJECT  | Web Push (browser notifications; unset = channel disabled). See `docs/ENVIRONMENT_VARIABLES.md` → Web Push runbook |
-| JIRA*\* / JSM*\*                    | Jira/JSM integration                  |
-| M365\_\*                            | Microsoft 365 integration             |
-| PUBLIC\_{TRAFFIC,LEAD}\_WEBHOOK_URL | Teams webhooks for leads              |
-| CF_ORIGIN_CERT/KEY                  | Cloudflare Origin CA certs            |
+| JIRA*\* / JSM*\*                    | Jira/JSM integration                                                                                               |
+| M365\_\*                            | Microsoft 365 integration                                                                                          |
+| PUBLIC\_{TRAFFIC,LEAD}\_WEBHOOK_URL | Teams webhooks for leads                                                                                           |
+| CF_ORIGIN_CERT/KEY                  | Cloudflare Origin CA certs                                                                                         |
 
 ### Required GitHub Variables
 
@@ -138,15 +138,15 @@ The deploy workflow writes the environment's secrets to `.env` on the droplet wi
 
 Terraform lives at `infra/terraform/digitalocean/`. It manages:
 
-| File             | Purpose                                                               |
-| ---------------- | --------------------------------------------------------------------- |
-| `providers.tf`   | DigitalOcean + Cloudflare providers                                   |
-| `variables.tf`   | 13 variables (DO token, region, size, SSH key, Cloudflare zones, env) |
-| `droplet.tf`     | Droplet resource with cloud-init, `prevent_destroy` lifecycle         |
+| File             | Purpose                                                                                                                 |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `providers.tf`   | DigitalOcean + Cloudflare providers                                                                                     |
+| `variables.tf`   | 13 variables (DO token, region, size, SSH key, Cloudflare zones, env)                                                   |
+| `droplet.tf`     | Droplet resource with cloud-init, `prevent_destroy` lifecycle                                                           |
 | `firewall.tf`    | DO Cloud Firewall: SSH 22 (admin ranges only) and HTTP/HTTPS 80/443 (Cloudflare ranges only); full egress. No port 2376 |
-| `dns.tf`         | A records per domain (dev→.us, prod→.com), proxied via Cloudflare     |
-| `outputs.tf`     | Droplet IP, ID, URN                                                   |
-| `cloud-init.yml` | Docker install, docker compose, data directories                      |
+| `dns.tf`         | A records per domain (dev→.us, prod→.com), proxied via Cloudflare                                                       |
+| `outputs.tf`     | Droplet IP, ID, URN                                                                                                     |
+| `cloud-init.yml` | Docker install, docker compose, data directories                                                                        |
 
 ### Terraform workflow
 
@@ -192,6 +192,7 @@ preconditions.
 ### Manual rollback via SSH
 
 Use this only when the images are not in GHCR or the workflow cannot run.
+
 ```bash
 ssh root@<droplet-ip>
 cd /opt/mct-portal

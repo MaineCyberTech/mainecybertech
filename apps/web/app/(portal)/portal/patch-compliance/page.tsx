@@ -33,7 +33,8 @@ export default async function PortalPatchCompliancePage() {
       <h1 className="text-2xl font-semibold text-slate-50">Patch Compliance</h1>
       {loadFailed ? <DataErrorNote what="patch-compliance" /> : null}
       <p className="text-sm text-slate-400">
-        {items.length} device{items.length !== 1 ? "s" : ""} tracked for patch compliance.
+        {items.length} device{items.length !== 1 ? "s" : ""} tracked in this view (most recent
+        first).
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (

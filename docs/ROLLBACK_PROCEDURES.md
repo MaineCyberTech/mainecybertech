@@ -280,9 +280,9 @@ terraform apply -var-file=dev.tfvars -target=digitalocean_droplet.mct_portal
 State is stored in DO Spaces (S3-compatible). The names come from
 `infra/terraform/digitalocean/env/backend.<env>.hcl`:
 
-| Environment | Bucket                               | Key                                  |
-| ----------- | ------------------------------------ | ------------------------------------ |
-| dev         | `portal-terraform-state-development` | `digitalocean/dev/terraform.tfstate` |
+| Environment | Bucket                               | Key                                   |
+| ----------- | ------------------------------------ | ------------------------------------- |
+| dev         | `portal-terraform-state-development` | `digitalocean/dev/terraform.tfstate`  |
 | prod        | `portal-terraform-state-production`  | `digitalocean/prod/terraform.tfstate` |
 
 Versioning is enforced by Terraform (`digitalocean_spaces_bucket.terraform_state`
@@ -347,7 +347,7 @@ Terraform prod apply (`terraform-do.yml`, `terraform-apply-prod`) and prod DB
 migrations (`supabase-migrations.yml` on `main`, BP-P3-003). The read-only
 `prod` environment is only used by `resolve-ip` / `terraform-plan`.
 
-**Required reviewers are a GitHub repository setting, not workflow code:**
+**Required reviewers are a GitHub repository setting, not workflow code (not configured as of 2026-11-03):**
 configure them under Settings → Environments → `prod-approval` → Required
 reviewers (add 1+). Until that list is populated there is **no working
 manual-approval gate** and a prod deploy (or migration) will start without

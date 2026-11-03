@@ -19,8 +19,12 @@ jest.mock("../config/env", () => ({
   }),
 }));
 
-jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
+jest.mock("../services/supabase", () => ({
+  getSupabaseAdmin: jest.fn(),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
+}));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 jest.mock("../lib/http-client", () => ({
   httpClients: {
@@ -60,10 +64,7 @@ jest.mock("../middleware/org-access", () => ({
   requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 jest.mock("../middleware/permissions", () => ({
-  requirePermission:
-    () =>
-    (_req: unknown, _res: unknown, next: () => void) =>
-      next(),
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 const app = createTestApp();
 
@@ -245,9 +246,7 @@ describe("billing routes", () => {
       },
     });
     const res = await request(app)
-      .get(
-        "/api/v1/billing/invoices/inv1?organization_id=00000000-0000-0000-0000-000000000001",
-      )
+      .get("/api/v1/billing/invoices/inv1?organization_id=00000000-0000-0000-0000-000000000001")
       .set("Authorization", "Bearer token");
     expect(res.status).toBe(200);
     expect(res.body.data.id).toBe("inv1");
@@ -259,10 +258,7 @@ describe("billing routes", () => {
 
   it("GET /invoices/:id returns 404 for an invoice in another org", async () => {
     mockRead({
-      memberOrgs: [
-        "00000000-0000-0000-0000-000000000001",
-        "00000000-0000-0000-0000-000000000002",
-      ],
+      memberOrgs: ["00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002"],
       routeResults: {
         invoices: { data: null, error: new Error("No rows") },
       },
@@ -1109,6 +1105,60 @@ describe("billing routes", () => {
       expect(res.status).toBe(502);
       expect(res.body.error.details.errors[0]).toContain("charges");
       expect(res.body.error.details.errors[0]).toContain("500");
+    });
+  });
+});
+
+describe("subscription item summary (BILL-P3-010)", () => {
+  const { summarizeSubscriptionItems } = jest.requireActual("@mct/config/subscription") as {
+    summarizeSubscriptionItems: typeof import("@mct/config/subscription").summarizeSubscriptionItems;
+  };
+
+  it("sums a base item and an add-on into the recurring total", () => {
+    expect(
+      summarizeSubscriptionItems([
+        {
+          quantity: 2,
+          price: {
+            nickname: "Managed",
+            unit_amount: 1000,
+            currency: "usd",
+            recurring: { interval: "month" },
+          },
+        },
+        {
+          quantity: 1,
+          price: { product: { name: "Backup add-on" }, unit_amount: 500, currency: "usd" },
+        },
+      ]),
+    ).toEqual({
+      planName: "Managed + Backup add-on",
+      amountCents: 2500,
+      currency: "usd",
+      interval: "month",
+      quantity: null,
+    });
+  });
+
+  it("keeps per-seat semantics for a single item", () => {
+    expect(
+      summarizeSubscriptionItems([
+        {
+          quantity: 5,
+          price: {
+            nickname: "Seat",
+            unit_amount: 1000,
+            currency: "usd",
+            recurring: { interval: "month" },
+          },
+        },
+      ]),
+    ).toEqual({
+      planName: "Seat",
+      amountCents: 1000,
+      currency: "usd",
+      interval: "month",
+      quantity: 5,
     });
   });
 });

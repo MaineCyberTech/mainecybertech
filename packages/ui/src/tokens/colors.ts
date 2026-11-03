@@ -65,6 +65,22 @@ export const colors = {
     900: "#7f1d1d",
     950: "#450a0a",
   },
+  // Topology canvas palette (UX-P3-005). SVG attributes need literal colour
+  // strings, so these live in the token module instead of the component.
+  network: {
+    switch: "#34d399",
+    router: "#60a5fa",
+    firewall: "#f87171",
+    ap: "#a78bfa",
+    server: "#fbbf24",
+    camera: "#f472b6",
+    internet: "#38bdf8",
+    default: "#94a3b8",
+    edge: "#64748b",
+    label: "#94a3b8",
+    nodeFill: "#0f172a",
+    nodeText: "#f1f5f9",
+  },
   white: "#ffffff",
   transparent: "transparent",
 };

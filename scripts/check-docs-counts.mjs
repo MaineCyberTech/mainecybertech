@@ -12,6 +12,8 @@
  *   - README.md "All unit tests (N)" and "**N tests**" vs the AGENTS total
  *   - README.md per-package (web/API/SDK/worker) counts vs AGENTS.md rows
  *   - docs/INDEX.md "(N paths)" vs "  \"/" lines in docs/openapi.yaml
+ *   - docs/INDEX.md ADR and module-doc counts vs docs/adr/README.md and
+ *     docs/modules/*.md (HYGIENE-P3-016)
  *   - AGENTS.md "Web pages | N | Admin/Portal/Public/forbidden" vs
  *     apps/web/app/**\/*.tsx page files
  *   - AGENTS.md / README.md E2E spec count vs apps/web/e2e/**\/*.spec.ts
@@ -189,9 +191,7 @@ const THRESHOLD_CONFIGS = {
 const THRESHOLD_KEYS = ["branches", "functions", "lines", "statements"];
 function readCoverageThreshold(relPath) {
   const text = read(relPath);
-  const globalBlock = text.match(
-    /coverageThreshold\s*:\s*\{[\s\S]*?global\s*:\s*\{([\s\S]*?)\}/,
-  );
+  const globalBlock = text.match(/coverageThreshold\s*:\s*\{[\s\S]*?global\s*:\s*\{([\s\S]*?)\}/);
   if (!globalBlock) {
     mismatches.push(`${relPath}: coverageThreshold.global not found`);
     return null;
@@ -210,7 +210,10 @@ function readCoverageThreshold(relPath) {
 const testingDoc = read("docs/testing.md");
 for (const [display, configPath] of Object.entries(THRESHOLD_CONFIGS)) {
   const declared = testingDoc.match(
-    new RegExp(`^\\|\\s*${display}\\s*\\|\\s*(\\d+)\\s*\\|\\s*(\\d+)\\s*\\|\\s*(\\d+)\\s*\\|\\s*(\\d+)\\s*\\|`, "m"),
+    new RegExp(
+      `^\\|\\s*${display}\\s*\\|\\s*(\\d+)\\s*\\|\\s*(\\d+)\\s*\\|\\s*(\\d+)\\s*\\|\\s*(\\d+)\\s*\\|`,
+      "m",
+    ),
   );
   if (!declared) {
     mismatches.push(`docs/testing.md: coverage threshold row "${display}" not found`);
@@ -223,11 +226,7 @@ for (const [display, configPath] of Object.entries(THRESHOLD_CONFIGS)) {
   const actual = readCoverageThreshold(configPath);
   if (!actual) continue;
   for (const key of THRESHOLD_KEYS) {
-    check(
-      `docs/testing.md ${display} ${key} vs ${configPath}`,
-      declaredValues[key],
-      actual[key],
-    );
+    check(`docs/testing.md ${display} ${key} vs ${configPath}`, declaredValues[key], actual[key]);
   }
 }
 
@@ -261,8 +260,7 @@ const SUITE_PACKAGES = [
     isSuite: (rel, name) =>
       !rel.includes("/openapi/") &&
       name !== "helpers.ts" &&
-      ((rel.includes("/__tests__/") && name.endsWith(".ts")) ||
-        /\.(test|spec)\.ts$/.test(name)),
+      ((rel.includes("/__tests__/") && name.endsWith(".ts")) || /\.(test|spec)\.ts$/.test(name)),
   },
   {
     display: "Web",
@@ -326,6 +324,30 @@ const indexPathCount = parse(
 if (indexPathCount !== null) {
   const yamlPaths = (read("docs/openapi.yaml").match(/^ {2}"\//gm) ?? []).length;
   check("docs/INDEX.md openapi paths vs docs/openapi.yaml", indexPathCount, yamlPaths);
+}
+
+// --- docs/INDEX.md ADR + module-doc counts (HYGIENE-P3-016) --------------
+const index = read("docs/INDEX.md");
+const declaredAdrs = parse(
+  "docs/INDEX.md ADR count",
+  index,
+  /Architecture Decision Records \((\d[\d,]*)\s+decisions?\)/,
+);
+if (declaredAdrs !== null) {
+  const adrRows = (read("docs/adr/README.md").match(/^\|\s*\d{3}\s*\|/gm) ?? []).length;
+  check("docs/INDEX.md ADR count vs docs/adr/README.md rows", declaredAdrs, adrRows);
+}
+const declaredModuleDocs = parse(
+  "docs/INDEX.md module-doc count",
+  index,
+  /Module Documentation \(`docs\/modules\/`\s*[—-]\s*(\d[\d,]*)\s+files\)/,
+);
+if (declaredModuleDocs !== null) {
+  check(
+    "docs/INDEX.md module-doc count vs docs/modules/*.md",
+    declaredModuleDocs,
+    countFiles("docs/modules", (full, name) => name.endsWith(".md")),
+  );
 }
 
 // --- AGENTS.md "Web pages" row vs app/**/page.tsx ------------------------
@@ -446,7 +468,11 @@ const readmeMigrations = parse(
   /database \/ RLS foundation \(([\d,]+) migrations\)/,
 );
 if (readmeMigrations !== null) {
-  check("README.md migration count vs supabase/migrations/*.sql", readmeMigrations, migrationFiles.length);
+  check(
+    "README.md migration count vs supabase/migrations/*.sql",
+    readmeMigrations,
+    migrationFiles.length,
+  );
 }
 const onboardingMigrations = parse(
   "docs/ONBOARDING.md migration count",
@@ -478,7 +504,11 @@ const onboardingOpenapiPaths = parse(
   /authoritative ([\d,]+)-path spec/,
 );
 if (onboardingOpenapiPaths !== null) {
-  check("docs/ONBOARDING.md openapi paths vs docs/openapi.yaml", onboardingOpenapiPaths, openapiPathCount);
+  check(
+    "docs/ONBOARDING.md openapi paths vs docs/openapi.yaml",
+    onboardingOpenapiPaths,
+    openapiPathCount,
+  );
 }
 const inventoryOpenapiPaths = parse(
   "docs/API_ENDPOINT_INVENTORY.md openapi paths",

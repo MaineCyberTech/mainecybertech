@@ -1,6 +1,6 @@
 # Dependency Policy
 
-Policy owner: Platform Engineering. Last updated 2026-10-12.
+Policy owner: Platform Engineering. Last updated 2026-11-03.
 
 How dependency vulnerabilities, overrides, and updates are governed. The
 machine-enforced policy is
@@ -12,11 +12,11 @@ applied by `scripts/audit-gate.mjs`.
 `scripts/audit-gate.mjs` runs in `test.yml` and `validate.yml` (the deploy
 gate). It audits **all** dependency scopes and applies this policy:
 
-| Scope | Severity | Behaviour |
-| --- | --- | --- |
-| any | `critical` | **block** |
-| production | `high` or `critical` | **block** |
-| development | `high` | reported, non-blocking |
+| Scope       | Severity             | Behaviour              |
+| ----------- | -------------------- | ---------------------- |
+| any         | `critical`           | **block**              |
+| production  | `high` or `critical` | **block**              |
+| development | `high`               | reported, non-blocking |
 | development | `moderate` and below | reported, non-blocking |
 
 Dev-tree advisories are printed on every run so they stay visible even when
@@ -34,9 +34,10 @@ reported as a policy violation (`LAPSED-ALLOWLIST`), so an accepted risk cannot
 silently outlive its review (SBOM-P2-010). Renewing means re-reviewing the
 advisory and moving the date forward in the same PR.
 
-| Advisory | Package | Scope | Reason |
-| --- | --- | --- | --- |
-| `GHSA-848j-6mx2-7j84` | `elliptic` (low) | dev | No patched version exists (`<0.0.0`). Reached only through `@storybook/nextjs > node-polyfill-webpack-plugin > crypto-browserify > browserify-sign > elliptic`; never in production images. Remove once upstream fixes it or Storybook drops the polyfill chain. |
+| Advisory              | Package          | Scope | Expires    | Reason                                                                                                                                                                                                                                                                          |
+| --------------------- | ---------------- | ----- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GHSA-848j-6mx2-7j84` | `elliptic` (low) | dev   | 2027-01-01 | No patched version exists (`<0.0.0`). Reached only through `@storybook/nextjs > node-polyfill-webpack-plugin > crypto-browserify > browserify-sign > elliptic`; never in production images. Remove once upstream fixes it or Storybook drops the polyfill chain.                |
+| `GHSA-mrhx-c7xc-m3w5` | `zod` (high)     | prod  | 2026-12-15 | Fixed only in zod 4.6.6; the API validators target zod 3 and the 3→4 migration is breaking (error shapes, coercion, parser APIs). Accepted only until the dedicated migration lands — re-review before the expiry or the gate fails closed with `LAPSED-ALLOWLIST` (SC-P2-012). |
 
 ## `pnpm.overrides`
 
@@ -47,21 +48,21 @@ Governance:
 
 - Every override must be synced to the lockfile (`pnpm install --lockfile-only`
   updates it; CI's `--frozen-lockfile` catches divergence).
-- An override that only widens a *declared peer range* is fine, but avoid one
+- An override that only widens a _declared peer range_ is fine, but avoid one
   that can never match the resolution it was added for.
 - The `next` override is deliberately `">=15.5.24 <16 || >=16.3.6"`: the 15.x
   line stays on the app's supported major, while any 16.x that the Storybook
   toolchain might pull is forced to the patched `>=16.3.6` line. Both halves
   matter — the earlier `">=15.5.24 <16"` could never match a 16.x resolution.
 
-| Override | Scope | Target advisory / rationale |
-| --- | --- | --- |
-| `next` | global | `GHSA-vcvr-r3jv-pc5j` (`next/og` RCE) — keep every line `>=` its patched release |
-| `webpack-dev-middleware` | global | path traversal `<7.4.5` |
-| `brace-expansion` (scoped + global) | global/scoped | DoS `<1.1.20` |
-| `js-yaml` | global | prototype pollution; `>=5` line separately |
-| `sharp` | global | `GHSA` / libvips; also pins the platform binaries |
-| others | global | see `package.json` |
+| Override                            | Scope         | Target advisory / rationale                                                      |
+| ----------------------------------- | ------------- | -------------------------------------------------------------------------------- |
+| `next`                              | global        | `GHSA-vcvr-r3jv-pc5j` (`next/og` RCE) — keep every line `>=` its patched release |
+| `webpack-dev-middleware`            | global        | path traversal `<7.4.5`                                                          |
+| `brace-expansion` (scoped + global) | global/scoped | DoS `<1.1.20`                                                                    |
+| `js-yaml`                           | global        | prototype pollution; `>=5` line separately                                       |
+| `sharp`                             | global        | `GHSA` / libvips; also pins the platform binaries                                |
+| others                              | global        | see `package.json`                                                               |
 
 ## Update governance
 
@@ -114,15 +115,15 @@ follow-up); instead the weekly `dependency-rescan.yml` runs
 Known intentional splits (reviewed 2026-10-12; update this list when they
 change):
 
-| Package               | Versions                    | Why it stays                                                                                        |
-| --------------------- | --------------------------- | --------------------------------------------------------------------------------------------------- |
+| Package                 | Versions                  | Why it stays                                                                                                                                   |
+| ----------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@supabase/realtime-js` | 2.106.2 / 2.117.2         | worker pins 2.106.2 (`apps/worker/package.json`) while the API resolves 2.117.2 — keep the pin until the worker realtime transport is upgraded |
-| `brace-expansion`     | 1.1.21 / 5.0.12             | scoped override: minimatch 3.x needs the 1.x line, everything else uses 5.x                          |
-| `@types/react-dom`    | 18.3.7 / 19.3.0             | React 18 types arrive transitively through an older Testing Library chain; app code is React 19      |
-| `ajv`                 | 6.15.0 / 8.20.0             | ESLint (ajv 6) vs schema tooling (ajv 8)                                                             |
-| `lucide-react`        | 0.453.0 / 0.468.0           | `packages/ui` and `apps/web` pin different minors — unify in a dedicated bump                        |
-| `dotenv`              | 16.6.1 / 17.4.2             | apps/api + worker on 16.x; a transitive consumer pulls 17.x                                          |
-| `react-is`            | 16.13.1 / 17.0.2 / 18.3.1   | transitive across React-versioned tooling                                                            |
+| `brace-expansion`       | 1.1.21 / 5.0.12           | scoped override: minimatch 3.x needs the 1.x line, everything else uses 5.x                                                                    |
+| `@types/react-dom`      | 18.3.7 / 19.3.0           | React 18 types arrive transitively through an older Testing Library chain; app code is React 19                                                |
+| `ajv`                   | 6.15.0 / 8.20.0           | ESLint (ajv 6) vs schema tooling (ajv 8)                                                                                                       |
+| `lucide-react`          | 0.453.0 / 0.468.0         | `packages/ui` and `apps/web` pin different minors — unify in a dedicated bump                                                                  |
+| `dotenv`                | 16.6.1 / 17.4.2           | apps/api + worker on 16.x; a transitive consumer pulls 17.x                                                                                    |
+| `react-is`              | 16.13.1 / 17.0.2 / 18.3.1 | transitive across React-versioned tooling                                                                                                      |
 
 ## Local commands
 

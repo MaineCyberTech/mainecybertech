@@ -27,7 +27,11 @@ type Subscription = {
   currency?: string | null;
   /** Stripe price recurring interval (BILL-P3-006). */
   interval?: string | null;
-  /** Subscription item seat count; amount_cents is the per-seat amount. */
+  /**
+   * Single-item seat count; amount_cents is then the per-seat amount. Null for
+   * a multi-item subscription, where amount_cents is the full recurring total
+   * (base plan + add-ons, BILL-P3-010).
+   */
   quantity?: number | null;
   current_period_end?: string | null;
   created_at: string;
@@ -94,9 +98,10 @@ function statusColor(status: string) {
 }
 
 /**
- * BILL-P3-006: `amount_cents` mirrors the per-seat unit amount, so a
- * multi-seat plan must render the seat total (unit × quantity) instead of
- * understating the plan price.
+ * BILL-P3-006 / BILL-P3-010: for a single-item plan `amount_cents` mirrors the
+ * per-seat unit amount, so multiply by the seat count. A multi-item
+ * subscription mirrors the full recurring total with `quantity = null`
+ * (base plan + add-ons), so it must not be multiplied again.
  */
 function planTotalCents(sub: Subscription): number {
   const seats = sub.quantity && sub.quantity > 1 ? sub.quantity : 1;

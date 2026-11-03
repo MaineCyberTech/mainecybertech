@@ -34,5 +34,7 @@ export default {
       "<rootDir>/../../packages/sdk/src/$1",
     // EVOL-P3-005: shared env schema source (ts-jest compiles it directly).
     "^@mct/config/env$": "<rootDir>/../../packages/config/src/env.ts",
+    // BILL-P3-010: shared Stripe subscription summary.
+    "^@mct/config/subscription$": "<rootDir>/../../packages/config/src/subscription.ts",
   },
 };

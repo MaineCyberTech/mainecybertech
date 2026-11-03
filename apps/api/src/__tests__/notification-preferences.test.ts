@@ -214,4 +214,40 @@ describe("Notification Preferences API", () => {
       .send({ preferences: [] });
     expect(res.status).toBe(400);
   });
+
+  it("advertises the global module key so the UI can surface it (NOTIF-P2-013)", async () => {
+    const supabase = mockAuth();
+    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
+    const res = await request(app)
+      .get("/api/v1/notification-preferences")
+      .set("Authorization", authToken);
+    expect(res.status).toBe(200);
+    expect(res.body.data.globalModule).toBe("all");
+  });
+
+  it("accepts moduleKey='all' so the global email opt-out can be cleared", async () => {
+    const supabase = mockAuth();
+    const builder = createMockBuilder({
+      data: { id: "pref-all", module_key: "all", channel: "email", enabled: true },
+      error: null,
+    });
+    supabase.from.mockReturnValue(builder);
+    const res = await request(app)
+      .put("/api/v1/notification-preferences")
+      .set("Authorization", authToken)
+      .send({
+        preferences: [{ moduleKey: "all", channel: "email", enabled: true }],
+      });
+    expect(res.status).toBe(200);
+    expect(builder.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organization_id: testOrgId,
+        user_id: "user-1",
+        module_key: "all",
+        channel: "email",
+        enabled: true,
+      }),
+      { onConflict: "organization_id,user_id,module_key,channel" },
+    );
+  });
 });

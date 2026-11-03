@@ -33,7 +33,8 @@ export default async function PortalRiskRegisterPage() {
       <h1 className="text-2xl font-semibold text-slate-50">Risk Register</h1>
       {loadFailed ? <DataErrorNote what="risk-register" /> : null}
       <p className="text-sm text-slate-400">
-        {items.length} risk{items.length !== 1 ? "s" : ""} identified for your organization.
+        {items.length} risk{items.length !== 1 ? "s" : ""} identified in this view (most recent
+        first).
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (

@@ -5,9 +5,11 @@
 **SDK:** `packages/sdk/src/ai.ts`
 
 ## Overview
+
 AI-powered tool management providing ticket triage analysis, automated ticket creation from triage drafts, and AI copilot features for ticket summarization and reply drafting.
 
 ## Key Features
+
 - Ticket triage analysis with keyword-based category detection (hardware, software, network, email, access, security)
 - Automatic priority suggestion (normal vs high/urgent)
 - Subject line generation and missing info detection
@@ -16,23 +18,27 @@ AI-powered tool management providing ticket triage analysis, automated ticket cr
 - AI copilot ticket summarization with key points and suggested actions
 - Reply draft generation with configurable tone (formal, friendly, technical, concise)
 - AI draft review gate: every AI output is persisted to `ai_draft_outputs` with `status = 'draft'` and can only be approved/rejected through the review endpoint (reviewer identity, timestamp, and notes are recorded)
+- Admin review queue at `/admin/ai/drafts` with SDK `ai.drafts.create/list/get/review` (FEAT-P3-009), so the gate is reachable without hand-calling the API
 
 ## Endpoints
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | /api/v1/ai/triage/analyze | Analyze raw description, suggest category/priority/subject |
-| POST | /api/v1/ai/triage/convert | Convert a triage draft into a ticket |
-| GET | /api/v1/ai/triage | List triage drafts (paginated, filterable by org) |
-| GET | /api/v1/ai/copilot/:ticketId/summarize | Summarize a ticket with key points and suggested action |
-| POST | /api/v1/ai/copilot/:ticketId/reply-draft | Generate a reply draft with specified tone |
-| POST | /api/v1/ai/drafts | Persist an AI draft output (`status = 'draft'`) |
-| GET | /api/v1/ai/drafts | List AI draft outputs (paginated; filter by status/module) |
-| GET | /api/v1/ai/drafts/:id | Get a single AI draft output |
-| POST | /api/v1/ai/drafts/:id/review | Approve/reject a draft (records reviewer, notes, approved content) |
+
+| Method | Path                                     | Description                                                        |
+| ------ | ---------------------------------------- | ------------------------------------------------------------------ |
+| POST   | /api/v1/ai/triage/analyze                | Analyze raw description, suggest category/priority/subject         |
+| POST   | /api/v1/ai/triage/convert                | Convert a triage draft into a ticket                               |
+| GET    | /api/v1/ai/triage                        | List triage drafts (paginated, filterable by org)                  |
+| GET    | /api/v1/ai/copilot/:ticketId/summarize   | Summarize a ticket with key points and suggested action            |
+| POST   | /api/v1/ai/copilot/:ticketId/reply-draft | Generate a reply draft with specified tone                         |
+| POST   | /api/v1/ai/drafts                        | Persist an AI draft output (`status = 'draft'`)                    |
+| GET    | /api/v1/ai/drafts                        | List AI draft outputs (paginated; filter by status/module)         |
+| GET    | /api/v1/ai/drafts/:id                    | Get a single AI draft output                                       |
+| POST   | /api/v1/ai/drafts/:id/review             | Approve/reject a draft (records reviewer, notes, approved content) |
 
 ## Data Model
+
 Key fields: `ticket_triage_drafts` (raw_description, suggested_category, suggested_priority, suggested_subject, missing_info, confidence_score, status, converted_ticket_id), `ai_draft_outputs` (module_key, prompt_key, prompt_version, draft_content, status, reviewed_by, reviewed_at, review_notes, approved_content, source_entity_type, source_entity_id) — all have `organization_id`, `created_by`, `created_at`
 
 ## Access Control
+
 - Admin: full access to all AI tools
 - Client: triage analysis + copilot on own tickets (portal)

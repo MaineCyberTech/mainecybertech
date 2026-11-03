@@ -31,7 +31,8 @@ export default async function PortalNetworkPortMapsPage() {
       <h1 className="text-2xl font-semibold text-slate-50">Network Port Maps</h1>
       {loadFailed ? <DataErrorNote what="network-port-maps" /> : null}
       <p className="text-sm text-slate-400">
-        {items.length} port map{items.length !== 1 ? "s" : ""} registered for your organization.
+        {items.length} port map{items.length !== 1 ? "s" : ""} registered in this view (most recent
+        first).
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (
