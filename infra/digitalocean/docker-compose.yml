@@ -345,7 +345,7 @@ services:
   # ping URL / external webhook), so a total loss of this droplet is still
   # detected off-box. Internal only — no published ports.
   alertmanager:
-    # TODO(ops): digest is pinned to the v0.28.1 manifest-list digest. If a newer
+    # TODO(ops): digest is pinned to the v0.29.0 manifest-list digest. If a newer
     # release is adopted, re-pin (`docker buildx imagetools inspect
     # prom/alertmanager:vX.Y.Z`) and update the digest here before merge.
     image: prom/alertmanager:v0.29.0@sha256:88743b63b3e09ea6e31e140ced5bf45f4a8e82c617c2a963f78841f4995ad1d7

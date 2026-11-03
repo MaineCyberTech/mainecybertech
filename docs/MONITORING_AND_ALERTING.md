@@ -186,10 +186,12 @@ read there. The documented `api.mainecybertech.com` hostname still resolves to
 a retired non-droplet endpoint that answers 404 for every path (an Express
 service, not the droplet's Caddy — see `docs/PRODUCTION_VS_TESTING_DOMAINS.md`
 for the current droplet topology). Repointing that DNS record at the prod
-droplet is operator work; until it is done, the same 404 also fails the prod
-deploy's public API gate in `deploy-do.yml` (`https://$API_DOMAIN/health`),
-which is a separate residual. Once the record is fixed, add an
-`api.mainecybertech.com/health` target back to the probe list.
+droplet is operator work. The prod deploy's public API readiness gate uses the
+same app-host API read (`https://app.mainecybertech.com/api/v1/store/products`,
+asserting the JSON success envelope) instead of the dead `/health` host
+(OBS-P1-002); the container healthchecks remain the authoritative gate. Once the
+record is fixed, add an `api.mainecybertech.com/health` target back to the probe
+list.
 
 ### Functional smoke check (TEST-P3-002)
 
@@ -218,6 +220,17 @@ is configured) and the run's `smoke-report` artifact lists each check.
 
 Defined in `docker-compose.yml` (or the service Dockerfile when compose does not
 override it), each with its own interval:
+
+| Service          | Command                                                                 | Interval               | Retries |
+| ---------------- | ----------------------------------------------------------------------- | ---------------------- | ------- |
+| **redis**        | `REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli ping` (password via env, not argv) | 10s              | 3       |
+| **api**          | `wget -qO- http://localhost:4000/health`                                | 30s (30s start period) | 3       |
+| **worker**       | `wget -qO- http://127.0.0.1:3001/health`                                | 30s (30s start period) | 3       |
+| **web**          | `wget --spider http://127.0.0.1:3000` (Dockerfile)                      | 30s (40s start period) | 3       |
+| **prometheus**   | `wget --spider -q http://localhost:9090/-/ready`                        | 30s (15s start period) | 3       |
+| **alertmanager** | `wget --spider -q http://localhost:9093/-/healthy`                      | 30s (10s start period) | 3       |
+| **node-exporter** | `/bin/node_exporter --version` (scratch image: no shell/HTTP client)    | 30s (10s start period) | 3       |
+| **caddy**        | `caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile`      | 30s (20s start period) | 3       |
 
 | Service          | Command                                                                       | Interval               | Retries |
 | ---------------- | ----------------------------------------------------------------------------- | ---------------------- | ------- |

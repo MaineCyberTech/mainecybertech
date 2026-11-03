@@ -1,0 +1,35 @@
+# Per-image Trivy exceptions for the third-party compose images.
+#
+# `third-party-image-scan.yml` passes ONE of these files to the Trivy action for
+# the matching image (`trivyignores`). They are deliberately not global: a CVE
+# exception accepted for one upstream image must not silence the same CVE in a
+# different image (CTR-P2-007).
+#
+# Every entry must be present in the current upstream image, be upstream
+# blocked (newest release already pinned), and carry an expiry. Do NOT add
+# first-party (mct-*) image findings here; those are gated by the build-push
+# scans. Re-review on the expiry date and drop each line once the upstream
+# image is rebuilt.
+#
+# Exception list reviewed: 2026-11-03. Next review: 2026-12-01.
+# --- prom/node-exporter v1.12.1 (digest-pinned in docker-compose.yml) ---
+# Added 2026-11-03: the previous global .trivyignore silently suppressed these
+# 15 HIGH findings (14 unique CVEs) in the new fifth image (CTR-P2-007). They
+# are real and fixable only by an upstream rebuild: node-exporter v1.12.1 is the
+# newest release and is built with Go 1.26.5, while the fixes need Go >= 1.26.6
+# (some >= 1.26.10). Scoped here explicitly so a future image is not covered by
+# the same blanket exception.
+CVE-2026-111943 exp:2026-12-01
+CVE-2026-33818 exp:2026-12-01
+CVE-2026-39821 exp:2026-12-01
+CVE-2026-46600 exp:2026-12-01
+CVE-2026-56851 exp:2026-12-01
+CVE-2026-56853 exp:2026-12-01
+CVE-2026-56854 exp:2026-12-01
+CVE-2026-56858 exp:2026-12-01
+CVE-2026-56859 exp:2026-12-01
+CVE-2026-56860 exp:2026-12-01
+CVE-2026-56862 exp:2026-12-01
+CVE-2026-78667 exp:2026-12-01
+CVE-2026-78669 exp:2026-12-01
+CVE-2026-97031 exp:2026-12-01

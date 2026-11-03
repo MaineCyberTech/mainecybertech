@@ -1,7 +1,7 @@
 # License Policy
 
 Policy owner: Platform Engineering. Legal review: Founder. Last updated
-2026-10-03.
+2026-11-03.
 
 This document is the human-readable companion to
 [`security/license-policy.json`](../security/license-policy.json), which is the
@@ -22,6 +22,9 @@ These permissive licenses are approved for all dependency scopes:
 ```
 MIT, MIT-0, ISC, Apache-2.0, Apache-1.1, BSD-2-Clause, BSD-3-Clause,
 BSD-3-Clause-Clear, BSD-4-Clause, 0BSD, BlueOak-1.0.0, Unlicense, CC0-1.0,
+CC-BY-4.0, CC-BY-3.0, Python-2.0, PSF-2.0, Artistic-2.0, WTFPL, Zlib,
+BSL-1.0, PostgreSQL, OpenSSL, X11, NCSA, MS-PL, UPL-1.0
+
 CC-BY-4.0, CC-BY-3.0, Python-2.0, PSF-2.0, Artistic-2.0, WTFPL, Zlib, BSL-1.0,
 PostgreSQL, OpenSSL, X11, NCSA, MS-PL, UPL-1.0
 ```

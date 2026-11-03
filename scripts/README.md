@@ -18,6 +18,36 @@
 
 ## Script index
 
+| Script | Purpose |
+| ------ | ------- |
+| `start-local-stack.ps1` / `.sh` | Start Supabase, API, and web app locally with seeded test users. |
+| `teardown-local-stack.ps1` / `.sh` | Stop all local stack services. |
+| `test-local-stack.ps1` | Full local stack test with seed data (Windows). |
+| `test-local-seeds.sh` | Full local stack test with seed data (Linux/macOS). |
+| `local_dev_reset_and_verify.automated.v2.ps1` / `.sh` | Reset local dev environment and verify it works end-to-end. |
+| `sync_supabase_env.auto.v2.ps1` | Sync local Supabase env values (URL, keys) into app `.env.local` files. |
+| `start_project_with_supabase_env.ps1` | Start the project after ensuring Supabase env values are present. |
+| `scan-secrets.ps1` / `.sh` | Scan the repo for accidentally committed secrets. |
+| `backup-database.sh` | Back up the Supabase/database data (the PowerShell duplicate was retired in DR-P3-002). |
+| `restore-database.sh` | Restore a database backup (Linux/macOS). |
+| `backup-storage.sh` | Mirror Supabase Storage buckets (`documents`/`avatars`/`logos`) to S3/Spaces. |
+| `record-backup-heartbeat.sh` | Record the platform backup heartbeat (`platform_backup_heartbeats`) after a successful backup run (DR-P2-008). |
+| `restore-storage.sh` | Restore uploaded files from a storage backup archive (Linux/macOS). |
+| `dev-setup.sh` | One-shot developer environment setup (Linux/macOS). |
+| `preflight-check.sh` | Pre-deploy sanity checks (Dockerfiles, env files, duplicate migration timestamps, workflow files); runs in the shared PR/deploy test job. |
+| `rollback.sh` | Roll back the last deployment on the droplet (Linux/macOS). |
+| `terraform-state-restore.sh` | Emergency Terraform state restore from the versioned DO Spaces backend (`--list`/`--scratch`/`--restore`; DR-P3-005 / IR-P3-001). |
+| `validate-terraform-env.sh` | Validate Terraform env files before plan/apply (scans `env/` and the module root, INFRA-P3-007). |
+| `install-terraform.ps1` | Install Terraform on Windows. |
+| `backfill-profile-pii.mjs` | One-off idempotent backfill of `profiles.encrypted_pii` from the plaintext PII columns (SEC-P2-002); run once per environment. Root alias: `pnpm backfill:profile-pii`. |
+| `seed-store.ts` | Idempotent upsert of `apps/api/src/data/products.json` + `categories.json` into `store_products` / `store_categories` (needs service-role credentials; see migration 5302134). |
+| `generate-sbom.mjs` | Generate a CycloneDX 1.5 SBOM (licenses + dependency graph + commit binding) — see `docs/SBOM_PROCESS.md`. |
+| `validate-sbom.mjs` | Fail CI on a malformed / regressed SBOM (structure, refs, count floor); `--image [--digest sha256:…]` validates Trivy image SBOMs (floor + digest binding) before upload/attestation (SBOM-P3-005). |
+| `audit-gate.mjs` | Dependency vulnerability gate for all scopes — see `docs/DEPENDENCY_POLICY.md`. |
+| `license-gate.mjs` | License allow/deny gate with documented exceptions — see `docs/LICENSE_POLICY.md`. |
+| `collect-licenses.mjs` | Build the license inventory from the installed tree (`node_modules/.pnpm`). Replaces `pnpm licenses list --json`, which exits 1 on pnpm 10.34.x and writes an error document to stdout. Root alias: `pnpm sbom:licenses`. |
+| `sync-product-catalog.mjs` | Keep `apps/api/src/data/products.json` byte-identical to the canonical `apps/web/lib/catalog/data/products.json` (HYGIENE-P2-002); `check` runs in the shared unit-tests action. |
+
 | Script                                                | Purpose                                                                                                                                                                                                                   |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `start-local-stack.ps1` / `.sh`                       | Start Supabase, API, and web app locally with seeded test users.                                                                                                                                                          |
