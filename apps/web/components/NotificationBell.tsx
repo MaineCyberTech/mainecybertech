@@ -303,7 +303,10 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
           />
         </svg>
         {unread > 0 ? (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+          <span
+            aria-hidden="true"
+            className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white"
+          >
             {unread > 99 ? "99+" : unread}
           </span>
         ) : null}
