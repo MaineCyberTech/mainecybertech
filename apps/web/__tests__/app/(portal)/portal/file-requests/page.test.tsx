@@ -40,7 +40,7 @@ describe("PortalFileRequestsPage", () => {
   it("renders heading", async () => {
     mockFileRequestsList.mockResolvedValue({ items: [] });
     const { default: Page } = await import("@/app/(portal)/portal/file-requests/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
     expect(screen.getByRole("heading", { name: /secure file requests/i })).toBeInTheDocument();
   });
@@ -48,7 +48,7 @@ describe("PortalFileRequestsPage", () => {
   it("renders breadcrumbs", async () => {
     mockFileRequestsList.mockResolvedValue({ items: [] });
     const { default: Page } = await import("@/app/(portal)/portal/file-requests/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
     expect(screen.getAllByRole("navigation").length).toBeGreaterThanOrEqual(1);
   });
@@ -56,7 +56,7 @@ describe("PortalFileRequestsPage", () => {
   it("shows empty state", async () => {
     mockFileRequestsList.mockResolvedValue({ items: [] });
     const { default: Page } = await import("@/app/(portal)/portal/file-requests/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
     expect(screen.getByText(/no active file request links/i)).toBeInTheDocument();
   });
@@ -64,7 +64,7 @@ describe("PortalFileRequestsPage", () => {
   it("shows access restricted when no org", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
     const { default: Page } = await import("@/app/(portal)/portal/file-requests/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     expect(element).toBeNull();
   });
 
@@ -83,7 +83,7 @@ describe("PortalFileRequestsPage", () => {
       ],
     });
     const { default: Page } = await import("@/app/(portal)/portal/file-requests/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
     expect(screen.getByText("Test Request")).toBeInTheDocument();
   });

@@ -56,14 +56,14 @@ describe("PortalBillingPage", () => {
 
   it("renders heading", async () => {
     const { default: Page } = await import("@/app/(portal)/portal/billing/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
     expect(screen.getByRole("heading", { name: /billing/i })).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {
     const { default: Page } = await import("@/app/(portal)/portal/billing/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
     expect(screen.getAllByRole("navigation").length).toBeGreaterThanOrEqual(1);
   });
@@ -71,14 +71,14 @@ describe("PortalBillingPage", () => {
   it("shows access restricted when no org", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
     const { default: Page } = await import("@/app/(portal)/portal/billing/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
     expect(screen.getByText(/access restricted/i)).toBeInTheDocument();
   });
 
   it("renders billing client when data available", async () => {
     const { default: Page } = await import("@/app/(portal)/portal/billing/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
     expect(screen.getByTestId("billing-client")).toBeInTheDocument();
   });
