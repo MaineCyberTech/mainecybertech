@@ -1,0 +1,160 @@
+{
+  "domain": "08_api_contracts_realtime_integrations",
+  "file": "08_api_contracts_realtime_integrations.md",
+  "area": "API",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T08:30:00Z",
+  "findings": [
+    {
+      "id": "API-P2-001",
+      "severity": "P2",
+      "title": "Mutations remain unguarded by `requirePermission` in several routers (including a governance state transition)",
+      "owner": "API principal engineer",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: governance submit is guarded (routes/governance.ts:190-218) and client-onboarding mutations are guarded, but the residual set is unchanged: routes/projects.ts:869,934,971,1010,1039,1084,1185,1220,1252 (task comments, updates, task read/approve/portal-comment) and routes/assets.ts:376 and routes/findings.ts:478 carry only org scoping (assertProjectInOrg/loadOwned), no requirePermission. No new unguarded route was added in this diff.",
+      "area": "API"
+    },
+    {
+      "id": "API-P2-002",
+      "severity": "P2",
+      "title": "External integration syncs report success while dropping items, and `jsm-sync` has no HTTP retry",
+      "owner": "Worker/API platform engineer",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: jsm-sync.ts:230-234 returns ok:false when any ticket fails and retries transient HTTP (:39-46); stripe-reconcile.ts fails the run on drift/per-item errors; jira-sync.ts still increments errors at :114-122 and :184 but returns { ok: true } at :206 after logging the error count.",
+      "area": "API"
+    },
+    {
+      "id": "API-P2-003",
+      "severity": "P2",
+      "title": "Published error-handling contract contradicts the implementation (codes, 422, and `request_id`)",
+      "owner": "API documentation + implementation agent",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: docs/API_ERROR_HANDLING.md:19-67 documents the implemented flat envelope, 400-not-422 validation and X-Request-ID header; middleware/request-id.ts:18 emits the header and middleware/error.ts maps Zod to 400 VALIDATION.",
+      "area": "API"
+    },
+    {
+      "id": "API-P2-004",
+      "severity": "P2",
+      "title": "SDK retries unsafe requests without an `Idempotency-Key` (duplicate creates on transient failure)",
+      "owner": "SDK owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: packages/sdk/src/client.ts:213-220 mints one Idempotency-Key per logical request outside executeFetch's retry loop, and :337-341 does the same for uploads.",
+      "area": "API"
+    },
+    {
+      "id": "API-P2-005",
+      "severity": "P2",
+      "title": "Outbound webhook dispatcher uses a non-atomic idempotency check (duplicate deliveries under concurrency)",
+      "owner": "API platform engineer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/api/src/lib/webhook-dispatcher.ts:203-206 atomically claims per endpoint before sending and upserts the delivery row on idempotency_key (:23-40); apps/worker/src/tasks/webhook-dispatcher.ts:111-127 mirrors the claim; the concurrent-duplicate tests remain.",
+      "area": "API"
+    },
+    {
+      "id": "API-P2-006",
+      "severity": "P2",
+      "title": "Search falls through to an unscoped cross-tenant query",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/search.ts:95-128 derives scopedOrgIds from req.orgScope, substitutes ['__none__'] for an empty scope, and only grants the all-tenant branch to a verified super_admin holding a cross-tenant role; search-portal.ts:45-66 scopes to approved memberships.",
+      "area": "API"
+    },
+    {
+      "id": "API-P2-007",
+      "severity": "P2",
+      "title": "OpenAPI schema is public and the Swagger UI is blocked by CSP",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/docs.ts:21-39 returns 404 for /openapi.json and /docs when NODE_ENV=production; the nonce/SRI wiring remains; node scripts/openapi-audit.js -> exit 0 with 0 MISSING.",
+      "area": "API"
+    },
+    {
+      "id": "API-P3-001",
+      "severity": "P3",
+      "title": "Minor contract inconsistencies (`rateLimitByUser` non-enveloped 429, capped raw-array lists, no `request_id`)",
+      "owner": "Implementation agent",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: the 429 gap is fixed - every limiter uses rateLimitHandler -> failure('RATE_LIMITED',...) (middleware/rate-limit.ts:15,27-31). Residual: idempotency middleware still returns {error: string} for the 400 overlong key (middleware/idempotency.ts:30) and {error: string, idempotencyKey} for 409 (:69-73), and request-timeout returns {error:{code,message}} without success/status (middleware/request-timeout.ts:37-41), while docs/API_ERROR_HANDLING.md:19-30 says every handled error uses the flat envelope.",
+      "area": "API"
+    },
+    {
+      "id": "API-P3-002",
+      "severity": "P3",
+      "title": "OpenAPI artifact is not bound to a commit and the CI audit warns (not fails) on documented-but-missing routes",
+      "owner": "Implementation agent",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: scripts/openapi-audit.js now fails on any EXTRA route not in scripts/openapi-audit-allowlist.json (ran: 455 live routes vs 697 spec entries, 0 MISSING, 242 EXTRA all allow-listed, exit 0). Residual: docs/openapi.yaml:1-4 still names only the generator, with no commit SHA or migrations digest, so the artifact is not bound to the source it was generated from.",
+      "area": "API"
+    },
+    {
+      "id": "API-P3-003",
+      "severity": "P3",
+      "title": "Realtime client has no reconnect path; server emits `auth_expired` with no documented client handling",
+      "owner": "Web + API engineers",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/web/components/NotificationBell.tsx:112-188 implements bounded exponential-backoff reconnect with a fallback poller and treats auth_expired as terminal -> sign-in.",
+      "area": "API"
+    },
+    {
+      "id": "API-P3-004",
+      "severity": "P3",
+      "title": "`/metrics` is fully public when `METRICS_TOKEN` is unset",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/api/src/app.ts:152-165 returns 404 unless authorizeInternalRequest(req, METRICS_TOKEN) succeeds; an unset token fails closed.",
+      "area": "API"
+    },
+    {
+      "id": "API-P3-005",
+      "severity": "P3",
+      "title": "Batch Jira/JSM/M365 sync tasks are registered but never dispatched (no scheduler or enqueue path)",
+      "owner": "Worker/API platform engineer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/admin.ts:127-169 POST /admin/integration-syncs enqueues jira/jsm/m365 tasks behind a super-admin check and returns 503 when the queue is unavailable.",
+      "area": "API"
+    },
+    {
+      "id": "API-P3-006",
+      "severity": "P3",
+      "title": "M365 calendar sync recreates a calendar event for every task on each run (duplicate events, no idempotency)",
+      "owner": "Worker/API platform engineer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/worker/src/tasks/m365-calendar-sync.ts:103-139 PATCHes the persisted m365_event_id and stores new ids; the schema column is 5302455.",
+      "area": "API"
+    },
+    {
+      "id": "API-P3-007",
+      "severity": "P3",
+      "title": "M365 inbound webhook acknowledges but only processes the first notification of a batch",
+      "owner": "API platform engineer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/webhooks.ts:920-982 iterates every notification in value[], with per-notification clientState, dedup/audit/delivery logging.",
+      "area": "API"
+    },
+    {
+      "id": "API-P3-008",
+      "severity": "P3",
+      "title": "GET /dynamic-forms/export.csv ignores format and returns JSON, contradicting the OpenAPI contract",
+      "owner": "API principal engineer",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: the route now emits real CSV via sendExportResponse (routes/dynamic-client-forms-builder.ts:86-110) and the OpenAPI summary says CSV, so the 'returns JSON' half is fixed. Residual: `format` is still accepted and ignored - the route always sends CSV even when `format=json` is requested (validators/dynamic-client-forms-builder.ts:65-70 passes parsed.format into services/dynamic-client-forms-builder.ts:327-356, which discards it), while the SDK still advertises ExportDynamicFormsSchema format csv|json (packages/sdk/src/dynamic-client-forms-builder.ts:92-97, .api.ts:90-96 sends it). No web call site; latent contract break for SDK consumers.",
+      "area": "API"
+    }
+  ],
+  "report": "Read-only re-verification at 6b7aa1a5; no live API calls. 10 of 15 previous API rows verified fixed, 5 partially fixed, 0 regressed, 0 new (the new proposal client-decision contract gap is tracked cross-domain as ADMIN-P2-010 and is not re-scored here). Executed: node scripts/openapi-audit.js (455 live routes vs 697 spec entries, 0 MISSING, 242 allow-listed EXTRA, exit 0). Key code: middleware/{rate-limit,idempotency,request-timeout,request-id}.ts; packages/sdk/src/client.ts:213-220,337-341; routes/{search,docs,admin,webhooks,dynamic-client-forms-builder,governance}.ts; worker/tasks/{jira-sync,jsm-sync,stripe-reconcile,m365-calendar-sync}.ts. Residuals: unguarded mutation routes in projects/assets/findings (API-P2-001), jira-sync.ts:206 returns ok:true with counted errors (API-P2-002), non-enveloped idempotency 400/409 and timeout 408 (API-P3-001), OpenAPI not commit-bound (API-P3-002), dynamic-forms export ignores format=json while the SDK offers it (API-P3-008)."
+}

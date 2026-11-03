@@ -1,0 +1,250 @@
+{
+  "domain": "27_webhook_delivery_replay_idempotency_audit",
+  "file": "27_webhook_delivery_replay_idempotency_audit.md",
+  "area": "WH",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T08:30:00Z",
+  "findings": [
+    {
+      "id": "WH-P1-001",
+      "severity": "P1",
+      "title": "Outbound webhook idempotency is non-atomic in the API and absent in the worker dispatcher",
+      "owner": "integrations/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/api/src/lib/webhook-dispatcher.ts:203-206 atomically claims per endpoint with claimIdempotencyKey before sending, carries Idempotency-Key (:211), and upserts the delivery row on idempotency_key (:23-40); apps/worker/src/tasks/webhook-dispatcher.ts:111-127 mirrors the per-endpoint claim and key carry.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P1-002",
+      "severity": "P1",
+      "title": "M365 webhook auth depends on `M365_CLIENT_STATE` which the deploy pipeline does not write, while `M365_WEBHOOK_SECRET` is dead config",
+      "owner": "integrations/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: M365_CLIENT_STATE is written by .github/workflows/deploy-do.yml:688,787 and infra/digitalocean/docker-compose.yml:111; handler 501s when unset (routes/webhooks.ts:875-883); M365_WEBHOOK_SECRET exists only as an explanatory comment in config/env.ts:104-105 and is absent from .env.example/compose.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-001",
+      "severity": "P2",
+      "title": "M365 inbound notifications have no enforced timestamp/replay window",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: dedupWebhook(m365Key, M365_REPLAY_WINDOW_SECONDS=7d) at routes/webhooks.ts:37,944 and logWebhookDelivery now receives the same ttlSeconds (:957-968); logWebhookDelivery calls storeIdempotencyKey(key,'done',ttlSeconds) (:103-108) and the helper's TTL is caller-selectable (lib/idempotency.ts:143-158), so the old 24h overwrite is gone.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-002",
+      "severity": "P2",
+      "title": "Inline dispatcher records a fixed `retry_count` and duplicates the worker's retry logic",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/api/src/lib/webhook-dispatcher.ts:272-290 records retry_count: result.attempts and marks failed rows dead_letter; the single retry owner is documented and the worker dispatcher records initial rows with retry_count 0 for webhook-retry to increment.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-003",
+      "severity": "P2",
+      "title": "Outbound and DLQ delivery outcomes are not metered; only inbound success increments the counter",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: recordWebhookDelivery/recordWebhookDeadLetter are called on API inline (:150,:235,:279), worker dispatcher (:148-149,:186-187,:242) and webhook-retry (:140,:226,:252); MCTWebhookDeadLetter/DeliveryFailureRatio rules consume them (infra/digitalocean/prometheus.rules.yml:219-253).",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-004",
+      "severity": "P2",
+      "title": "Inbound Jira/JSM signature falls back to re-serialized JSON when `req.rawBody` is absent",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: webhook-body.ts:41-50 captures the exact Buffer; rawBodyBuffer returns null for missing/non-Buffer (webhook-signature.ts:32-36) and the Jira/JSM handlers reject with 401 (routes/webhooks.ts:680-689,788-797) instead of re-serializing; Stripe rejects with 400 (:292-300).",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-005",
+      "severity": "P2",
+      "title": "`webhook_dead_letters` has no DELETE policy while the API deletes via the RLS client",
+      "owner": "integrations/backend + DB/platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: 5302452_webhook_dead_letters_delete_policy.sql:23-36 creates the manage-scoped DELETE policy and asserts the qual contains user_has_permission; no later migration drops it.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-006",
+      "severity": "P2",
+      "title": "No per-provider payload schema or size cap on webhook ingress (global 10mb JSON limit)",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: middleware/webhook-body.ts:20-40 fixes per-provider caps (stripe 1mb, jira/jsm 512kb, m365 256kb) and :62-80 mounts the parser before the global JSON parser; lib/webhook-schemas.ts requires the provider-identifying shapes before signature/clientState handling.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-007",
+      "severity": "P2",
+      "title": "Webhook endpoint and delivery reads are available to any org member (not manage-gated)",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/webhook-management.ts reads carry requirePermission('webhooks','view') at :103,:125,:348,:508 and mutations require 'webhooks','manage' at :220,:312,:363,:409,:481,:539.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-008",
+      "severity": "P2",
+      "title": "Webhook signing secrets are stored plaintext with no rotation or expiry",
+      "owner": "API platform + security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: 5302441_webhook_endpoint_secret_metadata.sql adds secret_rotated_at/secret_expires_at; the API encrypts on write and masks on read (routes/webhook-management.ts:35-52) and sets a 90-day default expiry (:370-382,:442-448); all four dispatchers decrypt before signing (api lib/webhook-dispatcher.ts:220, worker dispatcher:134, webhook-retry:182) and dead-letter on decrypt failure instead of signing unsigned. Rotation/expiry is advisory (not enforced on delivery), which is documented.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-009",
+      "severity": "P2",
+      "title": "Webhook SSRF guard has a DNS-rebinding TOCTOU window",
+      "owner": "@owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: pinnedFetch resolves once, validates every answer, pins the validated IP and never follows redirects (apps/api/src/lib/pinned-fetch.ts:41-120; worker lib/pinned-fetch.ts:85+). Call sites: api lib/webhook-dispatcher.ts:84, routes/webhook-management.ts:594, worker tasks/webhook-dispatcher.ts:209, webhook-retry.ts:199, module-tasks.ts:616,668.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-010",
+      "severity": "P2",
+      "title": "No alerting when webhook dead-letters accumulate or payment reconciliation drifts",
+      "owner": "platform lead / security reviewer",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: infra/digitalocean/prometheus.rules.yml:219-253 (DLQ growth + failure ratio) and :348-367 (stripe reconciliation drift) remain; promtool check rules -> SUCCESS (26 rules) and test rules -> SUCCESS. Alert delivery remains unexercised and is tracked under OBS-P2-014/NOTIF-P2-011.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-011",
+      "severity": "P2",
+      "title": "Admin dead-letter retry of inline-dispatched failures no-ops and deletes the DLQ row",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/webhook-management.ts:230-245 refuses a summary-only dead letter with 409 CONFLICT and keeps the row; webhook-retry.ts:110-128 re-creates the DLQ entry with the replay-refusal reason when it later encounters a payload with no data.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P2-012",
+      "severity": "P2",
+      "title": "`webhook-retry` has no row claim: concurrent retry runs can double-send deliveries",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: worker/tasks/webhook-retry.ts:12-45 claims each row by exact-matching retry_count + next_retry_at before sending, using next_retry_at as a 5-minute lease; the batch loop skips a lost claim (:96-104).",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-001",
+      "severity": "P3",
+      "title": "Test endpoint generates a random idempotency key and never dedups",
+      "owner": "integrations/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/webhook-management.ts:556-568 derives a deterministic test-ping key, claims atomically and returns a deduplicated response; the delivery upsert is at :609-628 and releases the claim on failure.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-002",
+      "severity": "P3",
+      "title": "No committed event catalog or webhook documentation for consumers",
+      "owner": "integrations/backend + docs",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: docs/WEBHOOKS.md contains the event catalog generated from the SDK catalog; apps/api/src/__tests__/webhook-event-catalog.test.ts remains the parity gate.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-003",
+      "severity": "P3",
+      "title": "Worker queued webhook dispatcher inserts deliveries without an idempotency key",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/worker/src/tasks/webhook-dispatcher.ts:47-64 derives the key and :104-127 carries it into the claim, header and delivery row.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-004",
+      "severity": "P3",
+      "title": "Webhook raw body typed as `string` but consumed as `Buffer`",
+      "owner": "billing/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: middleware/webhook-body.ts:41-50 stores a Buffer on req.rawBody; Stripe verifies the captured bytes (routes/webhooks.ts:286-300).",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-005",
+      "severity": "P3",
+      "title": "Retried deliveries replay a body without the envelope `timestamp` (payload drift)",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: worker/tasks/webhook-retry.ts:121-145 JSON.stringifies the persisted request_body verbatim and reuses the original idempotency key.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-006",
+      "severity": "P3",
+      "title": "Delivery inserts ignore unique-key conflicts, losing the successful-attempt record",
+      "owner": "integrations/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: persistDelivery upserts on idempotency_key (apps/api/src/lib/webhook-dispatcher.ts:23-40; worker dispatcher:31-36), so a re-dispatch updates the existing row.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-007",
+      "severity": "P3",
+      "title": "Outbound webhook response bodies are read without a size cap",
+      "owner": "integrations/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: lib/pinned-fetch.ts:23-24 MAX_RESPONSE_BYTES=64KiB is enforced in the stream handler (:108-140) and the worker copy carries the same cap.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-008",
+      "severity": "P3",
+      "title": "M365 handler processes only the first notification in a batch (value[0])",
+      "owner": "integrations/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/webhooks.ts:920-982 loops over every notification in value[], verifying clientState per notification and recording processed/duplicates counts.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-009",
+      "severity": "P3",
+      "title": "No retention/cleanup for webhook_deliveries and webhook_dead_letters",
+      "owner": "platform/backend",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: retention.ts:214-230 purges webhook_deliveries (90d) and webhook_dead_letters (180d) in bounded batches with deadline abort; 5302454 adds created_at indexes; docs/modules/webhooks.md documents the windows.",
+      "area": "WH"
+    },
+    {
+      "id": "WH-P3-010",
+      "severity": "P3",
+      "title": "Provider redelivery after the dedup TTL fails permanently with 500 (unique delivery-log key not conflict-handled)",
+      "owner": "integrations/backend",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: logWebhookDelivery now detects SQLSTATE 23505 on the delivery-log insert and returns 'duplicate' instead of throwing (routes/webhooks.ts:80-110); M365 counts it as a duplicate (:969) and all providers get a 200. The TTL passed for M365 is the same 7-day replay window (:37,:957-968).",
+      "area": "WH"
+    }
+  ],
+  "report": "Read-only re-verification at 6b7aa1a5; no live webhook traffic. All 24 previous WH findings are now verified fixed: 24/24, 0 partial, 0 regressed, 0 new. The two last residuals closed in this diff: M365 now passes its 7-day replay window to storeIdempotencyKey (WH-P2-001) and logWebhookDelivery collapses a 23505 delivery-key collision to a duplicate 200 instead of a permanent 500 (WH-P3-010). Executed: promtool check rules / test rules against infra/digitalocean/prometheus.rules.yml (26 rules SUCCESS). Key code: lib/webhook-dispatcher.ts, worker/tasks/{webhook-dispatcher,webhook-retry}.ts, routes/{webhooks,webhook-management}.ts, lib/idempotency.ts, middleware/webhook-body.ts, lib/webhook-schemas.ts; migrations 5302053/5302441/5302452/5302454. Residual outside WH: alert delivery remains unexercised (OBS-P2-014/NOTIF-P2-011); webhook signing-secret rotation remains operator-advisory."
+}

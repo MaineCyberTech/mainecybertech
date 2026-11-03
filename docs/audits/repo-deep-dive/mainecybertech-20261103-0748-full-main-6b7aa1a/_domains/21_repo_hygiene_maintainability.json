@@ -1,0 +1,209 @@
+{
+  "domain": "21_repo_hygiene_maintainability",
+  "file": "21_repo_hygiene_maintainability.md",
+  "area": "HYGIENE",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T09:43:35Z",
+  "findings": [
+    {
+      "id": "HYGIENE-P2-001",
+      "severity": "P2",
+      "title": "Committed prompt/audit corpus bloats the repo and review surface",
+      "owner": "repo maintainer",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: prompts/ is 626 tracked files / 9.43 MB (manifest pins 624 files / 8.9 MiB) and scripts/verify-prompts.js:29-31 still enforces the documented 640-file / 10 MiB budget; docs/audits is now 249 files / 5.86 MB and has its own documented advisory budget (docs/audits/README.md:75-90; scripts/check-audits-budget.mjs:30-32, but it is already over the 180-file ceiling - see HYGIENE-P3-014). Externalization remains an owner decision, so the corpus is bounded but still large.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P2-002",
+      "severity": "P2",
+      "title": "Duplicate product catalogs have diverged",
+      "owner": "content owner + web/API principal engineers",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: apps/web/lib/catalog/data/products.json and apps/api/src/data/products.json are byte-identical (md5 6393792cb7447a30a59a1f60b273e7d3, 2,533,263 bytes); node scripts/sync-product-catalog.mjs check prints 'Store catalog copies in sync (2533263 bytes)' and runs in the shared unit-tests action (.github/actions/unit-tests/action.yml:193-196). The prompt-pack copies remain historical data under the provenance banner.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P2-003",
+      "severity": "P2",
+      "title": "17 tracked shell scripts lack the exec bit; documented ./scripts/... commands fail",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: git ls-files -s '*.sh' returns 31 files, all mode 100755, zero at 100644; .github/workflows/validate.yml:20-31 fails the deploy gate on any tracked shell script that is 100644.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P2-004",
+      "severity": "P2",
+      "title": "AdminDocumentsCenterClient.tsx is a 2,322-line single component",
+      "owner": "web principal engineer",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: apps/web/components/admin/AdminDocumentsCenterClient.tsx is 309 lines; the CRUD/upload/preview helpers live in apps/web/components/admin/documents/ (15 files incl. DocumentLibrary.tsx, DocumentDrawer.tsx, useAdminDocumentsCenter.ts, useAdminDocumentActions.ts, ConfirmModal.tsx, FileThumb.tsx).",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-001",
+      "severity": "P3",
+      "title": "Stale and machine-specific generated documentation",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: the machine-local path is gone - docs/MT-P0-001-RLS-remediation-design.md:5 now says Repo: 'mainecybertech-portal' (branch develop), and scripts/check-docs-links.mjs:183-195 fails any current primary doc containing C:\\ or file:///C:. Residual: the same line still names the pre-rename repository and branch, and docs/MT-P0-001-RLS-remediation-design.md is not in the PRIMARY_DOCS scan list, so the stale name is unguarded.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-002",
+      "severity": "P3",
+      "title": "Generated artifacts are inconsistently tracked",
+      "owner": "platform/supply-chain",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: licenses.json, sbom.cdx.json and sbom.spdx.json are untracked and .gitignore:65-69 ignores them; .github/actions/dependency-audit/action.yml:38-50 fails the job when any of them is committed again; the action runs in test.yml:75 (PR) and validate.yml:18 (deploy gate).",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-003",
+      "severity": "P3",
+      "title": "Dead modules and a dead component with zero references",
+      "owner": "repo maintainer + web/API leads",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: apps/web/lib/catalog/proposal-actions.ts, apps/web/lib/subnav-styles.ts and apps/web/components/store/CategoryVisualHeader.tsx remain deleted. apps/api/src/lib/feature-flags.ts is still present, documented and tested, but still has zero production call sites (grep matches only feature-flags.ts and feature-flags.test.ts), so the 'implies functionality that does not exist' half of the finding persists for that one file.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-004",
+      "severity": "P3",
+      "title": "Orphaned one-off catalog scripts and their 1.2 MB content-map pipeline",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: all seven one-off scripts (apply-content-map.js, fix-apostrophe.js, fix-cat.js, fix-everything-dupes.js, generate-details.js, generate-fulfillment.js, generate-product-content.js) and both scripts/content-map/ and scripts/content-map-fulfillment/ directories are still absent from the tree.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-005",
+      "severity": "P3",
+      "title": "Committed Python bytecode and a stale build artifact are tracked",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: git ls-files returns zero tracked .pyc/__pycache__ files; .gitignore:72-73 ignores them and verify-prompts.js:46-53 excludes them from the pin; apps/web/public/version.json is untracked and .gitignore:76 ignores it.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-006",
+      "severity": "P3",
+      "title": "Stray duplicate snippet file with local dev auth seed data",
+      "owner": "backend/data lead",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: supabase/snippets/ does not exist - the duplicate 'Untitled query 314.sql' is gone; the seed copy under supabase/seeds/ remains the single location.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-007",
+      "severity": "P3",
+      "title": "Root package script `sbom:licenses` is known-broken on the pinned pnpm",
+      "owner": "platform/supply-chain",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: package.json:27 runs node scripts/collect-licenses.mjs --out licenses.json; the broken 'pnpm licenses list --json > licenses.json' form is gone from the root script.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-008",
+      "severity": "P3",
+      "title": "scripts/README.md index is stale: 14 scripts (10 active CI guards) are undocumented",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "status": "regressed",
+      "note": "re-verified at 6b7aa1a: verified-fixed at 7dd0402, but the index has gone stale again as new scripts landed. scripts/README.md (118 lines, header 'Last updated 2026-10-21') does not mention four scripts now in the tree: check-changelog-checkbox.mjs (required PR guard, .github/actions/unit-tests/action.yml:87-90), check-bundle-budget.mjs (e2e.yml:211), exercise-storage-restore.sh (validate.yml:74 and the shellcheck action), and check-no-dotenv.sh (the pre-commit helper). Three of the four are CI-executed (check-changelog-checkbox, check-bundle-budget, exercise-storage-restore), so the index no longer answers 'what runs in CI'.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-009",
+      "severity": "P3",
+      "title": "No circular-dependency guard; one live import cycle in the worker",
+      "owner": "worker/platform engineer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: node scripts/check-circular-deps.mjs reports '0 cycles' across 1004 files / 4,119 local edges; the guard self-tests against a synthetic cycle and runs in the shared gate (.github/actions/unit-tests/action.yml:201-205).",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-010",
+      "severity": "P3",
+      "title": "Explicit `any` is lint-disabled and 63 `supabase as any` casts sit at the typed-client boundary",
+      "owner": "API principal engineer",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: zero 'supabase as any' occurrences remain in apps/api/src; @typescript-eslint/no-explicit-any is 'warn' in all three app eslint configs (apps/api/eslint.config.js:21, apps/web/eslint.config.mjs:45, apps/worker/eslint.config.js:21), so new casts are visible in review.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-011",
+      "severity": "P3",
+      "title": "AGENTS.md (120 KB) doubles as a historical changelog and is mirrored into review.md",
+      "owner": "repo maintainer",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: AGENTS.md is 407 lines / 40,533 bytes (was 1,003 lines / 120,423 bytes); the ledgers and session logs live in docs/HISTORY.md (669 lines) with a historical-data banner; review.md is 413 lines / 40,754 bytes and stays guard-synced (action.yml:182; current run: in sync).",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-012",
+      "severity": "P3",
+      "title": "Audit run layout contract is not met by the committed repo-deep-dive runs",
+      "owner": "audit/repo maintainer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: docs/audits/README.md:22-90 documents the actual repo-deep-dive layout (INDEX/EXECUTIVE_SUMMARY/RELEASE_GATE/registers/manifest/findings.json) and :92-99 the legacy manual packs; the Runs table (:101-118) lists every committed run and explicitly labels REAUDIT_REPORT_20261004.md as a report, not a run directory.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-013",
+      "severity": "P3",
+      "title": "Two Redis client libraries coexist in apps/api",
+      "owner": "API principal engineer",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: apps/api/package.json:30 declares only ioredis ^5.11.1 (the redis ^4.7.0 dependency is gone); health/cache/idempotency and the worker all use ioredis.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-014",
+      "severity": "P3",
+      "title": "docs/audits corpus grows unbounded with no size or retention policy (prompts/ is budget-guarded, audits are not)",
+      "owner": "audit/repo maintainer",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: a policy and guard now exist - docs/audits/README.md:75-90 documents a 12-run / 180-file / 7 MiB budget and scripts/check-audits-budget.mjs:30-32 implements it in the shared unit-tests action (advisory, never fails by default). But the corpus already exceeds it: 11 run directories / 249 files / 5.86 MB against 12 / 180 / 7 MiB, and no runs have been archived. Because the guard is advisory by design and the file ceiling is the one being breached, growth is still effectively unbounded unless an operator acts; this run adds another ~45 files.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-015",
+      "severity": "P3",
+      "title": "scripts/README.md lists sync-product-catalog.mjs twice",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: scripts/README.md has a single sync-product-catalog.mjs row at line 49; the duplicate at the old line 89 is gone.",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P3-016",
+      "severity": "P3",
+      "title": "docs/INDEX.md states two stale counts (11 ADRs vs 12, 75 module docs vs 74) and no guard covers them",
+      "owner": "repo maintainer + docs",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a. docs/INDEX.md:28 says 'Architecture Decision Records (11 decisions)' but docs/adr/README.md:20-31 now has 12 rows (ADR-012, Redis-backed response cache, added 2026-10-12). docs/INDEX.md:141 says 'docs/modules/ - 75 files' but the directory contains 74 markdown files and the index links exactly 74 of them. scripts/check-docs-counts.mjs does not assert either count (it only covers AGENTS.md/README/test/migration/OpenAPI/a11y counts), and docs links pass because every link target exists. Impact: the docs landing page overstates the documentation inventory; readers/agents indexing it get a phantom file and a missing ADR. Recommendation: correct both cells and add the two counts to check-docs-counts.mjs.",
+      "area": "HYGIENE"
+    }
+  ]
+}

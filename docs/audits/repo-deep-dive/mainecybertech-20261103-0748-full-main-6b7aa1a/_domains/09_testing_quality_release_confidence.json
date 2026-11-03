@@ -1,0 +1,170 @@
+{
+  "domain": "09_testing_quality_release_confidence",
+  "file": "09_testing_quality_release_confidence.md",
+  "area": "TEST",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T09:07:11Z",
+  "findings": [
+    {
+      "id": "TEST-P2-001",
+      "severity": "P2",
+      "title": "Accessibility gate width contradicts the code (docs say 19 pages, code scans 25)",
+      "owner": "web platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/web/e2e/a11y.spec.ts still defines 25 BASE_PAGES and 43 FULL_PAGES (68 with A11Y_FULL); docs/testing.md:66,125-130, docs/WEB_UI_CONVENTIONS.md:104-112, docs/CI.md:13,21 and review.md all state 25 (68 full); scripts/check-docs-counts.mjs:631-715 parses the arrays and fails CI on drift.",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P2-002",
+      "severity": "P2",
+      "title": "Worker data-mutating scan tasks still lack a dedicated test suite; branch threshold is a no-op",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/worker/src/__tests__/tasks/module-tasks.test.ts now has suites for all seven previously-uncovered handlers (backupDrCheck :205, dmarcCoachCheck :288, statusMaintenanceCheck :312, websiteMonitorCheck :338, domainMonitorCheck :445, patchComplianceCheck :521, endpointSecurityCheck :552) and apps/worker/jest.config.mjs:22-30 ratcheted the branch floor to 25 with a documented measured baseline.",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P2-003",
+      "severity": "P2",
+      "title": "E2E flakiness is documented but unresolved, and the prod-only gate masks it",
+      "owner": "web platform",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: flake instrumentation and the no-paths-filter PR trigger are intact (playwright.config.ts:11-16; scripts/e2e-flake-summary.mjs; e2e.yml:12-26), and the E2E job now runs on ubuntu-24.04 with a Supabase image cache (e2e.yml:46,87-103). Residual is worse than at the prior run: the last green E2E was 41520431521 on b2fd32a (2026-11-02T20:34Z); every run since failed at `Start Supabase` before any Playwright test executed (41522067914, 41569749520, 41590405172, 41593286318, 41598757709). E2E therefore has no current test-stability evidence, and the prod-only deploy E2E gate remains unexercised. New cache-specific failure is TEST-P2-011.",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P2-004",
+      "severity": "P2",
+      "title": "Load tests exist but are manual-only with no enforced thresholds or failure injection",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: load-test.yml still commits budgets (scripts/load-testing/budgets.js:14-33) and the failure-injection control (:180-225) that must breach the error budget; the workflow now has green runs — scheduled 41511827450 (2026-11-02) and dispatch 41515001890 (2026-11-02) both succeeded. The prior 'no run yet' residual is closed.",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P2-005",
+      "severity": "P2",
+      "title": "Orphan-cleanup tests model `storage.list` incorrectly, masking the data-loss bug",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/worker/src/__tests__/orphan-cleanup.test.ts (456 lines) still models null/absent folder ids, .emptyFolderPlaceholder, pagination, chunked reference lookups and the fail-closed paths against the hardened source (orphan-cleanup.ts:52-130,237-255).",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P2-006",
+      "severity": "P2",
+      "title": "Route suites stub authorization middleware, so new routes can regress silently",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/api/src/__tests__/route-authorization-guard.test.ts remains active — it statically scans apps/api/src/routes/*.ts and fails any mutating router without requireAuth and any non-public router without an org-access gate, with explicit allowlists; docs/testing.md documents the split.",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P2-007",
+      "severity": "P2",
+      "title": "docs/testing.md coverage-threshold table contradicts the ratcheted jest configs",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: docs/testing.md:35-43 now lists API 45/70/74/70, Web 39/39/47/47, SDK 33/38/40/40, Worker 25/15/12/12, matching the four jest configs, and scripts/check-docs-counts.mjs:182-210 parses coverageThreshold.global from each config and fails on any mismatch in the Test gate.",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P2-008",
+      "severity": "P2",
+      "title": "Test/suite totals in AGENTS.md and README are stale and never verified against the tree",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: AGENTS.md:99-106, README.md:127,222 and review.md:105-112 all state 4,674 tests / 521 suites with API 2,003 / Web 2,035 / SDK 325 / Worker 311; scripts/check-docs-counts.mjs:123-178 checks the row totals against the declared total and :740-795 compares each package row to .jest-results.json when MCT_VERIFY_TEST_COUNTS=1 (.github/actions/unit-tests/action.yml:64-69). `node scripts/check-docs-counts.mjs` passes at this commit. Residual is the missing green Test artifact (TEST-P2-010), not a count drift.",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P2-009",
+      "severity": "P2",
+      "title": "E2E is a required check on `main` but its PR path filter can leave it unreported",
+      "owner": "platform/ci",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: e2e.yml's pull_request trigger has no paths filter (header documents BP-P2-004/CI-P2-009/TEST-P2-009) and scripts/check-required-checks.mjs:17-68,241 fails if a path-filtered workflow backs a required check; the push trigger was also removed.",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P3-001",
+      "severity": "P3",
+      "title": "Visual regression is still non-blocking with a known-broken Storybook build",
+      "owner": "web platform",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: the Storybook build break is fixed in practice — Chromatic run 41598762575 on main@6b7aa1a completed success (and 41598757937 on the same develop tree), and the webpack 5.101.2 pin is committed (package.json pnpm.overrides). Still partial: Chromatic is not a required check (.github/branch-protection/main.json lists no Chromatic context), the workflow silently skips the visual diff when CHROMATIC_PROJECT_TOKEN is unset (chromatic.yml:76-88), and docs/testing.md:68 still says 'the Storybook build is currently broken'.",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P3-002",
+      "severity": "P3",
+      "title": "No scheduled production smoke check (health + login + critical read)",
+      "owner": "platform/ops",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: smoke-check.yml runs every 30 minutes plus dispatch (scripts/uptime/smoke.mjs: health, login render, authenticated read) with prod gated by SMOKE_PROD_ENABLED; scheduled runs are green on 2026-10-13 (38376858192, 38436382538, 38473820207).",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P3-003",
+      "severity": "P3",
+      "title": "Coverage thresholds remain modest and cannot be confirmed met at this SHA",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: the unit-tests composite now uploads each package's coverage output and .jest-results.json as a 14-day artifact (.github/actions/unit-tests/action.yml:34-52), so the measured percentages behind the ratcheted floors are observable from CI; the thresholds were ratcheted to just below measured (api 45/70/74/70, web 39/39/47/47, worker 25/15/12/12, sdk 33/38/40/40). Residual judgment: the worker's line/statement floors (12) are still low; the branch floor is now meaningful.",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P3-004",
+      "severity": "P3",
+      "title": "Coverage thresholds are low and E2E stability is unproven on `main`",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: thresholds remain ratcheted and coverage artifacts are uploaded, but E2E stability on this tree is unproven — the last green E2E was 41520431521 (b2fd32a, 2026-11-02T20:34Z) and every run since (41522067914, 41569749520, 41590405172, 41593286318, 41598757709) failed at Supabase start before tests. The prod deploy E2E gate is unexercised (TEST-P2-003/TEST-P2-011).",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P3-005",
+      "severity": "P3",
+      "title": "Shared packages/ui has no test runner and no lint/typecheck script",
+      "owner": "web platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: packages/ui/package.json now defines lint, typecheck, test and test:coverage scripts (jest), so turbo runs the package and Storybook stories are covered by the per-story axe scans added in a7e027a8.",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P2-010",
+      "severity": "P2",
+      "title": "Promotion PRs merge before required checks, so the promoted commit has no green Test artifact (PR #333 recurred)",
+      "owner": "release owner + repo admin",
+      "target": "this week",
+      "status": "open",
+      "note": "re-checked at 6b7aa1a5: the same bypass recurs. PR #333 'Promote develop -> main (Nov 3...)' was created 2026-11-03T07:48:21Z and merged at 07:48:23Z with 0 approving reviews; the only check-runs recorded on merge commit 6b7aa1a start 07:48:30-07:51:10 (Release, SBOM, Chromatic, CodeQL) and none of the eight required contexts in .github/branch-protection/main.json completed before the merge. The PR head/tree checks then failed: Test 41598757780 (develop@2a8b6abf) failed inside the unit-tests composite at 07:50:58, E2E 41598757709 failed at Supabase start, and the BP/CI domains record the same merge bypass and red required check. So main@6b7aa1a has no green Test/E2E artifact and the merge bypassed the declared review/check policy. Log-level detail is not available without admin access.",
+      "area": "TEST"
+    },
+    {
+      "id": "TEST-P2-011",
+      "severity": "P2",
+      "title": "E2E Supabase image cache is not a reliable cold-start path: a cache hit loads, then `supabase start` still fails before Playwright",
+      "owner": "platform/ci",
+      "target": "this month",
+      "status": "open",
+      "note": "new at 6b7aa1a5: e2e.yml:87-103 restores /tmp/supabase-images.tar and `docker load`s it on a cache hit, and only saves the tar after a successful `supabase start` (:133-140). On run 41598757709 (2026-11-03, develop tree 2a8b6abf) steps 7-8 (restore + load) both succeeded and step 10 `Start Supabase` failed, so Playwright never ran; the two prior E2E runs also failed. The fixed key `supabase-images-${runner.os}-2.107.0-v1` (:91) never invalidates when the CLI's image set changes, and the save step cannot repair an incomplete cache because it is skipped on a hit; the same job also warns that DOCKERHUB_USERNAME/DOCKERHUB_TOKEN are not provisioned, so any cache miss still falls back to the anonymous pull limit. The new ubuntu-24.04 pin (:46) is sound for WebKit, but the cache does not yet deliver a green E2E. Fix: verify every image ref the pinned CLI needs with `docker image inspect` before start, rebuild/save on a miss or partial set, bump the key with the CLI/image set, and fail the cache step loudly rather than retrying an incomplete cache. Cross-domain: the CI area records the same red required check as CI-P1-005.",
+      "area": "TEST"
+    }
+  ],
+  "report": "11 verified-fixed, 3 partially-fixed, 0 regressed, 2 open (TEST-P2-010 carried, TEST-P2-011 new); one new E2E setup failure, no prior finding regressed."
+}

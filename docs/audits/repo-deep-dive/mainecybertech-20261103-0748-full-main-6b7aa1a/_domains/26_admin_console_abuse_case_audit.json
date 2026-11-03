@@ -1,0 +1,189 @@
+{
+  "domain": "26_admin_console_abuse_case_audit",
+  "file": "26_admin_console_abuse_case_audit.md",
+  "area": "ADMIN",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T07:48:00Z",
+  "findings": [
+    {
+      "id": "ADMIN-P1-001",
+      "severity": "P1",
+      "title": "Org-agnostic `requireAdmin` lets a tenant admin read other tenants' admin data",
+      "owner": "API platform / security",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: middleware/admin.ts:22-64 pins a non-super admin when orgScope.explicit; lib/admin-scope.ts:29-75 gates allTenants on is_super_admin + cross-tenant membership; audit/dashboard/search/store consumers apply the scope predicate. The multi-org membership variant is tracked separately as MT-P1-005.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P1-002",
+      "severity": "P1",
+      "title": "Impersonation/cross-tenant access is logged but not reviewable or alerted",
+      "owner": "API platform / security",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/audit.ts:126-158 review API + :174-195 export behind allTenants; services/impersonation.ts records every cross-tenant entry; metric + Prometheus alerts remain (prometheus.rules.yml:102-120). Residual (separate row): the impersonation export is still un-audited - ADMIN-P2-001.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P1-003",
+      "severity": "P1",
+      "title": "Role assignment paths let a delegated user-manager grant cross-tenant admin roles (self-escalation)",
+      "owner": "API platform / security",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: shared assertCanAssignRole (lib/role-assignment.ts:20-42) blocks cross-tenant role grants and self-role changes on all four paths (memberships.ts:90-91,150-161; bulk.ts:65-66; organizations.ts:93; users.ts:491-492); role-assignment.test.ts.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-001",
+      "severity": "P2",
+      "title": "Sensitive admin exports are not audit-logged",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: approvals, assets, audit, domain-monitors, findings, projects, proposals, tickets and users exports still write an export audit event. Residual grew to four un-audited sensitive exports: routes/audit.ts:174-195 (/audit/impersonation/export, the most sensitive), routes/satisfaction-pulse-widget.ts:87-112, routes/dynamic-client-forms-builder.ts:86-108, and routes/client-onboarding-command-center.ts:72-107 (client names/domains).",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-002",
+      "severity": "P2",
+      "title": "Destructive deletes are inconsistently confirmation-gated and org delete is unrecoverable",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: lib/delete-confirm.ts:6-60 assertDeleteConfirmed + assertOrgDeleteConfirmed (typed slug); routes/organizations.ts:452 requires the slug on DELETE and records a cascade summary; domain deletes require confirm (:606).",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-003",
+      "severity": "P2",
+      "title": "Bulk document operations apply without a per-row preview or elevation guardrail",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/documents.ts bulk endpoints support dryRun previews with per-field diffs (:771-775, :842-844) and visibility changes require an explicit confirm:true (:849-858); bulk operations remain rate-limited + audited.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-004",
+      "severity": "P2",
+      "title": "Bulk invite creates pre-confirmed auth accounts (and org onboarding auto-approves admin)",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/bulk.ts:163 uses inviteUserByEmail (no pre-confirmed accounts); routes/organizations.ts:127-140 creates the first admin membership as pending for platform approval.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-005",
+      "severity": "P2",
+      "title": "No rate limiting specific to expensive/destructive admin operations",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: rateLimitAdminOps (middleware/rate-limit.ts:101-118) is applied to audit exports (:74,174), bulk invite (bulk.ts:44), documents bulk (documents.ts:761,822), org onboard (organizations.ts:64), org delete (organizations.ts:429) and tickets bulk (tickets.ts:613). The plain POST /organizations create is still unthrottled; that is recorded in ADMIN-P3-005 rather than reopening this row.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-006",
+      "severity": "P2",
+      "title": "No undo/soft-delete is exercised despite the schema supporting it",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: migration 5302432_drop_unused_soft_delete_columns.sql removes the unhonoured deleted_at/deleted_by columns; docs/ADMIN_FEATURES.md:451-452 and docs/ROLLBACK_PROCEDURES.md:66-82 document the hard-delete decision and operator-only recovery.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-007",
+      "severity": "P2",
+      "title": "Approval flows allow self-approval and cancellation of already-approved requests",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: services/approvals.ts:80-84 rejects self-approval and :139-142 self-rejection; :195-202 only allows cancelling pending requests.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-008",
+      "severity": "P2",
+      "title": "Destructive deletes are not consistently audit-logged",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: the previously un-audited DELETE handlers route through audited services (services/client-onboarding-command-center.ts, services/dynamic-client-forms-builder.ts) or log inline; destructive-delete-guard.test.ts fails new deletes without confirm/audit.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-009",
+      "severity": "P2",
+      "title": "Any org member can open the Stripe billing portal for their org (no billing-contact check)",
+      "owner": "Billing / API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/billing.ts:683-720 assertBillingPortalAccess requires an approved is_billing_contact membership or billing:manage (admin/super_admin bypass); enforced on POST /billing/create-portal-session (:722-740).",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P3-001",
+      "severity": "P3",
+      "title": "Web admin gate accepts a broader role set than the API `requireAdmin` (guard/API divergence)",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/web/lib/auth/admin.ts uses isCrossTenantKey from the shared @mct/sdk/role-keys module (apps/web/lib/roles.ts mirror), so the web gate and API requireAdmin accept the same role set.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P3-002",
+      "severity": "P3",
+      "title": "Active-org cookie setter performs no server-side authorization",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/web/lib/org-actions.ts:22-40 setActiveOrg verifies an approved membership (or platform admin) before writing the cookie.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P3-003",
+      "severity": "P3",
+      "title": "Admin global search and dashboard expose global resource names/counts to any admin",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/search.ts:78-260 scopes global results to the caller's orgs for non-cross-tenant admins; routes/dashboard.ts:16-50 applies applyOrgScope to every count.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P3-004",
+      "severity": "P3",
+      "title": "Global store catalog is mutable by any tenant admin",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/store/catalog.ts:175-200 pins a single-org admin's catalog writes to their org (global organization_id NULL rows require a genuine cross-tenant admin, gated by resolveAdminTenantScope); reads are org-filtered (:54-60).",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P2-010",
+      "severity": "P2",
+      "title": "Proposal client decisions can be recorded or overwritten by internal staff (no client-role or immutability check)",
+      "owner": "API platform / product",
+      "target": "this month",
+      "status": "open",
+      "note": "NEW at 6b7aa1a5: POST /proposals/:id/client-decision (apps/api/src/routes/proposals.ts:797-868) is gated only by requirePermission('proposals','edit'). It never checks isClientMember or otherwise requires a client identity, does not use the required `organizationId` body field, and unconditionally overwrites metadata.clientDecision/clientDecidedBy/clientDecisionNotes on every call while status stays 'approved'. Any internal role holding proposals:edit (admin, project-manager, technician) can therefore record a client acceptance/decline, and a second caller can flip an existing decision.",
+      "area": "ADMIN"
+    },
+    {
+      "id": "ADMIN-P3-005",
+      "severity": "P3",
+      "title": "Organization create/onboard authorization is weaker than its documented super-admin gate, and plain create is unthrottled",
+      "owner": "Platform admin / API platform",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a5: routes/organizations.ts:64 mounts only requireAdmin for onboarding, and the role check at :93 delegates to assertCanAssignRole, which returns early for every non-cross-tenant role (lib/role-assignment.ts:26-28). onboardSchema defaults adminRoleKey to 'client_admin' (validators/organization.ts:42), so the documented 'requires a platform super admin' claim at docs/ADMIN_BULK_OPERATIONS.md:76 holds only when the caller supplies a cross-tenant role. POST /organizations (organizations.ts:329) is also requireAdmin-only and has no rateLimitAdminOps, unlike /onboard.",
+      "area": "ADMIN"
+    }
+  ]
+}
