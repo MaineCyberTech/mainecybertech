@@ -1,24 +1,22 @@
 export default {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  roots: ['<rootDir>/src'],
-  testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  preset: "ts-jest",
+  testEnvironment: "node",
+  roots: ["<rootDir>/src"],
+  testMatch: ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   // NOTIF-P3-001 / NOTIF-P3-005 / EVOL-P3-005: the shared email
   // template/unsubscribe-token helpers and the shared env schema are imported
   // via subpath exports; map them to source so ts-jest compiles them
   // regardless of package-exports support.
   moduleNameMapper: {
-    '^@mct/sdk/(email-template)$': '<rootDir>/../../packages/sdk/src/$1',
-    '^@mct/config/env$': '<rootDir>/../../packages/config/src/env.ts',
+    "^@mct/sdk/(email-template)$": "<rootDir>/../../packages/sdk/src/$1",
+    "^@mct/config/env$": "<rootDir>/../../packages/config/src/env.ts",
+    // BILL-P3-010: shared Stripe subscription summary.
+    "^@mct/config/subscription$": "<rootDir>/../../packages/config/src/subscription.ts",
   },
-  setupFiles: ['<rootDir>/jest.setup.ts'],
-  globalTeardown: '<rootDir>/jest.teardown.ts',
-  collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.d.ts',
-    '!src/**/index.ts',
-  ],
+  setupFiles: ["<rootDir>/jest.setup.ts"],
+  globalTeardown: "<rootDir>/jest.teardown.ts",
+  collectCoverageFrom: ["src/**/*.ts", "!src/**/*.d.ts", "!src/**/index.ts"],
   coverageThreshold: {
     // TEST-P2-002: the module-tasks suite landed, so the branch floor is no
     // longer a no-op. Measured worker branch coverage was ~54% before the

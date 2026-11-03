@@ -1,13 +1,19 @@
 name: Third-party image scan
 
-# CTR-P3-007: the four digest-pinned third-party images in the droplet compose
-# (redis, caddy, prometheus, alertmanager) were never scanned — only the built
-# mct-* images are (build-push.yml / deploy-do.yml). A pinned digest that later
-# becomes known-vulnerable could stay deployed until a Dependabot bump landed,
-# with nothing gating it. This weekly scan resolves the refs straight from
-# infra/digitalocean/docker-compose.yml (so it always scans what the stack
-# actually pins, including a Dependabot bump) and fails on CRITICAL/HIGH with
-# an available fix, then alerts through the shared ntfy/Slack path.
+# CTR-P3-007: the five digest-pinned third-party images in the droplet compose
+# (redis, caddy, prometheus, alertmanager, node-exporter) were never scanned —
+# only the built mct-* images are (build-push.yml / deploy-do.yml). A pinned
+# digest that later becomes known-vulnerable could stay deployed until a
+# Dependabot bump landed, with nothing gating it. This weekly scan resolves the
+# refs straight from infra/digitalocean/docker-compose.yml (so it always scans
+# what the stack actually pins, including a Dependabot bump) and fails on
+# CRITICAL/HIGH with an available fix, then alerts through the shared ntfy/Slack
+# path.
+#
+# Exceptions are per-image (`.trivyignore.d/<image>`, CTR-P2-007): a CVE
+# accepted for one upstream image must not silently suppress the same CVE in
+# another. The resolver maps each ref to its file; images without an entry get
+# no ignore file and must be clean.
 #
 # NOTE: schedules only fire from the default branch, so this file must be on
 # `main` for the cron to fire there.
@@ -61,7 +67,20 @@ jobs:
             echo "::error::no digest-pinned third-party images found in infra/digitalocean/docker-compose.yml"
             exit 1
           fi
-          json=$(printf '%s\n' "$images" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          json=$(printf '%s\n' "$images" | jq -R -s -c '
+            split("\n") | map(select(length > 0)) | map(
+              . as $ref
+              | ($ref | split("@")[0] | split(":")[0] | split("/")[-1]) as $name
+              | {
+                  image: $ref,
+                  ignore: (
+                    if $name == "caddy" or $name == "alertmanager" or $name == "node-exporter"
+                    then ".trivyignore.d/" + $name
+                    else ""
+                    end
+                  )
+                }
+            )')
           echo "images=$json" >> "$GITHUB_OUTPUT"
           echo "Scanning refs:"
           printf '%s\n' "$images"
@@ -74,7 +93,7 @@ jobs:
       # Scan every ref even when one fails, so the alert lists all findings.
       fail-fast: false
       matrix:
-        image: ${{ fromJSON(needs.resolve.outputs.images) }}
+        include: ${{ fromJSON(needs.resolve.outputs.images) }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -90,8 +109,9 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: "1"
           ignore-unfixed: true
-          # Time-boxed upstream-blocked entries only; see .trivyignore.
-          trivyignores: .trivyignore
+          # Per-image upstream-blocked entries only; see .trivyignore.d/.
+          # An empty value means no exceptions for this image.
+          trivyignores: ${{ matrix.ignore }}
           format: table
 
       - name: Generate ${{ matrix.image }} SBOM (CycloneDX)
@@ -135,7 +155,7 @@ jobs:
           NTFY_PASS: ${{ secrets.NTFY_ALERTS_PASS }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          MESSAGE="❌ Third-party image scan failed — a pinned redis/caddy/prometheus/alertmanager digest has CRITICAL/HIGH findings. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          MESSAGE="❌ Third-party image scan failed — a pinned redis/caddy/prometheus/alertmanager/node-exporter digest has CRITICAL/HIGH findings. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           # Do not swallow delivery failures (DR-P2-003): the run is already
           # red, and a silent notifier is how this scan goes unnoticed.
           if [ -n "$NTFY_URL" ]; then

@@ -98,8 +98,7 @@ function makeSupabase(state: TableState, opts: MockOpts = {}) {
       const rows = state.audit_logs ?? [];
       const expired = rows.filter(
         (r) =>
-          (!r.created_at || r.created_at < cutoff) &&
-          (org === null || r.organization_id === org),
+          (!r.created_at || r.created_at < cutoff) && (org === null || r.organization_id === org),
       );
       state.audit_logs = rows.filter((r) => !expired.includes(r));
       state.audit_log_archive = [...(state.audit_log_archive ?? []), ...expired];
@@ -429,6 +428,41 @@ describe("retentionTask policy windows (DATA-P2-006)", () => {
     expect(cutoffDays).toBeLessThan(31);
   });
 
+  it("applies registry windows to store analytics and purges proposal drafts [AN-P3-007/PRIV-P2-009]", async () => {
+    const state: TableState = {
+      audit_logs: [],
+      notifications: [],
+      store_analytics_events: [
+        { id: "analytics-old", created_at: daysAgo(40) },
+        { id: "analytics-recent", created_at: daysAgo(10) },
+      ],
+      store_proposal_drafts: [
+        { id: "draft-old", created_at: daysAgo(100) },
+        { id: "draft-recent", created_at: daysAgo(10) },
+      ],
+      retention_policies: [
+        {
+          id: "p1",
+          created_at: daysAgo(1),
+          organization_id: "org-1",
+          system_name: "Store Analytics Events",
+          data_category: null,
+          retention_period_days: 30,
+        },
+      ],
+    };
+    const supabase = makeSupabase(state);
+    (createClient as unknown as jest.Mock).mockReturnValue(supabase);
+
+    const res = await retentionTask({});
+
+    expect(res.ok).toBe(true);
+    // 30-day registry window removes the 40-day analytics row.
+    expect(state.store_analytics_events.map((row) => row.id)).toEqual(["analytics-recent"]);
+    // Proposal drafts use the 90-day default and the submitter PII ages out.
+    expect(state.store_proposal_drafts.map((row) => row.id)).toEqual(["draft-recent"]);
+  });
+
   it("falls back to the built-in window when the registry read fails", async () => {
     const state: TableState = {
       audit_logs: [{ id: "audit-old", created_at: daysAgo(400) }],
@@ -526,5 +560,30 @@ describe("resolveRetentionDays (DATA-P2-006)", () => {
       matchingPolicies: 1,
     });
     expect(resolveRetentionDays("store_quotes", 90, policies).days).toBe(90);
+  });
+
+  it("resolves store analytics and proposal drafts from the registry [AN-P3-007/PRIV-P2-009]", () => {
+    const policies = [
+      {
+        system_name: "Store Analytics Events",
+        data_category: null,
+        retention_period_days: 30,
+      },
+      {
+        system_name: null,
+        data_category: "Store Proposal Drafts",
+        retention_period_days: 45,
+      },
+    ];
+    expect(resolveRetentionDays("store_analytics_events", 90, policies)).toEqual({
+      days: 30,
+      source: "policy",
+      matchingPolicies: 1,
+    });
+    expect(resolveRetentionDays("store_proposal_drafts", 90, policies)).toEqual({
+      days: 45,
+      source: "policy",
+      matchingPolicies: 1,
+    });
   });
 });

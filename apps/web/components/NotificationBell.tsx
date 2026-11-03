@@ -8,6 +8,7 @@ import { formatDateTime } from "@/lib/format";
 import { notificationHref } from "@/lib/notification-links";
 
 const MODULES = ["tickets", "projects", "documents", "billing", "system"] as const;
+const GLOBAL_MODULE = "all";
 
 type NotificationItem = {
   id: string;
@@ -201,6 +202,9 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
         ? result
         : ((result as { preferences?: NotificationPreference[] }).preferences ?? []);
       const map: Record<string, boolean> = {};
+      // NOTIF-P2-013: the one-click unsubscribe row suppresses every module.
+      const globalRow = rows.find((r) => r.module_key === GLOBAL_MODULE && r.channel === "email");
+      map[GLOBAL_MODULE] = globalRow ? (globalRow.enabled ?? true) : true;
       for (const m of MODULES) {
         const row = rows.find((r) => r.module_key === m && r.channel === "email");
         map[m] = row ? (row.enabled ?? true) : true;
@@ -299,7 +303,10 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
           />
         </svg>
         {unread > 0 ? (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+          <span
+            aria-hidden="true"
+            className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white"
+          >
             {unread > 99 ? "99+" : unread}
           </span>
         ) : null}
@@ -410,28 +417,51 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
               <p className="mt-2 text-xs text-slate-400">Loading...</p>
             ) : (
               <div className="mt-2 space-y-1">
-                {MODULES.map((m) => (
-                  <label
-                    key={m}
-                    className="flex items-center justify-between rounded px-1 py-1 transition hover:bg-white/[0.02]"
+                <label className="flex items-center justify-between rounded px-1 py-1 transition hover:bg-white/[0.02]">
+                  <span className="text-xs font-medium text-slate-200">All email</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={prefs[GLOBAL_MODULE] ?? true}
+                    aria-label="Email notifications for all modules"
+                    onClick={() => handleTogglePref(GLOBAL_MODULE, !(prefs[GLOBAL_MODULE] ?? true))}
+                    className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${(prefs[GLOBAL_MODULE] ?? true) ? "bg-emerald-600" : "bg-white/10"}`}
                   >
-                    <span className="text-xs capitalize text-slate-300">
-                      {m === "system" ? "System" : m}
-                    </span>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={prefs[m] ?? true}
-                      aria-label={`${m === "system" ? "System" : m} notifications`}
-                      onClick={() => handleTogglePref(m, !(prefs[m] ?? true))}
-                      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${(prefs[m] ?? true) ? "bg-emerald-600" : "bg-white/10"}`}
+                    <span
+                      className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${(prefs[GLOBAL_MODULE] ?? true) ? "translate-x-4" : "translate-x-0"}`}
+                    />
+                  </button>
+                </label>
+                {MODULES.map((m) => {
+                  const globalEmail = prefs[GLOBAL_MODULE] ?? true;
+                  const enabled = globalEmail && (prefs[m] ?? true);
+                  return (
+                    <label
+                      key={m}
+                      className="flex items-center justify-between rounded px-1 py-1 transition hover:bg-white/[0.02]"
                     >
-                      <span
-                        className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${(prefs[m] ?? true) ? "translate-x-4" : "translate-x-0"}`}
-                      />
-                    </button>
-                  </label>
-                ))}
+                      <span className="text-xs capitalize text-slate-300">
+                        {m === "system" ? "System" : m}
+                      </span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={enabled}
+                        aria-label={`${m === "system" ? "System" : m} notifications`}
+                        disabled={!globalEmail}
+                        title={
+                          globalEmail ? undefined : "Re-enable All email to change per-module email"
+                        }
+                        onClick={() => handleTogglePref(m, !(prefs[m] ?? true))}
+                        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${enabled ? "bg-emerald-600" : "bg-white/10"} ${!globalEmail ? "cursor-not-allowed opacity-50" : ""}`}
+                      >
+                        <span
+                          className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${enabled ? "translate-x-4" : "translate-x-0"}`}
+                        />
+                      </button>
+                    </label>
+                  );
+                })}
               </div>
             )}
             {prefError ? (

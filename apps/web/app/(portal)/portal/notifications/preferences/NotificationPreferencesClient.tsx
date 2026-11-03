@@ -19,6 +19,8 @@ const MODULES = [
   { key: "system", label: "System" },
 ];
 
+const GLOBAL_MODULE = "all";
+
 const CHANNELS = [
   { key: "email", label: "Email" },
   { key: "in_app", label: "In-App" },
@@ -72,6 +74,16 @@ export default function NotificationPreferencesClient() {
     return pref ? pref.enabled : true;
   }
 
+  // NOTIF-P2-013: the unsubscribe link writes module_key='all'. It suppresses
+  // every module's email, so surface it as its own switch and reflect it in
+  // the per-module rows.
+  const globalEmailEnabled = isEnabled(GLOBAL_MODULE, "email");
+
+  function isEffectivelyEnabled(moduleKey: string, channel: string): boolean {
+    const own = isEnabled(moduleKey, channel);
+    return channel === "email" ? globalEmailEnabled && own : own;
+  }
+
   async function toggle(moduleKey: string, channel: string) {
     const current = isEnabled(moduleKey, channel);
     setPreferences((prev) => {
@@ -91,13 +103,17 @@ export default function NotificationPreferencesClient() {
     setSaved(false);
     setError(null);
 
-    const prefsPayload = MODULES.flatMap((m) =>
-      CHANNELS.map((c) => ({
-        moduleKey: m.key,
-        channel: c.key,
-        enabled: isEnabled(m.key, c.key),
-      })),
-    );
+    const prefsPayload = [
+      ...MODULES.flatMap((m) =>
+        CHANNELS.map((c) => ({
+          moduleKey: m.key,
+          channel: c.key,
+          enabled: isEnabled(m.key, c.key),
+        })),
+      ),
+      // Persist the global row so re-enabling clears the one-click unsubscribe.
+      { moduleKey: GLOBAL_MODULE, channel: "email", enabled: globalEmailEnabled },
+    ];
 
     try {
       await getClientApi().notifications.updatePreferences({ preferences: prefsPayload });
@@ -151,6 +167,32 @@ export default function NotificationPreferencesClient() {
         </div>
       ) : null}
 
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+        <div>
+          <p className="text-sm font-medium text-slate-200">Email notifications (all modules)</p>
+          <p className="mt-1 text-xs text-slate-400">
+            {globalEmailEnabled
+              ? "Email is enabled. Use the switches below to opt out of individual modules."
+              : "Email is paused for every module because you used the one-click unsubscribe link. Turn this on to re-enable email."}
+          </p>
+        </div>
+        <button
+          onClick={() => toggle(GLOBAL_MODULE, "email")}
+          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition ${
+            globalEmailEnabled ? "bg-emerald-600" : "bg-slate-700"
+          }`}
+          role="switch"
+          aria-checked={globalEmailEnabled}
+          aria-label="Email notifications for all modules"
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+              globalEmailEnabled ? "translate-x-6" : "translate-x-1"
+            }`}
+          />
+        </button>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
@@ -180,14 +222,21 @@ export default function NotificationPreferencesClient() {
                   {m.label}
                 </td>
                 {CHANNELS.map((c) => {
-                  const enabled = isEnabled(m.key, c.key);
+                  const enabled = isEffectivelyEnabled(m.key, c.key);
+                  const blockedByGlobal = c.key === "email" && !globalEmailEnabled;
                   return (
                     <td key={c.key} className="px-4 py-3 text-center">
                       <button
                         onClick={() => toggle(m.key, c.key)}
+                        disabled={blockedByGlobal}
+                        title={
+                          blockedByGlobal
+                            ? "Re-enable the global email switch above to change per-module email"
+                            : undefined
+                        }
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
                           enabled ? "bg-emerald-600" : "bg-slate-700"
-                        }`}
+                        } ${blockedByGlobal ? "cursor-not-allowed opacity-50" : ""}`}
                         role="switch"
                         aria-checked={enabled}
                       >
@@ -213,10 +262,10 @@ export default function NotificationPreferencesClient() {
       </div>
 
       <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-xs text-slate-400">
-        Preferences control whether new notifications are sent to each channel. Changes take
-        effect when you click Save Preferences. In-app notifications appear in the bell icon in the
-        header. Email notifications require SMTP to be configured on the server. Push notifications
-        require enabling browser push below.
+        Preferences control whether new notifications are sent to each channel. Changes take effect
+        when you click Save Preferences. In-app notifications appear in the bell icon in the header.
+        Email notifications require SMTP to be configured on the server. Push notifications require
+        enabling browser push below.
       </div>
     </div>
   );

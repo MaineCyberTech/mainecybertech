@@ -1,0 +1,290 @@
+{
+  "domain": "14_observability_monitoring_incident_readiness",
+  "file": "14_observability_monitoring_incident_readiness.md",
+  "area": "OBS",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T09:07:11Z",
+  "findings": [
+    {
+      "id": "OBS-P0-001",
+      "severity": "P0",
+      "title": "Total loss of the monitoring/alerting path has no independent dead-man's-switch receiver",
+      "owner": "platform lead / security reviewer",
+      "target": "immediate / release blocking",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: the Watchdog rule, dedicated receiver and fail-closed prod deploy guard remain (alertmanager.tmpl.yml:87-100,147-152; deploy-do.yml:856-863), but the external heartbeat URL is still unset (docs/INCIDENT_RESPONSE.md:158; docs/DATA_BREACH_RESPONSE.md:149) and the first scheduled alert-path exercise (41323651243, 2026-11-01) failed. The dead-man's switch is still 'configured, not provisioned'.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P1-001",
+      "severity": "P1",
+      "title": "No runtime detection or alerting for tenant-isolation (RLS) regressions",
+      "owner": "API platform / security",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: portal_rls_bypass_total/portal_rls_enforced_total are emitted from services/supabase.ts and alerted by MCTTenantScopeRegression and MCTRlsEnforcedShareCollapsed (prometheus.rules.yml:162-215), with promtool unit tests wired into CI via .github/actions/prometheus-rules (test.yml:52, validate.yml:50).",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-001",
+      "severity": "P2",
+      "title": "Prometheus alert rules are not routed anywhere",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: prometheus.yml forwards to alertmanager:9093, the alertmanager service is defined with a healthcheck, and the routing tree sends critical/default/Watchdog to ntfy-backed receivers (alertmanager.tmpl.yml:55-152); RELEASE_GATE still lists a synthetic delivery as an operator exit condition, now covered by the alert-path-exercise workflow.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-002",
+      "severity": "P2",
+      "title": "No committed dashboards or SLO/error-budget definitions",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: infra/digitalocean/dashboards/mct-overview.json and docs/SLO.md exist; SLO.md now lists six objectives with PromQL and maps each to a live alert rule (MCTHighRequestErrorRate, MCTNotificationDeliveryFailureRateHigh, MCTWorkerTaskFailures/DeadLettered, MCTRlsEnforcedShareCollapsed) and documents the error-budget policy.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-003",
+      "severity": "P2",
+      "title": "Backup/restore is scheduled but not verified on the deployed branch",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: the workflows and their notifiers exist on main and the staleness check (backup-staleness-check.yml) plus the worker heartbeat alert (MCTWorkerTaskFailures) now cover the gap independently; still partially fixed because no backup/restore run has ever succeeded (DR-P0-001) — the latest db-backup (2026-10-13) and db-restore-test (2026-10-12) runs are red and docs/RELEASE_GATE.md:69 keeps the exit condition open.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-004",
+      "severity": "P2",
+      "title": "Several Prometheus metrics are declared but not wired, limiting incident diagnosis",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: the previously unwired metrics all have live call sites and the worker's task/queue/notification/stripe metrics are wired (apps/worker/src/metrics.ts, task-registry.ts); docs/MONITORING_AND_ALERTING.md and docs/SLO.md were reconciled to the wired set (OBS-P3-007).",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-005",
+      "severity": "P2",
+      "title": "No alerting on audit-trail gaps or privileged (impersonation/admin) abuse",
+      "owner": "API platform / security",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: privileged abuse is now covered (portal_impersonation_events_total drives MCTImpersonationBurst and MCTImpersonationActivity, prometheus.rules.yml:102-130, with the admin impersonation review surface); the audit-trail-gap half is still absent — there is no metric or rule for audit-write failures, missing rows, or export gaps (grep of apps/api/src/lib/metrics.ts and prometheus.rules.yml finds none).",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-006",
+      "severity": "P2",
+      "title": "No alerting when webhook dead-letters accumulate or payment reconciliation drifts",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: MCTWebhookDeadLettersAccumulating (prometheus.rules.yml:217-228, API+worker counters) and MCTStripeReconcileDrift (:360-368) exist; stripe-reconcile.ts:190-191 increments worker_stripe_reconcile_drift_total per drift kind (metrics.ts:205), and MCTWebhookDeliveryFailureRateHigh covers the sustained-failure case.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-007",
+      "severity": "P2",
+      "title": "`/health` publicly discloses provider configuration and Redis errors",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: the public /health response is minimal and dependency detail lives on the token-gated /health/detail (apps/api/src/routes/health.ts; docs/MONITORING_AND_ALERTING.md:82-138 documents the split and the 404-without-token behavior).",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-008",
+      "severity": "P2",
+      "title": "Availability detection lives inside the failed domain; no external dead-man's switch or alert delivery",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: off-box watchdog receiver + fail-closed prod guard + external ntfy delivery for backup/uptime failures exist; the same control set is re-assessed (unexercised) under OBS-P0-001/IR-P0-003. The detector now also includes an external uptime probe (external-uptime-probe.yml), see OBS-P2-016/OBS-P2-017.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-009",
+      "severity": "P2",
+      "title": "Most golden-signal and SLO metrics have no alert rules (latency, circuit breaker, auth failures, notification/webhook failures, worker jobs, queue depth)",
+      "owner": "platform/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: the rules file now has 23 alerts covering latency (MCTHighRequestLatency), breaker state (MCTCircuitBreakerOpen), auth failures (MCTAuthFailureRateHigh), notification/webhook delivery (MCTNotificationDeliveryFailureRateHigh, MCTWebhookDeliveryFailureRateHigh, MCTNotificationEmailSkipped), worker jobs/DLQ (MCTWorkerTaskFailures, MCTWorkerTaskDeadLettered), queue depth/growth/disconnect (MCTWorkerQueueBacklog, BacklogGrowing, Disconnected), Redis degradation and Stripe drift.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-010",
+      "severity": "P2",
+      "title": "HTTP metric labels use the raw request path, creating unbounded Prometheus series cardinality",
+      "owner": "API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: request-id.ts labels metrics with the matched Express route template (routeLabel: req.route.path + req.baseUrl) and collapses unmatched requests into one 'unmatched' bucket; commit d9911286.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-011",
+      "severity": "P2",
+      "title": "Web error tracking is silently disabled in production (code reads NEXT_PUBLIC_SENTRY_DSN; deploy provides SENTRY_DSN)",
+      "owner": "web platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: the web Sentry configs resolve the DSN with a fallback to SENTRY_DSN (sentry.server.config.ts / sentry.edge.config.ts / instrumentation-client.ts), the deploy forwards both NEXT_PUBLIC_SENTRY_DSN and SENTRY_DSN (deploy-do.yml:740) and the build passes the public DSN; commit d9911286.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-012",
+      "severity": "P2",
+      "title": "Alerting configuration is not validated in CI and the deploy health gate ignores Prometheus/Alertmanager",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: promtool check rules + unit tests run in CI through .github/actions/prometheus-rules (test.yml:48-52, validate.yml:47-50); the deploy gate asserts every healthchecked service including prometheus and alertmanager (deploy-do.yml:1056-1085) and alertmanager has a healthcheck.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-013",
+      "severity": "P2",
+      "title": "Empty METRICS_TOKEN has no deploy guard and is documented as optional; it breaks the API scrape and fires a false service-down alert",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: deploy-do.yml:818-834 fails a prod deploy when METRICS_TOKEN is empty (dev warns), checks before writing the credentials file, and the docs/matrix now describe the token as required for the scrape; commit e6711ee7.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-014",
+      "severity": "P2",
+      "title": "Alert delivery and the dead-man's switch are configured but never exercised end-to-end; no monitoring-of-monitoring rules",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: the exercise tooling exists (alert-path-exercise.yml monthly + dispatch; scripts/exercise-alert-path.sh; docs/ALERT_PATH_EXERCISE.md) and now has one run — 41323651243 on 2026-11-01 — but that run failed (the Actions is:success search returns no results) at \"Exercise alert delivery on the droplet\" (exit 1) and the evidence table at docs/ALERT_PATH_EXERCISE.md:104-110 still says 'none recorded yet'. The manual missed-heartbeat drill remains blocked on the unset watchdog URL (OBS-P0-001). Alert delivery is still not proven end-to-end. Cross-domain: IR-P2-011 records the incident-readiness impact of the same failed run.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-015",
+      "severity": "P2",
+      "title": "Container logs are not persisted off-box and are destroyed by the deploy's `compose down`",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: the deploy now snapshots the stack's logs (gzipped, last 7 kept) before the rolling recreate (deploy-do.yml:952-962) and no longer runs `compose down` on the success path, so deploy-destroyed logs are recoverable on-box. Still partially fixed: there is no off-box log shipping — docs/MONITORING_AND_ALERTING.md still lists central forwarding as future, so a droplet loss loses all logs.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-016",
+      "severity": "P2",
+      "title": "No repository evidence of external uptime checks for platform endpoints; an edge/proxy failure is undetected in-stack",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: external-uptime-probe.yml runs hourly from outside the droplet against scripts/uptime/probe-targets.json with status/latency budgets and fail-loud ntfy/Slack notification (eeb8b3ce); smoke-check.yml additionally exercises login + an authenticated read every 30 minutes (runs green on 2026-10-13). Residual (target noise/docs) is split into the new OBS-P2-017.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P3-001",
+      "severity": "P3",
+      "title": "Incident runbooks/tabletop evidence is partial",
+      "owner": "platform lead",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: the broken references are fixed — docs/INCIDENT_TABLETOP_SCENARIOS.md, docs/INCIDENT_TABLETOP_DRYRUN_2026-10-11.md and docs/runbooks/tabletop-exercise-planner.md exist, and INCIDENT_RESPONSE.md:148-168 now states Alertmanager is deployed and IR-P0-003 is partially fixed. Still partial: no live/human tabletop has been facilitated (the dry-run is desk-only with the reviewer placeholder), every PLATFORM_FAILURE_RUNBOOKS drill row is still `_pending_`, and the rota is unassigned.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P3-002",
+      "severity": "P3",
+      "title": "Monitoring doc and health endpoint disagree on check semantics; Redis severity undocumented in alerts",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: docs/MONITORING_AND_ALERTING.md:82-138 now documents /health vs token-gated /health/detail, the provider checks, the Redis-is-degradation-never-outage semantics with the exact alert rules, and the worker's 503-on-queue-loss behavior — matching the code.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P3-003",
+      "severity": "P3",
+      "title": "`/metrics` is fully public when `METRICS_TOKEN` is unset",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: the API returns 404 without a configured+presented bearer token (routes/health.ts, app.ts), the worker /metrics gate fails closed (health-server.ts:46-58) and Caddy also 404s the path.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P3-004",
+      "severity": "P3",
+      "title": "API/worker Sentry release markers are not delivered (no SENTRY_RELEASE/GIT_SHA)",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: the deploy sets SENTRY_RELEASE from the deployed ref (deploy-do.yml:666,770) and passes it into the api/worker containers (docker-compose.yml:93-95,172,252), where Sentry reads env.SENTRY_RELEASE with a GIT_SHA fallback; commit 10d2d172.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P3-005",
+      "severity": "P3",
+      "title": "Alertmanager secret provisioning gaps: matrix omits ALERTMANAGER_*; awk renderer breaks on '&' or backslash in values",
+      "owner": "platform/ops",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: the renderer was replaced with infra/digitalocean/render-alertmanager.awk (index/substr substitution + YAML escaping, no gsub metacharacters), it is bind-mounted and copied by the deploy, and the ALERTMANAGER_*/NTFY_ALERTS_* names are documented in docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:117-126,161-175.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P3-006",
+      "severity": "P3",
+      "title": "Metrics rate limiter leaves almost no headroom for the 15s scrape (max 5/min vs 4/min)",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: rateLimitMetrics now allows 12/min (3x the 15s scrape rate) and still skips loopback (apps/api/src/middleware/rate-limit.ts:165-179).",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P3-007",
+      "severity": "P3",
+      "title": "SLO and monitoring docs drift from implemented metrics and alert rules",
+      "owner": "platform/ops",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: docs/SLO.md now maps every objective to a real rule and documents the worker metrics/queue alerts; docs/MONITORING_AND_ALERTING.md's metric table matches the wired set and documents the new uptime/smoke checks, the backup staleness signal and the Sentry release markers (commit 10d2d172).",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P2-017",
+      "severity": "P2",
+      "title": "External uptime probe is permanently red on api.mainecybertech.com while the API answers on app.mainecybertech.com/api, and the docs disagree on why",
+      "owner": "platform/ops",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: scripts/uptime/probe-targets.json:15-20 now probes https://app.mainecybertech.com/api/v1/store/products (200, 3000 ms) instead of the dead api.mainecybertech.com/health, and docs/MONITORING_AND_ALERTING.md:184-193 documents the topology. external-uptime-probe runs are green on 2026-11-01/02/03 (e.g. 41561295979, 41501856843, 41408537623). Residual: the api.mainecybertech.com DNS record is still operator work, and the prod deploy gate still uses that host — raised separately as OBS-P1-002.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P1-002",
+      "severity": "P1",
+      "title": "Prod deploy health gate still probes api.mainecybertech.com/health, which the repo docs say returns 404",
+      "owner": "platform/ops",
+      "target": "this week",
+      "status": "open",
+      "note": "new at 6b7aa1a5: deploy-do.yml:1155 polls `https://$API_DOMAIN/health` and exits 1 after 30 attempts; for prod, API_DOMAIN is api.mainecybertech.com (deploy-do.yml:92-93). docs/MONITORING_AND_ALERTING.md:184-193 states that hostname resolves to a retired non-droplet endpoint that answers 404 for every path, and that the same 404 'also fails the prod deploy's public API gate'. The API actually answers through app.mainecybertech.com/api/v1/*. The uptime probe was moved off the dead host (OBS-P2-017), but the deploy gate was not, so the first real prod deploy will fail the health gate after updating containers. Fix: probe the app-host API path (or add a Caddy-served api host), assert the expected JSON/status rather than only 200, and keep a direct container health check as the authoritative gate.",
+      "area": "OBS"
+    },
+    {
+      "id": "OBS-P3-008",
+      "severity": "P3",
+      "title": "Host-metrics exporter is outside service-down alerting and its healthcheck only runs the binary",
+      "owner": "platform/ops",
+      "target": "this quarter",
+      "status": "open",
+      "note": "new at 6b7aa1a5: node-exporter was added (infra/digitalocean/docker-compose.yml:271-300) and scraped (prometheus.yml:47-53), but MCTServiceDown only matches up{job=~\"mct-api|mct-worker\"} (prometheus.rules.yml:11-19). There is no rule for up{job=\"node-exporter\"} (or for prometheus/alertmanager), so a dead exporter silently stops the new disk/memory alerts. The container healthcheck runs `/bin/node_exporter --version` (compose:297-300), which succeeds from a spawned process even if the HTTP listener is wedged, and deploy-do now gates node-exporter health (deploy-do.yml:1067). Fix: add MCTNodeExporterDown (up{job=\"node-exporter\"} == 0 for 5m) with a promtool case, and either use an HTTP-capable healthcheck sidecar or drop the misleading healthcheck and rely on the up rule.",
+      "area": "OBS"
+    }
+  ],
+  "report": "20 verified-fixed, 6 partially-fixed, 0 regressed, 2 open (OBS-P1-002 and OBS-P3-008 new); OBS-P2-017 fixed by retargeting the uptime probe, the prod deploy gate on the dead API host is the new P1."
+}

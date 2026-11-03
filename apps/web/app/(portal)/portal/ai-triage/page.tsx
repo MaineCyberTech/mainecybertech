@@ -40,7 +40,8 @@ export default async function AiTriagePage() {
       {loadFailed ? <DataErrorNote what="ai-triage" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">AI Triage</h1>
       <p className="text-sm text-slate-400">
-        {items.length} triage record{items.length !== 1 ? "s" : ""} for your organization.
+        {items.length} triage record{items.length !== 1 ? "s" : ""} in this view (most recent
+        first).
       </p>
       <PortalTriageClient organizationId={orgId} />
       <h2 className="text-lg font-medium text-slate-50">Recent triage records</h2>

@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 /**
- * 42P10 regression guard (migration 5302463).
+ * 42P10 regression guard (migration 5302464).
  *
  * The in-app notification dedup path upserts with
  * `onConflict: "notification_key"` in both the API (`src/lib/notify.ts`) and
@@ -12,7 +12,7 @@ import path from "path";
  * chain must end with a full unique index on `notification_key` and the call
  * sites must keep targeting that column. 5302107 created the index WITH a
  * `where notification_key is not null` predicate, which made every deduped
- * insert fail on the deployed environment; 5302463 replaces it.
+ * insert fail on the deployed environment; 5302464 replaces it.
  */
 
 const MIGRATIONS = path.join(__dirname, "..", "..", "..", "..", "supabase", "migrations");
@@ -58,7 +58,7 @@ describe("notifications dedup index (ON CONFLICT notification_key)", () => {
 
   it("ends as a non-partial unique index on notification_key", () => {
     const latest = indexes[indexes.length - 1];
-    expect(latest.file).toBe("5302463_fix_notification_key_dedup_index.sql");
+    expect(latest.file).toBe("5302464_fix_notification_key_dedup_index.sql");
     expect(latest.statement).toContain("unique index");
     expect(latest.statement).toContain("notification_key");
     expect(latest.statement).not.toMatch(/\bwhere\b/);

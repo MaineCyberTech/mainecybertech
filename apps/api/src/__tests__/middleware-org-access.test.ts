@@ -65,6 +65,7 @@ function mockSupabase(
     membershipRow?: Record<string, unknown> | null;
     allMemberships?: Array<Record<string, unknown>>;
     primaryMembership?: Record<string, unknown> | null;
+    profile?: Record<string, unknown> | null;
     error?: unknown;
   } = {},
 ) {
@@ -98,12 +99,18 @@ function mockSupabase(
     opts.membershipRow ?? (opts.primaryMembership ? [opts.primaryMembership] : null);
   // Call 2: checkOrgAccess all memberships (admin fallback)
   const call2Data = opts.allMemberships ?? [];
-  // Call 3: not used in current test patterns
+  let membershipCalls = 0;
 
-  let callCount = 0;
-  mock.from.mockImplementation(() => {
-    callCount++;
-    if (callCount === 1)
+  mock.from.mockImplementation((table: string) => {
+    if (table === "profiles") {
+      return {
+        select: jest
+          .fn()
+          .mockReturnValue(makeSelectChain(opts.profile ?? { is_super_admin: false })),
+      };
+    }
+    membershipCalls++;
+    if (membershipCalls === 1)
       return { select: jest.fn().mockReturnValue(makeSelectChain(call1Data, opts.error)) };
     return { select: jest.fn().mockReturnValue(makeSelectChain(call2Data)) };
   });
@@ -291,12 +298,13 @@ describe("requireOrgAccess middleware", () => {
       expect(req.query.organization_id).toBe("00000000-0000-0000-0000-000000000001");
     });
 
-    it("does NOT inject a default org for platform admins (sees all tenants)", async () => {
+    it("does NOT inject a default org for genuine platform admins (sees all tenants)", async () => {
       mockSupabase({
         primaryMembership: {
           organization_id: "00000000-0000-0000-0000-000000000001",
           roles: { key: "super_admin" },
         },
+        profile: { is_super_admin: true },
       });
       const next = jest.fn();
       const req = mockReq({ userId: "user-1" });
@@ -342,22 +350,67 @@ describe("requireOrgAccess middleware", () => {
       }
     });
 
-    it("DOES give admin/super_admin cross-tenant reach (impersonation, audited)", async () => {
-      for (const key of ["admin", "super_admin"]) {
-        jest.clearAllMocks();
-        mockSupabase({
-          primaryMembership: {
-            organization_id: "00000000-0000-0000-0000-000000000001",
-            roles: { key },
-          },
-        });
-        const next = jest.fn();
-        const req = mockReq({ userId: "user-1" });
-        await requireOrgAccess(req, mockRes(), next);
-        expect(next).toHaveBeenCalledWith();
-        expect(req.query.organization_id).toBeUndefined();
-        expect((req as any).orgAccessPlatformAdmin).toBe(true);
-      }
+    it("pins a tenant admin to an admin org even when they are a client elsewhere (MT-P1-005)", async () => {
+      const ORG_A = "00000000-0000-0000-0000-00000000000a";
+      const ORG_B = "00000000-0000-0000-0000-00000000000b";
+      mockSupabase({
+        primaryMembership: {
+          organization_id: ORG_A,
+          roles: { key: "admin" },
+        },
+        allMemberships: [
+          { organization_id: ORG_A, roles: { key: "admin" } },
+          { organization_id: ORG_B, roles: { key: "client_user" } },
+        ],
+      });
+      const next = jest.fn();
+      const req = mockReq({ userId: "user-1" });
+
+      await requireOrgAccess(req, mockRes(), next);
+
+      expect(next).toHaveBeenCalledWith();
+      // Pinned to the admin org, never left org-agnostic (which previously
+      // exposed org B's audit/dashboard/search to the tenant admin).
+      expect(req.query.organization_id).toBe(ORG_A);
+      expect((req as any).orgAccessPlatformAdmin).toBe(false);
+      expect(req.orgScope).toMatchObject({
+        orgId: ORG_A,
+        platformAdmin: false,
+        explicit: false,
+      });
+    });
+
+    it("ONLY gives a genuine super_admin (profile flag + role) cross-tenant reach", async () => {
+      mockSupabase({
+        primaryMembership: {
+          organization_id: "00000000-0000-0000-0000-000000000001",
+          roles: { key: "super_admin" },
+        },
+        profile: { is_super_admin: true },
+      });
+      const next = jest.fn();
+      const req = mockReq({ userId: "user-1" });
+      await requireOrgAccess(req, mockRes(), next);
+      expect(next).toHaveBeenCalledWith();
+      expect(req.query.organization_id).toBeUndefined();
+      expect((req as any).orgAccessPlatformAdmin).toBe(true);
+    });
+
+    it("does not leave a tenant admin org-agnostic when no org is given", async () => {
+      mockSupabase({
+        primaryMembership: {
+          organization_id: "00000000-0000-0000-0000-000000000001",
+          roles: { key: "admin" },
+        },
+      });
+      const next = jest.fn();
+      const req = mockReq({ userId: "user-1" });
+
+      await requireOrgAccess(req, mockRes(), next);
+
+      expect(next).toHaveBeenCalledWith();
+      expect(req.query.organization_id).toBe("00000000-0000-0000-0000-000000000001");
+      expect((req as any).orgAccessPlatformAdmin).toBe(false);
     });
 
     it("does NOT treat client roles as platform admins", async () => {
@@ -377,7 +430,7 @@ describe("requireOrgAccess middleware", () => {
         expect((req as any).orgAccessPlatformAdmin).toBe(false);
       }
     });
-    it("treats an admin-role membership as platform admin when no org is given", async () => {
+    it("pins an admin-role membership when no org is given", async () => {
       mockSupabase({
         primaryMembership: {
           organization_id: "00000000-0000-0000-0000-000000000001",
@@ -390,8 +443,8 @@ describe("requireOrgAccess middleware", () => {
       await requireOrgAccess(req, mockRes(), next);
 
       expect(next).toHaveBeenCalledWith();
-      expect(req.query.organization_id).toBeUndefined();
-      expect((req as any).orgAccessPlatformAdmin).toBe(true);
+      expect(req.query.organization_id).toBe("00000000-0000-0000-0000-000000000001");
+      expect((req as any).orgAccessPlatformAdmin).toBe(false);
     });
 
     it("returns 403 when user has no approved memberships", async () => {
@@ -638,9 +691,10 @@ describe("req.orgScope population (QW-1)", () => {
     });
   });
 
-  it("requireOrgAccess leaves orgId null + platformAdmin for an un-pinned platform admin", async () => {
+  it("requireOrgAccess leaves orgId null + platformAdmin for an un-pinned genuine platform admin", async () => {
     mockSupabase({
       primaryMembership: { organization_id: "x", roles: { key: "super_admin" } },
+      profile: { is_super_admin: true },
     });
     const next = jest.fn();
     const req = mockReq({ userId: "user-1" });

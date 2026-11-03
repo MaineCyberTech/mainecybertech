@@ -7,7 +7,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccessByParam } from "../middleware/org-access";
 import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
-import { requireAdmin } from "../middleware/admin";
+import { requireAdmin, requirePlatformSuperAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
 import { rateLimitAdminOps } from "../middleware/rate-limit";
 import { clearPermissionCache } from "../lib/permissions";
@@ -21,7 +21,6 @@ import {
 } from "../validators/organization";
 import { queryInt } from "../lib/query";
 import { recordOrganizationCreated } from "../lib/metrics";
-import { assertCanAssignRole } from "../lib/role-assignment";
 import { assertDeleteConfirmed, assertOrgDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
 
@@ -61,186 +60,200 @@ const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
 
-router.post("/onboard", rateLimitAdminOps, requireAdmin, async (req, res, next) => {
-  try {
-    const parsed = onboardSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+// ADMIN-P3-005: tenant creation/onboarding is a platform super-admin action
+// regardless of the role key being assigned. `requirePlatformSuperAdmin`
+// enforces that explicitly instead of relying on `assertCanAssignRole`, which
+// deliberately allows non-super-admins to assign tenant-scoped roles.
+router.post(
+  "/onboard",
+  rateLimitAdminOps,
+  requireAdmin,
+  requirePlatformSuperAdmin,
+  async (req, res, next) => {
+    try {
+      const parsed = onboardSchema.parse(req.body);
+      const supabase = getSupabaseAdmin();
 
-    const { data: org, error: orgError } = await supabase
-      .from("organizations")
-      .insert({
-        name: parsed.name,
-        slug: parsed.slug,
-        primary_domain: parsed.primaryDomain ?? null,
-        support_plan: parsed.supportPlan ?? null,
-      })
-      .select()
-      .single();
+      const { data: org, error: orgError } = await supabase
+        .from("organizations")
+        .insert({
+          name: parsed.name,
+          slug: parsed.slug,
+          primary_domain: parsed.primaryDomain ?? null,
+          support_plan: parsed.supportPlan ?? null,
+        })
+        .select()
+        .single();
 
-    if (orgError) throw new AppError("DB_ERROR", orgError.message, 500);
+      if (orgError) throw new AppError("DB_ERROR", orgError.message, 500);
 
-    const { data: role, error: roleError } = await supabase
-      .from("roles")
-      .select("id")
-      .eq("key", parsed.adminRoleKey)
-      .maybeSingle();
+      const { data: role, error: roleError } = await supabase
+        .from("roles")
+        .select("id")
+        .eq("key", parsed.adminRoleKey)
+        .maybeSingle();
 
-    if (roleError) throw new AppError("DB_ERROR", roleError.message, 500);
-    if (!role) throw new AppError("NOT_FOUND", `Role ${parsed.adminRoleKey} not found`, 404);
+      if (roleError) throw new AppError("DB_ERROR", roleError.message, 500);
+      if (!role) throw new AppError("NOT_FOUND", `Role ${parsed.adminRoleKey} not found`, 404);
 
-    // SEC-P1-001: onboarding assigns a cross-tenant admin role, so only a
-    // platform super admin may run it.
-    await assertCanAssignRole(supabase, req.authUser!.userId, parsed.adminRoleKey);
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .eq("email", parsed.adminEmail)
+        .maybeSingle();
 
-    const { data: existingProfile } = await supabase
-      .from("profiles")
-      .select("id, email")
-      .eq("email", parsed.adminEmail)
-      .maybeSingle();
+      let userId = existingProfile?.id ?? null;
+      let invited = false;
 
-    let userId = existingProfile?.id ?? null;
-    let invited = false;
+      if (!userId) {
+        const { data: authUser, error: authError } = await supabase.auth.admin.inviteUserByEmail(
+          parsed.adminEmail,
+          { data: { full_name: parsed.adminFullName ?? null } },
+        );
 
-    if (!userId) {
-      const { data: authUser, error: authError } = await supabase.auth.admin.inviteUserByEmail(
-        parsed.adminEmail,
-        { data: { full_name: parsed.adminFullName ?? null } },
-      );
+        if (authError || !authUser?.user) {
+          throw new AppError(
+            "AUTH_ERROR",
+            authError?.message ?? "Failed to invite admin user",
+            400,
+          );
+        }
 
-      if (authError || !authUser?.user) {
-        throw new AppError("AUTH_ERROR", authError?.message ?? "Failed to invite admin user", 400);
+        userId = authUser.user.id;
+        invited = true;
+
+        await supabase.from("profiles").upsert(
+          {
+            id: userId,
+            email: parsed.adminEmail,
+            full_name: parsed.adminFullName ?? null,
+          },
+          { onConflict: "id" },
+        );
       }
 
-      userId = authUser.user.id;
-      invited = true;
+      // ADMIN-P2-004: the first admin membership starts `pending`, not
+      // `approved`. Auto-approving it meant an invited (unconfirmed) account
+      // could act for the brand-new tenant immediately; a platform super admin
+      // now approves it from the memberships queue after the invitee confirms
+      // their email. `approvalRequired` is returned so callers surface the step.
+      const { data: membership, error: memError } = await supabase
+        .from("memberships")
+        .insert({
+          organization_id: org.id,
+          user_id: userId,
+          role_id: role.id,
+          status: "pending",
+        })
+        .select()
+        .single();
 
-      await supabase.from("profiles").upsert(
-        {
-          id: userId,
-          email: parsed.adminEmail,
-          full_name: parsed.adminFullName ?? null,
+      if (memError) throw new AppError("DB_ERROR", memError.message, 500);
+
+      // PERF-P2-003: onboarding inserts an approved membership; the new admin's
+      // cached resolution (if any) must be dropped.
+      clearPermissionCache(userId);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "organization.onboard",
+        entityType: "organization",
+        entityId: org.id,
+        metadata: {
+          name: parsed.name,
+          adminEmail: parsed.adminEmail,
+          invited,
+          approvalRequired: true,
         },
-        { onConflict: "id" },
-      );
-    }
+      });
 
-    // ADMIN-P2-004: the first admin membership starts `pending`, not
-    // `approved`. Auto-approving it meant an invited (unconfirmed) account
-    // could act for the brand-new tenant immediately; a platform super admin
-    // now approves it from the memberships queue after the invitee confirms
-    // their email. `approvalRequired` is returned so callers surface the step.
-    const { data: membership, error: memError } = await supabase
-      .from("memberships")
-      .insert({
-        organization_id: org.id,
-        user_id: userId,
-        role_id: role.id,
-        status: "pending",
-      })
-      .select()
-      .single();
-
-    if (memError) throw new AppError("DB_ERROR", memError.message, 500);
-
-    // PERF-P2-003: onboarding inserts an approved membership; the new admin's
-    // cached resolution (if any) must be dropped.
-    clearPermissionCache(userId);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "organization.onboard",
-      entityType: "organization",
-      entityId: org.id,
-      metadata: {
-        name: parsed.name,
-        adminEmail: parsed.adminEmail,
-        invited,
-        approvalRequired: true,
-      },
-    });
-
-    invalidateCache(`/api/v1/organizations`);
-    res.status(201).json(
-      success({
-        organization: org,
-        adminUser: { id: userId, email: parsed.adminEmail },
-        membership,
-        invited,
-        approvalRequired: true,
-      }),
-    );
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get("/", responseCacheNoRenew(60, { scope: resolveAdminTenantScope }), async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "organizations", "read");
-
-    // Cross-tenant reach is decided in exactly ONE place: resolveAdminTenantScope
-    // (lib/admin-scope.ts), which requires BOTH the is_super_admin profile flag
-    // AND a cross-tenant role key in an approved membership.
-    //
-    // This route previously used a DISJUNCTION (`super_admin flag || admin role`),
-    // so a plain single-org `admin` with is_super_admin=false saw every tenant
-    // here while being scoped on audit/dashboard/business-os/store/search — an
-    // internal contradiction, since those routes deliberately treat a plain
-    // tenant `admin` as org-scoped. Use the shared helper so all surfaces agree.
-    //
-    // Resolve the scope BEFORE issuing the organizations query so the tenant
-    // predicate can be applied to it.
-    const tenantScope = await resolveAdminTenantScope(req);
-    const isPlatformAdmin = tenantScope.allTenants;
-
-    let query = supabase.from("organizations").select("*", { count: listCountMode(req.query) });
-
-    if (!isPlatformAdmin) {
-      const orgIds = tenantScope.orgIds;
-
-      if (orgIds.length > 0) {
-        query = query.in("id", orgIds);
-      } else {
-        query = query.eq("id", "00000000-0000-0000-0000-000000000000");
-      }
-    }
-
-    const statusFilter = req.query.status as string | undefined;
-    if (statusFilter) query = query.eq("status", statusFilter as never);
-
-    const idsFilter = req.query.ids as string | undefined;
-    if (idsFilter) {
-      const ids = idsFilter.split(",").filter(Boolean);
-      if (ids.length) query = query.in("id", ids);
-    }
-
-    const hasPaging = req.query.page !== undefined || req.query.limit !== undefined;
-    const page = Math.max(1, queryInt(req.query.page, 1));
-    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
-    const offset = (page - 1) * limit;
-
-    if (hasPaging) query = query.range(offset, offset + limit - 1);
-
-    const { data, error, count } = await query.order("name");
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-
-    if (hasPaging) {
-      res.json(
+      invalidateCache(`/api/v1/organizations`);
+      res.status(201).json(
         success({
-          items: data ?? [],
-          total: count ?? 0,
-          page,
-          limit,
+          organization: org,
+          adminUser: { id: userId, email: parsed.adminEmail },
+          membership,
+          invited,
+          approvalRequired: true,
         }),
       );
-    } else {
-      res.json(success(data ?? []));
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
-  }
-});
+  },
+);
+
+router.get(
+  "/",
+  responseCacheNoRenew(60, { scope: resolveAdminTenantScope }),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "organizations", "read");
+
+      // Cross-tenant reach is decided in exactly ONE place: resolveAdminTenantScope
+      // (lib/admin-scope.ts), which requires BOTH the is_super_admin profile flag
+      // AND a cross-tenant role key in an approved membership.
+      //
+      // This route previously used a DISJUNCTION (`super_admin flag || admin role`),
+      // so a plain single-org `admin` with is_super_admin=false saw every tenant
+      // here while being scoped on audit/dashboard/business-os/store/search — an
+      // internal contradiction, since those routes deliberately treat a plain
+      // tenant `admin` as org-scoped. Use the shared helper so all surfaces agree.
+      //
+      // Resolve the scope BEFORE issuing the organizations query so the tenant
+      // predicate can be applied to it.
+      const tenantScope = await resolveAdminTenantScope(req);
+      const isPlatformAdmin = tenantScope.allTenants;
+
+      let query = supabase.from("organizations").select("*", { count: listCountMode(req.query) });
+
+      if (!isPlatformAdmin) {
+        const orgIds = tenantScope.orgIds;
+
+        if (orgIds.length > 0) {
+          query = query.in("id", orgIds);
+        } else {
+          query = query.eq("id", "00000000-0000-0000-0000-000000000000");
+        }
+      }
+
+      const statusFilter = req.query.status as string | undefined;
+      if (statusFilter) query = query.eq("status", statusFilter as never);
+
+      const idsFilter = req.query.ids as string | undefined;
+      if (idsFilter) {
+        const ids = idsFilter.split(",").filter(Boolean);
+        if (ids.length) query = query.in("id", ids);
+      }
+
+      const hasPaging = req.query.page !== undefined || req.query.limit !== undefined;
+      const page = Math.max(1, queryInt(req.query.page, 1));
+      const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
+      const offset = (page - 1) * limit;
+
+      if (hasPaging) query = query.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await query.order("name");
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+      if (hasPaging) {
+        res.json(
+          success({
+            items: data ?? [],
+            total: count ?? 0,
+            page,
+            limit,
+          }),
+        );
+      } else {
+        res.json(success(data ?? []));
+      }
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.get("/:id", requireOrgAccessByParam, async (req, res, next) => {
   try {
@@ -326,40 +339,48 @@ router.get("/:id/detail", requireOrgAccessByParam, async (req, res, next) => {
   }
 });
 
-router.post("/", requireAdmin, async (req, res, next) => {
-  try {
-    const parsed = createOrganizationSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+// ADMIN-P3-005: plain organization creation is the same platform-level action
+// as onboarding, so it carries the super-admin gate and the admin-ops limiter.
+router.post(
+  "/",
+  rateLimitAdminOps,
+  requireAdmin,
+  requirePlatformSuperAdmin,
+  async (req, res, next) => {
+    try {
+      const parsed = createOrganizationSchema.parse(req.body);
+      const supabase = getSupabaseAdmin();
 
-    const { data, error } = await supabase
-      .from("organizations")
-      .insert({
-        name: parsed.name,
-        slug: parsed.slug,
-        primary_domain: parsed.primaryDomain ?? null,
-        support_plan: parsed.supportPlan ?? null,
-      })
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from("organizations")
+        .insert({
+          name: parsed.name,
+          slug: parsed.slug,
+          primary_domain: parsed.primaryDomain ?? null,
+          support_plan: parsed.supportPlan ?? null,
+        })
+        .select()
+        .single();
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "organization.create",
-      entityType: "organization",
-      entityId: data.id,
-      metadata: { name: parsed.name },
-    });
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "organization.create",
+        entityType: "organization",
+        entityId: data.id,
+        metadata: { name: parsed.name },
+      });
 
-    recordOrganizationCreated();
+      recordOrganizationCreated();
 
-    invalidateCache(`/api/v1/organizations`);
-    res.status(201).json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+      invalidateCache(`/api/v1/organizations`);
+      res.status(201).json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.patch(
   "/:id",
@@ -570,66 +591,76 @@ router.post("/:id/domains", requireOrgAccessByParam, requireAdmin, async (req, r
   }
 });
 
-router.patch("/:id/domains/:domainId", requireOrgAccessByParam, requireAdmin, async (req, res, next) => {
-  try {
-    const parsed = updateDomainSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+router.patch(
+  "/:id/domains/:domainId",
+  requireOrgAccessByParam,
+  requireAdmin,
+  async (req, res, next) => {
+    try {
+      const parsed = updateDomainSchema.parse(req.body);
+      const supabase = getSupabaseAdmin();
 
-    const { data, error } = await supabase
-      .from("organization_domains")
-      .update({ auto_approve: parsed.autoApprove })
-      .eq("id", String(req.params.domainId))
-      .eq("organization_id", String(req.params.id))
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from("organization_domains")
+        .update({ auto_approve: parsed.autoApprove })
+        .eq("id", String(req.params.domainId))
+        .eq("organization_id", String(req.params.id))
+        .select()
+        .single();
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Domain not found", 404);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Domain not found", 404);
 
-    await logAuditEvent({
-      organizationId: String(req.params.id),
-      actorUserId: req.authUser!.userId,
-      action: "organization.domain.update",
-      entityType: "organization_domain",
-      entityId: String(req.params.domainId),
-      metadata: { autoApprove: parsed.autoApprove },
-    });
+      await logAuditEvent({
+        organizationId: String(req.params.id),
+        actorUserId: req.authUser!.userId,
+        action: "organization.domain.update",
+        entityType: "organization_domain",
+        entityId: String(req.params.domainId),
+        metadata: { autoApprove: parsed.autoApprove },
+      });
 
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.delete("/:id/domains/:domainId", requireOrgAccessByParam, requireAdmin, async (req, res, next) => {
-  try {
-    assertDeleteConfirmed(req.body);
-    const supabase = getSupabaseAdmin();
-    const { data: deleted, error } = await supabase
-      .from("organization_domains")
-      .delete()
-      .eq("id", String(req.params.domainId))
-      .eq("organization_id", String(req.params.id))
-      .select()
-      .single();
+router.delete(
+  "/:id/domains/:domainId",
+  requireOrgAccessByParam,
+  requireAdmin,
+  async (req, res, next) => {
+    try {
+      assertDeleteConfirmed(req.body);
+      const supabase = getSupabaseAdmin();
+      const { data: deleted, error } = await supabase
+        .from("organization_domains")
+        .delete()
+        .eq("id", String(req.params.domainId))
+        .eq("organization_id", String(req.params.id))
+        .select()
+        .single();
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    await logAuditEvent({
-      organizationId: String(req.params.id),
-      actorUserId: req.authUser!.userId,
-      action: "organization.domain.remove",
-      entityType: "organization_domain",
-      entityId: String(req.params.domainId),
-      metadata: { domain: deleted?.domain ?? null },
-    });
+      await logAuditEvent({
+        organizationId: String(req.params.id),
+        actorUserId: req.authUser!.userId,
+        action: "organization.domain.remove",
+        entityType: "organization_domain",
+        entityId: String(req.params.domainId),
+        metadata: { domain: deleted?.domain ?? null },
+      });
 
-    invalidateCache(`/api/v1/organizations`);
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+      invalidateCache(`/api/v1/organizations`);
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.post(
   "/:id/logo",

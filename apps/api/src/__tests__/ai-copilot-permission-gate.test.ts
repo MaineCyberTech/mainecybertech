@@ -43,12 +43,16 @@ jest.mock("../middleware/org-access", () =>
   createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
 );
 jest.mock("../middleware/permissions", () => ({
-  requirePermission: jest.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
+  requirePermission: jest.fn((moduleKey: string, action: string) => {
+    const middleware = (_req: unknown, _res: unknown, next: () => void) => next();
+    (middleware as unknown as { gate: string }).gate = `${moduleKey}:${action}`;
+    return middleware;
+  }),
 }));
 
 import { requirePermission } from "../middleware/permissions";
 // Importing the router registers every route, which is what the mock records.
-import "../routes/ai";
+import aiRouter from "../routes/ai";
 
 describe("AI copilot permission gates (ACM-P3-007)", () => {
   it("gates ticket summarization with ai:view", () => {
@@ -69,5 +73,22 @@ describe("AI copilot permission gates (ACM-P3-007)", () => {
       .map(([, action]) => String(action));
     expect(aiActions).toEqual(expect.arrayContaining(["view", "create"]));
     expect(gated).toEqual(expect.arrayContaining(["ai:view", "ai:create"]));
+  });
+
+  it("gates GET /triage with ai:view (SEC-P3-015)", () => {
+    type GateHandle = { gate?: string };
+    type RouteLayer = {
+      route?: {
+        path: string;
+        methods: Record<string, boolean>;
+        stack: Array<{ handle: GateHandle }>;
+      };
+    };
+    const stack = (aiRouter as unknown as { stack: RouteLayer[] }).stack;
+    const route = stack.find((layer) => layer.route?.path === "/triage" && layer.route.methods.get);
+
+    expect(route?.route).toBeDefined();
+    const gates = (route?.route?.stack ?? []).map((layer) => layer.handle.gate).filter(Boolean);
+    expect(gates).toContain("ai:view");
   });
 });

@@ -42,9 +42,14 @@ export default async function AiToolsPage() {
       title="AI Service Desk Tools"
       description="Ticket triage assistant and service desk copilot for drafting replies and summarizing tickets."
       actions={
-        <Link href="/admin/ai/triage" className="cyber-button">
-          New Triage
-        </Link>
+        <div className="flex gap-3">
+          <Link href="/admin/ai/drafts" className="cyber-button-secondary">
+            Review Drafts
+          </Link>
+          <Link href="/admin/ai/triage" className="cyber-button">
+            New Triage
+          </Link>
+        </div>
       }
     >
       {loadFailed && <DataErrorNote what="ai" />}
@@ -69,6 +74,18 @@ export default async function AiToolsPage() {
           <div className="mt-4">
             <Link href="/admin/tickets" className="cyber-button">
               Open Tickets
+            </Link>
+          </div>
+        </section>
+        <section className="cyber-panel">
+          <h2 className="cyber-heading text-lg">Draft Review Gate</h2>
+          <p className="mt-2 text-sm text-slate-400">
+            Approve or reject AI-generated outputs before they are used. Every decision records the
+            reviewer and notes.
+          </p>
+          <div className="mt-4">
+            <Link href="/admin/ai/drafts" className="cyber-button">
+              Review Drafts
             </Link>
           </div>
         </section>

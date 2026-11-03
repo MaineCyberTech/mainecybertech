@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import StatusPill from "@/components/StatusPill";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
@@ -29,10 +30,12 @@ export default async function PortalBreakGlassPage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Break Glass Accounts" }]}
       />
+      <PortalSubnav current="break-glass" />
       <h1 className="text-2xl font-semibold text-slate-50">Break Glass Accounts</h1>
       {loadFailed ? <DataErrorNote what="break-glass" /> : null}
       <p className="text-sm text-slate-400">
-        {items.length} break glass account{items.length !== 1 ? "s" : ""} for your organization.
+        {items.length} break glass account{items.length !== 1 ? "s" : ""} in this view (most recent
+        first).
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (

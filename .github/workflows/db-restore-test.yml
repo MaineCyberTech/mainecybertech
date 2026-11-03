@@ -23,7 +23,7 @@ name: Database Restore Test
 
 on:
   schedule:
-    - cron: "0 6 * * 1"  # Every Monday at 6 AM UTC
+    - cron: "0 6 * * 1" # Every Monday at 6 AM UTC
   workflow_dispatch:
     inputs:
       environment:
@@ -92,7 +92,7 @@ jobs:
           # Destination contract (audit DR-P1-002 / IR-P1-005): S3_BUCKET is a
           # bucket NAME (no s3:// scheme) and S3_PREFIX is a key prefix — the
           # SAME values scripts/backup-database.sh writes to. A legacy full-URI
-          # S3_BACKUP_BUCKET is accepted and normalised below.
+          # S3_BACKUP_BUCKET is accepted and normalised by the discovery helper.
           S3_BUCKET: ${{ vars.S3_BUCKET || secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
           S3_PREFIX: ${{ vars.S3_PREFIX || 'database-backups' }}
           # Prefer dedicated AWS_* secrets; fall back to the Spaces keys the
@@ -105,25 +105,10 @@ jobs:
           AWS_ENDPOINT_URL: ${{ vars.S3_ENDPOINT || 'https://nyc3.digitaloceanspaces.com' }}
         run: |
           set -euo pipefail
-          # Accept both "bucket" and "s3://bucket[/prefix]" shapes, then always
-          # build a canonical s3://bucket/prefix/ path so a legacy secret can
-          # never silently point the test at the wrong location.
-          RAW_BUCKET="${S3_BUCKET#s3://}"
-          RAW_BUCKET="${RAW_BUCKET%/}"
-          S3_PATH="s3://${RAW_BUCKET}/${S3_PREFIX}/"
-          echo "Resolved backup location: ${S3_PATH}"
-          LATEST=$(aws s3 ls "${S3_PATH}" --recursive \
-            | sort | tail -1 | awk '{print $4}')
-          if [ -z "${LATEST}" ]; then
-            echo "::error::No backup objects found under ${S3_PATH} — nothing to restore-test"
-            exit 1
-          fi
-          # `aws s3 ls --recursive` returns the FULL key (including the prefix).
-          # Strip it if present and rebuild the URI once so the object path can
-          # never be double-prefixed (audit DR-P1-002).
-          REL="${LATEST#"${S3_PREFIX}/"}"
-          echo "backup_file=${LATEST}" >> "$GITHUB_OUTPUT"
-          echo "backup_uri=s3://${RAW_BUCKET}/${S3_PREFIX}/${REL}" >> "$GITHUB_OUTPUT"
+          # DR-P3-008: the helper keeps "cannot list the bucket" (credentials/
+          # endpoint/permission) distinct from "the bucket is reachable but has
+          # no objects" and prints an actionable ::error:: for each.
+          bash scripts/ci/find-latest-backup.sh database >> "$GITHUB_OUTPUT"
 
       - name: Download backup
         env:

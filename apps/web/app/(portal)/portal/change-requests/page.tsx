@@ -2,16 +2,22 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import AdminPagination from "@/components/admin/AdminPagination";
 import { hasPermission } from "@/lib/permissions";
 import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Change Requests - Portal - Maine CyberTech" };
 
-export default async function PortalChangeRequestsPage() {
+const DEFAULT_LIMIT = 25;
+
+export default async function PortalChangeRequestsPage(props: {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+}) {
   const membership = await getApprovedMembership();
   if (!membership) return null;
   let loadFailed = false;
@@ -19,8 +25,14 @@ export default async function PortalChangeRequestsPage() {
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
   let total = 0;
+  const sp = (await props.searchParams) ?? {};
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
   try {
-    const r = await api.governance.changes.list({ organizationId: orgId });
+    const r = await api.governance.changes.list({ organizationId: orgId, page, limit });
     items = r.items as unknown as typeof items;
     total = r.total ?? items.length;
   } catch (error) {
@@ -40,6 +52,7 @@ export default async function PortalChangeRequestsPage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Change Requests" }]}
       />
+      <PortalSubnav current="change-requests" />
       {loadFailed ? <DataErrorNote what="change-requests" /> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -81,6 +94,13 @@ export default async function PortalChangeRequestsPage() {
           </div>
         )}
       </div>
+      <AdminPagination
+        currentPage={page}
+        totalPages={Math.ceil(total / limit)}
+        buildHref={(p) => `/portal/change-requests?page=${p}&limit=${limit}`}
+        total={total}
+        limit={limit}
+      />
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard
       </Link>

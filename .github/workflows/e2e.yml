@@ -49,6 +49,12 @@ jobs:
       matrix:
         node-version: [20.x]
 
+    env:
+      # Single source of truth for the CLI pin shared by the install and cache
+      # key. Keep it aligned with pnpm-lock.yaml / package.json
+      # (EVOL-P3-010): 2.122.1 is what `pnpm install` resolves.
+      SUPABASE_CLI_VERSION: "2.122.1"
+
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -76,24 +82,52 @@ jobs:
         # `version: latest`: the action resolves `releases/latest` via the
         # GitHub API, which intermittently fails E2E with
         # "Failed to resolve latest Supabase CLI release: rate limit exceeded".
-        # Matches the pin in supabase-migrations.yml / package.json.
-        run: npm install -g supabase@2.107.0
+        # Matches the pin in supabase-migrations.yml / package.json /
+        # pnpm-lock.yaml (EVOL-P3-010).
+        run: npm install -g "supabase@${SUPABASE_CLI_VERSION}"
 
       - name: Restore the Supabase image cache
         # The Supabase CLI pulls ~13 images from public.ecr.aws; the shared
         # runner IPs intermittently exhaust the anonymous pull quota
         # (`toomanyrequests`), which no retry can fix. Cache the images so a
         # cache hit never pulls: the key is the pinned Supabase CLI version.
+        #
+        # v2 (2026-11-03, TEST-P2-011): v1 was first seeded by an older CLI and
+        # was never invalidated, so a hit could restore an image set the
+        # installed CLI no longer matched. The version segment keeps the key
+        # tied to the CLI pin; bump the trailing generation (`vN`) whenever the
+        # image set changes without a CLI version bump. Bumping it also forces
+        # a fresh seed after a bad/partial archive has been published.
+        #
+        # restore/save are separate actions (not the combined `actions/cache`)
+        # because the combined action's post-save only runs on a successful
+        # job. While E2E has any later failure (Playwright/a11y) the image
+        # tar would never be published, so the next run misses forever. The
+        # explicit save below runs as a normal step right after the images are
+        # pulled.
         id: supabase_image_cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/supabase-images.tar
-          key: supabase-images-${{ runner.os }}-2.107.0-v1
+          key: supabase-images-${{ runner.os }}-${{ env.SUPABASE_CLI_VERSION }}-v2
 
       - name: Load the cached Supabase images
         if: steps.supabase_image_cache.outputs.cache-hit == 'true'
         run: |
+          set -euo pipefail
           docker load -i /tmp/supabase-images.tar
+          # A cache hit must contain the CLI's full image set. A partial tar
+          # used to be retried until the job timed out; fail loudly instead so
+          # the key is bumped/reseeded rather than silently degrading to pulls
+          # (TEST-P2-011).
+          count=$(docker images --format '{{.Repository}}' \
+            | grep -c '^public.ecr.aws/supabase/' || true)
+          echo "Loaded ${count} cached Supabase image repositories."
+          if [ "$count" -lt 10 ]; then
+            echo "::error::cached Supabase archive is incomplete (${count} images); delete the cache entry or bump the key generation so the next run reseeds it."
+            rm -f /tmp/supabase-images.tar
+            exit 1
+          fi
           echo "Loaded the cached Supabase images."
 
       - name: Log in to Docker Hub (optional)
@@ -131,6 +165,7 @@ jobs:
           SUPABASE_DB_PORT: 5432
 
       - name: Save the Supabase images (cache miss)
+        id: save_supabase_images
         if: steps.supabase_image_cache.outputs.cache-hit != 'true'
         run: |
           # Persist the images so subsequent runs skip the public-registry
@@ -138,6 +173,22 @@ jobs:
           docker save $(docker images --format '{{.Repository}}:{{.Tag}}' \
             | grep -E 'supabase|kong|vector|mailpit|imgproxy|postgrest|gotrue|realtime|storage-api|studio|logflare|postgres-meta' \
             | grep -v '<none>') -o /tmp/supabase-images.tar
+
+      - name: Publish the Supabase image cache
+        # Explicit cache/save, not the restore action's post step: the post
+        # step only runs on a successful job, so a later Playwright/a11y
+        # failure would throw away the freshly pulled tar and every run would
+        # miss forever (TEST-P2-011).
+        #
+        # A concurrent miss/upload can make save fail because the key was
+        # reserved by another run; the cache is an optimization, so do not
+        # turn that race into an E2E failure.
+        if: steps.save_supabase_images.outcome == 'success'
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /tmp/supabase-images.tar
+          key: supabase-images-${{ runner.os }}-${{ env.SUPABASE_CLI_VERSION }}-v2
 
       - name: Apply migrations and seeds
         run: supabase db reset

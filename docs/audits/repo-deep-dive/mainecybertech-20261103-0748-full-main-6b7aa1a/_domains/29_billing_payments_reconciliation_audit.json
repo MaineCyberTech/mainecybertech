@@ -1,0 +1,220 @@
+{
+  "domain": "29_billing_payments_reconciliation_audit",
+  "file": "29_billing_payments_reconciliation_audit.md",
+  "area": "BILL",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T08:45:00Z",
+  "findings": [
+    {
+      "id": "BILL-P1-001",
+      "severity": "P1",
+      "title": "Module entitlements are derived but not enforced server-side",
+      "owner": "billing/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/api/src/middleware/entitlement.ts:149-196 requireEntitlement/requireActiveSubscription (402 PAYMENT_REQUIRED, 30s cache at :52, admin/role bypass at :128-131) and apps/api/src/lib/entitlements.ts:75-117 resolveOrgEntitlements; all six subscription-tier routers mount the gate: service-catalog.ts:18, findings.ts:37, governance.ts:34, security-ops.ts:24, qbr.ts:20, training-hub.ts:18. Module coverage is exactly the MODULE_REGISTRY subscription set (packages/sdk/src/module-registry.ts entitlement:\"subscription\" x6 at :174,273,331,677,867,883).",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P1-002",
+      "severity": "P1",
+      "title": "`payments` table is never populated; payment history is silently empty",
+      "owner": "billing/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: webhook lifecycle writes at apps/api/src/routes/webhooks.ts:512-561 (payment_intent.succeeded/payment_failed/canceled, linked via resolveBillingRefs:143-170) and sync backfill at apps/api/src/routes/billing.ts:574-623 (PaymentIntents -> payments, invoice linkage by stripe id); GET /billing/payments reads the table (billing.ts:345-372).",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P1-003",
+      "severity": "P1",
+      "title": "Missing Stripe webhook events leave refunds, void, and payment lifecycle unrecorded",
+      "owner": "billing/backend",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: charge.refunded -> payments refund state (webhooks.ts:567-600), invoice.voided/marked_uncollectible -> status+voided_at (:603-620), subscription.created/updated/deleted (:425-483), invoice.paid/payment_failed with dunning (:328-420). Sync also backfills refunds from charge.amount_refunded (billing.ts:632-649).",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P2-001",
+      "severity": "P2",
+      "title": "No refund and incomplete trial/cancel state handling",
+      "owner": "billing/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: schema columns in supabase/migrations/5302444_billing_lifecycle_fields.sql:24-32 (interval/trial_start/trial_end/cancel_at_period_end/canceled_at/quantity, voided_at, refund_amount_cents/refunded_at) and writes at webhooks.ts:462-481/553-560/567-600 and billing.ts:545-568/632-649.",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P2-002",
+      "severity": "P2",
+      "title": "`POST /billing/sync` does not paginate Stripe results",
+      "owner": "billing/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/api/src/routes/billing.ts:101-144 fetchStripePages follows starting_after with limit=100, a page cap (STRIPE_SYNC_MAX_PAGES, :453), and returns truncated/error; :656-670 fails the sync 502 STRIPE_SYNC_INCOMPLETE instead of reporting success for a partial mirror.",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P2-003",
+      "severity": "P2",
+      "title": "Reconciliation job has no drift detection, alerting, or tests",
+      "owner": "billing/backend + worker/platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/worker/src/tasks/stripe-reconcile.ts:142-264 detects subscription status, invoice count/sum and payment count/sum drift (recordStripeReconcileDrift) and :444-449 returns ok:false on any drift/error; alert infra/digitalocean/prometheus.rules.yml:358-370 (MCTStripeReconcileDrift); tests apps/worker/src/__tests__/tasks/stripe-reconcile.test.ts.",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P2-004",
+      "severity": "P2",
+      "title": "Failed payments produce no notification or dunning visibility",
+      "owner": "billing/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/api/src/lib/billing-dunning.ts resolves approved billing-role contacts and sends preference-aware in-app+email via notifyAndEmail; wired on invoice.payment_failed at webhooks.ts:410-420; metric portal_billing_dunning_notifications_total (metrics.ts:278-288); the portal shows overdue counts and per-invoice status incl. uncollectible (BillingPageClient.tsx:147-150,296-306).",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P2-005",
+      "severity": "P2",
+      "title": "Subscription/invoice schema lacks trial, interval, and void-lifecycle fields",
+      "owner": "data/platform owner + billing/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: migration 5302444 adds the lifecycle columns; both write paths persist them (webhooks.ts:462-481, billing.ts:545-568) and stripe-reconcile writes Stripe state back (stripe-reconcile.ts:369-397). docs/modules/billing.md:36,75-78 documents them.",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P2-006",
+      "severity": "P2",
+      "title": "Stripe webhook DB writes ignore errors and still mark the event processed",
+      "owner": "billing/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: every mirror write goes through assertMirrorWrite (webhooks.ts:226-234; used at :381,:481,:504,:557,:596,:618), the audit write failure throws, the delivery-log insert failure throws (:64-110), and the outer catch releases the idempotency claim + records a failed delivery (:619-631).",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P2-007",
+      "severity": "P2",
+      "title": "Out-of-order or late-retried Stripe events can overwrite terminal payment states",
+      "owner": "billing/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: TERMINAL_PAYMENT/INVOICE/SUBSCRIPTION sets (webhooks.ts:193-195) + readMirrorStatus (:205-220) guard invoice.paid/payment_failed (:347), subscription events (:445), payment_intent events (:532) and stale partial refunds (:586-596); sync preserves terminal refund states (billing.ts:586-603).",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P2-008",
+      "severity": "P2",
+      "title": "Billing read endpoints fall back to all-tenant scope for cross-tenant roles without an admin-scope guard or audit",
+      "owner": "billing/backend + API platform",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: every GET applies applyRequestedOrg+applyOrgScope (billing.ts:232-233,292-293,314-315,332-333,361-362,382-383) and an implicit all-tenant read is audited via billing.cross_tenant_read (:167-172); scope semantics in apps/api/src/lib/admin-scope.ts:55-71.",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P3-001",
+      "severity": "P3",
+      "title": "Webhook raw body typed as `string` but consumed as `Buffer`",
+      "owner": "billing/backend (API platform)",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: rawBodyBuffer(req.rawBody) rejects when the exact bytes were not captured (webhooks.ts:292-302) and stripe.webhooks.constructEvent consumes the Buffer; same helper for Jira/JSM (:680,:788).",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P3-002",
+      "severity": "P3",
+      "title": "Billing email stored in plaintext and raw Stripe payment-method id rendered to users",
+      "owner": "billing/backend + web",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: checkout.session.completed encrypts billing_email with encryptField (webhooks.ts:492-505); reads decrypt and mask the pm id (billing.ts:211-222,395-396); the portal renders the decrypted email/masked method only (BillingPageClient.tsx:190-200).",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P3-003",
+      "severity": "P3",
+      "title": "`invoice.paid` paid_at handling writes epoch dates (sync) or throws when status_transitions is missing (webhook)",
+      "owner": "billing/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/api/src/lib/billing-timestamps.ts:13-40 invoicePaidAtIso falls back to created then now (never epoch) and is used by both paths (billing.ts:530, webhooks.ts:377); epochSecondsToIsoOrNow for payment paid_at.",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P3-004",
+      "severity": "P3",
+      "title": "Payments list uses an inner join, hiding payments not linked to an invoice",
+      "owner": "billing/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: billing.ts:355-360 selects invoices(invoice_number,status) without !inner, so unlinked payments list with a null invoice column.",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P3-005",
+      "severity": "P3",
+      "title": "Entitlement override cannot revoke all modules (all-disabled falls back to the subscription set)",
+      "owner": "billing/backend",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: apps/api/src/lib/entitlements.ts:104-110 treats the mere existence of provisioned rows (even all-disabled) as the explicit override and returns the enabled subset, never the subscription set.",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P3-006",
+      "severity": "P3",
+      "title": "Subscription mirror ignores seat quantity and the billing summary excludes trialing plans",
+      "owner": "billing/backend + web",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: quantity persisted (billing.ts:565, webhooks.ts:478, stripe-reconcile.ts:385); summary counts active+trialing (billing.ts:251); the portal renders unit x quantity and a seats suffix (BillingPageClient.tsx:89-94,172,337).",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P3-007",
+      "severity": "P3",
+      "title": "Portal 'Sync from Stripe' button is shown to client roles that lack billing:manage",
+      "owner": "billing/backend + web",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: BillingPageClient.tsx:105 gates the button on can(\"billing\",\"manage\") and the API enforces requirePermission(\"billing\",\"manage\") (billing.ts:404).",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P3-008",
+      "severity": "P3",
+      "title": "Billing docs contradict the implementation (sync gate, webhook verification, reconcile source, payment statuses)",
+      "owner": "billing/backend (docs)",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: docs/BILLING.md:92,101-104,109,125,144-147 document the billing:manage sync gate, full signature verification, payments lifecycle incl. refunds, and entitlement override semantics; docs/modules/billing.md:17,31-32,36,42,75-78 match the code.",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P3-009",
+      "severity": "P3",
+      "title": "Entitlement enforcement fails open on billing-state lookup errors with no metric or alert",
+      "owner": "billing/backend + SRE",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5, now closed: the fail-open path calls recordBillingLookupFailure (middleware/entitlement.ts:92-94), the counter is defined in lib/metrics.ts:360-369, and MCTBillingLookupFailures alerts on any increase (prometheus.rules.yml:371-388). Regression test apps/api/src/__tests__/middleware-entitlement.test.ts:241-262 observes the counter.",
+      "area": "BILL"
+    },
+    {
+      "id": "BILL-P3-010",
+      "severity": "P3",
+      "title": "Subscription mirror reads only the first Stripe subscription item, so multi-item plans and add-ons are invisible",
+      "owner": "billing/backend",
+      "target": "next quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a5: every mirror writer takes sub.items.data[0] and derives plan_name/amount_cents/quantity/interval from that one price: apps/api/src/routes/webhooks.ts:455, apps/api/src/routes/billing.ts:543, apps/worker/src/tasks/stripe-reconcile.ts:370. A Stripe subscription with a base item plus add-on item loses the add-on amount; the reconcile job only compares subscription status (stripe-reconcile.ts:352-357), not the mirrored amount/quantity, so the understated mirror never raises drift. Stripe remains the billing source of truth, so impact is the portal/billing reporting view and the plan boundary derived from it (P3), not charging.",
+      "area": "BILL"
+    }
+  ],
+  "report": "Read-only re-verification at 6b7aa1a5; all 20 previous BILL findings are verified fixed (20/20), including BILL-P3-009 (fail-open entitlement lookup is now counted and alerted). No regressions. One new P3: the subscription mirror still reads only items.data[0], so multi-item subscriptions understate amount/quantity in the portal. Billing code is unchanged in this diff except the entitlement metric; webhook line numbers moved by the WH fixes. Executed: read billing/webhook/reconcile paths, migration 5302444, promtool check rules (26 rules SUCCESS) and rules tests (SUCCESS). Cross-domain: the 5302463 duplicate-version issue affecting notification migration apply order is tracked under INV-P1-001/DATA-P1-004, not BILL."
+}

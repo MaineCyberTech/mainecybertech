@@ -36,6 +36,11 @@ jest.mock(
   { virtual: true },
 );
 
+jest.mock("@/components/portal/PortalSubnav", () => ({
+  __esModule: true,
+  default: () => React.createElement("div"),
+}));
+
 describe("PortalChangeRequestsPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -46,7 +51,7 @@ describe("PortalChangeRequestsPage", () => {
     mockList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/change-requests/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByRole("heading", { level: 1, name: /change requests/i })).toBeInTheDocument();
@@ -56,7 +61,7 @@ describe("PortalChangeRequestsPage", () => {
     mockList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/change-requests/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByRole("navigation", { "aria-label": "Breadcrumb" })).toBeInTheDocument();
@@ -83,7 +88,7 @@ describe("PortalChangeRequestsPage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/change-requests/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByText("Firewall rule update")).toBeInTheDocument();
@@ -96,7 +101,7 @@ describe("PortalChangeRequestsPage", () => {
     mockList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/change-requests/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByText("No change requests yet.")).toBeInTheDocument();
@@ -114,7 +119,7 @@ describe("PortalChangeRequestsPage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/change-requests/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     const pills = screen.getAllByTestId("status-pill");
@@ -126,7 +131,7 @@ describe("PortalChangeRequestsPage", () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
     const { default: Page } = await import("@/app/(portal)/portal/change-requests/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
 
     expect(element).toBeNull();
   });

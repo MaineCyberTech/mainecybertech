@@ -15,10 +15,24 @@ import {
 } from "../validators/ai";
 import { queryInt } from "../lib/query";
 import { listCountMode } from "../lib/pagination";
+import { isClientMember } from "../lib/client-visibility";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
+
+/**
+ * SEC-P2-020: `ai:view` is now granted to client roles for the portal triage
+ * surface, but the draft review queue is an internal staff tool. Reject client
+ * members before the draft queries so internal prompts/outputs never reach the
+ * portal (the route remains open to every internal role with ai:view,
+ * including API keys, which are not client memberships).
+ */
+async function assertInternalDraftReader(req: Parameters<typeof isClientMember>[0]) {
+  if (await isClientMember(req)) {
+    throw new AppError("FORBIDDEN", "AI drafts are internal only", 403);
+  }
+}
 
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
   hardware: [
@@ -317,7 +331,9 @@ router.post("/triage/convert", requirePermission("tickets", "create"), async (re
   }
 });
 
-router.get("/triage", async (req, res, next) => {
+// SEC-P3-015: draft rows carry raw ticket descriptions, so listing them is an
+// AI-tool read and must carry the same `ai:view` gate as the other AI routes.
+router.get("/triage", requirePermission("ai", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "ai", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));
@@ -536,6 +552,7 @@ router.post("/drafts", requirePermission("ai", "create"), async (req, res, next)
 
 router.get("/drafts", requirePermission("ai", "view"), async (req, res, next) => {
   try {
+    await assertInternalDraftReader(req);
     const supabase = getScopedClient(req, "ai", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
@@ -561,6 +578,7 @@ router.get("/drafts", requirePermission("ai", "view"), async (req, res, next) =>
 
 router.get("/drafts/:id", requirePermission("ai", "view"), async (req, res, next) => {
   try {
+    await assertInternalDraftReader(req);
     const supabase = getScopedClient(req, "ai", "read");
     const { data, error } = await supabase
       .from("ai_draft_outputs")

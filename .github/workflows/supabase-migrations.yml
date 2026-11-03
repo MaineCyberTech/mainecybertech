@@ -59,9 +59,9 @@ jobs:
           test -n "$ok"
 
       - name: Install Supabase CLI
-        # Pinned to 2.107.0 to match the repo's pnpm-lock.yaml (supabase@2.107.0).
-        # Unpinned installs made migration behavior nondeterministic.
-        run: npm install -g supabase@2.107.0
+        # Pinned to the version resolved by pnpm-lock.yaml / package.json so
+        # developers and CI exercise the same migration behavior (EVOL-P3-010).
+        run: npm install -g supabase@2.122.1
 
       - name: Link project
         run: supabase link --project-ref ${{ vars.SUPABASE_PROJECT_REF }}

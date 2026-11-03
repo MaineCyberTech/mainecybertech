@@ -121,6 +121,35 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Changed
 
+- **Nov 3 re-audit remediation:** deterministic commit-date release tags
+  (REL-P3-005); a visible/reversible global email opt-out in both preference
+  UIs (NOTIF-P2-013); registry-driven `store_analytics_events` retention and
+  `store_proposal_drafts` in the quote purge (AN-P3-007/PRIV-P2-009);
+  `MCTNodeExporterDown` + node-exporter in `MCTServiceDown` (ARCH-P3-006 /
+  OBS-P3-008); multi-item Stripe subscription amounts (BILL-P3-010); portal
+  list pagination/total labels on the highest-traffic pages (USE-P2-012) and a
+  confirmation/audited reset for proposal decisions (USE-P2-013); an admin AI
+  draft review queue (FEAT-P3-009); and the docs/changelog/counts drift fixes
+  (REL-P2-001, HYGIENE-P3-008/016, DOC-P2-010, DOC-P3-011–015).
+- **Promoted `develop` → `main` on 2026-11-03** at `6b7aa1a5` (tag
+  `v0.1.0-20261103-6b7aa1a`), landing the Nov 3 re-audit fixes, the monitoring
+  image bumps, the third-party digest refresh and the CI/SBOM hardening below.
+- **Third-party image pins now use the registry manifest digests**
+  (`d32e5ac7`), so Trivy can scan the redis/caddy/prometheus/alertmanager
+  images instead of reporting `MANIFEST_UNKNOWN`; `prometheus` moves to
+  v3.15.1 and `alertmanager` to v0.29.0 (`ca567f93`), with dated exceptions for
+  the upstream caddy CVEs and third-party Go/Alpine findings (expiry
+  2026-12-01, `ca567f93`/`1f1b641f`).
+- **GitHub Actions/Dependabot bumps:** `actions/cache` 6.1.0, `docker/login-action`
+  4.6.0, `docker/setup-buildx-action` 4.4.1, `docker/build-push-action` 7.4.0,
+  `hashicorp/setup-terraform` 4.0.1, `digitalocean/digitalocean` 2.106.0,
+  `cloudflare/cloudflare` 5.28.1 and the Jest/testing group (Jest 30) —
+  `88d0eaba`, `52231420`, `254ee9c8`, `98deef9f`, `e77e4c9f`, `0bb64983`,
+  `553f513b`, `fa292b34`.
+- **License policy:** `PSF-2.0` is allowed (`6d747551`), matching the SPDX alias
+  already covered by `Python-2.0`.
+- **Docs counts** refreshed to the measured tree (API 2,003 / total 4,674 /
+  521 suites; `59ec843d`, `e00eab7f`).
 - **Vercel build remnants removed:** `apps/web/next.config.mjs` no longer
   branches on `process.env.VERCEL` (every environment builds the standalone
   server behind Caddy), and the marketing/Cloudflare docs describe the
@@ -129,6 +158,20 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Security
 
+- **Nov 3 re-audit security batch:** client roles can no longer read internal
+  comments/timeline through sibling endpoints, see internal file-request
+  attachments or AI drafts, or record proposal client decisions; a tenant
+  `admin` with a client membership elsewhere no longer inherits that org's
+  admin scope; primary module reads now enforce `:view`; migration `5302465`
+  revokes the anon `store_quotes` INSERT grant and migration `5302466` scopes
+  self-addressed notification inserts to approved orgs. Public file-request
+  uploads validate the token before buffering and are capped per token.
+
+- **Cleared the three HIGH production advisories** (`cde79fad`):
+  `body-parser` 2.4.0 (GHSA-27r3-jxmh-p828), `multer` ≥2.5.0
+  (GHSA-q7qp-rjg7-q26m), and a time-boxed `zod` <4.6.6 exception
+  (GHSA-mrhx-c7xc-m3w5) until the zod 4 migration lands (expires 2026-12-15,
+  now documented in `docs/DEPENDENCY_POLICY.md`).
 - Deploy now injects the Turnstile keys (`TURNSTILE_SECRET_KEY` into the droplet
   `.env`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as the web build arg) so the
   production contact form is captcha-protected (`e6bb073`).
@@ -161,7 +204,47 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Fixed
 
+- **Nov 3 re-audit P3 batch:** organization create/onboarding now requires the
+  platform super-admin flag for every role key and plain create is rate-limited
+  (ADMIN-P3-005); the Node engine floor is 20.11 for `import.meta.dirname`
+  (CI-P3-015); a node-exporter probe sidecar scrapes `:9100` and asserts a real
+  root-filesystem series before the deploy gate passes (CTR-P3-009);
+  restore-test discovery distinguishes an unreachable bucket/credentials from
+  an empty prefix with an actionable error plus a negative fixture
+  (DR-P3-008); one-click unsubscribe writes an audit event
+  (NOTIF-P3-009); `/sla/metrics` selects only summary columns and caps the scan
+  at `LIST_HARD_CAP` with a `truncated` flag (PERF-P3-005); the SBOM process doc
+  names all five images and the `--allow-missing-versions` validator flag
+  (SBOM-P3-011); client-visibility fails closed on membership lookup errors
+  while documenting the API-key/system exemption (SEC-P3-014); `GET /ai/triage`
+  carries `ai:view` (SEC-P3-015); every portal page now renders `PortalSubnav`
+  (USE-P3-007); and the six request-creation actions return inline errors
+  instead of throwing into the portal error boundary (USE-P3-008).
+
+- **Nov 3 re-audit CI/docs batch:** E2E's Supabase image cache is keyed to
+  CLI 2.122.1 with a fresh v2 seed and fails loudly on a partial archive
+  (TEST-P2-011); `PSF-2.0` is allowed by the PR dependency-review gate and
+  documented (SBOM-P1-006); the prod deploy readiness gate uses the app-host API
+  read instead of the retired `api.mainecybertech.com/health` host
+  (OBS-P1-002); third-party Trivy exceptions are per-image under
+  `.trivyignore.d/` instead of one global file (CTR-P2-007); operator docs,
+  monitoring tables and the image-scan header match the deployed five-image
+  stack (CTR-P3-006 / INFRA-P2-003 / DET-P3-003); promtool runs the deployed
+  Prometheus v3.15.1 (INFRA-P3-011); CI installs the lockfile's Supabase CLI
+  2.122.1 (EVOL-P3-010); and `scripts/preflight-check.sh` no longer aborts on
+  its first check and runs in the shared test job, so duplicate migration
+  timestamps gate PRs (DATA-P2-011).
+
+- **SBOM validator hardening:** third-party image SBOMs accept version-less
+  components (`b72dd68b`), and the `--allow-missing-versions` flag is no longer
+  passed through as a path argument (`b2fd32a9`). Digest binding and
+  specVersion checks stay enforced.
+- **Rate-limit test harness:** supertest now sets a public client IP so the
+  loopback skip no longer bypasses every limiter (`c934ed4d`), and the Express 5
+  `req.ip` prototype getter is overridden safely (`6d747551`).
 - **In-app notification dedup (42P10):** migration `5302463` replaces the
+
+- **In-app notification dedup (42P10):** migration `5302464` replaces the
   partial unique index on `notifications (notification_key)` with a full unique
   index. PostgreSQL cannot infer a partial index from a bare
   `ON CONFLICT (notification_key)` target, so every deduped insert from

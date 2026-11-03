@@ -1,0 +1,139 @@
+{
+  "domain": "19_platform_evolution_extensibility",
+  "file": "19_platform_evolution_extensibility.md",
+  "area": "EVOL",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T09:43:35Z",
+  "findings": [
+    {
+      "id": "EVOL-P2-001",
+      "severity": "P2",
+      "title": "No module registry: module metadata is duplicated across six disconnected catalogs with no drift guard",
+      "owner": "API principal engineer + web platform lead",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: the registry still exists and is guarded. packages/sdk/src/module-registry.ts:45 holds 90 module keys (key/name/icon/permissions/routes/entitlement); it drives entitlements (apps/api/src/lib/entitlements.ts:24-47), MODULE_LABELS (apps/web/lib/permissions.ts:53) and the portal entitlement form. Drift guards: apps/api/src/__tests__/module-registry.test.ts:47-85 (permission catalog exact match, entitlement tiers) and apps/web/__tests__/lib/module-registry.test.ts:25-45 (labels/nav/icons). Residual unchanged: apps/api/src/app.ts:166-227 still hand-mounts 62 /api/v1 routers; packages/sdk/src/index.ts:411-465 still constructs 55 sub-API classes; apps/web/lib/module-config.ts:25-748 remains a disconnected per-module CRUD catalog (keys such as gov-changes); module-registry.ts:24-28 still concedes this scope limit and no guard ties mounts or SDK wiring to the registry.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P2-002",
+      "severity": "P2",
+      "title": "Webhook UI advertises 11 event types but only 2 are ever dispatched; no event catalog exists",
+      "owner": "API + integrations lead",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the single catalog packages/sdk/src/webhook-events.ts:27-40 still lists 11 events and every one has an emitter (tickets.ts:189,316,342; projects.ts:537,605; store/quotes.ts:582; documents.ts:323,594,1121; memberships.ts:127,199; webhooks.ts:388,398). API write validation uses z.array(z.enum(WEBHOOK_EVENTS)) (apps/api/src/routes/webhook-management.ts:91,99); both UI surfaces consume the catalog (NewWebhookForm.tsx:101, WebhookDetailClient.tsx:171); apps/api/src/__tests__/webhook-event-catalog.test.ts:38-88 fails CI on emitter/catalog drift, missing docs coverage and a reintroduced second consumer doc.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-001",
+      "severity": "P3",
+      "title": "Feature flags are a hardcoded static map with no managed service, change log, or targeting",
+      "owner": "@api",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: the typed registry, targeting, change log and audit event remain (apps/api/src/lib/feature-flags.ts:45-68 registry, :135-166 env/org/percentage resolution, :204-211 change log + feature_flag.changed audit; docs/FEATURE_FLAGS.md; feature-flags.test.ts). The finding's second half is unchanged: isFeatureEnabled has zero production call sites (grep across apps/packages/scripts matches only feature-flags.ts and its test), runtime overrides are process-local and there is no managed store/admin surface, so no shipped feature is actually gated.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-002",
+      "severity": "P3",
+      "title": "No catalog-lint: referenced permission keys are not checked against the permissions table",
+      "owner": "API platform",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: scripts/check-permission-catalog.mjs still checks requirePermission literals, live RLS user_has_permission predicates and registerCrud module keys against the catalog; scripts/ci/check-permission-catalog.sh runs it plus an uncatalogued-key negative fixture; it is wired into the shared unit-tests action (.github/actions/unit-tests/action.yml:122-125) used by test.yml (PR) and validate.yml (deploy gate). Current run: PASS, 206 requirePermission + 46 live-policy references resolve against 338 catalog keys (9 CRUD modules).",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-003",
+      "severity": "P3",
+      "title": "No committed event catalog or webhook documentation for consumers",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: docs/WEBHOOKS.md (93 lines) is now the single consumer contract and publishes the 11-event catalog, envelope, signature/idempotency headers, two-layer retry budget and DLQ/replay semantics; docs/EVENTS.md:1-14 is explicitly a pointer to WEBHOOKS.md (indexed at docs/INDEX.md:77); webhook-event-catalog.test.ts:66-88 fails when a catalogued event is missing from WEBHOOKS.md or when EVENTS.md stops pointing at it. The previous residual (duplicate diverging docs, EVOL-P3-009) is now fixed, so this finding is fully closed.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-004",
+      "severity": "P3",
+      "title": "API versioning policy is documented but not enforced (no Sunset/Deprecation mechanism; spec version unrelated to the app version)",
+      "owner": "API principal engineer",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: DEPRECATIONS registry + deprecationMiddleware (apps/api/src/middleware/deprecation.ts:38-74,112) is mounted app-wide (apps/api/src/app.ts:140) and stamps RFC 9745 Deprecation, RFC 8594 Sunset and RFC 8288 Link headers including on removed paths; tests live in apps/api/src/__tests__/deprecation.test.ts; docs/API_VERSIONING.md:6-32 documents the policy and the intentionally decoupled OpenAPI contract version served from apps/api/src/lib/api-version.ts.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-005",
+      "severity": "P3",
+      "title": "Config model is duplicated per app; there is no shared env-schema package",
+      "owner": "platform engineering",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: packages/config/src/env.ts owns the shared zod fragments and client defaults; apps/api/src/config/env.ts:13 and apps/worker/src/env.ts:15 compose them; scripts/check-env-parity.mjs asserts schema <-> .env.example <-> docs/ENVIRONMENT_VARIABLES.md parity, self-tests a negative fixture and runs in the shared gate (.github/actions/unit-tests/action.yml:96-100). Current run: environment parity OK.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-006",
+      "severity": "P3",
+      "title": "Shared-package extraction is deferred: @mct/sdk and @mct/ui are source-only, and DB client setup is duplicated",
+      "owner": "platform engineering (package owner)",
+      "target": "next quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: docs/arch/package-extraction-plan.md still records the accepted incremental direction (phase 1 shared config done; @mct/db requires an ADR; sdk build and ui packaging deferred) and @mct/config/env shares supabaseAuthOptions/SUPABASE_CLIENT_DB_TIMEOUT_MS/resolveRedisUrl. Residual unchanged: @mct/sdk and @mct/ui remain source-only with no build/publish step (packages/sdk/package.json:6-20; packages/ui/package.json:5-18), packages/db still does not exist, and client construction remains per-process (apps/api/src/services/supabase.ts vs apps/worker/src/services/supabase.ts plus ad-hoc createClient calls in worker tasks). Deferral is documented, not removed.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-007",
+      "severity": "P3",
+      "title": "Migration-strategy docs contradict each other and the tree (ISO vs sequential naming; seed.sql references)",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: docs/migrations/naming-guide.md:19,115 and docs/SUPABASE_MIGRATION_CHEATSHEET.md:9-10 still match the tree - all 162 migrations use the sequential 5302xxx prefix, ISO timestamps are explicitly not used, and there is no supabase/seed.sql (seeds live under supabase/seeds/). The previous residual (no automated naming guard) is also closed: scripts/verify-rls.mjs check 4 (:480-493) fails any migration >= 5302427 that is not NNNNNNN_lower_snake_case.sql. Duplicate-prefix enforcement is still absent and is now a real defect (new EVOL-P1-001).",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-008",
+      "severity": "P3",
+      "title": "Roles, plan-to-module mapping, and status vocabularies are hardcoded with no parity guard",
+      "owner": "API platform + web",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: apps/api/src/__tests__/catalog-parity.test.ts:78-170 asserts API role tiers are inside the migration catalog, cross/elevated tiers are disjoint, API and web PLATFORM_ADMIN_KEYS are equal, entitlement tiers are derived from the module registry, and 9 status vocabularies match the 5302457 CHECK constraints; module-registry.test.ts covers the plan-to-module mapping.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-009",
+      "severity": "P3",
+      "title": "Two overlapping outbound-webhook consumer docs (docs/EVENTS.md, docs/WEBHOOKS.md); only one is guarded and they already diverge",
+      "owner": "integrations/backend + docs",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: docs/EVENTS.md is now a 14-line pointer to the canonical docs/WEBHOOKS.md (EVENTS.md:1-14) and no longer carries a second contract; WEBHOOKS.md:55-70 states the two-layer retry budget (3 inline attempts + up to 5 worker retries) and the test guard (apps/api/src/__tests__/webhook-event-catalog.test.ts:66-88) asserts both numbers and that EVENTS.md keeps pointing at WEBHOOKS.md. The contradiction and silent-rot surface are gone.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P1-001",
+      "severity": "P1",
+      "title": "Two migrations share version 5302463, so Supabase can treat the client-portal AI/visibility migration as already applied",
+      "owner": "backend/data governance + platform engineering",
+      "target": "this week",
+      "status": "open",
+      "note": "NEW at 6b7aa1a. supabase/migrations contains both 5302463_client_portal_ai_and_visibility.sql (added 8f8642ab, 2026-10-22) and 5302463_fix_notification_key_dedup_index.sql (added 059f4b90, 2026-10-15); `ls supabase/migrations/*.sql | sed 's#.*/##' | cut -d_ -f1 | sort | uniq -d` prints 5302463. Supabase records applied migrations by the numeric version in supabase_migrations.schema_migrations, so once the Oct-15 notification fix occupies version 5302463 the Oct-22 client-portal migration is matched as already applied (skipped) or conflicts - it cannot be tracked independently. The new file's own header at 5302463_client_portal_ai_and_visibility.sql:2 says '5302437', which suggests it was mis-numbered. Impact: the migration that grants client roles ai:view and normalises legacy visibility values may never run on dev/prod, so portal AI triage stays 403 and legacy visibility rows stay unnormalised; the next `supabase db push --include-all` (supabase-migrations.yml) is the exposure point. The repo already has a duplicate-prefix check (scripts/preflight-check.sh:50-51) and a naming-guide checklist item (docs/migrations/naming-guide.md:81), but neither runs in CI, and verify-rls.mjs check 4 validates filename shape only. Recommendation: renumber the client-portal migration to the next unused prefix (5302464 or later), repair/replay it on environments where 5302463 was already recorded, and add the duplicate-prefix check to verify-rls.mjs or the shared unit-tests action.",
+      "area": "EVOL"
+    },
+    {
+      "id": "EVOL-P3-010",
+      "severity": "P3",
+      "title": "Supabase CLI pin in CI (2.107.0) no longer matches the lockfile (2.122.1) or package.json (^2.120.0)",
+      "owner": "platform engineering",
+      "target": "this quarter",
+      "status": "open",
+      "note": "NEW at 6b7aa1a. .github/workflows/supabase-migrations.yml:62-64 pins `npm install -g supabase@2.107.0` and the comment claims it matches pnpm-lock.yaml, but pnpm-lock.yaml:6709,14614 resolve supabase@2.122.1 and package.json:51 declares ^2.120.0; .github/workflows/e2e.yml:80 also installs 2.107.0, and docs/CI.md:17 repeats 'pinned CLI 2.107.0'. Impact: the migration path runs a different CLI version than developers get from `pnpm install`, so dry-run/push behavior (including duplicate-version handling and migration ordering) is not the behavior the repo's tooling exercises; the comment is factually wrong and will keep the drift hidden. Recommendation: pin all workflows to the lockfile version (2.122.1) or pin package.json/lockfile down to 2.107.0, and update the comment and docs/CI.md in the same PR.",
+      "area": "EVOL"
+    }
+  ]
+}

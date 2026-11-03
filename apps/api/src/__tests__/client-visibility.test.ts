@@ -59,6 +59,25 @@ describe("client visibility scoping", () => {
     expect(membershipBuilder.maybeSingle).toHaveBeenCalledTimes(1);
   });
 
+  it("fails closed when the membership lookup errors (SEC-P3-014)", async () => {
+    membershipBuilder.select.mockReturnValue(membershipBuilder);
+    membershipBuilder.eq.mockReturnValue(membershipBuilder);
+    membershipBuilder.maybeSingle.mockResolvedValue({
+      data: null,
+      error: new Error("db down"),
+    });
+
+    await expect(isClientMember(request())).resolves.toBe(true);
+  });
+
+  it("keeps API-key/system requests on the staff path (SEC-P3-014)", async () => {
+    const req = request();
+    (req as unknown as { apiKey: { id: string } }).apiKey = { id: "key-1" };
+
+    await expect(isClientMember(req)).resolves.toBe(false);
+    expect(membershipBuilder.maybeSingle).not.toHaveBeenCalled();
+  });
+
   it("adds the visibility predicate for clients", async () => {
     mockRole("client_user");
     const query = { in: jest.fn().mockReturnThis() };

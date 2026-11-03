@@ -1,0 +1,159 @@
+{
+  "domain": "25_multi_tenant_isolation_attack_simulation",
+  "file": "25_multi_tenant_isolation_attack_simulation.md",
+  "area": "MT",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T07:48:00Z",
+  "findings": [
+    {
+      "id": "MT-P1-001",
+      "severity": "P1",
+      "title": "Audit log list and export are not org-scoped by default",
+      "owner": "API platform / security",
+      "target": "verified - no action",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/audit.ts:24-50 applies requireOrgAccess+requireAdmin, applyRequestedOrg and applyOrgScope (mandatory org predicate) to list and export; lib/admin-scope.ts:70-140 fails closed for non-cross-tenant admins. The multi-org membership variant is tracked separately as MT-P1-005.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P1-002",
+      "severity": "P1",
+      "title": "Platform dashboards expose all-tenant aggregates to any single-org admin",
+      "owner": "API platform / security",
+      "target": "verified - no action",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/dashboard.ts:16-50 and business-os.ts:35-62 scope every aggregate with resolveAdminTenantScope + applyOrgScope; single-org admins see only their resolved org list. The multi-org membership variant is tracked as MT-P1-005.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P1-003",
+      "severity": "P1",
+      "title": "Public file-request upload authorizes with a permission unioned across all orgs",
+      "owner": "API platform / security",
+      "target": "verified - no action",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/file-requests.ts:114-160 authorizes on the request token row and binds every write to data.organization_id (:161,197-275); the claim RPC is org-bound.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P1-004",
+      "severity": "P1",
+      "title": "Response cache keys omit the caller's tenant scope, so all-tenant responses can be served to single-org members",
+      "owner": "API principal engineer",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: middleware/cache.ts:204-260 folds a scopeFingerprint (allTenants + sorted orgIds hash) into the key, and documents list now opts into userScoped at routes/documents.ts:227; scope-dependent routes pass resolveAdminTenantScope.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P2-001",
+      "severity": "P2",
+      "title": "Admin global search lists all organizations and can fall through unscoped",
+      "owner": "API platform / security",
+      "target": "verified - no action",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/search.ts:78-260 resolves canSeeAllTenants/requestedOrg, applies scopedOrgIds to users/tickets/projects/documents/organizations, and only unscopes for genuine super-admin cross-tenant callers; search-tenant-scope.test.ts + search-org-pin.test.ts cover it.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P2-002",
+      "severity": "P2",
+      "title": "By-id org filters are conditional, so they fail open if the org gate is not reached",
+      "owner": "API principal engineer",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: the mandatory applyResolvedOrg helper (lib/admin-scope.ts:141-165, throws 403 when no scope resolves) is used in findings/tickets/qbr/documents and notifications list, and the tenant-scoping-guard allowlist no longer lists findings/tickets/qbr. Residual unchanged: conditional `if (orgId)` filters remain in ai.ts:329,546, api-keys.ts:53, approvals.ts:101,132,174, assets.ts:84,113,148, documents.ts:413,434,540,578,616,626,655, and others; they are safe only because requireOrgAccess injects organization_id for non-platform admins.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P2-003",
+      "severity": "P2",
+      "title": "Storage writer path and RLS org-derivation disagree (`orgs/<uuid>/` vs `<uuid>/`)",
+      "owner": "API platform / DB owner",
+      "target": "verified - no action",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: storage writers prefix objects with the org UUID - documents.ts:387 `${organizationId}/...`, file-requests.ts:161 `${data.organization_id}/requests/...`; storage_path_org_id (5302026:799-825) parses that UUID prefix and no `orgs/`-prefixed writer remains.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P2-004",
+      "severity": "P2",
+      "title": "Realtime/SSE notification channel is scoped by user only, with no org assertion",
+      "owner": "API platform / security",
+      "target": "verified - no action",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/notifications.ts:181-196 notificationInScope drops non-matching orgs, and :231,285,302-303 apply the resolved org to the stream and initial query; notifications-sse-scope.test.ts covers it.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P2-005",
+      "severity": "P2",
+      "title": "Platform-admin cross-tenant access is role-key based, broad, and unalerted",
+      "owner": "Platform lead + security",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: the role-key split narrows the tier; cross-tenant entries are written to impersonation_log (services/impersonation.ts) and incremented in lib/metrics.ts:137-140 with Prometheus alerts MCTImpersonationBurst/MCTImpersonationActivity (prometheus.rules.yml:102-120). Residual unchanged: the audit write is still fire-and-forget (void logImpersonation in middleware/org-access.ts:52,197 and lib/tenant.ts:48), so an insert failure drops the record, and the metric carries no organization label.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P2-006",
+      "severity": "P2",
+      "title": "Platform-wide report generators run as service role with no tenant guard on scope inputs",
+      "owner": "Worker/queue owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: scheduled report generators derive the org from the DB row and scope every read - worker/tasks/module-tasks.ts qbrScheduledGenerate (:1062-1124) and saas-audit-scan (:1300-1345) use `.eq('organization_id', orgId)`; api/lib/task-producer.ts:76-104 refuses scheduled-only tasks and fails closed on queue-backend mismatch.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P2-007",
+      "severity": "P2",
+      "title": "Client-portal entitlement routes order requireAdmin before requireOrgAccess, bypassing the org-pinned admin check",
+      "owner": "API principal engineer",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/client-portal.ts:121,145 order requireOrgAccess before requireAdmin on both entitlement routes, so the org-pinned admin check applies; client-portal-entitlements-org-pin.test.ts covers it.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P2-008",
+      "severity": "P2",
+      "title": "Platform-wide store intake and analytics endpoints are readable by any tenant admin with no cross-tenant gate",
+      "owner": "API platform / product",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/store/quotes.ts:36-37 requirePlatformAdmin (allTenants) on platform surfaces and :216-224 applies applyOrgScope on the quote list; analytics.ts:78-110 gates admin reads on allTenants; store-tenant-isolation.test.ts covers it.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P3-001",
+      "severity": "P3",
+      "title": "No automated cross-tenant isolation regression suite for application-layer scoping",
+      "owner": "QA / API team",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a5: isolation coverage includes tenant-scoping-guard.test.ts, search-tenant-scope, store-tenant-isolation, notifications-sse-scope, admin-scope-resolved-org, client-portal-entitlements-org-pin and final-view-gates. Residual unchanged: the static guard's KNOWN_UNSCOPED allowlist still lists 11 unremediated modules (tenant-scoping-guard.test.ts:49-64), and there is no per-module org-A->org-B matrix test.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P3-002",
+      "severity": "P3",
+      "title": "Admin notification create accepts an arbitrary recipient and org-less rows bypass the SSE scope assertion",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a5: routes/notifications.ts:449-470 admin create requires requireAdmin plus assertSharesActiveOrg on the recipient and assertOrgScopeMatches on a supplied org, and stamps the resolved org; list/SSE paths apply applyResolvedOrg.",
+      "area": "MT"
+    },
+    {
+      "id": "MT-P1-005",
+      "severity": "P1",
+      "title": "A cross-tenant admin membership widens admin scope to orgs where the user is only a client/member",
+      "owner": "API platform / security",
+      "target": "this week",
+      "status": "open",
+      "note": "NEW at 6b7aa1a5: requireOrgAccess treats any approved cross-tenant role as org-agnostic and leaves req.orgId null when no active/query org is supplied (middleware/org-access.ts:140-146). requireAdmin only pins the request when orgScope.explicit is true (middleware/admin.ts:49-58), and resolveAdminTenantScope then builds orgIds from EVERY approved membership (lib/admin-scope.ts:63-74), not only admin orgs. A user who is `admin` in org A and `client_user` in org B therefore passes requireAdmin with no explicit org and gets orgIds=[A,B]; audit list/export (routes/audit.ts:28-37), dashboard/business-os aggregates, global search (routes/search.ts:80-108) and tickets bulk (routes/tickets.ts:613-623) all operate on B as well. Reproduce by omitting ?organization_id and the mct_active_org cookie for such a two-org user.",
+      "area": "MT"
+    }
+  ]
+}

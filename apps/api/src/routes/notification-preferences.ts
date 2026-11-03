@@ -11,6 +11,10 @@ router.use(requireAuth);
 router.use(requireOrgAccess);
 
 const MODULES = ["tickets", "projects", "documents", "billing", "system"] as const;
+// NOTIF-P2-013: the one-click unsubscribe writes module_key = 'all'; expose it
+// so a user can see and clear the global email opt-out.
+const GLOBAL_MODULE = "all" as const;
+const MODULE_KEYS = [...MODULES, GLOBAL_MODULE] as const;
 const CHANNELS = ["email", "sms", "in_app", "push"] as const;
 
 router.get("/", async (req, res, next) => {
@@ -32,6 +36,7 @@ router.get("/", async (req, res, next) => {
       success({
         preferences: data ?? [],
         modules: [...MODULES],
+        globalModule: GLOBAL_MODULE,
         channels: [...CHANNELS],
       }),
     );
@@ -48,7 +53,7 @@ router.put("/", async (req, res, next) => {
         preferences: z
           .array(
             z.object({
-              moduleKey: z.enum(MODULES),
+              moduleKey: z.enum(MODULE_KEYS),
               channel: z.enum(CHANNELS),
               enabled: z.boolean(),
             }),
@@ -62,8 +67,7 @@ router.put("/", async (req, res, next) => {
     // membership) and exposes it as req.orgId plus req.query.organization_id.
     // Default to that resolved scope so the NOT NULL organization_id column is
     // always populated, and fail loudly when no organization can be resolved.
-    const orgId =
-      organizationId ?? req.orgId ?? (req.query.organization_id as string | undefined);
+    const orgId = organizationId ?? req.orgId ?? (req.query.organization_id as string | undefined);
     if (!orgId) {
       throw new AppError("VALIDATION", "organizationId is required", 400);
     }

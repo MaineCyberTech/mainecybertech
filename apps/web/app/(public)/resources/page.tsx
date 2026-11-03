@@ -41,7 +41,7 @@ export default function ResourcesIndexPage() {
         </p>
 
         {magnets.length === 0 ? (
-          <div className="rounded-lg border border-emerald-600/10 bg-cyber-card-subtle p-12 text-center backdrop-blur-sm">
+          <div className="bg-cyber-card-subtle rounded-lg border border-emerald-600/10 p-12 text-center backdrop-blur-sm">
             <p className="text-slate-400">No resources available yet. Check back soon.</p>
           </div>
         ) : (
@@ -55,9 +55,9 @@ export default function ResourcesIndexPage() {
                 <span className="mb-3 inline-block w-fit rounded-full border border-emerald-600/20 bg-emerald-600/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400">
                   Checklist
                 </span>
-                <h3 className="mb-3 font-display text-lg font-bold uppercase tracking-wider text-slate-50">
+                <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wider text-slate-50">
                   {magnet.title}
-                </h3>
+                </h2>
                 <p className="mb-4 flex-1 text-sm leading-relaxed text-slate-400">
                   {magnet.description ||
                     `A structured ${magnet.title.toLowerCase()} covering essential steps and best practices.`}

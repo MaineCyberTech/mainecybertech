@@ -43,7 +43,12 @@ export default async function DnsChangesPage() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-50">DNS Change Requests</h1>
           <p className="mt-1 text-sm text-slate-400">
-            {items.length} change request{items.length !== 1 ? "s" : ""} for your organization.
+            {items.length} change request{items.length !== 1 ? "s" : ""} in this view (most recent
+            first).
+          </p>
+          <p className="mt-2 text-xs text-slate-400">
+            One-way request: your account team owns status updates and history. Contact them to
+            reopen or change a submitted request.
           </p>
         </div>
         {canCreate ? (

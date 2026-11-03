@@ -13,16 +13,17 @@ unauthenticated; loopback is skipped for local development). It reuses the
 existing `userRateLimitKeyGenerator` (SHA-256 of the token) so rotating forged
 `sub` claims cannot mint fresh buckets.
 
-| Route                                          | Why it is limited                     |
-| ---------------------------------------------- | ------------------------------------- |
-| `POST /api/v1/bulk/invite`                     | up to 500 auth accounts per call      |
-| `POST /api/v1/documents/bulk/folder`           | mass folder reassignment              |
-| `POST /api/v1/documents/bulk/metadata`         | mass metadata/visibility changes      |
-| `POST /api/v1/tickets/bulk`                    | mass ticket state transitions         |
-| `POST /api/v1/organizations/onboard`           | org + auth user + membership creation |
-| `DELETE /api/v1/organizations/:id`             | cascading tenant delete               |
-| `GET /api/v1/audit/export`                     | full-trail export (up to 10k rows)    |
-| `GET /api/v1/audit/impersonation/export`       | cross-tenant impersonation trail      |
+| Route                                    | Why it is limited                     |
+| ---------------------------------------- | ------------------------------------- |
+| `POST /api/v1/bulk/invite`               | up to 500 auth accounts per call      |
+| `POST /api/v1/documents/bulk/folder`     | mass folder reassignment              |
+| `POST /api/v1/documents/bulk/metadata`   | mass metadata/visibility changes      |
+| `POST /api/v1/tickets/bulk`              | mass ticket state transitions         |
+| `POST /api/v1/organizations`             | tenant creation                       |
+| `POST /api/v1/organizations/onboard`     | org + auth user + membership creation |
+| `DELETE /api/v1/organizations/:id`       | cascading tenant delete               |
+| `GET /api/v1/audit/export`               | full-trail export (up to 10k rows)    |
+| `GET /api/v1/audit/impersonation/export` | cross-tenant impersonation trail      |
 
 Exceeding the limit returns HTTP 429. The SDK retries 429s with backoff, so an
 operator should surface the wait time instead of retrying in a tight loop.
@@ -73,12 +74,14 @@ step.
 
 ## Organization onboarding — first admin starts pending (ADMIN-P2-004)
 
-`POST /organizations/onboard` still requires a platform super admin (the admin
-role key is cross-tenant). The first admin membership is now created with
-`status: "pending"` and the response includes `approvalRequired: true`. After
-the invitee confirms their email, a platform super admin approves the
-membership from the memberships admin queue before the admin can act for the
-tenant.
+`POST /organizations/onboard` requires a platform super admin
+(`profiles.is_super_admin`) for every role key, not only when the caller
+supplies a cross-tenant role. `POST /organizations` (plain tenant creation) has
+the same gate and the admin-ops rate limit. The first admin membership is
+created with `status: "pending"` and the response includes
+`approvalRequired: true`. After the invitee confirms their email, a platform
+super admin approves the membership from the memberships admin queue before
+the admin can act for the tenant.
 
 ## Related documents
 

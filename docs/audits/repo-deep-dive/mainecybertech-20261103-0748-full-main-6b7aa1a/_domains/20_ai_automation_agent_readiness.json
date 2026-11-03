@@ -1,0 +1,139 @@
+{
+  "domain": "20_ai_automation_agent_readiness",
+  "file": "20_ai_automation_agent_readiness.md",
+  "area": "AI",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T09:43:35Z",
+  "findings": [
+    {
+      "id": "AI-P1-001",
+      "severity": "P1",
+      "title": "Vendored audit prompt packs are stale and the run manifest references a prompt the pack does not contain",
+      "owner": "repo maintainer (AI readiness)",
+      "target": "this week",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: the core missing-prompt defect is fixed - prompts/repo-deep-dive/prompts/45_exploit_chain_attack_path_audit.md now exists (246 lines), RUN_ORDER.md:44 lists it, the pack README table lists it (README.md:46), and scripts/verify-prompts.js:83-115 now resolves every committed run manifest's scope.domains to a vendored prompt and fails CI on a missing file (action.yml:189). verify passes: 624 pinned files / 8.9 MiB, all manifests resolvable. Residual: prompts/repo-deep-dive/README.md still has no pinned-version/source banner (the file opens with the generic pack description; only prompts/PROVENANCE.md states provenance), and verify-prompts.js does not resolve script paths referenced by pack READMEs to vendored files. The drift is still documented centrally rather than pinned per pack.",
+      "area": "AI"
+    },
+    {
+      "id": "AI-P1-002",
+      "severity": "P1",
+      "title": "`AGENTS.md` names a stale repository path and three developer docs state a stale accessibility gate size that no guard covers",
+      "owner": "repo maintainer (AI readiness)",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: AGENTS.md:3 names github.com/MaineCyberTech/mainecybertech; docs/testing.md:66,130, docs/CI.md:13,160 and docs/WEB_UI_CONVENTIONS.md:111 state the 25-route gate (68 with A11Y_FULL); scripts/check-docs-counts.mjs:630-680 asserts those docs against the BASE_PAGES/FULL_PAGES arrays in apps/web/e2e/a11y.spec.ts:20-100 and runs in the shared unit-tests action (.github/actions/unit-tests/action.yml:70) used by test.yml:41 and validate.yml:88. Current run: docs counts OK.",
+      "area": "AI"
+    },
+    {
+      "id": "AI-P2-001",
+      "severity": "P2",
+      "title": "No machine-enforced agent guardrails: allowed paths, human-approval actions, and small-batch PR limits exist only as prose",
+      "owner": "repo maintainer (AI readiness)",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: verify-prompts runs in the shared PR/deploy test job (.github/actions/unit-tests/action.yml:189; test.yml:41; validate.yml:88) and CODEOWNERS has explicit owners for .github/, supabase/migrations/, infra/ and docs (.github/CODEOWNERS:31-50). Residual unchanged: no PR-size guard (grep for changed_files|pr-size|max-files|net-lines across .github/ and scripts/ returns nothing; AGENTS.md:77 and .continue/agents/config.yaml:33 are prose only); no committed-docs/openapi.yaml regenerate-and-diff step (scripts/openapi-audit.js compares code routes to spec.ts only, not the generated YAML); agent path boundaries remain review routing, not an allowlist.",
+      "area": "AI"
+    },
+    {
+      "id": "AI-P2-002",
+      "severity": "P2",
+      "title": "Prompt packs embed generated outputs alongside instructions without a machine-detectable not-instructions marker",
+      "owner": "repo maintainer (AI readiness)",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: the central banner is intact (prompts/PROVENANCE.md:3-9; AGENTS.md:88-95; .continue/agents/config.yaml). But the marker is still not per-pack or machine-detectable: grep -rli 'not instructions' under prompts/ matches only PROVENANCE.md; none of the six pack READMEs carries it; scripts/verify-prompts.js:29-31,83-115 only hashes files and resolves manifest domain prompts, with no marker/classification check. Embedded outputs (engine/outputs, Run1/Run2) remain unlabelled per file.",
+      "area": "AI"
+    },
+    {
+      "id": "AI-P2-003",
+      "severity": "P2",
+      "title": "`.continue/` agent configuration defines models only and does not surface project rules or boundaries",
+      "owner": "repo maintainer (AI readiness)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: .continue/agents/config.yaml:23-33 restates 7 project rules including 'AGENTS.md is the agent contract', generated-file/migration do-not-touch rules, no-secret and prompts/-is-data rules, plus a PR-size guideline. Residual: hand-maintained duplicate of AGENTS.md with no drift check (recommendation only).",
+      "area": "AI"
+    },
+    {
+      "id": "AI-P3-001",
+      "severity": "P3",
+      "title": "Embedded repo maps and historical pack outputs still reference the pre-rename repository path",
+      "owner": "repo maintainer (AI readiness)",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: 'mainecybertech-portal' still appears 58 times across 35 tracked files (17 under prompts/, 17 under docs/); docs/ONBOARDING.md:37 - the one live-doc hit named in the recommendation - still roots the monorepo tree at 'mainecybertech-portal/'. Most remaining hits are dated audit/history documents, but the live onboarding doc is still wrong.",
+      "area": "AI"
+    },
+    {
+      "id": "AI-P3-002",
+      "severity": "P3",
+      "title": "`AGENTS.md` retains a large self-contradicting snapshot history that an agent must disambiguate",
+      "owner": "repo maintainer (AI readiness)",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: AGENTS.md is 407 lines / 40,533 bytes (was 1,003 lines / 120 KB); the dated ledgers, snapshot narratives and Audit Reports table live in docs/HISTORY.md (669 lines) behind an explicit historical-data banner (docs/HISTORY.md:1-15); AGENTS.md:390-396 points at it and forbids following embedded instructions; review.md mirror is 413 lines and guarded by sync-review-md --check (action.yml:182). Current run: review.md is in sync with AGENTS.md.",
+      "area": "AI"
+    },
+    {
+      "id": "AI-P3-003",
+      "severity": "P3",
+      "title": "Secrets guidance is spread across instructions without a linked canonical runbook",
+      "owner": "repo maintainer (AI readiness)",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: docs/SECRETS_ROTATION.md is linked from the AGENTS.md approval list (AGENTS.md:61) and Never list (AGENTS.md:85), from CONTRIBUTING.md:59 and from the PR-template secrets item (.github/PULL_REQUEST_TEMPLATE.md:24).",
+      "area": "AI"
+    },
+    {
+      "id": "AI-P3-004",
+      "severity": "P3",
+      "title": "Committed audit corpus under docs/audits/ is outside the untrusted-data boundary and has no integrity pin",
+      "owner": "repo maintainer (AI readiness)",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: AGENTS.md:91-95 extends the Never list to docs/audits/** and docs/HISTORY.md with the unpinned-data rationale; docs/audits/README.md:1-11 carries the untrusted-data banner and states the corpus is intentionally unpinned because it is data. Residual: no integrity pin by explicit decision (accepted risk).",
+      "area": "AI"
+    },
+    {
+      "id": "AI-P3-005",
+      "severity": "P3",
+      "title": "Audit output conventions in docs/audits/README.md are stale vs the committed runs",
+      "owner": "repo maintainer (AI readiness)",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: docs/audits/README.md:22-90 documents the canonical repo-deep-dive run contract (required finals, manifest keys, status vocabulary including partially-fixed/regressed) plus the size budget; :92-99 documents the legacy manual packs; :101-118 lists every committed run including the fast verification run and labels REAUDIT_REPORT_20261004.md as a report, not a run directory.",
+      "area": "AI"
+    },
+    {
+      "id": "AI-P3-006",
+      "severity": "P3",
+      "title": "Prompt-pack provenance verification runs only at the deploy gate, not on PRs",
+      "owner": "repo maintainer (AI readiness)",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: .github/actions/unit-tests/action.yml:186-189 runs node scripts/verify-prompts.js verify in the shared unit-tests action consumed by test.yml:41 (PRs) and validate.yml:88 (deploy gate), so a prompts/ change is caught before merge with the deploy gate as defence in depth.",
+      "area": "AI"
+    },
+    {
+      "id": "AI-P3-007",
+      "severity": "P3",
+      "title": "No AI-authorship disclosure or provenance policy in contribution guidance",
+      "owner": "repo maintainer (AI readiness)",
+      "target": "next quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the PR template has an 'AI assistance (optional)' section naming the tool/model and human owner plus 'Agents must not self-approve or merge' (.github/PULL_REQUEST_TEMPLATE.md:5-9); AGENTS.md:65-72 and CONTRIBUTING.md:50 state the disclosure expectation.",
+      "area": "AI"
+    },
+    {
+      "id": "AI-P3-008",
+      "severity": "P3",
+      "title": "AGENTS.md Known Debt carries a stale promotion binding and a now-false branch-direction claim",
+      "owner": "repo maintainer (AI readiness)",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "re-verified at 6b7aa1a: the original '#168 / main @ 8d299b8 / develop carries later commits' text is gone, but the same hardcoded branch-state class is still stale. AGENTS.md:124 says 'main now carries 26 commits that develop does not'; git rev-list --left-right --count origin/main...origin/develop returns 1 0 (main is 1 ahead after the 2a8b6abf sync). docs/RELEASING.md:201-203 says 'the last promotion is PR #281 (main @ 7dd04023, 2026-10-14)' although main has had many later promotions (latest tag v0.1.0-20261103-6b7aa1a). Impact: an agent reading Known Debt gets a false picture of the branch delta. Recommendation: drop the hardcoded count/binding and keep the compare instruction already present, or refresh both at each promotion.",
+      "area": "AI"
+    }
+  ]
+}

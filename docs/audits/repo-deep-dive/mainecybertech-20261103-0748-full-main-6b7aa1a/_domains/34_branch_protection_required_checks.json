@@ -1,0 +1,169 @@
+{
+  "domain": "34_branch_protection_required_checks",
+  "file": "34_branch_protection_required_checks.md",
+  "area": "BP",
+  "agent": "subagent",
+  "emitted_at": "2026-11-03T08:57:21Z",
+  "findings": [
+    {
+      "id": "BP-P1-001",
+      "severity": "P1",
+      "title": "`main` requires a context (`Dependency Review`) that no job emits",
+      "owner": "repo admin (owner decision)",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: main.json requires 'Dependency Review / review', emitted by dependency-review.yml job review; guard PASS (8/6 contexts resolve).",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P1-002",
+      "severity": "P1",
+      "title": "`enforce_admins:false` lets administrators bypass all required checks and reviews",
+      "owner": "repo admin (owner decision)",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: enforce_admins:true in both .github/branch-protection/main.json and develop.json.",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P1-003",
+      "severity": "P1",
+      "title": "Production deploy path uses the unguarded `prod` environment, not `prod-approval`",
+      "owner": "repo admin (owner decision)",
+      "target": "this week",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: deploy prod job environment prod-approval (deploy-do.yml:648); prod migrations (supabase-migrations.yml:38); terraform-apply-prod (terraform-do.yml:204); read-only resolve-ip/terraform-plan keep the unprotected prod env by design (nothing mutates).",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P2-001",
+      "severity": "P2",
+      "title": "`require_code_owner_reviews:false` makes the committed CODEOWNERS advisory only",
+      "owner": "repo admin (owner decision)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: require_code_owner_reviews:true in both payloads; scripts/check-codeowners.mjs (syntax + optional team resolution via CODEOWNERS_READ_TOKEN) wired in unit-tests action.yml:146-154.",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P2-002",
+      "severity": "P2",
+      "title": "No break-glass / bypass process for branch protection, and no bypass audit trail",
+      "owner": "repo admin (owner decision)",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "code and fixtures exist at 6b7aa1a (branch-protection-audit.yml:94-186; bash scripts/ci/check-branch-protection-audit.sh PASS), but the trail has never been produced: all 3 scheduled runs fail (39273950100 2026-10-19, 40340906384 2026-10-26, 41491379135 2026-11-02), the bypass job fails at 'Detect bypasses', there are 0 [break-glass] issues and 0 audit artifacts. Consistent with the documented missing BRANCH_PROTECTION_READ_TOKEN (matrix:231).",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P2-003",
+      "severity": "P2",
+      "title": "No drift detection between committed branch-protection JSON and live GitHub settings",
+      "owner": "repo admin (owner decision)",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "drift code/fixtures exist and the self-test passes, but the live detector has never completed: run 41491379135's drift job fails at step 3 'Compare the committed protection with the live settings' (same for 40340906384 / 39273950100), with no drift artifacts, so the committed-vs-live divergence is still unmeasured. Needs BRANCH_PROTECTION_READ_TOKEN (matrix:231).",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P2-004",
+      "severity": "P2",
+      "title": "Path-filtered required checks can leave `main`/`develop` protected by checks that never run",
+      "owner": "repo admin (owner decision)",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: all required workflows have an unfiltered pull_request trigger (test.yml:10-14, lint.yml:5-10, typecheck.yml:5-10, e2e.yml:19-23, dependency-review.yml:2-4, codeql.yml); scripts/check-required-checks.mjs fails on a filtered required workflow.",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P2-005",
+      "severity": "P2",
+      "title": "Required-check guard is not run on pull requests or on branch-protection-only changes",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: unit-tests composite runs scripts/ci/check-required-checks.sh in both the PR gate (test.yml:41) and the deploy gate (validate.yml:88), reading .github/branch-protection/*.json, so a branch-protection-only PR is checked too; fixtures 4/4 PASS.",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P2-006",
+      "severity": "P2",
+      "title": "`deploy-do` manual dispatch can target prod from an arbitrary ref, bypassing the develop->main promotion model",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: deploy-do.yml:61-69 rejects deploy_target=prod unless GITHUB_REF=refs/heads/main; the same main-only guard exists for db-restore-test (:52-60), load-test (:67-75) and smoke-check prod dispatch.",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P2-007",
+      "severity": "P2",
+      "title": "Security scan jobs are not required checks, so failing scans do not block merges",
+      "owner": "security/CI owner",
+      "target": "this month",
+      "status": "partially-fixed",
+      "note": "at 6b7aa1a Test / security-scan, Test / secrets-scan and CodeQL / Analyze (javascript-typescript) are required on both branches and block merges; residual: GitHub's 'Require code scanning results' setting is a repo-admin action not evidenced in-repo, and Chromatic/a11y-breadth remain non-required (documented).",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P3-001",
+      "severity": "P3",
+      "title": "Hotfix and emergency-deploy documentation is a stub and partially stale",
+      "owner": "repo admin (owner decision)",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: docs/RUNBOOK_HOTFIX.md is a complete procedure (branch-from-main, gates, backport, break-glass pointer, incident reference); RUNBOOK_EMERGENCY_MERGE.md covers the stuck-gate path.",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P3-002",
+      "severity": "P3",
+      "title": "Dependabot has no security-update separation or triage SLA, and PR template has no enforced link to required checks",
+      "owner": "repo admin (owner decision)",
+      "target": "this quarter",
+      "status": "partially-fixed",
+      "note": "at 6b7aa1a the SLA is documented (docs/DEPENDENCY_POLICY.md) and dependabot-triage-reminder.yml keeps a weekly deduplicated triage issue; .github/PULL_REQUEST_TEMPLATE.md links branch protection. Residual: Dependabot security-update separation is a GitHub repo setting not inspectable read-only.",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P3-003",
+      "severity": "P3",
+      "title": "Operator checklists disagree on which prod environments need required reviewers (`prod` vs `prod-approval`)",
+      "owner": "repo admin (owner decision)",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: matrix:9-16, RELEASING.md:118-141 and SECRETS_ROTATION.md:28-37 all name prod-approval as the single prod mutation gate; prod is read-only jobs only.",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P3-004",
+      "severity": "P3",
+      "title": "check-required-checks guard mis-models explicit job names combined with matrices",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: the guard models explicit job names + matrices (scripts/check-required-checks.mjs:73-90, emittedNames) and scripts/ci/check-required-checks.sh runs a 4/4 negative-fixture suite (PASS).",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P3-005",
+      "severity": "P3",
+      "title": "No CODEOWNERS validation; invalid team handles silently disable owner-review enforcement",
+      "owner": "repo admin (owner decision)",
+      "target": "this quarter",
+      "status": "verified-fixed",
+      "note": "re-verified at 6b7aa1a: scripts/check-codeowners.mjs + scripts/ci/check-codeowners.sh (fixture PASS) wired in unit-tests action.yml:146-154; CODEOWNERS_READ_TOKEN optional with a documented syntax-only fallback; .github/CODEOWNERS documents the failure mode.",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P1-004",
+      "severity": "P1",
+      "title": "PR #279 merged into main with required checks pending and zero reviews - live protection does not match the committed payloads (or an unrecorded bypass)",
+      "owner": "repo admin (owner decision)",
+      "target": "this week",
+      "status": "still-open",
+      "note": "still-open at 6b7aa1a with stronger live evidence: PR #333 (head 2a8b6ab -> main) merged 2026-11-03T07:48:23Z with 0 reviews and check-runs 'test (20.x)' failure, 'e2e (20.x)' failure and 'review' failure (Dependency Review annotation: 'Dependency review detected incompatible licenses'). The committed main.json requires 1 approving review, CODEOWNERS review, enforce_admins:true and 8 contexts (main.json:3-19). PRs #321, #323-#326 and #333 all merged with 0 reviews; no [break-glass] issue exists. The live protection still does not match the committed payload (or an unrecorded bypass).",
+      "area": "BP"
+    }
+  ]
+}

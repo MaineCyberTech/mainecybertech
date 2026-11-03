@@ -16,6 +16,10 @@ import * as path from "path";
  *    dropped and every anon/authenticated INSERT on `store_quotes` must
  *    constrain `organization_id` (global null-org, or an org the caller is an
  *    approved member of) so a quote cannot be injected into another tenant.
+ *  - PRIV-P2-010: the anonymous INSERT grant/policy on store_quotes is removed
+ *    entirely; the storefront writes through the consent-gated API.
+ *  - RLS-P3-009: a self-addressed notification insert must be limited to the
+ *    caller's approved organizations (or a global null-org row).
  *
  * The execution-level verification is `tools/migration_chain_check.sh`
  * (applies the whole chain to a fresh Postgres); this test catches an
@@ -45,7 +49,9 @@ function migrationFiles(): string[] {
 type Policy = { kind: "create" | "drop"; body: string; file: string };
 
 /** Final create/drop state of every policy on `table`, in chain order. */
-function policyState(table: "document_versions" | "store_quotes"): Map<string, Policy> {
+function policyState(
+  table: "document_versions" | "store_quotes" | "notifications",
+): Map<string, Policy> {
   const state = new Map<string, Policy>();
   const name = String.raw`(?:"([^"]+)"|'([^']+)'|([A-Za-z_][A-Za-z0-9_$]*))`;
   const createRe = new RegExp(
@@ -131,11 +137,18 @@ describe("RLS-P2-006 — store_quotes INSERT policies are tenant-scoped", () => 
     expect(offenders).toEqual([]);
   });
 
-  it("lets anonymous submitters create only global (null-org) quotes", () => {
+  it("revokes the anonymous store_quotes INSERT policy and grant (PRIV-P2-010)", () => {
     const anon = state.get("anon_insert_quotes");
-    expect(anon?.kind).toBe("create");
-    expect(anon?.body).toMatch(/to\s+anon/);
-    expect(anon?.body).toMatch(/organization_id\s+is\s+null/);
+    expect(anon?.kind).toBe("drop");
+
+    const migration = migrationFiles().find((f) =>
+      f.startsWith("5302465_revoke_anon_store_quotes_insert"),
+    );
+    expect(migration).toBeDefined();
+    const sql = maskComments(
+      fs.readFileSync(path.join(MIGRATIONS_DIR, migration!), "utf8"),
+    ).toLowerCase();
+    expect(sql).toMatch(/revoke\s+insert\s+on\s+table\s+public\.store_quotes\s+from\s+anon/);
   });
 
   it("lets authenticated users tag only an org they are approved members of", () => {
@@ -148,8 +161,24 @@ describe("RLS-P2-006 — store_quotes INSERT policies are tenant-scoped", () => 
   });
 });
 
+describe("RLS-P3-009 — self-addressed notifications are org-scoped", () => {
+  const state = policyState("notifications");
+  const policy = state.get("notifications_insert_system_or_admin");
+  const body = policy?.body ?? "";
+
+  it("has a live notifications insert policy", () => {
+    expect(policy?.kind).toBe("create");
+  });
+
+  it("requires approved membership for the self branch", () => {
+    expect(body).toMatch(/user_id\s*=\s*auth\.uid\s*\(\s*\)/);
+    expect(body).toMatch(/organization_id\s+is\s+null/);
+    expect(body).toMatch(/public\.is_org_member\s*\(\s*organization_id\s*\)/);
+  });
+});
+
 describe("RLS fix migrations are transactional", () => {
-  for (const prefix of ["5302447", "5302448"]) {
+  for (const prefix of ["5302447", "5302448", "5302465", "5302466"]) {
     it(`${prefix} is wrapped in begin;/commit;`, () => {
       const file = migrationFiles().find((f) => f.startsWith(prefix));
       expect(file).toBeDefined();

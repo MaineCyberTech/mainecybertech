@@ -65,7 +65,7 @@ services:
     pids_limit: 128
     healthcheck:
       # Authenticate via REDISCLI_AUTH (env), not `-a <password>` (argv).
-      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping"]
+      test: ["CMD-SHELL", 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -293,10 +293,42 @@ services:
     # Fork-bomb blast radius (CTR-P2-005), same as every other service.
     pids_limit: 128
     read_only: true
+    # OBS-P3-008 / CTR-P3-009: the official image is scratch-based (no
+    # shell/wget/curl), so a healthcheck inside this container can only re-run
+    # the binary and would stay "healthy" with a wedged HTTP listener or broken
+    # /host mounts. The probe sidecar below scrapes :9100 and asserts a real
+    # filesystem series instead; deploy-do gates on the probe.
+
+  node-exporter-probe:
+    # Same digest-pinned image as redis (already pulled and scanned), so this
+    # adds no new third-party image. The prometheus image's busybox wget cannot
+    # resolve Docker service names, so use the redis Alpine userland for the
+    # probe instead. It deliberately does not scrape via Prometheus: the point
+    # is to fail the deploy when the exporter's HTTP listener or
+    # /host/proc|/sys|rootfs mounts are broken, not when the TSDB is warming up.
+    image: redis:7-alpine@sha256:8da19c7399dca900c6822a1cf30f9d2285585e2c4b457ff4095b0f4500054d3f
+    logging: *default-logging
+    <<: *security
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["while true; do sleep 3600; done"]
+    depends_on:
+      node-exporter:
+        condition: service_started
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    mem_limit: 32m
+    pids_limit: 64
+    read_only: true
     healthcheck:
-      # The official node-exporter image is scratch-based: there is no shell
-      # and no wget/curl. Probe the binary itself instead of the HTTP endpoint.
-      test: ["CMD", "/bin/node_exporter", "--version"]
+      # Prove the scrape endpoint returns host metrics AND that the root
+      # filesystem mount was readable (a broken /rootfs mount yields no
+      # node_filesystem_size_bytes series). grep/read is a hard failure.
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://node-exporter:9100/metrics | grep -Eq '^node_filesystem_size_bytes\\{[^}]*mountpoint=\"/\"'",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -348,7 +380,7 @@ services:
   # ping URL / external webhook), so a total loss of this droplet is still
   # detected off-box. Internal only — no published ports.
   alertmanager:
-    # TODO(ops): digest is pinned to the v0.28.1 manifest-list digest. If a newer
+    # TODO(ops): digest is pinned to the v0.29.0 manifest-list digest. If a newer
     # release is adopted, re-pin (`docker buildx imagetools inspect
     # prom/alertmanager:vX.Y.Z`) and update the digest here before merge.
     image: prom/alertmanager:v0.29.0@sha256:88743b63b3e09ea6e31e140ced5bf45f4a8e82c617c2a963f78841f4995ad1d7
@@ -432,7 +464,8 @@ services:
     healthcheck:
       # `caddy validate` catches a broken Caddyfile deterministically; probing
       # HTTP would flap on the 80 -> 443 redirect (self-signed/TLS internal).
-      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+      test:
+        ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
       interval: 30s
       timeout: 5s
       retries: 3

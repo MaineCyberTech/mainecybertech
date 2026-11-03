@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import StatusPill from "@/components/StatusPill";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
@@ -28,10 +29,12 @@ export default async function PortalEndpointSecurityPage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Endpoint Security" }]}
       />
+      <PortalSubnav current="endpoint-security" />
       <h1 className="text-2xl font-semibold text-slate-50">Endpoint Security</h1>
       {loadFailed ? <DataErrorNote what="endpoint-security" /> : null}
       <p className="text-sm text-slate-400">
-        {items.length} endpoint{items.length !== 1 ? "s" : ""} monitored for your organization.
+        {items.length} endpoint{items.length !== 1 ? "s" : ""} monitored in this view (most recent
+        first).
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => {

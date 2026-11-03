@@ -3,12 +3,17 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import PortalDocumentsCenterClient from "@/components/portal/PortalDocumentsCenterClient";
+import AdminPagination from "@/components/admin/AdminPagination";
 import { uploadPortalDocument } from "./actions";
 import { bulkFolderAction, bulkMetadataAction } from "./bulk-actions";
 
 export const metadata = { title: "Documents - Portal - Maine CyberTech" };
 
-export default async function PortalDocumentsPage() {
+const DEFAULT_LIMIT = 25;
+
+export default async function PortalDocumentsPage(props: {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+}) {
   const api = getApiClient();
   const membership = await getApprovedMembership();
 
@@ -26,10 +31,19 @@ export default async function PortalDocumentsPage() {
     );
   }
 
+  const sp = (await props.searchParams) ?? {};
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
   const result = await api.documents.list({
     organizationId: membership.organization_id,
+    page,
+    limit,
   });
   const documents = result.items ?? [];
+  const total = result.total ?? documents.length;
 
   return (
     <div className="space-y-6">
@@ -51,10 +65,18 @@ export default async function PortalDocumentsPage() {
 
       <PortalDocumentsCenterClient
         documents={documents}
+        total={total}
         organizationId={membership.organization_id}
         uploadAction={uploadPortalDocument}
         bulkFolderAction={bulkFolderAction}
         bulkMetadataAction={bulkMetadataAction}
+      />
+      <AdminPagination
+        currentPage={page}
+        totalPages={Math.ceil(total / limit)}
+        buildHref={(p) => `/portal/documents?page=${p}&limit=${limit}`}
+        total={total}
+        limit={limit}
       />
     </div>
   );

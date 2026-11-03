@@ -1,7 +1,8 @@
 # Onboarding Guide — Maine CyberTech Portal
 
 > **Purpose:** Help new developers understand the architecture, development workflow, and key patterns in this monorepo.
-> **Prerequisites:** Node 20+, pnpm 10, Docker, Supabase CLI, VS Code
+> **Prerequisites:** Node 20.11+ (`import.meta.dirname` is used by the CI
+> scripts), pnpm 10, Docker, Supabase CLI, VS Code
 
 ---
 
@@ -48,7 +49,7 @@ mainecybertech-portal/
 │   └── terraform/
 │       └── digitalocean/  IaC (droplet, firewall, DNS)
 ├── supabase/
-│   ├── migrations/    162 SQL migration files
+│   ├── migrations/    164 SQL migration files
 │   └── seeds/         9 seed files
 ├── docs/              300+ documentation files
 ├── scripts/           PowerShell + bash utilities
@@ -296,7 +297,7 @@ Key helper functions (defined in migration `5302026`):
 | Document                                       | What it covers                                                                              |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `AGENTS.md`                                    | Full architecture, test patterns, critical context                                          |
-| `docs/API_ENDPOINT_INVENTORY.md`               | Historical endpoint inventory (see `docs/openapi.yaml` for the authoritative 422-path spec) |
+| `docs/API_ENDPOINT_INVENTORY.md`               | Historical endpoint inventory (see `docs/openapi.yaml` for the authoritative 424-path spec) |
 | `docs/ENVIRONMENT_VARIABLES.md`                | All env vars across all services                                                            |
 | `docs/MEGA_AUDIT_2026-06-18.md`                | Comprehensive architecture & security audit                                                 |
 | `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` | Operator manual                                                                             |

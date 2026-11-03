@@ -19,7 +19,7 @@ router.use(requireAuth);
 router.use(requireOrgAccess);
 router.use(requireEntitlement("qbr"));
 
-router.get("/", async (req, res, next) => {
+router.get("/", requirePermission("qbr", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "qbr", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));
@@ -44,7 +44,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requirePermission("qbr", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "qbr", "read");
     let query = supabase.from("qbr_reports").select("*").eq("id", String(req.params.id));

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
 
@@ -30,10 +31,12 @@ export default async function PortalDataRetentionPage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Data Retention" }]}
       />
+      <PortalSubnav current="data-retention" />
       <h1 className="text-2xl font-semibold text-slate-50">Data Retention Policies</h1>
       {loadFailed ? <DataErrorNote what="data-retention" /> : null}
       <p className="text-sm text-slate-400">
-        {items.length} retention polic{items.length !== 1 ? "ies" : "y"} for your organization.
+        {items.length} retention polic{items.length !== 1 ? "ies" : "y"} in this view (most recent
+        first).
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (

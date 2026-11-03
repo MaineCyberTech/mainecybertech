@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type NextFunction, type Request, type Response } from "express";
 import crypto from "crypto";
 import multer from "multer";
 import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
@@ -16,8 +16,27 @@ import { signedUrlDisposition } from "../lib/preview-policy";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
 import { applyClientVisibility, isClientVisible } from "../lib/client-visibility";
+import { rateLimitPublicFileUpload } from "../middleware/rate-limit";
 
 const router: ReturnType<typeof Router> = Router();
+
+type PublicFileRequestRow = {
+  id: string;
+  organization_id: string;
+  title: string;
+  token: string;
+  storage_path: string;
+  max_file_size_mb: number | null;
+  allowed_mime_types: string[] | null;
+  max_files: number | null;
+  upload_count: number;
+  expires_at: string;
+  status: string;
+  notify_on_upload: boolean | null;
+  created_by: string | null;
+};
+
+type PublicUploadRequest = Request & { publicFileRequest?: PublicFileRequestRow };
 
 const ALLOWED_MIME_TYPES = [
   "application/pdf",
@@ -77,6 +96,36 @@ const upload = multer({
   },
 });
 
+/**
+ * FILE-P2-009: resolve and validate the public upload capability BEFORE
+ * multer buffers the multipart body. Previously an invalid/expired/full token
+ * could still push up to 25 MiB into memory (per request) before the handler
+ * rejected it. The validated row is cached on the request so the handler does
+ * not repeat the lookup.
+ */
+async function validatePublicUploadToken(req: Request, _res: Response, next: NextFunction) {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("file_requests")
+      .select("*")
+      .eq("token", String(req.params.token))
+      .single();
+    if (error || !data) throw new AppError("NOT_FOUND", "File request not found or expired", 404);
+    if (data.status !== "active")
+      throw new AppError("GONE", "This upload link is no longer active", 410);
+    if (new Date(data.expires_at) < new Date())
+      throw new AppError("EXPIRED", "This upload link has expired", 410);
+    if (data.max_files != null && data.upload_count >= data.max_files)
+      throw new AppError("FULL", "Upload limit reached", 410);
+
+    (req as PublicUploadRequest).publicFileRequest = data as PublicFileRequestRow;
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
 router.get("/public/:token", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
@@ -119,24 +168,19 @@ router.post(
   // org A could write into org B's request folder, while anonymous uploaders
   // (the intended callers) got a 401. The token row is bound to one org via
   // `data.organization_id` and every write below is derived from it. (FILE-P1-001 / MT-P1-003)
+  //
+  // FILE-P2-009: validate the token (and its status/expiry/file limit) before
+  // multer buffers the body, and cap upload attempts per token/IP.
+  rateLimitPublicFileUpload,
+  validatePublicUploadToken,
   upload.single("file"),
   async (req, res, next) => {
     try {
+      const data = (req as PublicUploadRequest).publicFileRequest;
+      if (!data) throw new AppError("NOT_FOUND", "File request not found or expired", 404);
       if (!req.file) throw new AppError("VALIDATION", "No file provided", 400);
 
       const supabase = getSupabaseAdmin();
-      const { data, error } = await supabase
-        .from("file_requests")
-        .select("*")
-        .eq("token", String(req.params.token))
-        .single();
-      if (error || !data) throw new AppError("NOT_FOUND", "File request not found or expired", 404);
-      if (data.status !== "active")
-        throw new AppError("GONE", "This upload link is no longer active", 410);
-      if (new Date(data.expires_at) < new Date())
-        throw new AppError("EXPIRED", "This upload link has expired", 410);
-      if (data.max_files != null && data.upload_count >= data.max_files)
-        throw new AppError("FULL", "Upload limit reached", 410);
       if (data.max_file_size_mb && req.file.size > data.max_file_size_mb * 1024 * 1024) {
         throw new AppError("VALIDATION", `File exceeds the ${data.max_file_size_mb}MB limit`, 400);
       }
@@ -296,7 +340,7 @@ function generateToken(): string {
   return crypto.randomBytes(32).toString("hex");
 }
 
-router.get("/", async (req, res, next) => {
+router.get("/", requirePermission("file-requests", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "file-requests", "read");
     const page = Math.max(1, queryInt(req.query.page, 1));
@@ -323,7 +367,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requirePermission("file-requests", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "file-requests", "read");
     const { data, error } = await supabase
@@ -348,16 +392,21 @@ router.get("/:id", async (req, res, next) => {
 // URL; the path is always read from the `file_request_uploads` row so the
 // caller can never target an arbitrary object.
 
-router.get("/:id/uploads", async (req, res, next) => {
+router.get("/:id/uploads", requirePermission("file-requests", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "file-requests", "read");
     const { data: request, error: requestError } = await supabase
       .from("file_requests")
-      .select("id")
+      .select("id, visibility")
       .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (requestError || !request) throw new AppError("NOT_FOUND", "File request not found", 404);
+    // SEC-P2-019: the nested upload surface inherits the parent request's
+    // visibility; knowing an internal request UUID must not expose its files.
+    if (!(await isClientVisible(req, request as Record<string, unknown>))) {
+      throw new AppError("NOT_FOUND", "File request not found", 404);
+    }
 
     const { data, error } = await supabase
       .from("file_request_uploads")
@@ -373,47 +422,56 @@ router.get("/:id/uploads", async (req, res, next) => {
   }
 });
 
-router.get("/:id/uploads/:uploadId/signed-url", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "file-requests", "read");
-    const orgId = req.query.organization_id as string;
+router.get(
+  "/:id/uploads/:uploadId/signed-url",
+  requirePermission("file-requests", "view"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "file-requests", "read");
+      const orgId = req.query.organization_id as string;
 
-    // Verify the parent request AND the upload row belong to the caller's org
-    // before signing the stored path.
-    const { data: request, error: requestError } = await supabase
-      .from("file_requests")
-      .select("id")
-      .eq("id", String(req.params.id))
-      .eq("organization_id", orgId)
-      .single();
-    if (requestError || !request) throw new AppError("NOT_FOUND", "File request not found", 404);
+      // Verify the parent request AND the upload row belong to the caller's org
+      // before signing the stored path.
+      const { data: request, error: requestError } = await supabase
+        .from("file_requests")
+        .select("id, visibility")
+        .eq("id", String(req.params.id))
+        .eq("organization_id", orgId)
+        .single();
+      if (requestError || !request) throw new AppError("NOT_FOUND", "File request not found", 404);
+      // SEC-P2-019: match the detail endpoint's visibility rule so a client
+      // cannot mint URLs for an internal request's attachments.
+      if (!(await isClientVisible(req, request as Record<string, unknown>))) {
+        throw new AppError("NOT_FOUND", "File request not found", 404);
+      }
 
-    const { data: upload, error: uploadError } = await supabase
-      .from("file_request_uploads")
-      .select("storage_bucket, storage_path, mime_type, file_name")
-      .eq("id", String(req.params.uploadId))
-      .eq("file_request_id", request.id)
-      .eq("organization_id", orgId)
-      .single();
-    if (uploadError || !upload) throw new AppError("NOT_FOUND", "Upload not found", 404);
+      const { data: upload, error: uploadError } = await supabase
+        .from("file_request_uploads")
+        .select("storage_bucket, storage_path, mime_type, file_name")
+        .eq("id", String(req.params.uploadId))
+        .eq("file_request_id", request.id)
+        .eq("organization_id", orgId)
+        .single();
+      if (uploadError || !upload) throw new AppError("NOT_FOUND", "Upload not found", 404);
 
-    // FILE-P3-008: non-previewable uploads are signed with an attachment
-    // disposition so they cannot render inline from the storage origin.
-    const { data: signedUrl, error: urlError } = await supabase.storage
-      .from(upload.storage_bucket)
-      .createSignedUrl(
-        upload.storage_path,
-        3600,
-        signedUrlDisposition(upload.mime_type, upload.file_name),
-      );
-    if (urlError || !signedUrl)
-      throw new AppError("STORAGE_ERROR", "Failed to create signed URL", 500);
+      // FILE-P3-008: non-previewable uploads are signed with an attachment
+      // disposition so they cannot render inline from the storage origin.
+      const { data: signedUrl, error: urlError } = await supabase.storage
+        .from(upload.storage_bucket)
+        .createSignedUrl(
+          upload.storage_path,
+          3600,
+          signedUrlDisposition(upload.mime_type, upload.file_name),
+        );
+      if (urlError || !signedUrl)
+        throw new AppError("STORAGE_ERROR", "Failed to create signed URL", 500);
 
-    res.json(success({ signedUrl: signedUrl.signedUrl, expiresIn: 3600 }));
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(success({ signedUrl: signedUrl.signedUrl, expiresIn: 3600 }));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.post("/", requirePermission("file-requests", "create"), async (req, res, next) => {
   try {

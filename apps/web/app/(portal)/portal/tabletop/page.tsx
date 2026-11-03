@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import StatusPill from "@/components/StatusPill";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
@@ -29,10 +30,12 @@ export default async function PortalTabletopPage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Tabletop Exercises" }]}
       />
+      <PortalSubnav current="tabletop" />
       <h1 className="text-2xl font-semibold text-slate-50">Tabletop Exercises</h1>
       {loadFailed ? <DataErrorNote what="tabletop" /> : null}
       <p className="text-sm text-slate-400">
-        {items.length} tabletop exercise{items.length !== 1 ? "s" : ""} for your organization.
+        {items.length} tabletop exercise{items.length !== 1 ? "s" : ""} in this view (most recent
+        first).
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (

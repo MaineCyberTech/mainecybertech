@@ -28,7 +28,17 @@ jest.mock("@/components/Breadcrumbs", () => ({
 
 jest.mock("@/components/EmptyState", () => ({
   __esModule: true,
-  default: ({ title, description, actionLabel, actionHref }: any) =>
+  default: ({
+    title,
+    description,
+    actionLabel,
+    actionHref,
+  }: {
+    title: string;
+    description?: string;
+    actionLabel?: string;
+    actionHref?: string;
+  }) =>
     React.createElement(
       "div",
       null,
@@ -36,6 +46,11 @@ jest.mock("@/components/EmptyState", () => ({
       React.createElement("p", null, description),
       actionLabel ? React.createElement("a", { href: actionHref }, actionLabel) : null,
     ),
+}));
+
+jest.mock("@/components/portal/PortalSubnav", () => ({
+  __esModule: true,
+  default: () => React.createElement("div"),
 }));
 
 describe("ClientOnboardingPage", () => {

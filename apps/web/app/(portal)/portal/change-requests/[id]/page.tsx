@@ -5,6 +5,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import { withRetry } from "@/lib/retry";
 import { hasPermission } from "@/lib/permissions";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import StatusPill from "@/components/StatusPill";
 import { formatDate, formatDateTime, formatRelativeTime } from "@/lib/format";
 import SubmitChangeButton from "./SubmitChangeButton";
@@ -77,6 +78,7 @@ export default async function ChangeRequestDetailPage({
           { label: change.title },
         ]}
       />
+      <PortalSubnav current="change-requests" />
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>

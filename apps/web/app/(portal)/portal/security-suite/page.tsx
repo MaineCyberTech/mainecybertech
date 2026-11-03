@@ -46,7 +46,8 @@ export default async function SecuritySuitePage() {
       {loadFailed ? <DataErrorNote what="security-suite" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Security Suite</h1>
       <p className="text-sm text-slate-400">
-        {items.length} M365 hardening record{items.length !== 1 ? "s" : ""} for your organization.
+        {items.length} M365 hardening record{items.length !== 1 ? "s" : ""} in this view (most
+        recent first).
       </p>
       <div className="space-y-3">
         {items.map((item) => (

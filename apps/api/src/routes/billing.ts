@@ -15,6 +15,7 @@ import { resolveEffectivePermissions, ADMIN_BYPASS_KEYS } from "../lib/permissio
 import { listCountMode } from "../lib/pagination";
 import { decryptField } from "../lib/field-encryption";
 import { invoicePaidAtIso, epochSecondsToIsoOrNow } from "../lib/billing-timestamps";
+import { summarizeSubscriptionItems } from "@mct/config/subscription";
 
 type StripePrice = {
   nickname?: string | null;
@@ -540,13 +541,14 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
       }
 
       for (const sub of subsPage.items) {
-        const item = sub.items?.data?.[0];
-        const price = item?.price;
+        // BILL-P3-010: every item (base plan + add-ons) contributes to the
+        // mirror rather than only items.data[0].
+        const summary = summarizeSubscriptionItems(sub.items?.data);
         await supabase.from("subscriptions").upsert(
           {
             organization_id: customer.organization_id,
             stripe_subscription_id: sub.id,
-            plan_name: price?.nickname ?? price?.product ?? "Unknown",
+            plan_name: summary.planName,
             status: sub.status,
             current_period_start: sub.current_period_start
               ? new Date(sub.current_period_start * 1000).toISOString()
@@ -554,15 +556,15 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
             current_period_end: sub.current_period_end
               ? new Date(sub.current_period_end * 1000).toISOString()
               : null,
-            amount_cents: price?.unit_amount ?? 0,
-            currency: price?.currency ?? "usd",
+            amount_cents: summary.amountCents,
+            currency: summary.currency,
             // BILL-P2-001/P2-005: trial, interval and cancellation lifecycle.
-            interval: price?.recurring?.interval ?? null,
+            interval: summary.interval,
             trial_start: sub.trial_start ? new Date(sub.trial_start * 1000).toISOString() : null,
             trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
             cancel_at_period_end: sub.cancel_at_period_end ?? false,
             canceled_at: sub.canceled_at ? new Date(sub.canceled_at * 1000).toISOString() : null,
-            quantity: item?.quantity ?? null,
+            quantity: summary.quantity,
           },
           { onConflict: "stripe_subscription_id" },
         );
@@ -590,8 +592,7 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
         const terminalPaymentIntents = new Set(
           (orgPayments ?? [])
             .filter(
-              (payment) =>
-                payment.status === "refunded" || payment.status === "partially_refunded",
+              (payment) => payment.status === "refunded" || payment.status === "partially_refunded",
             )
             .map((payment) => payment.stripe_payment_intent_id),
         );
@@ -607,9 +608,7 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
               organization_id: customer.organization_id,
               invoice_id: pi.invoice ? (invoiceIdByStripeId.get(pi.invoice) ?? null) : null,
               stripe_payment_intent_id: pi.id,
-              amount_cents: Math.round(
-                succeeded ? (pi.amount_received ?? pi.amount) : pi.amount,
-              ),
+              amount_cents: Math.round(succeeded ? (pi.amount_received ?? pi.amount) : pi.amount),
               currency: pi.currency,
               status: succeeded
                 ? "succeeded"
@@ -634,8 +633,7 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
         const refundedCents = charge.amount_refunded ?? 0;
         if (!paymentIntentId || refundedCents <= 0) continue;
 
-        const fullyRefunded =
-          typeof charge.amount === "number" && refundedCents >= charge.amount;
+        const fullyRefunded = typeof charge.amount === "number" && refundedCents >= charge.amount;
         const refundedAt = latestRefundCreated(charge);
         await supabase
           .from("payments")
@@ -662,14 +660,16 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
     if (errors.length > 0) {
       // Fail closed: a sync that skipped a Stripe page or stopped at the page
       // cap must not be acknowledged as a complete mirror.
-      res.status(502).json(
-        failure(
-          "STRIPE_SYNC_INCOMPLETE",
-          `Stripe sync incomplete: ${errors.length} error(s)`,
-          502,
-          { synced, counts, errors },
-        ),
-      );
+      res
+        .status(502)
+        .json(
+          failure(
+            "STRIPE_SYNC_INCOMPLETE",
+            `Stripe sync incomplete: ${errors.length} error(s)`,
+            502,
+            { synced, counts, errors },
+          ),
+        );
       return;
     }
 

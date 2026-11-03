@@ -2988,6 +2988,13 @@ const extendedRoutes: RouteDef[] = [
     },
   },
   {
+    method: "post",
+    path: "/proposals/{id}/client-decision/reset",
+    summary: "Reset a client accept/decline decision (staff only)",
+    tag: "Proposals",
+    params: [pathParam("id")],
+  },
+  {
     method: "get",
     path: "/proposals/{id}/comments",
     summary: "List proposal comments",

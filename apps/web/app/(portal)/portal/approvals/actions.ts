@@ -10,15 +10,20 @@ async function orgId(): Promise<string | null> {
   return membership?.organization_id ?? null;
 }
 
-export async function createApprovalAction(formData: FormData): Promise<void> {
+export async function createApprovalAction(
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string }> {
   const organizationId = await orgId();
-  if (!organizationId) throw new Error("No approved organization membership.");
+  if (!organizationId) {
+    return { ok: false, error: "No approved organization membership." };
+  }
 
   const subject = String(formData.get("requestSubject") ?? "").trim();
-  if (!subject) throw new Error("Subject is required.");
+  if (!subject) return { ok: false, error: "Subject is required." };
 
+  let created: { id: string };
   try {
-    const created = await getApiClient().approvals.create({
+    created = await getApiClient().approvals.create({
       organizationId,
       requestType: String(formData.get("requestType") ?? "access_request"),
       requestSubject: subject,
@@ -30,12 +35,17 @@ export async function createApprovalAction(formData: FormData): Promise<void> {
       visibility: "client_visible",
       sourceModule: "portal",
     });
-    revalidatePath("/portal/approvals");
-    redirect(`/portal/approvals/${created.id}`);
   } catch (error) {
-    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
-    throw error;
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to submit request",
+    };
   }
+
+  // Redirect outside the try/catch so NEXT_REDIRECT is never converted into an
+  // inline error (USE-P2-007 / USE-P3-008).
+  revalidatePath("/portal/approvals");
+  redirect(`/portal/approvals/${created.id}`);
 }
 
 type ApprovalActionResult = { ok: boolean; error?: string };

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
 import type { IdentityVerification } from "@mct/sdk";
 import StatusPill from "@/components/StatusPill";
@@ -38,13 +39,18 @@ export default async function PortalIdentityVerificationPage() {
       <Breadcrumbs
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Identity Verification" }]}
       />
+      <PortalSubnav current="identity-verification" />
       {loadFailed ? <DataErrorNote what="identity-verification" /> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-slate-50">Identity Verification</h1>
           <p className="mt-1 text-sm text-slate-400">
-            {items.length} verification request{items.length !== 1 ? "s" : ""} for your
-            organization.
+            {items.length} verification request{items.length !== 1 ? "s" : ""} in this view (most
+            recent first).
+          </p>
+          <p className="mt-2 text-xs text-slate-400">
+            One-way request: your account team owns status updates and history. Contact them to
+            reopen or change a submitted request.
           </p>
         </div>
         {canCreate ? (

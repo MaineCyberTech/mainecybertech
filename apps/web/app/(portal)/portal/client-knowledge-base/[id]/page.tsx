@@ -4,6 +4,7 @@ import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 import { formatDate } from "@/lib/format";
 import CommentBody from "@/components/CommentBody";
 
@@ -52,6 +53,7 @@ export default async function KnowledgeBaseArticlePage({
           { label: article.title },
         ]}
       />
+      <PortalSubnav current="client-knowledge-base" />
 
       <div>
         <h1 className="text-2xl font-semibold text-slate-50">{article.title}</h1>

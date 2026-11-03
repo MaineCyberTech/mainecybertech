@@ -12,6 +12,7 @@ import {
   rawBodyBuffer,
 } from "../lib/webhook-signature";
 import { claimIdempotencyKey, storeIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
+import { summarizeSubscriptionItems } from "@mct/config/subscription";
 import {
   jiraWebhookSchema,
   jsmWebhookSchema,
@@ -223,10 +224,7 @@ async function readMirrorStatus(
  * the idempotency claim is released (Stripe retries) instead of acknowledging
  * the event with the mirror silently missing the change.
  */
-function assertMirrorWrite(
-  error: { message: string } | null | undefined,
-  context: string,
-): void {
+function assertMirrorWrite(error: { message: string } | null | undefined, context: string): void {
   if (error) {
     throw new AppError(
       "DB_ERROR",
@@ -452,13 +450,14 @@ router.post("/stripe", async (req, res, next) => {
               "Skipping stale Stripe subscription event (terminal state)",
             );
           } else {
-            const item = sub.items?.data?.[0];
-            const price = item?.price;
+            // BILL-P3-010: fold every item (base plan + add-ons), not just
+            // items.data[0], into the mirror.
+            const summary = summarizeSubscriptionItems(sub.items?.data);
             const { error: subscriptionWriteError } = await supabase.from("subscriptions").upsert(
               {
                 organization_id: customer.organization_id,
                 stripe_subscription_id: sub.id,
-                plan_name: price?.nickname ?? price?.product ?? "Unknown",
+                plan_name: summary.planName,
                 status: sub.status,
                 current_period_start: sub.current_period_start
                   ? new Date(sub.current_period_start * 1000).toISOString()
@@ -466,17 +465,21 @@ router.post("/stripe", async (req, res, next) => {
                 current_period_end: sub.current_period_end
                   ? new Date(sub.current_period_end * 1000).toISOString()
                   : null,
-                amount_cents: price?.unit_amount ?? 0,
-                currency: price?.currency ?? "usd",
+                amount_cents: summary.amountCents,
+                currency: summary.currency,
                 // BILL-P2-001/P2-005: trial, interval and cancellation lifecycle.
-                interval: price?.recurring?.interval ?? null,
-                trial_start: sub.trial_start ? new Date(sub.trial_start * 1000).toISOString() : null,
+                interval: summary.interval,
+                trial_start: sub.trial_start
+                  ? new Date(sub.trial_start * 1000).toISOString()
+                  : null,
                 trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
                 cancel_at_period_end: sub.cancel_at_period_end ?? false,
-                canceled_at: sub.canceled_at ? new Date(sub.canceled_at * 1000).toISOString() : null,
-                quantity: item?.quantity ?? null,
+                canceled_at: sub.canceled_at
+                  ? new Date(sub.canceled_at * 1000).toISOString()
+                  : null,
+                quantity: summary.quantity,
               },
-              { onConflict: "stripe_subscription_id" }
+              { onConflict: "stripe_subscription_id" },
             );
             assertMirrorWrite(subscriptionWriteError, "subscriptions.upsert");
           }
@@ -545,9 +548,7 @@ router.post("/stripe", async (req, res, next) => {
                 organization_id: organizationId,
                 invoice_id: invoiceRowId,
                 stripe_payment_intent_id: pi.id,
-                amount_cents: Math.round(
-                  succeeded ? (pi.amount_received ?? pi.amount) : pi.amount,
-                ),
+                amount_cents: Math.round(succeeded ? (pi.amount_received ?? pi.amount) : pi.amount),
                 currency: pi.currency,
                 status: mapPaymentIntentStatus(pi.status),
                 paid_at: succeeded ? epochSecondsToIsoOrNow(pi.created) : null,
