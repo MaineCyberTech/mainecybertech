@@ -98,8 +98,15 @@ jobs:
         # tied to the CLI pin; bump the trailing generation (`vN`) whenever the
         # image set changes without a CLI version bump. Bumping it also forces
         # a fresh seed after a bad/partial archive has been published.
+        #
+        # restore/save are separate actions (not the combined `actions/cache`)
+        # because the combined action's post-save only runs on a successful
+        # job. While E2E has any later failure (Playwright/a11y) the image
+        # tar would never be published, so the next run misses forever. The
+        # explicit save below runs as a normal step right after the images are
+        # pulled.
         id: supabase_image_cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/supabase-images.tar
           key: supabase-images-${{ runner.os }}-${{ env.SUPABASE_CLI_VERSION }}-v2
@@ -158,6 +165,7 @@ jobs:
           SUPABASE_DB_PORT: 5432
 
       - name: Save the Supabase images (cache miss)
+        id: save_supabase_images
         if: steps.supabase_image_cache.outputs.cache-hit != 'true'
         run: |
           # Persist the images so subsequent runs skip the public-registry
@@ -165,6 +173,17 @@ jobs:
           docker save $(docker images --format '{{.Repository}}:{{.Tag}}' \
             | grep -E 'supabase|kong|vector|mailpit|imgproxy|postgrest|gotrue|realtime|storage-api|studio|logflare|postgres-meta' \
             | grep -v '<none>') -o /tmp/supabase-images.tar
+
+      - name: Publish the Supabase image cache
+        # Explicit cache/save, not the restore action's post step: the post
+        # step only runs on a successful job, so a later Playwright/a11y
+        # failure would throw away the freshly pulled tar and every run would
+        # miss forever (TEST-P2-011).
+        if: steps.save_supabase_images.outcome == 'success'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /tmp/supabase-images.tar
+          key: supabase-images-${{ runner.os }}-${{ env.SUPABASE_CLI_VERSION }}-v2
 
       - name: Apply migrations and seeds
         run: supabase db reset
