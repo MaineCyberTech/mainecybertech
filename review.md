@@ -226,7 +226,7 @@ See `infra/digitalocean/docker-compose.yml` — runs on a single DO droplet behi
 | caddy        | caddy:2-alpine                                   | 80/443          | TLS reverse proxy                                                              |
 | prometheus   | prom/prometheus:v3.15.1                          | internal        | Metrics scraping (`prometheus.yml` + rules)                                    |
 | alertmanager | prom/alertmanager:v0.29.0                        | internal (9093) | Alert routing + watchdog (ntfy webhook); rendered from `alertmanager.tmpl.yml` |
-| node-exporter| prom/node-exporter:v1.12.1                       | internal (9100) | Host CPU/memory/filesystem/load metrics for Prometheus                         |
+| node-exporter | prom/node-exporter:v1.12.1                       | internal (9100) | Host CPU/memory/filesystem/load metrics for Prometheus                         |
 
 Supabase is **hosted** (cloud.supabase.com) — not self-hosted in docker-compose.
 
