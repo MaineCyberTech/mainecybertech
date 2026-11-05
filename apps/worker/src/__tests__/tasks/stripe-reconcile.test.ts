@@ -331,7 +331,7 @@ describe("stripeReconcile drift detection (BILL-P2-003)", () => {
           stripe_subscription_id: "sub_test",
           status: "trialing",
           created_at: "2026-01-01T00:00:00.000Z",
-          amount_cents: 49500,
+          amount_cents: 9900,
           quantity: 5,
         },
       ],
