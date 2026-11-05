@@ -209,6 +209,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Fixed
 
+- **SSO callback origin:** post-login redirects now use `APP_BASE_URL` instead
+  of the standalone web server's container origin. Authelia SSO was landing on
+  `https://0.0.0.0:3000` after a successful login.
+
 - **Nov 3 re-audit P3 batch:** organization create/onboarding now requires the
   platform super-admin flag for every role key and plain create is rate-limited
   (ADMIN-P3-005); the Node engine floor is 20.11 for `import.meta.dirname`

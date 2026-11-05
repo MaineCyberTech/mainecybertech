@@ -1,4 +1,4 @@
-import { resolvePostAuthRedirect } from "@/lib/auth/callback-redirect";
+import { resolvePostAuthRedirect, resolvePublicOrigin } from "@/lib/auth/callback-redirect";
 
 /**
  * USE-P1-001: the emailed reset link goes through
@@ -42,5 +42,26 @@ describe("resolvePostAuthRedirect", () => {
 
   it("trims surrounding whitespace before validating", () => {
     expect(resolvePostAuthRedirect("  /password-reset  ")).toBe("/password-reset");
+  });
+});
+
+
+describe("resolvePublicOrigin", () => {
+  it("uses the configured public origin instead of the container origin", () => {
+    expect(
+      resolvePublicOrigin("https://0.0.0.0:3000/auth/callback", "https://app.mainecybertech.us"),
+    ).toBe("https://app.mainecybertech.us");
+  });
+
+  it("falls back to the request origin when APP_BASE_URL is unset", () => {
+    expect(resolvePublicOrigin("http://localhost:3000/auth/callback", undefined)).toBe(
+      "http://localhost:3000",
+    );
+  });
+
+  it("ignores a malformed APP_BASE_URL", () => {
+    expect(resolvePublicOrigin("http://localhost:3000/auth/callback", "not-a-url")).toBe(
+      "http://localhost:3000",
+    );
   });
 });
