@@ -41,7 +41,7 @@ describe("PortalRunbooksPage", () => {
     mockRunbooksList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/runbooks/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByRole("heading", { level: 1, name: /runbooks/i })).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("PortalRunbooksPage", () => {
     mockRunbooksList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/runbooks/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getAllByRole("navigation").length).toBeGreaterThanOrEqual(1);
@@ -78,7 +78,7 @@ describe("PortalRunbooksPage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/runbooks/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByText("Incident Response Runbook")).toBeInTheDocument();
@@ -93,7 +93,7 @@ describe("PortalRunbooksPage", () => {
     mockRunbooksList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/runbooks/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByText("No runbooks found.")).toBeInTheDocument();
@@ -103,7 +103,7 @@ describe("PortalRunbooksPage", () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
     const { default: Page } = await import("@/app/(portal)/portal/runbooks/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
 
     expect(element).toBeNull();
   });
@@ -117,9 +117,9 @@ describe("PortalRunbooksPage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/runbooks/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
-    expect(screen.getByText(/Showing the most recent 2 runbooks/)).toBeInTheDocument();
+    expect(screen.getByText(/Showing the most recent 2 runbooks\./)).toBeInTheDocument();
   });
 });

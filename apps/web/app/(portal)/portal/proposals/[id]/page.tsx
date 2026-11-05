@@ -63,18 +63,6 @@ function statusClass(status: string): string {
   return `${base} ${styles[status] || "border-white/10 bg-white/5 text-slate-300"}`;
 }
 
-function phaseStatusClass(status: string): string {
-  const base =
-    "inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]";
-  const styles: Record<string, string> = {
-    not_started: "border-slate-500/25 bg-slate-500/10 text-slate-300",
-    in_progress: "border-amber-500/25 bg-amber-500/10 text-amber-300",
-    completed: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
-    skipped: "border-slate-500/25 bg-slate-500/10 text-slate-300",
-  };
-  return `${base} ${styles[status] || "border-white/10 bg-white/5 text-slate-300"}`;
-}
-
 interface Props {
   params: Promise<{ id: string }>;
 }
@@ -174,9 +162,6 @@ export default async function PortalProposalDetailPage({ params }: Props) {
               >
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="cyber-heading text-base">{phase.title}</h3>
-                  <span className={phaseStatusClass(phase.status || "not_started")}>
-                    {phase.status || "not_started"}
-                  </span>
                 </div>
                 {phase.description && (
                   <p className="mt-3 text-sm text-slate-400">{phase.description}</p>
