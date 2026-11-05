@@ -42,6 +42,27 @@ export async function loginAction(
   redirect(await resolveLandingRedirect(result.accessToken));
 }
 
+export async function ssoLoginAction(): Promise<{ error?: string }> {
+  let result;
+  try {
+    result = await unauthClient().auth.startSso();
+  } catch (error) {
+    const message =
+      error instanceof ApiError ? error.message : "Could not start SSO sign-in.";
+    return { error: message };
+  }
+
+  const cookieStore = await cookies();
+  const headersList = await headers();
+  const host = headersList.get("host") || "";
+  cookieStore.set(result.cookieName, result.cookieValue, {
+    ...getCookieOptions(host),
+    maxAge: result.maxAge,
+  });
+  // redirect() throws NEXT_REDIRECT - keep it outside the try/catch.
+  redirect(result.url);
+}
+
 export async function mfaLoginVerifyAction(code: string): Promise<{ error?: string }> {
   const cookieStore = await cookies();
   const headersList = await headers();

@@ -26,6 +26,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Added
 
+- **Kestrel SSO (dev):** staff can sign in to the portal through Authelia's
+  Supabase custom OIDC provider. Adds `POST /api/v1/auth/sso`, SDK/web start
+  helpers, the "Sign in with MCT SSO" login button, and the matching OpenAPI
+  contract. Email/password + MFA remain available as fallback.
+
 - **Client portal remediation (2026-10-21 audit):** client-visible approval,
   change-request, DNS, identity-verification, offboarding and insurance request
   flows; proposal accept/decline decisions; training enrollment/progress and
@@ -203,6 +208,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   form it still used fails on pnpm 10.34.x and blocked every deploy.
 
 ### Fixed
+
+- **SSO callback origin:** post-login redirects now use `APP_BASE_URL` instead
+  of the standalone web server's container origin. Authelia SSO was landing on
+  `https://0.0.0.0:3000` after a successful login.
 
 - **Nov 3 re-audit P3 batch:** organization create/onboarding now requires the
   platform super-admin flag for every role key and plain create is rate-limited

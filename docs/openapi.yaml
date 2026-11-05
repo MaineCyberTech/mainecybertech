@@ -1862,6 +1862,49 @@ paths:
               required:
                 - "email"
                 - "password"
+  "/auth/sso":
+    post:
+      tags:
+        - "Auth"
+      summary: "Start Supabase custom OIDC SSO with Authelia"
+      responses:
+        200:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                required:
+                  - "success"
+                  - "data"
+                properties:
+                  success:
+                    type: "boolean"
+                  data:
+                    type: "object"
+                    required:
+                      - "url"
+                      - "cookieName"
+                      - "cookieValue"
+                      - "maxAge"
+                    properties:
+                      url:
+                        type: "string"
+                      cookieName:
+                        type: "string"
+                      cookieValue:
+                        type: "string"
+                      maxAge:
+                        type: "integer"
+        400:
+          description: "Bad request"
+        401:
+          description: "Unauthorized"
+        403:
+          description: "Forbidden"
+        500:
+          description: "Internal server error"
+      security: []
   "/batch/dmarc":
     get:
       tags:

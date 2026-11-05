@@ -90,7 +90,7 @@ export default function PortalGlobalSearch() {
         onFocus={() => results && resultCount() > 0 && setOpen(true)}
         placeholder="Search tickets, projects, documents..."
         aria-label="Search portal"
-        className="w-full rounded-lg border border-white/10 bg-cyber-base/80 px-4 py-2.5 pl-10 text-sm text-slate-50 outline-none transition focus:border-emerald-600"
+        className="w-full rounded-lg border border-white/10 bg-cyber-base/80 px-4 py-2.5 pl-10 text-base text-slate-50 outline-none transition focus:border-emerald-600 sm:text-sm"
       />
       <svg
         className="absolute left-3 top-3 h-4 w-4 text-slate-400"

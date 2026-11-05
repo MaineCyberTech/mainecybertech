@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   loginAction,
+  ssoLoginAction,
   mfaLoginVerifyAction,
   mfaRecoveryLoginAction,
   mfaCancelAction,
@@ -25,6 +26,7 @@ export default function LoginPage() {
   const [step, setStep] = useState<"password" | "mfa">("password");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState(false);
   const [recoveryMode, setRecoveryMode] = useState(false);
   const [recoveryCode, setRecoveryCode] = useState("");
   const [recoveryError, setRecoveryError] = useState("");
@@ -67,8 +69,22 @@ export default function LoginPage() {
     }
   }
 
-  async function handleVerify(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSso() {
+    setSsoLoading(true);
+    setErrorMsg("");
+
+    try {
+      const result = await ssoLoginAction();
+      if (result?.error) setErrorMsg(result.error);
+    } catch (error) {
+      if (isNextRedirect(error)) throw error;
+      setErrorMsg("Could not start SSO sign-in. Please try again.");
+    } finally {
+      setSsoLoading(false);
+    }
+  }
+
+  async function handleVerify(e: React.FormEvent) {    e.preventDefault();
     setLoading(true);
     setErrorMsg("");
 
@@ -219,6 +235,26 @@ export default function LoginPage() {
                   {loading ? "Signing In..." : "Secure Login"}
                 </Button>
               </form>
+
+              <div className="my-5 flex items-center gap-3">
+                <div className="h-px flex-1 bg-white/10" />
+                <span className="text-[0.625rem] uppercase tracking-[0.2em] text-slate-500">
+                  or
+                </span>
+                <div className="h-px flex-1 bg-white/10" />
+              </div>
+
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={ssoLoading}
+                loading={ssoLoading}
+                className="w-full"
+                aria-label="Sign in with MCT SSO"
+                onClick={handleSso}
+              >
+                {ssoLoading ? "Redirecting..." : "Sign in with MCT SSO"}
+              </Button>
 
               <p className="mt-6 text-sm text-slate-400">
                 Need an account?{" "}

@@ -1,4 +1,5 @@
 import { Router, type Request } from "express";
+import { createHash, randomBytes } from "crypto";
 import { z } from "zod";
 import zxcvbn from "zxcvbn";
 import { getSupabaseAdmin, getScopedClient, getSupabaseUser } from "../services/supabase";
@@ -780,6 +781,43 @@ router.post("/mfa/recovery", requireAuth, rateLimitAuth, async (req, res, next) 
     });
 
     res.json(success({ ok: true, factorsRemoved }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Start the Kestrel/Authelia SSO flow through Supabase.
+ *
+ * The app talks PKCE to Supabase; Supabase talks PKCE to Authelia. The verifier
+ * cookie is set by the web server action and forwarded to /callback, where the
+ * existing exchange already looks for `sb-<ref>-auth-token-code-verifier`.
+ */
+router.post("/sso", rateLimitAuth, async (req, res, next) => {
+  try {
+    const env = getEnv();
+    const verifier = randomBytes(48).toString("base64url");
+    const challenge = createHash("sha256").update(verifier).digest("base64url");
+    const appBase = (env.APP_BASE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+    const redirectTo = `${appBase}/auth/callback`;
+    const ref = new URL(env.SUPABASE_URL).hostname.split(".")[0];
+    const cookieName = `sb-${ref}-auth-token-code-verifier`;
+
+    const params = new URLSearchParams({
+      provider: "custom:authelia",
+      redirect_to: redirectTo,
+      code_challenge: challenge,
+      code_challenge_method: "S256",
+    });
+
+    res.json(
+      success({
+        url: `${env.SUPABASE_URL}/auth/v1/authorize?${params.toString()}`,
+        cookieName,
+        cookieValue: verifier,
+        maxAge: 600,
+      }),
+    );
   } catch (error) {
     next(error);
   }

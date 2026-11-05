@@ -235,6 +235,10 @@ services:
     <<: *security
     environment:
       NODE_ENV: production
+      # Public web origin used for absolute auth redirects. The standalone
+      # server sees its container origin (0.0.0.0:3000) behind Caddy, so do
+      # not derive post-auth redirects from request.url.
+      APP_BASE_URL: https://${APP_DOMAIN:-app.mainecybertech.com}
       # ARCH-P3-003: server-side runtime API URL. NEXT_PUBLIC_* is inlined at
       # build time, so the server cannot be redirected with the compose value
       # below; API_INTERNAL_URL is read at request time by lib/api.ts and keeps
