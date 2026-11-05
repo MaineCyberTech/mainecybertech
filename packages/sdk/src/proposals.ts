@@ -35,6 +35,8 @@ export interface ProposalPhase {
   description: string | null;
   assumptions: string | null;
   notes: string | null;
+  /** Optional for older rows; the UI falls back to "not_started". */
+  status?: "not_started" | "in_progress" | "completed" | "blocked";
   created_at: string;
   updated_at: string;
 }
