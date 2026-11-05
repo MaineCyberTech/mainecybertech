@@ -17,6 +17,7 @@
 | --------------------------------------- | -------- | ---------------------- | ------------------------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_API_URL`                   | Yes      | — (local compose uses `http://localhost:4000`) | URL of the API server, inlined into the client bundle at build time; the web image build fails when the arg is absent (SECRET-P3-002) |
 | `API_INTERNAL_URL`                      | No       | —                      | Server-side SSR override for the API base URL (falls back to `NEXT_PUBLIC_API_URL`); ARCH-P3-003 |
+| `APP_BASE_URL`                          | No       | request origin         | Public web origin used for absolute auth redirects; required when the container origin is not the public hostname |
 | `NODE_ENV`                              | No       | `development`          | Node environment                                                                            |
 | `NEXT_PUBLIC_GA_ID`                     | No       | —                      | Google Analytics measurement ID (e.g. `G-XXXXXXXXXX`)                                       |
 | `NEXT_PUBLIC_TAWKTO_ID`                 | No       | —                      | Tawk.to widget ID (e.g. `66898d27e1e4f70f24ee3260/1i24kuosn`)                               |

@@ -119,11 +119,14 @@ jobs:
           # A cache hit must contain the CLI's full image set. A partial tar
           # used to be retried until the job timed out; fail loudly instead so
           # the key is bumped/reseeded rather than silently degrading to pulls
-          # (TEST-P2-011).
+          # (TEST-P2-011). Count with the same filter as the save step below:
+          # some images live on public.ecr.aws/supabase and some on
+          # ghcr.io/supabase (logflare/realtime/gotrue), and a repo-count that
+          # only looked at one registry rejected complete archives.
           count=$(docker images --format '{{.Repository}}' \
-            | grep -c '^public.ecr.aws/supabase/' || true)
+            | grep -Ec 'supabase|kong|vector|mailpit|imgproxy|postgrest|gotrue|realtime|storage-api|studio|logflare|postgres-meta' || true)
           echo "Loaded ${count} cached Supabase image repositories."
-          if [ "$count" -lt 10 ]; then
+          if [ "$count" -lt 12 ]; then
             echo "::error::cached Supabase archive is incomplete (${count} images); delete the cache entry or bump the key generation so the next run reseeds it."
             rm -f /tmp/supabase-images.tar
             exit 1

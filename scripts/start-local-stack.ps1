@@ -186,6 +186,7 @@ Write-Host "  Web:             http://localhost:3000" -ForegroundColor White
 Write-Host "`nSeed users (password: 1):" -ForegroundColor Cyan
 @(
     "superadmin.real@mainecybertech.local",
+    "julian.butler@mainecybertech.com",
     "mspadmin.real@mainecybertech.local",
     "clientadmin.real@acme.example",
     "technician.real@acme.example",

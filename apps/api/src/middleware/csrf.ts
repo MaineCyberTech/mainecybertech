@@ -43,6 +43,7 @@ const CSRF_SKIP_PATHS = [
   "/api/v1/auth/forgot-password",
   "/api/v1/auth/reset-password",
   "/api/v1/auth/callback",
+  "/api/v1/auth/sso",
 ];
 
 export function csrfProtection(req: Request, res: Response, next: NextFunction) {

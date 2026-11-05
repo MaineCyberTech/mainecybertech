@@ -41,6 +41,7 @@ set
 with user_rows(user_id, email, full_name, title, phone, default_org_id, role_key, is_super_admin, demo_label) as (
   values
     ('66ce903f-6fe0-45da-878b-a0398e6b1981'::uuid, 'superadmin.real@mainecybertech.local', 'Julian Super Admin', 'Global Super Admin', '555-9001', '11111111-1111-1111-1111-111111111111'::uuid, 'super_admin', true, 'superadmin@mainecybertech.local'),
+    ('86f1e3ac-5696-4a83-ab83-909dba2bca30'::uuid, 'julian.butler@mainecybertech.com', 'Julian Butler', 'Global Super Admin', '555-9003', '11111111-1111-1111-1111-111111111111'::uuid, 'super_admin', true, 'julian@mainecybertech.com'),
     ('817016dc-cc3b-49d1-8ee6-637f880fa0a4'::uuid, 'mspadmin.real@mainecybertech.local', 'Morgan MSP Admin', 'MSP Admin', '555-9002', '11111111-1111-1111-1111-111111111111'::uuid, 'admin', false, 'mspadmin@mainecybertech.local'),
     ('ef0370d6-0da8-43a1-8f24-d8c4f19448a0'::uuid, 'clientadmin.real@acme.example', 'Avery Client Admin', 'Operations Director', '555-0101', '11111111-1111-1111-1111-111111111111'::uuid, 'client_admin', false, 'clientadmin@acme.example'),
     ('b0a65dea-16c7-4f54-8192-d9267a4219d1'::uuid, 'technician.real@acme.example', 'Taylor Technician', 'Systems Technician', '555-0102', '11111111-1111-1111-1111-111111111111'::uuid, 'technician', false, 'technician@acme.example'),
@@ -85,7 +86,9 @@ set
 with membership_rows(user_id, organization_id, role_key, job_title, is_billing_contact, is_security_contact) as (
   values
     ('66ce903f-6fe0-45da-878b-a0398e6b1981'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'super_admin', 'Global Super Admin', true, true),
+    ('86f1e3ac-5696-4a83-ab83-909dba2bca30'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'super_admin', 'Global Super Admin', true, true),
     ('66ce903f-6fe0-45da-878b-a0398e6b1981'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'super_admin', 'Global Super Admin', true, true),
+    ('86f1e3ac-5696-4a83-ab83-909dba2bca30'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'super_admin', 'Global Super Admin', true, true),
     ('817016dc-cc3b-49d1-8ee6-637f880fa0a4'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'admin', 'MSP Admin', true, true),
     ('817016dc-cc3b-49d1-8ee6-637f880fa0a4'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'admin', 'MSP Admin', true, true),
     ('ef0370d6-0da8-43a1-8f24-d8c4f19448a0'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'client_admin', 'Client Admin', true, true),

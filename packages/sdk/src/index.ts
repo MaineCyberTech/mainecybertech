@@ -1,6 +1,6 @@
 import { ApiClient, type ClientOptions, type RetryOptions } from "./client";
 import type { OrganizationOnboardInput, OrganizationOnboardResult } from "./types";
-import { AuthApi, type SignInResult, type SignUpResult } from "./auth";
+import { AuthApi, type SignInResult, type SignUpResult, type SsoStartResult } from "./auth";
 import { OrganizationsApi } from "./organizations";
 import { MembershipsApi } from "./memberships";
 import { TicketsApi } from "./tickets";
@@ -224,6 +224,7 @@ export type * from "./types";
 export type {
   SignInResult,
   SignUpResult,
+  SsoStartResult,
   UserPermissionsResponse,
   PermissionOverride,
   RolePermissions,
