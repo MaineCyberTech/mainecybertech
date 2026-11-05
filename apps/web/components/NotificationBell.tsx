@@ -287,9 +287,10 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
         onClick={() => (open ? closePanel() : setOpen(true))}
         className="relative rounded-lg border-2 border-emerald-600 bg-transparent p-2.5 text-emerald-500 transition-all hover:bg-emerald-600/10"
         aria-expanded={open}
-        aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ""}`}
       >
+        <span className="sr-only">Notifications</span>
         <svg
+          aria-hidden="true"
           className="h-5 w-5"
           fill="none"
           viewBox="0 0 24 24"
@@ -303,10 +304,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
           />
         </svg>
         {unread > 0 ? (
-          <span
-            aria-hidden="true"
-            className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white"
-          >
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
             {unread > 99 ? "99+" : unread}
           </span>
         ) : null}
