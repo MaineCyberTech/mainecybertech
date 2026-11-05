@@ -29,6 +29,15 @@ const ACCOUNTS: TestAccount[] = [
     color: "#7c3aed",
   },
   {
+    email: "julian.butler@mainecybertech.com",
+    name: "Julian Butler",
+    role: "Global Super Admin",
+    org: "All tenants",
+    badge: "Super Admin",
+    badgeColor: "#a855f7",
+    color: "#7c3aed",
+  },
+  {
     email: "mspadmin.real@mainecybertech.local",
     name: "Morgan MSP Admin",
     role: "MSP Admin",
