@@ -54,6 +54,7 @@ export const EXTERNAL_KEYS = {
     SENTRY_RELEASE: "read by the server Sentry configs from process.env",
     NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED: "read directly by lib/test-accounts.ts",
     API_INTERNAL_URL: "server-side SSR runtime override for lib/api.ts (ARCH-P3-003)",
+    APP_BASE_URL: "public web origin for absolute auth redirects",
   },
 };
 
