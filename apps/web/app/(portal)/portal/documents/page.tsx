@@ -13,7 +13,7 @@ const DEFAULT_LIMIT = 25;
 
 export default async function PortalDocumentsPage(props: {
   searchParams?: Promise<{ page?: string; limit?: string }>;
-}) {
+} = {}) {
   const api = getApiClient();
   const membership = await getApprovedMembership();
 
