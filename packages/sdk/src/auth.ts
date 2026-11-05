@@ -10,6 +10,13 @@ export type SignUpResult = {
   user: { id: string; email: string | null } | null;
 };
 
+export type SsoStartResult = {
+  url: string;
+  cookieName: string;
+  cookieValue: string;
+  maxAge: number;
+};
+
 export type MfaFactor = {
   id: string;
   friendlyName: string | null;
@@ -60,6 +67,10 @@ export class AuthApi {
       email,
       password,
     });
+  }
+
+  startSso() {
+    return this.client.post<SsoStartResult>("/api/v1/auth/sso", {});
   }
 
   signUp(email: string, password: string, fullName?: string) {
