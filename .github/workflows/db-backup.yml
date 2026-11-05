@@ -96,6 +96,12 @@ jobs:
           # S3_OFFSITE_BUCKET variable to enable a second destination.
           S3_OFFSITE_BUCKET: ${{ vars.S3_OFFSITE_BUCKET }}
           S3_OFFSITE_PREFIX: ${{ vars.S3_OFFSITE_PREFIX || 'database-backups' }}
+          # Optional second endpoint for the offsite copy (for example Raven
+          # Garage). The runner must be able to reach this endpoint; do not set
+          # a private LAN address on a GitHub-hosted runner.
+          S3_OFFSITE_ENDPOINT: ${{ vars.S3_OFFSITE_ENDPOINT }}
+          S3_OFFSITE_ACCESS_KEY_ID: ${{ secrets.S3_OFFSITE_ACCESS_KEY_ID }}
+          S3_OFFSITE_SECRET_ACCESS_KEY: ${{ secrets.S3_OFFSITE_SECRET_ACCESS_KEY }}
           # Client-side encryption at rest (audit DR-P1-003). Key is a secret;
           # never echoed. REQUIRE_BACKUP_ENCRYPTION makes an unencrypted upload
           # a hard failure so this cannot silently regress.

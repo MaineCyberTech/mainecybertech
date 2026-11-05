@@ -85,6 +85,12 @@ jobs:
           S3_STORAGE_CLASS: ${{ vars.S3_STORAGE_CLASS || 'STANDARD' }}
           S3_OFFSITE_BUCKET: ${{ vars.S3_OFFSITE_BUCKET }}
           S3_OFFSITE_PREFIX: ${{ vars.S3_OFFSITE_PREFIX || 'storage-backups' }}
+          # Optional second endpoint for the offsite copy (for example Raven
+          # Garage). The runner must be able to reach this endpoint; do not set
+          # a private LAN address on a GitHub-hosted runner.
+          S3_OFFSITE_ENDPOINT: ${{ vars.S3_OFFSITE_ENDPOINT }}
+          S3_OFFSITE_ACCESS_KEY_ID: ${{ secrets.S3_OFFSITE_ACCESS_KEY_ID }}
+          S3_OFFSITE_SECRET_ACCESS_KEY: ${{ secrets.S3_OFFSITE_SECRET_ACCESS_KEY }}
           STORAGE_BUCKETS: ${{ vars.STORAGE_BUCKETS || 'documents avatars logos' }}
           BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
           REQUIRE_BACKUP_ENCRYPTION: "1"
