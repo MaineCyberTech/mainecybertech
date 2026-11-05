@@ -41,7 +41,7 @@ describe("PortalServiceCatalogPage", () => {
     mockList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/service-catalog/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByRole("heading", { name: /service catalog/i })).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("PortalServiceCatalogPage", () => {
     mockList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/service-catalog/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getAllByRole("navigation").length).toBeGreaterThanOrEqual(1);
@@ -86,7 +86,7 @@ describe("PortalServiceCatalogPage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/service-catalog/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByText("SIEM Monitoring")).toBeInTheDocument();
@@ -101,7 +101,7 @@ describe("PortalServiceCatalogPage", () => {
     mockList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/service-catalog/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByText("No services in catalog.")).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe("PortalServiceCatalogPage", () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
     const { default: Page } = await import("@/app/(portal)/portal/service-catalog/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
 
     expect(element).toBeNull();
   });

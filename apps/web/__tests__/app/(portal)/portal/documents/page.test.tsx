@@ -60,7 +60,7 @@ describe("PortalDocumentsPage", () => {
     mockDocumentsList.mockResolvedValue({ items: [] });
 
     const { default: PortalDocumentsPage } = await import("@/app/(portal)/portal/documents/page");
-    const element = await PortalDocumentsPage();
+    const element = await PortalDocumentsPage({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByRole("heading", { name: /documents/i })).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe("PortalDocumentsPage", () => {
     mockDocumentsList.mockResolvedValue({ items: [{ id: "d1" }, { id: "d2" }] });
 
     const { default: PortalDocumentsPage } = await import("@/app/(portal)/portal/documents/page");
-    const element = await PortalDocumentsPage();
+    const element = await PortalDocumentsPage({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByTestId("portal-documents-client")).toHaveTextContent("org:org-1,docs:2");
@@ -80,7 +80,7 @@ describe("PortalDocumentsPage", () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
     const { default: PortalDocumentsPage } = await import("@/app/(portal)/portal/documents/page");
-    const element = await PortalDocumentsPage();
+    const element = await PortalDocumentsPage({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByText(/access restricted/i)).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe("PortalDocumentsPage", () => {
     mockDocumentsList.mockResolvedValue({ items: [] });
 
     const { default: PortalDocumentsPage } = await import("@/app/(portal)/portal/documents/page");
-    const element = await PortalDocumentsPage();
+    const element = await PortalDocumentsPage({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByTestId("portal-documents-client")).toHaveTextContent("docs:0");

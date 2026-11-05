@@ -26,6 +26,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Added
 
+- **Kestrel SSO (dev):** staff can sign in to the portal through Authelia's
+  Supabase custom OIDC provider. Adds `POST /api/v1/auth/sso`, SDK/web start
+  helpers, the "Sign in with MCT SSO" login button, and the matching OpenAPI
+  contract. Email/password + MFA remain available as fallback.
+
 - **Client portal remediation (2026-10-21 audit):** client-visible approval,
   change-request, DNS, identity-verification, offboarding and insurance request
   flows; proposal accept/decline decisions; training enrollment/progress and

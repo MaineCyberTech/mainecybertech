@@ -72,6 +72,8 @@ interface MockState {
     stripe_subscription_id: string;
     status: string;
     created_at: string;
+    amount_cents?: number;
+    quantity?: number;
   }>;
   invoices: Array<{ organization_id: string; total_cents: number }>;
   payments: Array<{ organization_id: string; amount_cents: number; status: string }>;
@@ -207,6 +209,8 @@ function baseState(overrides: Partial<MockState> = {}): MockState {
         stripe_subscription_id: "sub_test",
         status: "active",
         created_at: "2026-01-01T00:00:00.000Z",
+        amount_cents: 9900,
+        quantity: 1,
       },
     ],
     invoices: [],
@@ -327,6 +331,8 @@ describe("stripeReconcile drift detection (BILL-P2-003)", () => {
           stripe_subscription_id: "sub_test",
           status: "trialing",
           created_at: "2026-01-01T00:00:00.000Z",
+          amount_cents: 9900,
+          quantity: 5,
         },
       ],
     });
@@ -392,6 +398,8 @@ describe("stripeReconcile drift detection (BILL-P2-003)", () => {
           stripe_subscription_id: "sub_test",
           status: "past_due",
           created_at: "2026-01-01T00:00:00.000Z",
+          amount_cents: 9900,
+          quantity: 1,
         },
       ],
     });

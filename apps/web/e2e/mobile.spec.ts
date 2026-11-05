@@ -143,6 +143,10 @@ test.describe("mobile viewport", () => {
   test("contact form controls render at 16px or larger", async ({ page }) => {
     await page.goto("/contact");
     await page.waitForLoadState("domcontentloaded");
+    await page
+      .locator("input:visible, select:visible, textarea:visible")
+      .first()
+      .waitFor({ state: "visible", timeout: 15_000 });
     await expectNoControlBelow16px(page, "/contact");
   });
 
