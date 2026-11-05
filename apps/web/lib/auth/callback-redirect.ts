@@ -23,3 +23,24 @@ export function resolvePostAuthRedirect(next: string | null | undefined): string
 
   return value;
 }
+
+
+/**
+ * Resolve the public web origin for absolute redirects.
+ *
+ * The standalone Next server runs with HOSTNAME=0.0.0.0 and, behind the
+ * container proxy, `request.url` can expose the internal `0.0.0.0:3000`
+ * origin. Use the configured public origin when available; only fall back to
+ * the request origin for local/dev where APP_BASE_URL is unset.
+ */
+export function resolvePublicOrigin(requestUrl: string, configured?: string | null): string {
+  const value = (configured ?? "").trim().replace(/\/+$/, "");
+  if (value) {
+    try {
+      return new URL(value).origin;
+    } catch {
+      // Ignore malformed configuration and use the request origin.
+    }
+  }
+  return new URL(requestUrl).origin;
+}
