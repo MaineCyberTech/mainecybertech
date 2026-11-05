@@ -49,7 +49,11 @@ jobs:
     # prod-approval). Schedule: dev normally; prod-backup once the operator has
     # enabled the scheduled prod target.
     environment: ${{ (github.event.inputs.environment == 'prod') && 'prod-approval' || (github.event_name == 'schedule' && vars.PROD_BACKUP_ENABLED == 'true') && 'prod-backup' || 'dev' }}
-    runs-on: ubuntu-latest
+    # Raven/offsite backups need a runner that can reach the private S3
+    # endpoint. Default to GitHub-hosted; set the BACKUP_RUNNER_LABELS
+    # repository variable to a JSON array such as
+    # ["self-hosted","Linux","X64","lab","lab-docker"] to use the lab runners.
+    runs-on: ${{ fromJSON(vars.BACKUP_RUNNER_LABELS || '["ubuntu-latest"]') }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
