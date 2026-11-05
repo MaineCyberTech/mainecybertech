@@ -41,7 +41,7 @@ describe("PortalTimeEntriesPage", () => {
     mockTimeEntriesList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/time-entries/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByRole("heading", { level: 1, name: /time entries/i })).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("PortalTimeEntriesPage", () => {
     mockTimeEntriesList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/time-entries/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getAllByRole("navigation").length).toBeGreaterThanOrEqual(1);
@@ -79,7 +79,7 @@ describe("PortalTimeEntriesPage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/time-entries/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByText("Server maintenance")).toBeInTheDocument();
@@ -92,7 +92,7 @@ describe("PortalTimeEntriesPage", () => {
     mockTimeEntriesList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/time-entries/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByText("No time entries found.")).toBeInTheDocument();
@@ -102,7 +102,7 @@ describe("PortalTimeEntriesPage", () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
     const { default: Page } = await import("@/app/(portal)/portal/time-entries/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
 
     expect(element).toBeNull();
   });
@@ -121,7 +121,7 @@ describe("PortalTimeEntriesPage", () => {
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/time-entries/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
 
     expect(screen.getByText(/2.0h/)).toBeInTheDocument();

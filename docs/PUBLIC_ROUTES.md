@@ -8,7 +8,7 @@
 > Signature-verified webhook receivers and CAPTCHA-gated public forms carry
 > no bearer-token auth but still verify a credential per request.
 
-**35 public operations.**
+**36 public operations.**
 
 ## Analytics
 
@@ -27,6 +27,7 @@
 | POST | `/auth/sign-in` | Sign in with email/password (returns mfaRequired when a TOTP factor is enrolled) |
 | POST | `/auth/sign-out` | Sign out |
 | POST | `/auth/sign-up` | Create account |
+| POST | `/auth/sso` | Start Supabase custom OIDC SSO with Authelia |
 
 ## Batch
 

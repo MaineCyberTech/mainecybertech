@@ -40,7 +40,7 @@ describe("PortalVendorContactsPage", () => {
   it("renders heading", async () => {
     mockContactsList.mockResolvedValue({ items: [] });
     const { default: Page } = await import("@/app/(portal)/portal/vendor-contacts/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
     expect(screen.getByRole("heading", { level: 1, name: /vendor contacts/i })).toBeInTheDocument();
   });
@@ -48,7 +48,7 @@ describe("PortalVendorContactsPage", () => {
   it("renders breadcrumbs", async () => {
     mockContactsList.mockResolvedValue({ items: [] });
     const { default: Page } = await import("@/app/(portal)/portal/vendor-contacts/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
     expect(screen.getAllByRole("navigation").length).toBeGreaterThanOrEqual(1);
   });
@@ -56,7 +56,7 @@ describe("PortalVendorContactsPage", () => {
   it("shows empty state", async () => {
     mockContactsList.mockResolvedValue({ items: [] });
     const { default: Page } = await import("@/app/(portal)/portal/vendor-contacts/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
     expect(screen.getByText(/no vendor contacts found/i)).toBeInTheDocument();
   });
@@ -64,7 +64,7 @@ describe("PortalVendorContactsPage", () => {
   it("shows access restricted when no org", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
     const { default: Page } = await import("@/app/(portal)/portal/vendor-contacts/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     expect(element).toBeNull();
   });
 
@@ -83,7 +83,7 @@ describe("PortalVendorContactsPage", () => {
       ],
     });
     const { default: Page } = await import("@/app/(portal)/portal/vendor-contacts/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     render(element);
     expect(screen.getByText("John Doe")).toBeInTheDocument();
   });

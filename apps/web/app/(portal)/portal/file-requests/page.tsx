@@ -14,7 +14,7 @@ const DEFAULT_LIMIT = 25;
 
 export default async function PortalFileRequestsPage(props: {
   searchParams?: Promise<{ page?: string; limit?: string }>;
-} = {}) {
+}) {
   const membership = await getApprovedMembership();
   if (!membership) return null;
   let loadFailed = false;

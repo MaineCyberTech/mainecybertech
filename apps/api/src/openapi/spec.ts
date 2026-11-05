@@ -91,6 +91,23 @@ const auth: RouteDef[] = [
   },
   {
     method: "post",
+    path: "/auth/sso",
+    summary: "Start Supabase custom OIDC SSO with Authelia",
+    tag: "Auth",
+    auth: false,
+    responseSchema: envelope({
+      type: "object",
+      required: ["url", "cookieName", "cookieValue", "maxAge"],
+      properties: {
+        url: { type: "string" },
+        cookieName: { type: "string" },
+        cookieValue: { type: "string" },
+        maxAge: { type: "integer" },
+      },
+    }),
+  },
+  {
+    method: "post",
     path: "/auth/forgot-password",
     summary: "Request password reset email",
     tag: "Auth",
