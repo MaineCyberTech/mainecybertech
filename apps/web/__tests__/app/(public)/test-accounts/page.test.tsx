@@ -19,10 +19,18 @@ jest.mock("next/link", () => {
   );
 });
 
+// jsdom 30 makes window.location non-configurable, so the host rule is covered
+// by the helper's unit test and this page test controls the gate directly.
+const mockIsTestAccountsEnabled = jest.fn();
+jest.mock("@/lib/test-accounts", () => ({
+  isTestAccountsEnabled: () => mockIsTestAccountsEnabled(),
+}));
+
 describe("TestAccountsPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED = "true";
+    mockIsTestAccountsEnabled.mockReturnValue(true);
     mockTestLoginAction.mockResolvedValue({
       ok: true,
       redirectTo: "/portal/dashboard",
@@ -33,17 +41,9 @@ describe("TestAccountsPage", () => {
     delete process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED;
   });
 
-  function setHostname(hostname: string) {
-    Object.defineProperty(window, "location", {
-      value: { hostname },
-      writable: true,
-      configurable: true,
-    });
-  }
-
   it("shows a Not Available state when test accounts are disabled", async () => {
     delete process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED;
-    setHostname("app.mainecybertech.com");
+    mockIsTestAccountsEnabled.mockReturnValue(false);
     const { default: Page } = await import("@/app/(public)/test-accounts/page");
     render(<Page />);
     expect(screen.getByText("Not Available")).toBeInTheDocument();
@@ -52,7 +52,7 @@ describe("TestAccountsPage", () => {
 
   it("enables on the dev domain (.us) even without the env flag", async () => {
     delete process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED;
-    setHostname("app.mainecybertech.us");
+    mockIsTestAccountsEnabled.mockReturnValue(true);
     const { default: Page } = await import("@/app/(public)/test-accounts/page");
     render(<Page />);
     expect(screen.getByText("Test Accounts")).toBeInTheDocument();
