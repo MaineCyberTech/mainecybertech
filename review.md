@@ -179,7 +179,7 @@ pnpm e2e                     # Playwright E2E
 | Web components            | 130   | `apps/web/components/`                                                                                                                                                                                                                                                                             |
 | SQL migrations            | 164   | `supabase/migrations/` (latest: 5302466_notifications_insert_membership_scope                                                                                                                                                                                                                      |
 | Seed files                | 10    | `supabase/seeds/*.sql`                                                                                                                                                                                                                                                                             |
-| GitHub Actions workflows  | 30    | `.github/workflows/`                                                                                                                                                                                                                                                                               |
+| GitHub Actions workflows  | 31    | `.github/workflows/`                                                                                                                                                                                                                                                                               |
 | AI prompt files           | 626   | `prompts/` (6 packs, 624 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                                                                                                                                           |
 | Build/dev/utility scripts | 123   | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
 
@@ -310,7 +310,7 @@ SENTRY_DSN=
 
 ## CI/CD
 
-**30 GitHub Actions workflows** in `.github/workflows/`:
+**31 GitHub Actions workflows** in `.github/workflows/`:
 
 | Workflow                       | Trigger            | Purpose                                                                                                |
 | ------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------ |
