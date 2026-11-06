@@ -13,4 +13,4 @@ permissions:
 
 jobs:
   approve:
-    uses: MaineCyberTech/ai-reviewer/.github/workflows/bot-approval.yml@02fc7613f5f08bea2619ef54a35cfd6e25349b5a
+    uses: MaineCyberTech/ai-reviewer/.github/workflows/bot-approval.yml@d401040c9777a63195396cbf177eec78192284d2
