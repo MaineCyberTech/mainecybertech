@@ -209,6 +209,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Fixed
 
+- **Portal SSO callback:** exchange Supabase PKCE authorization codes with
+  `grant_type=pkce`. The previous `grant_type=authorization_code` returns
+  `unsupported_grant_type`, so `/api/v1/auth/callback` failed with
+  `Failed to exchange auth code`.
+
 - **SSO callback origin:** post-login redirects now use `APP_BASE_URL` instead
   of the standalone web server's container origin. Authelia SSO was landing on
   `https://0.0.0.0:3000` after a successful login.
