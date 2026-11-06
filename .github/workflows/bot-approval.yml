@@ -1,0 +1,72 @@
+name: bot-approval
+
+# Human-triggered approval. A maintainer adds the `bot-approve` label only
+# after reviewing the PR. The workflow then verifies that the advisory AI
+# review exists and every required check is green before submitting an
+# approval using GITHUB_TOKEN.
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: read
+
+jobs:
+  approve:
+    if: >-
+      ${{
+        github.event.label.name == 'bot-approve' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.sender.type == 'User' &&
+        github.event.pull_request.user.login != 'github-actions[bot]'
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Verify checks and AI review, then approve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -Eeuo pipefail
+
+          if ! gh api "repos/$REPO/issues/$PR/comments" --paginate \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("AI review (advisory)"))) | .id' \
+            | grep -q .; then
+            echo "No advisory AI review comment found; refusing to approve." >&2
+            exit 1
+          fi
+
+          for _ in $(seq 1 60); do
+            checks="$(gh pr checks "$PR" --required --json name,state)"
+            failed="$(jq '[.[] | select(.state == "FAILURE" or .state == "CANCELLED" or .state == "TIMED_OUT" or .state == "ACTION_REQUIRED")] | length' <<<"$checks")"
+            pending="$(jq '[.[] | select(.state == "PENDING" or .state == "QUEUED" or .state == "IN_PROGRESS" or .state == "EXPECTED")] | length' <<<"$checks")"
+            if [ "$failed" -gt 0 ]; then
+              echo "Required checks are failing; refusing to approve." >&2
+              jq -r '.[] | "\(.name): \(.state)"' <<<"$checks" >&2
+              exit 1
+            fi
+            if [ "$pending" -eq 0 ]; then
+              break
+            fi
+            sleep 20
+          done
+
+          checks="$(gh pr checks "$PR" --required --json name,state)"
+          pending="$(jq '[.[] | select(.state == "PENDING" or .state == "QUEUED" or .state == "IN_PROGRESS" or .state == "EXPECTED")] | length' <<<"$checks")"
+          if [ "$pending" -gt 0 ]; then
+            echo "Required checks did not finish in time; refusing to approve." >&2
+            exit 1
+          fi
+
+          gh api -X POST "repos/$REPO/pulls/$PR/reviews" \
+            -f event=APPROVE \
+            -f body="Automated approval: the \`bot-approve\` label was applied by a maintainer, the advisory AI review is present, and all required checks are green."
