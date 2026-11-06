@@ -24,6 +24,11 @@ jest.mock("@/lib/env", () => ({
   getClientEnv: jest.fn().mockReturnValue({ NEXT_PUBLIC_API_URL: "http://api.test" }),
 }));
 
+const mockRedirectTo = jest.fn();
+jest.mock("@/lib/navigation", () => ({
+  redirectTo: (...args: any[]) => mockRedirectTo(...args),
+}));
+
 class MockEventSource {
   static instances: MockEventSource[] = [];
 
@@ -158,12 +163,7 @@ describe("NotificationBell SSE fallback polling", () => {
   // the session is expired/revoked, so the client must stop reconnecting and
   // send the user to sign in again.
   it("handles auth_expired by closing the stream and redirecting to login", async () => {
-    const assign = jest.fn();
-    const originalLocation = window.location;
-    Object.defineProperty(window, "location", {
-      configurable: true,
-      value: { pathname: "/portal/dashboard", assign },
-    });
+    mockRedirectTo.mockClear();
     try {
       const { unmount } = render(<NotificationBell basePath="/portal" />);
       await flushMicrotasks();
@@ -174,7 +174,7 @@ describe("NotificationBell SSE fallback polling", () => {
       });
 
       expect(es.closed).toBe(true);
-      expect(assign).toHaveBeenCalledWith("/login?reason=session_expired");
+      expect(mockRedirectTo).toHaveBeenCalledWith("/login?reason=session_expired");
 
       await act(async () => {
         jest.advanceTimersByTime(60000);
@@ -183,10 +183,7 @@ describe("NotificationBell SSE fallback polling", () => {
 
       unmount();
     } finally {
-      Object.defineProperty(window, "location", {
-        configurable: true,
-        value: originalLocation,
-      });
+      mockRedirectTo.mockClear();
     }
   });
 

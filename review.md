@@ -103,12 +103,12 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,728 tests, all passing. 523 suites.**
+**4,733 tests, all passing. 524 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
 | API     | 2,048         | 178    | Jest + supertest                  |
-| Web     | 2,040         | 308    | Jest + Testing Library            |
+| Web     | 2,045         | 309    | Jest + Testing Library            |
 | SDK     | 327           | 5      | Jest (mocked fetch)               |
 | Worker  | 313           | 32     | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
@@ -179,7 +179,7 @@ pnpm e2e                     # Playwright E2E
 | Web components            | 130   | `apps/web/components/`                                                                                                                                                                                                                                                                             |
 | SQL migrations            | 164   | `supabase/migrations/` (latest: 5302466_notifications_insert_membership_scope                                                                                                                                                                                                                      |
 | Seed files                | 10    | `supabase/seeds/*.sql`                                                                                                                                                                                                                                                                             |
-| GitHub Actions workflows  | 30    | `.github/workflows/`                                                                                                                                                                                                                                                                               |
+| GitHub Actions workflows  | 32    | `.github/workflows/`                                                                                                                                                                                                                                                                               |
 | AI prompt files           | 626   | `prompts/` (6 packs, 624 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                                                                                                                                           |
 | Build/dev/utility scripts | 123   | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `collect-licenses.mjs`, etc.) |
 
@@ -310,7 +310,7 @@ SENTRY_DSN=
 
 ## CI/CD
 
-**30 GitHub Actions workflows** in `.github/workflows/`:
+**32 GitHub Actions workflows** in `.github/workflows/`:
 
 | Workflow                       | Trigger            | Purpose                                                                                                |
 | ------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------ |
