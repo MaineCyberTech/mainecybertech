@@ -4,7 +4,7 @@ name: ai-review
 # MaineCyberTech/ai-reviewer repository; this file is only the caller.
 on:
   pull_request:
-    types: [opened, reopened, ready_for_review]
+    types: [opened, reopened, ready_for_review, synchronize]
   workflow_dispatch:
     inputs:
       pr:
@@ -15,6 +15,10 @@ on:
 permissions:
   contents: read
   pull-requests: write
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
 
 jobs:
   review:
