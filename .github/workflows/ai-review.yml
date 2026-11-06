@@ -1,15 +1,14 @@
 name: ai-review
 
-# Advisory AI review. This does not approve or merge anything; it posts one
-# comment so a human reviewer has an independent first pass. It runs a small
-# local model on the GitHub runner, so no model API key is stored in the repo.
+# Advisory AI review. The implementation lives in the reusable
+# MaineCyberTech/ai-reviewer repository; this file is only the caller.
 on:
   pull_request:
     types: [opened, reopened, ready_for_review]
   workflow_dispatch:
     inputs:
       pr:
-        description: Pull request number to review
+        description: Pull request number
         required: true
         type: number
 
@@ -17,79 +16,9 @@ permissions:
   contents: read
   pull-requests: write
 
-concurrency:
-  group: ai-review-${{ github.event.pull_request.number || inputs.pr }}
-  cancel-in-progress: true
-
-env:
-  OLLAMA_VERSION: 0.40.15
-  AI_REVIEW_MODEL: ${{ secrets.AI_REVIEW_MODEL || 'qwen2.5-coder:3b' }}
-  AI_REVIEW_ENDPOINT: ${{ secrets.AI_REVIEW_ENDPOINT }}
-
 jobs:
   review:
-    if: >-
-      ${{
-        github.event_name == 'workflow_dispatch' ||
-        (github.event.pull_request.draft == false &&
-         github.event.pull_request.head.repo.full_name == github.repository)
-      }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          fetch-depth: 0
-
-      - name: Install Ollama
-        if: env.AI_REVIEW_ENDPOINT == ''
-        run: |
-          set -Eeuo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq zstd curl
-          base="https://github.com/ollama/ollama/releases/download/v${OLLAMA_VERSION}"
-          curl -fsSL --retry 3 -o /tmp/ollama-linux-amd64.tar.zst "$base/ollama-linux-amd64.tar.zst"
-          curl -fsSL --retry 3 -o /tmp/ollama-sha.txt "$base/sha256sum.txt"
-          (cd /tmp && grep 'ollama-linux-amd64.tar.zst$' ollama-sha.txt | sha256sum -c -)
-          sudo tar --use-compress-program=unzstd -xf /tmp/ollama-linux-amd64.tar.zst -C /usr/local
-
-      - name: Start Ollama and pull the review model
-        if: env.AI_REVIEW_ENDPOINT == ''
-        run: |
-          set -Eeuo pipefail
-          nohup ollama serve >/tmp/ollama.log 2>&1 &
-          for _ in $(seq 1 45); do
-            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
-              break
-            fi
-            sleep 2
-          done
-          curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
-          ollama pull "$AI_REVIEW_MODEL"
-
-      - name: Review the PR diff
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
-          AI_REVIEW_ENDPOINT: ${{ secrets.AI_REVIEW_ENDPOINT || 'http://127.0.0.1:11434/v1/chat/completions' }}
-          AI_REVIEW_API_KEY: ${{ secrets.AI_REVIEW_API_KEY }}
-        run: |
-          set -Eeuo pipefail
-          mkdir -p .ai-review
-          gh pr view "$PR_NUMBER" --json title,body,files > .ai-review/pr.json
-          gh pr diff "$PR_NUMBER" > .ai-review/pr.diff
-
-          python3 .github/scripts/ai_review.py \
-            "$AI_REVIEW_MODEL" \
-            .github/prompts/ai-review.md \
-            .ai-review/pr.json \
-            .ai-review/pr.diff > .ai-review/review.md
-
-          {
-            printf '## AI review (advisory)\n\n'
-            printf '_Independent AI review of this diff. This is not a GitHub approval; a human must review and approve._\n\n'
-            cat .ai-review/review.md
-          } > .ai-review/comment.md
-
-          gh pr comment "$PR_NUMBER" --body-file .ai-review/comment.md
+    uses: MaineCyberTech/ai-reviewer/.github/workflows/ai-review.yml@02fc7613f5f08bea2619ef54a35cfd6e25349b5a
+    secrets: inherit
+    with:
+      pr: ${{ inputs.pr || 0 }}
