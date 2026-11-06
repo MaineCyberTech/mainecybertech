@@ -253,7 +253,7 @@ router.post("/callback", rateLimitAuth, async (req, res, next) => {
     if (codeVerifier) body.code_verifier = codeVerifier;
 
     const tokenRes = await fetch(
-      `${env.SUPABASE_URL}/auth/v1/token?grant_type=authorization_code`,
+      `${env.SUPABASE_URL}/auth/v1/token?grant_type=pkce`,
       {
         method: "POST",
         headers: {
