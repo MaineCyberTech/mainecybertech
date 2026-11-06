@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   review:
-    uses: MaineCyberTech/ai-reviewer/.github/workflows/ai-review.yml@main
+    uses: MaineCyberTech/ai-reviewer/.github/workflows/ai-review.yml@02fc7613f5f08bea2619ef54a35cfd6e25349b5a
     secrets: inherit
     with:
       pr: ${{ inputs.pr || 0 }}
