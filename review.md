@@ -4,7 +4,6 @@
   regenerate with:  node scripts/sync-review-md.mjs
 -->
 
-
 # MCT Portal — Agent Reference
 
 **Repo:** `github.com/MaineCyberTech/mainecybertech`
