@@ -39,8 +39,8 @@ RUN pnpm install --frozen-lockfile --filter=./apps/worker --prod --ignore-script
 # Runtime hardening (CTR-P1-001): drop npm/corepack/pnpm — the app runs `node`
 # directly. npm's bundled tree (tar 6.2.1 CRITICAL, minimatch, brace-expansion,
 # pacote, sigstore) and the corepack pnpm cache were the entire node-package
-# source of the image-scan findings; libcrypto3/libssl3 carry an Alpine fix.
-RUN apk upgrade --no-cache libcrypto3 libssl3 \
+# source of the image-scan findings; libcrypto3/libssl3/zlib carry Alpine fixes.
+RUN apk upgrade --no-cache libcrypto3 libssl3 zlib \
  && rm -rf /usr/local/lib/node_modules/npm \
            /usr/local/lib/node_modules/corepack \
            /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
