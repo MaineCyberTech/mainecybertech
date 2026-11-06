@@ -8,6 +8,7 @@
 
 **Repo:** `github.com/MaineCyberTech/mainecybertech`
 **Branch:** `develop`
+**Pull requests:** target `develop`; `main` is promotion-only.
 **Package manager:** pnpm (corepack, v10+)
 **Node:** >= 20
 **Shell:** PowerShell (no bash — do not use `&&`)
