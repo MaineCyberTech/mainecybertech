@@ -150,6 +150,12 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - **BullMQ 6:** upgraded the API and worker from 5.78.x to 6.7.1 and removed
   the held-major Dependabot ignore entry. The worker queue API and Redis
   connectivity tests cover the upgrade.
+- **Next.js 16:** upgraded `next` from 15.5.28 to 16.4.5 and removed the held-major
+  Dependabot ignore entry. The App Router build passes under Turbopack; the root
+  `next` override and Storybook extension are aligned to 16.4.5. The
+  `@opentelemetry/core` override is constrained to `<3` because
+  `sdk-trace-base` 2.12.0 imports `otperformance`, which core 3.0.0 no longer
+  exports.
 - **lucide-react 1.x:** upgraded the web and UI packages to `1.70.0` and removed
   the held-major Dependabot ignore entry. The module registry now uses the
   canonical v1 icon names (`ShieldExclamationPoint`, `FingerprintPattern`,
@@ -243,6 +249,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   form it still used fails on pnpm 10.34.x and blocked every deploy.
 
 ### Fixed
+
+- **Storage restore over Garage:** download the archive with `s3api get-object`
+  instead of `s3 cp`, because Garage returns `400` for the `HeadObject` that
+  `s3 cp` performs before the GET. This unblocks `storage-restore-test` against
+  the Raven Garage primary.
 
 - **Portal SSO callback:** exchange Supabase PKCE authorization codes with
   `grant_type=pkce`. The previous `grant_type=authorization_code` returns

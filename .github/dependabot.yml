@@ -31,7 +31,7 @@ updates:
     ignore:
       # Held majors are tracked in #361; remove an entry in the same PR that
       # lands the upgrade so Dependabot resumes reporting that line.
-      - dependency-name: "next"
+      - dependency-name: "bullmq"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
