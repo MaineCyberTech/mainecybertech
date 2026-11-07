@@ -49,7 +49,11 @@ jobs:
     # prod-approval). Schedule: dev normally; prod-backup once the operator has
     # enabled the scheduled prod target.
     environment: ${{ (github.event.inputs.environment == 'prod') && 'prod-approval' || (github.event_name == 'schedule' && vars.PROD_BACKUP_ENABLED == 'true') && 'prod-backup' || 'dev' }}
-    runs-on: ubuntu-latest
+    # Raven/offsite backups need a runner that can reach the private S3
+    # endpoint. Default to GitHub-hosted; set the BACKUP_RUNNER_LABELS
+    # repository variable to a JSON array such as
+    # ["self-hosted","Linux","X64","lab","lab-docker"] to use the lab runners.
+    runs-on: ${{ fromJSON(vars.BACKUP_RUNNER_LABELS || '["ubuntu-latest"]') }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -85,6 +89,12 @@ jobs:
           S3_STORAGE_CLASS: ${{ vars.S3_STORAGE_CLASS || 'STANDARD' }}
           S3_OFFSITE_BUCKET: ${{ vars.S3_OFFSITE_BUCKET }}
           S3_OFFSITE_PREFIX: ${{ vars.S3_OFFSITE_PREFIX || 'storage-backups' }}
+          # Optional second endpoint for the offsite copy (for example Raven
+          # Garage). The runner must be able to reach this endpoint; do not set
+          # a private LAN address on a GitHub-hosted runner.
+          S3_OFFSITE_ENDPOINT: ${{ vars.S3_OFFSITE_ENDPOINT }}
+          S3_OFFSITE_ACCESS_KEY_ID: ${{ secrets.S3_OFFSITE_ACCESS_KEY_ID }}
+          S3_OFFSITE_SECRET_ACCESS_KEY: ${{ secrets.S3_OFFSITE_SECRET_ACCESS_KEY }}
           STORAGE_BUCKETS: ${{ vars.STORAGE_BUCKETS || 'documents avatars logos' }}
           BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
           REQUIRE_BACKUP_ENCRYPTION: "1"

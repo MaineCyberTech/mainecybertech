@@ -111,6 +111,8 @@ operator in the environment the prod job attaches before prod backups can run.
 | `SUPABASE_DB_URL`         | yes | operator | Direct database connection string for `pg_dump`; also the write path for the DR-P2-008 platform heartbeat |
 | `AWS_ACCESS_KEY_ID`       | yes | operator | S3/Spaces key for backup upload and restore download; falls back to `DO_SPACES_ACCESS_KEY_ID` |
 | `AWS_SECRET_ACCESS_KEY`   | yes | operator | S3/Spaces secret for backup upload and restore; falls back to `DO_SPACES_SECRET_ACCESS_KEY` |
+| `S3_OFFSITE_ACCESS_KEY_ID` | opt | opt | Access key for the optional offsite endpoint (Raven Garage, another S3 provider); when unset the primary `AWS_*` key is reused |
+| `S3_OFFSITE_SECRET_ACCESS_KEY` | opt | opt | Secret for the optional offsite endpoint; when unset the primary `AWS_*` secret is reused |
 | `BACKUP_ENCRYPTION_KEY`   | yes | operator | openssl passphrase encrypting/decrypting backup objects (`db-backup.yml`, `db-restore-test.yml`, storage backup) |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | operator | Supabase Storage REST access for `scripts/backup-storage.sh` (prod storage backups need the prod project's key) |
 | `SUPABASE_URL`            | yes | operator | Supabase project URL for `scripts/backup-storage.sh`; provision the prod project URL in `prod-backup`/`prod-approval` |
@@ -133,7 +135,11 @@ DR-P1-002 / IR-P1-005):
 Full object path: `s3://${S3_BUCKET}/${S3_PREFIX}/<file>`. Set these as
 repository **variables** (Settings → Secrets and variables → Actions →
 Variables). Optional offsite copy: `S3_OFFSITE_BUCKET` /
-`S3_OFFSITE_PREFIX`. See `docs/ROLLBACK_PROCEDURES.md` §3a.
+`S3_OFFSITE_PREFIX`. Set `S3_OFFSITE_ENDPOINT` when the offsite destination is
+a different S3-compatible service (for example Raven Garage at
+`http://192.168.222.120:3900`), and optionally
+`S3_OFFSITE_ACCESS_KEY_ID` / `S3_OFFSITE_SECRET_ACCESS_KEY` for its scoped
+credentials. See `docs/ROLLBACK_PROCEDURES.md` §3a.
 
 The scheduled backup/restore workflows attach the **`dev` environment**, so
 `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` resolve from it, and the `AWS_*`
@@ -175,6 +181,8 @@ attaches `prod-backup` — both must carry the prod rows above (DR-P2-009).
 | `S3_STORAGE_CLASS`               | opt | opt  | Upload storage class; default `STANDARD` because DigitalOcean Spaces rejects other classes (DR-P0-001). Set `STANDARD_IA` only for a real AWS S3 destination |
 | `S3_OFFSITE_BUCKET`              | opt | opt  | Second destination for an offsite/cross-region backup copy    |
 | `S3_OFFSITE_PREFIX`              | opt | opt  | Prefix on the offsite bucket (defaults to `S3_PREFIX`)        |
+| `S3_OFFSITE_ENDPOINT`            | opt | opt  | Endpoint URL for the offsite copy, e.g. `http://192.168.222.120:3900` for Raven Garage. Leave unset to reuse the primary endpoint. A GitHub-hosted runner cannot reach a private LAN address; use a self-hosted LAN runner or relay |
+| `BACKUP_RUNNER_LABELS`           | opt | opt  | JSON array of runner labels for `db-backup` / `storage-backup`. Defaults to `["ubuntu-latest"]`. Set to `["self-hosted","Linux","X64","lab","lab-docker"]` to use the on-prem CI runners that can reach Raven |
 | `PROD_BACKUP_ENABLED`            | —   | opt  | Set to `true` to point the scheduled `db-backup` / `db-restore-test` / `storage-backup` / `storage-restore-test` runs at production (attaches `prod-backup`; DATA-P2-010 / DR-P2-009) |
 | `STORAGE_BUCKETS`                | yes | opt  | Storage buckets to back up (default `documents avatars logos`); set the prod bucket list in `prod-backup` if it differs |
 | `LOAD_TEST_API_URL`              | opt | opt  | Override the load-test API base URL for all runs (defaults: dev `https://api.mainecybertech.us`, prod `https://api.mainecybertech.com`) |

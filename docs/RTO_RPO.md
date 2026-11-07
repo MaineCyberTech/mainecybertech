@@ -21,7 +21,7 @@
 
 ## Backup Strategy
 
-- **Database**: Daily `pg_dump` to S3 (30-day retention, `STANDARD` storage class — Spaces rejects other classes, override with `S3_STORAGE_CLASS` on real AWS S3; AES-256-CBC encrypted when `BACKUP_ENCRYPTION_KEY` is set; optional offsite copy via `S3_OFFSITE_BUCKET`). Supabase PITR (7-day). Scheduled runs target **dev** by default — see Production backup coverage below.
+- **Database**: Daily `pg_dump` to S3 (30-day retention, `STANDARD` storage class — Spaces rejects other classes, override with `S3_STORAGE_CLASS` on real AWS S3; AES-256-CBC encrypted when `BACKUP_ENCRYPTION_KEY` is set; optional offsite copy via `S3_OFFSITE_BUCKET`). If the offsite copy uses a different S3-compatible endpoint (for example Raven Garage), set `S3_OFFSITE_ENDPOINT` and optionally `S3_OFFSITE_ACCESS_KEY_ID` / `S3_OFFSITE_SECRET_ACCESS_KEY`; the runner must be able to reach that endpoint. Supabase PITR (7-day). Scheduled runs target **dev** by default — see Production backup coverage below.
 - **Storage**: Daily mirror of `documents`/`avatars`/`logos` to S3/Spaces (`storage-backup.yml`, encrypted, same 30-day retention).
 - **Terraform state**: DO Spaces (S3-compatible) with versioning enabled — now enforced in code by `digitalocean_spaces_bucket.terraform_state` (`versioning { enabled = true }` in `infra/terraform/digitalocean/state-bucket.tf`, DR-P2-005), not a manual bucket setting. The S3 native lock file (`use_lockfile`) lives in the same bucket (`terraform.tfstate.tflock`), so versioning covers the state and lock objects; this backend does not use DynamoDB locking.
 - **Docker images**: GHCR with SHA-tagged immutable images. Rollback by redeploying a previous SHA tag.
