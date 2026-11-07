@@ -151,7 +151,7 @@ jobs:
         # SECRET-P2-008: only the sanitized text output is uploaded. The binary
         # plan file embeds do_token / cloudflare_api_token and must never leave
         # the runner; the apply jobs re-plan in their own job.
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: tfplan-summary-${{ steps.env.outputs.name }}
           path: ${{ runner.temp }}/tfplan.txt
