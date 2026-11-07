@@ -115,6 +115,14 @@ jobs:
           VERIFY_BACKUP: "1"
         run: bash scripts/backup-database.sh
 
+      - name: Clean up backup working directory
+        # DR-P2-011: the persistent lab runners must not keep a plaintext dump
+        # when the dump/verify/encrypt/upload/prune path fails. The script
+        # removes its files on success; this is the failure-path backstop and
+        # runs only after the upload step.
+        if: always()
+        run: rm -rf "${GITHUB_WORKSPACE}/backups"
+
       - name: Record platform backup heartbeat
         # DR-P2-008: the last successful run is the platform's real backup
         # signal (the client-facing `backup_status` module is product data).

@@ -104,7 +104,30 @@ jobs:
           # An empty dev mirror is legitimate before the first upload; keep the
           # fail-closed guard for prod runs and the prod schedule.
           ALLOW_EMPTY_STORAGE: ${{ (github.event.inputs.environment == 'prod' || (github.event_name == 'schedule' && vars.PROD_BACKUP_ENABLED == 'true')) && '0' || '1' }}
+          # DR-P2-010: preserve the MANIFEST so the staleness check can tell a
+          # real, data-bearing backup from a dev manifest-only archive.
+          BACKUP_METADATA_FILE: ${{ runner.temp }}/storage-backup-manifest.txt
         run: bash scripts/backup-storage.sh
+
+      - name: Upload backup manifest metadata
+        # DR-P2-010: consumed by backup-staleness-check.yml. Keep this artifact
+        # (and its name) in sync with the staleness check's download step.
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: storage-backup-manifest
+          path: ${{ runner.temp }}/storage-backup-manifest.txt
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Clean up backup working directory
+        # DR-P2-011: the persistent lab runners must not keep plaintext staged
+        # user files when any step above fails. Run after the upload and the
+        # manifest artifact, and on failure/cancellation too.
+        if: always()
+        run: |
+          rm -rf "${GITHUB_WORKSPACE}/storage-backups"
+          rm -f "${RUNNER_TEMP}/storage-backup-manifest.txt"
 
       - name: Notify on failure
         if: failure()

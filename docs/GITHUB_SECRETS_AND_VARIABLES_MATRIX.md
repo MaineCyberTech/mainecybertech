@@ -186,7 +186,7 @@ attaches `prod-backup` — both must carry the prod rows above (DR-P2-009).
 | `S3_OFFSITE_BUCKET`              | opt | opt  | Second destination for an offsite/cross-region backup copy    |
 | `S3_OFFSITE_PREFIX`              | opt | opt  | Prefix on the offsite bucket (defaults to `S3_PREFIX`)        |
 | `S3_OFFSITE_ENDPOINT`            | opt | opt  | Endpoint URL for the offsite copy, e.g. `http://192.168.222.120:3900` for Raven Garage. Leave unset to reuse the primary endpoint. A GitHub-hosted runner cannot reach a private LAN address; use a self-hosted LAN runner or relay |
-| `BACKUP_RUNNER_LABELS`           | opt | opt  | JSON array of runner labels for `db-backup` / `storage-backup`. Defaults to `["ubuntu-latest"]`. Set to `["self-hosted","Linux","X64","lab","lab-docker"]` to use the on-prem CI runners that can reach Raven |
+| `BACKUP_RUNNER_LABELS`           | opt | opt  | JSON array of runner labels for `db-backup` / `storage-backup` / `db-restore-test` / `storage-restore-test` (DR-P1-008). Defaults to `["ubuntu-latest"]`. Set to `["self-hosted","Linux","X64","lab","lab-docker"]` to use the on-prem CI runners that can reach Raven |
 | `PROD_BACKUP_ENABLED`            | —   | opt  | Set to `true` to point the scheduled `db-backup` / `db-restore-test` / `storage-backup` / `storage-restore-test` runs at production (attaches `prod-backup`; DATA-P2-010 / DR-P2-009) |
 | `STORAGE_BUCKETS`                | yes | opt  | Storage buckets to back up (default `documents avatars logos`); set the prod bucket list in `prod-backup` if it differs |
 | `LOAD_TEST_API_URL`              | opt | opt  | Override the load-test API base URL for all runs (defaults: dev `https://api.mainecybertech.us`, prod `https://api.mainecybertech.com`) |
