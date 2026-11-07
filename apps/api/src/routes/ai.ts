@@ -343,6 +343,10 @@ router.get("/triage", requirePermission("ai", "view"), async (req, res, next) =>
     let q = supabase.from("ticket_triage_drafts").select("*", { count: listCountMode(req.query) });
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) q = q.eq("organization_id", orgId);
+    // SEC-P3-016: the portal contract is triage analysis on the client's own
+    // tickets. Triage drafts have no visibility column, so a client only sees
+    // the drafts they created; staff keep the org-wide review queue.
+    if (await isClientMember(req)) q = q.eq("created_by", req.authUser!.userId);
 
     const { data, error, count } = await q
       .order("created_at", { ascending: false })

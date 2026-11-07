@@ -115,10 +115,28 @@ describe("AI API", () => {
 
     it("lists triage drafts", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
-      const res = await request(app).get("/api/v1/ai/triage").set("Authorization", authToken);
+      const builder = createMockBuilder({ data: [], error: null, count: 0 });
+      supabase.from.mockReturnValue(builder);
+      const res = await request(app)
+        .get(`/api/v1/ai/triage?organization_id=${testOrgId}`)
+        .set("Authorization", authToken);
       expect(res.status).toBe(200);
       expect(res.body.data.items).toEqual([]);
+      expect(builder.eq).not.toHaveBeenCalledWith("created_by", expect.anything());
+    });
+
+    it("limits client roles to their own triage drafts (SEC-P3-016)", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({ data: [], error: null, count: 0 });
+      supabase.from.mockReturnValue(builder);
+      (isClientMember as jest.Mock).mockResolvedValueOnce(true);
+
+      const res = await request(app)
+        .get(`/api/v1/ai/triage?organization_id=${testOrgId}`)
+        .set("Authorization", authToken);
+
+      expect(res.status).toBe(200);
+      expect(builder.eq).toHaveBeenCalledWith("created_by", "user-1");
     });
   });
 

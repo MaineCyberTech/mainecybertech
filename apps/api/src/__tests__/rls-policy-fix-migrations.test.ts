@@ -50,7 +50,7 @@ type Policy = { kind: "create" | "drop"; body: string; file: string };
 
 /** Final create/drop state of every policy on `table`, in chain order. */
 function policyState(
-  table: "document_versions" | "store_quotes" | "notifications",
+  table: "document_versions" | "store_quotes" | "notifications" | "ticket_comments",
 ): Map<string, Policy> {
   const state = new Map<string, Policy>();
   const name = String.raw`(?:"([^"]+)"|'([^']+)'|([A-Za-z_][A-Za-z0-9_$]*))`;
@@ -177,8 +177,29 @@ describe("RLS-P3-009 — self-addressed notifications are org-scoped", () => {
   });
 });
 
+describe("SEC-P1-012 — internal ticket comments are staff-only at the DB layer", () => {
+  const state = policyState("ticket_comments");
+  const policy = state.get("ticket_comments_select_same_org");
+  const body = policy?.body ?? "";
+
+  it("has a live ticket_comments select policy", () => {
+    expect(policy?.kind).toBe("create");
+  });
+
+  it("still requires approved membership (or super admin)", () => {
+    expect(body).toMatch(/public\.is_super_admin\s*\(\s*\)/);
+    expect(body).toMatch(/public\.is_org_approved_member\s*\(\s*organization_id\s*\)/);
+  });
+
+  it("hides internal rows from client roles but keeps them for staff roles", () => {
+    expect(body).toMatch(/is_internal\s*=\s*false/);
+    expect(body).toMatch(/public\.user_has_role\s*\(/);
+    expect(body).not.toMatch(/client_admin|client_user|client-viewer|client-billing/);
+  });
+});
+
 describe("RLS fix migrations are transactional", () => {
-  for (const prefix of ["5302447", "5302448", "5302465", "5302466"]) {
+  for (const prefix of ["5302447", "5302448", "5302465", "5302466", "5302467"]) {
     it(`${prefix} is wrapped in begin;/commit;`, () => {
       const file = migrationFiles().find((f) => f.startsWith(prefix));
       expect(file).toBeDefined();

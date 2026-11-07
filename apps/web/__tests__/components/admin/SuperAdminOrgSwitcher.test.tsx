@@ -36,6 +36,16 @@ const ORGS = [
   { id: "o3", name: "Suspended Co", status: "suspended" },
 ];
 
+async function renderAndWaitForOrgs(): Promise<HTMLSelectElement> {
+  mockIsSuperAdmin.mockReturnValue(true);
+  render(<SuperAdminOrgSwitcher />);
+  return await waitFor(() => {
+    const select = screen.getByLabelText("Switch active tenant (super admin)") as HTMLSelectElement;
+    expect(select.options.length).toBe(ORGS.length);
+    return select;
+  });
+}
+
 describe("SuperAdminOrgSwitcher", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -58,24 +68,14 @@ describe("SuperAdminOrgSwitcher", () => {
   });
 
   it("lists all tenants for super admins", async () => {
-    mockIsSuperAdmin.mockReturnValue(true);
-    render(<SuperAdminOrgSwitcher />);
-    await waitFor(() => {
-      expect(mockListAll).toHaveBeenCalled();
-    });
-    const select = screen.getByLabelText("Switch active tenant (super admin)") as HTMLSelectElement;
-    expect(select.options.length).toBe(3);
+    const select = await renderAndWaitForOrgs();
+    expect(mockListAll).toHaveBeenCalled();
     expect(select.options[0].textContent).toBe("Acme Corp");
     expect(select.options[2].textContent).toContain("suspended");
   });
 
   it("switches tenant via setActiveOrg and refreshes", async () => {
-    mockIsSuperAdmin.mockReturnValue(true);
-    render(<SuperAdminOrgSwitcher />);
-    await waitFor(() => {
-      expect(screen.getByLabelText("Switch active tenant (super admin)")).toBeInTheDocument();
-    });
-    const select = screen.getByLabelText("Switch active tenant (super admin)") as HTMLSelectElement;
+    const select = await renderAndWaitForOrgs();
     fireEvent.change(select, { target: { value: "o2" } });
     await waitFor(() => {
       expect(mockSetActiveOrg).toHaveBeenCalledWith("o2");

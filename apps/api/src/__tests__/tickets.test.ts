@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import ticketsRouter from "../routes/tickets";
-import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
+import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -18,7 +18,9 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
 }));
 
 jest.mock("../services/audit", () => ({
@@ -30,9 +32,14 @@ jest.mock("../lib/notify", () => ({
   createNotification: jest.fn(),
 }));
 
+jest.mock("../lib/client-visibility", () => ({
+  isClientMember: jest.fn().mockResolvedValue(false),
+}));
+
 import { getSupabaseAdmin } from "../services/supabase";
 import { notifyAndEmail } from "../lib/notify";
 import { logAuditEvent } from "../services/audit";
+import { isClientMember } from "../lib/client-visibility";
 
 function mockAuth() {
   const supabase = { from: jest.fn(), auth: { getUser: jest.fn() }, rpc: jest.fn() };
@@ -66,10 +73,7 @@ jest.mock("../middleware/org-access", () => ({
   requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 jest.mock("../middleware/permissions", () => ({
-  requirePermission:
-    () =>
-    (_req: unknown, _res: unknown, next: () => void) =>
-      next(),
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 const app = createTestApp();
 app.use("/api/v1/tickets", ticketsRouter);
@@ -140,6 +144,55 @@ describe("tickets routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
+    });
+
+    it("returns only public comments to client roles (SEC-P1-012)", async () => {
+      const supabase = mockAuth();
+      const builders: Record<string, ReturnType<typeof createMockBuilder>> = {};
+      supabase.from.mockImplementation((table: string) => {
+        const builder = createMockBuilder({
+          data:
+            table === "tickets"
+              ? { ...TICKET, ticket_comments: [] }
+              : [{ id: "comment-public", body: "public", is_internal: false }],
+          error: null,
+        });
+        builders[table] = builder;
+        return builder;
+      });
+      (isClientMember as jest.Mock).mockResolvedValueOnce(true);
+
+      const res = await request(app)
+        .get(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=00000000-0000-0000-0000-000000000001",
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(builders.ticket_comments.eq).toHaveBeenCalledWith("is_internal", false);
+      expect(res.body.data.ticket_comments).toEqual([
+        { id: "comment-public", body: "public", is_internal: false },
+      ]);
+    });
+
+    it("keeps internal comments in the staff ticket detail", async () => {
+      mockAuth();
+      const internal = { id: "comment-internal", body: "staff only", is_internal: true };
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({
+          data: { ...TICKET, ticket_comments: [internal] },
+          error: null,
+        }),
+      );
+
+      const res = await request(app)
+        .get(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=00000000-0000-0000-0000-000000000001",
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.ticket_comments).toEqual([internal]);
     });
   });
 
@@ -260,6 +313,51 @@ describe("tickets routes", () => {
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
     });
+
+    it("filters internal comments for client roles (SEC-P1-012)", async () => {
+      const supabase = mockAuth();
+      const builders: Record<string, ReturnType<typeof createMockBuilder>> = {};
+      supabase.from.mockImplementation((table: string) => {
+        const builder = createMockBuilder({
+          data: table === "tickets" ? { id: TICKET.id } : [COMMENT],
+          error: null,
+        });
+        builders[table] = builder;
+        return builder;
+      });
+      (isClientMember as jest.Mock).mockResolvedValueOnce(true);
+
+      const res = await request(app)
+        .get(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=00000000-0000-0000-0000-000000000001",
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(builders.ticket_comments.eq).toHaveBeenCalledWith("is_internal", false);
+    });
+
+    it("does not add an internal filter for staff (SEC-P1-012)", async () => {
+      const supabase = mockAuth();
+      const builders: Record<string, ReturnType<typeof createMockBuilder>> = {};
+      supabase.from.mockImplementation((table: string) => {
+        const builder = createMockBuilder({
+          data: table === "tickets" ? { id: TICKET.id } : [COMMENT],
+          error: null,
+        });
+        builders[table] = builder;
+        return builder;
+      });
+
+      const res = await request(app)
+        .get(
+          "/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=00000000-0000-0000-0000-000000000001",
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(builders.ticket_comments.eq).not.toHaveBeenCalledWith("is_internal", false);
+    });
   });
 
   describe("POST /:id/comments", () => {
@@ -279,6 +377,41 @@ describe("tickets routes", () => {
         });
 
       expect(res.status).toBe(201);
+    });
+
+    it("rejects an internal note from a client role with 403 (SEC-P1-012)", async () => {
+      const supabase = mockAuth();
+      (isClientMember as jest.Mock).mockResolvedValueOnce(true);
+
+      const res = await request(app)
+        .post("/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments")
+        .set("Authorization", "Bearer token-123")
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          body: "Internal note from a client",
+          isInternal: true,
+        });
+
+      expect(res.status).toBe(403);
+      expect(supabase.from).not.toHaveBeenCalled();
+    });
+
+    it("still lets staff post an internal note (SEC-P1-012)", async () => {
+      mockAuth();
+      const builder = createMockBuilder({ data: { ...COMMENT, is_internal: true }, error: null });
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .post("/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments")
+        .set("Authorization", "Bearer token-123")
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          body: "Internal note",
+          isInternal: true,
+        });
+
+      expect(res.status).toBe(201);
+      expect(builder.insert).toHaveBeenCalledWith(expect.objectContaining({ is_internal: true }));
     });
 
     it("notifies with an abstract body that omits the comment excerpt (NOTIF-P2-005)", async () => {
@@ -328,6 +461,19 @@ describe("tickets routes", () => {
   describe("PATCH /:id/comments/:commentId", () => {
     const ORG = "00000000-0000-0000-0000-000000000001";
     const OTHER_ORG = "00000000-0000-0000-0000-000000000002";
+
+    it("rejects a client promoting their comment to internal with 403 (SEC-P1-012)", async () => {
+      const supabase = mockAuth();
+      (isClientMember as jest.Mock).mockResolvedValueOnce(true);
+
+      const res = await request(app)
+        .patch(`/api/v1/tickets/ticket-1/comments/comment-1?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ body: "Now internal", isInternal: true });
+
+      expect(res.status).toBe(403);
+      expect(supabase.from).not.toHaveBeenCalled();
+    });
 
     function mockFromSequence(tableResults: Record<string, MockResult>) {
       const supabase = mockAuth();
@@ -508,9 +654,7 @@ describe("tickets routes", () => {
       );
 
       const res = await request(app)
-        .get(
-          `/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=${ORG}`,
-        )
+        .get(`/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=${ORG}`)
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
@@ -606,7 +750,9 @@ describe("tickets routes", () => {
       });
 
       const res = await request(app)
-        .post(`/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=${ORG}`)
+        .post(
+          `/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=${ORG}`,
+        )
         .set("Authorization", "Bearer token-123")
         .send({ organizationId: ORG, body: "New comment", isInternal: false });
 
@@ -622,7 +768,9 @@ describe("tickets routes", () => {
       );
 
       const res = await request(app)
-        .post(`/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=${ORG}`)
+        .post(
+          `/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=${ORG}`,
+        )
         .set("Authorization", "Bearer token-123")
         .send({ organizationId: ORG, body: "New comment", isInternal: false });
 
@@ -679,12 +827,11 @@ describe("tickets routes", () => {
         builders[table] = builder;
         return builder;
       });
-      supabase.rpc.mockImplementation(
-        (_name: string, args: { updates: { id: string }[] }) =>
-          Promise.resolve({
-            data: args.updates.map((u) => ({ id: u.id, success: true })),
-            error: null,
-          }),
+      supabase.rpc.mockImplementation((_name: string, args: { updates: { id: string }[] }) =>
+        Promise.resolve({
+          data: args.updates.map((u) => ({ id: u.id, success: true })),
+          error: null,
+        }),
       );
       return { supabase, builders };
     }
@@ -756,10 +903,7 @@ describe("tickets routes", () => {
       // lookup still runs so transitions can be validated (FEAT-P3-006).
       expect(builders.tickets).toBeDefined();
       expect(builders.tickets.in).toHaveBeenCalledWith("id", [OWNED_ID, FOREIGN_ID]);
-      expect(builders.tickets.in).not.toHaveBeenCalledWith(
-        "organization_id",
-        expect.anything(),
-      );
+      expect(builders.tickets.in).not.toHaveBeenCalledWith("organization_id", expect.anything());
     });
 
     // FEAT-P3-006: bulk status changes obey the same transition map.
