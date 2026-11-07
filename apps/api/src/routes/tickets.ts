@@ -16,6 +16,7 @@ import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { isPlatformAdminKey, PLATFORM_ADMIN_KEYS, roleKeyOf } from "../lib/roles";
 import { isTicketTransitionAllowed } from "@mct/sdk/ticket-status";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { isClientMember } from "../lib/client-visibility";
 import {
   applyOrgScope,
   applyRequestedOrg,
@@ -135,17 +136,34 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requirePermission("tickets", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "tickets", "read");
+    // SEC-P1-012: client roles must never receive internal notes embedded in
+    // the ticket detail. Fetch the parent normally, then load only
+    // client-visible comments for client callers instead of the unfiltered
+    // `ticket_comments(*)` embed.
+    const clientViewer = await isClientMember(req);
     let query = supabase
       .from("tickets")
-      .select("*, ticket_comments(*)")
+      .select(clientViewer ? "*" : "*, ticket_comments(*)")
       .eq("id", String(req.params.id));
     query = applyResolvedOrg(req, query);
     const { data, error } = await query.single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Ticket not found", 404);
+
+    if (clientViewer) {
+      const { data: comments, error: commentsError } = await supabase
+        .from("ticket_comments")
+        .select("*")
+        .eq("ticket_id", String(req.params.id))
+        .eq("is_internal", false)
+        .order("created_at", { ascending: true });
+      if (commentsError) throw new AppError("DB_ERROR", commentsError.message, 500);
+      (data as unknown as Record<string, unknown>).ticket_comments = comments ?? [];
+    }
+
     res.json(success(data));
   } catch (error) {
     next(error);
@@ -353,7 +371,7 @@ router.patch(
   },
 );
 
-router.get("/:id/comments", async (req, res, next) => {
+router.get("/:id/comments", requirePermission("tickets", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "tickets", "read");
 
@@ -365,11 +383,15 @@ router.get("/:id/comments", async (req, res, next) => {
     const { data: ticket, error: ticketError } = await ticketQuery.single();
     if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
 
-    const { data, error } = await supabase
+    // SEC-P1-012: internal notes are staff-only. Client roles only ever see
+    // public comments, regardless of any client-supplied query parameter.
+    let commentsQuery = supabase
       .from("ticket_comments")
       .select("*")
-      .eq("ticket_id", String(req.params.id))
-      .order("created_at", { ascending: true });
+      .eq("ticket_id", String(req.params.id));
+    if (await isClientMember(req)) commentsQuery = commentsQuery.eq("is_internal", false);
+
+    const { data, error } = await commentsQuery.order("created_at", { ascending: true });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data));
@@ -382,6 +404,12 @@ router.post("/:id/comments", requirePermission("tickets", "edit"), async (req, r
   try {
     const parsed = addTicketCommentSchema.parse(req.body);
     const supabase = getScopedClient(req, "tickets", "write");
+
+    // SEC-P1-012: client roles may comment on their own tickets but must not
+    // forge internal-only notes that staff will treat as private.
+    if (parsed.isInternal && (await isClientMember(req))) {
+      throw new AppError("FORBIDDEN", "Clients cannot post internal comments", 403);
+    }
 
     // Verify the ticket exists AND belongs to the caller's org before
     // commenting — prevents cross-tenant comment injection and notification
@@ -460,6 +488,12 @@ router.patch(
     try {
       const parsed = updateTicketCommentSchema.parse(req.body);
       const supabase = getScopedClient(req, "tickets", "write");
+
+      // SEC-P1-012: editing must not let a client turn their public comment
+      // into an internal-only note.
+      if (parsed.isInternal === true && (await isClientMember(req))) {
+        throw new AppError("FORBIDDEN", "Clients cannot post internal comments", 403);
+      }
 
       let commentQuery = supabase
         .from("ticket_comments")

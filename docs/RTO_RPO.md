@@ -43,7 +43,14 @@ the `MCTWorkerTaskFailures` alert fires — when the heartbeat is missing or old
 than 30 hours. This is the platform's own signal; the `backup_status` module is
 client-facing product data and is deliberately separate.
 `backup-staleness-check.yml` independently watches the GitHub run history for
-all backup/restore workflows.
+all backup/restore workflows. For storage it ignores **manifest-only**
+archives: the backup uploads the `MANIFEST.txt` as the
+`storage-backup-manifest` artifact, and a run whose manifest records
+`object_count: 0` (the dev empty-mirror allowance) does not satisfy the
+freshness window. The check walks back to the newest successful run with at
+least one object; real dev and prod backups both count. A manifest-only
+archive therefore cannot mask a broken storage schedule, and an unknown or
+missing manifest is not accepted as proof of a backup.
 
 > **Operator actions required to activate encryption/offsite (audit DR-P1-003):**
 > the code affordance is in place, but the following must be provisioned by an

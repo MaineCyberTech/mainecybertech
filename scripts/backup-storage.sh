@@ -33,6 +33,10 @@
 #   ALLOW_EMPTY_STORAGE        - "1" permits a manifest-only archive when the
 #                              buckets are legitimately empty (dev only; prod
 #                              keeps the fail-closed guard)
+#   BACKUP_METADATA_FILE       - optional path to copy MANIFEST.txt to before the
+#                              staging directory is removed. The workflow
+#                              uploads it so the staleness check can ignore
+#                              manifest-only archives (DR-P2-010)
 set -euo pipefail
 
 S3_BUCKET="${S3_BUCKET:-mainecybertech-backups}"
@@ -133,6 +137,9 @@ echo "Listed ${LISTED_FILES} object(s); downloaded ${OBJECT_COUNT}"
 if [ "${OBJECT_COUNT}" -eq 0 ]; then
   if [ "${ALLOW_EMPTY_STORAGE:-0}" = "1" ]; then
     echo "WARNING: no objects were downloaded; recording a manifest-only archive because ALLOW_EMPTY_STORAGE=1" >&2
+    # DR-P2-010: make the empty result visible on the run instead of letting a
+    # green check look like a data-bearing backup.
+    echo "::warning title=Manifest-only storage backup::No objects were downloaded; this run records object_count: 0 and does not prove any user data was captured."
   else
     echo "ERROR: no objects were downloaded — refusing to record an empty storage backup" >&2
     exit 1
@@ -151,6 +158,15 @@ supabase_url: ${SUPABASE_URL}
 buckets: ${STORAGE_BUCKETS}
 object_count: ${OBJECT_COUNT}
 EOF
+
+# DR-P2-010: keep a copy of the manifest outside the staging directory. The
+# workflow uploads it as an artifact and backup-staleness-check.yml reads
+# object_count from it; a zero-object (manifest-only) archive must not satisfy
+# the freshness gate.
+if [ -n "${BACKUP_METADATA_FILE:-}" ]; then
+  mkdir -p "$(dirname "${BACKUP_METADATA_FILE}")"
+  cp "${STAGE_DIR}/MANIFEST.txt" "${BACKUP_METADATA_FILE}"
+fi
 
 ARCHIVE_PATH="${BACKUP_DIR}/${ARCHIVE_NAME}"
 tar -C "${STAGE_DIR}" -czf "${ARCHIVE_PATH}" .

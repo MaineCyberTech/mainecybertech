@@ -33,6 +33,7 @@ import { queryInt } from "../lib/query";
 import { recordProjectCreated } from "../lib/metrics";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { isClientMember } from "../lib/client-visibility";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -400,7 +401,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.get("/:id/detail", async (req, res, next) => {
+router.get("/:id/detail", requirePermission("projects", "view"), async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const injected = (req as unknown as { orgAccessInjected?: boolean }).orgAccessInjected;
@@ -421,6 +422,16 @@ router.get("/:id/detail", async (req, res, next) => {
     // scope the sub-queries to the project's own org in that case.
     const scopeOrgId = orgId ?? (project as { organization_id?: string }).organization_id;
 
+    // SEC-P1-012: the compound detail payload also carries task comments, so
+    // client roles must not receive internal task notes through this path.
+    let detailCommentsQuery = supabase
+      .from("project_task_comments")
+      .select("*")
+      .eq("project_id", String(req.params.id));
+    if (await isClientMember(req)) {
+      detailCommentsQuery = detailCommentsQuery.eq("is_internal", false);
+    }
+
     const [
       { data: memberships, error: memError },
       { data: tasks, error: tasksError },
@@ -437,11 +448,7 @@ router.get("/:id/detail", async (req, res, next) => {
         .select("*")
         .eq("project_id", String(req.params.id))
         .order("sort_order"),
-      supabase
-        .from("project_task_comments")
-        .select("*")
-        .eq("project_id", String(req.params.id))
-        .order("created_at", { ascending: true }),
+      detailCommentsQuery.order("created_at", { ascending: true }),
       supabase
         .from("project_task_comment_reads")
         .select("task_id, last_seen_at")
@@ -827,7 +834,7 @@ router.delete(
   },
 );
 
-router.get("/:id/tasks/comments", async (req, res, next) => {
+router.get("/:id/tasks/comments", requirePermission("projects", "view"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "projects", "read");
     await assertProjectInOrg(
@@ -842,9 +849,15 @@ router.get("/:id/tasks/comments", async (req, res, next) => {
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
 
-    const isInternal = req.query.is_internal as string | undefined;
-    if (isInternal === "false") query = query.eq("is_internal", false);
-    else if (isInternal === "true") query = query.eq("is_internal", true);
+    // SEC-P1-012: client roles only see non-internal task comments. This is
+    // enforced server-side and cannot be relaxed with ?is_internal=true.
+    if (await isClientMember(req)) {
+      query = query.eq("is_internal", false);
+    } else {
+      const isInternal = req.query.is_internal as string | undefined;
+      if (isInternal === "false") query = query.eq("is_internal", false);
+      else if (isInternal === "true") query = query.eq("is_internal", true);
+    }
 
     const taskIds = req.query.task_ids as string | undefined;
     if (taskIds) {
@@ -874,6 +887,10 @@ router.post("/:id/tasks/:taskId/comments", async (req, res, next) => {
       String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
+    // SEC-P1-012: clients cannot forge internal-only task notes.
+    if (parsed.isInternal && (await isClientMember(req))) {
+      throw new AppError("FORBIDDEN", "Clients cannot post internal comments", 403);
+    }
     // Bind the task to the path project so a comment cannot be attached to a
     // task from another project/tenant.
     const { data: task } = await supabase
@@ -1039,6 +1056,10 @@ router.delete("/:id/updates/:updateId", async (req, res, next) => {
 router.patch("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) => {
   try {
     const parsed = updateTaskCommentSchema.parse(req.body);
+    // SEC-P1-012: clients cannot promote a public task comment to internal.
+    if (parsed.isInternal === true && (await isClientMember(req))) {
+      throw new AppError("FORBIDDEN", "Clients cannot post internal comments", 403);
+    }
     const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       String(req.params.id),

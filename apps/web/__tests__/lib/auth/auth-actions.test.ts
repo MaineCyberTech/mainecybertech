@@ -10,6 +10,7 @@ const mockMfaFactors = jest.fn();
 const mockMfaChallenge = jest.fn();
 const mockMfaVerify = jest.fn();
 const mockMfaRecover = jest.fn();
+const mockStartSso = jest.fn();
 const mockMe = jest.fn();
 const mockMembershipsList = jest.fn();
 const mockHeaders = jest.fn().mockResolvedValue({
@@ -39,6 +40,7 @@ jest.mock("@mct/sdk", () => ({
         mfaChallenge: mockMfaChallenge,
         mfaVerify: mockMfaVerify,
         mfaRecover: mockMfaRecover,
+        startSso: mockStartSso,
       },
       users: {
         me: mockMe,
@@ -133,6 +135,41 @@ describe("auth-actions", () => {
         expect.anything(),
         expect.anything(),
       );
+      expect(mockRedirect).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("ssoLoginAction (SEC-P3-018)", () => {
+    it("stores the PKCE verifier cookie before redirecting to the IdP", async () => {
+      mockStartSso.mockResolvedValue({
+        url: "https://test.supabase.co/auth/v1/authorize?provider=custom%3Aauthelia",
+        cookieName: "sb-test-auth-token-code-verifier",
+        cookieValue: "verifier-123",
+        maxAge: 600,
+      });
+
+      const { ssoLoginAction } = await import("@/lib/auth/auth-actions");
+      await ssoLoginAction();
+
+      expect(mockCookieSet).toHaveBeenCalledWith(
+        "sb-test-auth-token-code-verifier",
+        "verifier-123",
+        expect.objectContaining({ httpOnly: true, maxAge: 600, path: "/" }),
+      );
+      expect(mockRedirect).toHaveBeenCalledWith(
+        "https://test.supabase.co/auth/v1/authorize?provider=custom%3Aauthelia",
+      );
+    });
+
+    it("returns an error and does not redirect when the API cannot start SSO", async () => {
+      const { ApiError } = await import("@mct/sdk");
+      mockStartSso.mockRejectedValue(new ApiError("AUTH_ERROR", "SSO unavailable", 503));
+
+      const { ssoLoginAction } = await import("@/lib/auth/auth-actions");
+      const result = await ssoLoginAction();
+
+      expect(result).toEqual({ error: "SSO unavailable" });
+      expect(mockCookieSet).not.toHaveBeenCalled();
       expect(mockRedirect).not.toHaveBeenCalled();
     });
   });

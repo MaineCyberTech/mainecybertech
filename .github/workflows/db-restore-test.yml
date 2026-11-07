@@ -43,7 +43,11 @@ jobs:
     # prod-approval). Schedule: dev normally; prod-backup once the operator has
     # enabled the scheduled prod target.
     environment: ${{ (github.event.inputs.environment == 'prod') && 'prod-approval' || (github.event_name == 'schedule' && vars.PROD_BACKUP_ENABLED == 'true') && 'prod-backup' || 'dev' }}
-    runs-on: ubuntu-latest
+    # DR-P1-008: the restore test reads the same private S3/Garage endpoint the
+    # backup wrote to, so it must run on a runner that can reach it. Default to
+    # GitHub-hosted; set BACKUP_RUNNER_LABELS to a JSON array such as
+    # ["self-hosted","Linux","X64","lab","lab-docker"] to use the lab runners.
+    runs-on: ${{ fromJSON(vars.BACKUP_RUNNER_LABELS || '["ubuntu-latest"]') }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
