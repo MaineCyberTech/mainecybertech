@@ -250,6 +250,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Fixed
 
+- **Storage restore over Garage:** download the archive with `s3api get-object`
+  instead of `s3 cp`, because Garage returns `400` for the `HeadObject` that
+  `s3 cp` performs before the GET. This unblocks `storage-restore-test` against
+  the Raven Garage primary.
+
 - **Portal SSO callback:** exchange Supabase PKCE authorization codes with
   `grant_type=pkce`. The previous `grant_type=authorization_code` returns
   `unsupported_grant_type`, so `/api/v1/auth/callback` failed with
