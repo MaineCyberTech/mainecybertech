@@ -113,7 +113,7 @@ jobs:
         # DR-P2-010: consumed by backup-staleness-check.yml. Keep this artifact
         # (and its name) in sync with the staleness check's download step.
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: storage-backup-manifest
           path: ${{ runner.temp }}/storage-backup-manifest.txt
