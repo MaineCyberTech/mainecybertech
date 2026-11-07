@@ -23,8 +23,11 @@ test.describe("portal dashboard", () => {
 
   test("has navigation links", async ({ page }) => {
     await expect(page.getByRole("link", { name: /documents/i }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: "Support", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Projects", exact: true })).toBeVisible();
+    // The dashboard also has quick-action links with the same names as the
+    // sidebar, so scope to the first visible match (documents below does the
+    // same).
+    await expect(page.getByRole("link", { name: "Support", exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Projects", exact: true }).first()).toBeVisible();
   });
 });
 
