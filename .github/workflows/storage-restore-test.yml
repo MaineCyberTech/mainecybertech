@@ -77,8 +77,8 @@ jobs:
           S3_PREFIX: ${{ vars.S3_PREFIX || 'storage-backups' }}
           # Prefer dedicated AWS_* secrets; fall back to the Spaces keys the
           # dev environment already carries (Spaces is S3-compatible).
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID || secrets.S3_OFFSITE_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY || secrets.S3_OFFSITE_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
           AWS_ENDPOINT_URL: ${{ vars.S3_ENDPOINT || 'https://nyc3.digitaloceanspaces.com' }}
         run: |
@@ -90,8 +90,8 @@ jobs:
 
       - name: Verify archive against its manifest
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID || secrets.S3_OFFSITE_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY || secrets.S3_OFFSITE_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
           AWS_ENDPOINT_URL: ${{ vars.S3_ENDPOINT || 'https://nyc3.digitaloceanspaces.com' }}
           # Same key the backup uses (DR-P1-003). If the object is `.enc` but

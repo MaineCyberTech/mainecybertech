@@ -45,6 +45,15 @@ S3_OFFSITE_PREFIX="${S3_OFFSITE_PREFIX:-${S3_PREFIX}}"
 S3_OFFSITE_ENDPOINT="${S3_OFFSITE_ENDPOINT:-}"
 S3_OFFSITE_ACCESS_KEY_ID="${S3_OFFSITE_ACCESS_KEY_ID:-}"
 S3_OFFSITE_SECRET_ACCESS_KEY="${S3_OFFSITE_SECRET_ACCESS_KEY:-}"
+
+# When the offsite destination is the same bucket/endpoint as the primary
+# (Garage promoted to primary), skip the duplicate copy and prune.
+primary_endpoint="${AWS_ENDPOINT_URL:-}"
+if [ -n "${S3_OFFSITE_BUCKET}" ] && [ "${S3_OFFSITE_BUCKET}" = "${S3_BUCKET}" ] \
+   && [ "${S3_OFFSITE_ENDPOINT%/}" = "${primary_endpoint%/}" ]; then
+  echo "Offsite destination matches the primary (${S3_BUCKET}); skipping duplicate copy"
+  S3_OFFSITE_BUCKET=""
+fi
 TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
 FILENAME="supabase-dump-${TIMESTAMP}.sql.gz"
 LOCAL_PATH="${BACKUP_DIR}/${FILENAME}"
