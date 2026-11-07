@@ -9,6 +9,27 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ## [Unreleased]
 
+### Nov 7 delta-audit remediation
+
+- **Client comment isolation (SEC-P1-012):** clients no longer receive
+  `is_internal` ticket/project-task comments on any read path, cannot post or
+  patch internal notes, and a new RLS predicate backs the API filter.
+- **AI triage scoping (SEC-P3-016):** client roles see only their own triage
+  drafts; staff keep the org-wide view.
+- **SSO hygiene:** the web callback forwards only the PKCE verifier cookies
+  (SEC-P3-017), with negative-path tests for the SSO flow (SEC-P3-018).
+- **Backup operations:** restore tests now run on the lab runner that can reach
+  Garage (`DR-P1-008`); storage-backup records a manifest and the staleness
+  check ignores zero-object dev archives (`DR-P2-010`); backup/restore working
+  directories are cleaned on success and failure (`DR-P2-011`).
+- **Dependencies:** `tailwind-merge` reverted to 2.x to match Tailwind 3
+  (`EVOL-P2-003`); Docker Node-major Dependabot holds added to every app
+  directory (`CI-P3-016`).
+- **AI reviewer:** pinned to the immutable ai-reviewer fix commit; the bot
+  approval fails closed on check-query errors and the reviewer executes the
+  pinned SHA (`CI-P2-012/013`).
+
+
 ### Breaking Changes
 
 - **RLS:** `client_portal_entitlements` writes are now limited to platform

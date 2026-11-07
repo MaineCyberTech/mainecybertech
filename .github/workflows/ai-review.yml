@@ -22,7 +22,10 @@ concurrency:
 
 jobs:
   review:
-    uses: MaineCyberTech/ai-reviewer/.github/workflows/ai-review.yml@d401040c9777a63195396cbf177eec78192284d2
-    secrets: inherit
+    uses: MaineCyberTech/ai-reviewer/.github/workflows/ai-review.yml@edfeee83fc9121ba60503ad26bd473640c467da5
+    secrets:
+      AI_REVIEW_ENDPOINT: ${{ secrets.AI_REVIEW_ENDPOINT }}
+      AI_REVIEW_API_KEY: ${{ secrets.AI_REVIEW_API_KEY }}
+      AI_REVIEW_MODEL: ${{ secrets.AI_REVIEW_MODEL }}
     with:
       pr: ${{ inputs.pr || 0 }}
