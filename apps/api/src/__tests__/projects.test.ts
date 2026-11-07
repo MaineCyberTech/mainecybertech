@@ -19,15 +19,22 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
 }));
 
 jest.mock("../services/audit", () => ({
   logAuditEvent: jest.fn(),
 }));
 
+jest.mock("../lib/client-visibility", () => ({
+  isClientMember: jest.fn().mockResolvedValue(false),
+}));
+
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
+import { isClientMember } from "../lib/client-visibility";
 
 function mockAuth() {
   const supabase = {
@@ -82,10 +89,7 @@ jest.mock("../middleware/org-access", () =>
   createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
 );
 jest.mock("../middleware/permissions", () => ({
-  requirePermission:
-    () =>
-    (_req: unknown, _res: unknown, next: () => void) =>
-      next(),
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 const app = createTestApp();
 app.use("/api/v1/projects", projectsRouter);
@@ -254,7 +258,8 @@ describe("projects routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
-        .set("Authorization", "Bearer token-123").send({ confirm: true });
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
@@ -270,7 +275,8 @@ describe("projects routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
-        .set("Authorization", "Bearer token-123").send({ confirm: true });
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(404);
     });
@@ -285,7 +291,8 @@ describe("projects routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/projects/phases/phase-1")
-        .set("Authorization", "Bearer token-123").send({ confirm: true });
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(204);
       expect(logAuditEvent).toHaveBeenCalledWith(
@@ -381,7 +388,8 @@ describe("projects routes", () => {
         .delete(
           "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031",
         )
-        .set("Authorization", "Bearer token-123").send({ confirm: true });
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
@@ -415,6 +423,38 @@ describe("projects routes", () => {
 
       expect(res.status).toBe(200);
     });
+
+    it("forces the non-internal filter for client roles (SEC-P1-012)", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({ data: [COMMENT], error: null });
+      supabase.from.mockReturnValue(builder);
+      (isClientMember as jest.Mock).mockResolvedValueOnce(true);
+
+      const res = await request(app)
+        .get(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/comments?organization_id=00000000-0000-0000-0000-000000000001&is_internal=true",
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(builder.eq).toHaveBeenCalledWith("is_internal", false);
+      expect(builder.eq).not.toHaveBeenCalledWith("is_internal", true);
+    });
+
+    it("keeps the optional internal filter for staff", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({ data: [COMMENT], error: null });
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .get(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/comments?organization_id=00000000-0000-0000-0000-000000000001&is_internal=true",
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(builder.eq).toHaveBeenCalledWith("is_internal", true);
+    });
   });
 
   describe("POST /:id/tasks/:taskId/comments", () => {
@@ -432,6 +472,23 @@ describe("projects routes", () => {
         .send({ body: "New comment", isInternal: false });
 
       expect(res.status).toBe(201);
+    });
+
+    it("rejects an internal task note from a client role with 403 (SEC-P1-012)", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({ data: PROJECT, error: null });
+      supabase.from.mockReturnValue(builder);
+      (isClientMember as jest.Mock).mockResolvedValueOnce(true);
+
+      const res = await request(app)
+        .post(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031/comments",
+        )
+        .set("Authorization", "Bearer token-123")
+        .send({ body: "Internal note from a client", isInternal: true });
+
+      expect(res.status).toBe(403);
+      expect(builder.insert).not.toHaveBeenCalled();
     });
   });
 
@@ -528,6 +585,21 @@ describe("projects routes", () => {
         .send({ body: "Updated comment" });
 
       expect(res.status).toBe(200);
+    });
+
+    it("rejects a client promoting a task comment to internal with 403 (SEC-P1-012)", async () => {
+      const supabase = mockAuth();
+      (isClientMember as jest.Mock).mockResolvedValueOnce(true);
+
+      const res = await request(app)
+        .patch(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031/comments/cmt-1",
+        )
+        .set("Authorization", "Bearer token-123")
+        .send({ isInternal: true });
+
+      expect(res.status).toBe(403);
+      expect(supabase.from).not.toHaveBeenCalled();
     });
 
     it("returns 404 when comment not found", async () => {
@@ -721,7 +793,8 @@ describe("projects routes", () => {
         .delete(
           `/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031?organization_id=${ORG}`,
         )
-        .set("Authorization", "Bearer token-123").send({ confirm: true });
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(404);
     });
@@ -743,7 +816,9 @@ describe("projects routes", () => {
       mockMissingProject();
 
       const res = await request(app)
-        .post(`/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/reorder?organization_id=${ORG}`)
+        .post(
+          `/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/reorder?organization_id=${ORG}`,
+        )
         .set("Authorization", "Bearer token-123")
         .send({ order: ["00000000-0000-0000-0000-000000000031"] });
 
@@ -754,7 +829,9 @@ describe("projects routes", () => {
       mockMissingProject();
 
       const res = await request(app)
-        .post(`/api/v1/projects/00000000-0000-0000-0000-000000000030/updates?organization_id=${ORG}`)
+        .post(
+          `/api/v1/projects/00000000-0000-0000-0000-000000000030/updates?organization_id=${ORG}`,
+        )
         .set("Authorization", "Bearer token-123")
         .send({ body: "Update", isInternal: false, isPinned: false });
 
@@ -835,6 +912,32 @@ describe("projects routes", () => {
       expect(res.body.data.tasks).toBeDefined();
       expect(res.body.data.comments).toBeDefined();
       expect(res.body.data.readStates).toBeDefined();
+      expect(commentBuilder.eq).not.toHaveBeenCalledWith("is_internal", false);
+    });
+
+    it("filters internal task comments for client roles (SEC-P1-012)", async () => {
+      const supabase = mockAuth();
+      const builders: Record<string, ReturnType<typeof createMockBuilder>> = {
+        projects: createMockBuilder({
+          data: { ...PROJECT, project_tasks: [TASK] },
+          error: null,
+        }),
+        memberships: createMockBuilder({ data: [], error: null }),
+        project_tasks: createMockBuilder({ data: [TASK], error: null }),
+        project_task_comments: createMockBuilder({ data: [COMMENT], error: null }),
+        project_task_comment_reads: createMockBuilder({ data: [], error: null }),
+        profiles: createMockBuilder({ data: [], error: null }),
+        roles: createMockBuilder({ data: [], error: null }),
+      };
+      supabase.from.mockImplementation((table: string) => builders[table]);
+      (isClientMember as jest.Mock).mockResolvedValueOnce(true);
+
+      const res = await request(app)
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000030/detail")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(builders.project_task_comments.eq).toHaveBeenCalledWith("is_internal", false);
     });
 
     it("returns 404 when project not found", async () => {

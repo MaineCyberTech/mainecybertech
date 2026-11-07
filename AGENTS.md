@@ -116,12 +116,12 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,733 tests, all passing. 524 suites.**
+**4,760 tests, all passing. 526 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 2,048         | 178    | Jest + supertest                  |
-| Web     | 2,045         | 309    | Jest + Testing Library            |
+| API     | 2,067         | 178    | Jest + supertest                  |
+| Web     | 2,053         | 311    | Jest + Testing Library            |
 | SDK     | 327           | 5      | Jest (mocked fetch)               |
 | Worker  | 313           | 32     | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
@@ -190,7 +190,7 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                                                                                                                                                     |
 | Web pages                 | 331   | Admin 204, Portal 97, Public 29, `forbidden` 1                                                                                                                                                                                                                                                     |
 | Web components            | 130   | `apps/web/components/`                                                                                                                                                                                                                                                                             |
-| SQL migrations            | 164   | `supabase/migrations/` (latest: 5302466_notifications_insert_membership_scope                                                                                                                                                                                                                      |
+| SQL migrations            | 165   | `supabase/migrations/` (latest: 5302467_ticket_comments_internal_visibility                                                                                                                                                                                                                      |
 | Seed files                | 10    | `supabase/seeds/*.sql`                                                                                                                                                                                                                                                                             |
 | GitHub Actions workflows  | 32    | `.github/workflows/`                                                                                                                                                                                                                                                                               |
 | AI prompt files           | 626   | `prompts/` (6 packs, 624 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                                                                                                                                           |
@@ -400,7 +400,7 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 ## RLS & schema hygiene
 
 `scripts/verify-rls.mjs` (CI: the shared unit-tests action) scans
-`supabase/migrations/` and reports **137 tables, all RLS-enabled, 1036
+`supabase/migrations/` and reports **137 tables, all RLS-enabled, 1037
 policies**. It fails on a live table without RLS, on a new migration whose
 `create policy` lacks a paired `drop policy if exists`, and on a new migration
 filename outside the `NNNNNNN_lower_snake_case.sql` convention

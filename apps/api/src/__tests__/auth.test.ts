@@ -656,5 +656,77 @@ describe("POST /callback", () => {
   it("requires an auth_code", async () => {
     const res = await request(app).post("/api/v1/auth/callback").send({});
     expect(res.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a callback with no PKCE verifier and returns no session (SEC-P3-018)", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: "invalid_request", error_description: "code verifier required" }),
+    });
+
+    const res = await request(app)
+      .post("/api/v1/auth/callback")
+      .send({ auth_code: "valid-looking-code" });
+
+    expect(res.status).toBe(401);
+    expect(res.body.data?.accessToken).toBeUndefined();
+
+    // The exchange must still be a PKCE grant (never downgraded to a grant
+    // type that does not require the verifier).
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "https://test.supabase.co/auth/v1/token?grant_type=pkce",
+    );
+    const tokenOptions = fetchMock.mock.calls[0][1] as { body?: string };
+    expect(JSON.parse(String(tokenOptions.body))).toEqual({ auth_code: "valid-looking-code" });
+  });
+
+  it("rejects a callback whose PKCE verifier does not match (SEC-P3-018)", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: "invalid_grant", error_description: "code verifier mismatch" }),
+    });
+
+    const res = await request(app).post("/api/v1/auth/callback").send({
+      auth_code: "code-1",
+      cookies: "sb-test-auth-token-code-verifier=wrong-verifier",
+    });
+
+    expect(res.status).toBe(401);
+    expect(res.body.data?.accessToken).toBeUndefined();
+
+    const tokenOptions = fetchMock.mock.calls[0][1] as { body?: string };
+    expect(JSON.parse(String(tokenOptions.body))).toEqual({
+      auth_code: "code-1",
+      code_verifier: "wrong-verifier",
+    });
+  });
+});
+
+describe("POST /sso (SEC-P3-018)", () => {
+  it("starts the PKCE SSO flow with the callback redirect and verifier cookie", async () => {
+    const res = await request(app).post("/api/v1/auth/sso");
+
+    expect(res.status).toBe(200);
+    const data = res.body.data as {
+      url: string;
+      cookieName: string;
+      cookieValue: string;
+      maxAge: number;
+    };
+    expect(data.cookieName).toBe("sb-test-auth-token-code-verifier");
+    expect(data.maxAge).toBe(600);
+    expect(data.cookieValue.length).toBeGreaterThan(20);
+
+    const url = new URL(data.url);
+    expect(url.origin).toBe("https://test.supabase.co");
+    expect(url.pathname).toBe("/auth/v1/authorize");
+    expect(url.searchParams.get("provider")).toBe("custom:authelia");
+    expect(url.searchParams.get("redirect_to")).toBe("https://app.example.com/auth/callback");
+    expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(url.searchParams.get("code_challenge")).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(url.searchParams.get("code_challenge")).not.toBe(data.cookieValue);
   });
 });
