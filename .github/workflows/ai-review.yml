@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   review:
-    uses: MaineCyberTech/ai-reviewer/.github/workflows/ai-review.yml@edfeee83fc9121ba60503ad26bd473640c467da5
+    uses: MaineCyberTech/ai-reviewer/.github/workflows/ai-review.yml@695d976eac4d25fec377ccb5e4af51617bf9fdc3
     secrets:
       AI_REVIEW_ENDPOINT: ${{ secrets.AI_REVIEW_ENDPOINT }}
       AI_REVIEW_API_KEY: ${{ secrets.AI_REVIEW_API_KEY }}
