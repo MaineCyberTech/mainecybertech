@@ -30,6 +30,9 @@
 #   S3_OFFSITE_ENDPOINT        - optional endpoint for the offsite copy
 #   S3_OFFSITE_ACCESS_KEY_ID / S3_OFFSITE_SECRET_ACCESS_KEY
 #                              - optional credentials for that endpoint
+#   ALLOW_EMPTY_STORAGE        - "1" permits a manifest-only archive when the
+#                              buckets are legitimately empty (dev only; prod
+#                              keeps the fail-closed guard)
 set -euo pipefail
 
 S3_BUCKET="${S3_BUCKET:-mainecybertech-backups}"
@@ -119,8 +122,12 @@ echo "Listed ${LISTED_FILES} object(s); downloaded ${OBJECT_COUNT}"
 # success. `set -e` already aborts on a failed download, so the two counts
 # should always match; assert both invariants anyway.
 if [ "${OBJECT_COUNT}" -eq 0 ]; then
-  echo "ERROR: no objects were downloaded — refusing to record an empty storage backup" >&2
-  exit 1
+  if [ "${ALLOW_EMPTY_STORAGE:-0}" = "1" ]; then
+    echo "WARNING: no objects were downloaded; recording a manifest-only archive because ALLOW_EMPTY_STORAGE=1" >&2
+  else
+    echo "ERROR: no objects were downloaded — refusing to record an empty storage backup" >&2
+    exit 1
+  fi
 fi
 if [ "${OBJECT_COUNT}" -ne "${LISTED_FILES}" ]; then
   echo "ERROR: downloaded ${OBJECT_COUNT} object(s) but the listing reported ${LISTED_FILES} — refusing to record a partial backup" >&2
