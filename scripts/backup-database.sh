@@ -16,7 +16,7 @@
 # targets can override with S3_STORAGE_CLASS=STANDARD_IA.
 #
 # Offsite endpoint (optional): S3_OFFSITE_ENDPOINT lets the offsite copy live
-# on a different S3-compatible service (Raven Garage, another region, etc.).
+# on a different S3-compatible service (Raven SeaweedFS, another region, etc.).
 # S3_OFFSITE_ACCESS_KEY_ID / S3_OFFSITE_SECRET_ACCESS_KEY override the
 # credentials for that endpoint; when omitted, the primary AWS_* credentials
 # are reused. Without S3_OFFSITE_ENDPOINT the original single-endpoint behavior
@@ -40,7 +40,7 @@ S3_OFFSITE_BUCKET="${S3_OFFSITE_BUCKET:-}"
 S3_OFFSITE_PREFIX="${S3_OFFSITE_PREFIX:-${S3_PREFIX}}"
 # Optional second endpoint/credentials for the offsite copy. This is what lets
 # the offsite destination live on a different S3-compatible service (for
-# example Raven Garage) instead of the primary Spaces endpoint. Credentials are
+# example Raven SeaweedFS) instead of the primary Spaces endpoint. Credentials are
 # optional; when omitted the primary AWS_* credentials are reused.
 S3_OFFSITE_ENDPOINT="${S3_OFFSITE_ENDPOINT:-}"
 S3_OFFSITE_ACCESS_KEY_ID="${S3_OFFSITE_ACCESS_KEY_ID:-}"
