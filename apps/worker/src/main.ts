@@ -1,5 +1,5 @@
 ﻿import dotenv from "dotenv";
-dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env.local", quiet: true });
 import * as Sentry from "@sentry/node";
 import { logger } from "./logger";
 import { env } from "./env";

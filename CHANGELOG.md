@@ -129,6 +129,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - **Chromatic 18:** upgraded the CI-only Storybook visual-testing CLI from
   17.8.0 to 18.13.9 and removed the held-major Dependabot ignore entry so the
   line is tracked again (#361).
+- **dotenv 18:** upgraded the API and worker from 16.x to 18.0.9. Programmatic
+  `config({ path, quiet: true })` keeps `.env.local` loading and silent startup;
+  the v18 CLI/`.env.vault` changes are unused. Removed the held-major Dependabot
+  ignore entry (#361).
 - **Nov 3 re-audit remediation:** deterministic commit-date release tags
   (REL-P3-005); a visible/reversible global email opt-out in both preference
   UIs (NOTIF-P2-013); registry-driven `store_analytics_events` retention and
