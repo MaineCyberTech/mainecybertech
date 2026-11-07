@@ -83,7 +83,7 @@ jobs:
             image-sbom-mct-api.cdx.json
 
       - name: Upload mct-api image SBOM
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: image-sbom-mct-api-${{ github.sha }}
           path: image-sbom-mct-api.cdx.json
@@ -160,7 +160,7 @@ jobs:
             image-sbom-mct-worker.cdx.json
 
       - name: Upload mct-worker image SBOM
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: image-sbom-mct-worker-${{ github.sha }}
           path: image-sbom-mct-worker.cdx.json
@@ -249,7 +249,7 @@ jobs:
             image-sbom-mct-web.cdx.json
 
       - name: Upload mct-web image SBOM
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: image-sbom-mct-web-${{ github.sha }}
           path: image-sbom-mct-web.cdx.json
