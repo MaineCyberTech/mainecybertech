@@ -597,25 +597,29 @@ describe("OpenAPI contract — success response schemas", () => {
 
     it("GET /tickets/{id} row with embedded comments", async () => {
       const { mock } = mockSupabase();
-      mock.from.mockReturnValueOnce(
-        createMockBuilder({
-          data: {
-            ...TICKET_ROW,
-            ticket_comments: [
-              {
-                id: "comment-1",
-                ticket_id: TICKET_ROW.id,
-                organization_id: TICKET_ROW.organization_id,
-                author_id: "user-1",
-                body: "Test comment",
-                is_internal: false,
-                created_at: "2026-01-02T00:00:00.000Z",
-                edited_at: null,
-              },
-            ],
-          },
-          error: null,
-        }),
+      const ticketBuilder = createMockBuilder({
+        data: {
+          ...TICKET_ROW,
+          ticket_comments: [
+            {
+              id: "comment-1",
+              ticket_id: TICKET_ROW.id,
+              organization_id: TICKET_ROW.organization_id,
+              author_id: "user-1",
+              body: "Test comment",
+              is_internal: false,
+              created_at: "2026-01-02T00:00:00.000Z",
+              edited_at: null,
+            },
+          ],
+        },
+        error: null,
+      });
+      // SEC-P1-012: the handler resolves client membership before the ticket
+      // query, so the fixture must be table-aware instead of using a single
+      // `mockReturnValueOnce` (which the membership lookup would consume).
+      mock.from.mockImplementation((table: string) =>
+        table === "tickets" ? ticketBuilder : createMockBuilder({ data: null, error: null }),
       );
       const res = await request(app)
         .get(`/api/v1/tickets/${TICKET_ROW.id}?organization_id=${TICKET_ROW.organization_id}`)
