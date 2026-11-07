@@ -109,8 +109,8 @@ operator in the environment the prod job attaches before prod backups can run.
 | Secret                    | Dev | Prod | Purpose                                               |
 | ------------------------- | --- | ---- | ----------------------------------------------------- |
 | `SUPABASE_DB_URL`         | yes | operator | Direct database connection string for `pg_dump`; also the write path for the DR-P2-008 platform heartbeat |
-| `AWS_ACCESS_KEY_ID`       | yes | operator | S3/Spaces key for backup upload and restore download; falls back to `DO_SPACES_ACCESS_KEY_ID` |
-| `AWS_SECRET_ACCESS_KEY`   | yes | operator | S3/Spaces secret for backup upload and restore; falls back to `DO_SPACES_SECRET_ACCESS_KEY` |
+| `AWS_ACCESS_KEY_ID`       | yes | operator | S3/Spaces key for backup upload and restore download; falls back to `DO_SPACES_ACCESS_KEY_ID`, then `S3_OFFSITE_ACCESS_KEY_ID` (Garage) |
+| `AWS_SECRET_ACCESS_KEY`   | yes | operator | S3/Spaces secret for backup upload and restore; falls back to `DO_SPACES_SECRET_ACCESS_KEY`, then `S3_OFFSITE_SECRET_ACCESS_KEY` (Garage) |
 | `S3_OFFSITE_ACCESS_KEY_ID` | opt | opt | Access key for the optional offsite endpoint (Raven Garage, another S3 provider); when unset the primary `AWS_*` key is reused |
 | `S3_OFFSITE_SECRET_ACCESS_KEY` | opt | opt | Secret for the optional offsite endpoint; when unset the primary `AWS_*` secret is reused |
 | `BACKUP_ENCRYPTION_KEY`   | yes | operator | openssl passphrase encrypting/decrypting backup objects (`db-backup.yml`, `db-restore-test.yml`, storage backup) |
@@ -131,6 +131,10 @@ DR-P1-002 / IR-P1-005):
 | ----------- | ---------------------------- | ------------------------ |
 | `S3_BUCKET` | bucket **name** (no `s3://`) | `mainecybertech-backups` |
 | `S3_PREFIX` | key prefix (no leading `/`)  | `database-backups`       |
+
+Dev currently targets Raven Garage: `S3_BUCKET=mct-mainecybertech` and
+`S3_ENDPOINT=http://192.168.222.120:3900`, reusing the offsite credentials.
+The backup scripts skip the offsite copy when both destinations match.
 
 Full object path: `s3://${S3_BUCKET}/${S3_PREFIX}/<file>`. Set these as
 repository **variables** (Settings → Secrets and variables → Actions →

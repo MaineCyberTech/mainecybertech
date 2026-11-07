@@ -43,6 +43,15 @@ S3_OFFSITE_PREFIX="${S3_OFFSITE_PREFIX:-${S3_PREFIX}}"
 S3_OFFSITE_ENDPOINT="${S3_OFFSITE_ENDPOINT:-}"
 S3_OFFSITE_ACCESS_KEY_ID="${S3_OFFSITE_ACCESS_KEY_ID:-}"
 S3_OFFSITE_SECRET_ACCESS_KEY="${S3_OFFSITE_SECRET_ACCESS_KEY:-}"
+
+# When the offsite destination is the same bucket/endpoint as the primary
+# (Garage promoted to primary), skip the duplicate copy and prune.
+primary_endpoint="${AWS_ENDPOINT_URL:-}"
+if [ -n "${S3_OFFSITE_BUCKET}" ] && [ "${S3_OFFSITE_BUCKET}" = "${S3_BUCKET}" ] \
+   && [ "${S3_OFFSITE_ENDPOINT%/}" = "${primary_endpoint%/}" ]; then
+  echo "Offsite destination matches the primary (${S3_BUCKET}); skipping duplicate copy"
+  S3_OFFSITE_BUCKET=""
+fi
 STORAGE_BUCKETS="${STORAGE_BUCKETS:-documents avatars logos}"
 BACKUP_DIR="${BACKUP_DIR:-./storage-backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-30}"
