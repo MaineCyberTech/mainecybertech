@@ -126,6 +126,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Changed
 
+- **lucide-react 1.x:** upgraded the web and UI packages to `1.70.0` and removed
+  the held-major Dependabot ignore entry. The module registry now uses the
+  canonical v1 icon names (`ShieldExclamationPoint`, `FingerprintPattern`,
+  `BookBookmark`, `ClockArrowUp`, etc.); the web icon-name test covers the set.
 - **Chromatic 18:** upgraded the CI-only Storybook visual-testing CLI from
   17.8.0 to 18.13.9 and removed the held-major Dependabot ignore entry so the
   line is tracked again (#361).
