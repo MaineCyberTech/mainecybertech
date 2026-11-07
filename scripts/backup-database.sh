@@ -50,8 +50,9 @@ S3_OFFSITE_SECRET_ACCESS_KEY="${S3_OFFSITE_SECRET_ACCESS_KEY:-}"
 # (Garage promoted to primary), skip the duplicate copy and prune.
 primary_endpoint="${AWS_ENDPOINT_URL:-}"
 if [ -n "${S3_OFFSITE_BUCKET}" ] && [ "${S3_OFFSITE_BUCKET}" = "${S3_BUCKET}" ] \
+   && [ "${S3_OFFSITE_PREFIX}" = "${S3_PREFIX}" ] \
    && [ "${S3_OFFSITE_ENDPOINT%/}" = "${primary_endpoint%/}" ]; then
-  echo "Offsite destination matches the primary (${S3_BUCKET}); skipping duplicate copy"
+  echo "Offsite destination matches the primary (${S3_BUCKET}/${S3_PREFIX}); skipping duplicate copy"
   S3_OFFSITE_BUCKET=""
 fi
 TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
@@ -155,7 +156,9 @@ if [ -n "${S3_OFFSITE_BUCKET}" ]; then
   echo "Step 2b: Copying to offsite bucket ${S3_OFFSITE_BUCKET}${S3_OFFSITE_ENDPOINT:+ via ${S3_OFFSITE_ENDPOINT}}..."
   aws_s3 "${S3_OFFSITE_ENDPOINT}" "${S3_OFFSITE_ACCESS_KEY_ID}" "${S3_OFFSITE_SECRET_ACCESS_KEY}" \
     s3 cp "${UPLOAD_PATH}" "s3://${S3_OFFSITE_BUCKET}/${S3_OFFSITE_PREFIX}/${UPLOAD_NAME}" --storage-class "${S3_STORAGE_CLASS}"
-  echo "Offsite copy complete"
+  aws_s3 "${S3_OFFSITE_ENDPOINT}" "${S3_OFFSITE_ACCESS_KEY_ID}" "${S3_OFFSITE_SECRET_ACCESS_KEY}" \
+    s3api head-object --bucket "${S3_OFFSITE_BUCKET}" --key "${S3_OFFSITE_PREFIX}/${UPLOAD_NAME}" >/dev/null
+  echo "Offsite copy verified"
 fi
 
 echo ""
