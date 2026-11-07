@@ -232,16 +232,6 @@ override it), each with its own interval:
 | **node-exporter-probe** | `wget -qO- http://node-exporter:9100/metrics` and assert a `node_filesystem_size_bytes{mountpoint="/"}` series (the exporter image itself is scratch-based, so the probe proves the listener and `/host` mounts from a sibling container) | 30s (10s start period) | 3       |
 | **caddy**               | `caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile`                                                                                                                                                                        | 30s (20s start period) | 3       |
 
-| Service          | Command                                                                       | Interval               | Retries |
-| ---------------- | ----------------------------------------------------------------------------- | ---------------------- | ------- |
-| **redis**        | `REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli ping` (password via env, not argv) | 10s                    | 3       |
-| **api**          | `wget -qO- http://localhost:4000/health`                                      | 30s (30s start period) | 3       |
-| **worker**       | `wget -qO- http://127.0.0.1:3001/health`                                      | 30s (30s start period) | 3       |
-| **web**          | `wget --spider http://127.0.0.1:3000` (Dockerfile)                            | 30s (40s start period) | 3       |
-| **prometheus**   | `wget --spider -q http://localhost:9090/-/ready`                              | 30s (15s start period) | 3       |
-| **alertmanager** | `wget --spider -q http://localhost:9093/-/healthy`                            | 30s (10s start period) | 3       |
-| **caddy**        | `caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile`            | 30s (20s start period) | 3       |
-
 Unhealthy containers are automatically restarted via `restart: unless-stopped`.
 
 ---

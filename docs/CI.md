@@ -56,8 +56,8 @@ setup → resolve-ip
 `deploy` writes the droplet `.env` via `printf` (secrets never interpolate into
 the remote shell), pulls the verified image digests, restarts the compose stack,
 and only prunes old images after every healthchecked service (redis, api,
-worker, web, node-exporter, alertmanager, prometheus, caddy) reports healthy. A
-failed health gate rolls back to the previously running images.
+worker, web, node-exporter-probe, alertmanager, prometheus, caddy) reports
+healthy. A failed health gate rolls back to the previously running images.
 
 ### Provenance verification at deploy (CTR-P1-003)
 

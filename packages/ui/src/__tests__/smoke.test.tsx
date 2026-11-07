@@ -19,6 +19,9 @@ describe("@mct/ui smoke suite", () => {
     expect(cn("text-sm", false && "hidden", undefined, "font-bold")).toBe(
       "text-sm font-bold",
     );
+    // EVOL-P2-003: tailwind-merge v2 (Tailwind 3) treats these as the same
+    // group; tailwind-merge v3 leaves both classes in place.
+    expect(cn("outline-none", "outline")).toBe("outline");
   });
 
   it("Button renders children and fires onClick", () => {

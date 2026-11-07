@@ -78,8 +78,69 @@ jobs:
             fi
           }
 
+          # DR-P2-010: a dev manifest-only archive is a green run with
+          # object_count: 0. It proves the workflow executed but not that any
+          # user data was captured, so it must not satisfy the freshness gate.
+          # storage-backup.yml uploads the MANIFEST as the
+          # storage-backup-manifest artifact; walk back over recent successful
+          # runs and use the newest one whose manifest records at least one
+          # object. Real dev and prod backups both count (the check stays
+          # branch-agnostic); only zero-object/unknown manifests are ignored.
+          check_storage_backup() {
+            local limit="$1" runs id created age_h dir manifest count
+            local newest_created="" newest_id=""
+            if ! runs=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow storage-backup.yml \
+                 --status success --limit 30 --json databaseId,createdAt \
+                 --jq '.[] | [.databaseId, .createdAt] | @tsv'); then
+              echo "::error::Storage backup: could not query the run history"
+              fail=1
+              return
+            fi
+            while IFS=$'\t' read -r id created; do
+              [ -n "$id" ] || continue
+              dir=$(mktemp -d)
+              if ! gh run download "$id" --repo "$GITHUB_REPOSITORY" \
+                   --name storage-backup-manifest --dir "$dir" >/dev/null 2>&1; then
+                rm -rf "$dir"
+                echo "::warning::Storage backup: run ${id} (${created}) has no readable storage-backup-manifest artifact; ignoring it"
+                continue
+              fi
+              manifest=$(find "$dir" -type f -name 'MANIFEST*.txt' -print -quit)
+              count=""
+              if [ -n "$manifest" ]; then
+                count=$(awk '/^object_count:/{print $2; exit}' "$manifest")
+              fi
+              rm -rf "$dir"
+              case "$count" in
+                ''|*[!0-9]*)
+                  echo "::warning::Storage backup: run ${id} (${created}) has no numeric object_count; ignoring it"
+                  continue
+                  ;;
+              esac
+              if [ "$count" -eq 0 ]; then
+                echo "Storage backup: run ${id} (${created}) is manifest-only (object_count: 0); ignoring it"
+                continue
+              fi
+              newest_created="$created"
+              newest_id="$id"
+              echo "Storage backup: newest data-bearing success ${created} (run ${id}, object_count: ${count})"
+              break
+            done <<< "$runs"
+            if [ -z "$newest_created" ]; then
+              echo "::error::Storage backup: no successful run with a non-empty MANIFEST was recorded — a manifest-only archive does not prove user data was backed up"
+              fail=1
+              return
+            fi
+            age_h=$(( ( $(date -u +%s) - $(date -u -d "$newest_created" +%s) ) / 3600 ))
+            echo "Storage backup: newest success ${newest_created} (${age_h}h ago; limit ${limit}h)"
+            if [ "$age_h" -gt "$limit" ]; then
+              echo "::error::Storage backup: newest data-bearing run ${newest_id} is ${age_h}h old (limit ${limit}h) — backups may have stopped"
+              fail=1
+            fi
+          }
+
           check db-backup.yml "Database backup" "$MAX_AGE_HOURS"
-          check storage-backup.yml "Storage backup" "$MAX_AGE_HOURS"
+          check_storage_backup "$MAX_AGE_HOURS"
           check db-restore-test.yml "Database restore test" "$MAX_AGE_HOURS_RESTORE"
           check storage-restore-test.yml "Storage restore test" "$MAX_AGE_HOURS_RESTORE"
 
