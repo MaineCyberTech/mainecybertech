@@ -133,8 +133,9 @@ DR-P1-002 / IR-P1-005):
 | `S3_PREFIX` | key prefix (no leading `/`)  | `database-backups`       |
 
 Dev currently targets Raven SeaweedFS: `S3_BUCKET=mct-mainecybertech` and
-`S3_ENDPOINT=http://192.168.222.120:8333`, reusing the offsite credentials.
-The backup scripts skip the offsite copy when both destinations match.
+`S3_ENDPOINT=http://192.168.222.120:8333`, using the scoped
+`mct-mainecybertech` credentials. The backup scripts skip the offsite copy
+when both destinations match.
 
 Full object path: `s3://${S3_BUCKET}/${S3_PREFIX}/<file>`. Set these as
 repository **variables** (Settings → Secrets and variables → Actions →
