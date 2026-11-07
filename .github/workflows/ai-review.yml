@@ -1,0 +1,28 @@
+name: ai-review
+
+# Advisory AI review. The implementation lives in the reusable
+# MaineCyberTech/ai-reviewer repository; this file is only the caller.
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    uses: MaineCyberTech/ai-reviewer/.github/workflows/ai-review.yml@d401040c9777a63195396cbf177eec78192284d2
+    secrets: inherit
+    with:
+      pr: ${{ inputs.pr || 0 }}

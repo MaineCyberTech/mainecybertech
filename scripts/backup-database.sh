@@ -15,6 +15,13 @@
 # STANDARD and rejects other classes, so the default is STANDARD. Real AWS S3
 # targets can override with S3_STORAGE_CLASS=STANDARD_IA.
 #
+# Offsite endpoint (optional): S3_OFFSITE_ENDPOINT lets the offsite copy live
+# on a different S3-compatible service (Raven Garage, another region, etc.).
+# S3_OFFSITE_ACCESS_KEY_ID / S3_OFFSITE_SECRET_ACCESS_KEY override the
+# credentials for that endpoint; when omitted, the primary AWS_* credentials
+# are reused. Without S3_OFFSITE_ENDPOINT the original single-endpoint behavior
+# is unchanged.
+#
 # Encryption (audit DR-P1-003): when BACKUP_ENCRYPTION_KEY is set the gzipped
 # dump is encrypted with openssl AES-256-CBC before upload. The key is supplied
 # only via a secret/env var and is NEVER printed or committed. Set
@@ -31,6 +38,22 @@ S3_STORAGE_CLASS="${S3_STORAGE_CLASS:-STANDARD}"
 # only; when set, the same (already encrypted) object is copied there too.
 S3_OFFSITE_BUCKET="${S3_OFFSITE_BUCKET:-}"
 S3_OFFSITE_PREFIX="${S3_OFFSITE_PREFIX:-${S3_PREFIX}}"
+# Optional second endpoint/credentials for the offsite copy. This is what lets
+# the offsite destination live on a different S3-compatible service (for
+# example Raven Garage) instead of the primary Spaces endpoint. Credentials are
+# optional; when omitted the primary AWS_* credentials are reused.
+S3_OFFSITE_ENDPOINT="${S3_OFFSITE_ENDPOINT:-}"
+S3_OFFSITE_ACCESS_KEY_ID="${S3_OFFSITE_ACCESS_KEY_ID:-}"
+S3_OFFSITE_SECRET_ACCESS_KEY="${S3_OFFSITE_SECRET_ACCESS_KEY:-}"
+
+# When the offsite destination is the same bucket/endpoint as the primary
+# (Garage promoted to primary), skip the duplicate copy and prune.
+primary_endpoint="${AWS_ENDPOINT_URL:-}"
+if [ -n "${S3_OFFSITE_BUCKET}" ] && [ "${S3_OFFSITE_BUCKET}" = "${S3_BUCKET}" ] \
+   && [ "${S3_OFFSITE_ENDPOINT%/}" = "${primary_endpoint%/}" ]; then
+  echo "Offsite destination matches the primary (${S3_BUCKET}); skipping duplicate copy"
+  S3_OFFSITE_BUCKET=""
+fi
 TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
 FILENAME="supabase-dump-${TIMESTAMP}.sql.gz"
 LOCAL_PATH="${BACKUP_DIR}/${FILENAME}"
@@ -107,15 +130,31 @@ fi
 
 UPLOAD_NAME="$(basename "${UPLOAD_PATH}")"
 
+# Run an aws CLI command against an optional endpoint/credential pair. Empty
+# endpoint/credentials preserve the original single-endpoint behavior.
+aws_s3() {
+  local endpoint="$1" access_key="$2" secret_key="$3"; shift 3
+  local -a args=()
+  [ -n "${endpoint}" ] && args+=(--endpoint-url "${endpoint}")
+  if [ -n "${access_key}" ] || [ -n "${secret_key}" ]; then
+    env AWS_ACCESS_KEY_ID="${access_key:-${AWS_ACCESS_KEY_ID:-}}" \
+        AWS_SECRET_ACCESS_KEY="${secret_key:-${AWS_SECRET_ACCESS_KEY:-}}" \
+        aws "${args[@]}" "$@"
+  else
+    aws "${args[@]}" "$@"
+  fi
+}
+
 echo ""
 echo "Step 2: Uploading to S3..."
-aws s3 cp "${UPLOAD_PATH}" "s3://${S3_BUCKET}/${S3_PREFIX}/${UPLOAD_NAME}" --storage-class "${S3_STORAGE_CLASS}"
+aws_s3 "" "" "" s3 cp "${UPLOAD_PATH}" "s3://${S3_BUCKET}/${S3_PREFIX}/${UPLOAD_NAME}" --storage-class "${S3_STORAGE_CLASS}"
 
 # --- Optional offsite/second-region copy (audit DR-P1-003) ----------------
 if [ -n "${S3_OFFSITE_BUCKET}" ]; then
   echo ""
-  echo "Step 2b: Copying to offsite bucket ${S3_OFFSITE_BUCKET}..."
-  aws s3 cp "${UPLOAD_PATH}" "s3://${S3_OFFSITE_BUCKET}/${S3_OFFSITE_PREFIX}/${UPLOAD_NAME}" --storage-class "${S3_STORAGE_CLASS}"
+  echo "Step 2b: Copying to offsite bucket ${S3_OFFSITE_BUCKET}${S3_OFFSITE_ENDPOINT:+ via ${S3_OFFSITE_ENDPOINT}}..."
+  aws_s3 "${S3_OFFSITE_ENDPOINT}" "${S3_OFFSITE_ACCESS_KEY_ID}" "${S3_OFFSITE_SECRET_ACCESS_KEY}" \
+    s3 cp "${UPLOAD_PATH}" "s3://${S3_OFFSITE_BUCKET}/${S3_OFFSITE_PREFIX}/${UPLOAD_NAME}" --storage-class "${S3_STORAGE_CLASS}"
   echo "Offsite copy complete"
 fi
 
@@ -127,20 +166,21 @@ echo ""
 echo "Step 4: Removing backups older than ${RETENTION_DAYS} days..."
 cutoff=$(date -d "-${RETENTION_DAYS} days" +%Y-%m-%d)
 prune_bucket() {
-  local bucket="$1" prefix="$2"
-  aws s3api list-objects-v2 \
+  local bucket="$1" prefix="$2" endpoint="${3:-}" access_key="${4:-}" secret_key="${5:-}"
+  aws_s3 "${endpoint}" "${access_key}" "${secret_key}" s3api list-objects-v2 \
     --bucket "${bucket}" \
     --prefix "${prefix}/" \
     --query "Contents[?LastModified<=\`${cutoff}T00:00:00Z\`].Key" \
     --output json | jq -r '.[]? // empty' | while read -r key; do
       [ -n "${key}" ] || continue
-      aws s3api delete-object --bucket "${bucket}" --key "${key}"
+      aws_s3 "${endpoint}" "${access_key}" "${secret_key}" s3api delete-object --bucket "${bucket}" --key "${key}"
       echo "Deleted: ${key}"
     done
 }
 prune_bucket "${S3_BUCKET}" "${S3_PREFIX}"
 if [ -n "${S3_OFFSITE_BUCKET}" ]; then
-  prune_bucket "${S3_OFFSITE_BUCKET}" "${S3_OFFSITE_PREFIX}"
+  prune_bucket "${S3_OFFSITE_BUCKET}" "${S3_OFFSITE_PREFIX}" \
+    "${S3_OFFSITE_ENDPOINT}" "${S3_OFFSITE_ACCESS_KEY_ID}" "${S3_OFFSITE_SECRET_ACCESS_KEY}"
 fi
 
 echo ""

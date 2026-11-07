@@ -63,8 +63,9 @@ RUN adduser --system --uid 1001 nextjs
 # Runtime hardening (CTR-P1-001): drop npm/corepack — the server runs `node`
 # directly. npm's bundled tree (tar 6.2.1 CRITICAL, minimatch, brace-expansion,
 # pacote, sigstore) was the entire node-package source of the image-scan
-# findings; libcrypto3/libssl3 carry an Alpine fix.
-RUN apk upgrade --no-cache libcrypto3 libssl3 \
+# findings. Apply all Alpine patch updates: the pinned base digest
+# lags security fixes (zlib and musl both needed later r-releases).
+RUN apk upgrade --no-cache \
  && rm -rf /usr/local/lib/node_modules/npm \
            /usr/local/lib/node_modules/corepack \
            /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \

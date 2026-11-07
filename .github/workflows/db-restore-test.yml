@@ -97,8 +97,8 @@ jobs:
           S3_PREFIX: ${{ vars.S3_PREFIX || 'database-backups' }}
           # Prefer dedicated AWS_* secrets; fall back to the Spaces keys the
           # dev environment already carries (Spaces is S3-compatible).
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID || secrets.S3_OFFSITE_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY || secrets.S3_OFFSITE_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
           # Spaces endpoint by default; override with the S3_ENDPOINT variable
           # for real AWS S3 or another Spaces region.
@@ -114,8 +114,8 @@ jobs:
         env:
           # Prefer dedicated AWS_* secrets; fall back to the Spaces keys the
           # dev environment already carries (Spaces is S3-compatible).
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.DO_SPACES_ACCESS_KEY_ID || secrets.S3_OFFSITE_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.DO_SPACES_SECRET_ACCESS_KEY || secrets.S3_OFFSITE_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
           # Spaces endpoint by default; override with the S3_ENDPOINT variable
           # for real AWS S3 or another Spaces region.

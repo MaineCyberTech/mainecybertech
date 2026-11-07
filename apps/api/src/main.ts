@@ -1,5 +1,5 @@
 ﻿import dotenv from "dotenv";
-dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env.local", quiet: true });
 import { createApp } from "./app";
 import { getEnv } from "./config/env";
 import { logger } from "./lib/logger";

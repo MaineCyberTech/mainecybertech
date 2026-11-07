@@ -586,3 +586,75 @@ describe("MFA (TOTP) management", () => {
     expect(supabase.auth.mfa.unenroll).toHaveBeenCalledWith({ factorId: "f1" });
   });
 });
+
+describe("POST /callback", () => {
+  const fetchMock = jest.fn();
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+  });
+
+  afterAll(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("exchanges the authorization code with grant_type=pkce and the verifier cookie", async () => {
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          access_token: "token-abc",
+          user: { id: "user-1", email: "test@example.com" },
+        }),
+      })
+      .mockResolvedValueOnce({ ok: true });
+
+    const res = await request(app).post("/api/v1/auth/callback").send({
+      auth_code: "code-1",
+      cookies: "other=1; sb-test-auth-token-code-verifier=verifier-123",
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.accessToken).toBe("token-abc");
+
+    const tokenCall = fetchMock.mock.calls[0] as unknown[];
+    expect(tokenCall[0]).toBe("https://test.supabase.co/auth/v1/token?grant_type=pkce");
+    const tokenOptions = tokenCall[1] as { body?: string };
+    expect(JSON.parse(String(tokenOptions.body))).toEqual({
+      auth_code: "code-1",
+      code_verifier: "verifier-123",
+    });
+
+    const rpcCall = fetchMock.mock.calls[1] as unknown[];
+    expect(rpcCall[0]).toBe("https://test.supabase.co/rest/v1/rpc/bootstrap_portal_access");
+    const rpcOptions = rpcCall[1] as { headers?: Record<string, string> };
+    expect(rpcOptions.headers?.Authorization).toBe("Bearer token-abc");
+  });
+
+  it("returns a generic 401 without leaking the upstream error", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        error: "invalid_grant",
+        error_description: "sensitive upstream detail",
+      }),
+    });
+
+    const res = await request(app).post("/api/v1/auth/callback").send({
+      auth_code: "bad-code",
+      code_verifier: "verifier-123",
+    });
+
+    expect(res.status).toBe(401);
+    expect(JSON.stringify(res.body)).not.toContain("invalid_grant");
+    expect(JSON.stringify(res.body)).not.toContain("sensitive upstream detail");
+  });
+
+  it("requires an auth_code", async () => {
+    const res = await request(app).post("/api/v1/auth/callback").send({});
+    expect(res.status).toBe(400);
+  });
+});

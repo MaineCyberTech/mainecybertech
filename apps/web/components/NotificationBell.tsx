@@ -6,6 +6,7 @@ import { getClientApi } from "@/lib/client-api";
 import { getClientEnv } from "@/lib/env";
 import { formatDateTime } from "@/lib/format";
 import { notificationHref } from "@/lib/notification-links";
+import { redirectTo } from "@/lib/navigation";
 
 const MODULES = ["tickets", "projects", "documents", "billing", "system"] as const;
 const GLOBAL_MODULE = "all";
@@ -157,7 +158,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
         eventSourceRef.current = null;
         stopFallbackPolling();
         if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
-          window.location.assign("/login?reason=session_expired");
+          redirectTo("/login?reason=session_expired");
         }
       });
 

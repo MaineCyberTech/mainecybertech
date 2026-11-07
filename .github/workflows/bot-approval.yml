@@ -1,0 +1,16 @@
+name: bot-approval
+
+# Human-triggered approval. The implementation lives in the reusable
+# MaineCyberTech/ai-reviewer repository; this file is only the caller.
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: read
+
+jobs:
+  approve:
+    uses: MaineCyberTech/ai-reviewer/.github/workflows/bot-approval.yml@d401040c9777a63195396cbf177eec78192284d2

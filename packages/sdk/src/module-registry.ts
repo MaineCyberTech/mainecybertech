@@ -99,7 +99,7 @@ export const MODULE_REGISTRY: Record<string, ModuleDefinition> = {
   "organizations": {
     key: "organizations",
     name: "Organizations",
-    icon: "Building2",
+    icon: "Building",
     permissions: [
       "organizations:view",
       "organizations:create",
@@ -176,7 +176,7 @@ export const MODULE_REGISTRY: Record<string, ModuleDefinition> = {
   "incidents": {
     key: "incidents",
     name: "Incidents",
-    icon: "TriangleAlert",
+    icon: "TriangleExclamationPoint",
     permissions: ["incidents:view", "incidents:create", "incidents:edit", "incidents:delete"],
     routes: { admin: ["/admin/incidents"] },
   },
@@ -202,7 +202,7 @@ export const MODULE_REGISTRY: Record<string, ModuleDefinition> = {
   "dmarc-coach": {
     key: "dmarc-coach",
     name: "DMARC Coach",
-    icon: "MailWarning",
+    icon: "MailExclamationPoint",
     permissions: [
       "dmarc-coach:view",
       "dmarc-coach:create",
@@ -262,7 +262,7 @@ export const MODULE_REGISTRY: Record<string, ModuleDefinition> = {
   "security-ops": {
     key: "security-ops",
     name: "Security Ops",
-    icon: "ShieldAlert",
+    icon: "ShieldExclamationPoint",
     permissions: [
       "security-ops:view",
       "security-ops:create",
@@ -563,7 +563,7 @@ export const MODULE_REGISTRY: Record<string, ModuleDefinition> = {
   "identity-verification": {
     key: "identity-verification",
     name: "Identity Verification",
-    icon: "Fingerprint",
+    icon: "FingerprintPattern",
     permissions: [
       "identity-verification:view",
       "identity-verification:create",
@@ -575,7 +575,7 @@ export const MODULE_REGISTRY: Record<string, ModuleDefinition> = {
   "client-knowledge-base": {
     key: "client-knowledge-base",
     name: "Knowledge Base",
-    icon: "BookMarked",
+    icon: "BookBookmark",
     permissions: [
       "client-knowledge-base:view",
       "client-knowledge-base:create",
@@ -919,7 +919,7 @@ export const MODULE_REGISTRY: Record<string, ModuleDefinition> = {
   "timeline": {
     key: "timeline",
     name: "Timeline",
-    icon: "History",
+    icon: "ClockArrowUp",
     permissions: ["timeline:view"],
     routes: { portal: ["/portal/timeline"] },
   },

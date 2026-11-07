@@ -773,6 +773,11 @@ jobs:
             fi
             cd /opt/mct-portal/repo
             git fetch origin "$DEPLOY_REF"
+            # The droplet checkout is immutable. Discard any manual hotfix or
+            # generated file before switching refs; otherwise a dirty tracked
+            # file makes `git checkout -B` abort before the reset below runs.
+            git reset --hard HEAD
+            git clean -fd
             git checkout -B "$DEPLOY_REF" "origin/$DEPLOY_REF"
             git reset --hard "origin/$DEPLOY_REF"
             mkdir -p /opt/mct-portal

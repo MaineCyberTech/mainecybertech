@@ -27,6 +27,12 @@
 #   REQUIRE_BACKUP_ENCRYPTION  - "1" to fail if no key is set (CI sets this)
 #   VERIFY_BACKUP              - "1" to verify the archive (gzip tar + MANIFEST)
 #   S3_OFFSITE_BUCKET          - second destination bucket for an offsite copy
+#   S3_OFFSITE_ENDPOINT        - optional endpoint for the offsite copy
+#   S3_OFFSITE_ACCESS_KEY_ID / S3_OFFSITE_SECRET_ACCESS_KEY
+#                              - optional credentials for that endpoint
+#   ALLOW_EMPTY_STORAGE        - "1" permits a manifest-only archive when the
+#                              buckets are legitimately empty (dev only; prod
+#                              keeps the fail-closed guard)
 set -euo pipefail
 
 S3_BUCKET="${S3_BUCKET:-mainecybertech-backups}"
@@ -34,6 +40,18 @@ S3_PREFIX="${S3_PREFIX:-storage-backups}"
 S3_STORAGE_CLASS="${S3_STORAGE_CLASS:-STANDARD}"
 S3_OFFSITE_BUCKET="${S3_OFFSITE_BUCKET:-}"
 S3_OFFSITE_PREFIX="${S3_OFFSITE_PREFIX:-${S3_PREFIX}}"
+S3_OFFSITE_ENDPOINT="${S3_OFFSITE_ENDPOINT:-}"
+S3_OFFSITE_ACCESS_KEY_ID="${S3_OFFSITE_ACCESS_KEY_ID:-}"
+S3_OFFSITE_SECRET_ACCESS_KEY="${S3_OFFSITE_SECRET_ACCESS_KEY:-}"
+
+# When the offsite destination is the same bucket/endpoint as the primary
+# (Garage promoted to primary), skip the duplicate copy and prune.
+primary_endpoint="${AWS_ENDPOINT_URL:-}"
+if [ -n "${S3_OFFSITE_BUCKET}" ] && [ "${S3_OFFSITE_BUCKET}" = "${S3_BUCKET}" ] \
+   && [ "${S3_OFFSITE_ENDPOINT%/}" = "${primary_endpoint%/}" ]; then
+  echo "Offsite destination matches the primary (${S3_BUCKET}); skipping duplicate copy"
+  S3_OFFSITE_BUCKET=""
+fi
 STORAGE_BUCKETS="${STORAGE_BUCKETS:-documents avatars logos}"
 BACKUP_DIR="${BACKUP_DIR:-./storage-backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-30}"
@@ -113,8 +131,12 @@ echo "Listed ${LISTED_FILES} object(s); downloaded ${OBJECT_COUNT}"
 # success. `set -e` already aborts on a failed download, so the two counts
 # should always match; assert both invariants anyway.
 if [ "${OBJECT_COUNT}" -eq 0 ]; then
-  echo "ERROR: no objects were downloaded — refusing to record an empty storage backup" >&2
-  exit 1
+  if [ "${ALLOW_EMPTY_STORAGE:-0}" = "1" ]; then
+    echo "WARNING: no objects were downloaded; recording a manifest-only archive because ALLOW_EMPTY_STORAGE=1" >&2
+  else
+    echo "ERROR: no objects were downloaded — refusing to record an empty storage backup" >&2
+    exit 1
+  fi
 fi
 if [ "${OBJECT_COUNT}" -ne "${LISTED_FILES}" ]; then
   echo "ERROR: downloaded ${OBJECT_COUNT} object(s) but the listing reported ${LISTED_FILES} — refusing to record a partial backup" >&2
@@ -162,12 +184,29 @@ else
 fi
 
 UPLOAD_NAME="$(basename "${UPLOAD_PATH}")"
+
+# Run an aws CLI command against an optional endpoint/credential pair. Empty
+# endpoint/credentials preserve the original single-endpoint behavior.
+aws_s3() {
+  local endpoint="$1" access_key="$2" secret_key="$3"; shift 3
+  local -a args=()
+  [ -n "${endpoint}" ] && args+=(--endpoint-url "${endpoint}")
+  if [ -n "${access_key}" ] || [ -n "${secret_key}" ]; then
+    env AWS_ACCESS_KEY_ID="${access_key:-${AWS_ACCESS_KEY_ID:-}}" \
+        AWS_SECRET_ACCESS_KEY="${secret_key:-${AWS_SECRET_ACCESS_KEY:-}}" \
+        aws "${args[@]}" "$@"
+  else
+    aws "${args[@]}" "$@"
+  fi
+}
+
 echo "Uploading to s3://${S3_BUCKET}/${S3_PREFIX}/${UPLOAD_NAME}"
-aws s3 cp "${UPLOAD_PATH}" "s3://${S3_BUCKET}/${S3_PREFIX}/${UPLOAD_NAME}" --storage-class "${S3_STORAGE_CLASS}"
+aws_s3 "" "" "" s3 cp "${UPLOAD_PATH}" "s3://${S3_BUCKET}/${S3_PREFIX}/${UPLOAD_NAME}" --storage-class "${S3_STORAGE_CLASS}"
 
 if [ -n "${S3_OFFSITE_BUCKET}" ]; then
-  echo "Copying to offsite bucket ${S3_OFFSITE_BUCKET}..."
-  aws s3 cp "${UPLOAD_PATH}" "s3://${S3_OFFSITE_BUCKET}/${S3_OFFSITE_PREFIX}/${UPLOAD_NAME}" --storage-class "${S3_STORAGE_CLASS}"
+  echo "Copying to offsite bucket ${S3_OFFSITE_BUCKET}${S3_OFFSITE_ENDPOINT:+ via ${S3_OFFSITE_ENDPOINT}}..."
+  aws_s3 "${S3_OFFSITE_ENDPOINT}" "${S3_OFFSITE_ACCESS_KEY_ID}" "${S3_OFFSITE_SECRET_ACCESS_KEY}" \
+    s3 cp "${UPLOAD_PATH}" "s3://${S3_OFFSITE_BUCKET}/${S3_OFFSITE_PREFIX}/${UPLOAD_NAME}" --storage-class "${S3_STORAGE_CLASS}"
 fi
 
 rm -rf "${STAGE_DIR}" "${UPLOAD_PATH}"
@@ -175,17 +214,21 @@ rm -rf "${STAGE_DIR}" "${UPLOAD_PATH}"
 echo "Pruning storage backups older than ${RETENTION_DAYS} days..."
 cutoff=$(date -d "-${RETENTION_DAYS} days" +%Y-%m-%d)
 prune_bucket() {
-  local bucket="$1" prefix="$2"
-  aws s3api list-objects-v2 --bucket "${bucket}" --prefix "${prefix}/" \
+  local bucket="$1" prefix="$2" endpoint="${3:-}" access_key="${4:-}" secret_key="${5:-}"
+  aws_s3 "${endpoint}" "${access_key}" "${secret_key}" s3api list-objects-v2 \
+    --bucket "${bucket}" --prefix "${prefix}/" \
     --query "Contents[?LastModified<=\`${cutoff}T00:00:00Z\`].Key" --output json \
     | jq -r '.[]? // empty' | while read -r key; do
       [ -n "${key}" ] || continue
-      aws s3api delete-object --bucket "${bucket}" --key "${key}"
+      aws_s3 "${endpoint}" "${access_key}" "${secret_key}" s3api delete-object --bucket "${bucket}" --key "${key}"
       echo "Deleted: ${key}"
     done
 }
 prune_bucket "${S3_BUCKET}" "${S3_PREFIX}"
-[ -n "${S3_OFFSITE_BUCKET}" ] && prune_bucket "${S3_OFFSITE_BUCKET}" "${S3_OFFSITE_PREFIX}"
+if [ -n "${S3_OFFSITE_BUCKET}" ]; then
+  prune_bucket "${S3_OFFSITE_BUCKET}" "${S3_OFFSITE_PREFIX}" \
+    "${S3_OFFSITE_ENDPOINT}" "${S3_OFFSITE_ACCESS_KEY_ID}" "${S3_OFFSITE_SECRET_ACCESS_KEY}"
+fi
 
 echo ""
 echo "=== Storage Backup Complete (${OBJECT_COUNT} objects) ==="
