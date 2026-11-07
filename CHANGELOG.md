@@ -126,6 +126,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Changed
 
+- **BullMQ 6:** upgraded the API and worker from 5.78.x to 6.7.1 and removed
+  the held-major Dependabot ignore entry. The worker queue API and Redis
+  connectivity tests cover the upgrade.
 - **lucide-react 1.x:** upgraded the web and UI packages to `1.70.0` and removed
   the held-major Dependabot ignore entry. The module registry now uses the
   canonical v1 icon names (`ShieldExclamationPoint`, `FingerprintPattern`,

@@ -33,8 +33,6 @@ updates:
       # lands the upgrade so Dependabot resumes reporting that line.
       - dependency-name: "next"
         update-types: ["version-update:semver-major"]
-      - dependency-name: "bullmq"
-        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
