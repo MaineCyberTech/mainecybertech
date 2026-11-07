@@ -109,7 +109,7 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/supabase-images.tar
-          key: supabase-images-${{ runner.os }}-${{ env.SUPABASE_CLI_VERSION }}-v2
+          key: supabase-images-${{ runner.os }}-${{ env.SUPABASE_CLI_VERSION }}-v3
 
       - name: Load the cached Supabase images
         if: steps.supabase_image_cache.outputs.cache-hit == 'true'
@@ -191,7 +191,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/supabase-images.tar
-          key: supabase-images-${{ runner.os }}-${{ env.SUPABASE_CLI_VERSION }}-v2
+          key: supabase-images-${{ runner.os }}-${{ env.SUPABASE_CLI_VERSION }}-v3
 
       - name: Apply migrations and seeds
         run: supabase db reset
