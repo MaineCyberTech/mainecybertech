@@ -101,6 +101,9 @@ jobs:
           # Fail the job if the archive is not a readable tar carrying the
           # manifest (DR-P2-001); the script also refuses empty/partial mirrors.
           VERIFY_BACKUP: "1"
+          # An empty dev mirror is legitimate before the first upload; keep the
+          # fail-closed guard for prod runs and the prod schedule.
+          ALLOW_EMPTY_STORAGE: ${{ (github.event.inputs.environment == 'prod' || (github.event_name == 'schedule' && vars.PROD_BACKUP_ENABLED == 'true')) && '0' || '1' }}
         run: bash scripts/backup-storage.sh
 
       - name: Notify on failure
