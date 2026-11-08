@@ -98,7 +98,9 @@ echo "Backup created: ${LOCAL_PATH} (${FILE_SIZE})"
 if [ -n "${VERIFY_BACKUP:-}" ]; then
   echo "Step 1b: Verifying dump is a restorable archive..."
   gunzip -t "${LOCAL_PATH}"
-  if ! gunzip -c "${LOCAL_PATH}" | head -c 4096 | grep -q "PostgreSQL database dump"; then
+  # grep -q closes the pipe on the first match; with pipefail the upstream
+  # gunzip/head can then look like a failure even though the header is present.
+  if ! (set +o pipefail; gunzip -c "${LOCAL_PATH}" | head -c 4096 | grep -q "PostgreSQL database dump"); then
     echo "ERROR: dump does not look like a PostgreSQL dump"
     exit 1
   fi
