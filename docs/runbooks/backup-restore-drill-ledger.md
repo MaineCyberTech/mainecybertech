@@ -14,7 +14,11 @@ run 42436289022 produced an encrypted 952K dump at
 `s3://mct-mainecybertech/database-backups/supabase-dump-2026-11-08-015514.sql.gz.enc`
 and recorded the platform heartbeat. `db-restore-test` run 42437188270 restored
 140 public tables, 165 migrations and 425 rows with 0 tables missing RLS. The
-manual deep-dive and PITR drills remain planned.
+first non-empty storage backup/restore verification also passed: `storage-backup`
+run 42452717267 produced an encrypted archive with 1 object, and
+`storage-restore-test` run 42452741103 verified 1 object against the manifest
+(`object_count: 1`). The manual D1 deep-dive, PITR and scratch-bucket
+storage-recovery drills remain planned.
 
 | Drill | Planned window | Operator | Target | Result | Evidence | Follow-ups |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -23,7 +27,8 @@ manual deep-dive and PITR drills remain planned.
 | D2 (PITR) | first month after D1 is green | platform | throwaway Supabase project | planned | drill artifact | measure PITR duration; confirm the 5-min RPO claim |
 | D3 | every D1 run | backend | same as D1 | planned | automated run output | promote assertions if gaps found |
 | D4 (bad migration) | first quarter after D1 is green | backend | throwaway Supabase project | planned | drill artifact | template the reverse migration |
-| D5 (storage recovery) | first quarter after the storage backup is green | platform | scratch bucket | planned | drill artifact | verify MANIFEST checksums |
+| D5 (automated storage verification) | 2026-11-08 (first non-empty run) | Kestrel Ops | newest storage archive + manifest | **passed** — 1 object backed up and 1 verified against the manifest (`object_count: 1`) | backup run 42452717267; restore run 42452741103 | keep the private `storage-drill` seed; full scratch-bucket recovery still planned |
+| D5 (manual storage recovery) | first quarter after the automated storage verification | platform | scratch bucket | planned | drill artifact | delete/recover a known object and verify its checksum; the automated path is verify-only and does not write to a live bucket |
 | D6 (Terraform state) | semi-annual | infra | scratch backend bucket | planned | drill artifact | confirm live bucket versioning |
 | D7 (droplet loss) | semi-annual | platform/NOC | dev/scratch droplet | planned | paper + partial artifact | record timings vs RTO |
 

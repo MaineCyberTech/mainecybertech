@@ -34,12 +34,12 @@ run by an operator on an isolated target, never against production data.
 | Backup script (bash) | `scripts/backup-database.sh` | pg_dump → gzip → S3/Spaces; encryption when `BACKUP_ENCRYPTION_KEY` is set; 30-day retention | exercised 2026-11-08 (backup run 42436289022) |
 | Backup script (PowerShell) | — | Retired (DR-P3-002); use `scripts/backup-database.sh` via WSL/Git Bash | N/A |
 | Weekly restore test | `.github/workflows/db-restore-test.yml` | Restores to a temp `postgres:17-alpine`; skips the Supabase-only `vault` schema/extension; pre-creates the Supabase roles; asserts structure/freshness/RLS floors (DR-P0-003, DR-P1-001 fixed) | **Green 2026-11-08** — run 42437188270, 140 tables / 165 migrations / 425 rows / 0 RLS-off |
-| Storage backup | `.github/workflows/storage-backup.yml`, `scripts/backup-storage.sh` | Paginated listing, zero-object refusal, MANIFEST with `object_count`, encryption, offsite option (DR-P2-001 fixed) | `not exercised` |
-| Storage restore test | `.github/workflows/storage-restore-test.yml`, `scripts/restore-storage.sh --verify-only` | Weekly assertions: manifest present, `object_count` == extracted count, archive non-empty (DR-P1-002, DR-P2-002 fixed) | `not exercised` |
+| Storage backup | `.github/workflows/storage-backup.yml`, `scripts/backup-storage.sh` | Paginated listing, zero-object refusal, MANIFEST with `object_count`, encryption, offsite option (DR-P2-001 fixed) | **Green 2026-11-08** — run 42452717267; 1 object, encrypted archive |
+| Storage restore test | `.github/workflows/storage-restore-test.yml`, `scripts/restore-storage.sh --verify-only` | Weekly assertions: manifest present, `object_count` == extracted count, archive non-empty (DR-P1-002, DR-P2-002 fixed) | **Green 2026-11-08** — run 42452741103; decrypt + manifest match, `object_count: 1` (verify-only) |
 | Manual restore script | `scripts/restore-database.sh` | `--dry-run` supported; stream-decrypt; environment guardrail | `not exercised` |
 | Supabase PITR | `docs/ROLLBACK_PROCEDURES.md` §3 Option B | Documented (7-day, Pro plan) | `not exercised` |
 | Terraform state | `infra/terraform/digitalocean/state-bucket.tf` + `env/backend.*.hcl` | Remote S3/Spaces backend; `versioning { enabled = true }` now declared as a resource (DR-P2-005 fixed); state gitignored | `not exercised` (state read, not restored) |
-| Storage buckets (`documents`, `avatars`) | backup/restore scripts above | Backup + restore-test path exists (was absent in the 2026-10-02 audit) | `not exercised` |
+| Storage buckets (`documents`, `avatars`, `logos`, `storage-drill`) | backup/restore scripts above | Backup + restore-test path exists (was absent in the 2026-10-02 audit); dev `documents`/`avatars`/`logos` are empty, so the private `storage-drill` bucket holds a 167-byte `README.txt` seed (`STORAGE_BUCKETS=documents avatars logos storage-drill`) | non-empty backup/verify **green 2026-11-08** (runs 42452717267 / 42452741103); scratch-bucket recovery not exercised |
 | Redis | `infra/digitalocean/docker-compose.yml` | No backup; rebuilt from DB per `docs/RTO_RPO.md` | `not exercised` |
 | Secrets | `docs/SECRETS_ROTATION.md`, `docs/SECRET_ROTATION_RUNBOOK.md` | Rotation documented; key escrow **still unrecorded** (gap) | N/A (rotate, don't restore) |
 
@@ -113,6 +113,10 @@ See §6 checklist. This is the part that converts "exit code 0" into "the restor
 3. Verify download + checksum against the MANIFEST.
 4. Record recovery path and duration.
 
+> **Status 2026-11-08:** the automated non-empty backup + verify-only path is
+> green (runs 42452717267 / 42452741103). Steps 1–3 (delete and recover into a
+> scratch bucket) have not been exercised; D5 remains planned.
+
 ### D6 — Terraform state recovery drill (semi-annual)
 
 1. Copy the current state object in a scratch bucket.
@@ -170,4 +174,4 @@ following are true at the audited commit:
 2. The restore test asserts integrity (counts, migrations, tenant isolation) and fails on a truncated dump.
 3. A captured drill artifact proves the last real restore and its duration.
 4. A backup-failure **and** restore-test-failure alert path exists and has been fired once synthetically.
-5. Storage/uploaded-file recovery has a documented, exercised mechanism.
+5. Storage/uploaded-file recovery has a documented, exercised mechanism. The automated non-empty archive backup/verification path is green; the scratch-bucket recovery exercise is still required.
