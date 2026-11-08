@@ -48,10 +48,11 @@ and recorded the platform heartbeat. `db-restore-test` run 42437188270 restored
 140 public tables, 165 migrations and 425 rows with 0 tables missing RLS. The
 first non-empty storage backup (`storage-backup` run 42452717267) produced an
 encrypted archive with 1 object, and `storage-restore-test` run 42452741103
-decrypted and verified 1 object against the manifest (`object_count: 1`). This
+decrypted and verified 1 object against the manifest (`object_count: 1`). The
+live D5 scratch-bucket recovery also passed: `storage-drill/README.txt` was
+deleted and restored with a matching SHA-256 and `text/plain` content type. This
 closes the dev operator residual for `DR-P0-001` and the empty-dev-storage gap;
-prod backup coverage, the manual/PITR deep-dive and the scratch-bucket storage
-recovery remain open.
+prod backup coverage and the manual/PITR deep-dive remain open.
 
 > Status is deliberately recorded as *decision / owner / evidence required*,
 > not as "fixed". A finding may only be treated as closed with an artifact
@@ -115,8 +116,10 @@ artifact.
       (`docker compose stop alertmanager` → external page). Owner: infra.
 - [x] **Backup and restore drill**: dated green `db-restore-test` with row
       assertions and ordinary `db-backup` success; non-empty `storage-backup`
-      and `storage-restore-test` verification. Evidence: backup runs
-      42436289022 / 42452717267; restore runs 42437188270 / 42452741103.
+      and `storage-restore-test` verification; live storage scratch-bucket
+      recovery. Evidence: backup runs 42436289022 / 42452717267; restore runs
+      42437188270 / 42452741103;
+      [`runbooks/drills/2026-11-08-storage-live-recovery.md`](runbooks/drills/2026-11-08-storage-live-recovery.md).
       Owner: infra.
 - [ ] **SPOF / backup plan**: confirm documented recovery path and target
       RTO/RPO for the single-droplet topology.
