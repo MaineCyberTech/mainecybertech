@@ -103,7 +103,7 @@ drill **cannot pass** — record that state instead of pretending it was run.
 
 | Date (UTC) | Env | Operator | Workflow run / artifact | ntfy notification observed | Watchdog page observed |
 | ---------- | --- | -------- | ----------------------- | -------------------------- | ---------------------- |
-| _none recorded yet_ | — | — | — | — | — |
+| 2026-11-07 23:33 | dev | mct-agent (automated drill) | manual droplet run of `scripts/exercise-alert-path.sh`, exit 0: `total=1 -> 2`, `failed=0` (after #394 removed the no-op Slack receiver) | yes — synthetic critical delivered to the `portal-alerts` topic | n/a — external watchdog URL still unset (`IR-P0-003`) |
 
 Replace the placeholder row with the first real exercise; keep one row per
 run. Link the run URL (or a transcript for manual runs) and name the person
