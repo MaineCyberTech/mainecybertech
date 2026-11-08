@@ -72,7 +72,7 @@ jobs:
         run: |
           aws --version
           jq --version
-          (pg_dump --version || echo "pg_dump not on runner — script uses the pinned postgres:16-alpine client container")
+          (pg_dump --version || echo "pg_dump not on runner — script uses the pinned postgres:17-alpine client container")
 
       - name: Run database backup script
         id: backup

@@ -74,10 +74,10 @@ if command -v pg_dump &>/dev/null; then
   pg_dump "${SUPABASE_DB_URL}" --no-owner | gzip > "${LOCAL_PATH}"
 else
   # DR-P3-003: digest-pinned fallback client, same major as the restore test
-  # (postgres:16-alpine). A floating tag made a dump/restore pass depend on
+  # (postgres:17-alpine). A floating tag made a dump/restore pass depend on
   # whichever image happened to be pulled.
   docker run --rm -v "${BACKUP_DIR}:/backups" \
-    postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea \
+    postgres:17-alpine@sha256:3540c0362c809df084ffac0ae69fe794515f9de92692f02178bcdce0ef0302ac \
     sh -c "pg_dump '${SUPABASE_DB_URL}' --no-owner | gzip > /backups/${FILENAME}"
 fi
 
