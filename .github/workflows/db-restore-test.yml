@@ -182,7 +182,7 @@ jobs:
           # Supabase-managed extensions are not shipped with the stock
           # Postgres test image. Skipping only this extension's DDL keeps the
           # public schema/data restore and all integrity assertions intact.
-          grep -vE '^(CREATE EXTENSION (IF NOT EXISTS )?"supabase_vault"|COMMENT ON EXTENSION "supabase_vault"|ALTER EXTENSION "supabase_vault")' \
+          grep -vE '^(CREATE EXTENSION (IF NOT EXISTS )?"?supabase_vault"?|COMMENT ON EXTENSION "?supabase_vault"?|ALTER EXTENSION "?supabase_vault"?)' \
             /tmp/restore.sql > /tmp/restore.filtered.sql
           psql "postgresql://postgres:test@localhost:5432/restore_test" \
             -v ON_ERROR_STOP=1 -q -f /tmp/restore.filtered.sql
