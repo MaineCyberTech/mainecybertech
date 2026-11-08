@@ -166,6 +166,29 @@ jobs:
             postgres:17-alpine@sha256:3540c0362c809df084ffac0ae69fe794515f9de92692f02178bcdce0ef0302ac
           sleep 5
 
+      - name: Create Supabase roles
+        # The dump carries Supabase ACLs and RLS policies. A stock Postgres
+        # starts with only the built-in roles, so create the Supabase roles
+        # before loading the dump; no application service uses these roles in
+        # the throwaway database.
+        run: |
+          psql "postgresql://postgres:test@localhost:5432/restore_test" \
+            -v ON_ERROR_STOP=1 -q <<'SQL'
+          CREATE ROLE anon NOLOGIN;
+          CREATE ROLE authenticated NOLOGIN;
+          CREATE ROLE service_role NOLOGIN;
+          CREATE ROLE authenticator NOINHERIT LOGIN PASSWORD 'test';
+          CREATE ROLE supabase_admin NOLOGIN;
+          CREATE ROLE supabase_auth_admin NOLOGIN;
+          CREATE ROLE supabase_storage_admin NOLOGIN;
+          CREATE ROLE supabase_replication_admin NOLOGIN;
+          CREATE ROLE supabase_realtime_admin NOLOGIN;
+          CREATE ROLE supabase_functions_admin NOLOGIN;
+          CREATE ROLE supabase_read_only_user NOLOGIN;
+          CREATE ROLE dashboard_user NOLOGIN;
+          CREATE ROLE pgbouncer NOLOGIN;
+          SQL
+
       - name: Restore backup to temp database
         run: |
           # Fail on an empty/corrupt dump rather than letting psql absorb it.
