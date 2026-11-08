@@ -59,12 +59,28 @@ upload_object() {
     "${SUPABASE_URL}/storage/v1/object/${bucket}/${path}"
 }
 
+download_s3_object() {
+  local uri="$1"
+  local dest="$2"
+  local rest bucket key
+  rest="${uri#s3://}"
+  bucket="${rest%%/*}"
+  key="${rest#*/}"
+  if [[ -z "${bucket}" || -z "${key}" || "${key}" == "${rest}" ]]; then
+    echo "ERROR: invalid S3 object URI: ${uri}" >&2
+    exit 1
+  fi
+  # Garage returns 400 for HeadObject on these objects, and `aws s3 cp`
+  # performs a HeadObject before the GET. Use GetObject directly.
+  aws s3api get-object --bucket "${bucket}" --key "${key}" "${dest}" >/dev/null
+}
+
 echo "=== Supabase Storage Restore ==="
 
 if [ -n "${ARCHIVE_FILE}" ]; then
   echo "Using specified archive: ${ARCHIVE_FILE}"
   if [[ "${ARCHIVE_FILE}" == s3://* ]]; then
-    aws s3 cp "${ARCHIVE_FILE}" /tmp/storage-restore.download
+    download_s3_object "${ARCHIVE_FILE}" /tmp/storage-restore.download
   else
     # Local archive support (FILE-P3-004): the restore exercise feeds synthetic
     # archives from a temp dir, so no AWS CLI/network is needed to prove the
@@ -88,7 +104,7 @@ else
   # `aws s3 ls --recursive` returns the FULL key (including the prefix); strip
   # it if present and rebuild the URI once (audit DR-P1-002).
   REL="${LATEST#"${S3_PREFIX}/"}"
-  aws s3 cp "s3://${S3_BUCKET}/${S3_PREFIX}/${REL}" /tmp/storage-restore.download
+  download_s3_object "s3://${S3_BUCKET}/${S3_PREFIX}/${REL}" /tmp/storage-restore.download
 fi
 
 rm -rf "${STAGE_DIR}"

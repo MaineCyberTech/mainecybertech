@@ -113,6 +113,7 @@ receivers:
             username: "${ALERTMANAGER_WEBHOOK_USER}"
             password: "${ALERTMANAGER_WEBHOOK_PASS}"
     slack_configs:
+      # render:omit-if-empty ALERTMANAGER_SLACK_API_URL
       - api_url: "${ALERTMANAGER_SLACK_API_URL}"
         channel: "${ALERTMANAGER_SLACK_CHANNEL}"
         send_resolved: true
@@ -132,6 +133,7 @@ receivers:
             username: "${ALERTMANAGER_WEBHOOK_USER}"
             password: "${ALERTMANAGER_WEBHOOK_PASS}"
     slack_configs:
+      # render:omit-if-empty ALERTMANAGER_SLACK_API_URL
       - api_url: "${ALERTMANAGER_SLACK_API_URL}"
         channel: "${ALERTMANAGER_SLACK_CHANNEL}"
         send_resolved: true
