@@ -398,7 +398,7 @@ services:
       ALERTMANAGER_WATCHDOG_WEBHOOK_URL: ${ALERTMANAGER_WATCHDOG_WEBHOOK_URL:-http://127.0.0.1:1/noop}
       ALERTMANAGER_CRITICAL_WEBHOOK_URL: ${ALERTMANAGER_CRITICAL_WEBHOOK_URL:-http://127.0.0.1:1/noop}
       ALERTMANAGER_DEFAULT_WEBHOOK_URL: ${ALERTMANAGER_DEFAULT_WEBHOOK_URL:-http://127.0.0.1:1/noop}
-      ALERTMANAGER_SLACK_API_URL: ${ALERTMANAGER_SLACK_API_URL:-http://127.0.0.1:1/noop}
+      ALERTMANAGER_SLACK_API_URL: ${ALERTMANAGER_SLACK_API_URL:-}
       ALERTMANAGER_SLACK_CHANNEL: ${ALERTMANAGER_SLACK_CHANNEL:-#alerts}
       # Basic-auth credentials for the critical/default webhooks (ntfy relay
       # user). Non-empty placeholders keep the rendered config valid when the
