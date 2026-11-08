@@ -188,7 +188,7 @@ attaches `prod-backup` — both must carry the prod rows above (DR-P2-009).
 | `S3_OFFSITE_ENDPOINT`            | opt | opt  | Endpoint URL for the offsite copy, e.g. `http://192.168.222.120:3900` for Raven Garage. Leave unset to reuse the primary endpoint. A GitHub-hosted runner cannot reach a private LAN address; use a self-hosted LAN runner or relay |
 | `BACKUP_RUNNER_LABELS`           | opt | opt  | JSON array of runner labels for `db-backup` / `storage-backup` / `db-restore-test` / `storage-restore-test` (DR-P1-008). Defaults to `["ubuntu-latest"]`. Set to `["self-hosted","Linux","X64","lab","lab-docker"]` to use the on-prem CI runners that can reach Raven |
 | `PROD_BACKUP_ENABLED`            | —   | opt  | Set to `true` to point the scheduled `db-backup` / `db-restore-test` / `storage-backup` / `storage-restore-test` runs at production (attaches `prod-backup`; DATA-P2-010 / DR-P2-009) |
-| `STORAGE_BUCKETS`                | yes | opt  | Storage buckets to back up (default `documents avatars logos`); set the prod bucket list in `prod-backup` if it differs |
+| `STORAGE_BUCKETS`                | yes | opt  | Storage buckets to back up (default `documents avatars logos`); dev is set to `documents avatars logos storage-drill`, where `storage-drill` is a private 167-byte seed that keeps the restore test non-empty; set the prod bucket list in `prod-backup` if it differs |
 | `LOAD_TEST_API_URL`              | opt | opt  | Override the load-test API base URL for all runs (defaults: dev `https://api.mainecybertech.us`, prod `https://api.mainecybertech.com`) |
 | `UPTIME_PROBE_TARGETS`           | opt | opt  | JSON target list overriding `scripts/uptime/probe-targets.json` for the external uptime probe |
 | `UPTIME_PROBE_ENABLED`           | opt | opt  | Set to `false` to pause the scheduled external uptime probe (manual dispatch still runs) |
@@ -228,11 +228,13 @@ attaches `prod-backup` — both must carry the prod rows above (DR-P2-009).
      activate the prod backup target (DATA-P2-010). The prod storage backup
      additionally needs the prod `SUPABASE_URL` /
      `SUPABASE_SERVICE_ROLE_KEY` in the same environment (DR-P2-009)
-   - **Dev status (2026-11-08):** `SUPABASE_DB_URL` and
-     `BACKUP_ENCRYPTION_KEY` are provisioned in `dev`; the Supabase password was
-     rotated and the URL is stored in Vault `secret/kestrel/portal`. First
-     encrypted backup run 42436289022 and restore test run 42437188270 are
-     green. Prod copies remain operator work.
+   - **Dev status (2026-11-08):** `SUPABASE_DB_URL`, `BACKUP_ENCRYPTION_KEY`,
+     `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provisioned in `dev`;
+     the Supabase password was rotated and the URL is stored in Vault
+     `secret/kestrel/portal`. First encrypted DB backup run 42436289022 and
+     restore test run 42437188270 are green. The first non-empty storage backup
+     run 42452717267 and restore verification 42452741103 are also green
+     (`object_count: 1`). Prod copies remain operator work.
    - `CLOUDFLARE_API_TOKEN` — from Cloudflare dashboard
    - `CLOUDFLARE_ZONE_ID` / `CLOUDFLARE_ZONE_ID_US` — from Cloudflare dashboard
    - `CI_SSH_PRIVATE_KEY` — private key (e.g. `cat ~/.ssh/id_rsa`) for droplet SSH access

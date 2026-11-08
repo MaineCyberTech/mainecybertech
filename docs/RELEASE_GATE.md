@@ -41,13 +41,17 @@ configured but not exercised) partially fixed. Against the reconciled register,
 18 of the P0/P1 rows remain unresolved (2 P0, 16 P1); the gate stays **NO-GO**
 until each is `verified-fixed` or owner-accepted.
 
-**Status update 2026-11-08:** the dev database backup and restore path is green.
-`db-backup` run 42436289022 produced an encrypted 952K dump at
+**Status update 2026-11-08:** the dev database and storage backup/restore paths
+are green. `db-backup` run 42436289022 produced an encrypted 952K dump at
 `s3://mct-mainecybertech/database-backups/supabase-dump-2026-11-08-015514.sql.gz.enc`
 and recorded the platform heartbeat. `db-restore-test` run 42437188270 restored
-140 public tables, 165 migrations and 425 rows with 0 tables missing RLS. This
-closes the dev operator residual for `DR-P0-001`; prod backup coverage and the
-manual/PITR deep-dive remain open.
+140 public tables, 165 migrations and 425 rows with 0 tables missing RLS. The
+first non-empty storage backup (`storage-backup` run 42452717267) produced an
+encrypted archive with 1 object, and `storage-restore-test` run 42452741103
+decrypted and verified 1 object against the manifest (`object_count: 1`). This
+closes the dev operator residual for `DR-P0-001` and the empty-dev-storage gap;
+prod backup coverage, the manual/PITR deep-dive and the scratch-bucket storage
+recovery remain open.
 
 > Status is deliberately recorded as *decision / owner / evidence required*,
 > not as "fixed". A finding may only be treated as closed with an artifact
@@ -109,9 +113,11 @@ artifact.
       synthetic alert landing in `portal-alerts`. Then provision
       `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` and record the missed-heartbeat drill
       (`docker compose stop alertmanager` → external page). Owner: infra.
-- [x] **Backup restore drill**: dated green `db-restore-test` with row
-      assertions and ordinary `db-backup` success. Evidence: backup run
-      42436289022; restore run 42437188270. Owner: infra.
+- [x] **Backup and restore drill**: dated green `db-restore-test` with row
+      assertions and ordinary `db-backup` success; non-empty `storage-backup`
+      and `storage-restore-test` verification. Evidence: backup runs
+      42436289022 / 42452717267; restore runs 42437188270 / 42452741103.
+      Owner: infra.
 - [ ] **SPOF / backup plan**: confirm documented recovery path and target
       RTO/RPO for the single-droplet topology.
       See [`runbooks/backup-disaster-recovery.md`](runbooks/backup-disaster-recovery.md),
