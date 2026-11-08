@@ -21,7 +21,7 @@
 
 ## Backup Strategy
 
-- **Database**: Daily `pg_dump` to S3 (30-day retention, `STANDARD` storage class — Spaces rejects other classes, override with `S3_STORAGE_CLASS` on real AWS S3; AES-256-CBC encrypted when `BACKUP_ENCRYPTION_KEY` is set; optional offsite copy via `S3_OFFSITE_BUCKET`). If the offsite copy uses a different S3-compatible endpoint (for example Raven Garage), set `S3_OFFSITE_ENDPOINT` and optionally `S3_OFFSITE_ACCESS_KEY_ID` / `S3_OFFSITE_SECRET_ACCESS_KEY`; the runner must be able to reach that endpoint. Supabase PITR (7-day). Scheduled runs target **dev** by default — see Production backup coverage below.
+- **Database**: Daily `pg_dump` to S3 (30-day retention, `STANDARD` storage class — Spaces rejects other classes, override with `S3_STORAGE_CLASS` on real AWS S3; AES-256-CBC encrypted when `BACKUP_ENCRYPTION_KEY` is set; optional offsite copy via `S3_OFFSITE_BUCKET`). If the offsite copy uses a different S3-compatible endpoint (for example Raven SeaweedFS), set `S3_OFFSITE_ENDPOINT` and optionally `S3_OFFSITE_ACCESS_KEY_ID` / `S3_OFFSITE_SECRET_ACCESS_KEY`; the runner must be able to reach that endpoint. Supabase PITR (7-day). Scheduled runs target **dev** by default — see Production backup coverage below.
 - **Storage**: Daily mirror of `documents`/`avatars`/`logos` to S3/Spaces (`storage-backup.yml`, encrypted, same 30-day retention). The dev backup also includes the private `storage-drill` seed (`STORAGE_BUCKETS=documents avatars logos storage-drill`) so the weekly restore verification exercises a non-empty archive.
 - **Terraform state**: DO Spaces (S3-compatible) with versioning enabled — now enforced in code by `digitalocean_spaces_bucket.terraform_state` (`versioning { enabled = true }` in `infra/terraform/digitalocean/state-bucket.tf`, DR-P2-005), not a manual bucket setting. The S3 native lock file (`use_lockfile`) lives in the same bucket (`terraform.tfstate.tflock`), so versioning covers the state and lock objects; this backend does not use DynamoDB locking.
 - **Docker images**: GHCR with SHA-tagged immutable images. Rollback by redeploying a previous SHA tag.
@@ -85,12 +85,16 @@ throwaway PostgreSQL 17 database. Assertions: 140 public tables, 165 applied
 migrations, 425 rows across the critical tables and 0 tables without RLS. The
 manual deep-dive and PITR exercises remain planned.
 
-**Last real storage restore verification:** 2026-11-08 — `storage-restore-test`
+**Last real storage restore exercise:** 2026-11-08 — `storage-restore-test`
 run 42452741103 decrypted the archive from `storage-backup` run 42452717267
 (`s3://mct-mainecybertech/storage-backups/supabase-storage-2026-11-08-055651.tar.gz.enc`,
-1 object) and verified 1 object against the manifest (`object_count: 1`). This is
-verify-only: it does not overwrite a live bucket. The manual D5 scratch-bucket
-recovery remains planned.
+1 object) and verified 1 object against the manifest (`object_count: 1`). A live
+D5 recovery then deleted `storage-drill/README.txt` (167 bytes) and restored it
+from the same archive; the SHA-256 matched and the restored content type was
+`text/plain`. See
+[`runbooks/drills/2026-11-08-storage-live-recovery.md`](runbooks/drills/2026-11-08-storage-live-recovery.md).
+Production storage recovery remains open because the prod portal is not
+deployed and prod backup secrets are not provisioned.
 
 ## Incident Response
 
