@@ -33,7 +33,7 @@ All four backup/restore workflows — `db-backup.yml`, `db-restore-test.yml`,
 
 - **Manual prod run**: dispatch `environment: prod` **from `main`**. The job attaches the approval-gated `prod-approval` environment (required reviewers must be configured in GitHub for the gate to be real).
 - **Scheduled prod run**: set the `PROD_BACKUP_ENABLED` repository variable to `true`. The daily database/storage backups and the weekly restore tests then attach `prod-backup` instead of `dev` (one schedule target at a time; dispatch `environment: dev` manually to keep the dev runs). Create `prod-backup` with the prod backup secrets and **no** required reviewers — an approval-gated environment would leave the unattended run waiting for a human.
-- **Operator dependency (cannot be set from the repo)**: `SUPABASE_DB_URL` (prod), `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` (prod storage), `BACKUP_ENCRYPTION_KEY`, `AWS_*`/`DO_SPACES_*` and `S3_BUCKET`/`S3_PREFIX` must be provisioned in the environment the job attaches — see `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`. Until then, the backups cover dev only and this section is the record of that gap (DR-P2-009 for uploaded files).
+- **Operator dependency (cannot be set from the repo)**: prod `SUPABASE_DB_URL`, prod `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`, prod `BACKUP_ENCRYPTION_KEY`, `AWS_*`/`DO_SPACES_*` and `S3_BUCKET`/`S3_PREFIX` must be provisioned in the environment the prod job attaches — see `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`. The dev database/storage secrets are provisioned and the first dev backup/restore is green; prod coverage remains operator work (DR-P2-009 for uploaded files).
 
 ### Platform backup heartbeat (DR-P2-008)
 
@@ -52,16 +52,13 @@ least one object; real dev and prod backups both count. A manifest-only
 archive therefore cannot mask a broken storage schedule, and an unknown or
 missing manifest is not accepted as proof of a backup.
 
-> **Operator actions required to activate encryption/offsite (audit DR-P1-003):**
-> the code affordance is in place, but the following must be provisioned by an
-> operator and cannot be set from the repo: (1) create the
-> `BACKUP_ENCRYPTION_KEY` secret (a strong passphrase — see
-> `docs/SECRETS_ROTATION.md` for the rotation caveat); (2) create the second
-> bucket and set the `S3_OFFSITE_BUCKET` variable (plus `S3_OFFSITE_PREFIX`) to
-> enable the offsite copy; (3) run `db-backup` manually once to confirm an
-> encrypted object lands in both buckets, and run `db-restore-test` to confirm
-> it decrypts. Until (1) is set, CI uploads fail (the workflows set
-> `REQUIRE_BACKUP_ENCRYPTION=1`) rather than silently writing plaintext.
+> **Operator actions for prod/offsite (audit DR-P1-003):** the dev
+> `BACKUP_ENCRYPTION_KEY` and `SUPABASE_DB_URL` are provisioned; `db-backup`
+> run 42436289022 wrote the first encrypted dump and `db-restore-test` run
+> 42437188270 decrypted and restored it. The prod copies remain operator work:
+> create the prod `BACKUP_ENCRYPTION_KEY` and `SUPABASE_DB_URL` in the prod
+> environment, and create the second bucket/`S3_OFFSITE_BUCKET` if offsite is
+> required. Prod uploads fail closed rather than writing plaintext.
 
 ### Validating RPO/RTO
 
@@ -78,6 +75,12 @@ valid/corrupt/encrypted archives (FILE-P3-004), so the restore assertions run
 even when no backup has landed yet. The 5-minute PITR RPO is **not** yet proven
 by an automated drill; a dated PITR exercise must be recorded before that
 target is claimed as achieved.
+
+**Last real restore exercise:** 2026-11-08 — `db-restore-test` run
+42437188270 restored the encrypted dump from backup run 42436289022 into a
+throwaway PostgreSQL 17 database. Assertions: 140 public tables, 165 applied
+migrations, 425 rows across the critical tables and 0 tables without RLS. The
+manual deep-dive and PITR exercises remain planned.
 
 ## Incident Response
 

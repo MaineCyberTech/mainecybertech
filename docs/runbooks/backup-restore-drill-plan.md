@@ -26,14 +26,14 @@ run by an operator on an isolated target, never against production data.
 4. Redact secrets at all times; capture only key names, exit codes, counts, and timestamps.
 5. Record the drill result in the ledger (see §7) so the next audit can cite a real exercise date.
 
-## 2. Current state snapshot (reconciled 2026-10-12)
+## 2. Current state snapshot (reconciled 2026-11-08)
 
 | Asset | Path | State | Exercised? |
 |---|---|---|---|
-| Daily DB backup workflow | `.github/workflows/db-backup.yml` | Present and scheduled on the default branch (DR-P0-002 fixed); records a platform heartbeat (DR-P2-008) | **No green run yet** — operator backup secrets unprovisioned (DR-P0-001 residual) |
-| Backup script (bash) | `scripts/backup-database.sh` | pg_dump → gzip → S3/Spaces; encryption when `BACKUP_ENCRYPTION_KEY` is set; 30-day retention | `not exercised` |
+| Daily DB backup workflow | `.github/workflows/db-backup.yml` | Present and scheduled; records a platform heartbeat (DR-P2-008) | **Green 2026-11-08** — run 42436289022, encrypted 952K dump |
+| Backup script (bash) | `scripts/backup-database.sh` | pg_dump → gzip → S3/Spaces; encryption when `BACKUP_ENCRYPTION_KEY` is set; 30-day retention | exercised 2026-11-08 (backup run 42436289022) |
 | Backup script (PowerShell) | — | Retired (DR-P3-002); use `scripts/backup-database.sh` via WSL/Git Bash | N/A |
-| Weekly restore test | `.github/workflows/db-restore-test.yml` | Present and scheduled; restores to a temp `postgres:16-alpine` and **asserts** structure/freshness/RLS floors (DR-P0-003, DR-P1-001 fixed) | `not exercised` (same operator residual) |
+| Weekly restore test | `.github/workflows/db-restore-test.yml` | Restores to a temp `postgres:17-alpine`; skips the Supabase-only `vault` schema/extension; pre-creates the Supabase roles; asserts structure/freshness/RLS floors (DR-P0-003, DR-P1-001 fixed) | **Green 2026-11-08** — run 42437188270, 140 tables / 165 migrations / 425 rows / 0 RLS-off |
 | Storage backup | `.github/workflows/storage-backup.yml`, `scripts/backup-storage.sh` | Paginated listing, zero-object refusal, MANIFEST with `object_count`, encryption, offsite option (DR-P2-001 fixed) | `not exercised` |
 | Storage restore test | `.github/workflows/storage-restore-test.yml`, `scripts/restore-storage.sh --verify-only` | Weekly assertions: manifest present, `object_count` == extracted count, archive non-empty (DR-P1-002, DR-P2-002 fixed) | `not exercised` |
 | Manual restore script | `scripts/restore-database.sh` | `--dry-run` supported; stream-decrypt; environment guardrail | `not exercised` |
@@ -74,7 +74,7 @@ For D1 (database restore) the following must all be available and known-good:
 ### D1 — Full database restore from latest backup (weekly)
 
 1. **Preconditions:** read-only credentials to S3/Spaces; a throwaway Postgres container; the newest dump object identified (name + timestamp only, no secrets logged).
-2. Start target: `docker run -d --name drill-pg -e POSTGRES_PASSWORD=<throwaway> -e POSTGRES_DB=drill_restore -p 127.0.0.1:5433:5432 postgres:16-alpine`.
+2. Start target: `docker run -d --name drill-pg -e POSTGRES_PASSWORD=<throwaway> -e POSTGRES_DB=drill_restore -p 127.0.0.1:5433:5432 postgres:17-alpine`.
 3. Download: `aws s3 cp "s3://${S3_BUCKET}/${S3_PREFIX}/<latest>" /tmp/drill.sql.gz`
    (`S3_BUCKET` is a bucket name and `S3_PREFIX` a key prefix — the same
    contract the backup workflows write with, DR-P1-003 / DR-P3-007).
