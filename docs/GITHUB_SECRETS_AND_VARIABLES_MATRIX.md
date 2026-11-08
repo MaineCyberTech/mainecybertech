@@ -228,6 +228,11 @@ attaches `prod-backup` — both must carry the prod rows above (DR-P2-009).
      activate the prod backup target (DATA-P2-010). The prod storage backup
      additionally needs the prod `SUPABASE_URL` /
      `SUPABASE_SERVICE_ROLE_KEY` in the same environment (DR-P2-009)
+   - **Dev status (2026-11-08):** `SUPABASE_DB_URL` and
+     `BACKUP_ENCRYPTION_KEY` are provisioned in `dev`; the Supabase password was
+     rotated and the URL is stored in Vault `secret/kestrel/portal`. First
+     encrypted backup run 42436289022 and restore test run 42437188270 are
+     green. Prod copies remain operator work.
    - `CLOUDFLARE_API_TOKEN` — from Cloudflare dashboard
    - `CLOUDFLARE_ZONE_ID` / `CLOUDFLARE_ZONE_ID_US` — from Cloudflare dashboard
    - `CI_SSH_PRIVATE_KEY` — private key (e.g. `cat ~/.ssh/id_rsa`) for droplet SSH access
