@@ -179,7 +179,8 @@ echo "Archive created: ${ARCHIVE_PATH} ($(du -h "${ARCHIVE_PATH}" | cut -f1))"
 if [ -n "${VERIFY_BACKUP:-}" ]; then
   echo "Verifying archive integrity (tar -tzf)..."
   tar -tzf "${ARCHIVE_PATH}" >/dev/null
-  if ! tar -tzf "${ARCHIVE_PATH}" | grep -qE '(^|/)MANIFEST\.txt$'; then
+  # Same pipefail/SIGPIPE guard as the database header check.
+  if ! (set +o pipefail; tar -tzf "${ARCHIVE_PATH}" | grep -qE '(^|/)MANIFEST\.txt$'); then
     echo "ERROR: archive does not contain MANIFEST.txt" >&2
     exit 1
   fi
