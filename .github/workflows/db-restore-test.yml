@@ -179,11 +179,12 @@ jobs:
             echo "::error::Decompressed dump is empty"
             exit 1
           fi
-          # Supabase-managed extensions are not shipped with the stock
-          # Postgres test image. Skipping only this extension's DDL keeps the
-          # public schema/data restore and all integrity assertions intact.
-          grep -vE '^(CREATE EXTENSION (IF NOT EXISTS )?"?supabase_vault"?|COMMENT ON EXTENSION "?supabase_vault"?|ALTER EXTENSION "?supabase_vault"?)' \
-            /tmp/restore.sql > /tmp/restore.filtered.sql
+          # Supabase-managed extensions and the extension-owned vault schema
+          # are not shipped with the stock Postgres test image. The production
+          # dump stays complete; this filter removes only that schema so the
+          # public schema/data and integrity assertions still run.
+          python3 scripts/filter-restore-sql.py \
+            /tmp/restore.sql /tmp/restore.filtered.sql
           psql "postgresql://postgres:test@localhost:5432/restore_test" \
             -v ON_ERROR_STOP=1 -q -f /tmp/restore.filtered.sql
 
