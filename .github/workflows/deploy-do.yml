@@ -234,7 +234,7 @@ jobs:
       - name: Scan mct-api image (CRITICAL/HIGH)
         # Image-layer scan (CTR-P1-001): the fs scan cannot see base-image OS
         # packages or npm-in-image contents.
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -249,7 +249,7 @@ jobs:
         # SUPPLY-P3-001: emit a digest-bound SBOM on the deploy path so a shipped
         # image can always be tied to its bill of materials (the 30-day workflow
         # artifact alone expires, and build-push.yml is not on the deploy path).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -307,7 +307,7 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Scan mct-worker image (CRITICAL/HIGH)
         # Image-layer scan (CTR-P1-001).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -320,7 +320,7 @@ jobs:
           format: table
       - name: Generate mct-worker image SBOM (CycloneDX)
         # SUPPLY-P3-001: digest-bound SBOM on the deploy path (see build-api).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -383,7 +383,7 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Scan mct-web image (CRITICAL/HIGH)
         # Image-layer scan (CTR-P1-001).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -396,7 +396,7 @@ jobs:
           format: table
       - name: Generate mct-web image SBOM (CycloneDX)
         # SUPPLY-P3-001: digest-bound SBOM on the deploy path (see build-api).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}

@@ -49,7 +49,7 @@ jobs:
       - name: Scan mct-api image (CRITICAL/HIGH)
         # Image-layer scan (CTR-P1-001): the fs scan in test.yml cannot see the
         # Alpine OS packages or npm-in-image contents of the built artifact.
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -64,7 +64,7 @@ jobs:
       - name: Generate mct-api image SBOM (CycloneDX)
         # CTR-P1-002: SBOM of the built image (Alpine OS packages +
         # npm-in-image contents), bound to the pushed digest, not just the tag.
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -127,7 +127,7 @@ jobs:
 
       - name: Scan mct-worker image (CRITICAL/HIGH)
         # Image-layer scan (CTR-P1-001).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -141,7 +141,7 @@ jobs:
 
       - name: Generate mct-worker image SBOM (CycloneDX)
         # CTR-P1-002: image SBOM bound to the pushed digest (see build-api).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -216,7 +216,7 @@ jobs:
 
       - name: Scan mct-web image (CRITICAL/HIGH)
         # Image-layer scan (CTR-P1-001).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -230,7 +230,7 @@ jobs:
 
       - name: Generate mct-web image SBOM (CycloneDX)
         # CTR-P1-002: image SBOM bound to the pushed digest (see build-api).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
