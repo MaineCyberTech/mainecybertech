@@ -262,8 +262,8 @@ importers:
         specifier: ^19.0.0
         version: 19.3.1(react@19.3.1)
       tailwind-merge:
-        specifier: ^2.6.0
-        version: 2.6.1
+        specifier: ^3.7.0
+        version: 3.7.0
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -455,8 +455,8 @@ importers:
         specifier: ^19.0.0
         version: 19.3.1
       tailwind-merge:
-        specifier: ^2.6.0
-        version: 2.6.1
+        specifier: ^3.7.0
+        version: 3.7.0
     devDependencies:
       '@mct/config':
         specifier: workspace:^
@@ -2097,6 +2097,10 @@ packages:
 
   '@opentelemetry/semantic-conventions@1.44.0':
     resolution: {integrity: sha512-E3JkOlMBi3N8OGGkbl7tFyqk2MAS6/lySRZBK3Mu7AzjF1fT8oIChH9ChE48SUWzDn9Kdwta+G/p5LJ4xW4CLQ==}
+    engines: {node: '>=14'}
+
+  '@opentelemetry/semantic-conventions@1.45.0':
+    resolution: {integrity: sha512-aOP45mbcOKbQVvFWfQmgoOPT8R2iwbbbgl83k4CujGV9BrJhFr3qG55MFpwFs4YLabpuW3HhzUY9eQxPlDqaZw==}
     engines: {node: '>=14'}
 
   '@paralleldrive/cuid2@2.3.1':
@@ -6840,8 +6844,8 @@ packages:
     resolution: {integrity: sha512-eNRKgb3z66Yp3D2CixVujOUvXLFUTij/zVnV8KRyvFdQwpz7I5DS8UfRkTeLzb64u+dkzDSdelE24izu+zSSUg==}
     engines: {node: ^14.18.0 || >=16.0.0}
 
-  tailwind-merge@2.6.1:
-    resolution: {integrity: sha512-Oo6tHdpZsGpkKG88HJ8RR1rg/RdnEkQEfMoEk2x1XRI3F1AxeU+ijRXpiVUF4UbLfcxxRGw6TbUINKYdWVsQTQ==}
+  tailwind-merge@3.7.0:
+    resolution: {integrity: sha512-XPPUyAc+cvspz3lHTcR/QgPfW2A0lv/xQNIjX3HGhLR+Nq2lHaLq5MtTesHn8GUr3W3DguT2KT5x3NVgRtYwmA==}
 
   tailwindcss@3.4.19:
     resolution: {integrity: sha512-3ofp+LL8E+pK/JuPLPggVAIaEuhvIz4qNcf3nA1Xn2o/7fb7s/TYpHhwGDv1ZU3PkBluUVaF8PyCHcm48cKLWQ==}
@@ -9230,12 +9234,12 @@ snapshots:
   '@opentelemetry/core@3.0.0(@opentelemetry/api@1.10.0)':
     dependencies:
       '@opentelemetry/api': 1.10.0
-      '@opentelemetry/semantic-conventions': 1.44.0
+      '@opentelemetry/semantic-conventions': 1.45.0
 
   '@opentelemetry/core@3.0.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/semantic-conventions': 1.44.0
+      '@opentelemetry/semantic-conventions': 1.45.0
 
   '@opentelemetry/instrumentation@0.220.0(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -9268,6 +9272,8 @@ snapshots:
       '@opentelemetry/semantic-conventions': 1.44.0
 
   '@opentelemetry/semantic-conventions@1.44.0': {}
+
+  '@opentelemetry/semantic-conventions@1.45.0': {}
 
   '@paralleldrive/cuid2@2.3.1':
     dependencies:
@@ -14926,7 +14932,7 @@ snapshots:
     dependencies:
       '@pkgr/core': 0.3.6
 
-  tailwind-merge@2.6.1: {}
+  tailwind-merge@3.7.0: {}
 
   tailwindcss@3.4.19(tsx@4.23.15)(yaml@2.9.1):
     dependencies:
