@@ -18,7 +18,7 @@
     "@mct/config": "workspace:^",
     "@mct/sdk": "workspace:^",
     "@sentry/node": "^10.56.0",
-    "@supabase/realtime-js": "2.106.2",
+    "@supabase/realtime-js": "2.119.0",
     "@supabase/supabase-js": "^2.49.1",
     "bullmq": "^6.7.1",
     "dotenv": "^18.0.9",
