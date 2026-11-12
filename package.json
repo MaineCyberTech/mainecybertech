@@ -50,7 +50,7 @@
     "storybook": "^8.6.19",
     "supabase": "^2.120.0",
     "turbo": "^2.9.18",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
