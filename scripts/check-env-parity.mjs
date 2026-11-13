@@ -55,6 +55,16 @@ export const EXTERNAL_KEYS = {
     NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED: "read directly by lib/test-accounts.ts",
     API_INTERNAL_URL: "server-side SSR runtime override for lib/api.ts (ARCH-P3-003)",
     APP_BASE_URL: "public web origin for absolute auth redirects",
+    ALGA_PSA_INTAKE_ENABLED:
+      "server-only Alga PSA ticket-intake feature flag (lib/alga-psa/config.ts)",
+    ALGA_PSA_BASE_URL: "server-only Alga PSA API base URL (lib/alga-psa/config.ts)",
+    ALGA_PSA_API_KEY: "server-only Alga PSA API key (lib/alga-psa/config.ts); never logged",
+    ALGA_PSA_CLIENT_ID: "server-only default Alga PSA client UUID (lib/alga-psa/config.ts)",
+    ALGA_PSA_BOARD_ID: "server-only Alga PSA board UUID (lib/alga-psa/config.ts)",
+    ALGA_PSA_STATUS_ID: "server-only Alga PSA status UUID (lib/alga-psa/config.ts)",
+    ALGA_PSA_PRIORITY_ID: "server-only Alga PSA priority UUID (lib/alga-psa/config.ts)",
+    ALGA_PSA_CLIENT_MAP:
+      "optional server-only portal-org to PSA-client JSON allowlist (lib/alga-psa/config.ts)",
   },
 };
 

@@ -18,6 +18,14 @@
 | `NEXT_PUBLIC_API_URL`                   | Yes      | — (local compose uses `http://localhost:4000`) | URL of the API server, inlined into the client bundle at build time; the web image build fails when the arg is absent (SECRET-P3-002) |
 | `API_INTERNAL_URL`                      | No       | —                      | Server-side SSR override for the API base URL (falls back to `NEXT_PUBLIC_API_URL`); ARCH-P3-003 |
 | `APP_BASE_URL`                          | No       | request origin         | Public web origin used for absolute auth redirects; required when the container origin is not the public hostname |
+| `ALGA_PSA_INTAKE_ENABLED`               | No       | `false`                | Feature flag for Alga PSA ticket intake (ADR 0001). Only the literal `true` enables it; all required Alga settings must also be valid, otherwise the portal keeps the existing Supabase path |
+| `ALGA_PSA_BASE_URL`                     | With intake | —                  | Alga PSA API base including `/api/v1` (e.g. `https://psa.example.test/api/v1`); server-only |
+| `ALGA_PSA_API_KEY`                      | With intake | —                 | Least-privilege Alga PSA API key (sent as `x-api-key`); server-only and never logged |
+| `ALGA_PSA_CLIENT_ID`                    | With intake | —                 | Default Alga PSA client UUID for portal intake; per-organization values can be supplied by `ALGA_PSA_CLIENT_MAP` |
+| `ALGA_PSA_BOARD_ID`                     | With intake | —                 | Alga PSA board UUID for new intake tickets |
+| `ALGA_PSA_STATUS_ID`                    | With intake | —                 | Alga PSA initial status UUID for new intake tickets |
+| `ALGA_PSA_PRIORITY_ID`                  | With intake | —                 | Alga PSA initial priority UUID for new intake tickets |
+| `ALGA_PSA_CLIENT_MAP`                   | No       | —                      | Optional JSON allowlist mapping portal organization UUIDs to Alga client UUIDs. When set, only mapped organizations use PSA intake; unmapped organizations stay on Supabase |
 | `NODE_ENV`                              | No       | `development`          | Node environment                                                                            |
 | `NEXT_PUBLIC_GA_ID`                     | No       | —                      | Google Analytics measurement ID (e.g. `G-XXXXXXXXXX`)                                       |
 | `NEXT_PUBLIC_TAWKTO_ID`                 | No       | —                      | Tawk.to widget ID (e.g. `66898d27e1e4f70f24ee3260/1i24kuosn`)                               |
