@@ -9,6 +9,13 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ## [Unreleased]
 
+### Brand assets
+
+- **Level notification wordmark:** added transparent light and dark
+  `MAINE CYBERTECH` wordmark PNGs (3360×320 and 1680×160) and SVG sources for
+  Level organization notification branding under
+  `apps/web/public/brand/level-notification/`.
+
 ### Nov 7 delta-audit remediation
 
 - **Client comment isolation (SEC-P1-012):** clients no longer receive
