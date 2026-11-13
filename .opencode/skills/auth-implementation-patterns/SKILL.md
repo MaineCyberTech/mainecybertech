@@ -518,17 +518,17 @@ const passwordSchema = z.string()
     .regex(/[^A-Za-z0-9]/, 'Password must contain special character');
 
 // Hash password
-async function hashPassword(password: string): Promise<string> {
+async function hashPassword(secret: string): Promise<string> {
     const saltRounds = 12;  // 2^12 iterations
-    return bcrypt.hash(password, saltRounds);
+    return bcrypt.hash(secret, saltRounds);
 }
 
 // Verify password
 async function verifyPassword(
-    password: string,
+    secret: string,
     hash: string
 ): Promise<boolean> {
-    return bcrypt.compare(password, hash);
+    return bcrypt.compare(secret, hash);
 }
 
 // Registration with password validation
