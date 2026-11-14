@@ -7,11 +7,11 @@ const mockGetApiClient = jest.fn().mockReturnValue({
 const mockGetApprovedMembership = jest.fn();
 const mockRevalidatePath = jest.fn();
 const mockGetAlgaPsaIntakeConfig = jest.fn();
-const mockCreateIntakeTicket = jest.fn();
+const mockEnsureIntakeTicket = jest.fn();
 
 jest.mock("@/lib/alga-psa", () => ({
   getAlgaPsaIntakeConfig: mockGetAlgaPsaIntakeConfig,
-  createIntakeTicket: mockCreateIntakeTicket,
+  ensureIntakeTicket: mockEnsureIntakeTicket,
 }));
 
 jest.mock("@/lib/api", () => ({
@@ -138,7 +138,7 @@ describe("createPortalTicket", () => {
 
     const result = await createPortalTicket(formData);
 
-    expect(mockCreateIntakeTicket).not.toHaveBeenCalled();
+    expect(mockEnsureIntakeTicket).not.toHaveBeenCalled();
     expect(mockTicketsCreate).toHaveBeenCalledWith(expect.objectContaining({ source: "portal" }));
     expect(result).toEqual({ ok: true, ticketId: "ticket-9", subject: "Test ticket" });
   });
@@ -154,7 +154,7 @@ describe("createPortalTicket", () => {
       priorityId: "44444444-4444-4444-8444-444444444444",
     };
     mockGetAlgaPsaIntakeConfig.mockReturnValue(algaConfig);
-    mockCreateIntakeTicket.mockResolvedValue({
+    mockEnsureIntakeTicket.mockResolvedValue({
       id: "psa-ticket-1",
       number: "T-1042",
       title: "Test ticket",
@@ -171,7 +171,7 @@ describe("createPortalTicket", () => {
     const result = await createPortalTicket(formData);
 
     expect(mockGetAlgaPsaIntakeConfig).toHaveBeenCalledWith("org-1");
-    expect(mockCreateIntakeTicket).toHaveBeenCalledWith({
+    expect(mockEnsureIntakeTicket).toHaveBeenCalledWith({
       config: algaConfig,
       title: "Test ticket",
       description: "Help needed",
@@ -179,12 +179,64 @@ describe("createPortalTicket", () => {
       portalPriority: "high",
       portalCategory: "billing",
       portalBaseUrl: process.env.APP_BASE_URL,
+      externalId: undefined,
     });
     expect(mockTicketsCreate).not.toHaveBeenCalled();
     expect(mockRevalidatePath).toHaveBeenCalledWith("/portal/support");
     // The PSA id is not a portal ticket id, so the action suppresses the
     // portal detail link instead of producing a broken URL.
     expect(result).toEqual({ ok: true, ticketId: "", subject: "Test ticket" });
+  });
+
+  it("passes a valid form submission id through as the idempotency key", async () => {
+    mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
+    mockGetAlgaPsaIntakeConfig.mockReturnValue({
+      baseUrl: "https://psa.example.test/api/v1",
+      apiKey: "test-api-key",
+      clientId: "11111111-1111-4111-8111-111111111111",
+      boardId: "22222222-2222-4222-8222-222222222222",
+      statusId: "33333333-3333-4333-8333-333333333333",
+      priorityId: "44444444-4444-4444-8444-444444444444",
+    });
+    mockEnsureIntakeTicket.mockResolvedValue({ id: "psa-ticket-1", number: null, title: null });
+
+    const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
+
+    const formData = new FormData();
+    formData.set("subject", "Test ticket");
+    formData.set("submissionId", "66666666-6666-4666-8666-666666666666");
+
+    const result = await createPortalTicket(formData);
+
+    expect(mockEnsureIntakeTicket).toHaveBeenCalledWith(
+      expect.objectContaining({ externalId: "66666666-6666-4666-8666-666666666666" }),
+    );
+    expect(result).toEqual({ ok: true, ticketId: "", subject: "Test ticket" });
+  });
+
+  it("ignores a malformed submission id so the server can generate one", async () => {
+    mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
+    mockGetAlgaPsaIntakeConfig.mockReturnValue({
+      baseUrl: "https://psa.example.test/api/v1",
+      apiKey: "test-api-key",
+      clientId: "11111111-1111-4111-8111-111111111111",
+      boardId: "22222222-2222-4222-8222-222222222222",
+      statusId: "33333333-3333-4333-8333-333333333333",
+      priorityId: "44444444-4444-4444-8444-444444444444",
+    });
+    mockEnsureIntakeTicket.mockResolvedValue({ id: "psa-ticket-1", number: null, title: null });
+
+    const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
+
+    const formData = new FormData();
+    formData.set("subject", "Test ticket");
+    formData.set("submissionId", "not-a-uuid");
+
+    await createPortalTicket(formData);
+
+    expect(mockEnsureIntakeTicket).toHaveBeenCalledWith(
+      expect.objectContaining({ externalId: undefined }),
+    );
   });
 
   it("returns an error and never falls back to Supabase when Alga rejects the ticket", async () => {
@@ -197,7 +249,7 @@ describe("createPortalTicket", () => {
       statusId: "33333333-3333-4333-8333-333333333333",
       priorityId: "44444444-4444-4444-8444-444444444444",
     });
-    mockCreateIntakeTicket.mockRejectedValue(
+    mockEnsureIntakeTicket.mockRejectedValue(
       new Error("Alga PSA rejected ticket intake (HTTP 422 system_not_found)."),
     );
 

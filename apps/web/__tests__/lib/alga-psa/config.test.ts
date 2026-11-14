@@ -47,7 +47,56 @@ describe("Alga PSA intake configuration", () => {
       boardId: "22222222-2222-4222-8222-222222222222",
       statusId: "33333333-3333-4333-8333-333333333333",
       priorityId: "44444444-4444-4444-8444-444444444444",
+      priorityMap: null,
     });
+  });
+
+  it("parses a complete portal-priority map", () => {
+    const env = {
+      ...BASE_ENV,
+      ALGA_PSA_PRIORITY_MAP: JSON.stringify({
+        low: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        normal: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        high: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        urgent: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      }),
+    };
+
+    expect(getAlgaPsaIntakeConfig(undefined, env)?.priorityMap).toEqual({
+      low: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      normal: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      high: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      urgent: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    });
+  });
+
+  it("fails closed when the priority map is partial, unknown-keyed, or malformed", () => {
+    const partial = readAlgaPsaIntakeConfig({
+      ...BASE_ENV,
+      ALGA_PSA_PRIORITY_MAP: JSON.stringify({ high: "cccccccc-cccc-4ccc-8ccc-cccccccccccc" }),
+    });
+    expect(partial.enabled).toBe(false);
+    expect(partial.reason).toBe("invalid");
+    expect(partial.invalid).toEqual(["ALGA_PSA_PRIORITY_MAP"]);
+
+    const unknownKey = readAlgaPsaIntakeConfig({
+      ...BASE_ENV,
+      ALGA_PSA_PRIORITY_MAP: JSON.stringify({
+        low: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        normal: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        high: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        critical: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      }),
+    });
+    expect(unknownKey.enabled).toBe(false);
+    expect(unknownKey.invalid).toEqual(["ALGA_PSA_PRIORITY_MAP"]);
+
+    const malformed = readAlgaPsaIntakeConfig({
+      ...BASE_ENV,
+      ALGA_PSA_PRIORITY_MAP: "{not-json",
+    });
+    expect(malformed.enabled).toBe(false);
+    expect(malformed.invalid).toEqual(["ALGA_PSA_PRIORITY_MAP"]);
   });
 
   it("reports missing names, never values, when required settings are absent", () => {

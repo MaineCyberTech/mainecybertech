@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createIntakeTicket, getAlgaPsaIntakeConfig } from "@/lib/alga-psa";
+import { ensureIntakeTicket, getAlgaPsaIntakeConfig } from "@/lib/alga-psa";
 import { getApiClient } from "@/lib/api";
 import { formErrorMessage } from "@/lib/api-error";
 import { getApprovedMembership } from "@/lib/auth/membership";
@@ -9,6 +9,8 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 const ALGA_INTAKE_ERROR =
   "We couldn't submit your ticket to our service desk. No ticket was created. " +
   "Please try again, or email support@mainecybertech.com.";
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
  * USE-P3-001: the live portal ticket-create action.
@@ -22,6 +24,11 @@ const ALGA_INTAKE_ERROR =
  * portal organization, the ticket is created in the PSA instead of Supabase.
  * The two paths are exclusive — a failed PSA create returns an error and never
  * falls back to a second write in Supabase.
+ *
+ * Idempotency: the form supplies a `submissionId` that stays stable across a
+ * double-click or a retry after a timeout. The PSA adapter looks that key up
+ * before creating, so a retry returns the existing ticket instead of a
+ * duplicate. A missing or malformed key falls back to a fresh UUID.
  */
 export async function createPortalTicket(formData: FormData) {
   try {
@@ -36,6 +43,8 @@ export async function createPortalTicket(formData: FormData) {
     const description = String(formData.get("description") ?? "").trim();
     const priority = String(formData.get("priority") ?? "normal").trim();
     const category = String(formData.get("category") ?? "").trim();
+    const rawSubmissionId = String(formData.get("submissionId") ?? "").trim();
+    const submissionId = UUID_PATTERN.test(rawSubmissionId) ? rawSubmissionId : undefined;
 
     if (!subject) {
       return { ok: false as const, error: "Title is required." };
@@ -44,7 +53,7 @@ export async function createPortalTicket(formData: FormData) {
     const algaConfig = getAlgaPsaIntakeConfig(membership.organization_id);
     if (algaConfig) {
       try {
-        const algaTicket = await createIntakeTicket({
+        const algaTicket = await ensureIntakeTicket({
           config: algaConfig,
           title: subject,
           description: description || null,
@@ -52,6 +61,7 @@ export async function createPortalTicket(formData: FormData) {
           portalPriority: priority,
           portalCategory: category || null,
           portalBaseUrl: process.env.APP_BASE_URL,
+          externalId: submissionId,
         });
 
         // The PSA ticket already exists. A cache-refresh failure must not turn

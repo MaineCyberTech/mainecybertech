@@ -31,13 +31,23 @@ const UUID_KEYS = [
   "ALGA_PSA_PRIORITY_ID",
 ] as const;
 
+/** Portal priorities are the only values the support form can submit. */
+export const PORTAL_TICKET_PRIORITIES = ["low", "normal", "high", "urgent"] as const;
+export type PortalTicketPriority = (typeof PORTAL_TICKET_PRIORITIES)[number];
+
 export interface AlgaPsaIntakeConfig {
   baseUrl: string;
   apiKey: string;
   clientId: string;
   boardId: string;
   statusId: string;
+  /** Fallback PSA priority when no per-portal-priority mapping is configured. */
   priorityId: string;
+  /**
+   * Optional per-priority PSA UUIDs. When present, every portal priority maps
+   * to its own PSA priority instead of collapsing to `priorityId`.
+   */
+  priorityMap?: Record<PortalTicketPriority, string> | null;
 }
 
 export type AlgaPsaConfigReason = "disabled" | "incomplete" | "invalid" | null;
@@ -89,6 +99,31 @@ function parseClientMap(raw: string): Record<string, string> | null {
 }
 
 /**
+ * Parse the optional portal-priority -> PSA-priority map. All four portal
+ * priorities must be present with valid UUIDs: a partial map would silently
+ * collapse an unmapped priority to the fallback and lose the operator's
+ * intent. An empty value means "not configured".
+ */
+function parsePriorityMap(raw: string): Record<PortalTicketPriority, string> | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const entries = Object.entries(parsed as Record<string, unknown>);
+    if (entries.length !== PORTAL_TICKET_PRIORITIES.length) return null;
+    const map = {} as Record<PortalTicketPriority, string>;
+    for (const [priority, value] of entries) {
+      if (!(PORTAL_TICKET_PRIORITIES as readonly string[]).includes(priority)) return null;
+      if (typeof value !== "string" || !UUID_PATTERN.test(value.trim())) return null;
+      map[priority as PortalTicketPriority] = value.trim();
+    }
+    return map;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Inspect the environment without throwing. `portalOrganizationId` is used to
  * resolve the optional `ALGA_PSA_CLIENT_MAP`; when the map is configured, an
  * unmapped portal organization is intentionally not routed to the PSA.
@@ -116,6 +151,10 @@ export function readAlgaPsaIntakeConfig(
   const rawMap = read(env, "ALGA_PSA_CLIENT_MAP");
   const clientMap = parseClientMap(rawMap);
   if (rawMap && !clientMap) invalid.push("ALGA_PSA_CLIENT_MAP");
+
+  const rawPriorityMap = read(env, "ALGA_PSA_PRIORITY_MAP");
+  const priorityMap = parsePriorityMap(rawPriorityMap);
+  if (rawPriorityMap && !priorityMap) invalid.push("ALGA_PSA_PRIORITY_MAP");
 
   if (missing.length > 0 || invalid.length > 0) {
     return {
@@ -147,6 +186,7 @@ export function readAlgaPsaIntakeConfig(
       boardId: read(env, "ALGA_PSA_BOARD_ID"),
       statusId: read(env, "ALGA_PSA_STATUS_ID"),
       priorityId: read(env, "ALGA_PSA_PRIORITY_ID"),
+      priorityMap,
     },
     missing: [],
     invalid: [],
