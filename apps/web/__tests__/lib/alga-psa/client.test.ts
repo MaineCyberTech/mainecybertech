@@ -258,6 +258,28 @@ describe("findIntakeTicket", () => {
     ).rejects.toMatchObject({ status: 401, code: "UNAUTHORIZED" });
   });
 
+  it("rejects an external id linked to another portal organization", async () => {
+    const fetchMock = jest.fn().mockResolvedValue(
+      response({
+        data: {
+          ticket_id: "psa-ticket-other",
+          link: { system: "client_portal", realm: "another-portal-org" },
+        },
+      }),
+    );
+
+    await expect(
+      findIntakeTicket(
+        {
+          config: CONFIG,
+          externalId: "66666666-6666-4666-8666-666666666666",
+          portalOrganizationId: "55555555-5555-4555-8555-555555555555",
+        },
+        fetchMock as unknown as typeof fetch,
+      ),
+    ).rejects.toMatchObject({ status: 409, code: "external_id_realm_mismatch" });
+  });
+
   it("maps a lookup network failure to a 502", async () => {
     const fetchMock = jest.fn().mockRejectedValue(new Error("connect ECONNREFUSED"));
 

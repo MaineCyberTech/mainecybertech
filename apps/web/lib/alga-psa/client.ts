@@ -62,6 +62,11 @@ export interface FindIntakeTicketInput {
   config: AlgaPsaIntakeConfig;
   /** The same key supplied to `createIntakeTicket` as `externalId`. */
   externalId: string;
+  /**
+   * When set, a link whose `realm` names a different portal organization is
+   * treated as a collision instead of being returned.
+   */
+  portalOrganizationId?: string | null;
 }
 
 /** Resolve the PSA priority for a portal priority, falling back to the default. */
@@ -268,7 +273,10 @@ export async function findIntakeTicket(
   );
 
   // 404 is the documented "no ticket carries that external record" answer.
-  if (response.status === 404) return null;
+  if (response.status === 404) {
+    await response.text().catch(() => "");
+    return null;
+  }
 
   const payload = parseJsonBody(await response.text().catch(() => ""));
   if (!response.ok) {
@@ -280,6 +288,16 @@ export async function findIntakeTicket(
     stringOrNull(data?.ticket_id) ?? stringOrNull(data?.id) ?? stringOrNull(data?.ticketId);
   if (!id) {
     throw new AlgaPsaError("Alga PSA ticket lookup returned no ticket id.", 502);
+  }
+
+  const link = (data as { link?: { realm?: unknown } } | null)?.link;
+  const realm = stringOrNull(link?.realm);
+  if (input.portalOrganizationId && realm && realm !== input.portalOrganizationId) {
+    throw new AlgaPsaError(
+      "Alga PSA ticket lookup found the external id under a different portal organization.",
+      409,
+      "external_id_realm_mismatch",
+    );
   }
 
   return {
@@ -302,7 +320,14 @@ export async function ensureIntakeTicket(
   fetchImpl: typeof fetch = fetch,
 ): Promise<AlgaIntakeTicket> {
   const externalId = normalizeExternalId(input.externalId);
-  const existing = await findIntakeTicket({ config: input.config, externalId }, fetchImpl);
+  const existing = await findIntakeTicket(
+    {
+      config: input.config,
+      externalId,
+      portalOrganizationId: input.portalOrganizationId,
+    },
+    fetchImpl,
+  );
   if (existing) return existing;
 
   try {
@@ -313,7 +338,14 @@ export async function ensureIntakeTicket(
       error.status === 409 &&
       error.code === "duplicate_external_link"
     ) {
-      const winner = await findIntakeTicket({ config: input.config, externalId }, fetchImpl);
+      const winner = await findIntakeTicket(
+        {
+          config: input.config,
+          externalId,
+          portalOrganizationId: input.portalOrganizationId,
+        },
+        fetchImpl,
+      );
       if (winner) return winner;
     }
     throw error;
