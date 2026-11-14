@@ -5,11 +5,13 @@ description: Operate the MCT Microsoft 365 / Exchange Online tenant, custom doma
 
 # M365 Exchange Ops
 
-MCT's Microsoft 365 tenant is `eddb17c0-b7df-464f-a533-831123c7378d`, initial
-domain `mainecybertechad.onmicrosoft.com`. `mainecybertech.com` is live on
-Exchange Online; `mainecybertech.us` is **pending**.
+The production Microsoft 365 tenant is `eddb17c0-b7df-464f-a533-831123c7378d`,
+initial domain `mainecybertechad.onmicrosoft.com`; `mainecybertech.com` is live
+there. **Do not modify production while testing `.us`.** A new dev tenant is the
+target for `mainecybertech.us`; see `docs/runbooks/M365-DEV-TENANT.md`.
 
-Runbook: `docs/runbooks/M365-EXCHANGE.md`
+Runbooks: `docs/runbooks/M365-EXCHANGE.md` (production/reference) and
+`docs/runbooks/M365-DEV-TENANT.md` (isolated dev tenant).
 Integration map: `docs/analysis/MICROSOFT-INTEGRATION-MAP.md`
 
 ## Tenant facts
@@ -26,6 +28,8 @@ Integration map: `docs/analysis/MICROSOFT-INTEGRATION-MAP.md`
 ## Authentication
 
 - Human admin: Global Administrator / Exchange Administrator with MFA.
+- The bootstrap script requires an explicit `-TenantId`; do not default to the
+  production tenant. Use the dev tenant for `.us` testing.
 - Interactive bootstrap: `scripts/m365-device-login.py` uses the Azure CLI
   public client and writes a root-only Graph token. Use only on a trusted admin
   workstation.
