@@ -188,6 +188,21 @@ describe("createIntakeTicket", () => {
     ).rejects.toMatchObject({ status: 502 });
   });
 
+  it("records the portal user id as a non-PII audit attribute", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(response({ data: { ticket_id: "psa-ticket-user" } }));
+
+    await createIntakeTicket(
+      { ...baseInput(), portalUserId: "77777777-7777-4777-8777-777777777777" },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(String(init.body)) as { attributes: Record<string, unknown> };
+    expect(body.attributes.portal_user_id).toBe("77777777-7777-4777-8777-777777777777");
+  });
+
   it("uses the per-portal-priority PSA id when a priority map is configured", async () => {
     const fetchMock = jest
       .fn()

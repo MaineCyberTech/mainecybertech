@@ -47,6 +47,8 @@ export interface CreateIntakeTicketInput {
   title: string;
   description?: string | null;
   portalOrganizationId: string;
+  /** Authenticated portal user UUID, recorded as a non-PII audit attribute. */
+  portalUserId?: string | null;
   portalPriority?: string | null;
   portalCategory?: string | null;
   /** Absolute portal origin used in the external link, e.g. https://app.example. */
@@ -116,6 +118,8 @@ function buildTicketBody(input: CreateIntakeTicketInput, externalId: string) {
   };
   const description = input.description?.trim();
   if (description) attributes.description = description;
+  const portalUserId = input.portalUserId?.trim();
+  if (portalUserId) attributes.portal_user_id = portalUserId;
   if (input.portalPriority?.trim()) attributes.portal_priority = input.portalPriority.trim();
   if (input.portalCategory?.trim()) attributes.portal_category = input.portalCategory.trim();
 

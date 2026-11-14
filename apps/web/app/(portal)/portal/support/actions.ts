@@ -58,6 +58,7 @@ export async function createPortalTicket(formData: FormData) {
           title: subject,
           description: description || null,
           portalOrganizationId: membership.organization_id,
+          portalUserId: membership.userId,
           portalPriority: priority,
           portalCategory: category || null,
           portalBaseUrl: process.env.APP_BASE_URL,

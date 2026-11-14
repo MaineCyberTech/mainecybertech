@@ -9,6 +9,8 @@ type ResolvedMembership = {
   status: string;
   organization_id: string;
   role_id: string | null;
+  /** Authenticated portal user id (used for audit attributes, never email). */
+  userId: string;
   organizations?: Organization | null;
   isPlatformAdmin: boolean;
 };
@@ -54,6 +56,7 @@ async function loadApprovedMembership(): Promise<ResolvedMembership | null> {
       status: m.status,
       organization_id: m.organization_id,
       role_id: m.role_id,
+      userId: user.userId,
       organizations: m.organizations ?? null,
       isPlatformAdmin: m.roles?.key === "admin" || m.roles?.key === "super_admin",
     });
@@ -71,6 +74,7 @@ async function loadApprovedMembership(): Promise<ResolvedMembership | null> {
         status: "approved",
         organization_id: activeOrgId,
         role_id: null,
+        userId: user.userId,
         organizations: null,
         isPlatformAdmin: true,
       };
@@ -82,6 +86,7 @@ async function loadApprovedMembership(): Promise<ResolvedMembership | null> {
             status: "",
             organization_id: "",
             role_id: null,
+            userId: user.userId,
             organizations: null,
             isPlatformAdmin: false,
           };
@@ -92,6 +97,7 @@ async function loadApprovedMembership(): Promise<ResolvedMembership | null> {
       status: membership.status,
       organization_id: membership.organization_id,
       role_id: membership.role_id,
+      userId: membership.userId,
       organizations: membership.organizations ?? null,
       isPlatformAdmin: membership.isPlatformAdmin === true || isPlatformAdmin,
     };
