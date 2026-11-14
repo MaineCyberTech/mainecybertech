@@ -50,6 +50,7 @@ returned in an error, or sent anywhere except the configured PSA base URL.
   "attributes": {
     "description": "...",
     "portal_organization_id": "<portal-org-uuid>",
+    "portal_user_id": "<portal-user-uuid>",
     "portal_priority": "high",
     "portal_category": "hardware",
     "portal_external_id": "<uuid>",
@@ -88,6 +89,9 @@ Notes:
 - `ALGA_PSA_PRIORITY_MAP` is optional. When set, all four portal priorities
   must map to valid PSA UUIDs; otherwise intake stays disabled. Without the
   map, every ticket uses `ALGA_PSA_PRIORITY_ID`.
+- `attributes.portal_user_id` records the authenticated portal user UUID.
+  Alga's `entered_by` is the API key's service user, so this attribute is the
+  only submitter audit trail until portal users are mapped to PSA contacts.
 
 ## Alga contract verification (2026-11-13, pinned source)
 
