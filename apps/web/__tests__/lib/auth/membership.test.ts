@@ -60,6 +60,7 @@ describe("getApprovedMembership", () => {
       status: "approved",
       organization_id: "org-1",
       role_id: "role-1",
+      userId: "user-1",
       organizations: { name: "Test Org" },
       isPlatformAdmin: false,
     });
