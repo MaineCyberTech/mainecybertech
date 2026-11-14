@@ -206,6 +206,18 @@ export function getAlgaPsaIntakeConfig(
   return readAlgaPsaIntakeConfig(env, portalOrganizationId).config;
 }
 
+/**
+ * Returns the full configuration status, including why intake is disabled.
+ * Callers that must distinguish "flag off / tenant unmapped" from
+ * "flag on but misconfigured" use this instead of `getAlgaPsaIntakeConfig`.
+ */
+export function getAlgaPsaIntakeStatus(
+  portalOrganizationId?: string | null,
+  env: NodeJS.ProcessEnv = process.env,
+): AlgaPsaConfigStatus {
+  return readAlgaPsaIntakeConfig(env, portalOrganizationId);
+}
+
 /** True only when the flag is on and every required value is valid. */
 export function isAlgaPsaIntakeEnabled(
   portalOrganizationId?: string | null,

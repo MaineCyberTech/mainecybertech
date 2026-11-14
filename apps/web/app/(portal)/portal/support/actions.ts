@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { ensureIntakeTicket, getAlgaPsaIntakeConfig } from "@/lib/alga-psa";
+import { ensureIntakeTicket, getAlgaPsaIntakeStatus } from "@/lib/alga-psa";
 import { getApiClient } from "@/lib/api";
 import { formErrorMessage } from "@/lib/api-error";
 import { getApprovedMembership } from "@/lib/auth/membership";
@@ -50,7 +50,16 @@ export async function createPortalTicket(formData: FormData) {
       return { ok: false as const, error: "Title is required." };
     }
 
-    const algaConfig = getAlgaPsaIntakeConfig(membership.organization_id);
+    const algaStatus = getAlgaPsaIntakeStatus(membership.organization_id);
+
+    // A half-configured PSA path must not silently fall back to Supabase: that
+    // is the dual-write window the cutover is trying to close. A disabled flag
+    // or an unmapped tenant (reason "disabled") keeps the old path by design.
+    if (algaStatus.reason === "incomplete" || algaStatus.reason === "invalid") {
+      return { ok: false as const, error: ALGA_INTAKE_ERROR };
+    }
+
+    const algaConfig = algaStatus.config;
     if (algaConfig) {
       try {
         const algaTicket = await ensureIntakeTicket({

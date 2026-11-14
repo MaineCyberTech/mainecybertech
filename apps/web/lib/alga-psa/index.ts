@@ -3,6 +3,7 @@ import "server-only";
 export {
   PORTAL_TICKET_PRIORITIES,
   getAlgaPsaIntakeConfig,
+  getAlgaPsaIntakeStatus,
   isAlgaPsaIntakeEnabled,
   readAlgaPsaIntakeConfig,
   type AlgaPsaConfigReason,
