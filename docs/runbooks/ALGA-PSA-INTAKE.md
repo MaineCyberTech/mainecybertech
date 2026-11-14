@@ -115,6 +115,14 @@ Checked against `/tmp/opencode/repos/alga-psa` (`origin/main`, commit
   displayed from `attributes.description`, and a post-create failure must not
   turn a successful ticket into a retry/duplicate. Any future comment path must
   treat the comment as best-effort and still return success for the ticket.
+- **Idempotency lookup:** `GET /api/v1/tickets/by-external-link?system=…&external_id=…`
+  is implemented at the pinned commit
+  (`server/src/app/api/v1/tickets/by-external-link/route.ts`,
+  `ApiTicketController.findByExternalLink`). It returns the ticket id and the
+  matching link, or 404. Inline `external_links` on create are written in the
+  same transaction and a duplicate is rejected with 409
+  `duplicate_external_link` (`externalLinkPersistence.ts`); the adapter handles
+  that as a race and looks the winner up.
 
 ## Known limitations of this first step
 
