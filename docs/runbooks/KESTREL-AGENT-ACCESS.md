@@ -49,6 +49,19 @@ Current reachability from `mct-portal-dev` over the tunnel/public edge:
 A `Connection reset` or timeout means the tunnel or route is down; fix that
 before touching the token. Do not publish the broker through Cloudflare.
 
+## Kestrel Identity SSO
+
+The portal's Kestrel Identity login is the Supabase `custom:authelia` provider,
+not a broker token. The droplet does not hold the OIDC client secret; Supabase
+does. Verify the start route returns a Supabase authorize URL:
+
+```sh
+curl -sS -X POST https://api.mainecybertech.us/api/v1/auth/sso |
+  jq -r 'if .success then "sso_start=ok" else "sso_start=failed" end'
+```
+
+Do not print or persist `cookieValue`; it is the PKCE verifier.
+
 ## Install or refresh the token
 
 The token is managed by the Kestrel admin host `800g2`. Copy it root-to-root;
