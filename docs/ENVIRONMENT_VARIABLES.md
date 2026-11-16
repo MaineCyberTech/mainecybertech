@@ -24,7 +24,8 @@
 | `ALGA_PSA_CLIENT_ID`                    | With intake | —                 | Default Alga PSA client UUID for portal intake; per-organization values can be supplied by `ALGA_PSA_CLIENT_MAP` |
 | `ALGA_PSA_BOARD_ID`                     | With intake | —                 | Alga PSA board UUID for new intake tickets |
 | `ALGA_PSA_STATUS_ID`                    | With intake | —                 | Alga PSA initial status UUID for new intake tickets |
-| `ALGA_PSA_PRIORITY_ID`                  | With intake | —                 | Alga PSA initial priority UUID for new intake tickets |
+| `ALGA_PSA_PRIORITY_ID`                  | With intake | —                 | Alga PSA initial priority UUID for new intake tickets; fallback when `ALGA_PSA_PRIORITY_MAP` is not set |
+| `ALGA_PSA_PRIORITY_MAP`                 | No       | —                      | Optional JSON map of portal priority (`low`/`normal`/`high`/`urgent`) to Alga priority UUIDs. All four keys are required; a partial or malformed map disables intake |
 | `ALGA_PSA_CLIENT_MAP`                   | No       | —                      | Optional JSON allowlist mapping portal organization UUIDs to Alga client UUIDs. When set, only mapped organizations use PSA intake; unmapped organizations stay on Supabase |
 | `NODE_ENV`                              | No       | `development`          | Node environment                                                                            |
 | `NEXT_PUBLIC_GA_ID`                     | No       | —                      | Google Analytics measurement ID (e.g. `G-XXXXXXXXXX`)                                       |

@@ -63,6 +63,8 @@ export const EXTERNAL_KEYS = {
     ALGA_PSA_BOARD_ID: "server-only Alga PSA board UUID (lib/alga-psa/config.ts)",
     ALGA_PSA_STATUS_ID: "server-only Alga PSA status UUID (lib/alga-psa/config.ts)",
     ALGA_PSA_PRIORITY_ID: "server-only Alga PSA priority UUID (lib/alga-psa/config.ts)",
+    ALGA_PSA_PRIORITY_MAP:
+      "optional server-only portal-priority to PSA-priority JSON map (lib/alga-psa/config.ts)",
     ALGA_PSA_CLIENT_MAP:
       "optional server-only portal-org to PSA-client JSON allowlist (lib/alga-psa/config.ts)",
   },

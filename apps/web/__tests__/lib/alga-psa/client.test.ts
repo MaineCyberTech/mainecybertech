@@ -3,6 +3,11 @@ import {
   ALGA_PSA_EXTERNAL_SYSTEM,
   AlgaPsaError,
   createIntakeTicket,
+  ensureContact,
+  ensureIntakeTicket,
+  findContact,
+  findIntakeTicket,
+  resolvePriorityId,
   type AlgaPsaIntakeConfig,
 } from "@/lib/alga-psa/client";
 
@@ -183,5 +188,471 @@ describe("createIntakeTicket", () => {
     await expect(
       createIntakeTicket(baseInput(), fetchMock as unknown as typeof fetch),
     ).rejects.toMatchObject({ status: 502 });
+  });
+
+  it("records the portal user id as a non-PII audit attribute", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(response({ data: { ticket_id: "psa-ticket-user" } }));
+
+    await createIntakeTicket(
+      { ...baseInput(), portalUserId: "77777777-7777-4777-8777-777777777777" },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(String(init.body)) as { attributes: Record<string, unknown> };
+    expect(body.attributes.portal_user_id).toBe("77777777-7777-4777-8777-777777777777");
+  });
+
+  it("uses the per-portal-priority PSA id when a priority map is configured", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(response({ data: { ticket_id: "psa-ticket-map" } }));
+    const config: AlgaPsaIntakeConfig = {
+      ...CONFIG,
+      priorityMap: {
+        low: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        normal: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        high: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        urgent: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      },
+    };
+
+    await createIntakeTicket({ ...baseInput(), config }, fetchMock as unknown as typeof fetch);
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(String(init.body)) as { priority_id: string };
+    expect(body.priority_id).toBe("cccccccc-cccc-4ccc-8ccc-cccccccccccc");
+    expect(resolvePriorityId(config, "urgent")).toBe("dddddddd-dddd-4ddd-8ddd-dddddddddddd");
+    expect(resolvePriorityId(config, "unknown")).toBe(CONFIG.priorityId);
+    expect(resolvePriorityId(CONFIG, "high")).toBe(CONFIG.priorityId);
+  });
+});
+
+describe("findContact", () => {
+  const contactId = "88888888-8888-4888-8888-888888888888";
+
+  it("finds a contact by exact, case-insensitive email under the linked client", async () => {
+    const fetchMock = jest.fn().mockResolvedValue(
+      response(
+        {
+          data: [
+            {
+              contact_name_id: contactId,
+              full_name: "Casey Client",
+              email: "Casey@Example.test",
+              client_id: CONFIG.clientId,
+            },
+          ],
+          pagination: { page: 1, limit: 10, total: 1 },
+        },
+        200,
+      ),
+    );
+
+    const result = await findContact(
+      CONFIG,
+      "  casey@example.test ",
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(result).toEqual({
+      id: contactId,
+      fullName: "Casey Client",
+      email: "Casey@Example.test",
+    });
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("https://psa.example.test/api/v1/contacts?");
+    expect(url).toContain(`client_id=${CONFIG.clientId}`);
+    expect(url).toContain("email=casey%40example.test");
+    expect(url).toContain("limit=10");
+    expect(init.method).toBe("GET");
+  });
+
+  it("never picks an ILIKE prefix match with a different email", async () => {
+    const fetchMock = jest.fn().mockResolvedValue(
+      response(
+        {
+          data: [
+            {
+              contact_name_id: contactId,
+              full_name: "Not Casey",
+              email: "casey@example.test.evil",
+            },
+          ],
+        },
+        200,
+      ),
+    );
+
+    await expect(
+      findContact(CONFIG, "casey@example.test", fetchMock as unknown as typeof fetch),
+    ).resolves.toBeNull();
+  });
+
+  it("fails closed on an upstream contact lookup error", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(response({ error: { code: "INTERNAL_ERROR" } }, 500));
+
+    await expect(
+      findContact(CONFIG, "casey@example.test", fetchMock as unknown as typeof fetch),
+    ).rejects.toMatchObject({ status: 500, code: "INTERNAL_ERROR" });
+  });
+});
+
+describe("ensureContact", () => {
+  const contactId = "88888888-8888-4888-8888-888888888888";
+  const contact = {
+    fullName: "Casey Client",
+    email: "casey@example.test",
+    phone: "555-0103",
+    title: "Operations Coordinator",
+  };
+
+  it("creates a contact when no exact match exists", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(response({ data: [], pagination: {} }, 200))
+      .mockResolvedValueOnce(
+        response(
+          {
+            data: {
+              contact_name_id: contactId,
+              full_name: "Casey Client",
+              email: "casey@example.test",
+            },
+          },
+          201,
+        ),
+      );
+
+    const result = await ensureContact(CONFIG, contact, fetchMock as unknown as typeof fetch);
+
+    expect(result).toEqual({
+      id: contactId,
+      fullName: "Casey Client",
+      email: "casey@example.test",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(url).toBe("https://psa.example.test/api/v1/contacts");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(String(init.body))).toEqual({
+      full_name: "Casey Client",
+      email: "casey@example.test",
+      client_id: CONFIG.clientId,
+      role: "Operations Coordinator",
+      phone_numbers: [{ phone_number: "555-0103", canonical_type: "work", is_default: true }],
+    });
+  });
+
+  it("re-queries the winner after a duplicate create response", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(response({ data: [], pagination: {} }, 200))
+      .mockResolvedValueOnce(response({ error: { code: "CONFLICT" } }, 409))
+      .mockResolvedValueOnce(
+        response(
+          {
+            data: [
+              {
+                contact_name_id: contactId,
+                full_name: "Casey Client",
+                email: "casey@example.test",
+              },
+            ],
+          },
+          200,
+        ),
+      );
+
+    await expect(
+      ensureContact(CONFIG, contact, fetchMock as unknown as typeof fetch),
+    ).resolves.toEqual({
+      id: contactId,
+      fullName: "Casey Client",
+      email: "casey@example.test",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("returns null without a PSA call when the name or email is missing", async () => {
+    const fetchMock = jest.fn();
+
+    await expect(
+      ensureContact(
+        CONFIG,
+        { fullName: "  ", email: "casey@example.test" },
+        fetchMock as unknown as typeof fetch,
+      ),
+    ).resolves.toBeNull();
+    await expect(
+      ensureContact(
+        CONFIG,
+        { fullName: "Casey Client", email: "" },
+        fetchMock as unknown as typeof fetch,
+      ),
+    ).resolves.toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("findIntakeTicket", () => {
+  it("returns null only for a definitive 404", async () => {
+    const fetchMock = jest.fn().mockResolvedValue(response({ error: {} }, 404));
+
+    await expect(
+      findIntakeTicket(
+        { config: CONFIG, externalId: "66666666-6666-4666-8666-666666666666" },
+        fetchMock as unknown as typeof fetch,
+      ),
+    ).resolves.toBeNull();
+
+    const [url] = fetchMock.mock.calls[0] as [string];
+    expect(url).toContain("/tickets/by-external-link?");
+    expect(url).toContain(`system=${ALGA_PSA_EXTERNAL_SYSTEM}`);
+    expect(url).toContain("external_id=66666666-6666-4666-8666-666666666666");
+  });
+
+  it("returns the ticket id when the external link already exists", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(
+        response({ data: { ticket_id: "psa-ticket-existing", link: { system: "client_portal" } } }),
+      );
+
+    await expect(
+      findIntakeTicket(
+        { config: CONFIG, externalId: "66666666-6666-4666-8666-666666666666" },
+        fetchMock as unknown as typeof fetch,
+      ),
+    ).resolves.toEqual({ id: "psa-ticket-existing", number: null, title: null });
+  });
+
+  it("throws on an upstream error instead of treating it as not found", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(response({ error: { code: "UNAUTHORIZED" } }, 401));
+
+    await expect(
+      findIntakeTicket(
+        { config: CONFIG, externalId: "66666666-6666-4666-8666-666666666666" },
+        fetchMock as unknown as typeof fetch,
+      ),
+    ).rejects.toMatchObject({ status: 401, code: "UNAUTHORIZED" });
+  });
+
+  it("rejects an external id linked to another portal organization", async () => {
+    const fetchMock = jest.fn().mockResolvedValue(
+      response({
+        data: {
+          ticket_id: "psa-ticket-other",
+          link: { system: "client_portal", realm: "another-portal-org" },
+        },
+      }),
+    );
+
+    await expect(
+      findIntakeTicket(
+        {
+          config: CONFIG,
+          externalId: "66666666-6666-4666-8666-666666666666",
+          portalOrganizationId: "55555555-5555-4555-8555-555555555555",
+        },
+        fetchMock as unknown as typeof fetch,
+      ),
+    ).rejects.toMatchObject({ status: 409, code: "external_id_realm_mismatch" });
+  });
+
+  it("maps a lookup network failure to a 502", async () => {
+    const fetchMock = jest.fn().mockRejectedValue(new Error("connect ECONNREFUSED"));
+
+    await expect(
+      findIntakeTicket(
+        { config: CONFIG, externalId: "66666666-6666-4666-8666-666666666666" },
+        fetchMock as unknown as typeof fetch,
+      ),
+    ).rejects.toMatchObject({ status: 502 });
+  });
+});
+
+describe("ensureIntakeTicket", () => {
+  const externalId = "66666666-6666-4666-8666-666666666666";
+
+  it("returns the existing ticket and does not create a duplicate", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(response({ data: { ticket_id: "psa-ticket-existing" } }));
+
+    const result = await ensureIntakeTicket(
+      { ...baseInput(), externalId },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(result.id).toBe("psa-ticket-existing");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("/tickets/by-external-link?");
+    expect(init.method).toBe("GET");
+  });
+
+  it("creates only after a definitive 404", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(response({ error: {} }, 404))
+      .mockResolvedValueOnce(response({ data: { ticket_id: "psa-ticket-new" } }, 201));
+
+    const result = await ensureIntakeTicket(
+      { ...baseInput(), externalId },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(result.id).toBe("psa-ticket-new");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const [, createInit] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(createInit.method).toBe("POST");
+    const body = JSON.parse(String(createInit.body)) as {
+      external_links: Array<{ external_id: string }>;
+    };
+    expect(body.external_links[0]?.external_id).toBe(externalId);
+  });
+
+  it("fails closed when the pre-create lookup cannot be verified", async () => {
+    const fetchMock = jest.fn().mockResolvedValue(response({ error: { code: "UNKNOWN" } }, 500));
+
+    await expect(
+      ensureIntakeTicket({ ...baseInput(), externalId }, fetchMock as unknown as typeof fetch),
+    ).rejects.toMatchObject({ status: 500 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("resolves a create race by looking up the winning ticket on 409", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(response({ error: {} }, 404))
+      .mockResolvedValueOnce(response({ error: { code: "duplicate_external_link" } }, 409))
+      .mockResolvedValueOnce(response({ data: { ticket_id: "psa-ticket-race-winner" } }));
+
+    const result = await ensureIntakeTicket(
+      { ...baseInput(), externalId },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(result.id).toBe("psa-ticket-race-winner");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("attaches the resolved contact to a new ticket", async () => {
+    const contactId = "88888888-8888-4888-8888-888888888888";
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(response({ error: {} }, 404))
+      .mockResolvedValueOnce(
+        response(
+          {
+            data: [
+              {
+                contact_name_id: contactId,
+                full_name: "Casey Client",
+                email: "casey@example.test",
+              },
+            ],
+          },
+          200,
+        ),
+      )
+      .mockResolvedValueOnce(response({ data: { ticket_id: "psa-ticket-new" } }, 201));
+
+    const result = await ensureIntakeTicket(
+      {
+        ...baseInput(),
+        externalId,
+        portalContact: {
+          fullName: "Casey Client",
+          email: "casey@example.test",
+          phone: "555-0103",
+          title: "Operations Coordinator",
+        },
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(result.id).toBe("psa-ticket-new");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const [contactUrl] = fetchMock.mock.calls[1] as [string];
+    expect(contactUrl).toContain("/contacts?");
+    const [ticketUrl, ticketInit] = fetchMock.mock.calls[2] as [string, RequestInit];
+    expect(ticketUrl).toBe("https://psa.example.test/api/v1/tickets");
+    const body = JSON.parse(String(ticketInit.body)) as { contact_name_id?: string };
+    expect(body.contact_name_id).toBe(contactId);
+  });
+
+  it("does not look up or create a contact for an existing idempotent ticket", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(response({ data: { ticket_id: "psa-ticket-existing" } }));
+
+    const result = await ensureIntakeTicket(
+      {
+        ...baseInput(),
+        externalId,
+        portalContact: {
+          fullName: "Casey Client",
+          email: "casey@example.test",
+        },
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(result.id).toBe("psa-ticket-existing");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0] as [string];
+    expect(url).toContain("/tickets/by-external-link?");
+    expect(url).not.toContain("/contacts");
+  });
+
+  it("fails closed and creates no ticket when the contact lookup fails", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(response({ error: {} }, 404))
+      .mockResolvedValueOnce(response({ error: { code: "INTERNAL_ERROR" } }, 500));
+
+    await expect(
+      ensureIntakeTicket(
+        {
+          ...baseInput(),
+          externalId,
+          portalContact: {
+            fullName: "Casey Client",
+            email: "casey@example.test",
+          },
+        },
+        fetchMock as unknown as typeof fetch,
+      ),
+    ).rejects.toMatchObject({ status: 500 });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    for (const [, init] of fetchMock.mock.calls as Array<[string, RequestInit]>) {
+      expect(init?.method).not.toBe("POST");
+    }
+  });
+
+  it("fails closed instead of creating an unattributed ticket for an incomplete contact", async () => {
+    const fetchMock = jest.fn().mockResolvedValueOnce(response({ error: {} }, 404));
+
+    await expect(
+      ensureIntakeTicket(
+        {
+          ...baseInput(),
+          externalId,
+          portalContact: { fullName: "Casey Client", email: "" },
+        },
+        fetchMock as unknown as typeof fetch,
+      ),
+    ).rejects.toMatchObject({ status: 400, code: "contact_incomplete" });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
