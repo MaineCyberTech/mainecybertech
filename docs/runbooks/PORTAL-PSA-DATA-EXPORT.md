@@ -9,8 +9,8 @@ Related:
   record for service delivery.
 - `albatross/docs/analysis/PORTAL-PSA-ALIGNMENT-20261114.md` — portal/PSA
   entity alignment and ticket cutover.
-- `/tmp/opencode/portal-data-to-psa.md` — full data inventory, mapping,
-  exclusions and reconciliation sequence (working audit output).
+- `albatross/docs/analysis/PORTAL-DATA-TO-PSA-20261116.md` — full data
+  inventory, mapping, exclusions and reconciliation sequence.
 
 ## What the export covers
 
