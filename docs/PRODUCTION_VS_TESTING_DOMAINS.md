@@ -21,7 +21,8 @@ earlier Vercel/ECS descriptions were stale (INFRA-P2-005 / ARCH-P3-002).
 ## Testing Zone: `mainecybertech.us`
 
 ### Web application
-- Hostname: `app.mainecybertech.us`
+- Hostname: `app.mainecybertech.us` (canonical)
+- Compatibility hostname: `portal.mainecybertech.us` → permanent redirect to `app.mainecybertech.us`
 - DNS provider: Cloudflare
 - Origin: droplet `mct-portal-dev`, Caddy on 80/443 → `web:3000`
 
