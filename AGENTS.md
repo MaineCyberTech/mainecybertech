@@ -110,6 +110,12 @@ what it can; the rest are review gates.
   `MaineCyberTech/ai-reviewer` workflow. Repository secrets:
   `AI_REVIEW_ENDPOINT`, `AI_REVIEW_API_KEY`, optional `AI_REVIEW_MODEL`. The
   review is advisory and never approves or merges.
+- **Kestrel broker token (portal droplets)** — `repo-mainecybertech` at
+  `/etc/kestrel-agents/mainecybertech/broker-token` (`0600 root:root`) on
+  `mct-portal-dev`; `gh-kestrel` and `git-credential-kestrel` exchange it for
+  short-lived, repository-scoped GitHub App tokens. Host-only: never put it in
+  `.env`, containers, images or CI. See
+  [`docs/runbooks/KESTREL-AGENT-ACCESS.md`](docs/runbooks/KESTREL-AGENT-ACCESS.md).
 - Never put credential values in this repository. Rotation follows
   [`docs/SECRETS_ROTATION.md`](docs/SECRETS_ROTATION.md); the cross-app matrix
   is in `MaineCyberTech/kestrel` `docs/runbooks/KESTREL-OPS.md`.
