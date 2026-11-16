@@ -28,4 +28,4 @@ jobs:
       AI_REVIEW_API_KEY: ${{ secrets.AI_REVIEW_API_KEY }}
       AI_REVIEW_MODEL: ${{ secrets.AI_REVIEW_MODEL }}
     with:
-      pr: ${{ inputs.pr || 0 }}
+      pr: ${{ fromJSON(format('{0}', inputs.pr || '0')) }}
