@@ -79,3 +79,6 @@ apps/web/public/version.json
 repomix-*.xml
 session-*.diff
 session-*.txt
+
+# Read-only portal export output (PII/confidential; never commit)
+portal-export/
