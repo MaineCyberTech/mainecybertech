@@ -36,6 +36,16 @@ ping -c1 192.168.222.225
 curl -fsS http://192.168.222.225:8090/v1/status
 ```
 
+Current reachability from `mct-portal-dev` over the tunnel/public edge:
+
+| Target | Result |
+|---|---|
+| `http://192.168.222.225:8090/v1/status` | 200 |
+| `http://192.168.222.225:8080/healthz` | 200 |
+| `https://psa.mainecybertech.us/api/readyz` | 200 |
+| `https://access.mainecybertech.us/healthz` | 200 |
+| `http://192.168.222.227:3000/api/readyz` | timeout; use the public PSA URL or add a firewall rule if direct access is required |
+
 A `Connection reset` or timeout means the tunnel or route is down; fix that
 before touching the token. Do not publish the broker through Cloudflare.
 
