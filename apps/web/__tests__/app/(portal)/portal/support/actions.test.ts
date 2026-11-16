@@ -260,6 +260,86 @@ describe("createPortalTicket", () => {
     );
   });
 
+  it("passes the portal client user as the PSA contact", async () => {
+    mockGetApprovedMembership.mockResolvedValue({
+      organization_id: "org-1",
+      userId: "user-1",
+      email: "casey@example.test",
+      fullName: "Casey Client",
+      phone: "555-0103",
+      title: "Operations Coordinator",
+    });
+    mockGetAlgaPsaIntakeStatus.mockReturnValue({
+      enabled: true,
+      config: {
+        baseUrl: "https://psa.example.test/api/v1",
+        apiKey: "test-api-key",
+        clientId: "11111111-1111-4111-8111-111111111111",
+        boardId: "22222222-2222-4222-8222-222222222222",
+        statusId: "33333333-3333-4333-8333-333333333333",
+        priorityId: "44444444-4444-4444-8444-444444444444",
+      },
+      missing: [],
+      invalid: [],
+      reason: null,
+    });
+    mockEnsureIntakeTicket.mockResolvedValue({ id: "psa-ticket-1", number: null, title: null });
+
+    const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
+
+    const formData = new FormData();
+    formData.set("subject", "Test ticket");
+
+    await createPortalTicket(formData);
+
+    expect(mockEnsureIntakeTicket).toHaveBeenCalledWith(
+      expect.objectContaining({
+        portalContact: {
+          fullName: "Casey Client",
+          email: "casey@example.test",
+          phone: "555-0103",
+          title: "Operations Coordinator",
+        },
+      }),
+    );
+  });
+
+  it("omits the PSA contact when the profile lacks a full name or email", async () => {
+    mockGetApprovedMembership.mockResolvedValue({
+      organization_id: "org-1",
+      userId: "user-1",
+      email: "casey@example.test",
+      fullName: null,
+      phone: null,
+      title: null,
+    });
+    mockGetAlgaPsaIntakeStatus.mockReturnValue({
+      enabled: true,
+      config: {
+        baseUrl: "https://psa.example.test/api/v1",
+        apiKey: "test-api-key",
+        clientId: "11111111-1111-4111-8111-111111111111",
+        boardId: "22222222-2222-4222-8222-222222222222",
+        statusId: "33333333-3333-4333-8333-333333333333",
+        priorityId: "44444444-4444-4444-8444-444444444444",
+      },
+      missing: [],
+      invalid: [],
+      reason: null,
+    });
+    mockEnsureIntakeTicket.mockResolvedValue({ id: "psa-ticket-1", number: null, title: null });
+
+    const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
+
+    const formData = new FormData();
+    formData.set("subject", "Test ticket");
+
+    await createPortalTicket(formData);
+
+    const input = mockEnsureIntakeTicket.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(input).not.toHaveProperty("portalContact");
+  });
+
   it("passes a valid form submission id through as the idempotency key", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
     mockGetAlgaPsaIntakeStatus.mockReturnValue({

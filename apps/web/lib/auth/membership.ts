@@ -11,6 +11,11 @@ type ResolvedMembership = {
   role_id: string | null;
   /** Authenticated portal user id (used for audit attributes, never email). */
   userId: string;
+  /** Portal client user identity used to link a PSA contact; never logged. */
+  email: string | null;
+  fullName: string | null;
+  phone: string | null;
+  title: string | null;
   organizations?: Organization | null;
   isPlatformAdmin: boolean;
 };
@@ -44,6 +49,15 @@ async function loadApprovedMembership(): Promise<ResolvedMembership | null> {
 
     const activeOrgId = await getActiveOrg();
 
+    // Profile identity for PSA contact mapping. It is carried on the resolved
+    // membership but must never be logged.
+    const identity = {
+      email: user.email ?? null,
+      fullName: user.fullName ?? null,
+      phone: user.phone ?? null,
+      title: user.title ?? null,
+    };
+
     // Platform admins (admin/super_admin in any org) can switch into any
     // tenant — honor the active org cookie even without a membership there.
     const isPlatformAdmin = memberships.some((m) => {
@@ -57,6 +71,7 @@ async function loadApprovedMembership(): Promise<ResolvedMembership | null> {
       organization_id: m.organization_id,
       role_id: m.role_id,
       userId: user.userId,
+      ...identity,
       organizations: m.organizations ?? null,
       isPlatformAdmin: m.roles?.key === "admin" || m.roles?.key === "super_admin",
     });
@@ -75,6 +90,7 @@ async function loadApprovedMembership(): Promise<ResolvedMembership | null> {
         organization_id: activeOrgId,
         role_id: null,
         userId: user.userId,
+        ...identity,
         organizations: null,
         isPlatformAdmin: true,
       };
@@ -87,6 +103,7 @@ async function loadApprovedMembership(): Promise<ResolvedMembership | null> {
             organization_id: "",
             role_id: null,
             userId: user.userId,
+            ...identity,
             organizations: null,
             isPlatformAdmin: false,
           };
@@ -98,6 +115,10 @@ async function loadApprovedMembership(): Promise<ResolvedMembership | null> {
       organization_id: membership.organization_id,
       role_id: membership.role_id,
       userId: membership.userId,
+      email: membership.email,
+      fullName: membership.fullName,
+      phone: membership.phone,
+      title: membership.title,
       organizations: membership.organizations ?? null,
       isPlatformAdmin: membership.isPlatformAdmin === true || isPlatformAdmin,
     };

@@ -61,6 +61,22 @@ export async function createPortalTicket(formData: FormData) {
 
     const algaConfig = algaStatus.config;
     if (algaConfig) {
+      // Portal client users map to a PSA contact under the linked client. A
+      // profile without both a name and email cannot be matched safely, so the
+      // ticket is submitted without contact attribution rather than creating
+      // an incomplete PSA contact.
+      const contactEmail = membership.email?.trim();
+      const contactName = membership.fullName?.trim();
+      const portalContact =
+        contactEmail && contactName
+          ? {
+              fullName: contactName,
+              email: contactEmail,
+              phone: membership.phone?.trim() || null,
+              title: membership.title?.trim() || null,
+            }
+          : undefined;
+
       try {
         const algaTicket = await ensureIntakeTicket({
           config: algaConfig,
@@ -72,6 +88,7 @@ export async function createPortalTicket(formData: FormData) {
           portalCategory: category || null,
           portalBaseUrl: process.env.APP_BASE_URL,
           externalId: submissionId,
+          ...(portalContact ? { portalContact } : {}),
         });
 
         // The PSA ticket already exists. A cache-refresh failure must not turn

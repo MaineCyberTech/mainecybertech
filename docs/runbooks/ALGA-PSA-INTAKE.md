@@ -45,6 +45,7 @@ returned in an error, or sent anywhere except the configured PSA base URL.
   "title": "...",
   "board_id": "<uuid>",
   "client_id": "<uuid>",
+  "contact_name_id": "<contact-uuid>",
   "status_id": "<uuid>",
   "priority_id": "<uuid>",
   "attributes": {
@@ -89,9 +90,21 @@ Notes:
 - `ALGA_PSA_PRIORITY_MAP` is optional. When set, all four portal priorities
   must map to valid PSA UUIDs; otherwise intake stays disabled. Without the
   map, every ticket uses `ALGA_PSA_PRIORITY_ID`.
-- `attributes.portal_user_id` records the authenticated portal user UUID.
-  Alga's `entered_by` is the API key's service user, so this attribute is the
-  only submitter audit trail until portal users are mapped to PSA contacts.
+- **Portal client users become PSA contacts.** When a new ticket is needed, the
+  adapter resolves the authenticated portal user through
+  `GET /contacts?client_id=<psa-client>&email=<email>&limit=10` and accepts only
+  an exact, case-insensitive email match (Alga's email filter is an ILIKE
+  substring match, so a different address is never attached). If no contact
+  exists, it creates one under the linked PSA client with `full_name`, `email`,
+  the portal profile title as `role`, and the profile phone as a default work
+  phone. The resulting contact id is sent as the ticket `contact_name_id`. The
+  contact is never resolved for an idempotent replay: an existing ticket is
+  returned before any contact lookup. A contact sync failure aborts the
+  submission, so the PSA never receives an unattributed ticket. MCT staff use
+  the PSA as users; only portal client submissions reach this path.
+- `attributes.portal_user_id` remains the portal-side audit id. Alga's
+  `entered_by` is the API key's service user, so `contact_name_id` is the
+  requester link and `portal_user_id` is the cross-system audit key.
 
 ## Alga contract verification (2026-11-13, pinned source)
 
@@ -145,6 +158,10 @@ Checked against `/tmp/opencode/repos/alga-psa` (`origin/main`, commit
   submission and therefore a new key; the PSA will create a new ticket. A
   durable portal-side submission ledger is a later step if reload-level
   deduplication is required.
+- **Contact matching needs a complete portal profile.** The action supplies a
+  contact only when the profile has both a full name and an email; the adapter
+  never creates an incomplete contact. A profile missing either submits an
+  unattributed ticket, so keep portal profile names/emails complete.
 - **No live PSA smoke test in CI.** The tests mock `fetch`; a real create is
   an approved change-window action. The API key needs `ticket:read` in
   addition to `ticket:create` for the pre-create lookup.
@@ -153,8 +170,10 @@ Checked against `/tmp/opencode/repos/alga-psa` (`origin/main`, commit
 
 1. Create a least-privilege PSA service identity/API key with permission to
    create tickets and read ticket external links (`ticket:create` and
-   `ticket:read`); the pre-create lookup uses `GET /tickets/by-external-link`.
-   Do not reuse an admin key.
+   `ticket:read`), plus contact read/create for the portal-contact mapping
+   (`contact:read` and `contact:create`). The pre-create lookup uses
+   `GET /tickets/by-external-link`; contact resolution uses `GET /contacts` and
+   `POST /contacts`. Do not reuse an admin key.
 2. Confirm the `client_id`, `board_id`, `status_id` and `priority_id` are UUIDs
    from the same PSA tenant and that the board accepts API-created tickets. If
    `ALGA_PSA_PRIORITY_MAP` is set, confirm all four priority UUIDs exist in
@@ -185,8 +204,11 @@ Checked against `/tmp/opencode/repos/alga-psa` (`origin/main`, commit
    - Submit a test ticket through the portal; confirm the PSA ticket, the
      `client_portal` origin link, the description in `attributes.description`,
      and that no new Supabase ticket row was created.
+   - Confirm the PSA ticket has the portal user as its contact
+     (`contact_name_id`).
    - Re-submit the same form (double-click or retry) and confirm the same PSA
-     ticket is returned, with no second ticket and no second external link.
+     ticket is returned, with no second ticket, no second external link, and
+     no duplicate contact.
 4. **Verify and widen**
    - Compare portal submission count with PSA tickets created through the
      `client_portal` link.
