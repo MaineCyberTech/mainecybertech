@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import type { Request, Response } from "express";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { failure } from "../types";
 
 /**
@@ -25,11 +25,20 @@ export function rateLimitHandler(message: string) {
  * (stable for the token's lifetime), and treat the global IP limiter as the
  * authoritative ceiling. Falls back to the client IP when there is no token.
  */
+/**
+ * express-rate-limit v8 rejects a raw `req.ip` in a custom keyGenerator: IPv6
+ * clients could otherwise rotate addresses within their /64 and multiply their
+ * bucket. `ipKeyGenerator` applies the documented /56 normalization.
+ */
+function normalizedIp(ip: string | undefined): string {
+  return ip ? ipKeyGenerator(ip) : "unknown";
+}
+
 export function userRateLimitKeyGenerator(
   authorization: string | string[] | undefined,
   ip: string | undefined,
 ): string {
-  const clientIp = ip ?? "unknown";
+  const clientIp = normalizedIp(ip);
   const header = Array.isArray(authorization) ? authorization[0] : authorization;
   if (header?.startsWith("Bearer ")) {
     const token = header.slice(7);
@@ -169,7 +178,7 @@ export const rateLimitUnsubscribe = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const token = (req.query as Record<string, unknown> | undefined)?.token;
-    return `unsubscribe:${typeof token === "string" ? shareRateLimitKey(token) : `ip:${req.ip}`}`;
+    return `unsubscribe:${typeof token === "string" ? shareRateLimitKey(token) : `ip:${normalizedIp(req.ip)}`}`;
   },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
@@ -182,7 +191,7 @@ export const rateLimitAuth = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const email = emailRateLimitKey((req.body as Record<string, unknown> | undefined)?.email);
-    return email ? `email:${email}` : `ip:${req.ip}`;
+    return email ? `email:${email}` : `ip:${normalizedIp(req.ip)}`;
   },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
@@ -195,7 +204,7 @@ export const rateLimitEmail = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const email = emailRateLimitKey((req.body as Record<string, unknown> | undefined)?.email);
-    return email ? `email-action:${email}` : `ip:${req.ip}`;
+    return email ? `email-action:${email}` : `ip:${normalizedIp(req.ip)}`;
   },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
@@ -213,6 +222,6 @@ export const rateLimitMetrics = rateLimit({
   handler: rateLimitHandler("Too many requests to metrics endpoint"),
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => `ip:${req.ip}`,
+  keyGenerator: (req) => `ip:${normalizedIp(req.ip)}`,
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
