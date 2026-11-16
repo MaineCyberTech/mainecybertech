@@ -39,7 +39,7 @@ run by an operator on an isolated target, never against production data.
 | Manual restore script | `scripts/restore-database.sh` | `--dry-run` supported; stream-decrypt; environment guardrail | `not exercised` |
 | Supabase PITR | `docs/ROLLBACK_PROCEDURES.md` §3 Option B | Documented (7-day, Pro plan) | `not exercised` |
 | Terraform state | `infra/terraform/digitalocean/state-bucket.tf` + `env/backend.*.hcl` | Remote S3/Spaces backend; `versioning { enabled = true }` now declared as a resource (DR-P2-005 fixed); state gitignored | `not exercised` (state read, not restored) |
-| Storage buckets (`documents`, `avatars`, `logos`, `storage-drill`) | backup/restore scripts above | Backup + restore-test path exists (was absent in the 2026-10-02 audit); dev `documents`/`avatars`/`logos` are empty, so the private `storage-drill` bucket holds a 167-byte `README.txt` seed (`STORAGE_BUCKETS=documents avatars logos storage-drill`) | non-empty backup/verify **green 2026-11-08** (runs 42452717267 / 42452741103); scratch-bucket recovery not exercised |
+| Storage buckets (`documents`, `avatars`, `logos`, `storage-drill`) | backup/restore scripts above | Backup + restore-test path exists (was absent in the 2026-10-02 audit); dev `documents`/`avatars`/`logos` are empty, so the private `storage-drill` bucket holds a 167-byte `README.txt` seed (`STORAGE_BUCKETS=documents avatars logos storage-drill`) | non-empty backup/verify **green 2026-11-08** (runs 42452717267 / 42452741103); live scratch-bucket recovery **passed 2026-11-08** ([artifact](drills/2026-11-08-storage-live-recovery.md)) |
 | Redis | `infra/digitalocean/docker-compose.yml` | No backup; rebuilt from DB per `docs/RTO_RPO.md` | `not exercised` |
 | Secrets | `docs/SECRETS_ROTATION.md`, `docs/SECRET_ROTATION_RUNBOOK.md` | Rotation documented; key escrow **still unrecorded** (gap) | N/A (rotate, don't restore) |
 
@@ -113,9 +113,11 @@ See §6 checklist. This is the part that converts "exit code 0" into "the restor
 3. Verify download + checksum against the MANIFEST.
 4. Record recovery path and duration.
 
-> **Status 2026-11-08:** the automated non-empty backup + verify-only path is
-> green (runs 42452717267 / 42452741103). Steps 1–3 (delete and recover into a
-> scratch bucket) have not been exercised; D5 remains planned.
+> **Status 2026-11-08:** passed for the dev `storage-drill` bucket. The seed
+> was deleted and restored from the non-empty 05:56 archive; SHA-256 and
+> `text/plain` matched. See
+> [`drills/2026-11-08-storage-live-recovery.md`](drills/2026-11-08-storage-live-recovery.md).
+> Production recovery remains open because the prod portal is not deployed.
 
 ### D6 — Terraform state recovery drill (semi-annual)
 
@@ -174,4 +176,4 @@ following are true at the audited commit:
 2. The restore test asserts integrity (counts, migrations, tenant isolation) and fails on a truncated dump.
 3. A captured drill artifact proves the last real restore and its duration.
 4. A backup-failure **and** restore-test-failure alert path exists and has been fired once synthetically.
-5. Storage/uploaded-file recovery has a documented, exercised mechanism. The automated non-empty archive backup/verification path is green; the scratch-bucket recovery exercise is still required.
+5. Storage/uploaded-file recovery has a documented, exercised mechanism. The automated non-empty archive backup/verification path and the live dev scratch-bucket recovery are green (2026-11-08); production recovery remains open.

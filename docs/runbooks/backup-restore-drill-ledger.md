@@ -17,8 +17,10 @@ and recorded the platform heartbeat. `db-restore-test` run 42437188270 restored
 first non-empty storage backup/restore verification also passed: `storage-backup`
 run 42452717267 produced an encrypted archive with 1 object, and
 `storage-restore-test` run 42452741103 verified 1 object against the manifest
-(`object_count: 1`). The manual D1 deep-dive, PITR and scratch-bucket
-storage-recovery drills remain planned.
+(`object_count: 1`). A live scratch-bucket recovery also passed on 2026-11-08:
+`storage-drill/README.txt` was deleted and restored from the same archive with a
+matching SHA-256 and `text/plain` content type. The manual D1 deep-dive and PITR
+drills remain planned.
 
 | Drill | Planned window | Operator | Target | Result | Evidence | Follow-ups |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -27,8 +29,8 @@ storage-recovery drills remain planned.
 | D2 (PITR) | first month after D1 is green | platform | throwaway Supabase project | planned | drill artifact | measure PITR duration; confirm the 5-min RPO claim |
 | D3 | every D1 run | backend | same as D1 | planned | automated run output | promote assertions if gaps found |
 | D4 (bad migration) | first quarter after D1 is green | backend | throwaway Supabase project | planned | drill artifact | template the reverse migration |
-| D5 (automated storage verification) | 2026-11-08 (first non-empty run) | Kestrel Ops | newest storage archive + manifest | **passed** — 1 object backed up and 1 verified against the manifest (`object_count: 1`) | backup run 42452717267; restore run 42452741103 | keep the private `storage-drill` seed; full scratch-bucket recovery still planned |
-| D5 (manual storage recovery) | first quarter after the automated storage verification | platform | scratch bucket | planned | drill artifact | delete/recover a known object and verify its checksum; the automated path is verify-only and does not write to a live bucket |
+| D5 (automated storage verification) | 2026-11-08 (first non-empty run) | Kestrel Ops | newest storage archive + manifest | **passed** — 1 object backed up and 1 verified against the manifest (`object_count: 1`) | backup run 42452717267; restore run 42452741103 | live recovery passed 2026-11-08 (below); keep the private `storage-drill` seed |
+| D5 (manual storage recovery) | 2026-11-08 | Kestrel Ops | private `storage-drill` dev bucket | **passed** — deleted and restored `README.txt` (167 B); SHA-256 `6bfed737…` and `text/plain` matched | [artifact](drills/2026-11-08-storage-live-recovery.md); archive `s3://mct-mainecybertech/storage-backups/supabase-storage-2026-11-08-055651.tar.gz.enc` | prod recovery remains; keep the seed |
 | D6 (Terraform state) | semi-annual | infra | scratch backend bucket | planned | drill artifact | confirm live bucket versioning |
 | D7 (droplet loss) | semi-annual | platform/NOC | dev/scratch droplet | planned | paper + partial artifact | record timings vs RTO |
 

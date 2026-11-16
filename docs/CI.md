@@ -46,7 +46,10 @@ uploaded an encrypted archive with 1 object
 `storage-restore-test` run 42452741103 decrypted it and matched 1 object against
 the manifest (`object_count: 1`). The dev `STORAGE_BUCKETS` value includes the
 private `storage-drill` seed (`README.txt`, 167 bytes) so the weekly check stays
-non-empty; `documents`/`avatars`/`logos` remain empty in dev.
+non-empty; `documents`/`avatars`/`logos` remain empty in dev. A live D5 recovery
+also deleted and restored that seed from the archive; the SHA-256 and
+`text/plain` content type matched. See
+[`runbooks/drills/2026-11-08-storage-live-recovery.md`](runbooks/drills/2026-11-08-storage-live-recovery.md).
 
 ## Deploy pipeline
 

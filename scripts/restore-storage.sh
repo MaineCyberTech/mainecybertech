@@ -50,11 +50,22 @@ upload_object() {
   # upload_object <bucket> <path> <local-file>
   local bucket="$1" path="$2" file="$3"
   local upsert="false"
+  local content_type=""
   [ "${RESTORE_UPSERT}" = "1" ] && upsert="true"
+  # Preserve the user-visible MIME type when restoring. The archive does not
+  # carry a content-type sidecar, so infer it from the extracted object; fall
+  # back to a neutral binary type when the file utility is unavailable.
+  if command -v file >/dev/null 2>&1; then
+    content_type="$(file --mime-type -b "${file}" 2>/dev/null || true)"
+  fi
+  case "${content_type}" in
+    ""|inode/x-empty) content_type="application/octet-stream" ;;
+  esac
   curl -sS --fail-with-body -X POST \
     -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
     -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
     -H "x-upsert: ${upsert}" \
+    -H "Content-Type: ${content_type}" \
     --data-binary "@${file}" \
     "${SUPABASE_URL}/storage/v1/object/${bucket}/${path}"
 }
