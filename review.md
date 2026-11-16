@@ -158,12 +158,12 @@ repository: `docs/runbooks/AGENT-GITHUB-ACCESS.md` and `docs/SECRETS.md`.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,761 tests, all passing. 526 suites.**
+**4,778 tests, all passing. 528 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
 | API     | 2,068         | 178    | Jest + supertest                  |
-| Web     | 2,053         | 311    | Jest + Testing Library            |
+| Web     | 2,070         | 313    | Jest + Testing Library            |
 | SDK     | 327           | 5      | Jest (mocked fetch)               |
 | Worker  | 313           | 32     | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |

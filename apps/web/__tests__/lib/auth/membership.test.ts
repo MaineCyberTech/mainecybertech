@@ -60,8 +60,41 @@ describe("getApprovedMembership", () => {
       status: "approved",
       organization_id: "org-1",
       role_id: "role-1",
+      userId: "user-1",
+      email: "u@test.com",
+      fullName: null,
+      phone: null,
+      title: null,
       organizations: { name: "Test Org" },
       isPlatformAdmin: false,
+    });
+  });
+
+  it("carries the profile identity used for PSA contact mapping", async () => {
+    mockMe.mockResolvedValue({
+      userId: "user-1",
+      email: "casey@example.test",
+      fullName: "Casey Client",
+      phone: "555-0103",
+      title: "Operations Coordinator",
+    });
+    mockMembershipsList.mockResolvedValue([
+      {
+        id: "mem-1",
+        status: "approved",
+        organization_id: "org-1",
+        role_id: "role-1",
+      },
+    ]);
+
+    const { getApprovedMembership } = await import("@/lib/auth/membership");
+    const result = await getApprovedMembership();
+
+    expect(result).toMatchObject({
+      email: "casey@example.test",
+      fullName: "Casey Client",
+      phone: "555-0103",
+      title: "Operations Coordinator",
     });
   });
 
