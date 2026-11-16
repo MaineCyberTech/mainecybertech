@@ -42,6 +42,18 @@ resource "cloudflare_dns_record" "prod_api" {
 }
 
 # Dev/Testing DNS — mainecybertech.us
+# Compatibility hostname. Caddy redirects this to `app`; keeping the record
+# explicit prevents the zone wildcard from sending it to the wrong origin.
+resource "cloudflare_dns_record" "test_portal" {
+  count   = var.environment == "dev" && var.cloudflare_zone_id_us != "" ? 1 : 0
+  zone_id = var.cloudflare_zone_id_us
+  name    = "portal"
+  type    = "A"
+  content = digitalocean_droplet.portal.ipv4_address
+  ttl     = 1
+  proxied = true
+}
+
 resource "cloudflare_dns_record" "test_www" {
   count   = var.environment == "dev" && var.cloudflare_zone_id_us != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id_us
