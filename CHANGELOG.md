@@ -47,6 +47,13 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Added
 
+- **Alga PSA intake (feature-flagged):** portal support submissions can create
+  tickets in Alga PSA when `ALGA_PSA_INTAKE_ENABLED=true` and the tenant IDs
+  are configured; otherwise the existing Supabase path is unchanged. The PSA
+  path is exclusive and never dual-writes, and includes a server-only client,
+  an optional per-organization client map, unit tests and the
+  cutover/rollback runbook (`docs/runbooks/ALGA-PSA-INTAKE.md`).
+
 - **Kestrel SSO (dev):** staff can sign in to the portal through Authelia's
   Supabase custom OIDC provider. Adds `POST /api/v1/auth/sso`, SDK/web start
   helpers, the "Sign in with MCT SSO" login button, and the matching OpenAPI
