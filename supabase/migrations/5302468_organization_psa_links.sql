@@ -16,8 +16,7 @@ create table if not exists public.organization_psa_links (
   psa_tenant uuid not null,
   psa_client_id uuid not null,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  constraint organization_psa_links_client_unique unique (psa_tenant, psa_client_id)
+  updated_at timestamptz not null default now()
 );
 
 create index if not exists idx_organization_psa_links_client
@@ -39,7 +38,7 @@ using (
 );
 
 comment on table public.organization_psa_links is
-  'Explicit portal organization -> Alga PSA client crosswalk. Service-role writes only.';
+  'Explicit portal organization -> Alga PSA client crosswalk. A portal org maps to one PSA client; several portal orgs may share a PSA client. Service-role writes only.';
 
 alter table public.profiles
   add column if not exists psa_contact_id uuid,
