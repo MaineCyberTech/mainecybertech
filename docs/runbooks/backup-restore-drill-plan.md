@@ -26,20 +26,20 @@ run by an operator on an isolated target, never against production data.
 4. Redact secrets at all times; capture only key names, exit codes, counts, and timestamps.
 5. Record the drill result in the ledger (see §7) so the next audit can cite a real exercise date.
 
-## 2. Current state snapshot (reconciled 2026-10-12)
+## 2. Current state snapshot (reconciled 2026-11-08)
 
 | Asset | Path | State | Exercised? |
 |---|---|---|---|
-| Daily DB backup workflow | `.github/workflows/db-backup.yml` | Present and scheduled on the default branch (DR-P0-002 fixed); records a platform heartbeat (DR-P2-008) | **No green run yet** — operator backup secrets unprovisioned (DR-P0-001 residual) |
-| Backup script (bash) | `scripts/backup-database.sh` | pg_dump → gzip → S3/Spaces; encryption when `BACKUP_ENCRYPTION_KEY` is set; 30-day retention | `not exercised` |
+| Daily DB backup workflow | `.github/workflows/db-backup.yml` | Present and scheduled; records a platform heartbeat (DR-P2-008) | **Green 2026-11-08** — run 42436289022, encrypted 952K dump |
+| Backup script (bash) | `scripts/backup-database.sh` | pg_dump → gzip → S3/Spaces; encryption when `BACKUP_ENCRYPTION_KEY` is set; 30-day retention | exercised 2026-11-08 (backup run 42436289022) |
 | Backup script (PowerShell) | — | Retired (DR-P3-002); use `scripts/backup-database.sh` via WSL/Git Bash | N/A |
-| Weekly restore test | `.github/workflows/db-restore-test.yml` | Present and scheduled; restores to a temp `postgres:16-alpine` and **asserts** structure/freshness/RLS floors (DR-P0-003, DR-P1-001 fixed) | `not exercised` (same operator residual) |
-| Storage backup | `.github/workflows/storage-backup.yml`, `scripts/backup-storage.sh` | Paginated listing, zero-object refusal, MANIFEST with `object_count`, encryption, offsite option (DR-P2-001 fixed) | `not exercised` |
-| Storage restore test | `.github/workflows/storage-restore-test.yml`, `scripts/restore-storage.sh --verify-only` | Weekly assertions: manifest present, `object_count` == extracted count, archive non-empty (DR-P1-002, DR-P2-002 fixed) | `not exercised` |
+| Weekly restore test | `.github/workflows/db-restore-test.yml` | Restores to a temp `postgres:17-alpine`; skips the Supabase-only `vault` schema/extension; pre-creates the Supabase roles; asserts structure/freshness/RLS floors (DR-P0-003, DR-P1-001 fixed) | **Green 2026-11-08** — run 42437188270, 140 tables / 165 migrations / 425 rows / 0 RLS-off |
+| Storage backup | `.github/workflows/storage-backup.yml`, `scripts/backup-storage.sh` | Paginated listing, zero-object refusal, MANIFEST with `object_count`, encryption, offsite option (DR-P2-001 fixed) | **Green 2026-11-08** — run 42452717267; 1 object, encrypted archive |
+| Storage restore test | `.github/workflows/storage-restore-test.yml`, `scripts/restore-storage.sh --verify-only` | Weekly assertions: manifest present, `object_count` == extracted count, archive non-empty (DR-P1-002, DR-P2-002 fixed) | **Green 2026-11-08** — run 42452741103; decrypt + manifest match, `object_count: 1` (verify-only) |
 | Manual restore script | `scripts/restore-database.sh` | `--dry-run` supported; stream-decrypt; environment guardrail | `not exercised` |
 | Supabase PITR | `docs/ROLLBACK_PROCEDURES.md` §3 Option B | Documented (7-day, Pro plan) | `not exercised` |
 | Terraform state | `infra/terraform/digitalocean/state-bucket.tf` + `env/backend.*.hcl` | Remote S3/Spaces backend; `versioning { enabled = true }` now declared as a resource (DR-P2-005 fixed); state gitignored | `not exercised` (state read, not restored) |
-| Storage buckets (`documents`, `avatars`) | backup/restore scripts above | Backup + restore-test path exists (was absent in the 2026-10-02 audit) | `not exercised` |
+| Storage buckets (`documents`, `avatars`, `logos`, `storage-drill`) | backup/restore scripts above | Backup + restore-test path exists (was absent in the 2026-10-02 audit); dev `documents`/`avatars`/`logos` are empty, so the private `storage-drill` bucket holds a 167-byte `README.txt` seed (`STORAGE_BUCKETS=documents avatars logos storage-drill`) | non-empty backup/verify **green 2026-11-08** (runs 42452717267 / 42452741103); live scratch-bucket recovery **passed 2026-11-08** ([artifact](drills/2026-11-08-storage-live-recovery.md)) |
 | Redis | `infra/digitalocean/docker-compose.yml` | No backup; rebuilt from DB per `docs/RTO_RPO.md` | `not exercised` |
 | Secrets | `docs/SECRETS_ROTATION.md`, `docs/SECRET_ROTATION_RUNBOOK.md` | Rotation documented; key escrow **still unrecorded** (gap) | N/A (rotate, don't restore) |
 
@@ -74,7 +74,7 @@ For D1 (database restore) the following must all be available and known-good:
 ### D1 — Full database restore from latest backup (weekly)
 
 1. **Preconditions:** read-only credentials to S3/Spaces; a throwaway Postgres container; the newest dump object identified (name + timestamp only, no secrets logged).
-2. Start target: `docker run -d --name drill-pg -e POSTGRES_PASSWORD=<throwaway> -e POSTGRES_DB=drill_restore -p 127.0.0.1:5433:5432 postgres:16-alpine`.
+2. Start target: `docker run -d --name drill-pg -e POSTGRES_PASSWORD=<throwaway> -e POSTGRES_DB=drill_restore -p 127.0.0.1:5433:5432 postgres:17-alpine`.
 3. Download: `aws s3 cp "s3://${S3_BUCKET}/${S3_PREFIX}/<latest>" /tmp/drill.sql.gz`
    (`S3_BUCKET` is a bucket name and `S3_PREFIX` a key prefix — the same
    contract the backup workflows write with, DR-P1-003 / DR-P3-007).
@@ -112,6 +112,12 @@ See §6 checklist. This is the part that converts "exit code 0" into "the restor
 2. Recover from the newest storage archive (`scripts/restore-storage.sh`) or provider-native versioning when enabled.
 3. Verify download + checksum against the MANIFEST.
 4. Record recovery path and duration.
+
+> **Status 2026-11-08:** passed for the dev `storage-drill` bucket. The seed
+> was deleted and restored from the non-empty 05:56 archive; SHA-256 and
+> `text/plain` matched. See
+> [`drills/2026-11-08-storage-live-recovery.md`](drills/2026-11-08-storage-live-recovery.md).
+> Production recovery remains open because the prod portal is not deployed.
 
 ### D6 — Terraform state recovery drill (semi-annual)
 
@@ -170,4 +176,4 @@ following are true at the audited commit:
 2. The restore test asserts integrity (counts, migrations, tenant isolation) and fails on a truncated dump.
 3. A captured drill artifact proves the last real restore and its duration.
 4. A backup-failure **and** restore-test-failure alert path exists and has been fired once synthetically.
-5. Storage/uploaded-file recovery has a documented, exercised mechanism.
+5. Storage/uploaded-file recovery has a documented, exercised mechanism. The automated non-empty archive backup/verification path and the live dev scratch-bucket recovery are green (2026-11-08); production recovery remains open.

@@ -218,7 +218,10 @@ BACKUP_ENCRYPTION_KEY=... ./scripts/restore-storage.sh
 
 The restore refuses an archive that does not carry `MANIFEST.txt`, is empty, or
 whose extracted file count does not match the manifest's `object_count` — a
-partial backup fails instead of silently restoring a subset.
+partial backup fails instead of silently restoring a subset. Uploads infer a
+usable MIME type with `file --mime-type -b` (falling back to
+`application/octet-stream`); the archive has no content-type sidecar, so this is
+an inference rather than an exact metadata restore.
 
 Storage objects are keyed by path, so a database restore and a storage restore
 together restore working `documents.storage_path` links. A DB-only restore
@@ -228,8 +231,11 @@ against the newest archive; a green run is the storage-restore exercise
 artifact. `scripts/exercise-storage-restore.sh` (run by the validate workflow)
 additionally drives `--verify-only` against synthetic valid/corrupt/encrypted
 archives on every CI run, so the assertions themselves are exercised even when
-no live backup has landed yet (FILE-P3-004). A restore INTO a scratch Supabase
-project remains an operator drill.
+no live backup has landed yet (FILE-P3-004). A live dev scratch-bucket recovery
+passed on 2026-11-08: `storage-drill/README.txt` was deleted and restored from
+the non-empty archive with a matching SHA-256 and `text/plain` content type
+([artifact](runbooks/drills/2026-11-08-storage-live-recovery.md)). Production
+storage recovery remains open until the prod portal and backup secrets exist.
 
 ## 4. Terraform Rollback
 

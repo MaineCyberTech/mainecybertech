@@ -9,6 +9,12 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ## [Unreleased]
 
+### Nov 16
+
+- **Deploy fix (express-rate-limit v8):** custom rate-limit key generators now
+  normalize client IPs through `ipKeyGenerator`, so the API no longer fails
+  startup validation on IPv6-capable deployments.
+
 ### Nov 7 delta-audit remediation
 
 - **Client comment isolation (SEC-P1-012):** clients no longer receive

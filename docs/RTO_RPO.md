@@ -8,7 +8,7 @@
 | **Web** | 15 minutes | 0 (stateless) | Next.js standalone; no data loss |
 | **Worker** | 15 minutes | 0 (stateless) | Queue-based; in-flight tasks retry |
 | **Postgres (Supabase)** | 1 hour | 5 minutes (PITR) / ≤24 h (pg_dump) | RPO depends on the method: Supabase PITR (7-day retention) meets 5 min; the daily S3 dump can only meet ≤24 h. See Backup Strategy. |
-| **Storage (uploads)** | 1 hour | ≤24 h (daily mirror) | `documents` / `avatars` / `logos` mirrored to S3/Spaces by `storage-backup.yml` |
+| **Storage (uploads)** | 1 hour | ≤24 h (daily mirror) | `documents` / `avatars` / `logos` mirrored to S3/Spaces by `storage-backup.yml`; dev also mirrors the private `storage-drill` seed so restore tests are non-empty |
 | **Redis** | 30 minutes | 24 hours | RDB snapshot only (default `dump.rdb` on the `redis-data` volume; no AOF); recreated from DB on loss, and in-flight queue work is re-driven by producers/retries |
 | **DNS (Cloudflare)** | 5 minutes | N/A | Managed DNS; instant failover via API |
 
@@ -22,7 +22,7 @@
 ## Backup Strategy
 
 - **Database**: Daily `pg_dump` to S3 (30-day retention, `STANDARD` storage class — Spaces rejects other classes, override with `S3_STORAGE_CLASS` on real AWS S3; AES-256-CBC encrypted when `BACKUP_ENCRYPTION_KEY` is set; optional offsite copy via `S3_OFFSITE_BUCKET`). If the offsite copy uses a different S3-compatible endpoint (for example Raven SeaweedFS), set `S3_OFFSITE_ENDPOINT` and optionally `S3_OFFSITE_ACCESS_KEY_ID` / `S3_OFFSITE_SECRET_ACCESS_KEY`; the runner must be able to reach that endpoint. Supabase PITR (7-day). Scheduled runs target **dev** by default — see Production backup coverage below.
-- **Storage**: Daily mirror of `documents`/`avatars`/`logos` to S3/Spaces (`storage-backup.yml`, encrypted, same 30-day retention).
+- **Storage**: Daily mirror of `documents`/`avatars`/`logos` to S3/Spaces (`storage-backup.yml`, encrypted, same 30-day retention). The dev backup also includes the private `storage-drill` seed (`STORAGE_BUCKETS=documents avatars logos storage-drill`) so the weekly restore verification exercises a non-empty archive.
 - **Terraform state**: DO Spaces (S3-compatible) with versioning enabled — now enforced in code by `digitalocean_spaces_bucket.terraform_state` (`versioning { enabled = true }` in `infra/terraform/digitalocean/state-bucket.tf`, DR-P2-005), not a manual bucket setting. The S3 native lock file (`use_lockfile`) lives in the same bucket (`terraform.tfstate.tflock`), so versioning covers the state and lock objects; this backend does not use DynamoDB locking.
 - **Docker images**: GHCR with SHA-tagged immutable images. Rollback by redeploying a previous SHA tag.
 
@@ -33,7 +33,7 @@ All four backup/restore workflows — `db-backup.yml`, `db-restore-test.yml`,
 
 - **Manual prod run**: dispatch `environment: prod` **from `main`**. The job attaches the approval-gated `prod-approval` environment (required reviewers must be configured in GitHub for the gate to be real).
 - **Scheduled prod run**: set the `PROD_BACKUP_ENABLED` repository variable to `true`. The daily database/storage backups and the weekly restore tests then attach `prod-backup` instead of `dev` (one schedule target at a time; dispatch `environment: dev` manually to keep the dev runs). Create `prod-backup` with the prod backup secrets and **no** required reviewers — an approval-gated environment would leave the unattended run waiting for a human.
-- **Operator dependency (cannot be set from the repo)**: `SUPABASE_DB_URL` (prod), `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` (prod storage), `BACKUP_ENCRYPTION_KEY`, `AWS_*`/`DO_SPACES_*` and `S3_BUCKET`/`S3_PREFIX` must be provisioned in the environment the job attaches — see `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`. Until then, the backups cover dev only and this section is the record of that gap (DR-P2-009 for uploaded files).
+- **Operator dependency (cannot be set from the repo)**: prod `SUPABASE_DB_URL`, prod `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`, prod `BACKUP_ENCRYPTION_KEY`, `AWS_*`/`DO_SPACES_*` and `S3_BUCKET`/`S3_PREFIX` must be provisioned in the environment the prod job attaches — see `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`. The dev database/storage secrets are provisioned and the first dev backup/restore is green; prod coverage remains operator work (DR-P2-009 for uploaded files).
 
 ### Platform backup heartbeat (DR-P2-008)
 
@@ -52,16 +52,16 @@ least one object; real dev and prod backups both count. A manifest-only
 archive therefore cannot mask a broken storage schedule, and an unknown or
 missing manifest is not accepted as proof of a backup.
 
-> **Operator actions required to activate encryption/offsite (audit DR-P1-003):**
-> the code affordance is in place, but the following must be provisioned by an
-> operator and cannot be set from the repo: (1) create the
-> `BACKUP_ENCRYPTION_KEY` secret (a strong passphrase — see
-> `docs/SECRETS_ROTATION.md` for the rotation caveat); (2) create the second
-> bucket and set the `S3_OFFSITE_BUCKET` variable (plus `S3_OFFSITE_PREFIX`) to
-> enable the offsite copy; (3) run `db-backup` manually once to confirm an
-> encrypted object lands in both buckets, and run `db-restore-test` to confirm
-> it decrypts. Until (1) is set, CI uploads fail (the workflows set
-> `REQUIRE_BACKUP_ENCRYPTION=1`) rather than silently writing plaintext.
+> **Operator actions for prod/offsite (audit DR-P1-003):** the dev
+> `BACKUP_ENCRYPTION_KEY`, `SUPABASE_DB_URL` and storage
+> `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` are provisioned; `db-backup`
+> run 42436289022 wrote the first encrypted dump, `db-restore-test` run
+> 42437188270 decrypted and restored it, and storage backup run 42452717267
+> produced the first non-empty encrypted archive. The prod copies remain
+> operator work: create the prod `BACKUP_ENCRYPTION_KEY`, `SUPABASE_DB_URL`,
+> storage credentials and any prod-only `STORAGE_BUCKETS` in the prod
+> environment, and create the second bucket/`S3_OFFSITE_BUCKET` if offsite is
+> required. Prod uploads fail closed rather than writing plaintext.
 
 ### Validating RPO/RTO
 
@@ -78,6 +78,23 @@ valid/corrupt/encrypted archives (FILE-P3-004), so the restore assertions run
 even when no backup has landed yet. The 5-minute PITR RPO is **not** yet proven
 by an automated drill; a dated PITR exercise must be recorded before that
 target is claimed as achieved.
+
+**Last real restore exercise:** 2026-11-08 — `db-restore-test` run
+42437188270 restored the encrypted dump from backup run 42436289022 into a
+throwaway PostgreSQL 17 database. Assertions: 140 public tables, 165 applied
+migrations, 425 rows across the critical tables and 0 tables without RLS. The
+manual deep-dive and PITR exercises remain planned.
+
+**Last real storage restore exercise:** 2026-11-08 — `storage-restore-test`
+run 42452741103 decrypted the archive from `storage-backup` run 42452717267
+(`s3://mct-mainecybertech/storage-backups/supabase-storage-2026-11-08-055651.tar.gz.enc`,
+1 object) and verified 1 object against the manifest (`object_count: 1`). A live
+D5 recovery then deleted `storage-drill/README.txt` (167 bytes) and restored it
+from the same archive; the SHA-256 matched and the restored content type was
+`text/plain`. See
+[`runbooks/drills/2026-11-08-storage-live-recovery.md`](runbooks/drills/2026-11-08-storage-live-recovery.md).
+Production storage recovery remains open because the prod portal is not
+deployed and prod backup secrets are not provisioned.
 
 ## Incident Response
 

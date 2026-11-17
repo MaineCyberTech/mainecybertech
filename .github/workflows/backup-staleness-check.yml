@@ -105,7 +105,11 @@ jobs:
                 echo "::warning::Storage backup: run ${id} (${created}) has no readable storage-backup-manifest artifact; ignoring it"
                 continue
               fi
-              manifest=$(find "$dir" -type f -name 'MANIFEST*.txt' -print -quit)
+              # The storage-backup workflow uploads the manifest as
+              # storage-backup-manifest.txt (artifact: storage-backup-manifest);
+              # older archives used MANIFEST.txt. Match both so the freshness
+              # gate reads object_count instead of ignoring every run.
+              manifest=$(find "$dir" -type f -iname '*manifest*.txt' -print -quit)
               count=""
               if [ -n "$manifest" ]; then
                 count=$(awk '/^object_count:/{print $2; exit}' "$manifest")

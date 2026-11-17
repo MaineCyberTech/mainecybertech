@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import type { Request, Response } from "express";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { failure } from "../types";
 
 /**
@@ -45,7 +45,7 @@ export const rateLimitByUser = rateLimit({
   handler: rateLimitHandler("Too many requests from this user, please try again later."),
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, req.ip),
+  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, ipKeyGenerator(req.ip ?? "unknown")),
   skip: (req) =>
     req.path === "/health" ||
     req.path === "/api/v1/docs" ||
@@ -87,7 +87,7 @@ export const rateLimitSearch = rateLimit({
   handler: rateLimitHandler("Too many search requests, please try again later."),
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, req.ip),
+  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, ipKeyGenerator(req.ip ?? "unknown")),
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
 
@@ -105,7 +105,7 @@ export const rateLimitAdminOps = rateLimit({
   handler: rateLimitHandler("Too many admin operations, please try again later."),
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, req.ip),
+  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, ipKeyGenerator(req.ip ?? "unknown")),
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
 
@@ -169,7 +169,7 @@ export const rateLimitUnsubscribe = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const token = (req.query as Record<string, unknown> | undefined)?.token;
-    return `unsubscribe:${typeof token === "string" ? shareRateLimitKey(token) : `ip:${req.ip}`}`;
+    return `unsubscribe:${typeof token === "string" ? shareRateLimitKey(token) : `ip:${ipKeyGenerator(req.ip ?? "unknown")}`}`;
   },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
@@ -182,7 +182,7 @@ export const rateLimitAuth = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const email = emailRateLimitKey((req.body as Record<string, unknown> | undefined)?.email);
-    return email ? `email:${email}` : `ip:${req.ip}`;
+    return email ? `email:${email}` : `ip:${ipKeyGenerator(req.ip ?? "unknown")}`;
   },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
@@ -195,7 +195,7 @@ export const rateLimitEmail = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const email = emailRateLimitKey((req.body as Record<string, unknown> | undefined)?.email);
-    return email ? `email-action:${email}` : `ip:${req.ip}`;
+    return email ? `email-action:${email}` : `ip:${ipKeyGenerator(req.ip ?? "unknown")}`;
   },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
@@ -213,6 +213,6 @@ export const rateLimitMetrics = rateLimit({
   handler: rateLimitHandler("Too many requests to metrics endpoint"),
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => `ip:${req.ip}`,
+  keyGenerator: (req) => `ip:${ipKeyGenerator(req.ip ?? "unknown")}`,
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
