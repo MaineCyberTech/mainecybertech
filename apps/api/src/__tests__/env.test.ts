@@ -74,6 +74,29 @@ describe("CORS wildcard rejection [SEC-P3-006]", () => {
   });
 });
 
+describe("JWT verification secret placeholder rejection [SEC-P1-002]", () => {
+  it("rejects the known repeated JWT_SECRET placeholder at boot", () => {
+    const saved = {
+      SUPABASE_URL: process.env.SUPABASE_URL,
+      SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      JWT_SECRET: process.env.JWT_SECRET,
+    };
+    process.env.SUPABASE_URL = "https://test.supabase.co";
+    process.env.SUPABASE_ANON_KEY = "test-anon-key";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
+    process.env.JWT_SECRET = "JWT_SECRET".repeat(24);
+    try {
+      expect(() => getEnv()).toThrow(/known placeholder/);
+    } finally {
+      for (const [key, value] of Object.entries(saved)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
+  });
+});
+
 describe("env queue backend parity assertion [ARCH-P2-004]", () => {
   it("accepts bullmq in production", () => {
     expect(() =>
