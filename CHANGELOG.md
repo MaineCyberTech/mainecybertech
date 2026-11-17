@@ -9,6 +9,14 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ## [Unreleased]
 
+### Nov 17
+
+- **JWT verification hardening (SEC-P1-002):** the API rejects the known
+  repeated `JWT_SECRET` placeholder at boot. The dev deployment's placeholder
+  was replaced with a random verification secret, closing a forged-HS256
+  authentication path; the incident and fallback behavior are documented in
+  `docs/JWT_ROTATION.md`.
+
 ### Nov 16
 
 - **Deploy fix (express-rate-limit v8):** custom rate-limit key generators now
@@ -34,7 +42,6 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - **AI reviewer:** pinned to the immutable ai-reviewer fix commit; the bot
   approval fails closed on check-query errors and the reviewer executes the
   pinned SHA (`CI-P2-012/013`).
-
 
 ### Breaking Changes
 
