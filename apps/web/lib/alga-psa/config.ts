@@ -13,7 +13,11 @@ import "server-only";
  * PSA ticket and does not dual-write it to Supabase.
  */
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// Portal demo organizations use UUID-shaped IDs that are not RFC 4122
+// version/variant UUIDs (for example 11111111-1111-1111-1111-111111111111).
+// Accept any structurally valid UUID here; PSA client/board/status IDs are
+// still validated by the same structural shape.
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const REQUIRED_KEYS = [
   "ALGA_PSA_BASE_URL",

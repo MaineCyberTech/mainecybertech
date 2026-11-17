@@ -148,6 +148,23 @@ describe("Alga PSA intake configuration", () => {
     expect(getAlgaPsaIntakeConfig("77777777-7777-4777-8777-777777777777", env)).toBeNull();
   });
 
+  it("accepts UUID-shaped portal organization IDs without RFC 4122 version/variant nibbles", () => {
+    const env = {
+      ...BASE_ENV,
+      ALGA_PSA_CLIENT_MAP: JSON.stringify({
+        "11111111-1111-1111-1111-111111111111": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "22222222-2222-2222-2222-222222222222": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      }),
+    };
+
+    expect(
+      getAlgaPsaIntakeConfig("11111111-1111-1111-1111-111111111111", env)?.clientId,
+    ).toBe("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+    expect(
+      getAlgaPsaIntakeConfig("22222222-2222-2222-2222-222222222222", env)?.clientId,
+    ).toBe("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+  });
+
   it("fails closed when the per-org client map is malformed", () => {
     const status = readAlgaPsaIntakeConfig({
       ...BASE_ENV,
