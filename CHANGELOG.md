@@ -9,6 +9,14 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ## [Unreleased]
 
+### Nov 17
+
+- **Kestrel portal secrets:** new `scripts/kestrel-portal-secrets.sh` checks the
+  droplet's Supabase service-role key against Kestrel's managed source and can
+  apply the managed Supabase tokens, recreate api/worker, and restore the
+  previous `.env` if the post-apply check fails (`check` / `apply --dry-run` /
+  `apply`).
+
 ### Nov 16
 
 - **Deploy fix (express-rate-limit v8):** custom rate-limit key generators now
