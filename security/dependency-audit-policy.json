@@ -23,6 +23,14 @@
       "scope": "prod",
       "reason": "Fixed only in zod 4.6.6; the API's validators are written against zod 3 and the 3->4 migration is a breaking change (error shapes, coercion, parser APIs). Tracked as a dedicated migration; remove this entry when the upgrade lands.",
       "expires": "2026-12-15"
+    },
+    {
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "package": "picomatch",
+      "severity": "high",
+      "scope": "prod",
+      "reason": "No patched release exists: picomatch 4.0.7 is the latest and the advisory covers <=4.0.7. Reached in production only through @sentry/nextjs's build-time Rollup plugin chain (@sentry/nextjs > @rollup/plugin-commonjs > @rollup/pluginutils/fdir > picomatch); production requests do not pass user-controlled globs to picomatch. Re-review when picomatch publishes a fix or Sentry updates the plugin chain.",
+      "expires": "2026-12-31"
     }
   ]
 }

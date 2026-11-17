@@ -9,6 +9,14 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ## [Unreleased]
 
+### Nov 17
+
+- **Dependency audit:** allowlist `GHSA-fc5q-39xc-vjpf` (picomatch ReDoS,
+  high, no patched release) until 2026-12-31. The vulnerable module is reached
+  only through the build-time Rollup plugins bundled with `@sentry/nextjs`;
+  production requests do not pass user-controlled globs to it. Re-review when
+  upstream publishes a fix or Sentry updates the plugin chain.
+
 ### Nov 16
 
 - **Deploy fix (express-rate-limit v8):** custom rate-limit key generators now
@@ -34,7 +42,6 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - **AI reviewer:** pinned to the immutable ai-reviewer fix commit; the bot
   approval fails closed on check-query errors and the reviewer executes the
   pinned SHA (`CI-P2-012/013`).
-
 
 ### Breaking Changes
 
