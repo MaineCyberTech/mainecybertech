@@ -3,6 +3,11 @@
 www.mainecybertech.com, app.mainecybertech.com {
     tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
 
+    # Dev-only test-account page is disabled in the app; block the route as
+    # defense in depth.
+    @testaccounts path /test-accounts /test-accounts/*
+    respond @testaccounts 404
+
     reverse_proxy web:3000
 
     header / {
@@ -40,6 +45,11 @@ api.mainecybertech.com {
 
 www.mainecybertech.us, app.mainecybertech.us {
     tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+
+    # Dev-only test-account page is disabled in the app; block the route as
+    # defense in depth.
+    @testaccounts path /test-accounts /test-accounts/*
+    respond @testaccounts 404
 
     reverse_proxy web:3000
 

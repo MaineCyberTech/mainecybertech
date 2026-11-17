@@ -47,8 +47,7 @@ export async function ssoLoginAction(): Promise<{ error?: string }> {
   try {
     result = await unauthClient().auth.startSso();
   } catch (error) {
-    const message =
-      error instanceof ApiError ? error.message : "Could not start SSO sign-in.";
+    const message = error instanceof ApiError ? error.message : "Could not start SSO sign-in.";
     return { error: message };
   }
 
@@ -173,22 +172,23 @@ export type TestLoginResult = { ok: true; redirectTo: string } | { ok: false; er
  * cookie (no redirect) and resolves the best landing page from the
  * user's approved memberships (admins land in /admin).
  */
-export async function testLoginAction(email: string, password: string): Promise<TestLoginResult> {
+export async function testLoginAction(email: string): Promise<TestLoginResult> {
   try {
     const cookieStore = await cookies();
     const headersList = await headers();
     const host = (headersList.get("host") || "").toLowerCase();
 
     // Server-side gate: the UI check is client-only, so without this the
-    // action (bundled in the client chunk) could be invoked directly. Mirrors
-    // the client rule: env flag, localhost, or the dev droplet's .us domain.
-    const allowed =
-      process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED === "true" ||
-      host === "localhost" ||
-      host.startsWith("localhost:") ||
-      host.startsWith("127.0.0.1") ||
-      host.endsWith(".us");
-    if (!allowed) {
+    // action (bundled in the client chunk) could be invoked directly. Dev-only:
+    // explicit flag, non-production build, localhost, and a server-only
+    // password that is never shipped to the browser.
+    const testAccountsEnabled =
+      process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED === "true" &&
+      process.env.NODE_ENV !== "production";
+    const hostAllowed =
+      host === "localhost" || host.startsWith("localhost:") || host.startsWith("127.0.0.1");
+    const password = process.env.TEST_ACCOUNT_PASSWORD;
+    if (!testAccountsEnabled || !hostAllowed || !password) {
       return { ok: false, error: "Test accounts are disabled." };
     }
 

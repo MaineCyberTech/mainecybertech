@@ -9,6 +9,14 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ## [Unreleased]
 
+### Nov 17
+
+- **Test-account hardening (SEC-AUTH-002):** the public `/test-accounts`
+  one-click sign-in is now local-only, requires an explicit dev flag, a
+  non-production build and a server-only password, and no longer ships a
+  default credential. Caddy blocks the route as defense in depth; the affected
+  demo account passwords were rotated.
+
 ### Nov 16
 
 - **Deploy fix (express-rate-limit v8):** custom rate-limit key generators now
@@ -34,7 +42,6 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - **AI reviewer:** pinned to the immutable ai-reviewer fix commit; the bot
   approval fails closed on check-query errors and the reviewer executes the
   pinned SHA (`CI-P2-012/013`).
-
 
 ### Breaking Changes
 
