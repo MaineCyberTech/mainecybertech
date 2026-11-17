@@ -25,20 +25,11 @@ export function rateLimitHandler(message: string) {
  * (stable for the token's lifetime), and treat the global IP limiter as the
  * authoritative ceiling. Falls back to the client IP when there is no token.
  */
-/**
- * express-rate-limit v8 rejects a raw `req.ip` in a custom keyGenerator: IPv6
- * clients could otherwise rotate addresses within their /64 and multiply their
- * bucket. `ipKeyGenerator` applies the documented /56 normalization.
- */
-function normalizedIp(ip: string | undefined): string {
-  return ip ? ipKeyGenerator(ip) : "unknown";
-}
-
 export function userRateLimitKeyGenerator(
   authorization: string | string[] | undefined,
   ip: string | undefined,
 ): string {
-  const clientIp = normalizedIp(ip);
+  const clientIp = ip ?? "unknown";
   const header = Array.isArray(authorization) ? authorization[0] : authorization;
   if (header?.startsWith("Bearer ")) {
     const token = header.slice(7);
@@ -54,7 +45,7 @@ export const rateLimitByUser = rateLimit({
   handler: rateLimitHandler("Too many requests from this user, please try again later."),
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, req.ip),
+  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, ipKeyGenerator(req.ip ?? "unknown")),
   skip: (req) =>
     req.path === "/health" ||
     req.path === "/api/v1/docs" ||
@@ -96,7 +87,7 @@ export const rateLimitSearch = rateLimit({
   handler: rateLimitHandler("Too many search requests, please try again later."),
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, req.ip),
+  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, ipKeyGenerator(req.ip ?? "unknown")),
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
 
@@ -114,7 +105,7 @@ export const rateLimitAdminOps = rateLimit({
   handler: rateLimitHandler("Too many admin operations, please try again later."),
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, req.ip),
+  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, ipKeyGenerator(req.ip ?? "unknown")),
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
 
@@ -178,7 +169,7 @@ export const rateLimitUnsubscribe = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const token = (req.query as Record<string, unknown> | undefined)?.token;
-    return `unsubscribe:${typeof token === "string" ? shareRateLimitKey(token) : `ip:${normalizedIp(req.ip)}`}`;
+    return `unsubscribe:${typeof token === "string" ? shareRateLimitKey(token) : `ip:${ipKeyGenerator(req.ip ?? "unknown")}`}`;
   },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
@@ -191,7 +182,7 @@ export const rateLimitAuth = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const email = emailRateLimitKey((req.body as Record<string, unknown> | undefined)?.email);
-    return email ? `email:${email}` : `ip:${normalizedIp(req.ip)}`;
+    return email ? `email:${email}` : `ip:${ipKeyGenerator(req.ip ?? "unknown")}`;
   },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
@@ -204,7 +195,7 @@ export const rateLimitEmail = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const email = emailRateLimitKey((req.body as Record<string, unknown> | undefined)?.email);
-    return email ? `email-action:${email}` : `ip:${normalizedIp(req.ip)}`;
+    return email ? `email-action:${email}` : `ip:${ipKeyGenerator(req.ip ?? "unknown")}`;
   },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
@@ -222,6 +213,6 @@ export const rateLimitMetrics = rateLimit({
   handler: rateLimitHandler("Too many requests to metrics endpoint"),
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => `ip:${normalizedIp(req.ip)}`,
+  keyGenerator: (req) => `ip:${ipKeyGenerator(req.ip ?? "unknown")}`,
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
