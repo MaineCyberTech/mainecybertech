@@ -11,7 +11,7 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Nov 17
 
-- **JWT verification hardening (SEC-P1-002):** the API rejects the known
+- **JWT verification hardening (SEC-AUTH-001):** the API rejects the known
   repeated `JWT_SECRET` placeholder at boot. The dev deployment's placeholder
   was replaced with a random verification secret, closing a forged-HS256
   authentication path; the incident and fallback behavior are documented in

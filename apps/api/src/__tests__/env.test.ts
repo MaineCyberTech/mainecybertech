@@ -74,7 +74,7 @@ describe("CORS wildcard rejection [SEC-P3-006]", () => {
   });
 });
 
-describe("JWT verification secret placeholder rejection [SEC-P1-002]", () => {
+describe("JWT verification secret placeholder rejection [SEC-AUTH-001]", () => {
   it("rejects the known repeated JWT_SECRET placeholder at boot", () => {
     const saved = {
       SUPABASE_URL: process.env.SUPABASE_URL,
