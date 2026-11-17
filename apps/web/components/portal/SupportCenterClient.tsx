@@ -9,6 +9,22 @@ type TicketRecord = Record<string, any> & { id: string };
 
 type TicketCounts = { open: number; closed: number; all: number };
 
+/**
+ * A browser-generated idempotency token for one create form session. It stays
+ * stable across double-clicks and retries, so the server can return the ticket
+ * already created instead of writing a duplicate. An empty value is safe: the
+ * server action falls back to a fresh UUID.
+ */
+function newSubmissionId(): string {
+  if (
+    typeof globalThis.crypto !== "undefined" &&
+    typeof globalThis.crypto.randomUUID === "function"
+  ) {
+    return globalThis.crypto.randomUUID();
+  }
+  return "";
+}
+
 type Props = {
   tickets: TicketRecord[];
   createTicketAction: (
@@ -172,6 +188,9 @@ export default function SupportCenterClient({
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, openModal);
   const [formError, setFormError] = useState<string | null>(null);
+  // Idempotency token for the open create form. A retry reuses it; opening the
+  // form again starts a new submission.
+  const [submissionId, setSubmissionId] = useState<string>(() => newSubmissionId());
   // USE-P3-001: closing the modal silently left users unsure the ticket was
   // submitted; keep the created ticket so the list page can confirm it.
   const [createdTicket, setCreatedTicket] = useState<{ id: string; subject: string } | null>(null);
@@ -217,7 +236,14 @@ export default function SupportCenterClient({
             Open and track support requests for your organization.
           </p>
         </div>
-        <button type="button" className="cyber-button-secondary" onClick={() => setOpenModal(true)}>
+        <button
+          type="button"
+          className="cyber-button-secondary"
+          onClick={() => {
+            setSubmissionId(newSubmissionId());
+            setOpenModal(true);
+          }}
+        >
           Submit Ticket
         </button>
       </div>
@@ -361,6 +387,7 @@ export default function SupportCenterClient({
                       id: result.ticketId ?? "",
                       subject: result.subject ?? "Submitted",
                     });
+                    setSubmissionId(newSubmissionId());
                     setOpenModal(false);
                   } else {
                     setFormError(result.error ?? "Failed to create ticket.");
@@ -369,6 +396,7 @@ export default function SupportCenterClient({
               }}
               className="space-y-4 px-6 py-6"
             >
+              <input type="hidden" name="submissionId" value={submissionId} />
               <div>
                 <label className="cyber-label" htmlFor="support-title">
                   Title
@@ -435,7 +463,11 @@ export default function SupportCenterClient({
                   {isPending ? "Submitting..." : "Submit Ticket"}
                 </button>
               </div>
-              {formError && <p role="alert" className="text-sm text-red-400">{formError}</p>}
+              {formError && (
+                <p role="alert" className="text-sm text-red-400">
+                  {formError}
+                </p>
+              )}
             </form>
           </div>
         </div>
