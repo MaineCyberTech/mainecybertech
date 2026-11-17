@@ -135,6 +135,40 @@ Also run the repository checker:
 Do not leave a real branch named `kestrel-access-check`; the dry run does not
 create one.
 
+## Portal secret check and repair
+
+Kestrel owns the dev Supabase tokens in `/etc/kestrel/portal/portal.env`
+(`0600 root:root`): `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
+`SUPABASE_SERVICE_ROLE_KEY`. The file is written from Vault and is never
+committed to the repository.
+
+Check the droplet without changing it:
+
+```sh
+sudo ./scripts/kestrel-portal-secrets.sh check
+```
+
+Preview and apply the managed values:
+
+```sh
+sudo ./scripts/kestrel-portal-secrets.sh apply --dry-run
+sudo ./scripts/kestrel-portal-secrets.sh apply
+```
+
+`check` validates the runtime service-role key against Supabase, compares the
+managed keys with Kestrel's copy (short SHA-256 fingerprints only), and asserts
+`/health/detail` reports a healthy database. `apply` validates the source key
+before writing, backs up `.env`, merges only the managed keys, recreates
+`api` and `worker`, and restores the backup if the post-apply check fails.
+Neither mode prints a secret value.
+
+The Kestrel **broker** token is not one of these keys; it must stay out of
+`/opt/mct-portal/.env` (see "What not to do").
+
+Until the GitHub `dev` environment secret is corrected, `deploy-do` rewrites
+`.env` from that secret. Run `apply` after a deploy (or fix the secret) so the
+droplet keeps the Kestrel-managed values.
+
 ## What not to do
 
 - Do not copy the token into `/opt/mct-portal/.env`, Docker Compose or an app
