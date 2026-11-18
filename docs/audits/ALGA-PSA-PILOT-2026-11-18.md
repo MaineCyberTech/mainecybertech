@@ -148,9 +148,17 @@ created on 2026-11-18 as a mirror:
   app answered HTTP 307 on `/`.
 - The earlier broker consumers still return 403 on the Actions variables API;
   that is why the one-off App installation token path was used.
-- `prod` and `prod-approval` have no `ALGA_PSA_INTAKE_ENABLED` override. A
-  future prod deploy would inherit the repository value; set both to `false`
-  before any prod deploy (prod is not deployed today).
+
+### Production guard
+
+- `prod` and `prod-approval` now each carry
+  `ALGA_PSA_INTAKE_ENABLED=false` (created 2026-11-18T23:04:09Z and
+  23:04:10Z). A future production deploy cannot inherit the repository `true`.
+- Both environments already existed; no environment was created. The writes
+  used the same `kestrel-automation` App token with `actions_variables: write`
+  and `environments: write`; the token was revoked after use. No PAT.
+- The repository variable and the `dev` environment variable were read back
+  after the guard write and remain `true`.
 
 ### Test evidence and gap
 
