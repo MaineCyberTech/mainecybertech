@@ -222,14 +222,12 @@ export default async function AdminStoreProductsPage(props: {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <ProductForm mode="edit" product={p} categories={categories}>
-                      <button
-                        type="button"
-                        className="text-xs font-semibold text-emerald-400 transition hover:text-emerald-300"
-                      >
-                        Edit
-                      </button>
-                    </ProductForm>
+                    <Link
+                      href={`/admin/store/products/${p.id}`}
+                      className="text-xs font-semibold text-emerald-400 transition hover:text-emerald-300"
+                    >
+                      Edit
+                    </Link>
                     <DeleteButton id={p.id} name={p.name} />
                     <Link
                       href={`/admin/store/products/${p.id}`}
