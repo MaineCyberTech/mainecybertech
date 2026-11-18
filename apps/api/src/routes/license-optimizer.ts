@@ -10,6 +10,7 @@ import { requirePermission } from "../middleware/permissions";
 import { queryInt } from "../lib/query";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { partialUpdateSchema } from "../lib/validators";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -28,7 +29,7 @@ const createSchema = z.object({
   notes: z.string().max(2000).optional().nullable(),
 });
 
-const updateSchema = createSchema.partial();
+const updateSchema = partialUpdateSchema(createSchema);
 
 function snakeCase(str: string): string {
   return str.replace(/[A-Z]/g, (l) => `_${l.toLowerCase()}`);

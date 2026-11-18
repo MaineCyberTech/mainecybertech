@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createProjectSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   name: z.string().min(1, "Name is required").max(500),
   description: z.string().max(10000).optional().nullable(),
   status: z
@@ -38,7 +38,7 @@ export const createTaskSchema = z.object({
   issueType: z.string().max(50).optional().nullable(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional().default("normal"),
   labels: z.array(z.string().max(100)).optional().nullable(),
-  parentTaskId: z.string().uuid().optional().nullable(),
+  parentTaskId: z.guid().optional().nullable(),
   epicKey: z.string().max(50).optional().nullable(),
   resolution: z.string().max(50).optional().nullable(),
   sprint: z.string().max(100).optional().nullable(),
@@ -57,7 +57,7 @@ export const updateTaskSchema = z.object({
   issueType: z.string().max(50).optional().nullable(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
   labels: z.array(z.string().max(100)).optional().nullable(),
-  parentTaskId: z.string().uuid().optional().nullable(),
+  parentTaskId: z.guid().optional().nullable(),
   epicKey: z.string().max(50).optional().nullable(),
   resolution: z.string().max(50).optional().nullable(),
   sprint: z.string().max(100).optional().nullable(),
@@ -76,19 +76,19 @@ export const updateTaskCommentSchema = z.object({
 });
 
 export const reorderTasksSchema = z.object({
-  order: z.array(z.string().uuid()).min(1),
+  order: z.array(z.guid()).min(1),
 });
 
 export const markTaskReadSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
 });
 
 export const approveTaskSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
 });
 
 export const portalTaskCommentSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   body: z.string().min(1, "Comment body is required").max(10000),
 });
 
@@ -105,7 +105,7 @@ export const updateProjectUpdateSchema = z.object({
 });
 
 export const createPhaseSchema = z.object({
-  projectId: z.string().uuid(),
+  projectId: z.guid(),
   name: z.string().min(1).max(200),
   description: z.string().max(2000).optional().nullable(),
   status: z.string().default("planned"),
@@ -124,7 +124,7 @@ export const updatePhaseSchema = z.object({
 });
 
 export const createMilestoneSchema = z.object({
-  projectId: z.string().uuid(),
+  projectId: z.guid(),
   phaseId: z.string().optional().nullable(),
   title: z.string().min(1).max(200),
   description: z.string().max(2000).optional().nullable(),
@@ -142,7 +142,7 @@ export const updateMilestoneSchema = z.object({
 });
 
 export const createDependencySchema = z.object({
-  projectId: z.string().uuid(),
+  projectId: z.guid(),
   dependsOnTaskId: z.string().optional().nullable(),
   dependsOnMilestoneId: z.string().optional().nullable(),
   blockedByProjectId: z.string().optional().nullable(),

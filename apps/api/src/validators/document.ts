@@ -31,7 +31,7 @@ const storagePathSchema = z
   .regex(STORAGE_PATH_RE, "storagePath must look like <orgId>/<fileName>");
 
 export const createDocumentSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   name: z.string().min(1, "Document name is required").max(500),
   description: z.string().max(10000).optional().nullable(),
   visibility: z.enum(["private", "org", "internal", "public"]).default("org"),
@@ -43,7 +43,7 @@ export const createDocumentSchema = z.object({
   fileSize: z.number().optional().nullable(),
   uploadedBy: z.string().optional().nullable(),
   currentVersion: z.number().optional().nullable(),
-  metadata: z.record(z.unknown()).optional().nullable(),
+  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
 });
 
 export const updateDocumentSchema = z.object({
@@ -57,11 +57,11 @@ export const updateDocumentSchema = z.object({
   fileName: z.string().optional().nullable(),
   fileSize: z.number().optional().nullable(),
   currentVersion: z.number().optional().nullable(),
-  metadata: z.record(z.unknown()).optional().nullable(),
+  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
 });
 
 export const bulkFolderSchema = z.object({
-  documentIds: z.array(z.string().uuid()).min(1, "Select at least one document"),
+  documentIds: z.array(z.guid()).min(1, "Select at least one document"),
   folderPath: z.string().min(1, "Folder path is required").max(500),
   // ADMIN-P2-003: `dryRun` returns the resolved rows + field diffs without
   // writing; `confirm` is the explicit second step for elevated applies.
@@ -70,7 +70,7 @@ export const bulkFolderSchema = z.object({
 });
 
 export const bulkMetadataSchema = z.object({
-  documentIds: z.array(z.string().uuid()).min(1, "Select at least one document"),
+  documentIds: z.array(z.guid()).min(1, "Select at least one document"),
   description: z.string().max(10000).optional().nullable(),
   folderPath: z.string().max(500).optional().nullable(),
   visibility: z.enum(["private", "org", "internal", "public"]).optional().nullable(),

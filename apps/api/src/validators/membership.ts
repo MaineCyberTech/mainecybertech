@@ -7,7 +7,7 @@ import { z } from "zod";
  * are left untouched by the PATCH handler.
  */
 export const updateMembershipSchema = z.object({
-  roleId: z.string().uuid().optional(),
+  roleId: z.guid().optional(),
   status: z.enum(["pending", "approved", "rejected", "suspended"]),
   isBillingContact: z.boolean().optional(),
   isSecurityContact: z.boolean().optional(),

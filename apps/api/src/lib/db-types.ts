@@ -8,9 +8,10 @@ export type UpdateRow<T extends TableName> = Database["public"]["Tables"][T]["Up
 /**
  * Cast a value known to be JSON-serializable to the generated `Json` type.
  *
- * Zod schemas such as `z.record(z.unknown())` produce `Record<string, unknown>`
- * which TypeScript cannot narrow to `Json` even though the value is JSON by
- * construction. Use this at those boundaries instead of an `as any`.
+ * Zod schemas such as `z.record(z.string(), z.unknown())` produce
+ * `Record<string, unknown>` which TypeScript cannot narrow to `Json` even
+ * though the value is JSON by construction. Use this at those boundaries
+ * instead of an `as any`.
  */
 export function toJson(value: unknown): Json {
   return value as Json;

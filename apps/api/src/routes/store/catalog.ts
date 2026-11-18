@@ -17,6 +17,7 @@ import { toJson, type UpdateRow } from "../../lib/db-types";
 import { applyOrgScope, resolveAdminTenantScope } from "../../lib/admin-scope";
 import { responseCache, invalidateCache } from "../../middleware/cache";
 import { assertDeleteConfirmed } from "../../lib/delete-confirm";
+import { partialUpdateSchema } from "../../lib/validators";
 
 /** PERF-P2-002: public storefront reads are cached briefly (per-process/Redis)
  *  so a page view no longer costs two uncached Supabase reads. Admin catalog
@@ -254,7 +255,7 @@ export function registerCatalogRoutes(router: Router) {
     requireAdmin,
     async (req, res, next) => {
       try {
-        const parsed = productUpsertSchema.partial().parse(req.body);
+        const parsed = partialUpdateSchema(productUpsertSchema).parse(req.body);
         const supabase = getSupabaseAdmin();
         const scope = await resolveAdminTenantScope(req);
         const existing = await supabase
@@ -438,7 +439,7 @@ export function registerCatalogRoutes(router: Router) {
     requireAdmin,
     async (req, res, next) => {
       try {
-        const parsed = categoryUpsertSchema.partial().parse(req.body);
+        const parsed = partialUpdateSchema(categoryUpsertSchema).parse(req.body);
         const supabase = getSupabaseAdmin();
         const scope = await resolveAdminTenantScope(req);
         const existing = await supabase

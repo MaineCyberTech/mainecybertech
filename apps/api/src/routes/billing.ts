@@ -405,7 +405,7 @@ router.get("/billing-customer", async (req, res, next) => {
 router.post("/sync", requirePermission("billing", "manage"), async (req, res, next) => {
   try {
     const { organizationId } = z
-      .object({ organizationId: z.string().uuid().optional() })
+      .object({ organizationId: z.guid().optional() })
       .parse(req.body);
     const supabase = getScopedClient(req, "billing", "write");
 
