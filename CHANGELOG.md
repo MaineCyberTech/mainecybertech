@@ -11,6 +11,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Nov 18
 
+- **TypeScript 6:** migrated the tsconfigs (`baseUrl` removed, `types` baseline
+  restored, web side-effect import check disabled) and regenerated the lockfile;
+  residual semantic fixes will follow the CI typecheck.
 - **Sentry 11:** migrated to the v11 `dataCollection` policy (keeping the v10
   no-default-PII baseline), moved `withSentryConfig` to
   `@sentry/nextjs/config`, and recorded the new `sentry` CLI
