@@ -17,6 +17,12 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   default credential. Caddy blocks the route as defense in depth; the affected
   demo account passwords were rotated.
 
+- **Kestrel portal secrets:** new `scripts/kestrel-portal-secrets.sh` checks the
+  droplet's Supabase service-role key against Kestrel's managed source and can
+  apply the managed Supabase tokens, recreate api/worker, and restore the
+  previous `.env` if the post-apply check fails (`check` / `apply --dry-run` /
+  `apply`).
+
 ### Nov 16
 
 - **Deploy fix (express-rate-limit v8):** custom rate-limit key generators now
