@@ -122,12 +122,12 @@ what it can; the rest are review gates.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,762 tests, all passing. 526 suites.**
+**4,766 tests, all passing. 526 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
 | API     | 2,069         | 178    | Jest + supertest                  |
-| Web     | 2,053         | 311    | Jest + Testing Library            |
+| Web     | 2,057         | 311    | Jest + Testing Library            |
 | SDK     | 327           | 5      | Jest (mocked fetch)               |
 | Worker  | 313           | 32     | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
@@ -200,7 +200,7 @@ pnpm e2e                     # Playwright E2E
 | Seed files                | 10    | `supabase/seeds/*.sql`                                                                                                                                                                                                                                                                             |
 | GitHub Actions workflows  | 32    | `.github/workflows/`                                                                                                                                                                                                                                                                               |
 | AI prompt files           | 626   | `prompts/` (6 packs, 624 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                                                                                                                                           |
-| Build/dev/utility scripts | 126   | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `check-kestrel-agent.sh`, `check-portal-export-sql.py`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `filter-restore-sql.py`, `collect-licenses.mjs`, etc.) |
+| Build/dev/utility scripts | 127   | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `check-kestrel-agent.sh`, `kestrel-portal-secrets.sh`, `check-portal-export-sql.py`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `filter-restore-sql.py`, `collect-licenses.mjs`, etc.) |
 
 ## Database Types (2026-09-21)
 

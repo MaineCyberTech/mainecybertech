@@ -486,10 +486,7 @@ export default function TestAccountsPage() {
     setLoading(email);
     setError(null);
     try {
-      const result = await testLoginAction(
-        email,
-        process.env.NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD ?? "1",
-      );
+      const result = await testLoginAction(email);
       if (!result.ok) {
         setError(result.error);
         setLoading(null);
@@ -512,10 +509,8 @@ export default function TestAccountsPage() {
             Test Accounts
           </h1>
           <p className="mt-3 text-sm text-slate-400">
-            Click any account to sign in automatically. Password:{" "}
-            <code className="rounded bg-emerald-600/15 px-1.5 py-0.5 font-mono text-xs text-emerald-400">
-              {process.env.NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD ?? "1"}
-            </code>
+            Click any account to sign in automatically. This page is available only for local
+            development.
           </p>
         </div>
 
