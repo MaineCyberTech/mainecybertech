@@ -751,6 +751,17 @@ jobs:
           # relay user). Required whenever those URLs point at ntfy.
           ALERTMANAGER_WEBHOOK_USER: ${{ secrets.ALERTMANAGER_WEBHOOK_USER }}
           ALERTMANAGER_WEBHOOK_PASS: ${{ secrets.ALERTMANAGER_WEBHOOK_PASS }}
+          # PSA intake is staged per environment. These are non-secret IDs/flags;
+          # the API key/base URL/tenant ID are appended from the droplet's
+          # root-only broker lease file. Without this mapping the ssh-action
+          # has nothing to forward even though the names appear in `envs`.
+          ALGA_PSA_INTAKE_ENABLED: ${{ vars.ALGA_PSA_INTAKE_ENABLED }}
+          ALGA_PSA_CLIENT_ID: ${{ vars.ALGA_PSA_CLIENT_ID }}
+          ALGA_PSA_BOARD_ID: ${{ vars.ALGA_PSA_BOARD_ID }}
+          ALGA_PSA_STATUS_ID: ${{ vars.ALGA_PSA_STATUS_ID }}
+          ALGA_PSA_PRIORITY_ID: ${{ vars.ALGA_PSA_PRIORITY_ID }}
+          ALGA_PSA_PRIORITY_MAP: ${{ vars.ALGA_PSA_PRIORITY_MAP }}
+          ALGA_PSA_CLIENT_MAP: ${{ vars.ALGA_PSA_CLIENT_MAP }}
           # Forwarded so the remote script never interpolates these into the
           # command text (a branch name may contain shell metacharacters).
           DEPLOY_REF: ${{ github.ref_name }}
