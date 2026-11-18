@@ -11,6 +11,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Nov 18
 
+- **Deploy safety:** `deploy-do` now validates the Supabase service-role key
+  before replacing containers and restores the previous `/opt/mct-portal/.env`
+  when a deploy fails, so a rotated or rejected credential cannot leave the
+  stack running without a working database key.
+
 - **Express 5:** the API now runs Express 5. Injected org scoping uses the
   getter-safe `pinQueryParam` helper (`req.query` assignment throws in v5), and
   the test harness follows the same pattern; lockfile regenerated.
