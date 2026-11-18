@@ -76,3 +76,84 @@ it; the intake code does not create incomplete contacts.
 - Add a read-only PSA ticket projection before the portal is expected to show
   PSA-created tickets in its support list.
 - Enable only for mapped organizations and only in an approved change window.
+
+## Enablement attempt 2026-11-18 (blocked before the flag change)
+
+A second, controlled enablement attempt verified the staged configuration and
+then stopped at the cutover backfill gate. The flag was **not** changed.
+
+### Preconditions verified
+
+| Check | Result |
+|---|---|
+| Live `/opt/mct-portal/.env` | `0600 root:root`; one `ALGA_PSA_INTAKE_ENABLED` line, `false` |
+| Board / status / default priority | Service Desk `2fcfaecf…`, New `fe50b167…`, Normal `ce4f8578…` (match this audit) |
+| Priority map | `low`, `normal`, `high`, `urgent` all present |
+| `ALGA_PSA_CLIENT_MAP` | exactly 1 entry: Acme `11111111…` → `2f9aee0f…`; no second tenant |
+| PSA health | `GET /api/readyz` 200 (`database:true`, `redis:true`, v1.6.18) |
+| PSA client/contact | Acme client active; pilot contact `b5ad8d6a…` active under it; 10 contacts |
+| Web container | `healthy`; `ALGA_PSA_INTAKE_ENABLED=false`; client-map entries = 1 |
+| Portal tickets | 6 Acme rows: 1 `new`, 1 `open`, 2 `in_progress`, 2 `resolved` |
+
+### Blocker: one open ticket is not backfilled
+
+Four Acme portal tickets are open. Three are already mirrored into PSA with a
+`client_portal` link (`relationship: mirror`, `metadata.demo=true`):
+
+- `52000000-0000-0000-0000-000000000001` → PSA `62e59878-7ab3-507a-a53e-b23b81c27008`
+- `52700000-0000-0000-0000-000000000001` → PSA `1c793925-45d0-5431-af48-34914409c43e`
+- `52700000-0000-0000-0000-000000000002` → PSA `bf577f82-4098-5c3c-a394-b2a8e9dc1507`
+
+The fourth is **not** mirrored: portal ticket
+`337f97b4-0897-4cf4-9603-30ef45c23836` (title `g`, priority urgent, status
+`new`, created 2026-06-09 by a super-admin profile). The PSA lookup
+`GET /tickets/by-external-link?system=client_portal&external_id=337f97b4…`
+returns 404, and no Acme PSA ticket carries that title. Cutover checklist step 2
+requires every open portal ticket to be backfilled before intake is enabled.
+
+Owner decision required: backfill that ticket with the portal id in the
+external link, or close it as a stale test. This change deliberately did not
+alter any portal ticket or PSA record.
+
+### Flag state
+
+`ALGA_PSA_INTAKE_ENABLED` remained `false` in `/opt/mct-portal/.env` and in the
+running `mct-portal-web-1`. `vars.ALGA_PSA_INTAKE_ENABLED` was not changed.
+The available portal/cross-repo broker consumers return HTTP 403
+`Resource not accessible by integration` on the Actions variables API, so the
+persistent path needs an identity with repository-variable write. A
+droplet-only `.env` edit is not a substitute: the next deploy rewrites `.env`
+from the variable.
+
+No test submission was made; the pilot evidence above remains the live proof of
+the path.
+
+### Exact enable / rollback commands (for the approved window)
+
+Persistent flag (preferred; requires an identity that can write repository
+variables):
+
+```sh
+gh variable set ALGA_PSA_INTAKE_ENABLED \
+  --repo MaineCyberTech/mainecybertech --body true
+# then run deploy-do (or wait for the next develop deploy) so .env is rewritten
+
+# rollback
+gh variable set ALGA_PSA_INTAKE_ENABLED \
+  --repo MaineCyberTech/mainecybertech --body false
+```
+
+Droplet-only fallback (non-persistent; overwritten by the next deploy). Always
+keep the backup until the web container is healthy:
+
+```sh
+cd /opt/mct-portal
+BK=".env.bak-psa-intake-$(date -u +%Y%m%dT%H%M%SZ)"
+install -m 600 .env "$BK"
+sed -i 's/^ALGA_PSA_INTAKE_ENABLED=.*/ALGA_PSA_INTAKE_ENABLED=true/' .env
+docker compose -p mct-portal up -d --no-deps --force-recreate web
+
+# rollback
+cp -p "$BK" .env
+docker compose -p mct-portal up -d --no-deps --force-recreate web
+```
