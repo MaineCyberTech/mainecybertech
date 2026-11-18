@@ -11,6 +11,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Nov 18
 
+- **Sentry 11:** migrated to the v11 `dataCollection` policy (keeping the v10
+  no-default-PII baseline), moved `withSentryConfig` to
+  `@sentry/nextjs/config`, and recorded the new `sentry` CLI
+  `FSL-1.1-Apache-2.0` license exception; lockfile regenerated.
 - **Dependencies:** upgrade `zod` from 3.25.76 to 4.6.7. The migration uses the
   two-argument `z.record(keySchema, valueSchema)`, `z.guid()` for the existing
   UUID-shaped identifiers (zod 3 accepted any 8-4-4-4-12 hex string and the

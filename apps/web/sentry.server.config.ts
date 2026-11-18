@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import { scrubSentryEvent } from "./lib/sentry-scrub";
+import { SENTRY_DATA_COLLECTION, scrubSentryEvent } from "./lib/sentry-scrub";
 
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
@@ -17,7 +17,7 @@ if (dsn) {
     tracesSampleRate: resolveTracesSampleRate(process.env.SENTRY_TRACES_SAMPLE_RATE),
     // AN-P3-004: never attach default PII and scrub every event before
     // transport — see lib/sentry-scrub.ts.
-    sendDefaultPii: false,
+    dataCollection: SENTRY_DATA_COLLECTION,
     beforeSend: (event) => scrubSentryEvent(event),
   });
 }
