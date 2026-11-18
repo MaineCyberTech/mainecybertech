@@ -6,6 +6,7 @@
     "allowJs": false,
     "noEmit": true,
     "jsx": "preserve",
+    "types": ["node", "jest", "react", "react-dom"],
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "noUncheckedSideEffectImports": false,
