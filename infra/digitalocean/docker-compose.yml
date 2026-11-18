@@ -254,6 +254,20 @@ services:
       # OBS-P3-004: server-side Sentry release marker for the deployed commit
       # (the client bundle keeps its build-time NEXT_PUBLIC_GIT_SHA).
       SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+      # Portal -> Alga PSA intake. The key/base URL are written by the
+      # Kestrel broker lease into /opt/mct-portal/.env before compose starts;
+      # intake stays default-off until the crosswalk and PSA permissions are
+      # reviewed.
+      ALGA_PSA_INTAKE_ENABLED: ${ALGA_PSA_INTAKE_ENABLED:-false}
+      ALGA_PSA_BASE_URL: ${ALGA_PSA_BASE_URL:-}
+      ALGA_PSA_API_KEY: ${ALGA_PSA_API_KEY:-}
+      ALGA_PSA_TENANT_ID: ${ALGA_PSA_TENANT_ID:-}
+      ALGA_PSA_CLIENT_ID: ${ALGA_PSA_CLIENT_ID:-}
+      ALGA_PSA_BOARD_ID: ${ALGA_PSA_BOARD_ID:-}
+      ALGA_PSA_STATUS_ID: ${ALGA_PSA_STATUS_ID:-}
+      ALGA_PSA_PRIORITY_ID: ${ALGA_PSA_PRIORITY_ID:-}
+      ALGA_PSA_PRIORITY_MAP: ${ALGA_PSA_PRIORITY_MAP:-}
+      ALGA_PSA_CLIENT_MAP: ${ALGA_PSA_CLIENT_MAP:-}
     depends_on:
       api:
         condition: service_started
