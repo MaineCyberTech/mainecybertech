@@ -11,6 +11,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Nov 18
 
+- **TypeScript 6:** migrated the tsconfigs (`baseUrl` removed, `types` baseline
+  restored, web side-effect import check disabled) and regenerated the lockfile;
+  residual semantic fixes will follow the CI typecheck.
 - **AI reviewer:** `develop` now uses the oversized-diff fallback workflow pinned
   on `main`, so advisory reviews no longer fail before they can process large
   PRs.
