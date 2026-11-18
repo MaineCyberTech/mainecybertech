@@ -6,7 +6,7 @@ import { env } from "./env";
 import { runWorkerTasks } from "./consumer-sqs";
 import { startHealthServer } from "./health-server";
 import { executeTask } from "./task-registry";
-import { scrubSentryEvent } from "./lib/sentry-scrub";
+import { SENTRY_DATA_COLLECTION, scrubSentryEvent } from "./lib/sentry-scrub";
 
 // ============= Sentry =============
 if (env.SENTRY_DSN) {
@@ -17,7 +17,7 @@ if (env.SENTRY_DSN) {
     tracesSampleRate: env.SENTRY_TRACES_SAMPLE_RATE ?? (env.NODE_ENV === "production" ? 0.2 : 0.0),
     // AN-P3-004: never attach default PII and scrub every event before
     // transport — see lib/sentry-scrub.ts.
-    sendDefaultPii: false,
+    dataCollection: SENTRY_DATA_COLLECTION,
     beforeSend: (event) => scrubSentryEvent(event),
   });
   logger.info("Sentry initialized");

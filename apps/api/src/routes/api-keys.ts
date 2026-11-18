@@ -15,7 +15,7 @@ router.use(requireAuth);
 router.use(requireOrgAccess);
 
 const createSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   name: z.string().min(1).max(100),
   expiresAt: z.string().datetime().optional(),
   // Scope cap for the key, in permission-catalog format `${module}:${action}`.

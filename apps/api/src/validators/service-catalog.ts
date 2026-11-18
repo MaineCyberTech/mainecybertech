@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { partialUpdateSchema } from "../lib/validators";
 
 export const createServiceSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   name: z.string().min(1).max(500),
   description: z.string().max(5000).optional().nullable(),
   category: z.string().default("managed_services"),
@@ -11,9 +12,11 @@ export const createServiceSchema = z.object({
   includedUnits: z.number().int().min(0).optional().nullable(),
   overtureRate: z.number().min(0).optional().nullable(),
   isBundled: z.boolean().optional().default(false),
-  bundleId: z.string().uuid().optional().nullable(),
+  bundleId: z.guid().optional().nullable(),
   isActive: z.boolean().optional().default(true),
   visibility: z.enum(["internal", "client_visible"]).optional().default("internal"),
 });
 
-export const updateServiceSchema = createServiceSchema.partial().omit({ organizationId: true });
+export const updateServiceSchema = partialUpdateSchema(createServiceSchema).omit({
+  organizationId: true,
+});

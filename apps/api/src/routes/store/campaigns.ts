@@ -43,7 +43,7 @@ export function registerCampaignRoutes(router: Router) {
       capacityTotal: z.number().int().min(0).max(1_000_000).optional().nullable(),
       capacityRemaining: z.number().int().min(0).max(1_000_000).optional().nullable(),
       capacityLabel: z.string().max(200).default(""),
-      organizationId: z.string().uuid().optional().nullable(),
+      organizationId: z.guid().optional().nullable(),
     })
     .superRefine((value, ctx) => {
       // Truthful-capacity guardrail: no messaging without real numbers.
@@ -90,7 +90,7 @@ export function registerCampaignRoutes(router: Router) {
     capacityTotal: z.number().int().min(0).max(1_000_000).optional().nullable(),
     capacityRemaining: z.number().int().min(0).max(1_000_000).optional().nullable(),
     capacityLabel: z.string().max(200).optional(),
-    organizationId: z.string().uuid().optional().nullable(),
+    organizationId: z.guid().optional().nullable(),
   });
 
   function campaignInsertPayload(

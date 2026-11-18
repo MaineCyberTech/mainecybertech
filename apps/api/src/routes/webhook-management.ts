@@ -81,7 +81,7 @@ function maskWebhookData(data: Record<string, unknown> | null): Record<string, u
 }
 
 const createSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   name: z.string().min(1).max(200),
   url: z.string().url().max(2000),
   secret: z.string().max(500).optional().nullable(),

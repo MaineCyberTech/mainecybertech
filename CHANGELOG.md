@@ -14,6 +14,23 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - **Express 5:** the API now runs Express 5. Injected org scoping uses the
   getter-safe `pinQueryParam` helper (`req.query` assignment throws in v5), and
   the test harness follows the same pattern; lockfile regenerated.
+- **TypeScript 6:** migrated the tsconfigs (`baseUrl` removed, `types` baseline
+  restored, web side-effect import check disabled) and regenerated the lockfile;
+  residual semantic fixes will follow the CI typecheck.
+- **Sentry 11:** migrated to the v11 `dataCollection` policy (keeping the v10
+  no-default-PII baseline), moved `withSentryConfig` to
+  `@sentry/nextjs/config`, and recorded the new `sentry` CLI
+  `FSL-1.1-Apache-2.0` license exception; lockfile regenerated.
+- **Dependencies:** upgrade `zod` from 3.25.76 to 4.6.7. The migration uses the
+  two-argument `z.record(keySchema, valueSchema)`, `z.guid()` for the existing
+  UUID-shaped identifiers (zod 3 accepted any 8-4-4-4-12 hex string and the
+  fixtures/seed paths rely on demo IDs such as
+  `00000000-0000-0000-0000-000000000001`), and a typed status-page CRUD schema
+  because zod 4 defaults a bare `z.ZodType` output to `unknown`. Update schemas
+  strip create-time defaults before becoming optional, because zod 4's
+  `.partial()` keeps defaults and would otherwise write fields the caller did
+  not send. The `GHSA-mrhx-c7xc-m3w5` production allowlist is removed now that
+  the fixed major is in use.
 - **AI reviewer:** `develop` now uses the oversized-diff fallback workflow pinned
   on `main`, so advisory reviews no longer fail before they can process large
   PRs.

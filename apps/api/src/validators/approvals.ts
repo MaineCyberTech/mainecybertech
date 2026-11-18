@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const listApprovalsQuerySchema = z.object({
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.guid().optional(),
   status: z.enum(["pending", "approved", "rejected", "cancelled"]).optional(),
   requestType: z.string().optional(),
   page: z.coerce.number().int().positive().optional().default(1),
@@ -9,16 +9,16 @@ export const listApprovalsQuerySchema = z.object({
 });
 
 export const createApprovalSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   requestType: z.string().min(1).max(100),
   requestSubject: z.string().min(1).max(500),
   requestBody: z.string().max(10000).optional().nullable(),
-  requestMetadata: z.record(z.unknown()).optional().default({}),
+  requestMetadata: z.record(z.string(), z.unknown()).optional().default({}),
   sourceModule: z.string().max(100).optional().nullable(),
   sourceEntityType: z.string().max(100).optional().nullable(),
-  sourceEntityId: z.string().uuid().optional().nullable(),
+  sourceEntityId: z.guid().optional().nullable(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional().default("normal"),
-  assignedTo: z.string().uuid().optional().nullable(),
+  assignedTo: z.guid().optional().nullable(),
   dueAt: z.string().optional().nullable(),
   visibility: z.enum(["internal", "client_visible"]).optional().default("internal"),
 });
@@ -26,25 +26,25 @@ export const createApprovalSchema = z.object({
 export const updateApprovalSchema = z.object({
   requestSubject: z.string().min(1).max(500).optional(),
   requestBody: z.string().max(10000).optional().nullable(),
-  requestMetadata: z.record(z.unknown()).optional(),
+  requestMetadata: z.record(z.string(), z.unknown()).optional(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
-  assignedTo: z.string().uuid().optional().nullable(),
+  assignedTo: z.guid().optional().nullable(),
   dueAt: z.string().optional().nullable(),
   visibility: z.enum(["internal", "client_visible"]).optional(),
 });
 
 export const approveRequestSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   notes: z.string().max(5000).optional().nullable(),
 });
 
 export const rejectRequestSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   reason: z.string().min(1, "Rejection reason is required").max(5000),
 });
 
 export const cancelRequestSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   reason: z.string().max(5000).optional().nullable(),
 });
 
@@ -54,7 +54,7 @@ export const addApprovalCommentSchema = z.object({
 });
 
 export const exportApprovalsSchema = z.object({
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.guid().optional(),
   status: z.enum(["pending", "approved", "rejected", "cancelled"]).optional(),
   requestType: z.string().optional(),
   format: z.enum(["csv", "json"]).optional().default("csv"),

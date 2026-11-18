@@ -163,7 +163,7 @@ describe("store visual assets", () => {
       .send({ accentColor: "#10b981" });
 
     expect(res.status).toBe(200);
-    expect(updates.store_visual_assets).toMatchObject({ accent_color: "#10b981" });
+    expect(updates.store_visual_assets).toEqual({ accent_color: "#10b981" });
   });
 
   it("rejects an empty visual asset update", async () => {

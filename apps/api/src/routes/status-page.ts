@@ -9,6 +9,7 @@ import { requirePermission } from "../middleware/permissions";
 import { queryInt } from "../lib/query";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { partialUpdateSchema } from "../lib/validators";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -146,12 +147,10 @@ function snakeCase(str: string): string {
   return str.replace(/[A-Z]/g, (l) => `_${l.toLowerCase()}`);
 }
 
-function crudTable(
-  resource: string,
-  table: string,
-  createSchema: z.ZodType,
-  updateSchema: z.ZodType,
-) {
+function crudTable<
+  TCreate extends z.ZodType<{ organizationId: string }>,
+  TUpdate extends z.ZodType<object>,
+>(resource: string, table: string, createSchema: TCreate, updateSchema: TUpdate) {
   router.get(`/${resource}`, async (req, res, next) => {
     try {
       const supabase = getScopedClient(req, "status-page", "read");
@@ -278,7 +277,12 @@ function crudTable(
 }
 
 crudTable("components", "status_components", compCreateSchema, compUpdateSchema);
-crudTable("incidents", "status_incidents", incCreateSchema, incCreateSchema.partial());
-crudTable("maintenance", "maintenance_notices", maintCreateSchema, maintCreateSchema.partial());
+crudTable("incidents", "status_incidents", incCreateSchema, partialUpdateSchema(incCreateSchema));
+crudTable(
+  "maintenance",
+  "maintenance_notices",
+  maintCreateSchema,
+  partialUpdateSchema(maintCreateSchema),
+);
 
 export default router;

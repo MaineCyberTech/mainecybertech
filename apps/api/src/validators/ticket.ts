@@ -5,7 +5,7 @@ import { TICKET_STATUSES } from "@mct/sdk/ticket-status";
 const ticketStatusSchema = z.enum([...TICKET_STATUSES]);
 
 export const createTicketSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   title: z.string().min(1, "Title is required").max(500),
   description: z.string().max(10000).optional().nullable(),
   priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
@@ -29,7 +29,7 @@ export const updateTicketSchema = z.object({
 });
 
 export const addTicketCommentSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   body: z.string().min(1, "Comment body is required").max(10000),
   isInternal: z.boolean().default(false),
 });
@@ -40,7 +40,7 @@ export const updateTicketCommentSchema = z.object({
 });
 
 export const bulkTicketUpdateSchema = z.object({
-  ids: z.array(z.string().uuid()).min(1, "At least one ticket ID required"),
+  ids: z.array(z.guid()).min(1, "At least one ticket ID required"),
   status: ticketStatusSchema.optional(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
 });
