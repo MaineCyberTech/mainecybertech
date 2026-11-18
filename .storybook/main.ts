@@ -1,3 +1,8 @@
+// Must run before @storybook/nextjs is loaded: the framework's preset resolves
+// `next/config`, which Next.js 16 removed. The shim is Storybook-only and does
+// not affect the app runtime.
+import "./next-config-resolve.cjs";
+
 import type { StorybookConfig } from "@storybook/nextjs";
 import path from "node:path";
 
