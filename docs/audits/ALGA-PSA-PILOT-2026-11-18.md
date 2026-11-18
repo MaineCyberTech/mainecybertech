@@ -130,11 +130,16 @@ created on 2026-11-18 as a mirror:
 
 ### Flag state
 
-- `vars.ALGA_PSA_INTAKE_ENABLED=true` (repository variable; verified
-  2026-11-18T22:55:39Z). It was written with a fresh GitHub App installation
-  token from the existing `kestrel-automation` App (`app_id 5673382`,
-  installation `179999687`) carrying `actions_variables: write`; the token was
-  revoked after use. No PAT was used.
+- `vars.ALGA_PSA_INTAKE_ENABLED=true` (repository variable, verified
+  2026-11-18T22:55:39Z) **and** the `dev` environment variable
+  `ALGA_PSA_INTAKE_ENABLED=true` (2026-11-18T23:00:44Z). The deploy job runs in
+  the `dev` environment, so the environment value is the effective one. The
+  environment initially held `false` and would have overridden a
+  repository-only change; it was corrected in the same window.
+- Both writes used a fresh GitHub App installation token from the existing
+  `kestrel-automation` App (`app_id 5673382`, installation `179999687`)
+  carrying `actions_variables: write`; each token was revoked after use. No PAT
+  was used.
 - `/opt/mct-portal/.env` contains `ALGA_PSA_INTAKE_ENABLED=true`; backup
   `.env.bak-psa-enable-20261118T225736Z` (`0600 root:root`).
 - `mct-portal-web-1` was recreated on the same image digest, is `healthy`, and
@@ -142,6 +147,9 @@ created on 2026-11-18 as a mirror:
   app answered HTTP 307 on `/`.
 - The earlier broker consumers still return 403 on the Actions variables API;
   that is why the one-off App installation token path was used.
+- `prod` and `prod-approval` have no `ALGA_PSA_INTAKE_ENABLED` override. A
+  future prod deploy would inherit the repository value; set both to `false`
+  before any prod deploy (prod is not deployed today).
 
 ### Test evidence and gap
 
@@ -165,17 +173,22 @@ end-to-end proof of the portal → PSA path.
 
 ### Exact enable / rollback commands
 
-Persistent flag (preferred; requires an identity that can write repository
-variables):
+Persistent flag (preferred; requires an identity that can write repository and
+environment variables). The `dev` environment value overrides the repository
+value for the dev deploy job, so set both:
 
 ```sh
 gh variable set ALGA_PSA_INTAKE_ENABLED \
   --repo MaineCyberTech/mainecybertech --body true
+gh variable set ALGA_PSA_INTAKE_ENABLED \
+  --repo MaineCyberTech/mainecybertech --env dev --body true
 # then run deploy-do (or wait for the next develop deploy) so .env is rewritten
 
 # rollback
 gh variable set ALGA_PSA_INTAKE_ENABLED \
   --repo MaineCyberTech/mainecybertech --body false
+gh variable set ALGA_PSA_INTAKE_ENABLED \
+  --repo MaineCyberTech/mainecybertech --env dev --body false
 ```
 
 Droplet-only fallback (non-persistent; overwritten by the next deploy). Always

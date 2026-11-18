@@ -226,13 +226,16 @@ Checked against `/tmp/opencode/repos/alga-psa` (`origin/main`, commit
 1. Set `ALGA_PSA_INTAKE_ENABLED=false` and restart/redeploy the `web` service.
    The action immediately returns to the existing Supabase path.
 
-   `deploy-do.yml` reads the flag from the GitHub repository variable
-   `vars.ALGA_PSA_INTAKE_ENABLED`; the droplet `.env` is rewritten on every
-   deploy. Exact rollback:
+   `deploy-do.yml` reads `vars.ALGA_PSA_INTAKE_ENABLED`. A GitHub
+   environment-scoped variable overrides the repository variable, and the dev
+   deploy job runs in the `dev` environment: set **both**. The droplet `.env`
+   is rewritten on every deploy. Exact rollback:
 
    ```sh
    gh variable set ALGA_PSA_INTAKE_ENABLED \
      --repo MaineCyberTech/mainecybertech --body false
+   gh variable set ALGA_PSA_INTAKE_ENABLED \
+     --repo MaineCyberTech/mainecybertech --env dev --body false
    # then run deploy-do, or update the running stack without waiting for one:
    cd /opt/mct-portal
    BK=".env.bak-psa-intake-$(date -u +%Y%m%dT%H%M%SZ)"
