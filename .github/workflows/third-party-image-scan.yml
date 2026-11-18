@@ -102,7 +102,7 @@ jobs:
         # Same Trivy action as the app-image scans. `ignore-unfixed: true`
         # matches build-push.yml: fail on findings that have a fix (bump the
         # pin); an unfixed upstream CVE would only repeat alert noise.
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         with:
           scan-type: image
           image-ref: ${{ matrix.image }}
@@ -118,7 +118,7 @@ jobs:
         # SBOM-P3-008: a digest-bound SBOM for each pinned third-party image,
         # the same durable record class as the mct-* image SBOMs, resolved
         # from the compose refs so a Dependabot bump is covered automatically.
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         with:
           scan-type: image
           image-ref: ${{ matrix.image }}
