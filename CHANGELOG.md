@@ -9,6 +9,12 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ## [Unreleased]
 
+### Nov 18
+
+- **AI reviewer:** `develop` now uses the oversized-diff fallback workflow pinned
+  on `main`, so advisory reviews no longer fail before they can process large
+  PRs.
+
 ### Nov 17
 
 - **JWT verification hardening (SEC-AUTH-001):** the API rejects the known
