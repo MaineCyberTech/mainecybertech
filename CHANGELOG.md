@@ -21,6 +21,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   was replaced with a random verification secret, closing a forged-HS256
   authentication path; the incident and fallback behavior are documented in
   `docs/JWT_ROTATION.md`.
+- **Dependency audit:** allowlist `GHSA-fc5q-39xc-vjpf` (picomatch ReDoS,
+  high, no patched release) until 2026-12-31. The vulnerable module is reached
+  only through the build-time Rollup plugins bundled with `@sentry/nextjs`;
+  production requests do not pass user-controlled globs to it. Re-review when
+  upstream publishes a fix or Sentry updates the plugin chain.
 
 ### Nov 16
 
