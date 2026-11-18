@@ -6,7 +6,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
-    "types": ["*"],
+    "types": ["jest", "react", "react-dom"],
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
