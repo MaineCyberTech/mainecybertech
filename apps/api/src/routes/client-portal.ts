@@ -136,7 +136,7 @@ router.get("/entitlements", requireOrgAccess, requireAdmin, async (req, res, nex
 });
 
 const entitlementsSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   modules: z
     .array(z.object({ moduleKey: z.string().min(1).max(100), enabled: z.boolean() }))
     .min(1),

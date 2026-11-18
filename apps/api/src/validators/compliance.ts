@@ -1,13 +1,13 @@
 import { z } from "zod";
 
 export const createFrameworkSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   name: z.string().min(1, "Name is required").max(500),
   description: z.string().max(5000).optional().nullable(),
 });
 
 export const createControlSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   title: z.string().min(1, "Title is required").max(500),
   status: z
     .enum(["not_started", "in_progress", "implemented", "not_applicable"])

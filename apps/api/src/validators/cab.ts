@@ -1,22 +1,22 @@
 import { z } from "zod";
 
 export const listCabMeetingsQuerySchema = z.object({
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.guid().optional(),
   status: z.enum(["scheduled", "in_progress", "completed", "cancelled"]).optional(),
   page: z.coerce.number().int().positive().optional().default(1),
   limit: z.coerce.number().int().min(1).max(100).optional().default(25),
 });
 
 export const createCabMeetingSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   scheduledAt: z.string().datetime().optional().nullable(),
   status: z.enum(["scheduled", "in_progress", "completed", "cancelled"]).optional().default("scheduled"),
   notes: z.string().max(10000).optional().nullable(),
 });
 
 export const addCabAgendaItemSchema = z.object({
-  organizationId: z.string().uuid().optional(),
-  changeRequestId: z.string().uuid(),
+  organizationId: z.guid().optional(),
+  changeRequestId: z.guid(),
   decision: z.enum(["pending", "approved", "rejected"]).optional().default("pending"),
   notes: z.string().max(10000).optional().nullable(),
 });

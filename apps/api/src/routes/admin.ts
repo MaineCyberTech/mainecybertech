@@ -99,8 +99,8 @@ const INTEGRATION_SYNC_TASKS = ["jira-sync", "jsm-sync", "m365-calendar-sync"] a
 const integrationSyncSchema = z
   .object({
     task: z.enum(INTEGRATION_SYNC_TASKS),
-    organizationId: z.string().uuid(),
-    projectId: z.string().uuid().optional(),
+    organizationId: z.guid(),
+    projectId: z.guid().optional(),
     projectKey: z.string().min(1).max(100).optional(),
     userPrincipalName: z.string().min(3).max(320).optional(),
     batchSize: z.number().int().positive().max(500).optional(),

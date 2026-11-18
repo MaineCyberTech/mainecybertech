@@ -8,6 +8,7 @@ import { queryInt } from "../../lib/query";
 import { requirePermission } from "../../middleware/permissions";
 import { assertDeleteConfirmed } from "../../lib/delete-confirm";
 import { listCountMode } from "../../lib/pagination";
+import { parsePartialUpdate } from "../../lib/validators";
 import { applyPublishedStatus, isPublishedForClient } from "../../lib/client-visibility";
 
 export function snake(s: string) {
@@ -119,13 +120,7 @@ export function registerCrud(
     requirePermission(permissionModule, "edit"),
     async (req, res, next) => {
       try {
-        const schemaWithPartial = schema as unknown as {
-          partial?: () => { parse: (b: unknown) => Record<string, unknown> };
-          parse: (b: unknown) => Record<string, unknown>;
-        };
-        const p = (
-          schemaWithPartial.partial ? schemaWithPartial.partial() : schemaWithPartial
-        ).parse(req.body);
+        const p = parsePartialUpdate(schema, req.body);
         const sb = getScopedClient(req, permissionModule, "write");
         const fields: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(p)) {

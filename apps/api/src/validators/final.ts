@@ -1,6 +1,6 @@
 import { z } from "zod";
 export const sp = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   siteName: z.string().min(1).max(500),
   teamName: z.string().max(500).optional().nullable(),
   structureType: z.string().default("team_site"),
@@ -10,15 +10,15 @@ export const sp = z.object({
   notes: z.string().max(5000).optional().nullable(),
 });
 export const dp = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   profileName: z.string().min(1).max(500),
   deviceType: z.string().max(200).optional().nullable(),
   os: z.string().max(200).optional().nullable(),
-  settings: z.record(z.unknown()).default({}),
+  settings: z.record(z.string(), z.unknown()).default({}),
   description: z.string().max(5000).optional().nullable(),
 });
 export const saas = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   vendorName: z.string().min(1).max(500),
   serviceName: z.string().min(1).max(500),
   monthlyCost: z.number().min(0).optional().nullable(),
@@ -32,7 +32,7 @@ export const saas = z.object({
   notes: z.string().max(5000).optional().nullable(),
 });
 export const quote = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   vendorName: z.string().min(1).max(500),
   product: z.string().min(1).max(500),
   quoteAmount: z.number().min(0).optional().nullable(),
@@ -41,7 +41,7 @@ export const quote = z.object({
   notes: z.string().max(5000).optional().nullable(),
 });
 export const dns = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   domain: z.string().min(1).max(253),
   changeType: z.string().min(1).max(200),
   changeDescription: z.string().max(5000).optional().nullable(),
@@ -49,15 +49,15 @@ export const dns = z.object({
   currentValue: z.string().max(2000).optional().nullable(),
 });
 export const time = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   description: z.string().min(1).max(5000),
   hours: z.number().min(0).default(0),
   billable: z.boolean().default(true),
   workDate: z.string().optional().nullable(),
-  ticketId: z.string().uuid().optional().nullable(),
+  ticketId: z.guid().optional().nullable(),
 });
 export const budget = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   itemName: z.string().min(1).max(500),
   category: z.string().default("hardware"),
   estimatedCost: z.number().min(0).optional().nullable(),
@@ -67,14 +67,14 @@ export const budget = z.object({
   notes: z.string().max(5000).optional().nullable(),
 });
 export const runbook = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   title: z.string().min(1).max(500),
   content: z.string().max(50000).optional().nullable(),
   category: z.string().max(200).optional().nullable(),
   version: z.string().default("1.0"),
 });
 export const form = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   formName: z.string().min(1).max(500),
   formDescription: z.string().max(5000).optional().nullable(),
   formFields: z.array(z.unknown()).default([]),
@@ -82,7 +82,7 @@ export const form = z.object({
 });
 
 export const backup = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   systemName: z.string().min(1).max(500),
   backupType: z.string().default("full"),
   lastBackupAt: z.string().optional().nullable(),

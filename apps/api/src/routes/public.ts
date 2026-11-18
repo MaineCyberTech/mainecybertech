@@ -49,7 +49,7 @@ async function lookupVisitorLocation(ipAddress: string): Promise<string> {
 }
 
 const submitSchema = z.object({
-  trackingId: z.string().uuid(),
+  trackingId: z.guid(),
   company: z.string().min(1).max(150),
   name: z.string().min(1).max(100),
   email: z.string().email().max(100),
