@@ -16,6 +16,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   apply the managed Supabase tokens, recreate api/worker, and restore the
   previous `.env` if the post-apply check fails (`check` / `apply --dry-run` /
   `apply`).
+- **Dependency audit:** allowlist `GHSA-fc5q-39xc-vjpf` (picomatch ReDoS,
+  high, no patched release) until 2026-12-31. The vulnerable module is reached
+  only through the build-time Rollup plugins bundled with `@sentry/nextjs`;
+  production requests do not pass user-controlled globs to it. Re-review when
+  upstream publishes a fix or Sentry updates the plugin chain.
 
 ### Nov 16
 
@@ -42,7 +47,6 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - **AI reviewer:** pinned to the immutable ai-reviewer fix commit; the bot
   approval fails closed on check-query errors and the reviewer executes the
   pinned SHA (`CI-P2-012/013`).
-
 
 ### Breaking Changes
 
