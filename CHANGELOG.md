@@ -11,6 +11,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Nov 17
 
+- **Kestrel portal secrets:** new `scripts/kestrel-portal-secrets.sh` checks the
+  droplet's Supabase service-role key against Kestrel's managed source and can
+  apply the managed Supabase tokens, recreate api/worker, and restore the
+  previous `.env` if the post-apply check fails (`check` / `apply --dry-run` /
+  `apply`).
 - **JWT verification hardening (SEC-AUTH-001):** the API rejects the known
   repeated `JWT_SECRET` placeholder at boot. The dev deployment's placeholder
   was replaced with a random verification secret, closing a forged-HS256

@@ -18,6 +18,7 @@ runs:
         shellcheck --version
         shellcheck --severity=warning \
           scripts/rollback.sh \
+          scripts/kestrel-portal-secrets.sh \
           scripts/backup-database.sh \
           scripts/backup-storage.sh \
           scripts/restore-database.sh \
