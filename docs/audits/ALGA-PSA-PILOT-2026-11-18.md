@@ -138,9 +138,9 @@ created on 2026-11-18 as a mirror:
   environment initially held `false` and would have overridden a
   repository-only change; it was corrected in the same window.
 - Both writes used a fresh GitHub App installation token from the existing
-  `kestrel-automation` App (`app_id 5673382`, installation `179999687`)
-  carrying `actions_variables: write`; each token was revoked after use. No PAT
-  was used.
+  `kestrel-automation` App (`app_id 5673382`, installation `179999687`); the
+  token carried `actions_variables: write`, plus `environments: write` for the
+  environment-scoped value. Each token was revoked after use. No PAT was used.
 - `/opt/mct-portal/.env` contains `ALGA_PSA_INTAKE_ENABLED=true`; backup
   `.env.bak-psa-enable-20261118T225736Z` (`0600 root:root`).
 - `mct-portal-web-1` was recreated on the same image digest, is `healthy`, and
