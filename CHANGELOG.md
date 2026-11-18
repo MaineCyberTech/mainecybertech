@@ -11,6 +11,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Nov 18
 
+- **Deploy safety:** `deploy-do` now validates the Supabase service-role key
+  before replacing containers and restores the previous `/opt/mct-portal/.env`
+  when a deploy fails, so a rotated or rejected credential cannot leave the
+  stack running without a working database key.
 - **Storybook/Chromatic:** restored `pnpm storybook:build` on Next.js 16.
   `.storybook/main.ts` loads a Storybook-only resolver that shims the removed
   `next/config` module and the changed `next/dist/build/swc` API used by
