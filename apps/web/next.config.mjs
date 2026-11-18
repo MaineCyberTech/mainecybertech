@@ -25,6 +25,13 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      { source: "/products", destination: "/store", permanent: true },
+      { source: "/products/:path*", destination: "/store", permanent: true },
+      { source: "/store/products", destination: "/store", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {
