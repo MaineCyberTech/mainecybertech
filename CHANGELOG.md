@@ -9,6 +9,12 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ## [Unreleased]
 
+### Nov 18
+
+- **Legacy product URLs:** `/products` and `/store/products` now permanently
+  redirect to `/store`, and the admin product list no longer renders a client
+  form per row (reducing the RSC payload for large catalogs).
+
 ### Nov 17
 
 - **JWT verification hardening (SEC-AUTH-001):** the API rejects the known
