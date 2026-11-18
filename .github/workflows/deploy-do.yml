@@ -801,6 +801,13 @@ jobs:
             git checkout -B "$DEPLOY_REF" "origin/$DEPLOY_REF"
             git reset --hard "origin/$DEPLOY_REF"
             mkdir -p /opt/mct-portal
+            # Deploy-safety: keep the env the running stack was created with.
+            # If this deploy fails, the deploy job restores this file before
+            # rolling the containers back, so a bad secret cannot leave the
+            # stack running with an invalid credential.
+            if [ -f /opt/mct-portal/.env ]; then
+              cp -p /opt/mct-portal/.env /opt/mct-portal/.env.pre-deploy
+            fi
             : > /opt/mct-portal/.env
             # printf '%s' does not re-expand values, so shell metacharacters in
             # a secret are written literally.
@@ -870,6 +877,37 @@ jobs:
             # PSA key/base URL are a broker lease, not a GitHub secret.
             if [ -r /etc/kestrel/portal/psa.env ]; then
               grep -E '^ALGA_PSA_(BASE_URL|API_KEY|TENANT_ID)=' /etc/kestrel/portal/psa.env >> /opt/mct-portal/.env
+            fi
+
+            # Deploy-safety: validate the Supabase service-role key before the
+            # running containers are replaced. Previously a rotated/rejected
+            # key was only discovered by the API healthcheck, after the old
+            # containers were gone; the rollback then recreated them from the
+            # same bad .env and the service stayed down.
+            if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+              supabase_status="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+                "${SUPABASE_URL%/}/rest/v1/roles?select=id&limit=1" \
+                -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+                -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" || true)"
+              case "$supabase_status" in
+                401|403)
+                  echo "ERROR: Supabase rejected SUPABASE_SERVICE_ROLE_KEY (HTTP $supabase_status)." >&2
+                  echo "Refusing to deploy with a bad credential; restoring the previous /opt/mct-portal/.env." >&2
+                  if [ -f /opt/mct-portal/.env.pre-deploy ]; then
+                    cp -p /opt/mct-portal/.env.pre-deploy /opt/mct-portal/.env
+                  else
+                    rm -f /opt/mct-portal/.env
+                  fi
+                  chmod 600 /opt/mct-portal/.env 2>/dev/null || true
+                  exit 1
+                  ;;
+                000)
+                  echo "WARNING: Supabase was unreachable while validating SUPABASE_SERVICE_ROLE_KEY; continuing." >&2
+                  ;;
+                *)
+                  echo "Supabase service-role key accepted (HTTP $supabase_status)"
+                  ;;
+              esac
             fi
             # OBS-P2-013 fail-closed guard: an empty METRICS_TOKEN makes the API
             # /metrics endpoint 404 and the authenticated Prometheus scrape fail,
@@ -1047,7 +1085,15 @@ jobs:
               done
               return 1
             }
+            restore_previous_env() {
+              if [ -f /opt/mct-portal/.env.pre-deploy ]; then
+                cp -p /opt/mct-portal/.env.pre-deploy /opt/mct-portal/.env
+                chmod 600 /opt/mct-portal/.env
+                echo "Restored the pre-deploy /opt/mct-portal/.env" >&2
+              fi
+            }
             rollback_stack() {
+              restore_previous_env
               echo "Rolling back to the previously running images" >&2
               echo "  ${PREV_API_IMAGE:-<unset>} / ${PREV_WORKER_IMAGE:-<unset>} / ${PREV_WEB_IMAGE:-<unset>}" >&2
               docker compose -p mct-portal down --remove-orphans || true
@@ -1077,6 +1123,7 @@ jobs:
               fi
             done
             if [ "$deploy_failed" = "1" ]; then
+              restore_previous_env
               docker compose -p mct-portal logs --tail=40 "$svc" 2>/dev/null || true
               if [ -n "$PREV_API_IMAGE" ] && [ "$PREV_API_IMAGE" != "$MCT_API_IMAGE" ]; then
                 rollback_stack
@@ -1176,6 +1223,8 @@ jobs:
               echo "WARNING: could not determine the running image IDs; skipping prune"
             fi
             docker image prune -f 2>/dev/null || true
+            # Green deploy: the previous env copy is no longer needed.
+            rm -f /opt/mct-portal/.env.pre-deploy
         env:
           CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
           CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}

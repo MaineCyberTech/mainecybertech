@@ -75,6 +75,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   only through the build-time Rollup plugins bundled with `@sentry/nextjs`;
   production requests do not pass user-controlled globs to it. Re-review when
   upstream publishes a fix or Sentry updates the plugin chain.
+- **Deploy safety:** `deploy-do` now validates the Supabase service-role key
+  before replacing containers and restores the previous `.env` when a deploy
+  fails, so a rotated/rejected key cannot leave the stack running without a
+  working database credential.
+
 
 ### Nov 16
 
