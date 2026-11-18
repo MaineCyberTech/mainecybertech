@@ -5,6 +5,7 @@ import { getEnv } from "../config/env";
 import { AppError } from "../types";
 import { logger } from "../lib/logger";
 import { requiresSecondFactor } from "../lib/mfa";
+import { pinQueryParam } from "../lib/query";
 import { authenticateApiKey, isApiKeyToken } from "./api-key";
 
 declare global {
@@ -82,7 +83,7 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
       req.orgId = apiKey.organizationId;
       // The org resolved by requireOrgAccess is read from the query string, so
       // inject the key's org and overwrite any caller-supplied org id.
-      req.query = { ...req.query, organization_id: apiKey.organizationId };
+      pinQueryParam(req, "organization_id", apiKey.organizationId);
       next();
       return;
     }
