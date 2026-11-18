@@ -169,6 +169,28 @@ Until the GitHub `dev` environment secret is corrected, `deploy-do` rewrites
 `.env` from that secret. Run `apply` after a deploy (or fix the secret) so the
 droplet keeps the Kestrel-managed values.
 
+## Workflow-scoped consumer (pending)
+
+The default `repo-mainecybertech` consumer cannot push `.github/workflows/**`;
+GitHub rejects the push with *"refusing to allow a GitHub App to create or
+update workflow … without `workflows` permission."* Kestrel defines a separate
+`repo-mainecybertech-workflows` consumer for reviewed workflow changes, but it
+is **disabled** and its token is not installed on this droplet.
+
+To enable reviewed workflow PRs from the agent:
+
+1. Enable the `repo-mainecybertech-workflows` consumer in Kestrel and give it
+   the GitHub App `workflows: write` permission.
+2. Install its consumer token root-to-root on the droplet:
+   `/etc/kestrel-agents/mainecybertech-workflows/broker-token` (`0600 root:root`).
+3. Use it only for reviewed `.github/workflows/**` changes:
+   `KESTREL_AGENT_REPO=mainecybertech-workflows gh-kestrel …`.
+4. Keep the default `repo-mainecybertech` token for application code and PRs.
+
+Until this is provisioned, workflow changes must be pushed by a human or applied
+from a patch (for example `/root/sentry-dependency-review.patch` and
+`/root/mct-deploy-safety.patch`).
+
 ## What not to do
 
 - Do not copy the token into `/opt/mct-portal/.env`, Docker Compose or an app
