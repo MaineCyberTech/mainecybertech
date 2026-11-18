@@ -245,6 +245,9 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           format: table
+          # The npm-heavy images can take over the action's 5m default on a
+          # loaded runner; keep the vulnerability gate but give it headroom.
+          timeout: 15m
       - name: Generate mct-api image SBOM (CycloneDX)
         # SUPPLY-P3-001: emit a digest-bound SBOM on the deploy path so a shipped
         # image can always be tied to its bill of materials (the 30-day workflow
@@ -318,6 +321,9 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           format: table
+          # The npm-heavy images can take over the action's 5m default on a
+          # loaded runner; keep the vulnerability gate but give it headroom.
+          timeout: 15m
       - name: Generate mct-worker image SBOM (CycloneDX)
         # SUPPLY-P3-001: digest-bound SBOM on the deploy path (see build-api).
         uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
@@ -394,6 +400,9 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           format: table
+          # The npm-heavy images can take over the action's 5m default on a
+          # loaded runner; keep the vulnerability gate but give it headroom.
+          timeout: 15m
       - name: Generate mct-web image SBOM (CycloneDX)
         # SUPPLY-P3-001: digest-bound SBOM on the deploy path (see build-api).
         uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
