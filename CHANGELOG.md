@@ -11,6 +11,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Nov 17
 
+- **Kestrel portal secrets:** new `scripts/kestrel-portal-secrets.sh` checks the
+  droplet's Supabase service-role key against Kestrel's managed source and can
+  apply the managed Supabase tokens, recreate api/worker, and restore the
+  previous `.env` if the post-apply check fails (`check` / `apply --dry-run` /
+  `apply`).
 - **Dependency audit:** allowlist `GHSA-fc5q-39xc-vjpf` (picomatch ReDoS,
   high, no patched release) until 2026-12-31. The vulnerable module is reached
   only through the build-time Rollup plugins bundled with `@sentry/nextjs`;
