@@ -809,6 +809,17 @@ jobs:
               cp -p /opt/mct-portal/.env /opt/mct-portal/.env.pre-deploy
               chmod 600 /opt/mct-portal/.env.pre-deploy
             fi
+            # If a later fail-closed guard exits before the deploy job starts,
+            # put the previous env back instead of leaving an unvalidated one.
+            env_restore_needed=1
+            restore_setup_env() {
+              if [ "${env_restore_needed}" = "1" ] && [ -f /opt/mct-portal/.env.pre-deploy ]; then
+                cp -p /opt/mct-portal/.env.pre-deploy /opt/mct-portal/.env
+                chmod 600 /opt/mct-portal/.env
+                echo "Restored the pre-deploy /opt/mct-portal/.env after a setup failure" >&2
+              fi
+            }
+            trap restore_setup_env EXIT
             : > /opt/mct-portal/.env
             # printf '%s' does not re-expand values, so shell metacharacters in
             # a secret are written literally.
@@ -965,6 +976,7 @@ jobs:
             elif [ -z "${ALERTMANAGER_WEBHOOK_USER:-}" ] || [ -z "${ALERTMANAGER_WEBHOOK_PASS:-}" ]; then
               echo "WARNING: ALERTMANAGER_CRITICAL_WEBHOOK_URL is set but ALERTMANAGER_WEBHOOK_USER/PASS is empty — the webhook will be rejected (e.g. ntfy 403)." >&2
             fi
+            env_restore_needed=0
             echo "Droplet ready"
 
       - name: Deploy containers
