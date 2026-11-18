@@ -5,6 +5,11 @@
 www.mainecybertech.us, app.mainecybertech.us {
     tls internal
 
+    # Dev-only test-account page is disabled in the app; block the route as
+    # defense in depth so a stale image cannot expose one-click sign-in.
+    @testaccounts path /test-accounts /test-accounts/*
+    respond @testaccounts 404
+
     reverse_proxy web:3000
 
     header / {
@@ -36,4 +41,11 @@ api.mainecybertech.us {
         Strict-Transport-Security "max-age=63072000; includeSubDomains"
         Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' wss:"
     }
+}
+
+# `portal.` is a compatibility hostname only. The canonical dev app is
+# `app.mainecybertech.us`; keep one origin for cookies, auth callbacks and CORS.
+portal.mainecybertech.us {
+    tls internal
+    redir https://app.mainecybertech.us{uri} permanent
 }

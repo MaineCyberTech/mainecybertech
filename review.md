@@ -116,18 +116,24 @@ what it can; the rest are review gates.
   `MaineCyberTech/ai-reviewer` workflow. Repository secrets:
   `AI_REVIEW_ENDPOINT`, `AI_REVIEW_API_KEY`, optional `AI_REVIEW_MODEL`. The
   review is advisory and never approves or merges.
+- **Kestrel broker token (portal droplets)** — `repo-mainecybertech` at
+  `/etc/kestrel-agents/mainecybertech/broker-token` (`0600 root:root`) on
+  `mct-portal-dev`; `gh-kestrel` and `git-credential-kestrel` exchange it for
+  short-lived, repository-scoped GitHub App tokens. Host-only: never put it in
+  `.env`, containers, images or CI. See
+  [`docs/runbooks/KESTREL-AGENT-ACCESS.md`](docs/runbooks/KESTREL-AGENT-ACCESS.md).
 - Never put credential values in this repository. Rotation follows
   [`docs/SECRETS_ROTATION.md`](docs/SECRETS_ROTATION.md); the cross-app matrix
   is in `MaineCyberTech/kestrel` `docs/runbooks/KESTREL-OPS.md`.
 
 ## Test Status (suite counts tree-verified; test totals from CI)
 
-**4,761 tests, all passing. 526 suites.**
+**4,815 tests, all passing. 528 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 2,068         | 178    | Jest + supertest                  |
-| Web     | 2,053         | 311    | Jest + Testing Library            |
+| API     | 2,069         | 178    | Jest + supertest                  |
+| Web     | 2,106         | 313    | Jest + Testing Library            |
 | SDK     | 327           | 5      | Jest (mocked fetch)               |
 | Worker  | 313           | 32     | Jest (env schema + task handlers) |
 | E2E     | 91 spec files | —      | Playwright (chromium + axe-core)  |
@@ -194,13 +200,13 @@ pnpm e2e                     # Playwright E2E
 | API route files           | 64    | `apps/api/src/routes/*.ts` (77 incl. `routes/final/` + `routes/store/`)                                                                                                                                                                                                                            |
 | API SDK modules           | 65    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                                                                                                                                                        |
 | Worker task files         | 14    | 29 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                                                                                                                                                     |
-| Web pages                 | 331   | Admin 204, Portal 97, Public 29, `forbidden` 1                                                                                                                                                                                                                                                     |
+| Web pages                 | 333   | Admin 204, Portal 97, Public 31, `forbidden` 1                                                                                                                                                                                                                                                     |
 | Web components            | 130   | `apps/web/components/`                                                                                                                                                                                                                                                                             |
-| SQL migrations            | 165   | `supabase/migrations/` (latest: 5302467_ticket_comments_internal_visibility                                                                                                                                                                                                                        |
+| SQL migrations            | 166   | `supabase/migrations/` (latest: 5302468_organization_psa_links                                                                                                                                                                                                                        |
 | Seed files                | 10    | `supabase/seeds/*.sql`                                                                                                                                                                                                                                                                             |
 | GitHub Actions workflows  | 32    | `.github/workflows/`                                                                                                                                                                                                                                                                               |
 | AI prompt files           | 626   | `prompts/` (6 packs, 624 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                                                                                                                                           |
-| Build/dev/utility scripts | 125   | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `check-portal-export-sql.py`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `filter-restore-sql.py`, `collect-licenses.mjs`, etc.) |
+| Build/dev/utility scripts | 127   | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `check-kestrel-agent.sh`, `kestrel-portal-secrets.sh`, `check-portal-export-sql.py`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `filter-restore-sql.py`, `collect-licenses.mjs`, etc.) |
 
 ## Database Types (2026-09-21)
 
@@ -406,7 +412,7 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 ## RLS & schema hygiene
 
 `scripts/verify-rls.mjs` (CI: the shared unit-tests action) scans
-`supabase/migrations/` and reports **137 tables, all RLS-enabled, 1037
+`supabase/migrations/` and reports **137 tables, all RLS-enabled, 1038
 policies**. It fails on a live table without RLS, on a new migration whose
 `create policy` lacks a paired `drop policy if exists`, and on a new migration
 filename outside the `NNNNNNN_lower_snake_case.sql` convention

@@ -79,7 +79,7 @@ jobs:
       - name: Trivy filesystem scan (report-only)
         # Second opinion over the lockfile/manifests. exit-code 0 keeps the
         # run non-blocking; findings are reported in the SARIF artifact.
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         with:
           scan-type: fs
           scan-ref: .

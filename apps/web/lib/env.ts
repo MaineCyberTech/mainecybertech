@@ -13,7 +13,6 @@ export const clientEnvSchema = z.object({
   NEXT_PUBLIC_BUILD_TIME: z.string().optional(),
   NEXT_PUBLIC_LOG_LEVEL: z.string().optional(),
   NEXT_PUBLIC_LOG_ENDPOINT: z.string().optional(),
-  NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD: z.string().optional(),
 });
 
 export type ClientEnvRaw = z.infer<typeof clientEnvSchema>;
@@ -31,7 +30,6 @@ export interface ClientEnv {
   NEXT_PUBLIC_BUILD_TIME: string;
   NEXT_PUBLIC_LOG_LEVEL: string;
   NEXT_PUBLIC_LOG_ENDPOINT: string;
-  NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD: string;
 }
 
 const DEFAULTS: ClientEnv = {
@@ -47,7 +45,6 @@ const DEFAULTS: ClientEnv = {
   NEXT_PUBLIC_BUILD_TIME: "",
   NEXT_PUBLIC_LOG_LEVEL: "info",
   NEXT_PUBLIC_LOG_ENDPOINT: "",
-  NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD: "",
 };
 
 const warnedKeys = new Set<string>();
@@ -77,7 +74,6 @@ export function getClientEnv(): ClientEnv {
     NEXT_PUBLIC_BUILD_TIME: process.env.NEXT_PUBLIC_BUILD_TIME,
     NEXT_PUBLIC_LOG_LEVEL: process.env.NEXT_PUBLIC_LOG_LEVEL,
     NEXT_PUBLIC_LOG_ENDPOINT: process.env.NEXT_PUBLIC_LOG_ENDPOINT,
-    NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD: process.env.NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD,
   };
 
   // SECRET-P3-002: a production build with no NEXT_PUBLIC_API_URL used to fall
@@ -113,8 +109,6 @@ export function getClientEnv(): ClientEnv {
       NEXT_PUBLIC_BUILD_TIME: data.NEXT_PUBLIC_BUILD_TIME ?? DEFAULTS.NEXT_PUBLIC_BUILD_TIME,
       NEXT_PUBLIC_LOG_LEVEL: data.NEXT_PUBLIC_LOG_LEVEL ?? DEFAULTS.NEXT_PUBLIC_LOG_LEVEL,
       NEXT_PUBLIC_LOG_ENDPOINT: data.NEXT_PUBLIC_LOG_ENDPOINT ?? DEFAULTS.NEXT_PUBLIC_LOG_ENDPOINT,
-      NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD:
-        data.NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD ?? DEFAULTS.NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD,
     };
   }
   for (const issue of result.error.issues) {

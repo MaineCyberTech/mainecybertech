@@ -234,7 +234,7 @@ jobs:
       - name: Scan mct-api image (CRITICAL/HIGH)
         # Image-layer scan (CTR-P1-001): the fs scan cannot see base-image OS
         # packages or npm-in-image contents.
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -249,7 +249,7 @@ jobs:
         # SUPPLY-P3-001: emit a digest-bound SBOM on the deploy path so a shipped
         # image can always be tied to its bill of materials (the 30-day workflow
         # artifact alone expires, and build-push.yml is not on the deploy path).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -307,7 +307,7 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Scan mct-worker image (CRITICAL/HIGH)
         # Image-layer scan (CTR-P1-001).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -320,7 +320,7 @@ jobs:
           format: table
       - name: Generate mct-worker image SBOM (CycloneDX)
         # SUPPLY-P3-001: digest-bound SBOM on the deploy path (see build-api).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -383,7 +383,7 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Scan mct-web image (CRITICAL/HIGH)
         # Image-layer scan (CTR-P1-001).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -396,7 +396,7 @@ jobs:
           format: table
       - name: Generate mct-web image SBOM (CycloneDX)
         # SUPPLY-P3-001: digest-bound SBOM on the deploy path (see build-api).
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -757,7 +757,7 @@ jobs:
           # Secrets are forwarded as environment variables rather than being
           # interpolated into the remote script, so a value containing $,
           # backticks or quotes cannot execute on the droplet.
-          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SENTRY_RELEASE,NEXT_PUBLIC_SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,VAPID_SUBJECT,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,M365_CLIENT_STATE,JIRA_WEBHOOK_SECRET,JSM_WEBHOOK_SECRET,METRICS_TOKEN,MFA_ENFORCEMENT_ENABLED,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,TURNSTILE_SECRET_KEY,MALWARE_SCANNER_URL,MALWARE_SCANNER_API_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,ALERTMANAGER_WATCHDOG_WEBHOOK_URL,ALERTMANAGER_CRITICAL_WEBHOOK_URL,ALERTMANAGER_DEFAULT_WEBHOOK_URL,ALERTMANAGER_SLACK_API_URL,ALERTMANAGER_SLACK_CHANNEL,ALERTMANAGER_WEBHOOK_USER,ALERTMANAGER_WEBHOOK_PASS,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
+          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SENTRY_RELEASE,NEXT_PUBLIC_SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY,VAPID_SUBJECT,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,M365_CLIENT_STATE,JIRA_WEBHOOK_SECRET,JSM_WEBHOOK_SECRET,METRICS_TOKEN,MFA_ENFORCEMENT_ENABLED,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,TURNSTILE_SECRET_KEY,MALWARE_SCANNER_URL,MALWARE_SCANNER_API_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,ALERTMANAGER_WATCHDOG_WEBHOOK_URL,ALERTMANAGER_CRITICAL_WEBHOOK_URL,ALERTMANAGER_DEFAULT_WEBHOOK_URL,ALERTMANAGER_SLACK_API_URL,ALERTMANAGER_SLACK_CHANNEL,ALERTMANAGER_WEBHOOK_USER,ALERTMANAGER_WEBHOOK_PASS,ALGA_PSA_INTAKE_ENABLED,ALGA_PSA_CLIENT_ID,ALGA_PSA_BOARD_ID,ALGA_PSA_STATUS_ID,ALGA_PSA_PRIORITY_ID,ALGA_PSA_PRIORITY_MAP,ALGA_PSA_CLIENT_MAP,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
           script: |
             set -e
             timeout 60 cloud-init status --wait 2>/dev/null || true
@@ -838,8 +838,19 @@ jobs:
               printf 'ALERTMANAGER_SLACK_CHANNEL=%s\n' "$ALERTMANAGER_SLACK_CHANNEL"
               printf 'ALERTMANAGER_WEBHOOK_USER=%s\n' "$ALERTMANAGER_WEBHOOK_USER"
               printf 'ALERTMANAGER_WEBHOOK_PASS=%s\n' "$ALERTMANAGER_WEBHOOK_PASS"
+              printf 'ALGA_PSA_INTAKE_ENABLED=%s\n' "${ALGA_PSA_INTAKE_ENABLED:-false}"
+              printf 'ALGA_PSA_CLIENT_ID=%s\n' "${ALGA_PSA_CLIENT_ID:-}"
+              printf 'ALGA_PSA_BOARD_ID=%s\n' "${ALGA_PSA_BOARD_ID:-}"
+              printf 'ALGA_PSA_STATUS_ID=%s\n' "${ALGA_PSA_STATUS_ID:-}"
+              printf 'ALGA_PSA_PRIORITY_ID=%s\n' "${ALGA_PSA_PRIORITY_ID:-}"
+              printf 'ALGA_PSA_PRIORITY_MAP=%s\n' "${ALGA_PSA_PRIORITY_MAP:-}"
+              printf 'ALGA_PSA_CLIENT_MAP=%s\n' "${ALGA_PSA_CLIENT_MAP:-}"
             } >> /opt/mct-portal/.env
             chmod 600 /opt/mct-portal/.env
+            # PSA key/base URL are a broker lease, not a GitHub secret.
+            if [ -r /etc/kestrel/portal/psa.env ]; then
+              grep -E '^ALGA_PSA_(BASE_URL|API_KEY|TENANT_ID)=' /etc/kestrel/portal/psa.env >> /opt/mct-portal/.env
+            fi
             # OBS-P2-013 fail-closed guard: an empty METRICS_TOKEN makes the API
             # /metrics endpoint 404 and the authenticated Prometheus scrape fail,
             # which false-fires MCTServiceDown and blinds monitoring. Production
