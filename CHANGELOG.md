@@ -11,6 +11,12 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Nov 17
 
+- **Test-account hardening (SEC-AUTH-002):** the public `/test-accounts`
+  one-click sign-in is now local-only, requires an explicit dev flag, a
+  non-production build and a server-only password, and no longer ships a
+  default credential. Caddy blocks the route as defense in depth; the affected
+  demo account passwords were rotated.
+
 - **Kestrel portal secrets:** new `scripts/kestrel-portal-secrets.sh` checks the
   droplet's Supabase service-role key against Kestrel's managed source and can
   apply the managed Supabase tokens, recreate api/worker, and restore the
