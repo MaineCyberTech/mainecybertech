@@ -28,6 +28,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   apply the managed Supabase tokens, recreate api/worker, and restore the
   previous `.env` if the post-apply check fails (`check` / `apply --dry-run` /
   `apply`).
+- **JWT verification hardening (SEC-AUTH-001):** the API rejects the known
+  repeated `JWT_SECRET` placeholder at boot. The dev deployment's placeholder
+  was replaced with a random verification secret, closing a forged-HS256
+  authentication path; the incident and fallback behavior are documented in
+  `docs/JWT_ROTATION.md`.
 - **Dependency audit:** allowlist `GHSA-fc5q-39xc-vjpf` (picomatch ReDoS,
   high, no patched release) until 2026-12-31. The vulnerable module is reached
   only through the build-time Rollup plugins bundled with `@sentry/nextjs`;
