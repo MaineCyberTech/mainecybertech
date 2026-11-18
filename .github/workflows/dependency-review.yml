@@ -33,6 +33,6 @@ jobs:
           #   @img/sharp-libvips-linux-x64 -> LGPL-3.0-or-later (dev/build-only
           #     via @storybook/nextjs; never present in a shipped image)
           #   axe-core, @axe-core/playwright -> MPL-2.0 (test-only)
-          #   @sentry/cli* -> FSL-1.1-MIT (build/CI/observability tooling)
+          #   sentry -> FSL-1.1-Apache-2.0 (build/CI/observability tooling)
           #   browser-assert -> UNKNOWN (dev-only Storybook dep, no license field)
-          allow-dependencies-licenses: pkg:npm/%40img/sharp-libvips-linux-x64, pkg:npm/axe-core, pkg:npm/%40axe-core/playwright, pkg:npm/%40sentry/cli, pkg:npm/%40sentry/cli-win32-x64, pkg:npm/%40sentry/cli-linux-x64, pkg:npm/browser-assert
+          allow-dependencies-licenses: pkg:npm/%40img/sharp-libvips-linux-x64, pkg:npm/axe-core, pkg:npm/%40axe-core/playwright, pkg:npm/sentry, pkg:npm/browser-assert
