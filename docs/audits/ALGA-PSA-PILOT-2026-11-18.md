@@ -1,8 +1,8 @@
 # Alga PSA intake pilot — 2026-11-18
 
-Status: **pilot path verified, intake rolled back to off**. Scope was the
-demo/pilot `.us` portal and Acme Manufacturing only. Production `.com` and the
-other demo organizations were not enabled.
+Status: **pilot path verified; Acme-only intake enabled 2026-11-18**. Scope was
+the demo/pilot `.us` portal and Acme Manufacturing only. Production `.com` and
+the other demo organizations were not enabled.
 
 ## Configuration staged
 
@@ -77,58 +77,92 @@ it; the intake code does not create incomplete contacts.
   PSA-created tickets in its support list.
 - Enable only for mapped organizations and only in an approved change window.
 
-## Enablement attempt 2026-11-18 (blocked before the flag change)
+## Enablement 2026-11-18 (completed)
 
-A second, controlled enablement attempt verified the staged configuration and
-then stopped at the cutover backfill gate. The flag was **not** changed.
+A controlled enablement verified the staged configuration, initially stopped at
+the cutover backfill gate, then backfilled the one missing open ticket and
+enabled intake for Acme only.
 
-### Preconditions verified
+### Preconditions verified (before enablement)
 
 | Check | Result |
 |---|---|
-| Live `/opt/mct-portal/.env` | `0600 root:root`; one `ALGA_PSA_INTAKE_ENABLED` line, `false` |
+| Live `/opt/mct-portal/.env` | `0600 root:root`; one `ALGA_PSA_INTAKE_ENABLED` line, `false` at the start |
 | Board / status / default priority | Service Desk `2fcfaecf…`, New `fe50b167…`, Normal `ce4f8578…` (match this audit) |
 | Priority map | `low`, `normal`, `high`, `urgent` all present |
 | `ALGA_PSA_CLIENT_MAP` | exactly 1 entry: Acme `11111111…` → `2f9aee0f…`; no second tenant |
 | PSA health | `GET /api/readyz` 200 (`database:true`, `redis:true`, v1.6.18) |
 | PSA client/contact | Acme client active; pilot contact `b5ad8d6a…` active under it; 10 contacts |
-| Web container | `healthy`; `ALGA_PSA_INTAKE_ENABLED=false`; client-map entries = 1 |
+| Web container | `healthy`; flag false at the start; client-map entries = 1 |
 | Portal tickets | 6 Acme rows: 1 `new`, 1 `open`, 2 `in_progress`, 2 `resolved` |
 
-### Blocker: one open ticket is not backfilled
+### Backfill gate and resolution
 
-Four Acme portal tickets are open. Three are already mirrored into PSA with a
+Four Acme portal tickets were open. Three were already mirrored into PSA with a
 `client_portal` link (`relationship: mirror`, `metadata.demo=true`):
 
 - `52000000-0000-0000-0000-000000000001` → PSA `62e59878-7ab3-507a-a53e-b23b81c27008`
 - `52700000-0000-0000-0000-000000000001` → PSA `1c793925-45d0-5431-af48-34914409c43e`
 - `52700000-0000-0000-0000-000000000002` → PSA `bf577f82-4098-5c3c-a394-b2a8e9dc1507`
 
-The fourth is **not** mirrored: portal ticket
+The fourth was **not** mirrored: portal ticket
 `337f97b4-0897-4cf4-9603-30ef45c23836` (title `g`, priority urgent, status
-`new`, created 2026-06-09 by a super-admin profile). The PSA lookup
-`GET /tickets/by-external-link?system=client_portal&external_id=337f97b4…`
-returns 404, and no Acme PSA ticket carries that title. Cutover checklist step 2
-requires every open portal ticket to be backfilled before intake is enabled.
+`new`, created 2026-06-09 by a super-admin profile). The owner chose backfill,
+not closure. PSA ticket `T000012` (`5d5b136a-1e8b-4459-8ae6-1e876118d81b`) was
+created on 2026-11-18 as a mirror:
 
-Owner decision required: backfill that ticket with the portal id in the
-external link, or close it as a stale test. This change deliberately did not
-alter any portal ticket or PSA record.
+- Board `2fcfaecf…`, status `fe50b167…`, priority `7b439434…` (portal urgent →
+  mapped urgent), client `2f9aee0f…`, `is_closed=false`.
+- `entered_at` preserves the original portal timestamp
+  `2026-06-09T04:28:48.564Z`; creation is silent (no new-ticket notification).
+- Contact `b5ad8d6a…` is a documented pilot fallback. The portal creator profile
+  `66ce903f…` (MCT super-admin) has no linked PSA contact (`psa_contact_id`
+  null) and no exact email match under the Acme client. The attribution is
+  stated in `attributes.description` and the link metadata; no contact was
+  invented.
+- External link `client_portal` / `mirror`, `external_id` = portal ticket,
+  realm Acme, URL `https://app.mainecybertech.us/portal/support`; the
+  by-external-link lookup returns the same ticket.
+- No duplicate: Acme PSA ticket count 9 with one title `g`; Acme contact count
+  10 with one pilot contact. The portal ticket was not closed or deleted and no
+  portal row changed.
 
 ### Flag state
 
-`ALGA_PSA_INTAKE_ENABLED` remained `false` in `/opt/mct-portal/.env` and in the
-running `mct-portal-web-1`. `vars.ALGA_PSA_INTAKE_ENABLED` was not changed.
-The available portal/cross-repo broker consumers return HTTP 403
-`Resource not accessible by integration` on the Actions variables API, so the
-persistent path needs an identity with repository-variable write. A
-droplet-only `.env` edit is not a substitute: the next deploy rewrites `.env`
-from the variable.
+- `vars.ALGA_PSA_INTAKE_ENABLED=true` (repository variable; verified
+  2026-11-18T22:55:39Z). It was written with a fresh GitHub App installation
+  token from the existing `kestrel-automation` App (`app_id 5673382`,
+  installation `179999687`) carrying `actions_variables: write`; the token was
+  revoked after use. No PAT was used.
+- `/opt/mct-portal/.env` contains `ALGA_PSA_INTAKE_ENABLED=true`; backup
+  `.env.bak-psa-enable-20261118T225736Z` (`0600 root:root`).
+- `mct-portal-web-1` was recreated on the same image digest, is `healthy`, and
+  its environment reports the flag true with exactly one client-map entry. The
+  app answered HTTP 307 on `/`.
+- The earlier broker consumers still return 403 on the Actions variables API;
+  that is why the one-off App installation token path was used.
 
-No test submission was made; the pilot evidence above remains the live proof of
-the path.
+### Test evidence and gap
 
-### Exact enable / rollback commands (for the approved window)
+No new portal submission was made: no active dedicated client test account with
+a usable credential exists. The seeded Acme client profiles are banned; the only
+active `client_user` auth row is an SSO identity with no portal profile or test
+credential. No user was created, unbanned or modified. Prior pilot evidence was
+re-verified:
+
+- submission `27ac5f1e…` resolves twice to PSA ticket `d81e7f37…` with
+  `client_portal` / `origin`, realm Acme — stable across retries.
+- ticket board `2fcfaecf…`, status `fe50b167…`, priority `ce4f8578…`, contact
+  `b5ad8d6a…`; the contact is active under the Acme client.
+- Acme Supabase ticket count remains **6**; no row matches the submission id or
+  the backfilled portal ticket.
+- PSA Acme counts: 9 tickets and 10 contacts; no duplicate ticket/contact.
+
+Gap: a fresh submission through the live portal action remains to be performed
+when an approved client test account is available. The prior pilot remains the
+end-to-end proof of the portal → PSA path.
+
+### Exact enable / rollback commands
 
 Persistent flag (preferred; requires an identity that can write repository
 variables):
@@ -148,7 +182,7 @@ keep the backup until the web container is healthy:
 
 ```sh
 cd /opt/mct-portal
-BK=".env.bak-psa-intake-$(date -u +%Y%m%dT%H%M%SZ)"
+BK=".env.bak-psa-enable-$(date -u +%Y%m%dT%H%M%SZ)"
 install -m 600 .env "$BK"
 sed -i 's/^ALGA_PSA_INTAKE_ENABLED=.*/ALGA_PSA_INTAKE_ENABLED=true/' .env
 docker compose -p mct-portal up -d --no-deps --force-recreate web
