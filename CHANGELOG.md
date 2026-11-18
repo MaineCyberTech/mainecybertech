@@ -18,6 +18,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   `MAINE CYBERTECH` wordmark PNGs (3360×320 and 1680×160) and SVG sources for
   Level organization notification branding under
   `apps/web/public/brand/level-notification/`.
+- **Legacy product URLs:** `/products` and `/store/products` now permanently
+  redirect to `/store`, and the admin product list no longer renders a client
+  form per row (reducing the RSC payload for large catalogs).
 
 ### Nov 17
 
