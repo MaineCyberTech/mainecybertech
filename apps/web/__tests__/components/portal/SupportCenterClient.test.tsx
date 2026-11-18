@@ -133,6 +133,18 @@ describe("SupportCenterClient", () => {
     expect(screen.getByText("Create Support Ticket")).toBeInTheDocument();
   });
 
+  it("submits a stable idempotency token with the create form", async () => {
+    const user = userEvent.setup();
+    render(<SupportCenterClient tickets={[]} createTicketAction={mockCreateTicketAction} />);
+
+    await user.click(screen.getByText("Submit Ticket"));
+    const input = document.querySelector<HTMLInputElement>('input[name="submissionId"]');
+    expect(input).not.toBeNull();
+    expect(input?.value).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+  });
+
   it("renders ticket links to detail page", () => {
     render(<SupportCenterClient tickets={tickets} createTicketAction={mockCreateTicketAction} />);
     const link = screen.getByText("Network Issue").closest("a");
