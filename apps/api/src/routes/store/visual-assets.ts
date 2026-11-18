@@ -8,6 +8,7 @@ import { logAuditEvent } from "../../services/audit";
 import { type UpdateRow } from "../../lib/db-types";
 import { LIST_HARD_CAP } from "../../lib/pagination";
 import { assertDeleteConfirmed } from "../../lib/delete-confirm";
+import { partialUpdateSchema } from "../../lib/validators";
 
 /** Store visual assets (admin CRUD). Extracted from `routes/store.ts` (same pattern as `routes/final/`).
  *
@@ -33,7 +34,7 @@ export function registerVisualAssetRoutes(router: Router) {
     licenseNotes: z.string().max(1000).default(""),
   });
 
-  const updateVisualAssetSchema = visualAssetSchema.partial();
+  const updateVisualAssetSchema = partialUpdateSchema(visualAssetSchema);
 
   // --- Visual assets (admin) ---
   interface VisualAssetRow {

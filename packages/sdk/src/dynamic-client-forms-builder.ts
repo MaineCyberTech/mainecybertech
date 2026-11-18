@@ -8,33 +8,33 @@ export const DynamicFormFieldSchema = z.object({
   placeholder: z.string().nullable(),
   options: z.array(z.string()),
   helpText: z.string().nullable(),
-  validation: z.record(z.unknown()),
+  validation: z.record(z.string(), z.unknown()),
   sortOrder: z.number(),
 });
 
 export const DynamicFormRecordSchema = z.object({
-  id: z.string().uuid(),
-  organization_id: z.string().uuid(),
+  id: z.guid(),
+  organization_id: z.guid(),
   title: z.string(),
   description: z.string().nullable(),
   form_type: z.string(),
   status: z.string(),
   fields: z.array(DynamicFormFieldSchema),
-  settings: z.record(z.unknown()),
+  settings: z.record(z.string(), z.unknown()),
   published_at: z.string().nullable(),
   closes_at: z.string().nullable(),
-  created_by: z.string().uuid().nullable(),
+  created_by: z.guid().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
 });
 
 export const FormSubmissionSchema = z.object({
-  id: z.string().uuid(),
-  form_id: z.string().uuid(),
-  organization_id: z.string().uuid(),
-  respondent_id: z.string().uuid().nullable(),
+  id: z.guid(),
+  form_id: z.guid(),
+  organization_id: z.guid(),
+  respondent_id: z.guid().nullable(),
   respondent_email: z.string().nullable(),
-  answers: z.record(z.unknown()),
+  answers: z.record(z.string(), z.unknown()),
   status: z.string(),
   submitted_at: z.string(),
   created_at: z.string(),
@@ -64,7 +64,7 @@ export const CreateDynamicFormSchema = z.object({
   description: z.string().max(5000).optional().nullable(),
   formType: z.string().optional().default("intake"),
   fields: z.array(DynamicFormFieldSchema).optional().default([]),
-  settings: z.record(z.unknown()).optional().default({}),
+  settings: z.record(z.string(), z.unknown()).optional().default({}),
   closesAt: z.string().optional().nullable(),
 });
 
@@ -76,7 +76,7 @@ export const UpdateDynamicFormSchema = z.object({
   formType: z.string().optional(),
   status: z.string().optional(),
   fields: z.array(DynamicFormFieldSchema).optional(),
-  settings: z.record(z.unknown()).optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
   closesAt: z.string().optional().nullable(),
 });
 
@@ -84,7 +84,7 @@ export type UpdateDynamicFormInput = z.infer<typeof UpdateDynamicFormSchema>;
 
 export const SubmitDynamicFormSchema = z.object({
   respondentEmail: z.string().email().optional().nullable(),
-  answers: z.record(z.unknown()),
+  answers: z.record(z.string(), z.unknown()),
 });
 
 export type SubmitDynamicFormInput = z.infer<typeof SubmitDynamicFormSchema>;

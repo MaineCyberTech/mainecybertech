@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const listOnboardingQuerySchema = z.object({
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.guid().optional(),
   status: z.string().optional(),
   phase: z.string().optional(),
   riskLevel: z.string().optional(),
@@ -11,7 +11,7 @@ export const listOnboardingQuerySchema = z.object({
 });
 
 export const createOnboardingSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   clientName: z.string().min(1).max(255),
   clientDomain: z.string().max(255).optional().nullable(),
   clientContactEmail: z.string().email().optional().nullable(),
@@ -23,12 +23,12 @@ export const createOnboardingSchema = z.object({
   discoveryNotes: z.string().max(10000).optional().nullable(),
   m365SetupStatus: z.string().optional().default("not_started"),
   m365TenantId: z.string().max(255).optional().nullable(),
-  m365Licenses: z.record(z.unknown()).optional().default({}),
+  m365Licenses: z.record(z.string(), z.unknown()).optional().default({}),
   accessCollectionStatus: z.string().optional().default("not_started"),
-  accessCredentials: z.record(z.unknown()).optional().default({}),
+  accessCredentials: z.record(z.string(), z.unknown()).optional().default({}),
   networkBaselineStatus: z.string().optional().default("not_started"),
   networkDiagramUrl: z.string().url().optional().nullable(),
-  networkScanResults: z.record(z.unknown()).optional().default({}),
+  networkScanResults: z.record(z.string(), z.unknown()).optional().default({}),
   documentationStatus: z.string().optional().default("not_started"),
   documentationUrl: z.string().url().optional().nullable(),
   securityBaselineStatus: z.string().optional().default("not_started"),
@@ -51,12 +51,12 @@ export const updateOnboardingSchema = z.object({
   discoveryNotes: z.string().max(10000).optional().nullable(),
   m365SetupStatus: z.string().optional(),
   m365TenantId: z.string().max(255).optional().nullable(),
-  m365Licenses: z.record(z.unknown()).optional(),
+  m365Licenses: z.record(z.string(), z.unknown()).optional(),
   accessCollectionStatus: z.string().optional(),
-  accessCredentials: z.record(z.unknown()).optional(),
+  accessCredentials: z.record(z.string(), z.unknown()).optional(),
   networkBaselineStatus: z.string().optional(),
   networkDiagramUrl: z.string().url().optional().nullable(),
-  networkScanResults: z.record(z.unknown()).optional(),
+  networkScanResults: z.record(z.string(), z.unknown()).optional(),
   documentationStatus: z.string().optional(),
   documentationUrl: z.string().url().optional().nullable(),
   securityBaselineStatus: z.string().optional(),
@@ -70,13 +70,13 @@ export const updateOnboardingSchema = z.object({
 });
 
 export const completePhaseSchema = z.object({
-  organizationId: z.string().uuid(),
-  completedBy: z.string().uuid(),
+  organizationId: z.guid(),
+  completedBy: z.guid(),
   notes: z.string().max(5000).optional().nullable(),
 });
 
 export const exportOnboardingSchema = z.object({
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.guid().optional(),
   status: z.string().optional(),
   phase: z.string().optional(),
   riskLevel: z.string().optional(),

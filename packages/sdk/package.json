@@ -20,7 +20,7 @@
     "test:coverage": "jest --coverage --json --outputFile=.jest-results.json"
   },
   "dependencies": {
-    "zod": "^3.24.1"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

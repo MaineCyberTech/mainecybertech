@@ -72,18 +72,18 @@ export function registerQuoteRoutes(router: Router) {
 
   const generateProposalDraftSchema = z.object({
     // When present, a first-class `proposals` row is created and linked.
-    organizationId: z.string().uuid().optional(),
+    organizationId: z.guid().optional(),
     visibility: z.enum(["internal", "client_visible"]).default("internal"),
     validUntil: z.string().optional().nullable(),
-    ownerUserId: z.string().uuid().optional().nullable(),
+    ownerUserId: z.guid().optional().nullable(),
   });
 
   const convertQuoteRequestSchema = z.object({
-    organizationId: z.string().uuid(),
+    organizationId: z.guid(),
     projectName: z.string().min(1).max(500).optional(),
     priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
-    ownerId: z.string().uuid().optional().nullable(),
-    assignedOwnerId: z.string().uuid().optional().nullable(),
+    ownerId: z.guid().optional().nullable(),
+    assignedOwnerId: z.guid().optional().nullable(),
   });
 
   // POST /api/v1/store/quotes - submit a quote (public)

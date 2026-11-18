@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { partialUpdateSchema } from "../lib/validators";
 
 export const listKnowledgeBaseQuerySchema = z.object({
   search: z.string().optional(),
@@ -8,7 +9,7 @@ export const listKnowledgeBaseQuerySchema = z.object({
 });
 
 export const createKnowledgeBaseSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   title: z.string().min(1, "Title is required").max(500),
   body: z.string().min(1, "Body is required"),
   category: z.string().max(200).optional().nullable(),
@@ -16,6 +17,6 @@ export const createKnowledgeBaseSchema = z.object({
   isPublished: z.boolean().optional().default(true),
 });
 
-export const updateKnowledgeBaseSchema = createKnowledgeBaseSchema
-  .partial()
-  .omit({ organizationId: true });
+export const updateKnowledgeBaseSchema = partialUpdateSchema(createKnowledgeBaseSchema).omit({
+  organizationId: true,
+});

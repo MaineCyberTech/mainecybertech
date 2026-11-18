@@ -23,7 +23,7 @@ const trackSchema = z.object({
   quizId: z.string().max(200).optional(),
   quoteId: z.string().max(200).optional(),
   campaignId: z.string().max(200).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   anonymousId: z.string().max(200).optional(),
 });
 

@@ -325,7 +325,7 @@ router.get("/stream", async (req, res, next) => {
 
 const createNotificationSchema = z.object({
   userId: z.string().min(1),
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.guid().optional(),
   title: z.string().min(1).max(200),
   body: z.string().min(1).max(2000),
   module: z.enum(["tickets", "projects", "documents", "billing", "system"]),
