@@ -9,7 +9,22 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ## [Unreleased]
 
+### Nov 18
+
+- **AI reviewer:** `develop` now uses the oversized-diff fallback workflow pinned
+  on `main`, so advisory reviews no longer fail before they can process large
+  PRs.
+- **Legacy product URLs:** `/products` and `/store/products` now permanently
+  redirect to `/store`, and the admin product list no longer renders a client
+  form per row (reducing the RSC payload for large catalogs).
+
 ### Nov 17
+
+- **JWT verification hardening (SEC-AUTH-001):** the API rejects the known
+  repeated `JWT_SECRET` placeholder at boot. The dev deployment's placeholder
+  was replaced with a random verification secret, closing a forged-HS256
+  authentication path; the incident and fallback behavior are documented in
+  `docs/JWT_ROTATION.md`.
 
 - **Test-account hardening (SEC-AUTH-002):** the public `/test-accounts`
   one-click sign-in is now local-only, requires an explicit dev flag, a
@@ -22,6 +37,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   apply the managed Supabase tokens, recreate api/worker, and restore the
   previous `.env` if the post-apply check fails (`check` / `apply --dry-run` /
   `apply`).
+- **JWT verification hardening (SEC-AUTH-001):** the API rejects the known
+  repeated `JWT_SECRET` placeholder at boot. The dev deployment's placeholder
+  was replaced with a random verification secret, closing a forged-HS256
+  authentication path; the incident and fallback behavior are documented in
+  `docs/JWT_ROTATION.md`.
 - **Dependency audit:** allowlist `GHSA-fc5q-39xc-vjpf` (picomatch ReDoS,
   high, no patched release) until 2026-12-31. The vulnerable module is reached
   only through the build-time Rollup plugins bundled with `@sentry/nextjs`;

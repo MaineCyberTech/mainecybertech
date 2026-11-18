@@ -20,10 +20,26 @@
 
 Consequences for rotation:
 
-| Action                              | Changes the signer? | Effect on existing tokens                                            |
-| ----------------------------------- | ------------------- | -------------------------------------------------------------------- |
-| Rotate the Supabase signing secret  | Yes                 | New tokens are signed with the new key; old access tokens stop validating at Supabase |
-| Update `JWT_SECRET` only            | No                  | Only the API's verification list changes; Supabase-issued tokens are unaffected |
+| Action                             | Changes the signer? | Effect on existing tokens                                                             |
+| ---------------------------------- | ------------------- | ------------------------------------------------------------------------------------- |
+| Rotate the Supabase signing secret | Yes                 | New tokens are signed with the new key; old access tokens stop validating at Supabase |
+| Update `JWT_SECRET` only           | No                  | Only the API's verification list changes; Supabase-issued tokens are unaffected       |
+
+## 2026-11-17 dev incident: known placeholder
+
+The dev `/opt/mct-portal/.env` contained `JWT_SECRET` as the literal string
+`JWT_SECRET` repeated 24 times. The API accepted a forged HS256 token signed
+with that value at `/api/v1/auth/me` (HTTP 200) because it trusted the token's
+`sub` before any Supabase lookup. Supabase rejected the same signature, so the
+value was only the API verification copy.
+
+Remediation: a 64-character random value is now in Vault
+`secret/kestrel/portal` (`jwt_secret`), GitHub environment `dev`
+(`JWT_SECRET`), and `/opt/mct-portal/.env`; `api`/`worker` were recreated and
+the forged token now returns HTTP 401. The API currently falls back to
+`supabase.auth.getUser()` for session tokens until the project's real signing
+secret (or asymmetric/JWKS verification) is configured. `env.ts` now rejects
+the known placeholder at boot.
 
 ## Scheduled rotation (zero downtime)
 
@@ -60,10 +76,10 @@ Consequences for rotation:
 
 ## Environment configuration
 
-| Environment | Deploy job environment | `JWT_SECRET` location                                |
-| ----------- | ---------------------- | ---------------------------------------------------- |
-| `dev`       | `dev`                  | GitHub Environment `dev` → `JWT_SECRET`               |
-| `prod`      | `prod-approval`        | GitHub Environment `prod-approval` → `JWT_SECRET`     |
+| Environment | Deploy job environment | `JWT_SECRET` location                             |
+| ----------- | ---------------------- | ------------------------------------------------- |
+| `dev`       | `dev`                  | GitHub Environment `dev` → `JWT_SECRET`           |
+| `prod`      | `prod-approval`        | GitHub Environment `prod-approval` → `JWT_SECRET` |
 
 The Supabase signing secret itself is **not** a GitHub secret — it lives only in
 the Supabase project. The GitHub value is injected into the container via the
