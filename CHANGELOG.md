@@ -11,6 +11,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Nov 18
 
+- **Sentry 11:** migrated to the v11 `dataCollection` policy (keeping the v10
+  no-default-PII baseline), moved `withSentryConfig` to
+  `@sentry/nextjs/config`, and recorded the new `sentry` CLI
+  `FSL-1.1-Apache-2.0` license exception; lockfile regenerated.
 - **AI reviewer:** `develop` now uses the oversized-diff fallback workflow pinned
   on `main`, so advisory reviews no longer fail before they can process large
   PRs.

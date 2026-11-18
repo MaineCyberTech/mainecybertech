@@ -126,3 +126,23 @@ export function scrubSentryEvent<T>(event: T): T {
 
   return event;
 }
+
+/**
+ * AN-P3-004: Sentry v11 defaults collect significantly more PII than v10. Keep
+ * the v10 no-default-PII baseline explicitly; beforeSend still scrubs manually
+ * attached data. Keep this next to the scrubber so the policy reviews together.
+ */
+export const SENTRY_DATA_COLLECTION = {
+  userInfo: false,
+  cookies: false,
+  httpHeaders: {
+    request: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+    response: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+  },
+  httpBodies: [],
+  urlQueryParams: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+  genAI: { inputs: false, outputs: false },
+  databaseQueryData: false,
+  queues: false,
+  graphQL: { document: false, variables: false },
+};

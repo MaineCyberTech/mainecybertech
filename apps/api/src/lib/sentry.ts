@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/node";
 import { getEnv } from "../config/env";
-import { scrubSentryEvent } from "./sentry-scrub";
+import { SENTRY_DATA_COLLECTION, scrubSentryEvent } from "./sentry-scrub";
 
 export function initSentry() {
   const env = getEnv();
@@ -13,7 +13,7 @@ export function initSentry() {
     tracesSampleRate: env.SENTRY_TRACES_SAMPLE_RATE ?? (env.NODE_ENV === "production" ? 0.2 : 0.0),
     // AN-P3-004: never attach default PII (IP, cookies, user identity) and
     // scrub every event before transport — see lib/sentry-scrub.ts.
-    sendDefaultPii: false,
+    dataCollection: SENTRY_DATA_COLLECTION,
     beforeSend: (event) => scrubSentryEvent(event),
   });
 }

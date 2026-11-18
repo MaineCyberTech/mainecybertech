@@ -68,13 +68,11 @@
       "expires": "2027-10-02"
     },
     {
-      "license": "FSL-1.1-MIT",
+      "license": "FSL-1.1-Apache-2.0",
       "packages": [
-        "@sentry/cli",
-        "@sentry/cli-win32-x64",
-        "@sentry/cli-linux-x64"
+        "sentry"
       ],
-      "reason": "Sentry CLI, a build/CI/observability tooling dependency, not linked into or redistributed with the product. FSL is source-available (not OSI) and converts to MIT after its change date. Accepted 2026-10-02; re-evaluate if Sentry CLI becomes part of a shipped artifact.",
+      "reason": "Sentry CLI/build tooling (`sentry`), not linked into or redistributed with the product. FSL is source-available (not OSI) and converts to Apache-2.0 after its change date. Accepted 2026-11-18; re-evaluate if the Sentry CLI becomes part of a shipped artifact.",
       "expires": "2027-10-02"
     },
     {

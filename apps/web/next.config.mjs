@@ -1,7 +1,7 @@
 import { fileURLToPath } from "url";
 import path from "path";
 import withBundleAnalyzer from "@next/bundle-analyzer";
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

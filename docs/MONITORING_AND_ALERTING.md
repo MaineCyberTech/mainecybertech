@@ -338,7 +338,7 @@ All three services tag events with a **release** (OBS-P3-004): `deploy-do.yml` w
 
 Error telemetry is **scrubbed at the SDK boundary** before transport:
 
-- Every init sets `sendDefaultPii: false` and routes events through `beforeSend`
+- Every init sets the v11 `dataCollection` baseline (user info, cookies, headers, bodies, genAI and database data off) and routes events through `beforeSend`
   (`apps/api/src/lib/sentry-scrub.ts`, `apps/web/lib/sentry-scrub.ts`,
   `apps/worker/src/lib/sentry-scrub.ts`). The hook redacts values held under PII
   keys (names, email, phone, credentials, tokens, IP) recursively in
