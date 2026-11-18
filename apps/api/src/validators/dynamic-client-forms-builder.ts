@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const listDynamicFormsQuerySchema = z.object({
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.guid().optional(),
   status: z.string().optional(),
   formType: z.string().optional(),
   page: z.coerce.number().int().positive().optional().default(1),
@@ -28,17 +28,17 @@ const formFieldSchema = z.object({
   placeholder: z.string().max(255).optional().nullable(),
   options: z.array(z.string()).optional().default([]),
   helpText: z.string().max(500).optional().nullable(),
-  validation: z.record(z.unknown()).optional().default({}),
+  validation: z.record(z.string(), z.unknown()).optional().default({}),
   sortOrder: z.number().int().optional().default(0),
 });
 
 export const createDynamicFormSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   title: z.string().min(1).max(255),
   description: z.string().max(5000).optional().nullable(),
   formType: z.string().optional().default("intake"),
   fields: z.array(formFieldSchema).optional().default([]),
-  settings: z.record(z.unknown()).optional().default({}),
+  settings: z.record(z.string(), z.unknown()).optional().default({}),
   closesAt: z.string().optional().nullable(),
 });
 
@@ -48,7 +48,7 @@ export const updateDynamicFormSchema = z.object({
   formType: z.string().optional(),
   status: z.string().optional(),
   fields: z.array(formFieldSchema).optional(),
-  settings: z.record(z.unknown()).optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
   closesAt: z.string().optional().nullable(),
 });
 
@@ -57,13 +57,13 @@ export const publishDynamicFormSchema = z.object({
 });
 
 export const submitDynamicFormSchema = z.object({
-  formId: z.string().uuid(),
+  formId: z.guid(),
   respondentEmail: z.string().email().optional().nullable(),
-  answers: z.record(z.unknown()),
+  answers: z.record(z.string(), z.unknown()),
 });
 
 export const exportDynamicFormsSchema = z.object({
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.guid().optional(),
   status: z.string().optional(),
   formType: z.string().optional(),
   format: z.string().optional().default("csv"),

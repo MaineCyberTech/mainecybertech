@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { partialUpdateSchema } from "../lib/validators";
 
 export const listAssetsQuerySchema = z.object({
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.guid().optional(),
   status: z.enum(["active", "retired", "decommissioned", "lost", "repair"]).optional(),
   assetType: z.string().optional(),
   search: z.string().optional(),
@@ -11,7 +12,7 @@ export const listAssetsQuerySchema = z.object({
 });
 
 export const createAssetSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   name: z.string().min(1, "Name is required").max(500),
   assetType: z.string().default("hardware"),
   make: z.string().max(200).optional().nullable(),
@@ -26,7 +27,7 @@ export const createAssetSchema = z.object({
   warrantyExpires: z.string().optional().nullable(),
   replacementRecommended: z.string().optional().nullable(),
   lifecycleScore: z.number().min(0).max(100).optional().default(100),
-  assignedTo: z.string().uuid().optional().nullable(),
+  assignedTo: z.guid().optional().nullable(),
   maintenanceNotes: z.string().max(10000).optional().nullable(),
   supportedUntil: z.string().optional().nullable(),
   vendorSupportStatus: z.string().default("supported"),
@@ -35,11 +36,13 @@ export const createAssetSchema = z.object({
   operatingSystem: z.string().max(200).optional().nullable(),
   contractReference: z.string().max(500).optional().nullable(),
   visibility: z.enum(["internal", "client_visible"]).optional().default("internal"),
-  metadata: z.record(z.unknown()).optional().default({}),
+  metadata: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
-export const updateAssetSchema = createAssetSchema.partial().omit({ organizationId: true });
+export const updateAssetSchema = partialUpdateSchema(createAssetSchema).omit({
+  organizationId: true,
+});
 
 export const assetStatsSchema = z.object({
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.guid().optional(),
 });

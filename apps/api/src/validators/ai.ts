@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 export const triageInputSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   rawDescription: z.string().min(10, "Description must be at least 10 characters").max(5000),
   requesterEmail: z.string().email().optional().nullable(),
 });
 
 export const convertTriageSchema = z.object({
-  organizationId: z.string().uuid(),
-  triageId: z.string().uuid(),
+  organizationId: z.guid(),
+  triageId: z.guid(),
   subject: z.string().min(1).max(500),
   category: z.string().optional(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional().default("normal"),
@@ -16,11 +16,11 @@ export const convertTriageSchema = z.object({
 });
 
 export const copilotSummarizeSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
 });
 
 export const copilotReplyDraftSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   tone: z.enum(["formal", "friendly", "technical", "concise"]).optional().default("friendly"),
 });
 
@@ -31,17 +31,17 @@ export const copilotReplyDraftSchema = z.object({
  * the output is used.
  */
 export const createAiDraftSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   moduleKey: z.string().min(1).max(100),
   promptKey: z.string().max(200).optional().nullable(),
   promptVersion: z.string().max(100).optional().nullable(),
-  draftContent: z.record(z.unknown()).default({}),
+  draftContent: z.record(z.string(), z.unknown()).default({}),
   sourceEntityType: z.string().max(100).optional().nullable(),
-  sourceEntityId: z.string().uuid().optional().nullable(),
+  sourceEntityId: z.guid().optional().nullable(),
 });
 
 export const reviewAiDraftSchema = z.object({
   decision: z.enum(["approved", "rejected"]),
   reviewNotes: z.string().max(5000).optional().nullable(),
-  approvedContent: z.record(z.unknown()).optional(),
+  approvedContent: z.record(z.string(), z.unknown()).optional(),
 });

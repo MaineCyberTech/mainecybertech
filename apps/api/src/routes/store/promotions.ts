@@ -10,6 +10,7 @@ import { type UpdateRow } from "../../lib/db-types";
 import { LIST_HARD_CAP } from "../../lib/pagination";
 import { applyOrgScope, resolveAdminTenantScope } from "../../lib/admin-scope";
 import { assertDeleteConfirmed } from "../../lib/delete-confirm";
+import { partialUpdateSchema } from "../../lib/validators";
 
 /** Store promotions (public reads + admin CRUD). Extracted from `routes/store.ts` (same pattern as `routes/final/`). */
 export function registerPromotionRoutes(router: Router) {
@@ -25,7 +26,7 @@ export function registerPromotionRoutes(router: Router) {
     endDate: z.string().optional(),
   });
 
-  const updatePromotionSchema = createPromotionSchema.partial();
+  const updatePromotionSchema = partialUpdateSchema(createPromotionSchema);
 
   // GET /api/v1/store/promotions - list active promotions (public)
   router.get("/promotions", async (_req, res, next) => {

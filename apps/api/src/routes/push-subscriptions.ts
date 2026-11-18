@@ -39,7 +39,7 @@ const subscriptionSchema = z.object({
     p256dh: z.string().min(1).max(512),
     auth: z.string().min(1).max(512),
   }),
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.guid().optional(),
 });
 
 const unsubscribeSchema = z.object({

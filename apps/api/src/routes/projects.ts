@@ -8,6 +8,7 @@ import { requirePermission } from "../middleware/permissions";
 import { loadOwned } from "../lib/tenant";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { EXPORT_ROW_LIMIT } from "../lib/pagination";
+import { parsePartialUpdate } from "../lib/validators";
 import { applyOrgScope, applyRequestedOrg, resolveAdminTenantScope } from "../lib/admin-scope";
 import { responseCacheNoRenew } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
@@ -235,8 +236,6 @@ function projectSubRoute(
     partial: () => { parse: (body: unknown) => Record<string, unknown> };
   },
 ) {
-  const updateSchema = createSchema.partial();
-
   router.get(`/${resource}`, async (req, res, next) => {
     try {
       const supabase = getSupabaseAdmin();
@@ -305,7 +304,7 @@ function projectSubRoute(
     requirePermission("projects", "edit"),
     async (req, res, next) => {
       try {
-        const parsed = updateSchema.parse(req.body) as Record<string, unknown>;
+        const parsed = parsePartialUpdate(createSchema, req.body);
         const supabase = getScopedClient(req, "projects", "write");
         const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 

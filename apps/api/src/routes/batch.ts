@@ -14,6 +14,7 @@ import {
 import { queryInt } from "../lib/query";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { listCountMode } from "../lib/pagination";
+import { parsePartialUpdate } from "../lib/validators";
 const router: ReturnType<typeof Router> = Router();
 
 router.get("/status/public", async (_req, res, next) => {
@@ -111,11 +112,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
     try {
       // Partial updates: accept any subset of the create schema's fields
       // (a full re-submit would break editing a single field).
-      const schema = createSchema as {
-        partial?: () => { parse: (b: unknown) => Record<string, unknown> };
-        parse: (b: unknown) => Record<string, unknown>;
-      };
-      const parsed = (schema.partial ? schema.partial() : schema).parse(req.body);
+      const parsed = parsePartialUpdate(createSchema, req.body);
       const sb = getScopedClient(req, "batch", "write");
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(parsed)) {

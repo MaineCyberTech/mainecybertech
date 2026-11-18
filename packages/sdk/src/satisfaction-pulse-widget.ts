@@ -1,51 +1,51 @@
 import { z } from "zod";
 
 export const SatisfactionPulseRecordSchema = z.object({
-  id: z.string().uuid(),
-  organization_id: z.string().uuid(),
+  id: z.guid(),
+  organization_id: z.guid(),
   subject: z.string(),
   question: z.string().nullable(),
   rating: z.number().int(),
   feedback: z.string().nullable(),
   source: z.string(),
-  source_entity_id: z.string().uuid().nullable(),
-  template_id: z.string().uuid().nullable(),
+  source_entity_id: z.guid().nullable(),
+  template_id: z.guid().nullable(),
   status: z.string(),
   sent_at: z.string().nullable(),
   responded_at: z.string().nullable(),
   send_at: z.string().nullable(),
   scheduled_for: z.string().nullable(),
-  created_by: z.string().uuid().nullable(),
+  created_by: z.guid().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
 });
 
 export const TemplateSchema = z.object({
-  id: z.string().uuid(),
-  organization_id: z.string().uuid(),
+  id: z.guid(),
+  organization_id: z.guid(),
   name: z.string(),
   subject: z.string(),
   question: z.string().nullable(),
   default_rating: z.number().int(),
   is_active: z.boolean(),
-  created_by: z.string().uuid().nullable(),
+  created_by: z.guid().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
 });
 
 export const ScheduleSchema = z.object({
-  id: z.string().uuid(),
-  organization_id: z.string().uuid(),
-  template_id: z.string().uuid().nullable(),
+  id: z.guid(),
+  organization_id: z.guid(),
+  template_id: z.guid().nullable(),
   name: z.string(),
   trigger_type: z.string(),
-  trigger_config: z.record(z.unknown()),
+  trigger_config: z.record(z.string(), z.unknown()),
   frequency: z.string().nullable(),
   cron_expression: z.string().nullable(),
   is_active: z.boolean(),
   last_run_at: z.string().nullable(),
   next_run_at: z.string().nullable(),
-  created_by: z.string().uuid().nullable(),
+  created_by: z.guid().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -152,7 +152,7 @@ export const ScheduleInputSchema = z.object({
     ])
     .optional()
     .default("ticket_closed"),
-  triggerConfig: z.record(z.unknown()).optional().default({}),
+  triggerConfig: z.record(z.string(), z.unknown()).optional().default({}),
   frequency: z.enum(["once", "daily", "weekly", "monthly", "quarterly"]).optional().nullable(),
   cronExpression: z.string().optional().nullable(),
   isActive: z.boolean().optional().default(true),
@@ -173,7 +173,7 @@ export const UpdateScheduleSchema = z.object({
       "manual",
     ])
     .optional(),
-  triggerConfig: z.record(z.unknown()).optional(),
+  triggerConfig: z.record(z.string(), z.unknown()).optional(),
   frequency: z.enum(["once", "daily", "weekly", "monthly", "quarterly"]).optional().nullable(),
   cronExpression: z.string().optional().nullable(),
   isActive: z.boolean().optional(),
