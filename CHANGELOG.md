@@ -11,6 +11,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Nov 18
 
+- **Express 5:** the API now runs Express 5. Injected org scoping uses the
+  getter-safe `pinQueryParam` helper (`req.query` assignment throws in v5), and
+  the test harness follows the same pattern; lockfile regenerated.
 - **AI reviewer:** `develop` now uses the oversized-diff fallback workflow pinned
   on `main`, so advisory reviews no longer fail before they can process large
   PRs.
