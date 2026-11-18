@@ -110,6 +110,12 @@ what it can; the rest are review gates.
   `MaineCyberTech/ai-reviewer` workflow. Repository secrets:
   `AI_REVIEW_ENDPOINT`, `AI_REVIEW_API_KEY`, optional `AI_REVIEW_MODEL`. The
   review is advisory and never approves or merges.
+- **Kestrel broker token (portal droplets)** — `repo-mainecybertech` at
+  `/etc/kestrel-agents/mainecybertech/broker-token` (`0600 root:root`) on
+  `mct-portal-dev`; `gh-kestrel` and `git-credential-kestrel` exchange it for
+  short-lived, repository-scoped GitHub App tokens. Host-only: never put it in
+  `.env`, containers, images or CI. See
+  [`docs/runbooks/KESTREL-AGENT-ACCESS.md`](docs/runbooks/KESTREL-AGENT-ACCESS.md).
 - Never put credential values in this repository. Rotation follows
   [`docs/SECRETS_ROTATION.md`](docs/SECRETS_ROTATION.md); the cross-app matrix
   is in `MaineCyberTech/kestrel` `docs/runbooks/KESTREL-OPS.md`.
@@ -194,7 +200,7 @@ pnpm e2e                     # Playwright E2E
 | Seed files                | 10    | `supabase/seeds/*.sql`                                                                                                                                                                                                                                                                             |
 | GitHub Actions workflows  | 32    | `.github/workflows/`                                                                                                                                                                                                                                                                               |
 | AI prompt files           | 626   | `prompts/` (6 packs, 624 pinned); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                                                                                                                                           |
-| Build/dev/utility scripts | 125   | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `check-portal-export-sql.py`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `filter-restore-sql.py`, `collect-licenses.mjs`, etc.) |
+| Build/dev/utility scripts | 127   | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `check-migration-transactions.sh`, `seed-store.ts`, `check-kestrel-agent.sh`, `kestrel-portal-secrets.sh`, `check-portal-export-sql.py`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, `filter-restore-sql.py`, `collect-licenses.mjs`, etc.) |
 
 ## Database Types (2026-09-21)
 
