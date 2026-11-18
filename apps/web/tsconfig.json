@@ -8,7 +8,7 @@
     "jsx": "preserve",
     "incremental": true,
     "plugins": [{ "name": "next" }],
-    "baseUrl": ".",
+    "noUncheckedSideEffectImports": false,
     "paths": {
       "@/*": ["./*"],
       "@mct/ui/*": ["../../packages/ui/src/*"],
