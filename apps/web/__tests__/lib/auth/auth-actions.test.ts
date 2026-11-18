@@ -337,6 +337,16 @@ describe("auth-actions", () => {
   });
 
   describe("testLoginAction", () => {
+    beforeEach(() => {
+      process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED = "true";
+      process.env.TEST_ACCOUNT_PASSWORD = "server-test-password";
+    });
+
+    afterEach(() => {
+      delete process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED;
+      delete process.env.TEST_ACCOUNT_PASSWORD;
+    });
+
     it("sets cookie and lands admins in /admin", async () => {
       mockSignIn.mockResolvedValue({
         accessToken: "token-456",
@@ -348,9 +358,10 @@ describe("auth-actions", () => {
       ]);
 
       const { testLoginAction } = await import("@/lib/auth/auth-actions");
-      const result = await testLoginAction("admin@test.com", "1");
+      const result = await testLoginAction("admin@test.com");
 
       expect(result).toEqual({ ok: true, redirectTo: "/admin" });
+      expect(mockSignIn).toHaveBeenCalledWith("admin@test.com", "server-test-password");
       expect(mockCookieSet).toHaveBeenCalledWith(
         SESSION_COOKIE,
         "token-456",
@@ -369,7 +380,7 @@ describe("auth-actions", () => {
       ]);
 
       const { testLoginAction } = await import("@/lib/auth/auth-actions");
-      const result = await testLoginAction("client@test.com", "1");
+      const result = await testLoginAction("client@test.com");
 
       expect(result).toEqual({ ok: true, redirectTo: "/portal/dashboard" });
     });
@@ -382,7 +393,7 @@ describe("auth-actions", () => {
       mockMe.mockRejectedValue(new Error("boom"));
 
       const { testLoginAction } = await import("@/lib/auth/auth-actions");
-      const result = await testLoginAction("x@test.com", "1");
+      const result = await testLoginAction("x@test.com");
 
       expect(result).toEqual({ ok: true, redirectTo: "/portal/dashboard" });
       expect(mockCookieSet).toHaveBeenCalled();
@@ -393,7 +404,7 @@ describe("auth-actions", () => {
       mockSignIn.mockRejectedValue(new ApiError("AUTH_ERROR", "Invalid credentials", 401));
 
       const { testLoginAction } = await import("@/lib/auth/auth-actions");
-      const result = await testLoginAction("bad@test.com", "wrong");
+      const result = await testLoginAction("bad@test.com");
 
       expect(result).toEqual({ ok: false, error: "Invalid credentials" });
       expect(mockCookieSet).not.toHaveBeenCalled();
@@ -407,13 +418,46 @@ describe("auth-actions", () => {
       });
 
       const { testLoginAction } = await import("@/lib/auth/auth-actions");
-      const result = await testLoginAction("a@b.com", "1");
+      const result = await testLoginAction("a@b.com");
 
       expect(result).toEqual({
         ok: false,
         error: "This account requires an authenticator code. Sign in from the login page.",
       });
       expect(mockCookieSet).not.toHaveBeenCalled();
+    });
+
+    it("refuses the public .us host even when the flag is set", async () => {
+      mockHeaders.mockResolvedValue({
+        get: jest.fn().mockReturnValue("app.mainecybertech.us"),
+      });
+
+      const { testLoginAction } = await import("@/lib/auth/auth-actions");
+      const result = await testLoginAction("admin@test.com");
+
+      expect(result).toEqual({ ok: false, error: "Test accounts are disabled." });
+      expect(mockSignIn).not.toHaveBeenCalled();
+      expect(mockCookieSet).not.toHaveBeenCalled();
+    });
+
+    it("refuses when the dev flag is missing", async () => {
+      delete process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED;
+
+      const { testLoginAction } = await import("@/lib/auth/auth-actions");
+      const result = await testLoginAction("admin@test.com");
+
+      expect(result).toEqual({ ok: false, error: "Test accounts are disabled." });
+      expect(mockSignIn).not.toHaveBeenCalled();
+    });
+
+    it("refuses when the server-only password is missing", async () => {
+      delete process.env.TEST_ACCOUNT_PASSWORD;
+
+      const { testLoginAction } = await import("@/lib/auth/auth-actions");
+      const result = await testLoginAction("admin@test.com");
+
+      expect(result).toEqual({ ok: false, error: "Test accounts are disabled." });
+      expect(mockSignIn).not.toHaveBeenCalled();
     });
   });
 });
