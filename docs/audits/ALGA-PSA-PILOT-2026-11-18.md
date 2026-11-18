@@ -56,10 +56,11 @@ failed closed without creating a ticket. Removing the invalid phone let the
 contact create succeed. Production profiles should carry a valid phone or omit
 it; the intake code does not create incomplete contacts.
 
-## Rollback
+## Rollback (first pilot window)
 
-- `ALGA_PSA_INTAKE_ENABLED` was returned to `false`; the web container was
-  recreated and is healthy.
+- `ALGA_PSA_INTAKE_ENABLED` was returned to `false` after the first test window;
+  the web container was recreated and is healthy. The 2026-11-18 enablement
+  below is the current state.
 - The temporary portal user was deleted and its credential file shredded.
 - The Acme crosswalk and board/status/priority values remain staged for a
   future approved window.
