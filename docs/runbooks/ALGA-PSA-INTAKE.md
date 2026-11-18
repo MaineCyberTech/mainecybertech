@@ -225,6 +225,28 @@ Checked against `/tmp/opencode/repos/alga-psa` (`origin/main`, commit
 
 1. Set `ALGA_PSA_INTAKE_ENABLED=false` and restart/redeploy the `web` service.
    The action immediately returns to the existing Supabase path.
+
+   `deploy-do.yml` reads `vars.ALGA_PSA_INTAKE_ENABLED`. A GitHub
+   environment-scoped variable overrides the repository variable, and the dev
+   deploy job runs in the `dev` environment: set **both**. The droplet `.env`
+   is rewritten on every deploy. Exact rollback:
+
+   ```sh
+   gh variable set ALGA_PSA_INTAKE_ENABLED \
+     --repo MaineCyberTech/mainecybertech --body false
+   gh variable set ALGA_PSA_INTAKE_ENABLED \
+     --repo MaineCyberTech/mainecybertech --env dev --body false
+   # then run deploy-do, or update the running stack without waiting for one:
+   cd /opt/mct-portal
+   BK=".env.bak-psa-intake-$(date -u +%Y%m%dT%H%M%SZ)"
+   install -m 600 .env "$BK"
+   sed -i 's/^ALGA_PSA_INTAKE_ENABLED=.*/ALGA_PSA_INTAKE_ENABLED=false/' .env
+   docker compose -p mct-portal up -d --no-deps --force-recreate web
+   ```
+
+   Keep `$BK` until `docker inspect --format '{{.State.Health.Status}}'
+   mct-portal-web-1` reports `healthy`. It is the service-recovery trap: if the
+   recreate fails, restore it and investigate before retrying.
 2. No dual write occurs in either direction, so there is nothing to unwind in
    Supabase. Tickets created in the PSA during the enabled window remain valid;
    do not delete them.
