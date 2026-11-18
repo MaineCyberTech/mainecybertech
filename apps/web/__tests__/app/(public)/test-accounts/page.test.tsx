@@ -1,8 +1,9 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import type { ComponentProps } from "react";
 
 const mockTestLoginAction = jest.fn();
 jest.mock("@/lib/auth/auth-actions", () => ({
-  testLoginAction: (...args: any[]) => mockTestLoginAction(...args),
+  testLoginAction: (...args: unknown[]) => mockTestLoginAction(...args),
 }));
 
 const mockPush = jest.fn();
@@ -12,7 +13,7 @@ jest.mock("next/navigation", () => ({
 }));
 
 jest.mock("next/link", () => {
-  return ({ children, href, ...rest }: any) => (
+  return ({ children, href, ...rest }: ComponentProps<"a"> & { href: string }) => (
     <a href={href} {...rest}>
       {children}
     </a>
@@ -50,13 +51,12 @@ describe("TestAccountsPage", () => {
     expect(screen.queryByText("Marcus Chen")).not.toBeInTheDocument();
   });
 
-  it("enables on the dev domain (.us) even without the env flag", async () => {
-    delete process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED;
-    mockIsTestAccountsEnabled.mockReturnValue(true);
+  it("does not render the sign-in grid when the host gate is false", async () => {
+    mockIsTestAccountsEnabled.mockReturnValue(false);
     const { default: Page } = await import("@/app/(public)/test-accounts/page");
     render(<Page />);
-    expect(screen.getByText("Test Accounts")).toBeInTheDocument();
-    expect(screen.getByText("Marcus Chen")).toBeInTheDocument();
+    expect(screen.getByText("Not Available")).toBeInTheDocument();
+    expect(screen.queryByText("Marcus Chen")).not.toBeInTheDocument();
   });
 
   it("renders the account grid with all seeded users", async () => {
@@ -108,14 +108,14 @@ describe("TestAccountsPage", () => {
     expect(screen.getAllByText("suspended").length).toBe(2);
   });
 
-  it("signs in with the shared password and routes to the redirect target", async () => {
+  it("signs in the selected account without sending a password from the browser", async () => {
     const { default: Page } = await import("@/app/(public)/test-accounts/page");
     render(<Page />);
 
     fireEvent.click(screen.getByText("Marcus Chen"));
 
     await waitFor(() => {
-      expect(mockTestLoginAction).toHaveBeenCalledWith("marcus.chen@harborview.example", "1");
+      expect(mockTestLoginAction).toHaveBeenCalledWith("marcus.chen@harborview.example");
     });
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith("/portal/dashboard");

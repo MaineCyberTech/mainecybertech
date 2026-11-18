@@ -21,8 +21,9 @@ earlier Vercel/ECS descriptions were stale (INFRA-P2-005 / ARCH-P3-002).
 ## Testing Zone: `mainecybertech.us`
 
 ### Web application
-- Hostname: `app.mainecybertech.us`
-- DNS provider: Cloudflare
+- Hostname: `app.mainecybertech.us` (canonical)
+- Compatibility hostname: `portal.mainecybertech.us` → permanent redirect to `app.mainecybertech.us`
+- DNS provider: Cloudflare. The `portal` A record is currently managed manually; import it into Terraform state before the next `terraform apply` if Terraform is the owner.
 - Origin: droplet `mct-portal-dev`, Caddy on 80/443 → `web:3000`
 
 ### API

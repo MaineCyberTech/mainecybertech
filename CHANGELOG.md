@@ -9,6 +9,55 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ## [Unreleased]
 
+### Nov 18
+
+- **AI reviewer:** `develop` now uses the oversized-diff fallback workflow pinned
+  on `main`, so advisory reviews no longer fail before they can process large
+  PRs.
+- **Level notification wordmark:** added transparent light and dark
+  `MAINE CYBERTECH` wordmark PNGs (3360×320 and 1680×160) and SVG sources for
+  Level organization notification branding under
+  `apps/web/public/brand/level-notification/`.
+- **Legacy product URLs:** `/products` and `/store/products` now permanently
+  redirect to `/store`, and the admin product list no longer renders a client
+  form per row (reducing the RSC payload for large catalogs).
+
+### Nov 17
+
+- **JWT verification hardening (SEC-AUTH-001):** the API rejects the known
+  repeated `JWT_SECRET` placeholder at boot. The dev deployment's placeholder
+  was replaced with a random verification secret, closing a forged-HS256
+  authentication path; the incident and fallback behavior are documented in
+  `docs/JWT_ROTATION.md`.
+
+- **Test-account hardening (SEC-AUTH-002):** the public `/test-accounts`
+  one-click sign-in is now local-only, requires an explicit dev flag, a
+  non-production build and a server-only password, and no longer ships a
+  default credential. Caddy blocks the route as defense in depth; the affected
+  demo account passwords were rotated.
+
+- **Kestrel portal secrets:** new `scripts/kestrel-portal-secrets.sh` checks the
+  droplet's Supabase service-role key against Kestrel's managed source and can
+  apply the managed Supabase tokens, recreate api/worker, and restore the
+  previous `.env` if the post-apply check fails (`check` / `apply --dry-run` /
+  `apply`).
+- **JWT verification hardening (SEC-AUTH-001):** the API rejects the known
+  repeated `JWT_SECRET` placeholder at boot. The dev deployment's placeholder
+  was replaced with a random verification secret, closing a forged-HS256
+  authentication path; the incident and fallback behavior are documented in
+  `docs/JWT_ROTATION.md`.
+- **Dependency audit:** allowlist `GHSA-fc5q-39xc-vjpf` (picomatch ReDoS,
+  high, no patched release) until 2026-12-31. The vulnerable module is reached
+  only through the build-time Rollup plugins bundled with `@sentry/nextjs`;
+  production requests do not pass user-controlled globs to it. Re-review when
+  upstream publishes a fix or Sentry updates the plugin chain.
+
+### Nov 16
+
+- **Deploy fix (express-rate-limit v8):** custom rate-limit key generators now
+  normalize client IPs through `ipKeyGenerator`, so the API no longer fails
+  startup validation on IPv6-capable deployments.
+
 ### Nov 7 delta-audit remediation
 
 - **Client comment isolation (SEC-P1-012):** clients no longer receive
@@ -29,7 +78,6 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   approval fails closed on check-query errors and the reviewer executes the
   pinned SHA (`CI-P2-012/013`).
 
-
 ### Breaking Changes
 
 - **RLS:** `client_portal_entitlements` writes are now limited to platform
@@ -46,6 +94,13 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   release notes using [`templates/RELEASE_NOTES_TEMPLATE.md`](./templates/RELEASE_NOTES_TEMPLATE.md).
 
 ### Added
+
+- **Alga PSA intake (feature-flagged):** portal support submissions can create
+  tickets in Alga PSA when `ALGA_PSA_INTAKE_ENABLED=true` and the tenant IDs
+  are configured; otherwise the existing Supabase path is unchanged. The PSA
+  path is exclusive and never dual-writes, and includes a server-only client,
+  an optional per-organization client map, unit tests and the
+  cutover/rollback runbook (`docs/runbooks/ALGA-PSA-INTAKE.md`).
 
 - **Kestrel SSO (dev):** staff can sign in to the portal through Authelia's
   Supabase custom OIDC provider. Adds `POST /api/v1/auth/sso`, SDK/web start

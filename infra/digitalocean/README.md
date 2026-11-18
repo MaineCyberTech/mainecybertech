@@ -57,6 +57,17 @@ Supporting files:
   mounted read-only for the authenticated `mct-api` scrape.
 - `.env.example` — template for the droplet `/opt/mct-portal/.env`.
 
+The Alga PSA API key is a broker lease. `/usr/local/sbin/psa-broker-lease`
+writes `/etc/kestrel/portal/psa.env` (`0600`); `deploy-do.yml` appends only
+`ALGA_PSA_BASE_URL`, `ALGA_PSA_API_KEY` and `ALGA_PSA_TENANT_ID` to
+`/opt/mct-portal/.env` before Compose starts. The intake flag remains default
+false.
+
+Kestrel repository-agent access is host-only and is **not** part of
+`docker-compose.yml` or the app `.env`. The broker token, `gh-kestrel` and
+`git-credential-kestrel` live under `/etc/kestrel-agents` and `/usr/local`;
+see `docs/runbooks/KESTREL-AGENT-ACCESS.md`.
+
 ## Required environment
 
 Compose refuses to start without these (the `${VAR:?}` entries have no fallback):
