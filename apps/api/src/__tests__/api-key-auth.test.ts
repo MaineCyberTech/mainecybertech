@@ -2,6 +2,7 @@ import { jest } from "@jest/globals";
 import type { Request, Response, NextFunction } from "express";
 import { requireAuth } from "../middleware/auth";
 import { hashApiKey, isApiKeyToken } from "../middleware/api-key";
+import { pinQueryParam } from "../lib/query";
 
 jest.mock("../config/env", () => ({
   getEnv: jest.fn().mockReturnValue({
@@ -71,7 +72,7 @@ describe("requireAuth — API key path (FEAT-P2-001)", () => {
   it("authenticates a valid key and pins the request to the key's org", async () => {
     mockKeyRow();
     const req = mockReq({ authorization: `Bearer ${TOKEN}` }) as Request;
-    req.query = { organization_id: "00000000-0000-0000-0000-000000000099" };
+    pinQueryParam(req, "organization_id", "00000000-0000-0000-0000-000000000099");
     const res = mockRes() as Response;
     const next = jest.fn() as NextFunction;
 

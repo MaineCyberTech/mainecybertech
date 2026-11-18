@@ -1,3 +1,5 @@
+import type { Request } from "express";
+
 /**
  * Helpers for normalizing Express query/route values.
  *
@@ -33,4 +35,22 @@ export function queryStringArray(value: unknown): string[] {
   if (typeof value === "string") return [value];
   if (Array.isArray(value)) return value.filter((v): v is string => typeof v === "string");
   return [];
+}
+
+/**
+ * Pin a query parameter on the request.
+ *
+ * Express 5 defines `req.query` as a prototype getter with no setter, so the
+ * old `req.query = { ...req.query, key: value }` pattern throws a TypeError and
+ * is surfaced as a 500. Define an own data property instead (the same approach
+ * used for `req.ip`). `configurable: true` allows a later middleware to pin a
+ * second parameter on the same request.
+ */
+export function pinQueryParam(req: Request, key: string, value: string): void {
+  Object.defineProperty(req, "query", {
+    value: { ...(req.query as Record<string, unknown>), [key]: value },
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
 }

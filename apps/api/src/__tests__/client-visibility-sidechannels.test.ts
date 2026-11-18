@@ -2,6 +2,7 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import { createMockBuilder, createTestApp, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
+import { pinQueryParam } from "../lib/query";
 
 /**
  * SEC-P1-011: client roles must not read internal comments/timeline through
@@ -59,7 +60,7 @@ jest.mock("../middleware/org-access", () => ({
     const orgId = "00000000-0000-0000-0000-000000000001";
     req.orgScope = { orgId, explicit: true, platformAdmin: false, impersonation: false };
     req.orgId = orgId;
-    req.query = { ...req.query, organization_id: orgId };
+    pinQueryParam(req, "organization_id", orgId);
     next();
   },
 }));
