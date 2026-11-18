@@ -15,7 +15,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   before replacing containers and restores the previous `/opt/mct-portal/.env`
   when a deploy fails, so a rotated or rejected credential cannot leave the
   stack running without a working database key.
-
+- **Storybook/Chromatic:** restored `pnpm storybook:build` on Next.js 16.
+  `.storybook/main.ts` loads a Storybook-only resolver that shims the removed
+  `next/config` module and the changed `next/dist/build/swc` API used by
+  Storybook 8.6's `@storybook/nextjs`; the app runtime is unchanged.
 - **Express 5:** the API now runs Express 5. Injected org scoping uses the
   getter-safe `pinQueryParam` helper (`req.query` assignment throws in v5), and
   the test harness follows the same pattern; lockfile regenerated.
