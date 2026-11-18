@@ -1,5 +1,6 @@
 import { jest } from "@jest/globals";
 import express from "express";
+import { pinQueryParam } from "../lib/query";
 
 export type MockResult = {
   data: unknown;
@@ -64,7 +65,7 @@ export function createOrgAccessStub(
         impersonation: false,
       };
       _req.orgId = orgId;
-      _req.query = { ..._req.query, organization_id: orgId };
+      pinQueryParam(_req, "organization_id", orgId);
       next();
     },
     requireOrgAccessByParam: (req: any, _res: unknown, next: () => void) => {
