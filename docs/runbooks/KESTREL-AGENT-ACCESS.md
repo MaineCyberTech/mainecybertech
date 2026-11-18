@@ -169,27 +169,40 @@ Until the GitHub `dev` environment secret is corrected, `deploy-do` rewrites
 `.env` from that secret. Run `apply` after a deploy (or fix the secret) so the
 droplet keeps the Kestrel-managed values.
 
-## Workflow-scoped consumer (pending)
+## Workflow-scoped consumer (temporary)
 
 The default `repo-mainecybertech` consumer cannot push `.github/workflows/**`;
 GitHub rejects the push with *"refusing to allow a GitHub App to create or
 update workflow … without `workflows` permission."* Kestrel defines a separate
-`repo-mainecybertech-workflows` consumer for reviewed workflow changes, but it
-is **disabled** and its token is not installed on this droplet.
+`repo-mainecybertech-workflows` consumer for reviewed workflow changes.
 
-To enable reviewed workflow PRs from the agent:
+It was enabled temporarily on 2026-11-18 (broker policy v113) and its consumer
+token is installed root-to-root on the droplet at
+`/etc/kestrel-agents/mainecybertech-workflows/broker-token` (`0600 root:root`).
+The token was verified with a temporary `.github/workflows` branch push; that
+branch was deleted. The policy grants only `actions: write`, `contents: write`,
+`metadata: read` and `workflows: write` for `MaineCyberTech/mainecybertech`.
 
-1. Enable the `repo-mainecybertech-workflows` consumer in Kestrel and give it
-   the GitHub App `workflows: write` permission.
-2. Install its consumer token root-to-root on the droplet:
-   `/etc/kestrel-agents/mainecybertech-workflows/broker-token` (`0600 root:root`).
-3. Use it only for reviewed `.github/workflows/**` changes:
-   `KESTREL_AGENT_REPO=mainecybertech-workflows gh-kestrel …`.
-4. Keep the default `repo-mainecybertech` token for application code and PRs.
+Use it only for reviewed `.github/workflows/**` changes:
 
-Until this is provisioned, workflow changes must be pushed by a human or applied
-from a patch (for example `/root/sentry-dependency-review.patch` and
-`/root/mct-deploy-safety.patch`).
+```sh
+KESTREL_AGENT_REPO=mainecybertech-workflows gh-kestrel …
+```
+
+Keep the default `repo-mainecybertech` token for application code and PRs.
+After the reviewed workflow PRs land, disable the consumer and remove the token:
+
+```sh
+# Kestrel admin host
+kestrel-token-broker-admin --vault-token-file /root/.vault-ops-token \
+  consumer disable --apply repo-mainecybertech-workflows
+# On the portal droplet
+shred -u /etc/kestrel-agents/mainecybertech-workflows/broker-token
+```
+
+The two prepared patch files referenced earlier
+(`/root/sentry-dependency-review.patch` and `/root/mct-deploy-safety.patch`)
+are not present on the current agent host; recreate and review them before use.
 
 ## What not to do
 
