@@ -1,6 +1,6 @@
 // Auto-generated from supabase/migrations/*.sql — DO NOT EDIT MANUALLY
 // Run: node scripts/generate-db-types.js to regenerate
-// Source migrations digest (sha256): ff4ef548884a8bc60d52f5a2153c4ac1843d2d84a8ad741f6a3fa3e29bacd3ba
+// Source migrations digest (sha256): a12326972e30a4af82718e4af540f3e27f7d90c76e6b20d8c5a13234a2485396
 export type Json =
   | string
   | number
@@ -3555,6 +3555,32 @@ export type Database = {
           { foreignKeyName: "organization_domains_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };
+      organization_psa_links: {
+        Row: {
+          created_at: string;
+          organization_id: string;
+          psa_client_id: string;
+          psa_tenant: string;
+          updated_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          psa_client_id: string;
+          psa_tenant: string;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          organization_id?: string | null;
+          psa_client_id?: string | null;
+          psa_tenant?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "organization_psa_links_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
+      };
       organizations: {
         Row: {
           accent_color: string | null;
@@ -4048,6 +4074,8 @@ export type Database = {
           is_super_admin: boolean;
           metadata: Json;
           phone: string | null;
+          psa_contact_id: string | null;
+          psa_user_id: string | null;
           title: string | null;
           updated_at: string;
           version: number;
@@ -4063,6 +4091,8 @@ export type Database = {
           is_super_admin?: boolean | null;
           metadata?: Json | null;
           phone?: string | null;
+          psa_contact_id?: string | null;
+          psa_user_id?: string | null;
           title?: string | null;
           updated_at?: string | null;
           version?: number | null;
@@ -4078,6 +4108,8 @@ export type Database = {
           is_super_admin?: boolean | null;
           metadata?: Json | null;
           phone?: string | null;
+          psa_contact_id?: string | null;
+          psa_user_id?: string | null;
           title?: string | null;
           updated_at?: string | null;
           version?: number | null;
