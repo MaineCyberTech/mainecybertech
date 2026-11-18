@@ -14,6 +14,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - **AI reviewer:** `develop` now uses the oversized-diff fallback workflow pinned
   on `main`, so advisory reviews no longer fail before they can process large
   PRs.
+- **Level notification wordmark:** added transparent light and dark
+  `MAINE CYBERTECH` wordmark PNGs (3360×320 and 1680×160) and SVG sources for
+  Level organization notification branding under
+  `apps/web/public/brand/level-notification/`.
 - **Legacy product URLs:** `/products` and `/store/products` now permanently
   redirect to `/store`, and the admin product list no longer renders a client
   form per row (reducing the RSC payload for large catalogs).
