@@ -67,7 +67,7 @@ it; the intake code does not create incomplete contacts.
 - The PSA ticket and contact are retained as pilot evidence; they were not
   deleted.
 
-## Remaining before enabling permanently
+## Remaining before wider enablement
 
 - Confirm the PSA `svc-portal-intake` role still has ticket/contact write
   permissions after the pilot (the registry records client read, contact
@@ -76,7 +76,8 @@ it; the intake code does not create incomplete contacts.
   clean up the duplicate P1–P5 taxonomy.
 - Add a read-only PSA ticket projection before the portal is expected to show
   PSA-created tickets in its support list.
-- Enable only for mapped organizations and only in an approved change window.
+- Enable additional organizations only after the projection and an approved
+  change window.
 
 ## Enablement 2026-11-18 (completed)
 
