@@ -111,7 +111,11 @@ test.describe("portal flows", () => {
   test("portal has navigation links", async ({ page }) => {
     await page.goto("/portal/dashboard");
     await expect(page.getByRole("link", { name: /documents/i }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: "Support", exact: true })).toBeVisible();
+    await expect(
+      page
+        .getByLabel("Portal navigation", { exact: true })
+        .getByRole("link", { name: "Support", exact: true }),
+    ).toBeVisible();
   });
 
   test("portal documents page loads", async ({ page }) => {
