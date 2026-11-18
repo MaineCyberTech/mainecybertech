@@ -25,8 +25,8 @@
 | `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | No       | `0.2` prod / `0` other | Client-side Sentry trace sample rate (0–1); invalid values use the default                  |
 | `NEXT_PUBLIC_SENTRY_RELEASE`            | No       | `NEXT_PUBLIC_GIT_SHA`  | Client-side Sentry release identifier                                                       |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`        | No       | —                      | Cloudflare Turnstile site key (contact form captcha)                                        |
-| `NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED`     | No       | `false`                | Show the `/test-accounts` dev login page (localhost/`.us` only)                             |
-| `NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD`     | No       | `1`                    | Password used by the `/test-accounts` dev login page; **never set in production or CI**     |
+| `NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED`     | No       | `false`                | Show the `/test-accounts` dev login page (localhost + non-production only)                  |
+| `TEST_ACCOUNT_PASSWORD`                 | No       | —                      | Server-only password for the local-only `/test-accounts` page; **never expose via `NEXT_PUBLIC_*` or set in production/CI** |
 | `NEXT_PUBLIC_APP_VERSION`               | No       | `0.0.0-dev`            | App version string shown by the web app (injected as a build arg by `deploy-do.yml`)        |
 | `NEXT_PUBLIC_GIT_SHA`                   | No       | `local`                | Git commit SHA of the build (shown in version info)                                         |
 | `NEXT_PUBLIC_BUILD_TIME`                | No       | version.json           | Build timestamp persisted to `public/version.json` (`apps/web/scripts/generate-version.js`) |

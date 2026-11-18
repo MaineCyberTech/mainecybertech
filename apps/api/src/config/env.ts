@@ -55,7 +55,20 @@ const envSchema = z.object({
     }),
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
   LOG_LEVEL: logLevelSchema,
-  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
+  JWT_SECRET: z
+    .string()
+    .min(32, "JWT_SECRET must be at least 32 characters")
+    // Fail closed on the 2026-11-17 dev placeholder. The API trusts a valid
+    // HS256 `sub` without a Supabase lookup, so a known verification value is
+    // an authentication bypass, not just a weak secret.
+    .refine(
+      (value) =>
+        !value
+          .split(",")
+          .map((entry) => entry.trim())
+          .includes("JWT_SECRET".repeat(24)),
+      "JWT_SECRET must not be the known placeholder value",
+    ),
   ...smtpEnvShape,
   // Web Push (NOTIF-P2-001): VAPID public key returned to browsers by
   // GET /push-subscriptions/vapid-public-key. The worker holds the private key
@@ -157,9 +170,7 @@ export function assertProductionTurnstile(
  * (docker-compose x-app-env), so this assertion is the producer half of the
  * parity check; the worker's env schema enforces the consumer half.
  */
-export function assertQueueBackendParity(
-  env: Pick<Env, "NODE_ENV" | "QUEUE_BACKEND">,
-): void {
+export function assertQueueBackendParity(env: Pick<Env, "NODE_ENV" | "QUEUE_BACKEND">): void {
   if (env.NODE_ENV === "production" && env.QUEUE_BACKEND !== "bullmq") {
     throw new Error(
       `QUEUE_BACKEND=${env.QUEUE_BACKEND} is not supported in production: the API only enqueues to BullMQ, so the worker backend must match (set QUEUE_BACKEND=bullmq)`,
@@ -172,9 +183,7 @@ export function assertQueueBackendParity(
  * FIELD_ENCRYPTION_KEY must refuse startup rather than let
  * lib/field-encryption silently store PII as reversible `plain:` values.
  */
-export function assertProductionSecrets(
-  env: Pick<Env, "NODE_ENV" | "FIELD_ENCRYPTION_KEY">,
-): void {
+export function assertProductionSecrets(env: Pick<Env, "NODE_ENV" | "FIELD_ENCRYPTION_KEY">): void {
   if (env.NODE_ENV === "production" && !isValidFieldEncryptionKey(env.FIELD_ENCRYPTION_KEY)) {
     throw new Error(
       "FIELD_ENCRYPTION_KEY is required in production and must decode to exactly 32 bytes (64-char hex or base64)",

@@ -11,11 +11,28 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Nov 17
 
+- **JWT verification hardening (SEC-AUTH-001):** the API rejects the known
+  repeated `JWT_SECRET` placeholder at boot. The dev deployment's placeholder
+  was replaced with a random verification secret, closing a forged-HS256
+  authentication path; the incident and fallback behavior are documented in
+  `docs/JWT_ROTATION.md`.
+
+- **Test-account hardening (SEC-AUTH-002):** the public `/test-accounts`
+  one-click sign-in is now local-only, requires an explicit dev flag, a
+  non-production build and a server-only password, and no longer ships a
+  default credential. Caddy blocks the route as defense in depth; the affected
+  demo account passwords were rotated.
+
 - **Kestrel portal secrets:** new `scripts/kestrel-portal-secrets.sh` checks the
   droplet's Supabase service-role key against Kestrel's managed source and can
   apply the managed Supabase tokens, recreate api/worker, and restore the
   previous `.env` if the post-apply check fails (`check` / `apply --dry-run` /
   `apply`).
+- **JWT verification hardening (SEC-AUTH-001):** the API rejects the known
+  repeated `JWT_SECRET` placeholder at boot. The dev deployment's placeholder
+  was replaced with a random verification secret, closing a forged-HS256
+  authentication path; the incident and fallback behavior are documented in
+  `docs/JWT_ROTATION.md`.
 - **Dependency audit:** allowlist `GHSA-fc5q-39xc-vjpf` (picomatch ReDoS,
   high, no patched release) until 2026-12-31. The vulnerable module is reached
   only through the build-time Rollup plugins bundled with `@sentry/nextjs`;
