@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { logImpersonation } from "../services/impersonation";
 import { AppError } from "../types";
 import { isCrossTenantKey, roleKeyOf } from "../lib/roles";
+import { pinQueryParam } from "../lib/query";
 
 function extractOrgId(req: Request): string | null {
   if (req.query.organization_id) return req.query.organization_id as string;
@@ -218,7 +219,7 @@ export async function requireOrgAccess(req: Request, _res: Response, next: NextF
       }
 
       if (defaultOrgId) {
-        req.query = { ...req.query, organization_id: defaultOrgId };
+        pinQueryParam(req, "organization_id", defaultOrgId);
         (req as Request & { orgAccessInjected?: boolean }).orgAccessInjected = true;
       }
       (req as Request & { orgAccessPlatformAdmin?: boolean }).orgAccessPlatformAdmin =
