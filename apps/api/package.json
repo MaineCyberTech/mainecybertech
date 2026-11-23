@@ -18,7 +18,7 @@
     "@mct/config": "workspace:^",
     "@mct/sdk": "workspace:^",
     "@sentry/node": "^11.12.0",
-    "@supabase/supabase-js": "^2.49.1",
+    "@supabase/supabase-js": "^2.119.2",
     "@types/zxcvbn": "^4.4.5",
     "bullmq": "^6.7.1",
     "cookie-parser": "^1.4.7",
