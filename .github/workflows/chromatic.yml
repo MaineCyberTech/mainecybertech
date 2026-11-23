@@ -86,7 +86,7 @@ jobs:
 
       - name: Chromatic
         if: steps.chromatic_token.outputs.configured == 'true'
-        uses: chromaui/action@5d18868345f53a8f61258ad393396c7e169100fd
+        uses: chromaui/action@9cb4d65a86fe1c4c67a76a8d90f35a51a118e55f
         with:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           storybookBuildDir: docs/storybook-static
